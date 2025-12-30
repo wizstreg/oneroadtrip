@@ -4706,6 +4706,22 @@ function generateBuilderItinerary(steps, config, lang) {
       console.warn('[ROUTE-BUILDER] ⚠️ ensurePlacesIndex non disponible');
     }
     
+    // ══════════════════════════════════════════════════════════════
+    // CRITIQUE : Créer un nouveau tripId et initialiser l'adaptateur
+    // ══════════════════════════════════════════════════════════════
+    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('ORT_CURRENT_TRIP_ID', newTripId);
+    state.tripId = newTripId;
+    window.state.tripId = newTripId;
+    console.log('[ROUTE-BUILDER] 🆕 Nouveau tripId créé:', newTripId);
+    
+    if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.init === 'function') {
+      window.ORT_DETAIL_ADAPTER.init(newTripId, window.state);
+      console.log('[ROUTE-BUILDER] ✅ ORT_DETAIL_ADAPTER initialisé');
+    } else {
+      console.warn('[ROUTE-BUILDER] ⚠️ ORT_DETAIL_ADAPTER non disponible');
+    }
+    
     if (typeof renderRows === 'function') {
       console.log('[ROUTE-BUILDER] Appel renderRows...');
       renderRows();
@@ -12208,6 +12224,16 @@ if (tripIdFromUrl && !ccParam && !itinParam) {
 }
 
 // === FALLBACK: URL VIDE → Charger depuis localStorage + ORT_STATE ===
+// ══════════════════════════════════════════════════════════════
+// SKIP si from=builder - le Route Builder gère tout lui-même
+// ══════════════════════════════════════════════════════════════
+const fromBuilder = urlParams.get('from');
+if (fromBuilder === 'builder') {
+  console.log('[INIT] ⏭️ Skip fallback - Route Builder actif');
+  // Le Route Builder va créer son propre tripId et initialiser l'adaptateur
+  return;
+}
+
 const cc = urlParams.get('cc');
 const itin = urlParams.get('itin');
 if (!cc || !itin) {

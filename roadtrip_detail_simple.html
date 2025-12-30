@@ -8628,26 +8628,30 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
       if (window.firebase?.apps?.length) return window.firebase;
       await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
       await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
       if (!window.firebase.apps?.length && window.__FIREBASE_CONFIG__) {
         window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
       }
       return window.firebase;
     }
     
-    ensureFb().then(function(fb) {
+    ensureFb().then(async function(fb) {
       const btn = document.getElementById('openAuth');
       const btnLogout = document.getElementById('btnLogout');
       const btnGoogle = document.getElementById('btnGoogle');
       const btnEmail = document.getElementById('btnEmail');
       if (!btn) return;
       
-      fb.auth().onAuthStateChanged(function(user) {
-        // ══════════════════════════════════════════════════════
-        // CRITIQUE : Notifier ORT_STATE pour Firestore
-        // ══════════════════════════════════════════════════════
-        if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
-          window.ORT_STATE.updateUser(user);
-          console.log('[AUTH] ORT_STATE.updateUser appelé:', user ? user.uid : 'null');
+      fb.auth().onAuthStateChanged(async function(user) {
+        // Initialiser ORT_STATE avec l'utilisateur
+        if (window.ORT_STATE) {
+          if (typeof window.ORT_STATE.init === 'function') {
+            await window.ORT_STATE.init({ user: user, premium: false });
+          }
+          if (user && typeof window.ORT_STATE.updateUser === 'function') {
+            await window.ORT_STATE.updateUser(user);
+            console.log('[AUTH-FALLBACK] ORT_STATE.updateUser appelé:', user.uid);
+          }
         }
         
         if (user) {
