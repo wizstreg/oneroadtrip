@@ -5,6 +5,10 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>OneRoadTrip – Importer & Générer JSON</title>
@@ -49,7 +53,31 @@
   }
   
   #section34Container {
+    display: grid !important;
+  }
+  
+  #section3Container {
     display: none !important;
+  }
+  
+  #section3Container.section-collapsed {
+    display: none !important;
+  }
+  
+  #section3Container.section-expanded {
+    display: grid !important;
+  }
+  
+  #section4Container {
+    display: none !important;
+  }
+  
+  #section4Container.section-collapsed {
+    display: none !important;
+  }
+  
+  #section4Container.section-expanded {
+    display: grid !important;
   }
     
     /* Ajuster les paddings sur mobile */
@@ -385,7 +413,8 @@
       <div style="margin-top:20px">
         <label for="src" style="display:block;margin-bottom:8px;font-weight:600" id="labelSrc">Collez le texte source ici :</label>
         <textarea id="src" placeholder="" aria-label="Source text" style="height:120px;min-height:120px;max-height:120px"></textarea>
-        <div class="row" style="margin-top:20px">
+                <div class="muted" id="hint1"></div>
+<div class="row" style="margin-top:20px">
           <button class="btn" id="btn-gen" type="button"></button>
           <button class="btn ghost" id="btn-clear" type="button"></button>
         </div>
@@ -395,10 +424,10 @@
   
   </div><!-- Fin grille 2 colonnes -->
 
-  <!-- Sections 3-4 groupées avec titre gratuit -->
-  <div id="section34Container" class="section-group section-collapsed">
+  <!-- Sections 3-4 groupées avec titre gratuit - pour référence seulement -->
+  <div id="section34Container" class="section-group section-collapsed" style="display: none !important;">
     <div class="section-group-title" id="freeSectionTitle"></div>
-    
+  </div>
 
 <script>
 // === Gestion Accordéon Progressif Mobile ===
@@ -409,34 +438,47 @@
   }
   
   function expandSection(sectionId) {
+    console.log('[ORT] expandSection called with:', sectionId);
     const section = document.getElementById(sectionId);
-    if (!section) return;
-    
-    if (isMobile()) {
-      section.classList.remove('section-collapsed');
-      section.classList.add('section-expanded');
-      
-      // Scroll vers la section avec un délai pour l'animation
-      setTimeout(() => {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
+    console.log('[ORT] section found:', section);
+    if (!section) {
+      console.log('[ORT] section NOT FOUND!');
+      return;
     }
+    
+    // Appliquer les classes sans vérifier isMobile - laisse le CSS gérer
+    console.log('[ORT] Applying expanded classes');
+    section.classList.remove('section-collapsed');
+    section.classList.add('section-expanded');
+    console.log('[ORT] classList now:', section.className);
+    
+    // Scroll vers la section avec un délai pour l'animation
+    setTimeout(() => {
+      console.log('[ORT] scrolling into view');
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 300);
   }
   
   function collapseSection(sectionId) {
+    console.log('[ORT] collapseSection called with:', sectionId);
     const section = document.getElementById(sectionId);
-    if (!section) return;
-    
-    if (isMobile()) {
-      section.classList.remove('section-expanded');
-      section.classList.add('section-collapsed');
+    if (!section) {
+      console.log('[ORT] collapseSection: section NOT FOUND!');
+      return;
     }
+    
+    console.log('[ORT] Applying collapsed classes');
+    section.classList.remove('section-expanded');
+    section.classList.add('section-collapsed');
+    console.log('[ORT] classList now:', section.className);
   }
   
-  // Initialiser : sections 2-4 masquées sur mobile
+  // Initialiser : sections 2-3-4 masquées sur mobile
   if (isMobile()) {
     document.getElementById('section2Container')?.classList.add('section-collapsed');
     document.getElementById('section34Container')?.classList.add('section-collapsed');
+    document.getElementById('section3Container')?.classList.add('section-collapsed');
+    document.getElementById('section4Container')?.classList.add('section-collapsed');
   }
   
   // Rendre les fonctions accessibles globalement
@@ -541,6 +583,7 @@
 
   <main class="grid" aria-live="polite">
     <!-- 3) Prompt généré -->
+    <div id="section3Container" class="section-collapsed">
     <section class="card">
       <h2 id="t2"><span class="step-num">3</span><span id="t2text">Prompt IA généré</span></h2>
       <pre id="prompt" aria-label="Prompt IA à copier"></pre>
@@ -553,7 +596,9 @@
       </div>
       <div class="muted" id="hint2"></div>
     </section>
+  </div><!-- /section3Container -->
 
+  <div id="section4Container" class="section-collapsed">
     <!-- 4) Coller la réponse JSON -->
     <section class="card">
       <h2 id="t3"><span class="step-num">4</span><span id="t3text">Collez la réponse de l'IA</span></h2>
@@ -565,8 +610,8 @@
       <div id="json-status" class="status" style="display:none"></div>
       <div id="json-info" class="info-box" style="display:none"></div>
     </section>
+  </div><!-- /section4Container -->
   </main>
-  </div><!-- /section-group -->
 
   <footer>
     <a href="mentions-legales.html">Mentions légales</a> ·
@@ -2531,7 +2576,7 @@ function setLang(lang){
 // Init langue
 (function(){
   const urlLang = new URLSearchParams(location.search).get('lang');
-  const saved   = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang');
+  const saved   = localStorage.getItem('ORT_LANG') || localStorage.getItem('ORT_LANG');
   const lang    = urlLang || saved || 'fr';
   $('#langSel').value = lang;
   setLang(lang);
@@ -2562,11 +2607,15 @@ function setLang(lang){
 })();
 
 // Générer le prompt (MAJ: utilise options + supprime thèmes imposés)
-$('#btn-gen').onclick = ()=>{
-  const raw = $('#src').value.trim();
-  const t = I18N[document.documentElement.lang]||I18N.fr;
-  const btn = $('#btn-gen');
-  if(!raw){ alert(t.needSrc); return; }
+const btnGen = $('#btn-gen');
+if(btnGen) {
+  console.log('[ORT] btn-gen listener attached');
+  btnGen.addEventListener('click', ()=>{
+    console.log('[ORT] btn-gen clicked');
+    const raw = $('#src').value.trim();
+    const t = I18N[document.documentElement.lang]||I18N.fr;
+    const btn = $('#btn-gen');
+    if(!raw){ alert(t.needSrc); return; }
 
   // récupère le mode
   let mode = 'follow';
@@ -2620,51 +2669,110 @@ $('#btn-gen').onclick = ()=>{
     btn.textContent = t.btnValidate;
 
     if(removed > 100) {
-      $('#hint1').textContent = t.cleanedChars.replace('{count}', removed);
-      $('#hint1').style.color = '#059669';
-      $('#hint1').style.fontWeight = '600';
+      const hint1 = $('#hint1');
+      if(hint1) {
+        hint1.textContent = t.cleanedChars.replace('{count}', removed);
+        hint1.style.color = '#059669';
+        hint1.style.fontWeight = '600';
+      }
     } else {
-      $('#hint1').textContent = t.hint1;
-      $('#hint1').style.color = '';
-      $('#hint1').style.fontWeight = '';
+      const hint1 = $('#hint1');
+      if(hint1) {
+        hint1.textContent = t.hint1;
+        hint1.style.color = '';
+        hint1.style.fontWeight = '';
+      }
     }
     
-    // Ouvrir la section 3 (prompt) sur mobile
+    // Ouvrir la section 3 (prompt) sur mobile et fermer la section 2
+    console.log('[ORT] About to collapse/expand sections');
     if(window.ORT_expandSection){
-      window.ORT_expandSection('section34Container');
+      console.log('[ORT] ORT_expandSection exists');
+      if(window.ORT_collapseSection) {
+        console.log('[ORT] Calling collapseSection(section2Container)');
+        window.ORT_collapseSection('section2Container');
+        setTimeout(() => {
+          console.log('[ORT] Calling expandSection(section3Container) after delay');
+          window.ORT_expandSection('section3Container');
+        }, 350);
+      } else {
+        console.log('[ORT] ORT_collapseSection not available, calling expandSection directly');
+        window.ORT_expandSection('section3Container');
+      }
+    } else {
+      console.log('[ORT] ORT_expandSection NOT available!');
     }
   }, 100);
-};
-
-$('#btn-copy').onclick = ()=>{
-  const text = $('#prompt').textContent||'';
-  if(!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    const t = I18N[document.documentElement.lang]||I18N.fr;
-    const btn = $('#btn-copy');
-    const orig = btn.textContent;
-    btn.textContent = t.copied;
-    btn.style.background = '#059669';
-    setTimeout(()=> { btn.textContent = orig; btn.style.background = ''; }, 2000);
   });
-};
+}
 
-$('#btn-clear').onclick = ()=>{
-  $('#src').value='';
-  $('#prompt').textContent='';
-  $('#json-return').value='';
-  $('#hint1').textContent='';
-  $('#hint1').style.color='';
-  $('#hint1').style.fontWeight='';
-  $('#json-status').style.display='none';
-  $('#json-info').style.display='none';
-};
-$('#btn-clear-prompt').onclick = ()=>{ $('#prompt').textContent=''; };
-$('#btn-clear-json').onclick = ()=>{
-  $('#json-return').value='';
-  $('#json-status').style.display='none';
-  $('#json-info').style.display='none';
-};
+const btnCopy = $('#btn-copy');
+if(btnCopy) {
+  btnCopy.addEventListener('click', ()=>{
+    const text = $('#prompt').textContent||'';
+    if(!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const t = I18N[document.documentElement.lang]||I18N.fr;
+      const btn = $('#btn-copy');
+      const orig = btn.textContent;
+      btn.textContent = t.copied;
+      btn.style.background = '#059669';
+      console.log('[ORT] Prompt copié');
+      
+      // Toujours passer à section 4 après copie
+      console.log('[ORT] Preparing section4 transition');
+      setTimeout(()=> { 
+        btn.textContent = orig; 
+        btn.style.background = ''; 
+        
+        // Après 500ms supplémentaires, ouvrir section 4
+        setTimeout(() => {
+          console.log('[ORT] Transitioning to section4');
+          if(window.ORT_collapseSection && window.ORT_expandSection) {
+            console.log('[ORT] ORT functions available, collapsing section3');
+            window.ORT_collapseSection('section3Container');
+            setTimeout(() => {
+              console.log('[ORT] Expanding section4');
+              window.ORT_expandSection('section4Container');
+            }, 350);
+          } else {
+            console.log('[ORT] ORT functions NOT available!');
+          }
+        }, 500);
+      }, 2000);
+    });
+  });
+}
+
+const btnClear = $('#btn-clear');
+if(btnClear) {
+  btnClear.addEventListener('click', ()=>{
+    $('#src').value='';
+    $('#prompt').textContent='';
+    $('#json-return').value='';
+    const h1 = $('#hint1');
+    if(h1) {
+      h1.textContent='';
+      h1.style.color='';
+      h1.style.fontWeight='';
+    }
+    $('#json-status').style.display='none';
+    $('#json-info').style.display='none';
+  });
+}
+const btnClearPrompt = $('#btn-clear-prompt');
+if(btnClearPrompt) {
+  btnClearPrompt.addEventListener('click', ()=>{ $('#prompt').textContent=''; });
+}
+
+const btnClearJson = $('#btn-clear-json');
+if(btnClearJson) {
+  btnClearJson.addEventListener('click', ()=>{
+    $('#json-return').value='';
+    $('#json-status').style.display='none';
+    $('#json-info').style.display='none';
+  });
+}
 
 // Validation JSON (inchangé)
 $('#btn-validate-json').addEventListener('click', ()=>{

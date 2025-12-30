@@ -482,6 +482,7 @@
   window.ORT_DASHBOARD_ADAPTER = {
     init,
     loadTrips,
+    refresh: loadTrips,  // Alias pour compatibilité
     openTrip,
     deleteTrip,
     displayStats

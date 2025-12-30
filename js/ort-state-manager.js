@@ -35,6 +35,11 @@
   const AUTO_SAVE_DELAY = 3000; // 3 secondes après dernière modif
   const SUPPORTED_LANGS = ['fr', 'en', 'it', 'es', 'pt', 'ar'];
 
+  // ===== LIMITES FIRESTORE =====
+  const MAX_SAVED_TRIPS = 2;      // Max voyages sauvegardés
+  const MAX_BOOKINGS_TOTAL = 20;  // Max réservations par voyage
+  const MAX_DOCUMENTS = 10;       // Max documents d'identité
+
   // ===== ÉTAT GLOBAL =====
   let firebaseApp = null;
   let firestoreDb = null;
@@ -140,11 +145,11 @@
     return new Promise((resolve, reject) => {
       // Firebase App (core)
       const appScript = document.createElement('script');
-      appScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js';
+      appScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js';
       appScript.onload = () => {
         // Firebase Firestore
         const firestoreScript = document.createElement('script');
-        firestoreScript.src = 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js';
+        firestoreScript.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
         firestoreScript.onload = resolve;
         firestoreScript.onerror = reject;
         document.head.appendChild(firestoreScript);
@@ -308,6 +313,9 @@
    * Sauvegarde un voyage complet
    * @param {Object} tripData - Données du voyage
    * @returns {boolean} Succès de la sauvegarde
+   * 
+   * RÈGLE : Firestore = UNIQUEMENT si saved === true
+   *         localStorage = brouillons et modifs temporaires
    */
   async function saveTrip(tripData) {
     if (!tripData || !tripData.id) {
@@ -315,20 +323,19 @@
       return false;
     }
 
-    console.log(`💾 [STATE] Sauvegarde voyage: ${tripData.id}`);
-
     // Prépare les données
     const preparedData = prepareTripData(tripData);
 
     // Mise à jour du cache
     tripsCache[tripData.id] = preparedData;
 
-    // Sauvegarde selon le mode
-    // Si connecté → Firestore (cloud, synchronisé)
-    // Sinon → localStorage (local uniquement)
-    if (currentUser) {
+    // RÈGLE ABSOLUE : Firestore = saved:true UNIQUEMENT
+    // Brouillons et modifs temporaires → localStorage
+    if (currentUser && preparedData.saved === true) {
+      console.log(`💾 [STATE] Sauvegarde Firestore (saved=true): ${tripData.id}`);
       return await saveTripToFirestore(preparedData);
     } else {
+      console.log(`💾 [STATE] Sauvegarde localStorage (brouillon): ${tripData.id}`);
       return saveTripToLocalStorage(preparedData);
     }
   }
@@ -669,6 +676,37 @@ if (hasDeepNesting) {
     if (!firestoreDb || !currentUser) {
       console.warn('⚠️ [STATE] Firestore non disponible, sauvegarde en local');
       return saveTripToLocalStorage(tripData);
+    }
+
+    // Vérifier la limite de voyages sauvegardés (sauf si c'est une mise à jour)
+    try {
+      const existingDoc = await firestoreDb
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('trips')
+        .doc(tripData.id)
+        .get();
+      
+      if (!existingDoc.exists) {
+        // Nouveau voyage : vérifier la limite
+        const snapshot = await firestoreDb
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('trips')
+          .get();
+        
+        if (snapshot.size >= MAX_SAVED_TRIPS) {
+          console.error(`❌ [STATE] Limite atteinte: ${MAX_SAVED_TRIPS} voyages max`);
+          // Émet un événement pour notifier l'UI
+          window.dispatchEvent(new CustomEvent('ort:limit-reached', {
+            detail: { type: 'trips', limit: MAX_SAVED_TRIPS, current: snapshot.size }
+          }));
+          return false;
+        }
+      }
+    } catch (limitError) {
+      console.warn('⚠️ [STATE] Erreur vérification limite:', limitError);
+      // Continue quand même (mieux vaut sauvegarder que perdre des données)
     }
 
 try {
@@ -1067,7 +1105,21 @@ try {
   /**
    * Obtient la liste de tous les voyages
    */
+  /**
+   * ╔═══════════════════════════════════════════════════════════╗
+   * ║  RÈGLE ABSOLUE - Dashboard = FIRESTORE UNIQUEMENT         ║
+   * ║  JAMAIS localStorage quand utilisateur connecté           ║
+   * ╚═══════════════════════════════════════════════════════════╝
+   */
   async function getAllTrips() {
+    // Si connecté + Firestore dispo → UNIQUEMENT Firestore
+    if (currentUser && firestoreDb) {
+      tripsCache = {};
+      await loadTripsFromFirestore();
+      console.log(`☁️ [STATE] getAllTrips: ${Object.keys(tripsCache).length} voyage(s) depuis Firestore UNIQUEMENT`);
+      return Object.values(tripsCache);
+    }
+    // Sinon localStorage (offline)
     await loadTripsIndex();
     return Object.values(tripsCache);
   }

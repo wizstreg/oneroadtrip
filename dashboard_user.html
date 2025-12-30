@@ -17,24 +17,22 @@
   body{margin:0;background:var(--bg);color:#e7f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
   a{color:inherit}
 
-  /* ==== Header ORT (repris du questionnaire) ==== */
+  /* ==== Header ORT (structure 2 rows, compatible ort-header.js) ==== */
   header.ort-hdr{position:sticky;top:0;z-index:10;background:#113f7a;color:#fff;
-    padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #113f7a}
+    padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid rgba(255,255,255,0.2)}
+  .header-row-1,.header-row-2{display:flex;align-items:center;gap:12px;width:100%}
+  .header-row-2{justify-content:flex-end}
   header.ort-hdr .brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
-  header.ort-hdr .brandlink img{width:80px;height:80px}
+  header.ort-hdr .brandlink img{width:60px;height:60px}
   header.ort-hdr .brand{font-weight:800;font-size:20px}
   header.ort-hdr .spacer{flex:1}
   header.ort-hdr .langpick{appearance:none;background:#fff;border:1px solid #113f7a;border-radius:10px;
     padding:8px 10px;cursor:pointer;color:#113f7a}
   header.ort-hdr .auth{position:relative}
-  header.ort-hdr .hdr-btn{padding:8px 12px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer}
-  header.ort-hdr .hdr-btn:hover{background:#ffffff2b}
+  header.ort-hdr .btn{padding:8px 12px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer}
+  header.ort-hdr .btn:hover{background:#ffffff2b}
   header.ort-hdr .auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid var(--bd);
-    border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px}
-  header.ort-hdr .auth-pop .hdr-btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
-  header.ort-hdr .auth-pop .hdr-btn.out{background:#fff;color:#113f7a}
-
-/* Harmonisation avec quest_simple (la popin peut contenir .btn) */
+    border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px;z-index:10001}
   header.ort-hdr .auth-pop .btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
   header.ort-hdr .auth-pop .btn.out{background:#fff;color:#113f7a}
 
@@ -93,6 +91,9 @@
 <!-- ⬇️ IDENTIQUE À quest_simple -->
 <script src="/js/ort-config.js"></script>
 
+<!-- I18N Auth (nécessaire pour ort-header.js) -->
+<script src="/js/ort-i18n-auth.js"></script>
+
 <!-- STATE MANAGER -->
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-dashboard-adapter.js"></script>
@@ -111,24 +112,8 @@
 </head>
 <body>
 
-  <!-- ==== Header ORT (logo, langue, auth) ==== -->
-  <header class="ort-hdr">
-    <a class="brandlink" id="homeLink" href="#"><img src="../assets/symbol.webp" alt="Logo"><div class="brand">OneRoadTrip</div></a>
-    <div class="spacer"></div>
-    <select id="langSel" class="langpick" aria-label="Langue">
-      <option value="fr">Français</option><option value="en">English</option>
-      <option value="it">Italiano</option><option value="es">Español</option>
-      <option value="pt">Português</option><option value="ar">العربية</option>
-    </select>
-    <div class="auth">
-      <button id="openAuth" class="btn" type="button">Se connecter</button>
-      <div id="authPop" class="auth-pop" role="dialog" aria-label="Connexion">
-        <button id="btnGoogle" class="btn" type="button">Google</button>
-        <button id="btnEmail" class="btn" type="button">E‑mail</button>
-        <button id="btnLogout" class="btn out" type="button" style="display:none">Déconnexion</button>
-      </div>
-    </div>
-  </header>
+  <!-- ==== Header ORT (généré par ort-header.js) ==== -->
+  <header id="site-header" class="ort-hdr"></header>
 
   <div class="wrap">
 
@@ -153,11 +138,8 @@
       </div>
     </div>
 
-    <footer>
-      <a href="mentions-legales.html">Mentions légales</a> ·
-      <a href="politique-confidentialite.html">Confidentialité</a> ·
-      <a href="politique-cookies.html">Cookies</a>
-    </footer>
+    <!-- Footer généré par ort-footer.js -->
+    <footer id="footer-legal"></footer>
   </div>
 
 <script>
@@ -290,36 +272,14 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   localStorage.setItem('ORT_LANG', lang);
   localStorage.setItem('lang', lang);
 
-  // 3) applique lang + sens d’écriture
+  // 3) applique lang + sens d'écriture
   document.documentElement.lang = lang;
   document.documentElement.dir  = (lang === 'ar') ? 'rtl' : 'ltr';
 
-  // 4) dictionnaire + sélecteur
+  // 4) dictionnaire pour UI dashboard
   const L = I18N[lang] || I18N.fr;
-  const sel = document.getElementById('langSel');
-  if(sel){
-    sel.value = lang;
-    sel.addEventListener('change', e=>{
-      const code = e.target.value.slice(0,2).toLowerCase();
-      localStorage.setItem('ORT_LANG', code);
-      localStorage.setItem('lang', code);
-      const u = new URL(location.href);
-      u.searchParams.set('lang', code);
-      location.replace(u.toString()); // reload → recalc UI
-    });
-  }
 
-  // 5) lien accueil garde la langue courante
-  const home = document.getElementById('homeLink');
-  if(home){
-    home.addEventListener('click', e=>{
-      e.preventDefault();
-      const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
-      location.href = 'index.html?lang=' + code;
-    });
-  }
-
-  // 6) UI labels
+  // 5) UI labels (les éléments du header sont gérés par ort-header.js)
   document.getElementById('title').textContent    = L.title;
   document.getElementById('lblNew').textContent   = L.new;
   document.getElementById('lblImport').textContent= L.import;
@@ -330,11 +290,17 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   hint.textContent = L.hint; hint.style.display='block';
 })();
 
+// ================= Firebase + Auth State =================
 (function(){
-  const $ = (id)=>document.getElementById(id);
-
-  const openAuth=$('openAuth'), pop=$('authPop'), btnGoogle=$('btnGoogle'), btnEmail=$('btnEmail'), btnLogout=$('btnLogout');
-  function loadScript(src){ return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('load '+src));document.head.appendChild(s);}); }
+  function loadScript(src){ 
+    return new Promise((ok,ko)=>{
+      if(document.querySelector(`script[src="${src}"]`)) return ok();
+      const s=document.createElement('script');
+      s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('load '+src));
+      document.head.appendChild(s);
+    }); 
+  }
+  
   async function ensureFirebase(){
     if(window.firebase?.apps?.length) return window.firebase;
     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
@@ -344,119 +310,42 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
     await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
     return window.firebase;
   }
-window.ensureFirebase = ensureFirebase;
-  function setHeaderLabel(user){
-    if(!openAuth) return;
-    const lang = document.documentElement.lang || 'fr';
-    const LABELS = {fr:{signin:'Se connecter',account:'Mon compte'},en:{signin:'Sign in',account:'My account'},it:{signin:'Accedi',account:'Il mio account'},es:{signin:'Iniciar sesión',account:'Mi cuenta'},pt:{signin:'Entrar',account:'Minha conta'},ar:{signin:'تسجيل الدخول',account:'حسابي'}};
-    const LBL = LABELS[lang] || LABELS.fr;
-    if(user){ openAuth.textContent = user.displayName || user.email || LBL.account; btnLogout.style.display=''; btnGoogle.style.display='none'; btnEmail.style.display='none'; }
-    else { openAuth.textContent = LBL.signin; btnLogout.style.display='none'; btnGoogle.style.display=''; btnEmail.style.display=''; }
-  }
-  if(openAuth&&pop){ openAuth.addEventListener('click',e=>{e.stopPropagation();pop.style.display=pop.style.display==='block'?'none':'block';}); document.addEventListener('click',()=>{pop.style.display='none';}); }
-  if(btnGoogle){ btnGoogle.addEventListener('click', async()=>{ try{ const fb=await ensureFirebase(); await fb.auth().signInWithPopup(new fb.auth.GoogleAuthProvider()); pop.style.display='none'; }catch(_){ } }); }
-  if(btnEmail){ btnEmail.addEventListener('click', async()=>{
-    // ⬇️ Mini-formulaire inline dans la popin (pas de redirection)
-    let box = document.getElementById('emailInline');
-    if(!box){
-      box = document.createElement('div');
-      box.id = 'emailInline';
-      box.style.cssText = 'border-top:1px solid #c3d6b6;margin-top:6px;padding-top:6px';
-      box.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <input id="eml" type="email" placeholder="E-mail" style="padding:8px;border:1px solid #113f7a;border-radius:8px">
-          <input id="pwd" type="password" placeholder="Mot de passe" style="padding:8px;border:1px solid #113f7a;border-radius:8px">
-          <div id="pwd2wrap" style="display:none"><input id="pwd2" type="password" placeholder="Répéter mot de passe" style="padding:8px;border:1px solid #113f7a;border-radius:8px"></div>
-          <div id="emlMsg" style="display:none;padding:8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px"></div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button id="doLogin"  class="hdr-btn" type="button">Continuer</button>
-            <button id="doSignup" class="hdr-btn" type="button">Créer un compte</button>
-            <button id="doReset"  class="hdr-btn out" type="button">Mot de passe oublié</button>
-          </div>
-        </div>`;
-      pop.appendChild(box);
+  window.ensureFirebase = ensureFirebase;
 
-      const eml = box.querySelector('#eml');
-      const pwd = box.querySelector('#pwd');
-      const pwd2w= box.querySelector('#pwd2wrap');
-      const pwd2 = box.querySelector('#pwd2');
-      const msg = box.querySelector('#emlMsg');
-      const showErr = (t)=>{ msg.textContent=t; msg.style.display='block'; };
-      const clearMsg = ()=>{ msg.style.display='none'; msg.textContent=''; };
-
-      // Mode inscription toggle
-      let signup = false;
-      box.querySelector('#doSignup').addEventListener('click', ()=>{ signup = !signup; clearMsg(); pwd2w.style.display = signup ? '' : 'none'; });
-
-      // Reset mdp
-      box.querySelector('#doReset').addEventListener('click', async()=>{
-        clearMsg();
-        try{
-          const fb = await ensureFirebase();
-          const email = (eml.value||'').trim();
-          if(!email) return showErr('Saisissez votre e-mail.');
-          await fb.auth().sendPasswordResetEmail(email);
-          msg.style.cssText = 'display:block;padding:8px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:8px';
-          msg.textContent = 'E-mail de réinitialisation envoyé.';
-        }catch(e){ showErr(e?.message||'Échec de l’envoi.'); }
-      });
-
-      // Login / Signup
-      box.querySelector('#doLogin').addEventListener('click', async()=>{
-        clearMsg();
-        try{
-          const fb = await ensureFirebase();
-          const email = (eml.value||'').trim();
-          const pass  = (pwd.value||'').trim();
-          if(!email || !pass) return showErr('E-mail et mot de passe requis.');
-          if(signup){
-            const pass2 = (pwd2?.value||'').trim();
-            if(pass!==pass2) return showErr('Les mots de passe ne correspondent pas.');
-            const cred = await fb.auth().createUserWithEmailAndPassword(email, pass);
-            try{ await cred.user.sendEmailVerification(); }catch(_){}
-            msg.style.cssText = 'display:block;padding:8px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:8px';
-            msg.textContent = 'Compte créé. Vérifiez votre e-mail puis reconnectez-vous.';
-            await fb.auth().signOut();
-          }else{
-            await fb.auth().signInWithEmailAndPassword(email, pass);
-            pop.style.display='none';
-          }
-        }catch(e){ showErr(e?.message||'Erreur d’authentification.'); }
-      });
+  // Auth state listener → met à jour Dashboard et ORT_STATE
+  // (Le header est géré par ort-header.js)
+  ensureFirebase().then(fb => fb.auth().onAuthStateChanged(async u => { 
+    console.log('🔐 [AUTH] État changé:', u ? u.email : 'déconnecté');
+    
+    Dashboard.setUser(u);
+    
+    // Update State Manager avec le user
+    if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+      await window.ORT_STATE.updateUser(u);
+      // Rafraîchir l'affichage du dashboard après connexion
+      if (u && typeof Dashboard !== 'undefined' && typeof Dashboard.render === 'function') {
+        console.log('🔄 [DASHBOARD] Rafraîchissement après connexion...');
+        await Dashboard.render();
+      }
     }
-    // focus email au premier affichage
-    const eml = box.querySelector('#eml'); if(eml) eml.focus();
-  }); }
-  if(btnLogout){ btnLogout.addEventListener('click', async()=>{ try{ const fb=await ensureFirebase(); await fb.auth().signOut(); }catch(_){ } }); }
- ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(async u=>{ 
-  setHeaderLabel(u); 
-  Dashboard.setUser(u);
-  // Update State Manager avec le user
-  if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
-    await window.ORT_STATE.updateUser(u);
-    // Rafraîchir l'affichage du dashboard après connexion
-  if (u && typeof Dashboard !== 'undefined' && typeof Dashboard.render === 'function') {
-      console.log('🔄 [DASHBOARD] Rafraîchissement après connexion...');
-      await Dashboard.render();
+    
+    // Afficher Export modules uniquement pour admin
+    const btnExportModules = document.getElementById('btnExportModules');
+    if(btnExportModules) {
+      // Hash simple des emails admin (marcsorci@free.fr OU sorcimarc1967@gmail.com)
+      const adminHashes = ['12929525', '5494611b'];
+      const userHash = u && u.email ? u.email.split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,0).toString(16) : '';
+      console.log('🔑 [ADMIN CHECK] Email:', u?.email, 'Hash:', userHash, 'Match:', adminHashes.includes(userHash));
+      btnExportModules.style.display = adminHashes.includes(userHash) ? '' : 'none';
     }
-  }
-  // Afficher Export modules uniquement pour admin
-  const btnExportModules = document.getElementById('btnExportModules');
-  if(btnExportModules) {
-    // Hash simple des emails admin (marcsorci@free.fr OU sorcimarc1967@gmail.com)
-    const adminHashes = ['12929525', '5494611b'];
-    const userHash = u && u.email ? u.email.split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,0).toString(16) : '';
-    console.log('🔑 [ADMIN CHECK] Email:', u?.email, 'Hash:', userHash, 'Match:', adminHashes.includes(userHash));
-    btnExportModules.style.display = adminHashes.includes(userHash) ? '' : 'none';
-  }
-}))
-
-.catch(()=>{ 
-  Dashboard.setUser(null); 
-  if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
-    window.ORT_STATE.updateUser(null);
-  }
-});
+  }))
+  .catch((err)=>{ 
+    console.error('❌ [AUTH] Erreur Firebase:', err);
+    Dashboard.setUser(null); 
+    if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+      window.ORT_STATE.updateUser(null);
+    }
+  });
 })();
 
 // ================= Persistance des voyages (par utilisateur) =================
@@ -596,8 +485,11 @@ async function trTitleIfNeeded(txt){
     listEl.innerHTML='';
     if(!currentUser){ emptyEl.style.display='block'; document.getElementById('lblEmpty').textContent=L.needLogin; return; }
     
-    // Charge les voyages depuis le State Manager
-    const data = await window.ORT_STATE.getAllTrips();
+    // Charge les voyages depuis le State Manager (Firestore UNIQUEMENT)
+    const allTrips = await window.ORT_STATE.getAllTrips();
+    // Filtrer UNIQUEMENT les voyages sauvegardés (saved === true)
+    const data = allTrips.filter(t => t.saved === true);
+    console.log('[DASHBOARD] Trips total:', allTrips.length, '| Saved:', data.length);
     
     if(!data.length){ emptyEl.style.display='block'; document.getElementById('lblEmpty').textContent=L.empty; return; }
     emptyEl.style.display='none';
@@ -743,10 +635,10 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
  const openBtn = btn(L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
 const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
 const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); actions.appendChild(photosBtn);
-const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn);
+// const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn); // TODO: réactiver
 const delBtn  = btn(L.btn.del, ()=> delRT(rt), true); actions.appendChild(delBtn);
-const linkBtn = btn(L.btn.link, ()=> shareLink(rt)); actions.appendChild(linkBtn);
-const mailBtn = btn(L.btn.mail, ()=> shareEmail(rt)); actions.appendChild(mailBtn);
+// const linkBtn = btn(L.btn.link, ()=> shareLink(rt)); actions.appendChild(linkBtn); // TODO: réactiver
+// const mailBtn = btn(L.btn.mail, ()=> shareEmail(rt)); actions.appendChild(mailBtn); // TODO: réactiver
 const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> generateAndShowImage(rt)); actions.appendChild(shareBtn);
 ;
 
@@ -2374,6 +2266,7 @@ function ensureSeed(){
   // API publique
   return {
     setUser(u){ currentUser = u; if(u){ ensureSeed(); } loadRtCoversOnce().finally(render); },
+    render,  // Exposer render pour le rafraîchissement après connexion
 
     async import(data){ 
       if(!currentUser) return;
@@ -2695,7 +2588,7 @@ document.getElementById('btnStart').addEventListener('click',()=>{
 toast(`${deleted} voyage(s) supprimé(s)`);
     // Rafraîchir l'affichage sans recharger la page
     setTimeout(async () => {
-      await window.ORT_DASHBOARD_ADAPTER.refresh();
+      await window.ORT_DASHBOARD_ADAPTER.loadTrips();
     }, 1000);
   });
 })();
@@ -2758,6 +2651,10 @@ console.log('ℹ️ [MIGRATION] Migration localStorage désactivée');
 
 <!-- html2canvas pour capturer la carte Leaflet -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<!-- Scripts ORT modulaires (header + footer) -->
+<script src="/js/ort-header.js"></script>
+<script src="/js/ort-footer.js"></script>
 
 </body>
 </html>

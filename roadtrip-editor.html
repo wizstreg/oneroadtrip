@@ -232,45 +232,49 @@
             column-gap: 30px;
         }
 
-        .step-item {
+        .steps-list li {
+            margin-bottom: 12px;
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+
+        .step-summary {
             display: flex;
             align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #eee;
-            gap: 15px;
+            gap: 12px;
         }
-        .step-item:last-child { border-bottom: none; }
 
-        .step-num {
-            width: 32px;
-            height: 32px;
+        .step-marker {
+            width: 36px;
+            height: 36px;
             background: #113f7a;
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: bold;
+            font-size: 0.9em;
             flex-shrink: 0;
         }
 
-        .step-info { flex: 1; }
+        .step-summary-content {
+            flex: 1;
+        }
+
         .step-name {
             font-weight: 600;
-            font-size: 1.05em;
             color: #333;
         }
+
         .step-nights {
             font-size: 0.85em;
             color: #666;
         }
 
         .step-distance {
-            color: #666;
-            font-size: 0.85em;
-            text-align: right;
-            flex-shrink: 0;
+            font-size: 0.8em;
+            color: #888;
         }
 
         /* Pages étapes */
@@ -280,107 +284,94 @@
         }
 
         .step-photo {
-            flex: 0 0 50%;
+            width: 50%;
+            min-height: 500px;
             position: relative;
-            background: #1a1a2e;
             overflow: hidden;
+            background: #eee;
         }
 
         .step-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            display: block;
         }
-        
+
         .step-no-photo {
             width: 100%;
             height: 100%;
-            min-height: 400px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
-            color: #9ca3af;
             font-size: 4rem;
+            color: #ccc;
+            background: #f0f0f0;
         }
 
         .step-content {
-            flex: 1;
-            padding: 25px;
+            width: 50%;
+            padding: 30px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
         }
 
         .day-badge {
-            background: rgba(17,63,122,0.1);
-            color: #113f7a;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 700;
             display: inline-block;
-            margin-bottom: 10px;
-            font-size: 12px;
-            border: 1px solid rgba(17,63,122,0.2);
-            width: fit-content;
+            background: #113f7a;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            margin-bottom: 15px;
         }
 
         .step-title {
-            font-size: 1.5em;
+            font-size: 1.6em;
             font-weight: bold;
             color: #113f7a;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .section-block {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
         }
 
         .section-title {
             font-weight: 600;
             color: #113f7a;
-            margin-bottom: 8px;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            font-size: 0.95em;
         }
 
         .section-items {
             list-style: none;
-            padding-left: 0;
+            padding: 0;
         }
 
         .section-items li {
-            padding: 4px 0;
+            padding: 6px 0 6px 20px;
             position: relative;
-            padding-left: 16px;
-            font-size: 0.9em;
-            line-height: 1.4;
+            font-size: 0.95em;
         }
 
         .section-items li:before {
             content: "•";
-            color: #113f7a;
             position: absolute;
-            left: 0;
-            font-weight: bold;
+            left: 5px;
+            color: #113f7a;
         }
 
         .next-step-info {
-            background: #f8f9fa;
-            padding: 10px 14px;
-            border-radius: 8px;
             margin-top: auto;
+            padding: 12px 15px;
+            background: #f8f9fa;
             border-left: 4px solid #113f7a;
-            font-size: 0.85em;
-            color: #666;
+            font-size: 0.9em;
         }
 
-        /* Loading */
         .loading {
             text-align: center;
-            padding: 100px;
+            padding: 60px;
             color: #666;
         }
         .loading-icon {
@@ -388,21 +379,129 @@
             margin-bottom: 16px;
         }
 
-        /* ===========================================
-           STYLES IMPRESSION (CSS PRINT) - CORRIGÉ
-           =========================================== */
-        @media print {
-            /* Page A4 paysage SANS marges navigateur (supprime header/footer) */
-            @page {
-                size: 297mm 210mm;
-                margin: 0;
-            }
+        /* Modal de partage */
+        .share-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+        .share-modal {
+            background: linear-gradient(135deg, #113f7a 0%, #1a5298 100%);
+            border-radius: 16px;
+            padding: 0;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            overflow: hidden;
+        }
+        .share-modal-header {
+            background: url('/assets/image_index.webp') center/cover;
+            padding: 30px 25px;
+            position: relative;
+        }
+        .share-modal-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(17,63,122,0.85), rgba(17,63,122,0.7));
+        }
+        .share-modal-header h3 {
+            position: relative;
+            color: white;
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .share-modal-body {
+            padding: 25px;
+            background: white;
+        }
+        .share-link-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .share-link-input {
+            flex: 1;
+            padding: 12px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #334155;
+            background: #f8fafc;
+        }
+        .share-link-input:focus {
+            outline: none;
+            border-color: #113f7a;
+        }
+        .share-copy-btn {
+            padding: 12px 20px;
+            background: #113f7a;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .share-copy-btn:hover {
+            background: #0d2f5c;
+        }
+        .share-copy-btn.copied {
+            background: #16a34a;
+        }
+        .share-warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 10px;
+            padding: 14px;
+            font-size: 13px;
+            color: #92400e;
+            line-height: 1.5;
+        }
+        .share-modal-footer {
+            padding: 16px 25px;
+            background: #f8fafc;
+            text-align: right;
+        }
+        .share-close-btn {
+            padding: 10px 24px;
+            background: transparent;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .share-close-btn:hover {
+            background: #f1f5f9;
+            color: #334155;
+        }
 
+        /* ===========================================
+           STYLES IMPRESSION (A4 paysage)
+           =========================================== */
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        @media print {
             /* Masquer éléments non imprimables */
             .toolbar,
             .carousel-btn,
             .photo-counter,
             .add-item-btn,
+            .share-modal-overlay,
             .no-print {
                 display: none !important;
             }
@@ -499,53 +598,50 @@
                 padding: 0 !important;
             }
 
+            .stat-item {
+                text-align: center !important;
+            }
+
             .stat-number {
-                font-size: 22pt !important;
+                font-size: 24pt !important;
+                font-weight: bold !important;
                 color: #113f7a !important;
             }
 
             .stat-label {
                 font-size: 10pt !important;
+                color: #666 !important;
             }
 
             /* ===========================================
-               PAGE RÉSUMÉ - COLONNE UNIQUE
+               PAGE RÉSUMÉ
                =========================================== */
             .summary-page {
                 width: 297mm !important;
                 height: 210mm !important;
                 padding: 15mm 20mm !important;
-                display: flex !important;
-                flex-direction: column !important;
             }
 
             .summary-title {
-                font-size: 20pt !important;
-                margin-bottom: 10mm !important;
-                padding-bottom: 5mm !important;
-                flex-shrink: 0 !important;
+                font-size: 18pt !important;
+                margin-bottom: 15px !important;
+                padding-bottom: 10px !important;
             }
 
             .steps-list {
-                flex: 1 !important;
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: flex-start !important;
-                gap: 0 !important;
+                columns: 2 !important;
+                column-gap: 20mm !important;
             }
 
-            .step-item {
-                display: flex !important;
-                align-items: center !important;
-                padding: 8px 0 !important;
-                border-bottom: 1px solid #ddd !important;
-                gap: 12px !important;
+            .steps-list li {
+                margin-bottom: 8px !important;
+                font-size: 10pt !important;
             }
 
-            .step-num {
+            .step-marker {
                 width: 28px !important;
                 height: 28px !important;
-                font-size: 12pt !important;
+                font-size: 9pt !important;
                 background: #113f7a !important;
                 color: white !important;
             }
@@ -670,7 +766,8 @@
         <span class="toolbar-title" id="toolbarTitle">Mon carnet de voyage</span>
         <div class="toolbar-spacer"></div>
         <button class="toolbar-btn" id="btnClose">✕ Fermer</button>
-        <button class="toolbar-btn" id="btnSave">💾 Sauvegarder</button>
+        <button class="toolbar-btn" id="btnCopyLink">🔗 Copier le lien</button>
+        <button class="toolbar-btn" id="btnModify">✏️ Modifier</button>
         <button class="toolbar-btn primary" id="btnPrint">🖨️ Imprimer / PDF</button>
     </div>
 
@@ -689,27 +786,436 @@
         
         let tripData = null;
         let tripId = null;
-        let hasChanges = false;
+        let urlParams = null;
         let photosCache = {};
+        let LANG = 'fr';
+        
+        // ===== TRADUCTIONS I18N (6 langues) =====
+        const I18N = {
+            fr: {
+                myTravelBook: "Mon carnet de voyage",
+                close: "Fermer",
+                copyLink: "Copier le lien",
+                linkCopied: "Lien copié !",
+                modify: "Modifier",
+                printPdf: "Imprimer / PDF",
+                preparing: "Préparation...",
+                loading: "Chargement du carnet...",
+                noData: "Aucune donnée de voyage trouvée.",
+                backHome: "Retour à l'accueil",
+                days: "Jours",
+                steps: "Étapes",
+                km: "km",
+                itinerary: "Itinéraire",
+                night: "nuit",
+                nights: "nuits",
+                day: "Jour",
+                toDiscover: "À découvrir",
+                activities: "Activités",
+                addPlace: "+ Ajouter un lieu",
+                addActivity: "+ Ajouter une activité",
+                cannotShare: "Ce carnet ne peut pas être partagé via lien.",
+                cannotModify: "Ce carnet ne peut pas être modifié.",
+                shareLink: "Partager ce carnet",
+                copyToClipboard: "Copier",
+                shareWarning: "⚠️ Si vous n'avez pas sauvegardé votre voyage dans le dashboard, le destinataire ne verra pas vos modifications.",
+                copied: "Copié !"
+            },
+            en: {
+                myTravelBook: "My travel book",
+                close: "Close",
+                copyLink: "Copy link",
+                linkCopied: "Link copied!",
+                modify: "Modify",
+                printPdf: "Print / PDF",
+                preparing: "Preparing...",
+                loading: "Loading travel book...",
+                noData: "No travel data found.",
+                backHome: "Back to home",
+                days: "Days",
+                steps: "Steps",
+                km: "km",
+                itinerary: "Itinerary",
+                night: "night",
+                nights: "nights",
+                day: "Day",
+                toDiscover: "To discover",
+                activities: "Activities",
+                addPlace: "+ Add a place",
+                addActivity: "+ Add an activity",
+                cannotShare: "This book cannot be shared via link.",
+                cannotModify: "This book cannot be modified.",
+                shareLink: "Share this travel book",
+                copyToClipboard: "Copy",
+                shareWarning: "⚠️ If you haven't saved your trip to the dashboard, the recipient won't see your changes.",
+                copied: "Copied!"
+            },
+            es: {
+                myTravelBook: "Mi cuaderno de viaje",
+                close: "Cerrar",
+                copyLink: "Copiar enlace",
+                linkCopied: "¡Enlace copiado!",
+                modify: "Modificar",
+                printPdf: "Imprimir / PDF",
+                preparing: "Preparando...",
+                loading: "Cargando cuaderno de viaje...",
+                noData: "No se encontraron datos del viaje.",
+                backHome: "Volver al inicio",
+                days: "Días",
+                steps: "Etapas",
+                km: "km",
+                itinerary: "Itinerario",
+                night: "noche",
+                nights: "noches",
+                day: "Día",
+                toDiscover: "Por descubrir",
+                activities: "Actividades",
+                addPlace: "+ Añadir un lugar",
+                addActivity: "+ Añadir una actividad",
+                cannotShare: "Este cuaderno no se puede compartir por enlace.",
+                cannotModify: "Este cuaderno no se puede modificar.",
+                shareLink: "Compartir este cuaderno",
+                copyToClipboard: "Copiar",
+                shareWarning: "⚠️ Si no has guardado tu viaje en el dashboard, el destinatario no verá tus cambios.",
+                copied: "¡Copiado!"
+            },
+            it: {
+                myTravelBook: "Il mio diario di viaggio",
+                close: "Chiudi",
+                copyLink: "Copia link",
+                linkCopied: "Link copiato!",
+                modify: "Modifica",
+                printPdf: "Stampa / PDF",
+                preparing: "Preparazione...",
+                loading: "Caricamento diario di viaggio...",
+                noData: "Nessun dato di viaggio trovato.",
+                backHome: "Torna alla home",
+                days: "Giorni",
+                steps: "Tappe",
+                km: "km",
+                itinerary: "Itinerario",
+                night: "notte",
+                nights: "notti",
+                day: "Giorno",
+                toDiscover: "Da scoprire",
+                activities: "Attività",
+                addPlace: "+ Aggiungi un luogo",
+                addActivity: "+ Aggiungi un'attività",
+                cannotShare: "Questo diario non può essere condiviso tramite link.",
+                cannotModify: "Questo diario non può essere modificato.",
+                shareLink: "Condividi questo diario",
+                copyToClipboard: "Copia",
+                shareWarning: "⚠️ Se non hai salvato il viaggio nella dashboard, il destinatario non vedrà le tue modifiche.",
+                copied: "Copiato!"
+            },
+            pt: {
+                myTravelBook: "Meu diário de viagem",
+                close: "Fechar",
+                copyLink: "Copiar link",
+                linkCopied: "Link copiado!",
+                modify: "Modificar",
+                printPdf: "Imprimir / PDF",
+                preparing: "Preparando...",
+                loading: "Carregando diário de viagem...",
+                noData: "Nenhum dado de viagem encontrado.",
+                backHome: "Voltar ao início",
+                days: "Dias",
+                steps: "Etapas",
+                km: "km",
+                itinerary: "Itinerário",
+                night: "noite",
+                nights: "noites",
+                day: "Dia",
+                toDiscover: "Para descobrir",
+                activities: "Atividades",
+                addPlace: "+ Adicionar um lugar",
+                addActivity: "+ Adicionar uma atividade",
+                cannotShare: "Este diário não pode ser compartilhado por link.",
+                cannotModify: "Este diário não pode ser modificado.",
+                shareLink: "Compartilhar este diário",
+                copyToClipboard: "Copiar",
+                shareWarning: "⚠️ Se você não salvou sua viagem no dashboard, o destinatário não verá suas alterações.",
+                copied: "Copiado!"
+            },
+            ar: {
+                myTravelBook: "دفتر سفري",
+                close: "إغلاق",
+                copyLink: "نسخ الرابط",
+                linkCopied: "تم نسخ الرابط!",
+                modify: "تعديل",
+                printPdf: "طباعة / PDF",
+                preparing: "جاري التحضير...",
+                loading: "جاري تحميل دفتر السفر...",
+                noData: "لم يتم العثور على بيانات السفر.",
+                backHome: "العودة للرئيسية",
+                days: "أيام",
+                steps: "مراحل",
+                km: "كم",
+                itinerary: "خط السير",
+                night: "ليلة",
+                nights: "ليالي",
+                day: "اليوم",
+                toDiscover: "للاكتشاف",
+                activities: "الأنشطة",
+                addPlace: "+ إضافة مكان",
+                addActivity: "+ إضافة نشاط",
+                cannotShare: "لا يمكن مشاركة هذا الدفتر عبر الرابط.",
+                cannotModify: "لا يمكن تعديل هذا الدفتر.",
+                shareLink: "مشاركة هذا الدفتر",
+                copyToClipboard: "نسخ",
+                shareWarning: "⚠️ إذا لم تحفظ رحلتك في لوحة التحكم، فلن يرى المستلم تعديلاتك.",
+                copied: "تم النسخ!"
+            }
+        };
+        
+        // Fonction de traduction
+        function t(key) {
+            return I18N[LANG]?.[key] || I18N.fr[key] || key;
+        }
+        
+        // Images de fallback pour les étapes sans photo
+        const FALLBACK_IMAGES = [
+            'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&q=80', // Van sur route
+            'https://images.unsplash.com/photo-1527786356703-4b100091cd2c?w=800&q=80', // Campervan
+            'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&q=80', // Route scenic
+            'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80', // Road trip
+            'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80'  // Voyage
+        ];
+        
+        // ===== FONCTIONS GLOBALES (exposées pour onerror) =====
+        
+        // Optimisation d'image via proxy wsrv.nl
+        window.optimizeImg = function(url, w = 1200) {
+            if (!url) return '';
+            // Déjà optimisé
+            if (url.includes('wsrv.nl')) return url;
+            // Wikimedia/Wikipedia - ne pas proxifier
+            if (url.includes('wikimedia.org') || url.includes('wikipedia.org')) return url;
+            // Unsplash - déjà optimisé avec paramètres
+            if (url.includes('unsplash.com') && url.includes('?')) return url;
+            // URL locale - ne pas proxifier (wsrv.nl ne peut pas y accéder)
+            if (url.startsWith('/') || url.startsWith('./') || url.includes('127.0.0.1') || url.includes('localhost')) {
+                return url; // Retourner tel quel
+            }
+            // Proxifier les autres URLs
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&q=85&output=webp`;
+        };
+        
+        // Gestion erreurs images - bascule vers la suivante
+        window.handleImageError = function(img, stepIdx) {
+            const photos = img.dataset.photos ? JSON.parse(img.dataset.photos) : [];
+            let currentIdx = parseInt(img.dataset.currentIdx || 0);
+            currentIdx++;
+            
+            if (currentIdx < photos.length) {
+                img.dataset.currentIdx = currentIdx;
+                const nextPhoto = photos[currentIdx];
+                img.src = window.optimizeImg(nextPhoto);
+                console.log(`[IMG] Erreur sur image ${stepIdx}, essai photo ${currentIdx + 1}/${photos.length}`);
+            } else {
+                // Plus de photos valides, utiliser fallback
+                const fallbackIdx = typeof stepIdx === 'number' ? stepIdx % FALLBACK_IMAGES.length : 0;
+                img.src = FALLBACK_IMAGES[fallbackIdx];
+                img.onerror = null; // Éviter boucle infinie
+                console.log(`[IMG] Aucune image valide pour ${stepIdx}, fallback utilisé`);
+            }
+        };
+        
+        // ===== CHARGEMENT DEPUIS URL (cc + itin) =====
+        async function loadFromUrl() {
+            urlParams = new URLSearchParams(location.search);
+            const cc = urlParams.get('cc');
+            const itin = urlParams.get('itin');
+            const lang = urlParams.get('lang') || localStorage.getItem('lang') || 'fr';
+            
+            if (!cc || !itin) return null;
+            
+            console.log(`[CARNET] Chargement depuis URL: cc=${cc}, itin=${itin}, lang=${lang}`);
+            
+            // Charger le fichier itins.modules
+            const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toUpperCase()}.itins.modules`;
+            let data = null;
+            
+            // Essayer avec la langue, puis sans
+            for (const path of [`${basePath}-${lang}.json`, `${basePath}.json`]) {
+                try {
+                    const res = await fetch(path);
+                    if (res.ok) {
+                        data = await res.json();
+                        console.log(`[CARNET] Fichier chargé: ${path}`);
+                        break;
+                    }
+                } catch(e) {}
+            }
+            
+            if (!data) {
+                console.error('[CARNET] Fichier itins.modules non trouvé');
+                return null;
+            }
+            
+            // Trouver l'itinéraire
+            const itins = data.itineraries || data.modules || [];
+            const it = itins.find(x => (x.itin_id || x.id || x.slug) === itin);
+            
+            if (!it) {
+                console.error(`[CARNET] Itinéraire "${itin}" non trouvé`);
+                return null;
+            }
+            
+            // Charger le cache photos
+            await loadPhotosCache();
+            await loadCountryPhotos(cc);
+            
+            // Convertir en format tripData
+            const steps = [];
+            const daysPlan = it.days_plan || [];
+            const places = it.places || [];
+            
+            if (daysPlan.length > 0) {
+                for (const d of daysPlan) {
+                    const pid = d.night?.place_id || '';
+                    const coords = d.night?.coords || [];
+                    let name = pid ? pid.split('::')[1]?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '';
+                    
+                    steps.push({
+                        place_id: pid,
+                        name: name || d.night?.name || 'Étape',
+                        lat: coords[0] || null,
+                        lon: coords[1] || null,
+                        nights: 1,
+                        visits: Array.isArray(d.visits) ? d.visits : [],
+                        activities: Array.isArray(d.activities) ? d.activities : [],
+                        distanceKm: d.to_next_leg?.distance_km || 0,
+                        driveMin: d.to_next_leg?.drive_min || 0,
+                        photos: getPhotosForPlaceLocal(pid)
+                    });
+                }
+            } else if (places.length > 0) {
+                for (const p of places) {
+                    const pid = p.place_id || p.id || '';
+                    steps.push({
+                        place_id: pid,
+                        name: p.name || p.title || 'Étape',
+                        lat: p.lat || null,
+                        lon: p.lon || null,
+                        nights: 1,
+                        visits: p.visits || [],
+                        activities: p.activities || [],
+                        photos: getPhotosForPlaceLocal(pid)
+                    });
+                }
+            }
+            
+            return {
+                id: `${cc}::${itin}`,
+                title: it.title || it.name || 'Mon roadtrip',
+                country: cc.toUpperCase(),
+                steps: steps,
+                cc: cc.toUpperCase(),
+                itin: itin
+            };
+        }
+        
+        // Photos locales (sans dépendance globale)
+        let countryPhotosCache = {};
+        
+        async function loadCountryPhotos(cc) {
+            try {
+                const url = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.photos.cache.json`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    countryPhotosCache = await res.json() || {};
+                    console.log(`[CARNET] Photos pays chargées: ${Object.keys(countryPhotosCache).length} lieux`);
+                }
+            } catch(e) {}
+        }
+        
+        function getPhotosForPlaceLocal(placeId) {
+            if (!placeId) return [];
+            const photos = [];
+            
+            // Depuis photosCache global
+            if (photosCache[placeId]?.photos) {
+                photos.push(...photosCache[placeId].photos);
+            }
+            
+            // Depuis countryPhotosCache
+            if (countryPhotosCache[placeId]?.photos) {
+                countryPhotosCache[placeId].photos.forEach(p => {
+                    if (!photos.includes(p)) photos.push(p);
+                });
+            }
+            
+            return photos.filter(p => p && typeof p === 'string');
+        }
+        
+        // ===== MISE À JOUR TOOLBAR I18N =====
+        function updateToolbarLabels() {
+            document.getElementById('toolbarTitle').textContent = t('myTravelBook');
+            document.getElementById('btnClose').innerHTML = `✕ ${t('close')}`;
+            document.getElementById('btnCopyLink').innerHTML = `🔗 ${t('copyLink')}`;
+            document.getElementById('btnModify').innerHTML = `✏️ ${t('modify')}`;
+            document.getElementById('btnPrint').innerHTML = `🖨️ ${t('printPdf')}`;
+            
+            // Mettre à jour le message de chargement
+            const loadingDiv = document.querySelector('.loading');
+            if (loadingDiv) {
+                loadingDiv.innerHTML = `
+                    <div class="loading-icon">⏳</div>
+                    <div>${t('loading')}</div>
+                `;
+            }
+            
+            // Direction RTL pour l'arabe
+            if (LANG === 'ar') {
+                document.documentElement.dir = 'rtl';
+            }
+        }
         
         // ===== INIT =====
         async function init() {
             console.log('[CARNET] Initialisation...');
             
-            // Récupérer données depuis sessionStorage
+            // Détecter la langue
+            urlParams = new URLSearchParams(location.search);
+            LANG = urlParams.get('lang') || localStorage.getItem('lang') || 'fr';
+            if (!I18N[LANG]) LANG = 'fr';
+            console.log(`[CARNET] Langue: ${LANG}`);
+            
+            // Mettre à jour la toolbar avec les traductions
+            updateToolbarLabels();
+            
+            // 1) Essayer sessionStorage (depuis roadtrip_detail.html)
             const stored = sessionStorage.getItem('ort_editor_trip');
             if (stored) {
                 tripData = JSON.parse(stored);
                 tripId = tripData.id || generateId();
                 tripData.id = tripId;
+                console.log('[CARNET] Données depuis sessionStorage');
+                
+                // Debug: afficher les nuits de chaque étape
+                const nightsDebug = tripData.steps.map((s, i) => `${i}: ${s.name} = ${s.nights} nuit(s)`);
+                console.log('[CARNET] Nuits par étape:', nightsDebug);
+                const totalNights = tripData.steps.reduce((sum, s) => sum + (s.nights || 0), 0);
+                console.log(`[CARNET] Total nuits: ${totalNights}`);
             }
             
+            // 2) Sinon, charger depuis URL params (cc + itin)
+            if (!tripData || !tripData.steps || tripData.steps.length === 0) {
+                tripData = await loadFromUrl();
+                if (tripData) {
+                    tripId = tripData.id;
+                    console.log('[CARNET] Données depuis URL params');
+                }
+            }
+            
+            // 3) Toujours pas de données ?
             if (!tripData || !tripData.steps || tripData.steps.length === 0) {
                 document.getElementById('container').innerHTML = `
                     <div class="loading">
                         <div class="loading-icon">❌</div>
-                        <div>Aucune donnée de voyage trouvée.</div>
-                        <div style="margin-top:16px"><a href="/" style="color:#113f7a">Retour à l'accueil</a></div>
+                        <div>${t('noData')}</div>
+                        <div style="margin-top:16px"><a href="/" style="color:#113f7a">${t('backHome')}</a></div>
                     </div>
                 `;
                 return;
@@ -749,36 +1255,9 @@
                     if (!photos.includes(p)) photos.push(p);
                 });
             }
-            return photos.filter(p => p && typeof p === 'string');
-        }
-        
-        function optimizeImg(url, w = 1200) {
-            if (!url) return '';
-            if (url.includes('wsrv.nl')) return url;
-            // Wikimedia/Wikipedia déjà optimisé, ne pas proxifier
-            if (url.includes('wikimedia.org') || url.includes('wikipedia.org')) return url;
-            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&q=85&output=webp`;
-        }
-        
-        // Gestion erreurs images - bascule vers la suivante
-        function handleImageError(img, stepIdx) {
-            const photos = img.dataset.photos ? JSON.parse(img.dataset.photos) : [];
-            let currentIdx = parseInt(img.dataset.currentIdx || 0);
-            currentIdx++;
-            
-            if (currentIdx < photos.length) {
-                img.dataset.currentIdx = currentIdx;
-                const nextPhoto = photos[currentIdx];
-                img.src = nextPhoto.includes('wikimedia.org') || nextPhoto.includes('wikipedia.org') 
-                    ? nextPhoto 
-                    : optimizeImg(nextPhoto);
-                console.log(`[IMG] Erreur sur image ${stepIdx}, essai photo ${currentIdx + 1}/${photos.length}`);
-            } else {
-                // Plus de photos, placeholder
-                img.style.display = 'none';
-                img.parentElement.innerHTML = '<div class="step-no-photo">📷</div>';
-                console.log(`[IMG] Aucune image valide pour ${stepIdx}`);
-            }
+            // Filtrer les URLs valides (exclure les chemins locaux type /img/default)
+            const validPhotos = photos.filter(p => p && typeof p === 'string' && !p.includes('default-roadtrip') && (p.startsWith('http') || p.includes('wikimedia') || p.includes('unsplash')));
+            return validPhotos;
         }
         
         // ===== RENDER =====
@@ -787,12 +1266,30 @@
             const steps = tripData.steps;
             
             // Stats
-            const totalDays = steps.reduce((s, st) => s + (st.nights || 1), 0);
-            const totalKm = Math.round(steps.reduce((s, st) => s + (st.to_next_leg?.distance_km || 0), 0));
+            // totalDays = somme des nuits (pas nights || 1 qui ajoute 1 pour les étapes avec 0 nuits)
+            const totalNights = steps.reduce((s, st) => s + (Number(st.nights) || 0), 0);
+            // Jours = nuits + 1 (on arrive jour 1, on repart après les nuits)
+            // Mais si totalNights vient de tripData, l'utiliser directement
+            const totalDays = tripData.totalNights || totalNights || steps.length;
+            const totalKm = Math.round(steps.reduce((s, st) => s + (st.to_next_leg?.distance_km || st.distanceKm || 0), 0));
             const country = tripData.country ? getCountryName(tripData.country) : '';
             
+            // Compter les étapes uniques (lieux distincts, pas les jours)
+            // Regrouper par place_id ou par nom si pas de place_id
+            const uniquePlaces = new Set();
+            steps.forEach(st => {
+                const key = st.place_id || st.name || '';
+                if (key) uniquePlaces.add(key);
+            });
+            const totalSteps = uniquePlaces.size || steps.length;
+            
+            console.log(`[CARNET] Stats: ${totalDays} jours, ${totalSteps} étapes, ${totalKm} km`);
+            
             // Photo couverture
-            const coverPhotos = getPhotos(steps[0]);
+            let coverPhotos = getPhotos(steps[0]);
+            if (coverPhotos.length === 0) {
+                coverPhotos = [FALLBACK_IMAGES[0]];
+            }
             const coverPhoto = coverPhotos[tripData.coverPhotoIdx || 0] || coverPhotos[0] || '';
             
             let html = `
@@ -800,7 +1297,7 @@
             <div class="page cover-page">
                 <div class="cover-hero">
                     ${coverPhoto ? `
-                        <img src="${optimizeImg(coverPhoto)}" alt="Couverture" id="coverImg" data-photos='${JSON.stringify(coverPhotos)}' data-current-idx="0" onerror="handleImageError(this, 'cover')">
+                        <img src="${window.optimizeImg(coverPhoto)}" alt="Couverture" id="coverImg" data-photos='${JSON.stringify(coverPhotos)}' data-current-idx="0" onerror="handleImageError(this, 'cover')">
                         ${coverPhotos.length > 1 ? `
                             <button class="carousel-btn prev no-print" onclick="changePhoto('cover',-1)">‹</button>
                             <button class="carousel-btn next no-print" onclick="changePhoto('cover',1)">›</button>
@@ -809,112 +1306,128 @@
                     ` : '<div class="step-no-photo">📷</div>'}
                     <div class="cover-overlay"></div>
                     <div class="cover-title-box">
-                        <h1 class="cover-title" contenteditable="true" data-field="title">${esc(tripData.title || 'Mon voyage')}</h1>
+                        <h1 class="cover-title" contenteditable="true" data-field="title">${esc(tripData.title || t('myTravelBook'))}</h1>
                         <p class="cover-subtitle">${country ? '🌍 ' + country : ''}</p>
                     </div>
                 </div>
                 <div class="cover-stats">
                     <div class="stat-item">
                         <div class="stat-number">${totalDays}</div>
-                        <div class="stat-label">Jours</div>
+                        <div class="stat-label">${t('days')}</div>
                     </div>
                     <div class="stat-item">
-                        <div class="stat-number">${steps.length}</div>
-                        <div class="stat-label">Étapes</div>
+                        <div class="stat-number">${totalSteps}</div>
+                        <div class="stat-label">${t('steps')}</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-number">${totalKm}</div>
-                        <div class="stat-label">km</div>
+                        <div class="stat-label">${t('km')}</div>
                     </div>
                 </div>
             </div>
             
             <!-- PAGE RÉSUMÉ -->
             <div class="page summary-page">
-                <h2 class="summary-title">📋 Votre itinéraire</h2>
-                <ul class="steps-list">
-                    ${steps.map((st, i) => `
-                        <li class="step-item">
-                            <div class="step-num">${i + 1}</div>
-                            <div class="step-info">
-                                <div class="step-name">${esc(st.name)}</div>
-                                <div class="step-nights">${st.nights ?? 1} ${(st.nights ?? 1) > 1 ? 'nuits' : 'nuit'}</div>
-                            </div>
-                            <div class="step-distance">
-                                ${st.to_next_leg?.distance_km ? Math.round(st.to_next_leg.distance_km) + ' km' : ''}
+                <h2 class="summary-title">📍 ${t('itinerary')}</h2>
+                <ol class="steps-list">
+                    ${steps.map((st, i) => {
+                        const nights = st.nights || 1;
+                        const dist = st.to_next_leg?.distance_km || st.distanceKm || 0;
+                        const nightLabel = nights > 1 ? t('nights') : t('night');
+                        return `
+                        <li>
+                            <div class="step-summary">
+                                <div class="step-marker">${i + 1}</div>
+                                <div class="step-summary-content">
+                                    <div class="step-name">${esc(st.name)}</div>
+                                    <div class="step-nights">${nights} ${nightLabel}</div>
+                                    ${dist ? `<div class="step-distance">→ ${Math.round(dist)} ${t('km')}</div>` : ''}
+                                </div>
                             </div>
                         </li>
-                    `).join('')}
-                </ul>
+                        `;
+                    }).join('')}
+                </ol>
             </div>
             `;
             
-            // Pages étapes
-            let dayNum = 1;
+            // Collecter TOUTES les photos du voyage pour les répartir
+            let allPhotos = [];
+            steps.forEach((st) => {
+                const stepPhotos = getPhotos(st);
+                stepPhotos.forEach(p => {
+                    if (!allPhotos.includes(p)) allPhotos.push(p);
+                });
+            });
+            // Ajouter les fallbacks si pas assez de photos
+            if (allPhotos.length < steps.length) {
+                FALLBACK_IMAGES.forEach(p => {
+                    if (!allPhotos.includes(p)) allPhotos.push(p);
+                });
+            }
+            
+            // Pages étapes - UNE PAGE PAR ÉTAPE avec photo différente
             steps.forEach((step, idx) => {
-                const photos = getPhotos(step);
-                const photoIdx = step.selectedPhotoIdx || 0;
-                const photo = photos[photoIdx] || photos[0] || '';
+                // Utiliser une photo différente pour chaque étape
+                // Prendre la photo à l'index correspondant dans le pool global
+                const photo = allPhotos[idx % allPhotos.length];
                 
-                const dayEnd = dayNum + (step.nights || 1) - 1;
-                const dayLabel = dayEnd > dayNum 
-                    ? `Jours ${dayNum}-${dayEnd}` 
-                    : `Jour ${dayNum}`;
-                dayNum = dayEnd + 1;
+                // Photos spécifiques à cette étape pour le carrousel
+                let stepPhotos = getPhotos(step);
+                if (stepPhotos.length === 0) {
+                    stepPhotos = [photo]; // Au moins la photo attribuée
+                }
                 
+                const visits = step.visits || step.pois || [];
+                const activities = step.activities || [];
                 const nextStep = steps[idx + 1];
-                const distKm = step.distanceKm || step.to_next_leg?.distance_km ? Math.round(step.distanceKm || step.to_next_leg?.distance_km) : 0;
-                const driveMin = step.driveMin || step.to_next_leg?.drive_min || 0;
-                
-                // Limiter les items pour tenir sur la page
-                const visits = (step.visits || []).slice(0, 5);
-                const activities = (step.activities || []).slice(0, 4);
+                const distKm = step.to_next_leg?.distance_km || step.distanceKm || 0;
+                const driveMin = step.to_next_leg?.drive_min || step.driveMin || 0;
                 
                 html += `
-                <!-- PAGE ÉTAPE ${idx + 1} -->
                 <div class="page step-page">
                     <div class="step-photo">
                         ${photo ? `
-                            <img src="${optimizeImg(photo)}" alt="${esc(step.name)}" id="stepImg${idx}" data-photos='${JSON.stringify(photos)}' data-current-idx="0" onerror="handleImageError(this, ${idx})">
-                            ${photos.length > 1 ? `
+                            <img src="${window.optimizeImg(photo)}" alt="${esc(step.name)}" id="stepImg${idx}" data-photos='${JSON.stringify(stepPhotos)}' data-current-idx="0" onerror="handleImageError(this, ${idx})">
+                            ${stepPhotos.length > 1 ? `
                                 <button class="carousel-btn prev no-print" onclick="changePhoto(${idx},-1)">‹</button>
                                 <button class="carousel-btn next no-print" onclick="changePhoto(${idx},1)">›</button>
-                                <div class="photo-counter no-print" id="stepCounter${idx}">1/${photos.length}</div>
+                                <div class="photo-counter no-print" id="stepCounter${idx}">1/${stepPhotos.length}</div>
                             ` : ''}
                         ` : '<div class="step-no-photo">📷</div>'}
                     </div>
                     <div class="step-content">
-                        <span class="day-badge">${dayLabel}</span>
+                        <span class="day-badge">${t('day')} ${idx + 1}</span>
                         <h2 class="step-title" contenteditable="true" data-step="${idx}" data-field="name">${esc(step.name)}</h2>
                         
                         ${visits.length > 0 ? `
                             <div class="section-block">
-                                <div class="section-title">🔍 À découvrir</div>
+                                <div class="section-title">🔍 ${t('toDiscover')}</div>
                                 <ul class="section-items" id="visits${idx}">
                                     ${visits.map((v, vi) => `
                                         <li contenteditable="true" data-step="${idx}" data-field="visits" data-idx="${vi}">${esc(typeof v === 'string' ? v : v.name || v.text || '')}</li>
                                     `).join('')}
                                 </ul>
-                                <button class="add-item-btn no-print" onclick="addItem(${idx},'visits')">+ Ajouter un lieu</button>
+                                <button class="add-item-btn no-print" onclick="addItem(${idx},'visits')">${t('addPlace')}</button>
                             </div>
                         ` : ''}
                         
                         ${activities.length > 0 ? `
                             <div class="section-block">
-                                <div class="section-title">🎯 Activités</div>
+                                <div class="section-title">🎯 ${t('activities')}</div>
                                 <ul class="section-items" id="activities${idx}">
                                     ${activities.map((a, ai) => `
                                         <li contenteditable="true" data-step="${idx}" data-field="activities" data-idx="${ai}">${esc(typeof a === 'string' ? a : a.name || a.text || '')}</li>
                                     `).join('')}
                                 </ul>
-                                <button class="add-item-btn no-print" onclick="addItem(${idx},'activities')">+ Ajouter une activité</button>
+                                <button class="add-item-btn no-print" onclick="addItem(${idx},'activities')">${t('addActivity')}</button>
                             </div>
                         ` : ''}
                         
                         ${nextStep ? `
                             <div class="next-step-info">
                                 <strong>➡️ ${esc(nextStep.name)}</strong>
-                                ${distKm ? ` — ${distKm} km` : ''}
+                                ${distKm ? ` — ${Math.round(distKm)} ${t('km')}` : ''}
                                 ${driveMin ? ` • ${formatTime(driveMin)}` : ''}
                             </div>
                         ` : ''}
@@ -931,7 +1444,11 @@
                 cover_idx: tripData.coverPhotoIdx || 0
             };
             steps.forEach((st, i) => {
-                window._photos[i] = getPhotos(st);
+                let stepPhotos = getPhotos(st);
+                if (stepPhotos.length === 0) {
+                    stepPhotos = [allPhotos[i % allPhotos.length]];
+                }
+                window._photos[i] = stepPhotos;
                 window._photos[i + '_idx'] = st.selectedPhotoIdx || 0;
             });
         }
@@ -952,17 +1469,16 @@
             const img = document.getElementById(imgId);
             const counter = document.getElementById(counterId);
             
-            if (img) img.src = optimizeImg(photos[idx]);
+            if (img) img.src = window.optimizeImg(photos[idx]);
             if (counter) counter.textContent = `${idx + 1}/${photos.length}`;
             
-            // Sauvegarder sélection
+            // Sauvegarder sélection dans tripData (pour l'impression)
             if (key === 'cover') {
                 tripData.coverPhotoIdx = idx;
             } else {
                 tripData.steps[key].selectedPhotoIdx = idx;
                 tripData.steps[key].photo = photos[idx];
             }
-            markChanged();
         };
         
         // ===== AJOUTER ITEM =====
@@ -981,8 +1497,6 @@
             ul.appendChild(li);
             li.focus();
             document.execCommand('selectAll', false, null);
-            
-            markChanged();
         };
         
         // ===== EVENTS =====
@@ -992,11 +1506,27 @@
             });
             
             document.getElementById('btnClose').onclick = () => {
-                if (hasChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
-                window.close();
+                // Si ouvert via lien (pas popup), window.close() ne marche pas
+                // Dans ce cas, rediriger vers roadtrip_detail
+                const cc = tripData.cc || tripData.country || '';
+                const itin = tripData.itin || tripData._originalItinId || '';
+                
+                if (cc && itin) {
+                    // Rediriger vers le roadtrip
+                    const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${LANG}`;
+                    window.location.href = url;
+                } else {
+                    // Essayer de fermer, sinon retour accueil
+                    window.close();
+                    // Si toujours ouvert après 100ms, rediriger
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 100);
+                }
             };
             
-            document.getElementById('btnSave').onclick = saveTrip;
+            document.getElementById('btnCopyLink').onclick = copyShareLink;
+            document.getElementById('btnModify').onclick = openModifyPage;
             document.getElementById('btnPrint').onclick = printBook;
         }
         
@@ -1022,54 +1552,139 @@
                     step.activities[parseInt(idx)] = text;
                 }
             }
-            markChanged();
         }
         
-        function markChanged() {
-            hasChanges = true;
-            document.getElementById('btnSave').textContent = '💾 Sauvegarder *';
-        }
-        
-        // ===== SAVE =====
-        async function saveTrip() {
-            const btn = document.getElementById('btnSave');
-            btn.textContent = '⏳ Sauvegarde...';
-            btn.disabled = true;
+        // ===== COPIER LE LIEN (avec modal) =====
+        function copyShareLink() {
+            // Construire le lien partageable
+            const cc = tripData.cc || tripData.country || '';
+            const itin = tripData.itin || tripData._originalItinId || '';
+            const lang = LANG;
             
-            try {
-                tripData.updatedAt = new Date().toISOString();
-                tripData.saved = true;
-                
-                if (window.ORT_STATE) {
-                    await ORT_STATE.saveTrip(tripData);
-                } else {
-                    localStorage.setItem('ort_trip_' + tripId, JSON.stringify(tripData));
+            if (!cc || !itin) {
+                alert(t('cannotShare'));
+                return;
+            }
+            
+            const shareUrl = `${location.origin}/roadtrip-editor.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
+            
+            // Créer la modal
+            const overlay = document.createElement('div');
+            overlay.className = 'share-modal-overlay';
+            overlay.innerHTML = `
+                <div class="share-modal">
+                    <div class="share-modal-header">
+                        <h3>🔗 ${t('shareLink')}</h3>
+                    </div>
+                    <div class="share-modal-body">
+                        <div class="share-link-box">
+                            <input type="text" class="share-link-input" id="shareLinkInput" value="${shareUrl}" readonly>
+                            <button class="share-copy-btn" id="shareCopyBtn">${t('copyToClipboard')}</button>
+                        </div>
+                        <div class="share-warning">
+                            ${t('shareWarning')}
+                        </div>
+                    </div>
+                    <div class="share-modal-footer">
+                        <button class="share-close-btn" id="shareCloseBtn">${t('close')}</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Sélectionner le texte
+            const input = document.getElementById('shareLinkInput');
+            input.select();
+            
+            // Bouton copier
+            document.getElementById('shareCopyBtn').onclick = () => {
+                const btn = document.getElementById('shareCopyBtn');
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    btn.textContent = `✅ ${t('copied')}`;
+                    btn.classList.add('copied');
+                    input.select();
+                }).catch(() => {
+                    // Fallback pour anciens navigateurs
+                    input.select();
+                    document.execCommand('copy');
+                    btn.textContent = `✅ ${t('copied')}`;
+                    btn.classList.add('copied');
+                });
+            };
+            
+            // Fermer la modal
+            const closeModal = () => overlay.remove();
+            document.getElementById('shareCloseBtn').onclick = closeModal;
+            overlay.onclick = (e) => {
+                if (e.target === overlay) closeModal();
+            };
+            
+            // Fermer avec Escape
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    document.removeEventListener('keydown', escHandler);
                 }
-                
-                hasChanges = false;
-                btn.textContent = '✅ Sauvegardé';
-                setTimeout(() => { btn.textContent = '💾 Sauvegarder'; }, 2000);
-            } catch(e) {
-                console.error('[CARNET] Erreur save:', e);
-                btn.textContent = '❌ Erreur';
-            } finally {
-                btn.disabled = false;
+            };
+            document.addEventListener('keydown', escHandler);
+        }
+        
+        // ===== MODIFIER (ouvrir roadtrip_detail) =====
+        function openModifyPage() {
+            const cc = tripData.cc || tripData.country || '';
+            const itin = tripData.itin || tripData._originalItinId || '';
+            const lang = LANG;
+            
+            if (cc && itin) {
+                // Ouvrir roadtrip_detail avec le même roadtrip
+                // L'utilisateur pourra le personnaliser (nouvel ID sera créé)
+                const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
+                window.open(url, '_blank');
+            } else {
+                alert(t('cannotModify'));
             }
         }
         
         // ===== PRINT =====
         async function printBook() {
-            // Attendre chargement images
-            const imgs = [...document.images];
-            await Promise.all(imgs.map(img => {
-                if (img.complete) return Promise.resolve();
-                return new Promise(res => {
-                    img.onload = res;
-                    img.onerror = res;
-                });
-            }));
+            const btn = document.getElementById('btnPrint');
+            btn.innerHTML = `⏳ ${t('preparing')}`;
+            btn.disabled = true;
             
-            window.print();
+            try {
+                // Attendre chargement images
+                const imgs = [...document.images];
+                console.log(`[CARNET] Attente de ${imgs.length} images...`);
+                
+                await Promise.all(imgs.map(img => {
+                    if (img.complete && img.naturalHeight > 0) return Promise.resolve();
+                    return new Promise(res => {
+                        img.onload = () => {
+                            console.log(`[CARNET] Image chargée: ${img.src.substring(0, 50)}...`);
+                            res();
+                        };
+                        img.onerror = () => {
+                            console.warn(`[CARNET] Erreur image: ${img.src.substring(0, 50)}...`);
+                            res();
+                        };
+                        // Timeout de 5s par image
+                        setTimeout(res, 5000);
+                    });
+                }));
+                
+                console.log('[CARNET] Images prêtes, lancement impression...');
+                
+                // Petit délai pour le rendu final
+                await new Promise(r => setTimeout(r, 300));
+                
+                window.print();
+            } catch(e) {
+                console.error('[CARNET] Erreur impression:', e);
+            } finally {
+                btn.innerHTML = `🖨️ ${t('printPdf')}`;
+                btn.disabled = false;
+            }
         }
         
         // ===== UTILS =====

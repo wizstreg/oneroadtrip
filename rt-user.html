@@ -297,6 +297,9 @@ function applyI18N() {
 <!-- AI Parser -->
 <script src="/js/ort-ai-parser.js"></script>
 
+<!-- ORT Trip Data - Données centralisées -->
+<script src="/js/ort-trip-data.js"></script>
+
 <!-- Main Script -->
 <script>
 (async function() {
@@ -317,7 +320,7 @@ function applyI18N() {
   
   let trip = null;
   let currentStep = 0;
-  let userData = {}; // { step_0: { photos: [], bookings: [] }, step_1: {...}, ... }
+  // userData remplacé par ORT_TRIP_DATA (centralisé dans le trip)
   let hasChanges = false;
   
   // DOM
@@ -520,27 +523,44 @@ function applyI18N() {
   }
   
   async function loadUserData() {
-    const user = firebase.auth().currentUser;
-    const localKey = `ort_user_content_${user?.uid || 'anon'}_${tripId}`;
-    
-    // Charger depuis localStorage (restauré par state-manager si voyage cloud)
-    try {
-      const local = localStorage.getItem(localKey);
-      if (local) {
-        userData = JSON.parse(local);
-        console.log('[RT-USER] Chargé depuis localStorage:', Object.keys(userData).length, 'steps');
-      }
-    } catch (e) { console.warn('localStorage parse failed:', e); }
+    // Charge les données via ORT_TRIP_DATA (qui migre auto les anciennes données)
+    if (window.ORT_TRIP_DATA && tripId) {
+      await ORT_TRIP_DATA.loadTrip(tripId);
+      const stats = ORT_TRIP_DATA.getStats();
+      console.log('[RT-USER] Données chargées via ORT_TRIP_DATA:', stats);
+    } else {
+      console.warn('[RT-USER] ORT_TRIP_DATA non disponible, fallback ancien système');
+      // Fallback ancien système (sera migré au prochain chargement)
+      const user = firebase.auth().currentUser;
+      const localKey = `ort_user_content_${user?.uid || 'anon'}_${tripId}`;
+      try {
+        const local = localStorage.getItem(localKey);
+        if (local) {
+          console.log('[RT-USER] Données localStorage trouvées (seront migrées)');
+        }
+      } catch (e) { console.warn('localStorage parse failed:', e); }
+    }
   }
   
   async function saveUserData() {
+    // Sauvegarde via ORT_TRIP_DATA (Firestore si connecté, sinon localStorage)
+    if (window.ORT_TRIP_DATA) {
+      const success = await ORT_TRIP_DATA.forceSave();
+      if (success) {
+        hasChanges = false;
+        showToast(t('saved'));
+        return true;
+      } else {
+        showToast(t('errorSaving') || 'Erreur sauvegarde', 'error');
+        return false;
+      }
+    }
+    
+    // Fallback ancien système
     const user = firebase.auth().currentUser;
     const localKey = `ort_user_content_${user?.uid || 'anon'}_${tripId}`;
-    
-    // Sauvegarder en localStorage (sera fusionné dans Firestore via Dashboard)
-    localStorage.setItem(localKey, JSON.stringify(userData));
-    console.log('[RT-USER] Sauvegardé localStorage:', localKey);
-    
+    localStorage.setItem(localKey, JSON.stringify({}));
+    console.log('[RT-USER] Sauvegardé localStorage (fallback):', localKey);
     hasChanges = false;
     showToast(t('savedLocal'));
     return true;
@@ -598,8 +618,8 @@ function applyI18N() {
   }
   
   function renderPhotos() {
-    const stepKey = `step_${currentStep}`;
-    const photos = userData[stepKey]?.photos || [];
+    // Via ORT_TRIP_DATA
+    const photos = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepPhotos(currentStep) : [];
     
     const slots = photosGrid.querySelectorAll('.photo-slot');
     slots.forEach((slot, i) => {
@@ -625,8 +645,8 @@ function applyI18N() {
   }
   
   function renderBookings() {
-    const stepKey = `step_${currentStep}`;
-    const bookings = userData[stepKey]?.bookings || [];
+    // Via ORT_TRIP_DATA
+    const bookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(currentStep) : [];
     
     resasList.innerHTML = '';
     bookings.forEach((booking, i) => {
@@ -638,7 +658,7 @@ function applyI18N() {
           <div class="resa-name">${booking.name || 'Réservation'}</div>
           <div class="resa-details">${booking.date_start || ''} ${booking.city ? '• ' + booking.city : ''}</div>
         </div>
-        <button class="resa-remove" data-index="${i}">×</button>
+        <button class="resa-remove" data-id="${booking.id || ''}" data-index="${i}">×</button>
       `;
       resasList.appendChild(item);
     });
@@ -650,15 +670,11 @@ function applyI18N() {
     $('btnPrev').addEventListener('click', () => goToStep(currentStep - 1));
     $('btnNext').addEventListener('click', () => goToStep(currentStep + 1));
     
-    // Back buttons - avec rappel cloud
+    // Back buttons
     const goBack = () => {
-      if (hasChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
-      // Rappel cloud si données présentes
-      const user = firebase.auth().currentUser;
-      const localKey = `ort_user_content_${user?.uid || 'anon'}_${tripId}`;
-      if (localStorage.getItem(localKey)) {
-        alert(t('cloudReminder'));
-      }
+      // Vérifie s'il y a des changements non sauvegardés
+      const hasPending = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.hasPendingChanges() : hasChanges;
+      if (hasPending && !confirm('Modifications non sauvegardées. Quitter ?')) return;
       location.href = `roadtrip_detail.html?id=${tripId}&cc=${cc}&itin=${itin}`;
     };
     $('btnBackToTrip').addEventListener('click', goBack);
@@ -792,18 +808,20 @@ function applyI18N() {
   }
   
   function addPhoto(index, url) {
-    const stepKey = `step_${currentStep}`;
-    if (!userData[stepKey]) userData[stepKey] = { photos: [], bookings: [] };
-    if (!userData[stepKey].photos) userData[stepKey].photos = [];
-    userData[stepKey].photos[index] = url;
-    hasChanges = true;
-    renderPhotos();
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      const success = ORT_TRIP_DATA.addUserPhoto(currentStep, url, index);
+      if (success) {
+        hasChanges = true;
+        renderPhotos();
+      }
+    }
   }
   
   function removePhoto(index) {
-    const stepKey = `step_${currentStep}`;
-    if (userData[stepKey]?.photos) {
-      userData[stepKey].photos[index] = null;
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      ORT_TRIP_DATA.removeUserPhoto(currentStep, index);
       hasChanges = true;
       renderPhotos();
     }
@@ -811,28 +829,22 @@ function applyI18N() {
   
   // Booking management
   function addBooking(booking) {
-    // Limite 30 résas au total
-    let totalResas = 0;
-    for (const key of Object.keys(userData)) {
-      if (userData[key]?.bookings) totalResas += userData[key].bookings.length;
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      const success = ORT_TRIP_DATA.addStepBooking(currentStep, booking);
+      if (success) {
+        hasChanges = true;
+        renderBookings();
+      } else {
+        showToast(t('maxBookings'), 'error');
+      }
     }
-    if (totalResas >= 30) {
-      showToast(t('maxBookings'), 'error');
-      return;
-    }
-    
-    const stepKey = `step_${currentStep}`;
-    if (!userData[stepKey]) userData[stepKey] = { photos: [], bookings: [] };
-    if (!userData[stepKey].bookings) userData[stepKey].bookings = [];
-    userData[stepKey].bookings.push(booking);
-    hasChanges = true;
-    renderBookings();
   }
   
-  function removeBooking(index) {
-    const stepKey = `step_${currentStep}`;
-    if (userData[stepKey]?.bookings) {
-      userData[stepKey].bookings.splice(index, 1);
+  function removeBooking(indexOrId) {
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      ORT_TRIP_DATA.removeStepBooking(currentStep, indexOrId);
       hasChanges = true;
       renderBookings();
     }
@@ -840,28 +852,22 @@ function applyI18N() {
   
   // Travel booking management (global)
   function addTravelBooking(booking) {
-    // Limite 30 résas au total
-    let totalResas = 0;
-    for (const key of Object.keys(userData)) {
-      if (userData[key]?.bookings) totalResas += userData[key].bookings.length;
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      const success = ORT_TRIP_DATA.addTravelBooking(booking);
+      if (success) {
+        hasChanges = true;
+        renderTravelBookings();
+      } else {
+        showToast(t('maxBookings'), 'error');
+      }
     }
-    if (totalResas >= 30) {
-      showToast(t('maxBookings'), 'error');
-      return;
-    }
-    
-    const stepKey = 'step_travel';
-    if (!userData[stepKey]) userData[stepKey] = { photos: [], bookings: [] };
-    if (!userData[stepKey].bookings) userData[stepKey].bookings = [];
-    userData[stepKey].bookings.push(booking);
-    hasChanges = true;
-    renderTravelBookings();
   }
   
-  function removeTravelBooking(index) {
-    const stepKey = 'step_travel';
-    if (userData[stepKey]?.bookings) {
-      userData[stepKey].bookings.splice(index, 1);
+  function removeTravelBooking(indexOrId) {
+    // Via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA) {
+      ORT_TRIP_DATA.removeTravelBooking(indexOrId);
       hasChanges = true;
       renderTravelBookings();
     }
@@ -869,7 +875,8 @@ function applyI18N() {
   
   function renderTravelBookings() {
     const travelResasList = $('travelResasList');
-    const bookings = userData['step_travel']?.bookings || [];
+    // Via ORT_TRIP_DATA
+    const bookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getTravelBookings() : [];
     const CATEGORIES = { travel: '🧳', flight: '✈️', car_rental: '🚗', insurance: '🛡️', hotel: '🏨', activity: '🎯', visit: '🏛️', show: '🎭' };
     
     travelResasList.innerHTML = '';
@@ -882,7 +889,7 @@ function applyI18N() {
           <div class="resa-name">${booking.name || 'Réservation'}</div>
           <div class="resa-details">${booking.date_start || ''} ${booking.city ? '• ' + booking.city : ''}</div>
         </div>
-        <button class="resa-remove" data-index="${i}">×</button>
+        <button class="resa-remove" data-id="${booking.id || ''}" data-index="${i}">×</button>
       `;
       travelResasList.appendChild(item);
     });

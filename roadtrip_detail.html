@@ -3039,11 +3039,33 @@ hdr.appendChild(row);
   }
 
  async function ensureFirebase(){
-    if(window.firebase?.apps?.length) return window.firebase;
-    await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-    await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
-    await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
-    window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    if(window.firebase?.apps?.length && typeof window.firebase.auth === 'function') return window.firebase;
+    
+    // Charger les scripts si nécessaire
+    if (!window.firebase?.initializeApp) {
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+    }
+    if (typeof window.firebase?.auth !== 'function') {
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+    }
+    if (!window.firebase?.firestore) {
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
+    }
+    
+    // Attendre que firebase.auth soit vraiment disponible
+    for (let i = 0; i < 50; i++) {
+      if (typeof window.firebase?.auth === 'function') break;
+      await new Promise(r => setTimeout(r, 50));
+    }
+    
+    if (typeof window.firebase?.auth !== 'function') {
+      throw new Error('firebase.auth not available');
+    }
+    
+    // Initialiser seulement si pas déjà fait
+    if (!window.firebase.apps.length) {
+      window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    }
     await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
     return window.firebase;
   }
@@ -11964,7 +11986,25 @@ if (previewBtn) {
       await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
       await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
       await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
-      window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+      
+      // Attendre que firebase.auth soit vraiment disponible (le script peut mettre du temps à s'initialiser)
+      let authReady = false;
+      for (let i = 0; i < 50 && !authReady; i++) {
+        if (typeof window.firebase?.auth === 'function') {
+          authReady = true;
+        } else {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+      
+      if (!authReady) {
+        throw new Error('firebase.auth not available after loading');
+      }
+      
+      // Initialiser Firebase seulement si pas déjà fait
+      if (!window.firebase.apps.length) {
+        window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+      }
       await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
       console.log('[INIT] ✅ Firebase chargé');
     } catch (e) {
@@ -12231,7 +12271,7 @@ if (!cc || !itin) {
       clearInterval(waitForStateManager);
       
       try {
-        const trip = ORT_STATE.getTrip(savedTripId);
+        const trip = await ORT_STATE.getTrip(savedTripId);
         console.log('[INIT] Trip récupéré:', trip ? trip.id : 'null');
         
         if (trip && trip.steps && trip.steps.length > 0) {

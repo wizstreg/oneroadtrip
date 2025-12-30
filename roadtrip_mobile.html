@@ -1083,6 +1083,7 @@ html, body {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
 <script>
 // === GLOBAL REDIRECT PROTECTION ===
@@ -1278,6 +1279,34 @@ setTimeout(() => {
 
 async function init() {
   console.log('[MOBILE] Init');
+  
+  // === INITIALISER ORT_STATE POUR SAUVEGARDE ===
+  if (window.ORT_STATE) {
+    try {
+      // Attendre Firebase Auth
+      await new Promise((resolve) => {
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+          firebase.auth().onAuthStateChanged(user => {
+            console.log('[MOBILE] Auth state:', user ? user.email : 'non connecté');
+            resolve(user);
+          });
+        } else {
+          console.log('[MOBILE] Firebase Auth non disponible');
+          resolve(null);
+        }
+      });
+      
+      const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+      await window.ORT_STATE.init({ user: user, premium: false });
+      
+      if (user) {
+        await window.ORT_STATE.updateUser(user);
+      }
+      console.log('[MOBILE] ✅ ORT_STATE initialisé');
+    } catch (e) {
+      console.error('[MOBILE] Erreur init ORT_STATE:', e);
+    }
+  }
   
   // Charger le cache de photos AVANT tout le reste
   await loadPhotosCache();
@@ -2214,6 +2243,7 @@ function openStepSheet(idx) {
   $('btnGyg').href = AFFILIATE.gyg(cityName);
   $('btnTiqets').href = AFFILIATE.tiqets(cityName, state.lang);
   $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, nights, checkIn, campaign);
+  $('btnHotel').style.display = step.nights > 0 ? '' : 'none';
   
   openSheet($('stepSheet'));
 }
@@ -2230,6 +2260,7 @@ function adjustNights(delta) {
   const checkIn = new Date().toISOString().split('T')[0];
   const campaign = `ort_mobile_step${currentStepIndex + 1}`;
   $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, step.nights || 1, checkIn, campaign);
+  $('btnHotel').style.display = step.nights > 0 ? '' : 'none';
   
   renderList();
   renderBookings();
@@ -2258,8 +2289,44 @@ async function saveTrip() {
     // Vérifier si Firebase est disponible et utilisateur connecté
     const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
     
-    if (user) {
-      // Sauvegarde Firestore pour utilisateurs connectés
+    if (user && window.ORT_STATE) {
+      // Sauvegarde via ORT_STATE (Firestore users/{uid}/trips/{tripId})
+      const tripId = state._tripId || state._originalItinId || `mobile_${Date.now()}`;
+      
+      const tripData = {
+        id: tripId,
+        title: state.title || 'Roadtrip',
+        country: state.cc || 'XX',
+        steps: state.steps.map(s => ({
+          name: s.name,
+          lat: s.lat,
+          lon: s.lng || s.lon,
+          lng: s.lng || s.lon,
+          nights: s.nights || 0,
+          place_id: s.place_id || s.placeId,
+          photos: s.photos || [],
+          description: s.description || ''
+        })),
+        nights: state.steps.reduce((sum, s) => sum + (s.nights || 0), 0),
+        kms: state.totalKm || 0,
+        saved: true,  // IMPORTANT: Pour apparaître dans le Dashboard
+        updatedAt: Date.now(),
+        createdAt: state._createdAt || Date.now(),
+        source: 'mobile'
+      };
+      
+      // Sauvegarder via State Manager
+      await window.ORT_STATE.saveTrip(tripData);
+      
+      // Mettre à jour le tripId dans state pour les sauvegardes suivantes
+      state._tripId = tripId;
+      
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé dans votre Dashboard !');
+      console.log('[SAVE] ✅ Trip sauvegardé via ORT_STATE:', tripId);
+    } else if (user) {
+      // Fallback Firestore direct si ORT_STATE non disponible
+      console.warn('[SAVE] ORT_STATE non disponible, fallback Firestore direct');
       const tripId = state._originalItinId || `mobile_${Date.now()}`;
       const tripData = {
         title: state.title || 'Roadtrip',
@@ -2273,13 +2340,19 @@ async function saveTrip() {
           photos: s.photos || [],
           description: s.description || ''
         })),
+        saved: true,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         userId: user.uid,
         source: 'mobile'
       };
       
-      await firebase.firestore().collection('trips').doc(tripId).set(tripData, { merge: true });
+      // CORRECTION: Utiliser users/{uid}/trips au lieu de trips
+      await firebase.firestore()
+        .collection('users').doc(user.uid)
+        .collection('trips').doc(tripId)
+        .set(tripData, { merge: true });
+      
       hasUnsavedChanges = false;
       showToast('✅ Sauvegardé dans votre Dashboard !');
     } else {
