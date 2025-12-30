@@ -84,6 +84,178 @@
         .toolbar-btn.primary:hover {
             background: #f0f0f0;
         }
+        
+        /* ===== MOBILE RESPONSIVE ===== */
+        
+        /* Bouton flottant mobile (caché par défaut) */
+        .mobile-fab {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #113f7a;
+            color: white;
+            border: none;
+            box-shadow: 0 4px 16px rgba(17,63,122,0.4);
+            font-size: 1.4rem;
+            cursor: pointer;
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .mobile-fab:active {
+            transform: scale(0.95);
+        }
+        
+        /* Menu mobile (caché par défaut) */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            overflow: hidden;
+            z-index: 100;
+            min-width: 180px;
+        }
+        .mobile-menu.open {
+            display: block;
+            animation: slideUp 0.2s ease;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border: none;
+            background: white;
+            color: #113f7a;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .mobile-menu-item:last-child {
+            border-bottom: none;
+        }
+        .mobile-menu-item:active {
+            background: #f8f9fa;
+        }
+        
+        @media (max-width: 768px) {
+            /* Cacher la toolbar desktop */
+            .toolbar {
+                display: none !important;
+            }
+            
+            /* Afficher le FAB mobile */
+            .mobile-fab {
+                display: flex;
+            }
+            
+            /* Container pleine largeur */
+            .container {
+                padding: 0;
+                max-width: 100%;
+            }
+            
+            /* Pages responsive */
+            .page {
+                border-radius: 0;
+                margin: 0 0 8px 0;
+                box-shadow: none;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            
+            /* Cover page mobile */
+            .cover-page {
+                min-height: auto;
+            }
+            .cover-hero {
+                height: 50vh;
+                min-height: 280px;
+            }
+            .cover-title {
+                font-size: 1.6rem !important;
+                padding: 0 16px;
+            }
+            .cover-stats {
+                padding: 16px;
+                gap: 20px;
+            }
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            /* Summary page mobile */
+            .summary-page {
+                padding: 20px 16px;
+            }
+            .steps-list {
+                columns: 1;
+            }
+            
+            /* Step pages mobile */
+            .step-page {
+                flex-direction: column;
+                min-height: auto;
+            }
+            .step-photo {
+                width: 100%;
+                height: 45vh;
+                min-height: 250px;
+            }
+            .step-content {
+                width: 100%;
+                padding: 20px 16px;
+            }
+            .step-title {
+                font-size: 1.4rem;
+            }
+            .day-badge {
+                font-size: 11px;
+                padding: 4px 10px;
+            }
+            
+            /* Boutons carrousel plus grands sur mobile */
+            .carousel-btn {
+                width: 44px;
+                height: 44px;
+            }
+            
+            /* Cacher les boutons d'ajout sur mobile */
+            .add-item-btn {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .cover-hero {
+                height: 40vh;
+                min-height: 220px;
+            }
+            .cover-title {
+                font-size: 1.3rem !important;
+            }
+            .step-photo {
+                height: 35vh;
+                min-height: 200px;
+            }
+            .stat-number {
+                font-size: 1.6rem;
+            }
+        }
 
         /* Boutons d'édition */
         .carousel-btn {
@@ -770,6 +942,15 @@
         <button class="toolbar-btn" id="btnModify">✏️ Modifier</button>
         <button class="toolbar-btn primary" id="btnPrint">🖨️ Imprimer / PDF</button>
     </div>
+    
+    <!-- Mobile FAB et menu -->
+    <button class="mobile-fab" id="mobileFab">☰</button>
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="mobile-menu-item" id="mobileModify">✏️ <span data-mobile-i18n="modify">Modifier</span></button>
+        <button class="mobile-menu-item" id="mobileCopyLink">🔗 <span data-mobile-i18n="copyLink">Copier le lien</span></button>
+        <button class="mobile-menu-item" id="mobilePrint">🖨️ <span data-mobile-i18n="printPdf">Imprimer / PDF</span></button>
+        <button class="mobile-menu-item" id="mobileClose">✕ <span data-mobile-i18n="close">Fermer</span></button>
+    </div>
 
     <div class="container" id="container">
         <div class="loading">
@@ -1151,11 +1332,20 @@
         
         // ===== MISE À JOUR TOOLBAR I18N =====
         function updateToolbarLabels() {
+            // Desktop toolbar
             document.getElementById('toolbarTitle').textContent = t('myTravelBook');
             document.getElementById('btnClose').innerHTML = `✕ ${t('close')}`;
             document.getElementById('btnCopyLink').innerHTML = `🔗 ${t('copyLink')}`;
             document.getElementById('btnModify').innerHTML = `✏️ ${t('modify')}`;
             document.getElementById('btnPrint').innerHTML = `🖨️ ${t('printPdf')}`;
+            
+            // Mobile menu
+            document.querySelectorAll('[data-mobile-i18n]').forEach(el => {
+                const key = el.dataset.mobileI18n;
+                if (key && t(key)) {
+                    el.textContent = t(key);
+                }
+            });
             
             // Mettre à jour le message de chargement
             const loadingDiv = document.querySelector('.loading');
@@ -1505,29 +1695,63 @@
                 el.addEventListener('input', handleInput);
             });
             
-            document.getElementById('btnClose').onclick = () => {
-                // Si ouvert via lien (pas popup), window.close() ne marche pas
-                // Dans ce cas, rediriger vers roadtrip_detail
+            // Handler fermer commun
+            const handleClose = () => {
                 const cc = tripData.cc || tripData.country || '';
                 const itin = tripData.itin || tripData._originalItinId || '';
                 
                 if (cc && itin) {
-                    // Rediriger vers le roadtrip
                     const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${LANG}`;
                     window.location.href = url;
                 } else {
-                    // Essayer de fermer, sinon retour accueil
                     window.close();
-                    // Si toujours ouvert après 100ms, rediriger
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 100);
+                    setTimeout(() => { window.location.href = '/'; }, 100);
                 }
             };
             
+            // Desktop toolbar
+            document.getElementById('btnClose').onclick = handleClose;
             document.getElementById('btnCopyLink').onclick = copyShareLink;
             document.getElementById('btnModify').onclick = openModifyPage;
             document.getElementById('btnPrint').onclick = printBook;
+            
+            // Mobile FAB et menu
+            const fab = document.getElementById('mobileFab');
+            const menu = document.getElementById('mobileMenu');
+            
+            fab.onclick = () => {
+                menu.classList.toggle('open');
+                fab.textContent = menu.classList.contains('open') ? '✕' : '☰';
+            };
+            
+            // Fermer menu si clic ailleurs
+            document.addEventListener('click', (e) => {
+                if (!fab.contains(e.target) && !menu.contains(e.target)) {
+                    menu.classList.remove('open');
+                    fab.textContent = '☰';
+                }
+            });
+            
+            // Actions menu mobile
+            document.getElementById('mobileModify').onclick = () => {
+                menu.classList.remove('open');
+                fab.textContent = '☰';
+                openModifyPage();
+            };
+            document.getElementById('mobileCopyLink').onclick = () => {
+                menu.classList.remove('open');
+                fab.textContent = '☰';
+                copyShareLink();
+            };
+            document.getElementById('mobilePrint').onclick = () => {
+                menu.classList.remove('open');
+                fab.textContent = '☰';
+                printBook();
+            };
+            document.getElementById('mobileClose').onclick = () => {
+                menu.classList.remove('open');
+                handleClose();
+            };
         }
         
         function handleInput(e) {
