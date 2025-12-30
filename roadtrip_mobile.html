@@ -764,6 +764,47 @@ html, body {
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
+
+/* Scanner buttons */
+.scan-btn {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+}
+.scan-btn.primary {
+  background: #113f7a;
+  color: #fff;
+}
+.scan-btn.secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+.scan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scan result card */
+.scan-result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.scan-result-row:last-child {
+  border-bottom: none;
+}
+.scan-result-label {
+  color: #666;
+  font-size: 0.85rem;
+}
+.scan-result-value {
+  font-weight: 600;
+  color: #333;
+}
 </style>
 </head>
 <body>
@@ -913,6 +954,16 @@ html, body {
         <span class="service-name">Transferts</span>
         <span class="service-desc">Aéroport & plus</span>
       </a>
+      <div class="service-card" id="btnScanBooking">
+        <span class="service-icon">📷</span>
+        <span class="service-name">Scanner résa</span>
+        <span class="service-desc">Photo → import</span>
+      </div>
+      <div class="service-card" id="btnScanDocument">
+        <span class="service-icon">🪪</span>
+        <span class="service-name">Scanner doc</span>
+        <span class="service-desc">Passeport, visa...</span>
+      </div>
     </div>
   </div>
 </div>
@@ -932,9 +983,9 @@ html, body {
       <span class="menu-icon">📤</span>
       <span>Partager</span>
     </div>
-    <div class="menu-item" id="menuPdf">
-      <span class="menu-icon">📄</span>
-      <span>Voir / Imprimer (PDF)</span>
+    <div class="menu-item" id="menuLang">
+      <span class="menu-icon">🌐</span>
+      <span>Langue</span>
     </div>
     <div class="menu-item" id="menuCenter">
       <span class="menu-icon">🎯</span>
@@ -944,6 +995,86 @@ html, body {
       <span class="menu-icon">💻</span>
       <span>Édition avancée (sur ordi)</span>
     </div>
+  </div>
+</div>
+
+<!-- Language Bottom Sheet -->
+<div class="bottom-sheet" id="langSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">🌐 Langue / Language</div>
+  </div>
+  <div class="sheet-body">
+    <div class="service-grid">
+      <div class="service-card lang-option" data-lang="fr">
+        <span class="service-icon">🇫🇷</span>
+        <span class="service-name">Français</span>
+      </div>
+      <div class="service-card lang-option" data-lang="en">
+        <span class="service-icon">🇬🇧</span>
+        <span class="service-name">English</span>
+      </div>
+      <div class="service-card lang-option" data-lang="es">
+        <span class="service-icon">🇪🇸</span>
+        <span class="service-name">Español</span>
+      </div>
+      <div class="service-card lang-option" data-lang="it">
+        <span class="service-icon">🇮🇹</span>
+        <span class="service-name">Italiano</span>
+      </div>
+      <div class="service-card lang-option" data-lang="pt">
+        <span class="service-icon">🇵🇹</span>
+        <span class="service-name">Português</span>
+      </div>
+      <div class="service-card lang-option" data-lang="ar">
+        <span class="service-icon">🇸🇦</span>
+        <span class="service-name">العربية</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Bottom Sheet -->
+<div class="bottom-sheet" id="scannerSheet" style="max-height:90vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="scannerTitle">📷 Scanner</div>
+    <div class="sheet-subtitle" id="scannerSubtitle">Prenez une photo</div>
+  </div>
+  <div class="sheet-body" style="padding-bottom:20px;">
+    <!-- Étape 1: Capture -->
+    <div id="scanStep1">
+      <div style="text-align:center;padding:20px 0;">
+        <label for="scannerInput" style="display:inline-flex;flex-direction:column;align-items:center;gap:12px;padding:30px 40px;background:#f0f4f8;border-radius:16px;border:2px dashed #113f7a;cursor:pointer;">
+          <span style="font-size:3rem;">📷</span>
+          <span style="font-weight:600;color:#113f7a;">Prendre une photo</span>
+          <span style="font-size:0.85rem;color:#666;">ou choisir dans la galerie</span>
+        </label>
+        <input type="file" id="scannerInput" accept="image/*" capture="environment" style="display:none;">
+      </div>
+      <div id="scanPreview" style="display:none;text-align:center;margin-top:16px;">
+        <img id="scanPreviewImg" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid #ddd;">
+        <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
+          <button class="scan-btn secondary" id="btnScanRetake">🔄 Reprendre</button>
+          <button class="scan-btn primary" id="btnScanAnalyze">✨ Analyser</button>
+        </div>
+      </div>
+    </div>
+    <!-- Étape 2: Loading -->
+    <div id="scanStep2" style="display:none;text-align:center;padding:40px 20px;">
+      <div style="font-size:3rem;animation:spin 1s linear infinite;">⏳</div>
+      <div style="margin-top:16px;color:#666;">Analyse en cours...</div>
+    </div>
+    <!-- Étape 3: Résultat -->
+    <div id="scanStep3" style="display:none;">
+      <div id="scanResult" style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="scan-btn secondary" id="btnScanNew">📷 Nouveau scan</button>
+        <button class="scan-btn primary" id="btnScanSave">💾 Enregistrer</button>
+      </div>
+    </div>
+    <!-- Erreur -->
+    <div id="scanError" style="display:none;background:#fee;color:#c33;padding:12px;border-radius:8px;margin-top:16px;text-align:center;"></div>
   </div>
 </div>
 
@@ -1103,6 +1234,34 @@ let routeLayer = null;
 let currentStepIndex = null;
 let hasUnsavedChanges = false;
 let totalRouteKm = 0;
+let CITY_NAMES_INDEX = {};
+
+/**
+ * Retourne le nom de ville dans la langue demandée avec fallbacks
+ */
+function getCityDisplayName(place, lang) {
+  if (!place) return '';
+  const pid = place.place_id || place.placeId;
+  
+  // 1. Chercher dans CITY_NAMES_INDEX
+  if (pid && CITY_NAMES_INDEX[pid]?.names) {
+    const names = CITY_NAMES_INDEX[pid].names;
+    if (names[lang]) return names[lang];
+    if (names.en) return names.en;
+    if (names.fr) return names.fr;
+    if (names._default) return names._default;
+  }
+  
+  // 2. Fallback: place.names
+  if (place.names) {
+    if (place.names[lang]) return place.names[lang];
+    if (place.names.en) return place.names.en;
+    if (place.names.fr) return place.names.fr;
+  }
+  
+  // 3. Nom original
+  return place.name || '';
+}
 
 // === DOM REFS ===
 const $ = id => document.getElementById(id);
@@ -1158,6 +1317,42 @@ async function init() {
     } else {
       // Aucun itinéraire → message d'erreur
       throw new Error('Aucun itinéraire spécifié');
+    }
+    
+    // Charger les noms multilingues pour tous les pays des steps
+    const countriesToLoad = new Set();
+    if (state.cc) countriesToLoad.add(state.cc.toUpperCase());
+    if (state.steps && state.steps.length > 0) {
+      state.steps.forEach(step => {
+        let stepCC = step.cc;
+        if (!stepCC && (step.place_id || step.placeId)) {
+          const pid = step.place_id || step.placeId;
+          if (pid.includes('::')) stepCC = pid.split('::')[0];
+        }
+        if (stepCC) countriesToLoad.add(stepCC.toUpperCase());
+      });
+    }
+    
+    for (const cc of countriesToLoad) {
+      const namesPaths = [
+        `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toLowerCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toUpperCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toUpperCase()}_names.json`
+      ];
+      for (const namesPath of namesPaths) {
+        try {
+          const namesResp = await fetch(namesPath);
+          if (namesResp.ok) {
+            const namesData = await namesResp.json();
+            for (const [pid, data] of Object.entries(namesData)) {
+              if (!CITY_NAMES_INDEX[pid]) CITY_NAMES_INDEX[pid] = data;
+            }
+            console.log(`[NAMES] ✅ ${cc}: ${Object.keys(namesData).length} noms chargés`);
+            break;
+          }
+        } catch (e) { /* next path */ }
+      }
     }
     
     renderList();
@@ -1822,8 +2017,20 @@ function setupEvents() {
   
   $('menuSave').onclick = saveTrip;
   $('menuShare').onclick = shareTrip;
-  $('menuPdf').onclick = exportPdf;
+  $('menuLang').onclick = () => { closeAllSheets(); openSheet($('langSheet')); };
   $('menuCenter').onclick = centerMap;
+  
+  // Handlers changement de langue
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.onclick = () => {
+      const newLang = opt.dataset.lang;
+      localStorage.setItem('lang', newLang);
+      state.lang = newLang;
+      closeAllSheets();
+      showToast(`✅ Langue: ${newLang.toUpperCase()}`);
+      setTimeout(() => location.reload(), 500);
+    };
+  });
   $('menuDesktop').onclick = showDesktopMessage;
 }
 
@@ -1846,6 +2053,7 @@ function getStepPhoto(step) {
 function renderList() {
   const list = $('stepsList');
   list.innerHTML = '';
+  const lang = state.lang || 'fr';
   
   state.steps.forEach((step, idx) => {
     const card = document.createElement('div');
@@ -1855,12 +2063,13 @@ function renderList() {
     const photoUrl = getStepPhoto(step);
     const nightsText = step.nights > 0 ? `${step.nights} nuit${step.nights > 1 ? 's' : ''}` : '';
     const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
+    const stepDisplayName = getCityDisplayName(step, lang) || step.name;
     
     card.innerHTML = `
       <div class="step-card-num">${idx + 1}</div>
       <img class="step-card-photo" src="${photoUrl}" alt="" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
       <div class="step-card-info">
-        <div class="step-card-name">${step.name}</div>
+        <div class="step-card-name">${stepDisplayName}</div>
         <div class="step-card-meta">${distText}</div>
         ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
       </div>
@@ -1914,10 +2123,11 @@ function renderMarkers() {
     marker.on('click', () => {
       const currentStep = state.steps[idx];
       const photoUrl = getStepPhoto(currentStep);
+      const popupName = getCityDisplayName(currentStep, state.lang || 'fr') || currentStep.name;
       marker.bindPopup(`
         <div class="map-popup-mini">
           <img src="${photoUrl}" onerror="this.src='${PLACEHOLDER_IMG}'">
-          <div class="name">${currentStep.name}</div>
+          <div class="name">${popupName}</div>
           <button class="btn-details" onclick="openStepSheet(${idx})">Voir détails</button>
         </div>
       `).openPopup();
@@ -1978,14 +2188,17 @@ function closeAllSheets() {
   $('stepSheet').classList.remove('show');
   $('menuSheet').classList.remove('show');
   $('servicesSheet').classList.remove('show');
+  $('langSheet').classList.remove('show');
+  $('scannerSheet').classList.remove('show');
   currentStepIndex = null;
 }
 
 function openStepSheet(idx) {
   currentStepIndex = idx;
   const step = state.steps[idx];
+  const lang = state.lang || 'fr';
   
-  $('sheetStepName').textContent = step.name;
+  $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
   $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
   $('sheetStepPhoto').src = getStepPhoto(step);
   $('sheetStepPhoto').onerror = function() { this.src = PLACEHOLDER_IMG; };
@@ -2042,12 +2255,43 @@ function deleteCurrentStep() {
 async function saveTrip() {
   closeAllSheets();
   try {
-    const saveKey = `ort_trip_${state._originalItinId || Date.now()}`;
-    localStorage.setItem(saveKey, JSON.stringify({ ...state, savedAt: new Date().toISOString() }));
-    hasUnsavedChanges = false;
-    showToast('✅ Sauvegardé !');
+    // Vérifier si Firebase est disponible et utilisateur connecté
+    const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+    
+    if (user) {
+      // Sauvegarde Firestore pour utilisateurs connectés
+      const tripId = state._originalItinId || `mobile_${Date.now()}`;
+      const tripData = {
+        title: state.title || 'Roadtrip',
+        cc: state.cc || 'XX',
+        steps: state.steps.map(s => ({
+          name: s.name,
+          lat: s.lat,
+          lng: s.lng || s.lon,
+          nights: s.nights || 0,
+          place_id: s.place_id || s.placeId,
+          photos: s.photos || [],
+          description: s.description || ''
+        })),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        userId: user.uid,
+        source: 'mobile'
+      };
+      
+      await firebase.firestore().collection('trips').doc(tripId).set(tripData, { merge: true });
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé dans votre Dashboard !');
+    } else {
+      // Fallback localStorage pour non-connectés
+      const saveKey = `ort_trip_${state._originalItinId || Date.now()}`;
+      localStorage.setItem(saveKey, JSON.stringify({ ...state, savedAt: new Date().toISOString() }));
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé localement (connectez-vous pour synchroniser)');
+    }
   } catch (err) {
-    showToast('❌ Erreur');
+    console.error('[SAVE]', err);
+    showToast('❌ Erreur de sauvegarde');
   }
 }
 
@@ -2093,6 +2337,215 @@ function showToast(message, duration = 2500) {
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), duration);
 }
+
+// ===== SCANNER MODULE =====
+const SCANNER = {
+  mode: null, // 'booking' ou 'document'
+  photoBase64: null,
+  result: null,
+  
+  API_BOOKING: '/.netlify/functions/parse-booking-photo',
+  API_DOCUMENT: '/.netlify/functions/parse-document',
+  
+  async getToken() {
+    if (window.firebase?.auth) {
+      const user = firebase.auth().currentUser;
+      if (user) return user.getIdToken();
+    }
+    return null;
+  },
+  
+  open(mode) {
+    this.mode = mode;
+    this.photoBase64 = null;
+    this.result = null;
+    
+    // Reset UI
+    $('scanStep1').style.display = 'block';
+    $('scanStep2').style.display = 'none';
+    $('scanStep3').style.display = 'none';
+    $('scanPreview').style.display = 'none';
+    $('scanError').style.display = 'none';
+    $('scannerInput').value = '';
+    
+    // Update titles
+    if (mode === 'booking') {
+      $('scannerTitle').textContent = '📷 Scanner une réservation';
+      $('scannerSubtitle').textContent = 'Photo de confirmation, email, PDF...';
+    } else {
+      $('scannerTitle').textContent = '🪪 Scanner un document';
+      $('scannerSubtitle').textContent = 'Passeport, visa, permis...';
+    }
+    
+    closeAllSheets();
+    openSheet($('scannerSheet'));
+  },
+  
+  handleFile(file) {
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoBase64 = e.target.result;
+      $('scanPreviewImg').src = this.photoBase64;
+      $('scanPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  },
+  
+  retake() {
+    this.photoBase64 = null;
+    $('scanPreview').style.display = 'none';
+    $('scannerInput').value = '';
+    $('scanError').style.display = 'none';
+  },
+  
+  async analyze() {
+    if (!this.photoBase64) return;
+    
+    const token = await this.getToken();
+    if (!token) {
+      this.showError('Connectez-vous pour utiliser le scanner');
+      return;
+    }
+    
+    // Show loading
+    $('scanStep1').style.display = 'none';
+    $('scanStep2').style.display = 'block';
+    $('scanError').style.display = 'none';
+    
+    try {
+      const url = this.mode === 'booking' ? this.API_BOOKING : this.API_DOCUMENT;
+      const body = this.mode === 'booking' 
+        ? { photo: this.photoBase64 }
+        : { photo: this.photoBase64, save: false };
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erreur analyse');
+      }
+      
+      this.result = this.mode === 'booking' ? data.items?.[0] : data.data;
+      this.renderResult();
+      
+    } catch (e) {
+      console.error('[SCANNER]', e);
+      $('scanStep2').style.display = 'none';
+      $('scanStep1').style.display = 'block';
+      this.showError(e.message);
+    }
+  },
+  
+  renderResult() {
+    $('scanStep2').style.display = 'none';
+    $('scanStep3').style.display = 'block';
+    
+    const r = this.result;
+    let html = '';
+    
+    if (this.mode === 'booking') {
+      const typeIcons = { hotel: '🏨', flight: '✈️', car: '🚗', train: '🚆', activity: '🎯', restaurant: '🍽️' };
+      html = `
+        <div style="text-align:center;margin-bottom:12px;">
+          <span style="font-size:2rem;">${typeIcons[r.type] || '📄'}</span>
+          <div style="font-weight:700;font-size:1.1rem;margin-top:4px;">${r.name || 'Réservation'}</div>
+        </div>
+        ${r.confirmation_number ? `<div class="scan-result-row"><span class="scan-result-label">N° confirmation</span><span class="scan-result-value">${r.confirmation_number}</span></div>` : ''}
+        ${r.date_start ? `<div class="scan-result-row"><span class="scan-result-label">Date</span><span class="scan-result-value">${r.date_start}${r.date_end ? ' → ' + r.date_end : ''}</span></div>` : ''}
+        ${r.city ? `<div class="scan-result-row"><span class="scan-result-label">Lieu</span><span class="scan-result-value">${r.city}</span></div>` : ''}
+        ${r.price?.amount ? `<div class="scan-result-row"><span class="scan-result-label">Prix</span><span class="scan-result-value">${r.price.amount} ${r.price.currency || ''}</span></div>` : ''}
+      `;
+    } else {
+      const typeIcons = { passport: '🛂', visa: '📑', id_card: '🪪', driving_license: '🚗', health_card: '🏥' };
+      html = `
+        <div style="text-align:center;margin-bottom:12px;">
+          <span style="font-size:2rem;">${typeIcons[r.type] || '📄'}</span>
+          <div style="font-weight:700;font-size:1.1rem;margin-top:4px;">${r.document_name || 'Document'}</div>
+        </div>
+        ${r.holder_name ? `<div class="scan-result-row"><span class="scan-result-label">Titulaire</span><span class="scan-result-value">${r.holder_name}</span></div>` : ''}
+        ${r.document_number ? `<div class="scan-result-row"><span class="scan-result-label">Numéro</span><span class="scan-result-value">${r.document_number}</span></div>` : ''}
+        ${r.expiry_date ? `<div class="scan-result-row"><span class="scan-result-label">Expiration</span><span class="scan-result-value">${r.expiry_date}</span></div>` : ''}
+        ${r.country_code ? `<div class="scan-result-row"><span class="scan-result-label">Pays</span><span class="scan-result-value">${r.country_code}</span></div>` : ''}
+      `;
+    }
+    
+    $('scanResult').innerHTML = html;
+  },
+  
+  showError(msg) {
+    $('scanError').textContent = msg;
+    $('scanError').style.display = 'block';
+  },
+  
+  newScan() {
+    this.photoBase64 = null;
+    this.result = null;
+    $('scanStep3').style.display = 'none';
+    $('scanStep1').style.display = 'block';
+    $('scanPreview').style.display = 'none';
+    $('scannerInput').value = '';
+    $('scanError').style.display = 'none';
+  },
+  
+  async save() {
+    if (!this.result) return;
+    
+    const token = await this.getToken();
+    if (!token) {
+      showToast('❌ Connexion requise');
+      return;
+    }
+    
+    try {
+      if (this.mode === 'booking') {
+        // Ajouter aux bookings du voyage
+        if (!state.bookings) state.bookings = [];
+        state.bookings.push(this.result);
+        showToast('✅ Réservation ajoutée !');
+      } else {
+        // Sauvegarder le document via API
+        const res = await fetch(this.API_DOCUMENT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ photo: this.photoBase64, save: true })
+        });
+        
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        
+        showToast('✅ Document enregistré !');
+      }
+      
+      closeAllSheets();
+      
+    } catch (e) {
+      console.error('[SCANNER SAVE]', e);
+      showToast('❌ ' + e.message);
+    }
+  }
+};
+
+// Scanner event handlers
+$('btnScanBooking').onclick = () => SCANNER.open('booking');
+$('btnScanDocument').onclick = () => SCANNER.open('document');
+$('scannerInput').onchange = (e) => SCANNER.handleFile(e.target.files[0]);
+$('btnScanRetake').onclick = () => SCANNER.retake();
+$('btnScanAnalyze').onclick = () => SCANNER.analyze();
+$('btnScanNew').onclick = () => SCANNER.newScan();
+$('btnScanSave').onclick = () => SCANNER.save();
 
 // Expose
 window.openStepSheet = openStepSheet;

@@ -1,9 +1,6 @@
 <!doctype html>
 <html lang="fr" data-page="index">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>OneRoadTrip – Accueil</title>
@@ -263,23 +260,70 @@
     .social-link.facebook:hover{ background:#1877F2 }
     .social-link.x:hover{ background:#000 }
     
-    /* Boutons mobile-only (cachés sur desktop) */
-    .cta-btn.mobile-only{
+    /* Boutons icône ronds (mobile) */
+    .icon-buttons{
       display:none;
+      position:fixed;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      flex-direction:column;
+      gap:10px;
+      z-index:10;
     }
-    .cta-btn.lilia{
-      background:linear-gradient(135deg, rgba(255,100,150,0.85) 0%, rgba(255,150,200,0.85) 100%);
+    .icon-btn{
+      width:44px;
+      height:44px;
+      border-radius:50%;
+      border:none;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:20px;
+      color:#fff;
+      box-shadow:0 4px 15px rgba(0,0,0,.3);
+      transition:all .2s ease;
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
     }
-    .cta-btn.lilia:hover{
-      background:linear-gradient(135deg, rgba(230,80,130,0.95) 0%, rgba(230,130,180,0.95) 100%);
-      transform:translateY(-2px);
+    .icon-btn:hover, .icon-btn:active{
+      transform:scale(1.1);
     }
-    .cta-btn.dashboard{
-      background:linear-gradient(135deg, rgba(255,170,50,0.85) 0%, rgba(255,200,100,0.85) 100%);
+    .icon-btn.help{
+      background:linear-gradient(135deg, rgba(120,80,200,0.9) 0%, rgba(180,100,220,0.9) 100%);
     }
-    .cta-btn.dashboard:hover{
-      background:linear-gradient(135deg, rgba(230,150,30,0.95) 0%, rgba(230,180,80,0.95) 100%);
-      transform:translateY(-2px);
+    .icon-btn.camera{
+      background:linear-gradient(135deg, rgba(255,100,150,0.9) 0%, rgba(255,150,200,0.9) 100%);
+    }
+    .icon-btn.list{
+      background:linear-gradient(135deg, rgba(17,63,122,0.9) 0%, rgba(0,178,255,0.9) 100%);
+    }
+    .icon-btn.user{
+      background:linear-gradient(135deg, rgba(255,170,50,0.9) 0%, rgba(255,200,100,0.9) 100%);
+    }
+    .icon-btn.plus{
+      background:linear-gradient(135deg, rgba(33,71,107,0.9) 0%, rgba(16,185,129,0.9) 100%);
+    }
+    .icon-btn svg{
+      width:22px;
+      height:22px;
+      fill:currentColor;
+    }
+    
+    @media (max-width: 480px) {
+      .icon-buttons{
+        right:6px;
+        gap:8px;
+      }
+      .icon-btn{
+        width:38px;
+        height:38px;
+      }
+      .icon-btn svg{
+        width:18px;
+        height:18px;
+      }
     }
 
     /* Boutons flottants - en haut sur desktop */
@@ -355,8 +399,8 @@
     
     /* Tablettes et petits écrans */
     @media (max-width: 768px) {
-      .hero{ min-height:auto; padding-bottom:340px } /* Espace pour boutons fixes + Lilia + Dashboard + icônes */
-      .hero > .content{ padding:clamp(32px, 8vh, 80px) 16px 24px; max-width:var(--max) }
+      .hero{ min-height:auto; padding-bottom:60px } /* Espace pour bandeau social uniquement */
+      .hero > .content{ padding:clamp(32px, 8vh, 80px) 60px 24px 16px; max-width:var(--max) }
       
       .headline{ font-size:clamp(24px, 6vw, 36px); margin-bottom:16px }
       
@@ -381,37 +425,35 @@
       /* Afficher la note mobile */
       .mobile-note{ display:block }
       
-      /* Cacher le mode Simple sur mobile */
-      .cta-btn.simple{ display:none }
+      /* Cacher tous les boutons texte sur mobile */
+      .cta-btn{ display:none }
       
-      /* Afficher les boutons mobile-only */
-      .cta-btn.mobile-only{ display:block }
+      /* Afficher les boutons icône sur mobile */
+      .icon-buttons{ display:flex }
       
-      /* Boutons CTA en bas sur mobile */
+      /* Cacher le container CTA (les boutons texte) */
       .cta-container{
-        position:fixed;
-        top:auto;
-        left:0; right:0; bottom:0;
-        flex-direction:column;
-        align-items:stretch;
-        gap:0;
-        padding:0;
-        background:linear-gradient(transparent, rgba(17,63,122,0.95) 20%);
-        padding-top:20px;
+        display:none;
       }
-      .cta-btn{
-        border-radius:0;
-        padding:14px 20px;
-        width:auto;
-        font-size:0.95rem;
-      }
-      .cta-btn:first-child{ border-radius:12px 12px 0 0 }
       
-      /* Icônes sociales sur mobile */
+      /* Icônes sociales sur mobile - plus compact */
       .social-links{
         justify-content:center;
-        padding:12px 0;
-        background:rgba(17,63,122,0.98);
+        padding:8px 0;
+        background:rgba(17,63,122,0.95);
+        position:fixed;
+        bottom:0;
+        left:0;
+        right:0;
+        z-index:9;
+      }
+      .social-link{
+        width:32px;
+        height:32px;
+      }
+      .social-link svg{
+        width:16px;
+        height:16px;
       }
       
       /* Modal responsive */
@@ -449,8 +491,8 @@
     
     /* Smartphones petits */
     @media (max-width: 480px) {
-      .hero{ padding-bottom:320px } /* Espace pour boutons + Lilia + Dashboard + icônes */
-      .hero > .content{ padding:24px 12px 20px }
+      .hero{ padding-bottom:55px } /* Espace pour bandeau social uniquement */
+      .hero > .content{ padding:24px 55px 20px 12px }
       
       .headline{ font-size:clamp(20px, 5.5vw, 28px) }
       
@@ -576,6 +618,8 @@
         cta_how:"Comment ça marche ?",
         cta_lilia:"Utilise Lilia, notre IA intégrée",
         cta_dashboard:"Retrouve ton voyage sauvegardé",
+        lilia_welcome_title:"Bienvenue sur Lilia",
+        lilia_welcome_text:"Vous allez utiliser notre IA intégrée. Elle vous permettra de photographier un objet, un lieu ou un texte et de demander à l'IA des explications.<br><br><strong>Limité à 2 photos par jour.</strong>",
         modal_simple_title:"Mode Simple",
         modal_simple_text:"Conseillé pour ceux qui ne veulent pas se casser la tête. Vous pourrez choisir un itinéraire déjà préparé ou demander à l'IA de reconstruire un itinéraire que vous avez trouvé par ailleurs. L'outil vous proposera un itinéraire clé en mains avec les étapes, les hôtels conseillés en fonction de votre budget (3 choix), les activités et visites principales. Vous pourrez avoir accès à l'intégralité de l'itinéraire en format papier ou numérique.",
         modal_expert_title:"Mode Expert",
@@ -632,6 +676,8 @@
         cta_how:"How does it work?",
         cta_lilia:"Use Lilia, our integrated AI",
         cta_dashboard:"Find your saved trip",
+        lilia_welcome_title:"Welcome to Lilia",
+        lilia_welcome_text:"You are about to use our integrated AI. It will allow you to photograph an object, a place or text and ask the AI for explanations.<br><br><strong>Limited to 2 photos per day.</strong>",
         modal_simple_title:"Simple Mode",
         modal_simple_text:"Recommended for those who want a hassle-free experience. You can choose a ready-made itinerary or ask the AI to rebuild one you found elsewhere. The tool will provide a turnkey itinerary with stages, recommended hotels based on your budget (3 choices), main activities and visits. You'll have access to the complete itinerary in paper or digital format.",
         modal_expert_title:"Expert Mode",
@@ -688,6 +734,8 @@
         cta_how:"Come funziona?",
         cta_lilia:"Usa Lilia, la nostra IA integrata",
         cta_dashboard:"Ritrova il tuo viaggio salvato",
+        lilia_welcome_title:"Benvenuto su Lilia",
+        lilia_welcome_text:"Stai per utilizzare la nostra IA integrata. Ti permetterà di fotografare un oggetto, un luogo o un testo e chiedere spiegazioni all'IA.<br><br><strong>Limitato a 2 foto al giorno.</strong>",
         modal_simple_title:"Modalità Semplice",
         modal_simple_text:"Consigliata per chi non vuole complicarsi la vita. Potrai scegliere un itinerario già pronto o chiedere all'IA di ricostruire un itinerario che hai trovato altrove. Lo strumento ti proporrà un itinerario chiavi in mano con tappe, hotel consigliati in base al tuo budget (3 scelte), attività e visite principali. Avrai accesso all'itinerario completo in formato cartaceo o digitale.",
         modal_expert_title:"Modalità Esperto",
@@ -744,6 +792,8 @@
         cta_how:"¿Cómo funciona?",
         cta_lilia:"Usa Lilia, nuestra IA integrada",
         cta_dashboard:"Encuentra tu viaje guardado",
+        lilia_welcome_title:"Bienvenido a Lilia",
+        lilia_welcome_text:"Vas a utilizar nuestra IA integrada. Te permitirá fotografiar un objeto, un lugar o un texto y pedir explicaciones a la IA.<br><br><strong>Limitado a 2 fotos por día.</strong>",
         modal_simple_title:"Modo Simple",
         modal_simple_text:"Recomendado para quienes no quieren complicarse. Podrás elegir un itinerario ya preparado o pedir a la IA que reconstruya uno que hayas encontrado. La herramienta te propondrá un itinerario llave en mano con etapas, hoteles recomendados según tu presupuesto (3 opciones), actividades y visitas principales. Tendrás acceso al itinerario completo en formato papel o digital.",
         modal_expert_title:"Modo Experto",
@@ -800,6 +850,8 @@
         cta_how:"Como funciona?",
         cta_lilia:"Usa Lilia, a nossa IA integrada",
         cta_dashboard:"Encontra a tua viagem guardada",
+        lilia_welcome_title:"Bem-vindo ao Lilia",
+        lilia_welcome_text:"Vais utilizar a nossa IA integrada. Permitir-te-á fotografar um objeto, um lugar ou um texto e pedir explicações à IA.<br><br><strong>Limitado a 2 fotos por dia.</strong>",
         modal_simple_title:"Modo Simples",
         modal_simple_text:"Recomendado para quem não quer complicações. Poderá escolher um itinerário já preparado ou pedir à IA para reconstruir um itinerário que encontrou noutro lugar. A ferramenta irá propor um itinerário chave na mão com etapas, hotéis recomendados conforme o seu orçamento (3 opções), atividades e visitas principais. Terá acesso ao itinerário completo em formato papel ou digital.",
         modal_expert_title:"Modo Expert",
@@ -856,6 +908,8 @@
         cta_how:"كيف يعمل؟",
         cta_lilia:"استخدم ليليا، ذكاؤنا الاصطناعي المدمج",
         cta_dashboard:"اعثر على رحلتك المحفوظة",
+        lilia_welcome_title:"مرحباً بك في ليليا",
+        lilia_welcome_text:"ستستخدم ذكاءنا الاصطناعي المدمج. سيمكّنك من تصوير شيء أو مكان أو نص وطلب توضيحات من الذكاء الاصطناعي.<br><br><strong>محدود بصورتين في اليوم.</strong>",
         modal_simple_title:"الوضع البسيط",
         modal_simple_text:"موصى به لمن لا يريدون التعقيد. يمكنك اختيار مسار جاهز أو طلب من الذكاء الاصطناعي إعادة بناء مسار وجدته في مكان آخر. ستقدم لك الأداة مساراً جاهزاً مع المراحل والفنادق الموصى بها حسب ميزانيتك (3 خيارات) والأنشطة والزيارات الرئيسية. ستتمكن من الوصول إلى المسار الكامل بصيغة ورقية أو رقمية.",
         modal_expert_title:"وضع الخبير",
@@ -1101,12 +1155,20 @@
       btnSimple.type = "button";
       btnSimple.textContent = t.cta_simple;
       btnSimple.setAttribute("aria-label", t.cta_simple);
-     btnSimple.addEventListener("click", ()=>{
-        showModal(t.modal_simple_title, t.modal_simple_text, ()=>{
+      btnSimple.addEventListener("click", ()=>{
+        const goToSimple = ()=>{
           const url = new URL("pres_simple.html", location.href);
           url.searchParams.set("lang", lang);
           window.location.href = url.toString();
-        });
+        };
+        if(!localStorage.getItem('simpleModeSeen')){
+          showModal(t.modal_simple_title, t.modal_simple_text, ()=>{
+            localStorage.setItem('simpleModeSeen', '1');
+            goToSimple();
+          });
+        } else {
+          goToSimple();
+        }
       });
       
       // Bouton Mode Expert
@@ -1116,11 +1178,19 @@
       btnExpert.textContent = t.cta_expert;
       btnExpert.setAttribute("aria-label", t.cta_expert);
       btnExpert.addEventListener("click", ()=>{
-        showModal(t.modal_expert_title, t.modal_expert_text, ()=>{
+        const goToExpert = ()=>{
           const url = new URL(presentation);
           url.searchParams.set("mode", "expert");
           window.location.href = url.toString();
-        });
+        };
+        if(!localStorage.getItem('expertModeSeen')){
+          showModal(t.modal_expert_title, t.modal_expert_text, ()=>{
+            localStorage.setItem('expertModeSeen', '1');
+            goToExpert();
+          });
+        } else {
+          goToExpert();
+        }
       });
       
       // Bouton Comment ça marche
@@ -1149,38 +1219,100 @@
         </a>
       `;
       
-      // Bouton Lilia IA (mobile-only)
-      const btnLilia = document.createElement("button");
-      btnLilia.className = "cta-btn lilia mobile-only";
-      btnLilia.type = "button";
-      btnLilia.textContent = t.cta_lilia;
-      btnLilia.setAttribute("aria-label", t.cta_lilia);
-      btnLilia.addEventListener("click", ()=>{
+      // Fonction pour afficher la modale de bienvenue Lilia (première utilisation)
+      function goToLilia(){
         const url = new URL("vision-photo.html", location.href);
         url.searchParams.set("lang", lang);
         window.location.href = url.toString();
-      });
+      }
       
-      // Bouton Dashboard (mobile-only)
-      const btnDashboard = document.createElement("button");
-      btnDashboard.className = "cta-btn dashboard mobile-only";
-      btnDashboard.type = "button";
-      btnDashboard.textContent = t.cta_dashboard;
-      btnDashboard.setAttribute("aria-label", t.cta_dashboard);
-      btnDashboard.addEventListener("click", ()=>{
+      function handleLiliaClick(){
+        if(!localStorage.getItem('liliaWelcomeSeen')){
+          // Première utilisation : afficher la modale
+          const overlay = document.createElement("div");
+          overlay.className = "modal-overlay";
+          overlay.innerHTML = `
+            <div class="modal-content">
+              <h2 class="modal-title">${t.lilia_welcome_title}</h2>
+              <p class="modal-text">${t.lilia_welcome_text}</p>
+              <div class="modal-actions">
+                <button class="modal-btn primary" data-action="confirm">${t.modal_continue}</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+          setTimeout(()=> overlay.classList.add("show"), 10);
+          
+          overlay.addEventListener("click", (e)=>{
+            if(e.target === overlay || e.target.dataset.action === "confirm"){
+              localStorage.setItem('liliaWelcomeSeen', '1');
+              overlay.classList.remove("show");
+              setTimeout(()=> {
+                overlay.remove();
+                goToLilia();
+              }, 200);
+            }
+          });
+        } else {
+          goToLilia();
+        }
+      }
+      
+      // Conteneur des boutons icône (mobile)
+      const iconButtons = document.createElement("div");
+      iconButtons.className = "icon-buttons";
+      iconButtons.innerHTML = `
+        <button class="icon-btn plus" aria-label="${t.cta_expert}">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </button>
+        <button class="icon-btn list" aria-label="${t.cta_itins}">
+          <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <button class="icon-btn camera" aria-label="${t.cta_lilia}">
+          <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+        </button>
+        <button class="icon-btn user" aria-label="${t.cta_dashboard}">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+        </button>
+        <button class="icon-btn help" aria-label="${t.cta_how}">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
+        </button>
+      `;
+      
+      // Ajouter les événements aux boutons icône
+      iconButtons.querySelector('.icon-btn.plus').addEventListener('click', ()=>{
+        const goToExpert = ()=>{
+          const url = new URL(presentation);
+          url.searchParams.set("mode", "expert");
+          window.location.href = url.toString();
+        };
+        if(!localStorage.getItem('expertModeSeen')){
+          showModal(t.modal_expert_title, t.modal_expert_text, ()=>{
+            localStorage.setItem('expertModeSeen', '1');
+            goToExpert();
+          });
+        } else {
+          goToExpert();
+        }
+      });
+      iconButtons.querySelector('.icon-btn.list').addEventListener('click', ()=>{
+        window.location.href = (ITIN_FOLDERS[lang] || ITIN_FOLDERS.fr) + "/index.html";
+      });
+      iconButtons.querySelector('.icon-btn.camera').addEventListener('click', handleLiliaClick);
+      iconButtons.querySelector('.icon-btn.user').addEventListener('click', ()=>{
         const url = new URL("dashboard_user.html", location.href);
         url.searchParams.set("lang", lang);
         window.location.href = url.toString();
       });
+      iconButtons.querySelector('.icon-btn.help').addEventListener('click', showHowModal);
       
       ctaContainer.appendChild(btnExpert);
       ctaContainer.appendChild(btnSimple);
       ctaContainer.appendChild(btnItins);
-      ctaContainer.appendChild(btnLilia);
-      ctaContainer.appendChild(btnDashboard);
       ctaContainer.appendChild(btnHow);
-      ctaContainer.appendChild(socialLinks);
       document.body.appendChild(ctaContainer);
+      document.body.appendChild(iconButtons);
+      document.body.appendChild(socialLinks);
     });
   })();
   </script>

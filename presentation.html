@@ -143,10 +143,6 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 .budget-modal label{color:#113f7a}
 .budget-modal .filter-input,.budget-modal .filter-select{border:1px solid #113f7a;background:#fff;color:#113f7a}
 .budget-modal .filter-input:focus,.budget-modal .filter-select:focus{outline:2px solid #113f7a;outline-offset:2px}
-.budget-chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
-.budget-chip{padding:10px 16px;border:2px solid #113f7a;border-radius:999px;background:#fff;color:#113f7a;cursor:pointer;font-weight:600;font-size:14px;transition:all .2s}
-.budget-chip:hover{border-color:#113f7a;background:#d0e8f7}
-.budget-chip.selected{background:#113f7a;color:#fff;border-color:#113f7a}
 .budget-modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
 .budget-modal-btn{padding:12px 24px;border-radius:8px;border:0;cursor:pointer;font-weight:700;font-size:15px;transition:all .2s}
 .budget-modal-btn.primary{background:#113f7a;color:#fff}
@@ -2170,6 +2166,7 @@ let placesRatingIndex = {};
 let allItineraries = [];
 let photosData = {};
 let placesPhotosIndex = null;   // NEW: index photos par lieu (photos_lieux.json)
+let placesNamesIndex = {};      // Index noms multilingues (xx_names.json)
 let mapFull = null;
 let markersLayerFull = null;    // Layer clusterisé pour les marqueurs principaux
 let overlaysLayer = null;       // Layer NON clusterisé pour polylines et cityMarkers
@@ -2426,7 +2423,11 @@ async function loadAllItineraries() {
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      await loadPlacesRatings(countryCode);
+      // Charger ratings ET noms multilingues en parallèle
+      await Promise.all([
+        loadPlacesRatings(countryCode),
+        loadCityNamesForCountry(countryCode)
+      ]);
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2703,12 +2704,72 @@ function computeItinCenter(itin) {
 }
 /* === FIN AJOUT === */
 
+// Retourne le nom de ville traduit selon la langue
+function getCityDisplayName(place, lang) {
+  if (!place) return 'Ville inconnue';
+  
+  // Si c'est un string (place_id)
+  if (typeof place === 'string') {
+    const indexed = placesNamesIndex[place];
+    if (indexed && indexed.names) {
+      return indexed.names[lang] || indexed.names._default || indexed.names.en || indexed.names.fr || place.split('::').pop().replace(/-/g, ' ');
+    }
+    return place.split('::').pop().replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  
+  // Objet place - essayer l'index global d'abord
+  if (place.place_id && placesNamesIndex[place.place_id]) {
+    const indexed = placesNamesIndex[place.place_id];
+    if (indexed.names) {
+      return indexed.names[lang] || indexed.names._default || indexed.names.en || indexed.names.fr || place.name;
+    }
+  }
+  
+  // Fallback sur name_i18n existant dans l'itinéraire
+  if (place.name_i18n) {
+    return place.name_i18n[lang] || place.name_i18n.en || place.name_i18n.fr || place.name;
+  }
+  
+  // Fallback final
+  return place.city || place.name || (place.place_id ? place.place_id.split('::').pop().replace(/-/g, ' ') : 'Ville');
+}
+
+// Charge les noms multilingues pour un pays
+async function loadCityNamesForCountry(countryCode) {
+  const cc = countryCode.toLowerCase();
+  const CC = countryCode.toUpperCase();
+  const paths = [
+    `data/Roadtripsprefabriques/countries/${CC}/${cc}_names.json`,
+    `./data/Roadtripsprefabriques/countries/${CC}/${cc}_names.json`,
+    `data/Roadtripsprefabriques/countries/${cc}/${cc}_names.json`
+  ];
+  for (const path of paths) {
+    try {
+      const response = await fetch(path);
+      if (response.ok) {
+        const data = await response.json();
+        let count = 0;
+        for (const [placeId, placeData] of Object.entries(data)) {
+          if (placeData && placeData.names) {
+            placesNamesIndex[placeId] = placeData;
+            count++;
+          }
+        }
+        console.log(`✅ ${CC} noms i18n: ${count} lieux`);
+        return true;
+      }
+    } catch (err) { /* continue */ }
+  }
+  return false;
+}
+
 function extractCities(itin) {
   if (!itin.days_plan) return [];
   const cities = [];
+  const lang = localStorage.getItem('lang') || 'fr';
   itin.days_plan.forEach(day => {
     if (day.night && day.night.place_id) {
-      const cityName = (day.night.name_i18n && day.night.name_i18n[lang]) || (day.night.name_i18n && day.night.name_i18n['en']) || day.night.place_id.split('::').pop().replace(/-/g, ' ');
+      const cityName = getCityDisplayName(day.night, lang);
       const capitalized = cityName.charAt(0).toUpperCase() + cityName.slice(1);
       if (!cities.includes(capitalized)) cities.push(capitalized);
     }
@@ -3168,8 +3229,11 @@ function showMobileSelectionModal(itin) {
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 0) {
     const cities = [];
     itin.days_plan.forEach(day => {
-      if (day?.night?.city && !cities.includes(day.night.city)) {
-        cities.push(day.night.city);
+      if (day?.night) {
+        const cityName = getCityDisplayName(day.night, lang);
+        if (cityName && !cities.includes(cityName)) {
+          cities.push(cityName);
+        }
       }
     });
     
@@ -3267,8 +3331,9 @@ function showPreview(itin) {
     firstPhoto = itin.photos[0];
   }
 
-  // Bloc villes + photo unique
-  let citiesHtml = `<strong>${t.cities}</strong><br>${(itin.cities||[]).join(' → ')}`;
+  // Bloc villes + photo unique (utiliser extractCities pour les noms traduits)
+  const citiesList = extractCities(itin).length > 0 ? extractCities(itin) : (itin.cities || []);
+  let citiesHtml = `<strong>${t.cities}</strong><br>${citiesList.join(' → ')}`;
   if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${')) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(firstPhoto)}&w=400&h=200&fit=cover&output=webp`;
     citiesHtml += `<div style="margin-top:10px;"><img src="${proxyUrl}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy"></div>`;
@@ -3281,7 +3346,14 @@ function showPreview(itin) {
   const pathFlow = document.getElementById('previewPathFlow');
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 1) {
     const simplifiedCities = [];
-    itin.days_plan.forEach(day => { if (day?.night?.city) simplifiedCities.push(day.night.city); });
+    itin.days_plan.forEach(day => {
+      if (day?.night) {
+        const cityName = getCityDisplayName(day.night, lang);
+        if (cityName && !simplifiedCities.includes(cityName)) {
+          simplifiedCities.push(cityName);
+        }
+      }
+    });
     if (simplifiedCities.length >= 2) {
       pathFlow.innerHTML = '';
       simplifiedCities.forEach((city, idx) => {
@@ -3534,7 +3606,6 @@ function showBudgetModal(callback, itinDays, itinTitle) {
   document.getElementById('budgetModalTitle').textContent = L.modal_title || 'Configurez votre voyage';
   document.getElementById('labelDepartureDate').textContent = L.modal_departure_date || 'Date de départ :';
   document.getElementById('labelNumDays').textContent = L.modal_num_days || 'Nombre de jours souhaités :';
-  document.getElementById('labelBudget').textContent = L.modal_budget_label || 'Budget hôtel (€/jour/personne) :';
   document.getElementById('budgetConfirm').textContent = L.budget_confirm || 'Valider';
   document.getElementById('budgetCancel').textContent = L.budget_cancel || 'Annuler';
   
@@ -3546,31 +3617,6 @@ function showBudgetModal(callback, itinDays, itinTitle) {
   const numDaysInput = document.getElementById('inputNumDays');
   numDaysInput.value = itinDays || 7;
   
-  // Générer les checkboxes budget (multichoix)
-  const budgetCheckboxes = document.getElementById('budgetCheckboxes');
-  const budgetRanges = ['0-50', '50-100', '100-150', '150-200', '200-250', '250-300', '300-500', '500+'];
-  const budgetLabels = {
-    '0-50': L.budget_0_50 || '0-50',
-    '50-100': L.budget_50_100 || '50-100',
-    '100-150': L.budget_100_150 || '100-150',
-    '150-200': L.budget_150_200 || '150-200',
-    '200-250': L.budget_200_250 || '200-250',
-    '250-300': L.budget_250_300 || '250-300',
-    '300-500': L.budget_300_500 || '300-500',
-    '500+': L.budget_500plus || '500+'
-  };
-  
-  budgetCheckboxes.innerHTML = '';
-  budgetRanges.forEach((range, idx) => {
-    const label = document.createElement('label');
-    label.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;background:#fff;padding:6px 10px;border-radius:6px;border:1px solid #113f7a;';
-    label.innerHTML = `
-      <input type="checkbox" name="budgetCheckbox" value="${range}" ${idx === 1 ? 'checked' : ''}>
-      <span style="color:#113f7a;">${budgetLabels[range]}</span>
-    `;
-    budgetCheckboxes.appendChild(label);
-  });
-  
   // Afficher modal
   modal.classList.add('show');
   
@@ -3581,16 +3627,11 @@ function showBudgetModal(callback, itinDays, itinTitle) {
     document.getElementById('budgetCancel').removeEventListener('click', cancelHandler);
     modal.removeEventListener('click', overlayHandler);
     
-    // Récupérer toutes les valeurs
+    // Récupérer les valeurs
     const departureDate = document.getElementById('inputDepartureDate').value;
     const numDays = document.getElementById('inputNumDays').value;
     
-    // Récupérer tous les budgets cochés
-    const checkedBudgets = Array.from(document.querySelectorAll('input[name="budgetCheckbox"]:checked'))
-      .map(cb => cb.value);
-    const budget = checkedBudgets.length > 0 ? checkedBudgets.join(',') : '50-100';
-    
-    callback({ departureDate, numDays, budget });
+    callback({ departureDate, numDays, budget: '' });
   };
   
   // Bouton Annuler
@@ -4132,70 +4173,6 @@ if (cookieManageBtn) {
   });
 }
 
- /* === Bannière Cookies (auto-injection si absente, modèle quest_simple.html) ============== */
-(function(){
-  var KEY = 'cookieConsent.v1';
-
-  function readConsent(){
-    try { return JSON.parse(localStorage.getItem(KEY) || ''); }
-    catch(e){ return null; }
-  }
-  function saveConsent(c){
-    try { localStorage.setItem(KEY, JSON.stringify(c)); } catch(_) {}
-    var b = document.getElementById('cookieBanner');
-    if (b) b.style.display = 'none';
-  }
-
-  // Injecter la bannière si absente
-  if (!document.getElementById('cookieBanner')) {
-    var wrap = document.createElement('div');
-    wrap.id = 'cookieBanner';
-    wrap.setAttribute('role', 'dialog');
-    wrap.setAttribute('aria-live', 'polite');
-    wrap.setAttribute('aria-label', 'Bannière cookies');
-    wrap.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:99999;display:none';
-    wrap.innerHTML = '' +
-      '<div class="panel" style="max-width:520px;background:#fff;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;color:#113f7a">' +
-        '<div>Nous utilisons des cookies <em>nécessaires</em> (connexion). Les cookies <em>facultatifs</em> sont <strong>désactivés par défaut</strong>.</div>' +
-        '<div id="cookiePrefs" style="display:none;margin-top:6px;text-align:left">' +
-          '<label style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" id="consent-analytics"> Mesure d’audience</label>' +
-          '<label style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" id="consent-marketing"> Marketing</label>' +
-        '</div>' +
-        '<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px">' +
-          '<button id="btnPrefs"  class="btn" type="button" style="background:#fff;color:#113f7a;border:1px solid #113f7a">Paramétrer</button>' +
-          '<button id="btnReject" class="btn" type="button" style="background:#fff;color:#113f7a;border:1px solid #113f7a">Tout refuser</button>' +
-          '<button id="btnAccept" class="btn" type="button" style="background:#113f7a;color:#fff;border:1px solid #113f7a">Tout accepter</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(wrap);
-  }
-
-  var banner = document.getElementById('cookieBanner');
-  var prefs  = document.getElementById('cookiePrefs');
-  var btnPrefs  = document.getElementById('btnPrefs');
-  var btnAccept = document.getElementById('btnAccept');
-  var btnReject = document.getElementById('btnReject');
-
-  if (!readConsent()) {
-    banner.style.display = 'block';
-  }
-
-  if (btnPrefs) {
-    btnPrefs.addEventListener('click', function(){
-      prefs.style.display = (prefs.style.display ? '' : 'block');
-    });
-  }
-if (btnReject) {
-    btnReject.addEventListener('click', function(){
-      saveConsent({necessary:true, analytics:false, marketing:false, ts:Date.now()});
-    });
-  }
-  if (btnAccept) {
-    btnAccept.addEventListener('click', function(){
-      saveConsent({necessary:true, analytics:true, marketing:true, ts:Date.now()});
-    });
-  }
-})(); // ferme l'IIFE interne (cookies)
 })(); // ferme l’IIFE externe "Auto-lang"
 </script>
 
@@ -4315,11 +4292,6 @@ if (btnReject) {
     <div style="margin-bottom:16px;">
       <label id="labelNumDays" style="display:block;font-weight:600;margin-bottom:6px;">Nombre de jours souhaités :</label>
       <input type="number" id="inputNumDays" class="filter-input" style="width:100%;" min="1" max="60" value="7">
-    </div>
-    
-    <div style="margin-bottom:16px;">
-      <label id="labelBudget" style="display:block;font-weight:600;margin-bottom:6px;">Budget hôtel (€/jour/personne) :</label>
-      <div id="budgetCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
     </div>
     
     <div class="budget-modal-actions">

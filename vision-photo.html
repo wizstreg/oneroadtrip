@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
-<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Vision Photo - OneRoadTrip</title>
@@ -501,51 +498,18 @@
         <!-- Main Content -->
         <div class="main-content">
             <!-- Screen: Camera -->
-            <div class="screen screen-camera active" id="screenCamera">
-                <div class="empty-state" style="margin-top: 40px;">
-                    <div class="empty-state-icon">📸</div>
-                    <p class="empty-state-text">Prêt à capturer une photo</p>
-                </div>
-                <div class="camera-box">
+            <div class="screen screen-camera active" id="screenCamera" style="display: flex; flex-direction: column; gap: 0;">
+                <div class="camera-box" style="flex: 1; order: 1;">
                     <video id="video" autoplay playsinline></video>
                 </div>
-                <p class="instruction">Prenez une photo avec votre caméra mobile</p>
-                <div class="btn-group">
+                <div class="btn-group" style="order: 2; margin: 8px 0 0 0;">
                     <button class="btn-primary" id="btnCapture">
-                        <span>📷 Capturer</span>
+                        <span id="captureBtnText">📷 Capturer</span>
                     </button>
                 </div>
             </div>
 
-            <!-- Screen: Preview -->
-            <div class="screen screen-preview" id="screenPreview">
-                <div class="preview-image">
-                    <img id="previewImg" alt="Capture">
-                </div>
-                
-                <div class="form-group">
-                    <label for="language">Langue</label>
-                    <select id="language">
-                        <option value="fr">Français</option>
-                        <option value="en">English</option>
-                        <option value="es">Español</option>
-                        <option value="it">Italiano</option>
-                        <option value="de">Deutsch</option>
-                        <option value="pt">Português</option>
-                        <option value="ja">日本語</option>
-                        <option value="zh">中文</option>
-                    </select>
-                </div>
-
-                <div class="btn-group">
-                    <button class="btn-primary" id="btnGoQuestions">
-                        <span>➡️ Continuer</span>
-                    </button>
-                    <button class="btn-secondary" id="btnRetake">
-                        <span>🔄 Recommencer</span>
-                    </button>
-                </div>
-            </div>
+            <!-- Screen: Preview SUPPRIMÉ - va direct aux questions -->
 
             <!-- Screen: Questions -->
             <div class="screen screen-questions" id="screenQuestions">
@@ -560,19 +524,13 @@
                         <span>📖 <span id="q1Text">Raconte-moi l'histoire</span></span>
                     </button>
                     <button class="btn-primary" id="btnQ2" style="flex: 1; text-align: left;">
-                        <span>🤔 <span id="q2Text">Dis-moi ce que c'est</span></span>
-                    </button>
-                    <button class="btn-primary" id="btnQ3" style="flex: 1; text-align: left;">
-                        <span>🌍 <span id="q3Text">Traduis-moi le texte</span></span>
-                    </button>
-                    <button class="btn-primary" id="btnQ4" style="flex: 1; text-align: left;">
-                        <span>✨ <span id="q4Text">Qu'est-ce qui rend ce lieu unique</span></span>
+                        <span>🌟 <span id="q2Text">Pourquoi c'est important</span></span>
                     </button>
                 </div>
 
                 <div class="btn-group">
                     <button class="btn-secondary" id="btnBackQuestions">
-                        <span>⬅️ Retour</span>
+                        <span id="backBtnText">⬅️ Retour</span>
                     </button>
                 </div>
             </div>
@@ -582,29 +540,29 @@
                 <div id="responseAlert"></div>
                 
                 <div class="response-box">
-                    <div class="response-title">Réponse de l'IA</div>
+                    <div class="response-title" id="responseTitle">Réponse de l'IA</div>
                     <div class="response-text" id="responseText"></div>
                     <div class="audio-controls">
                         <button class="audio-btn play" id="btnPlayAudio">
-                            <span>🔊 Lire à haute voix</span>
+                            <span id="playAudioText">🔊 Lire à haute voix</span>
                         </button>
                         <button class="audio-btn stop" id="btnStopAudio" style="display: none;">
-                            <span>⏹ Arrêter</span>
+                            <span id="stopAudioText">⏹ Arrêter</span>
                         </button>
                     </div>
                 </div>
 
                 <div style="background: rgba(0,0,0,0.05); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #666; margin-top: 8px;">
-                    <strong>Utilisation:</strong> 
+                    <strong id="usingLabel">Utilisation:</strong> 
                     <span id="usageText">--</span>
                 </div>
 
                 <div class="btn-group">
                     <button class="btn-primary" id="btnNewPhoto">
-                        <span>📸 Nouvelle photo</span>
+                        <span id="newPhotoBtnText">📸 Nouvelle photo</span>
                     </button>
                     <button class="btn-secondary" id="btnRetakeAnalyze">
-                        <span>✏️ Modifier demande</span>
+                        <span id="modifyQuestionBtnText">✏️ Modifier demande</span>
                     </button>
                 </div>
             </div>
@@ -704,65 +662,156 @@
 
         const QUESTIONS = {
             fr: {
-                q1: "Raconte-moi l'histoire de cette photo",
-                q2: "Dis-moi ce que c'est",
-                q3: "Traduis-moi le texte que tu vois",
-                q4: "Qu'est-ce qui rend ce lieu unique ?"
+                q1: "Raconte-moi l'histoire de ce lieu/monument/œuvre",
+                q2: "Pourquoi c'est important culturellement ?"
             },
             en: {
-                q1: "Tell me the story of this photo",
-                q2: "What is this?",
-                q3: "Translate the text you see",
-                q4: "What makes this place unique?"
+                q1: "Tell me the story of this place/monument/artwork",
+                q2: "Why is this culturally important?"
             },
             es: {
-                q1: "Cuéntame la historia de esta foto",
-                q2: "Dime qué es esto",
-                q3: "Traduce el texto que ves",
-                q4: "¿Qué hace que este lugar sea único?"
+                q1: "Cuéntame la historia de este lugar/monumento/obra",
+                q2: "¿Por qué es culturalmente importante?"
             },
             it: {
-                q1: "Raccontami la storia di questa foto",
-                q2: "Dimmi cos'è",
-                q3: "Traduci il testo che vedi",
-                q4: "Cosa rende questo luogo unico?"
+                q1: "Raccontami la storia di questo luogo/monumento/opera",
+                q2: "Perché è culturalmente importante?"
             },
             de: {
-                q1: "Erzählen Sie mir die Geschichte dieses Fotos",
-                q2: "Sagen Sie mir, was das ist",
-                q3: "Übersetzen Sie den Text, den Sie sehen",
-                q4: "Was macht diesen Ort einzigartig?"
+                q1: "Erzählen Sie mir die Geschichte dieses Ortes/Denkmals/Kunstwerks",
+                q2: "Warum ist dies kulturell wichtig?"
             },
             pt: {
-                q1: "Conte-me a história desta foto",
-                q2: "Diga-me o que é",
-                q3: "Traduza o texto que você vê",
-                q4: "O que torna este lugar único?"
+                q1: "Conte-me a história deste lugar/monumento/obra",
+                q2: "Por que isso é culturalmente importante?"
             },
             ja: {
-                q1: "この写真の話をしてください",
-                q2: "これが何かを教えてください",
-                q3: "見えるテキストを翻訳してください",
-                q4: "この場所を特別にするものは何ですか？"
+                q1: "この場所/モニュメント/作品の話をしてください",
+                q2: "なぜこれは文化的に重要ですか？"
             },
             zh: {
-                q1: "讲述这张照片的故事",
-                q2: "告诉我这是什么",
-                q3: "翻译你看到的文字",
-                q4: "是什么让这个地方独特？"
+                q1: "讲述这个地点/纪念碑/作品的故事",
+                q2: "为什么这在文化上很重要？"
             }
         };
 
         const I18N_LABELS = {
-            fr: { choose: "Choisissez une question", using: "Utilisation:" },
-            en: { choose: "Choose a question", using: "Usage:" },
-            es: { choose: "Elija una pregunta", using: "Uso:" },
-            it: { choose: "Scegli una domanda", using: "Utilizzo:" },
-            de: { choose: "Wählen Sie eine Frage", using: "Nutzung:" },
-            pt: { choose: "Escolha uma pergunta", using: "Uso:" },
-            ja: { choose: "質問を選択してください", using: "使用法:" },
-            zh: { choose: "选择一个问题", using: "用法:" }
+            fr: {
+                camera_ready: "Prêt à capturer une photo",
+                camera_instruction: "Prenez une photo avec votre caméra mobile",
+                capture_btn: "📷 Capturer",
+                choose: "Choisissez une question",
+                using: "Utilisation:",
+                response_title: "Réponse de l'IA",
+                play_audio: "🔊 Lire à haute voix",
+                stop_audio: "⏹ Arrêter",
+                new_photo: "📸 Nouvelle photo",
+                modify_question: "✏️ Modifier demande",
+                back_btn: "⬅️ Retour"
+            },
+            en: {
+                camera_ready: "Ready to capture a photo",
+                camera_instruction: "Take a photo with your mobile camera",
+                capture_btn: "📷 Capture",
+                choose: "Choose a question",
+                using: "Usage:",
+                response_title: "AI Response",
+                play_audio: "🔊 Read aloud",
+                stop_audio: "⏹ Stop",
+                new_photo: "📸 New photo",
+                modify_question: "✏️ Change question",
+                back_btn: "⬅️ Back"
+            },
+            es: {
+                camera_ready: "Listo para capturar una foto",
+                camera_instruction: "Toma una foto con tu cámara móvil",
+                capture_btn: "📷 Capturar",
+                choose: "Elija una pregunta",
+                using: "Uso:",
+                response_title: "Respuesta de IA",
+                play_audio: "🔊 Leer en voz alta",
+                stop_audio: "⏹ Detener",
+                new_photo: "📸 Nueva foto",
+                modify_question: "✏️ Cambiar pregunta",
+                back_btn: "⬅️ Atrás"
+            },
+            it: {
+                camera_ready: "Pronto per catturare una foto",
+                camera_instruction: "Scatta una foto con la tua fotocamera mobile",
+                capture_btn: "📷 Cattura",
+                choose: "Scegli una domanda",
+                using: "Utilizzo:",
+                response_title: "Risposta dell'IA",
+                play_audio: "🔊 Leggi ad alta voce",
+                stop_audio: "⏹ Ferma",
+                new_photo: "📸 Nuova foto",
+                modify_question: "✏️ Cambia domanda",
+                back_btn: "⬅️ Indietro"
+            },
+            de: {
+                camera_ready: "Bereit, ein Foto zu machen",
+                camera_instruction: "Machen Sie ein Foto mit Ihrer mobilen Kamera",
+                capture_btn: "📷 Aufnahme",
+                choose: "Wählen Sie eine Frage",
+                using: "Nutzung:",
+                response_title: "KI-Antwort",
+                play_audio: "🔊 Laut vorlesen",
+                stop_audio: "⏹ Stopp",
+                new_photo: "📸 Neues Foto",
+                modify_question: "✏️ Frage ändern",
+                back_btn: "⬅️ Zurück"
+            },
+            pt: {
+                camera_ready: "Pronto para capturar uma foto",
+                camera_instruction: "Tire uma foto com sua câmera móvel",
+                capture_btn: "📷 Capturar",
+                choose: "Escolha uma pergunta",
+                using: "Uso:",
+                response_title: "Resposta da IA",
+                play_audio: "🔊 Ler em voz alta",
+                stop_audio: "⏹ Parar",
+                new_photo: "📸 Nova foto",
+                modify_question: "✏️ Alterar pergunta",
+                back_btn: "⬅️ Voltar"
+            },
+            ja: {
+                camera_ready: "写真を撮る準備ができています",
+                camera_instruction: "携帯電話のカメラで写真を撮ってください",
+                capture_btn: "📷 撮影",
+                choose: "質問を選択してください",
+                using: "使用法:",
+                response_title: "AI応答",
+                play_audio: "🔊 音声で読む",
+                stop_audio: "⏹ 停止",
+                new_photo: "📸 新しい写真",
+                modify_question: "✏️ 質問を変更",
+                back_btn: "⬅️ 戻る"
+            },
+            zh: {
+                camera_ready: "准备好拍照",
+                camera_instruction: "用您的手机摄像头拍照",
+                capture_btn: "📷 捕获",
+                choose: "选择一个问题",
+                using: "用法:",
+                response_title: "AI响应",
+                play_audio: "🔊 朗读",
+                stop_audio: "⏹ 停止",
+                new_photo: "📸 新照片",
+                modify_question: "✏️ 更改问题",
+                back_btn: "⬅️ 返回"
+            }
         };
+
+        // ===== STATE =====
+        // ===== DETECT LANGUE =====
+        function detectLanguage() {
+            const supported = ['fr', 'en', 'es', 'it', 'de', 'pt', 'ja', 'zh'];
+            const stored = localStorage.getItem('lang');
+            if (stored && supported.includes(stored)) return stored;
+            
+            const navLang = (navigator.language || 'en').toLowerCase().slice(0, 2);
+            return supported.includes(navLang) ? navLang : 'en';
+        }
 
         // ===== STATE =====
         let state = {
@@ -770,8 +819,14 @@
             photoBase64: null,
             isRequesting: false,
             quotaData: null,
-            authToken: null
+            authToken: null,
+            language: detectLanguage(),
+            location: localStorage.getItem('visionPhotoLocation') || null,
+            geolocationApproved: localStorage.getItem('visionPhotoGeoApproved') === 'true'
         };
+        
+        // Sauvegarder la langue
+        localStorage.setItem('lang', state.language);
 
         // ===== DOM ELEMENTS =====
         const video = document.getElementById('video');
@@ -780,13 +835,11 @@
         const screenPreview = document.getElementById('screenPreview');
         const screenResponse = document.getElementById('screenResponse');
         const btnCapture = document.getElementById('btnCapture');
-        const btnRetake = document.getElementById('btnRetake');
         const btnPlayAudio = document.getElementById('btnPlayAudio');
         const btnStopAudio = document.getElementById('btnStopAudio');
         const btnNewPhoto = document.getElementById('btnNewPhoto');
         const btnRetakeAnalyze = document.getElementById('btnRetakeAnalyze');
         const quotaDisplay = document.getElementById('quotaDisplay');
-        const languageSelect = document.getElementById('language');
 
         // ===== INIT =====
         async function init() {
@@ -822,27 +875,26 @@
 
             // Initialiser la caméra
             initCamera();
+            
+            // Charger la langue depuis localStorage
+            state.language = localStorage.getItem('lang') || state.language;
+            console.log('🌐 Langue chargée:', state.language);
+            
+            // Appliquer I18N
+            applyI18N();
 
             // Event listeners
             btnCapture.addEventListener('click', capturePhoto);
-            document.getElementById('btnGoQuestions').addEventListener('click', () => {
-                document.getElementById('previewImg2').src = state.photoBase64;
-                updateQuestionsLabels();
-                switchScreen('questions');
-            });
-            btnRetake.addEventListener('click', () => switchScreen('camera'));
             
             document.getElementById('btnQ1').addEventListener('click', () => askQuestion('q1'));
             document.getElementById('btnQ2').addEventListener('click', () => askQuestion('q2'));
-            document.getElementById('btnQ3').addEventListener('click', () => askQuestion('q3'));
-            document.getElementById('btnQ4').addEventListener('click', () => askQuestion('q4'));
             
-            document.getElementById('btnBackQuestions').addEventListener('click', () => switchScreen('preview'));
+            document.getElementById('btnBackQuestions').addEventListener('click', () => switchScreen('camera'));
             
             btnPlayAudio.addEventListener('click', playAudio);
             btnStopAudio.addEventListener('click', stopAudio);
             btnNewPhoto.addEventListener('click', () => switchScreen('camera'));
-            btnRetakeAnalyze.addEventListener('click', () => switchScreen('questions'));
+            btnRetakeAnalyze.addEventListener('click', () => switchScreen('camera'));
 
             // Charger les quotas depuis localStorage
             loadQuotaFromStorage();
@@ -852,7 +904,10 @@
         async function initCamera() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
+                    video: { 
+                        facingMode: 'environment',
+                        persistent: true  // Garder la permission
+                    }
                 });
                 video.srcObject = stream;
                 console.log('✅ Caméra initialisée');
@@ -890,10 +945,53 @@
                 return;
             }
             
-            document.getElementById('previewImg').src = state.photoBase64;
-            document.getElementById('previewImg2').src = state.photoBase64;
+            // Récupérer la langue depuis localStorage
+            state.language = localStorage.getItem('lang') || 'fr';
+            console.log('🌐 Langue:', state.language);
             
-            switchScreen('preview');
+            // Récupérer le lieu via géoloc ou prompt
+            getLocationAndGoToQuestions();
+        }
+
+        async function getLocationAndGoToQuestions() {
+            console.log('📍 Demande géolocation...');
+            
+            // Afficher la photo capturée
+            document.getElementById('previewImg2').src = state.photoBase64;
+            updateQuestionsLabels();
+            
+            // Si déjà approuvée, utiliser directement
+            if (state.geolocationApproved && state.location) {
+                console.log('✅ Géoloc approuvée précédemment:', state.location);
+                switchScreen('questions');
+                return;
+            }
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        state.location = `${pos.coords.latitude},${pos.coords.longitude}`;
+                        state.geolocationApproved = true;
+                        localStorage.setItem('visionPhotoGeoApproved', 'true');
+                        localStorage.setItem('visionPhotoLocation', state.location);
+                        console.log('✅ Géoloc acceptée:', state.location);
+                        switchScreen('questions');
+                    },
+                    (err) => {
+                        console.log('⚠️ Géoloc échouée/refusée:', err.message);
+                        // Demander le lieu manuellement
+                        const lieu = prompt('Lieu/Ville ? (pour plus de précisions)') || 'inconnu';
+                        state.location = lieu;
+                        switchScreen('questions');
+                    },
+                    {timeout: 3000, enableHighAccuracy: false}
+                );
+            } else {
+                // Pas de géoloc dispo
+                const lieu = prompt('Lieu/Ville ?') || 'inconnu';
+                state.location = lieu;
+                switchScreen('questions');
+            }
         }
 
         // ===== ANALYZE =====
@@ -902,7 +1000,8 @@
             console.log('📍 API_URL:', API_URL);
             console.log('🔍 state.photoBase64 existe?', !!state.photoBase64);
             console.log('🔍 state.authToken existe?', !!state.authToken);
-            const lang = languageSelect.value;
+            
+            const lang = state.language || 'fr';
             console.log('🔍 langue:', lang, 'QUESTIONS:', QUESTIONS);
             const prompt = QUESTIONS[lang][questionKey];
             console.log('🔍 prompt:', prompt);
@@ -915,16 +1014,21 @@
 
             document.getElementById('btnQ1').disabled = true;
             document.getElementById('btnQ2').disabled = true;
-            document.getElementById('btnQ3').disabled = true;
-            document.getElementById('btnQ4').disabled = true;
 
             try {
                 console.log('✅ Avant fetch, appel API...');
                 window.DEBUG_LOG('📍 Appel API...');
+                
+                // Ajouter le lieu au prompt
+                const fullPrompt = state.location 
+                    ? `${prompt} (Lieu/Ville: ${state.location})`
+                    : prompt;
+                
                 const payload = {
                     photo: state.photoBase64,
-                    prompt,
-                    language: lang
+                    prompt: fullPrompt,
+                    language: lang,
+                    questionKey: questionKey  // Passer q1 ou q2
                 };
 
                 console.log('📤 Envoi API:', payload);
@@ -970,8 +1074,6 @@
             } finally {
                 document.getElementById('btnQ1').disabled = false;
                 document.getElementById('btnQ2').disabled = false;
-                document.getElementById('btnQ3').disabled = false;
-                document.getElementById('btnQ4').disabled = false;
             }
         }
 
@@ -1056,7 +1158,7 @@
 
         function playAudio() {
             const text = document.getElementById('responseText').textContent;
-            const lang = languageSelect.value;
+            const lang = state.language || 'fr';
             if (text) speakText(text, lang);
         }
 
@@ -1068,15 +1170,39 @@
             }
         }
 
-        // ===== UI =====
+        // ===== APPLY I18N =====
+        function applyI18N() {
+            const lang = state.language;
+            const t = I18N_LABELS[lang] || I18N_LABELS.en;
+            
+            // Helper pour éviter les erreurs null
+            const setText = (id, text) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            };
+            
+            // Camera screen
+            setText('cameraReady', t.camera_ready);
+            setText('cameraInstruction', t.camera_instruction);
+            setText('captureBtnText', t.capture_btn);
+            
+            // Questions screen
+            setText('questionsLabel', t.choose);
+            setText('backBtnText', t.back_btn);
+            
+            // Response screen
+            setText('responseTitle', t.response_title);
+            setText('playAudioText', t.play_audio);
+            setText('stopAudioText', t.stop_audio);
+            setText('newPhotoBtnText', t.new_photo);
+            setText('modifyQuestionBtnText', t.modify_question);
+            setText('usingLabel', t.using);
+        }
         function updateQuestionsLabels() {
-            const lang = languageSelect.value;
+            const lang = state.language || 'en';
             const labels = QUESTIONS[lang] || QUESTIONS.en;
-            document.getElementById('questionsLabel').textContent = I18N_LABELS[lang]?.choose || "Choose a question";
             document.getElementById('q1Text').textContent = labels.q1;
             document.getElementById('q2Text').textContent = labels.q2;
-            document.getElementById('q3Text').textContent = labels.q3;
-            document.getElementById('q4Text').textContent = labels.q4;
         }
 
         function switchScreen(screen) {
