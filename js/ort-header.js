@@ -224,6 +224,14 @@
         fb.auth().onAuthStateChanged((user) => {
           currentUser = user;
           updateAuthButton(user);
+          
+          // ══════════════════════════════════════════════════════
+          // CRITIQUE : Notifier ORT_STATE pour Firestore
+          // ══════════════════════════════════════════════════════
+          if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+            window.ORT_STATE.updateUser(user);
+            console.log('[ORT-HEADER] ORT_STATE.updateUser appelé:', user ? user.uid : 'déconnecté');
+          }
         });
       } catch (e) {
         console.warn('[ORT-HEADER] Firebase init error:', e);
