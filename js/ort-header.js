@@ -136,15 +136,16 @@
     const btnLogout = document.getElementById('btnLogout');
     const T = getT();
 
-    if (!btn) return;
-
-    if (user) {
-      // Utilisateur connecté (peu importe emailVerified)
-      const name = user.displayName || (user.email || '').split('@')[0] || 'Mon compte';
+    if (user && user.emailVerified) {
+      const name = user.displayName || (user.email || '').split('@')[0];
+      btn.innerHTML = '<span>👤 ' + name.slice(0, 12) + '</span>';
+      if (btnLogout) btnLogout.style.display = '';
+    } else if (user && !user.emailVerified && user.providerData?.some(p => p.providerId !== 'password')) {
+      // Connecté via Google (pas besoin de vérification email)
+      const name = user.displayName || (user.email || '').split('@')[0];
       btn.innerHTML = '<span>👤 ' + name.slice(0, 12) + '</span>';
       if (btnLogout) btnLogout.style.display = '';
     } else {
-      // Non connecté
       btn.innerHTML = '<span>' + (T.login || 'Se connecter') + '</span>';
       if (btnLogout) btnLogout.style.display = 'none';
     }
@@ -223,14 +224,6 @@
         fb.auth().onAuthStateChanged((user) => {
           currentUser = user;
           updateAuthButton(user);
-          
-          // ══════════════════════════════════════════════════════
-          // CRITIQUE : Notifier ORT_STATE pour Firestore
-          // ══════════════════════════════════════════════════════
-          if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
-            window.ORT_STATE.updateUser(user);
-            console.log('[ORT-HEADER] ORT_STATE.updateUser appelé:', user ? user.uid : 'déconnecté');
-          }
         });
       } catch (e) {
         console.warn('[ORT-HEADER] Firebase init error:', e);

@@ -104,6 +104,22 @@
     } else {
       console.log('✅ [STATE] SDK Firebase déjà présent');
     }
+    
+    // ══════════════════════════════════════════════════════════════
+    // CRITIQUE : Vérifier si Firestore SDK est chargé
+    // RT Simple ne charge que Auth, pas Firestore !
+    // ══════════════════════════════════════════════════════════════
+    if (!window.firebase.firestore) {
+      console.log('📦 [STATE] Chargement SDK Firestore...');
+      await new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+      console.log('✅ [STATE] SDK Firestore chargé');
+    }
 
     // Initialise Firebase App
     if (!firebaseApp) {
