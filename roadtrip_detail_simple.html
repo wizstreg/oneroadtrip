@@ -8678,6 +8678,241 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 })();
 </script>
 
+<!-- ===== INITIALISATION STATE MANAGER (SYNC) ===== -->
+<script>
+(async function initStateManager() {
+  console.log('[INIT] Initialisation State Manager...');
+  
+  // Charger Firebase si pas déjà chargé
+  if (!window.firebase?.apps?.length) {
+    console.log('[INIT] 🔄 Chargement Firebase...');
+    const load = (src) => new Promise((ok, ko) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = ok;
+      s.onerror = () => ko(new Error('load ' + src));
+      document.head.appendChild(s);
+    });
+    
+    try {
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
+      
+      // Attendre que firebase.auth soit vraiment disponible
+      let authReady = false;
+      for (let i = 0; i < 50 && !authReady; i++) {
+        if (typeof window.firebase?.auth === 'function') {
+          authReady = true;
+        } else {
+          await new Promise(r => setTimeout(r, 50));
+        }
+      }
+      
+      if (!authReady) {
+        throw new Error('firebase.auth not available after loading');
+      }
+      
+      // Initialiser Firebase seulement si pas déjà fait
+      if (!window.firebase.apps.length) {
+        window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+      }
+      await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+      console.log('[INIT] ✅ Firebase chargé');
+    } catch (e) {
+      console.warn('[INIT] ⚠️ Erreur chargement Firebase:', e);
+    }
+  }
+  
+  // Attend que Firebase Auth soit prêt
+  console.log('[INIT] 🔍 Firebase disponible?', !!window.firebase);
+  console.log('[INIT] 🔍 Firebase.auth disponible?', !!window.firebase?.auth);
+  
+  const user = await new Promise(resolve => {
+    if (window.firebase?.auth) {
+      console.log('[INIT] ⏳ Attente onAuthStateChanged...');
+      const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+        console.log('[INIT] ✅ Auth state:', user ? user.uid : 'null', 'email:', user?.email);
+        unsubscribe();
+        resolve(user);
+      });
+    } else {
+      console.log('[INIT] ❌ Firebase.auth non disponible');
+      resolve(null);
+    }
+  });
+
+  // Initialiser ORT_STATE de façon synchrone
+  if (window.ORT_STATE && typeof window.ORT_STATE.init === 'function') {
+    await window.ORT_STATE.init({
+      user: user,
+      premium: false
+    });
+    
+    // Mettre à jour le user pour activer Firestore
+    if (user && typeof window.ORT_STATE.updateUser === 'function') {
+      console.log('[INIT] 🔄 Mise à jour user dans State Manager...');
+      await window.ORT_STATE.updateUser(user);
+    }
+    
+    console.log('[INIT] ✅ State Manager initialisé avec user:', user?.uid || 'non connecté');
+  } else {
+    console.warn('[INIT] ⚠️ ORT_STATE non disponible');
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const fromTemp = urlParams.get('from') === 'temp';
+  const rtKey = urlParams.get('rtKey');
+  
+  // MODE IMPORT : Ne pas utiliser le State Manager
+  if (fromTemp && rtKey) {
+    console.log('[INIT] Mode IMPORT detecte - rtKey:', rtKey);
+    const ccFromRtKey = rtKey.split('_')[0]?.toUpperCase() || 'XX';
+    state._itinRef = { country: ccFromRtKey, itin: `${ccFromRtKey}::temp_${Date.now()}` };
+    state.country = ccFromRtKey;
+    state.cc = ccFromRtKey;
+    
+    const waitForImport = setInterval(() => {
+      if (window.state && window.state.steps && window.state.steps.length > 0) {
+        clearInterval(waitForImport);
+        const tempTripId = `temp_${Date.now()}`;
+        if (window.ORT_DETAIL_ADAPTER) window.ORT_DETAIL_ADAPTER.init(tempTripId, window.state);
+        localStorage.setItem('ORT_CURRENT_TRIP_ID', tempTripId);
+        localStorage.setItem(`ORT_TEMP_STATE_${tempTripId}`, JSON.stringify(window.state));
+        console.log('[INIT] Import initialisé avec tripId temp:', tempTripId);
+      }
+    }, 100);
+    setTimeout(() => clearInterval(waitForImport), 5000);
+    return;
+  }
+
+  // MODE DASHBOARD : tripId dans l'URL SANS cc/itin
+  const tripIdFromUrl = urlParams.get('tripId');
+  const ccParam = urlParams.get('cc');
+  const itinParam = urlParams.get('itin');
+
+  if (tripIdFromUrl && !ccParam && !itinParam) {
+    console.log('[INIT] 📌 Mode DASHBOARD détecté - tripId:', tripIdFromUrl);
+    
+    const waitForDeps = setInterval(async () => {
+      if (window.ORT_STATE && typeof window.ORT_STATE.getTrip === 'function' && typeof window.renderRows === 'function') {
+        clearInterval(waitForDeps);
+        console.log('[INIT] ✅ Dépendances prêtes');
+        
+        try {
+          let savedTrip = null;
+          
+          if (tripIdFromUrl.startsWith('temp_')) {
+            const savedStateStr = localStorage.getItem(`ORT_TEMP_STATE_${tripIdFromUrl}`);
+            if (savedStateStr) savedTrip = JSON.parse(savedStateStr);
+          }
+          
+          if (!savedTrip) {
+            savedTrip = await window.ORT_STATE.getTrip(tripIdFromUrl);
+          }
+          
+          if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
+            console.log('[INIT] ✅ Voyage trouvé:', savedTrip.title || tripIdFromUrl);
+            
+            window.state = window.state || {};
+            window.state.steps = savedTrip.steps;
+            window.state.title = savedTrip.title || 'Roadtrip';
+            window.state.cc = savedTrip.country || 'XX';
+            window.state.country = savedTrip.country || 'XX';
+            window.state.tripId = tripIdFromUrl;
+            
+            if (savedTrip.nights) {
+              window.state.targetNights = savedTrip.nights;
+              window.state.initialNights = savedTrip.initialNights || savedTrip.nights;
+            }
+            
+            Object.assign(state, window.state);
+            
+            if (window.ORT_DETAIL_ADAPTER) window.ORT_DETAIL_ADAPTER.init(tripIdFromUrl, window.state);
+            localStorage.setItem('ORT_CURRENT_TRIP_ID', tripIdFromUrl);
+            
+            window.renderRows();
+            if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
+            
+            console.log('[INIT] ✅ Mode DASHBOARD - Affichage terminé');
+          }
+        } catch (e) {
+          console.error('[INIT] ❌ Erreur chargement:', e);
+        }
+      }
+    }, 100);
+    
+    setTimeout(() => clearInterval(waitForDeps), 10000);
+    return;
+  }
+
+  // MODE NORMAL : Attendre que window.state soit prêt
+  const waitForState = setInterval(async () => {
+    if (window.state && window.state.steps) {
+      clearInterval(waitForState);
+      console.log('[INIT] window.state prêt');
+      
+      let tripId = urlParams.get('tripId');
+      
+      if (!tripId) {
+        const cc = urlParams.get('cc');
+        const itin = urlParams.get('itin');
+        
+        if (cc && itin) {
+          tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
+          console.log('[INIT] ✅ TripId stable généré:', tripId);
+        } else if (window.ORT_STATE && typeof window.ORT_STATE.generateTripId === 'function') {
+          tripId = window.ORT_STATE.generateTripId();
+          console.log('[INIT] ⚠️ TripId temporaire généré:', tripId);
+        } else {
+          tripId = `trip_${Date.now()}`;
+        }
+      }
+      
+      // Chercher modifications sauvegardées
+      if (tripId && window.ORT_STATE && typeof window.ORT_STATE.getTrip === 'function') {
+        try {
+          const savedTrip = await window.ORT_STATE.getTrip(tripId);
+          
+          if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
+            console.log('[INIT] ✅ Modifications trouvées, application...');
+            
+            window.state.steps = savedTrip.steps;
+            if (savedTrip.title) window.state.title = savedTrip.title;
+            if (savedTrip.country) window.state.cc = savedTrip.country;
+            if (savedTrip.nights) {
+              window.state.targetNights = savedTrip.nights;
+              window.state.initialNights = savedTrip.initialNights || savedTrip.nights;
+            }
+            
+            if (typeof window.renderRows === 'function') window.renderRows();
+            if (typeof window.renderMap === 'function') window.renderMap();
+            if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
+            
+            console.log('[INIT] ✅ Modifications appliquées');
+          }
+        } catch (error) {
+          console.error('[INIT] ❌ Erreur chargement modifications:', error);
+        }
+      }
+      
+      // Initialiser l'adaptateur
+      if (window.ORT_DETAIL_ADAPTER) {
+        window.ORT_DETAIL_ADAPTER.init(tripId, window.state);
+      }
+      
+      localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
+      console.log('[INIT] ✅ State Manager initialisé pour trip:', tripId);
+    }
+  }, 100);
+  
+  setTimeout(() => {
+    clearInterval(waitForState);
+    console.warn('[INIT] ⚠️ Timeout atteint');
+  }, 5000);
+})();
+</script>
+
 <!-- === PARTNER REDIRECT MODAL === -->
 <style>
 #partnerModal {
