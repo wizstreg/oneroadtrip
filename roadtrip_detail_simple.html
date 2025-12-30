@@ -8642,6 +8642,14 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
       if (!btn) return;
       
       fb.auth().onAuthStateChanged(function(user) {
+        // ══════════════════════════════════════════════════════
+        // CRITIQUE : Notifier ORT_STATE pour Firestore
+        // ══════════════════════════════════════════════════════
+        if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+          window.ORT_STATE.updateUser(user);
+          console.log('[AUTH] ORT_STATE.updateUser appelé:', user ? user.uid : 'null');
+        }
+        
         if (user) {
           const name = user.displayName || (user.email || '').split('@')[0] || 'Mon compte';
           btn.innerHTML = '<span>👤 ' + name.slice(0, 12) + '</span>';
