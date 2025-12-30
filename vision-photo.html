@@ -513,10 +513,6 @@
 
             <!-- Screen: Questions -->
             <div class="screen screen-questions" id="screenQuestions">
-                <div class="preview-image">
-                    <img id="previewImg2" alt="Capture">
-                </div>
-                
                 <p style="text-align: center; margin: 12px 0; font-size: 0.9rem; color: #666;" id="questionsLabel">Choisissez une question</p>
 
                 <div class="btn-group" style="flex-direction: column;">
@@ -972,11 +968,10 @@
         async function getLocationAndGoToQuestions() {
             console.log('📍 Demande géolocation...');
             
-            // Afficher la photo capturée
-            document.getElementById('previewImg2').src = state.photoBase64;
+            // Pas de preview photo - direct aux questions
             updateQuestionsLabels();
             
-            // Si déjà approuvée, utiliser directement
+            // Si déjà approuvée par géoloc, utiliser directement
             if (state.geolocationApproved && state.location) {
                 console.log('✅ Géoloc approuvée précédemment:', state.location);
                 switchScreen('questions');
@@ -996,25 +991,62 @@
                         state.geolocationApproved = true;
                         localStorage.setItem('visionPhotoGeoApproved', 'true');
                         localStorage.setItem('visionPhotoLocation', state.location);
+                        localStorage.removeItem('visionPhotoCity'); // Supprimer la ville si géoloc acceptée
                         console.log('✅ Géoloc acceptée:', state.location);
                         switchScreen('questions');
                     },
                     (err) => {
-                        // ❌ Géoloc refusée ou échouée - demander la ville
+                        // ❌ Géoloc refusée ou échouée - proposer ville précédente ou demander
                         console.log('⚠️ Géoloc refusée:', err.message);
-                        const cityPrompt = t.city_prompt;
-                        const lieu = prompt(cityPrompt) || 'inconnu';
-                        state.location = lieu;
-                        switchScreen('questions');
+                        const previousCity = localStorage.getItem('visionPhotoCity');
+                        
+                        if (previousCity) {
+                            // Proposer la ville précédente avec confirmation
+                            const confirmed = confirm(`${t.city_prompt}\n\n(${previousCity})`);
+                            if (confirmed) {
+                                state.location = previousCity;
+                                switchScreen('questions');
+                            } else {
+                                // Demander une nouvelle ville
+                                const lieu = prompt(t.city_prompt) || previousCity;
+                                state.location = lieu;
+                                localStorage.setItem('visionPhotoCity', lieu);
+                                switchScreen('questions');
+                            }
+                        } else {
+                            // Première fois - demander la ville
+                            const lieu = prompt(t.city_prompt) || 'inconnu';
+                            state.location = lieu;
+                            localStorage.setItem('visionPhotoCity', lieu);
+                            switchScreen('questions');
+                        }
                     },
                     {timeout: 3000, enableHighAccuracy: false}
                 );
             } else {
-                // Pas de géoloc dispo - demander la ville
-                const cityPrompt = t.city_prompt;
-                const lieu = prompt(cityPrompt) || 'inconnu';
-                state.location = lieu;
-                switchScreen('questions');
+                // Pas de géoloc dispo - proposer ville précédente ou demander
+                const previousCity = localStorage.getItem('visionPhotoCity');
+                
+                if (previousCity) {
+                    // Proposer la ville précédente avec confirmation
+                    const confirmed = confirm(`${t.city_prompt}\n\n(${previousCity})`);
+                    if (confirmed) {
+                        state.location = previousCity;
+                        switchScreen('questions');
+                    } else {
+                        // Demander une nouvelle ville
+                        const lieu = prompt(t.city_prompt) || previousCity;
+                        state.location = lieu;
+                        localStorage.setItem('visionPhotoCity', lieu);
+                        switchScreen('questions');
+                    }
+                } else {
+                    // Première fois - demander la ville
+                    const lieu = prompt(t.city_prompt) || 'inconnu';
+                    state.location = lieu;
+                    localStorage.setItem('visionPhotoCity', lieu);
+                    switchScreen('questions');
+                }
             }
         }
 
