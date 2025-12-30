@@ -4825,10 +4825,18 @@ async function initFromItin(it){
   // PASSE 1b : Rattacher les hubs fusionnés comme satellites
   steps.forEach((step, idx) => {
     if(step._mergedInto !== undefined){
-      const masterHub = steps[step._mergedInto];
-      step._hubGroup = step._mergedInto;
+      // Suivre la chaîne _mergedInto jusqu'au hub final
+      let finalMaster = step._mergedInto;
+      let safetyCounter = 0;
+      while(steps[finalMaster]._mergedInto !== undefined && safetyCounter < 20){
+        finalMaster = steps[finalMaster]._mergedInto;
+        safetyCounter++;
+      }
+      const masterHub = steps[finalMaster];
+      step._hubGroup = finalMaster;
       step._isSatellite = true;
-      if(masterHub._satellites) masterHub._satellites.push(idx);
+      if(!masterHub._satellites) masterHub._satellites = [];
+      masterHub._satellites.push(idx);
       console.log(`[NIGHTS] Hub fusionné "${step.name}" → satellite de "${masterHub.name}"`);
     }
   });
@@ -4848,9 +4856,15 @@ async function initFromItin(it){
     
     // Chercher en arrière (premier hub OU hub fusionné rencontré)
     for(let h = idx - 1; h >= 0; h--){
-      // Un hub fusionné compte comme barrière - on utilise son hub maître
+      // Un hub fusionné compte comme barrière - on utilise son hub maître final
       if(steps[h]._mergedInto !== undefined){
-        const masterIdx = steps[h]._mergedInto;
+        // Suivre la chaîne _mergedInto jusqu'au hub final
+        let masterIdx = steps[h]._mergedInto;
+        let safetyCounter = 0;
+        while(steps[masterIdx]._mergedInto !== undefined && safetyCounter < 20){
+          masterIdx = steps[masterIdx]._mergedInto;
+          safetyCounter++;
+        }
         for(let k = masterIdx; k < idx; k++) distBefore += steps[k]._distanceToNext || 50;
         if(distBefore < PROXIMITY_MAX_KM){
           hubBefore = masterIdx;
@@ -4870,7 +4884,13 @@ async function initFromItin(it){
     // Chercher en avant (premier hub OU hub fusionné rencontré)
     for(let h = idx + 1; h < steps.length; h++){
       if(steps[h]._mergedInto !== undefined){
-        const masterIdx = steps[h]._mergedInto;
+        // Suivre la chaîne _mergedInto jusqu'au hub final
+        let masterIdx = steps[h]._mergedInto;
+        let safetyCounter = 0;
+        while(steps[masterIdx]._mergedInto !== undefined && safetyCounter < 20){
+          masterIdx = steps[masterIdx]._mergedInto;
+          safetyCounter++;
+        }
         for(let k = idx; k < masterIdx; k++) distAfter += steps[k]._distanceToNext || 50;
         if(distAfter < PROXIMITY_MAX_KM){
           hubAfter = masterIdx;
@@ -4948,11 +4968,23 @@ async function initFromItin(it){
           step._satellites = [];
           console.log(`[NIGHTS] ${step.name} → hub indépendant`);
         } else {
-          // Satellite
-          step._hubGroup = nearestHub;
+          // Satellite - suivre la chaîne _mergedInto jusqu'au hub final
+          let finalHub = nearestHub;
+          let safetyCounter = 0;
+          while(steps[finalHub]._mergedInto !== undefined && safetyCounter < 20){
+            finalHub = steps[finalHub]._mergedInto;
+            safetyCounter++;
+          }
+          
+          step._hubGroup = finalHub;
           step._isSatellite = true;
-          steps[nearestHub]._satellites.push(idx);
-          console.log(`[NIGHTS] ${step.name} → satellite`);
+          
+          // S'assurer que le hub final a _satellites
+          if(!steps[finalHub]._satellites){
+            steps[finalHub]._satellites = [];
+          }
+          steps[finalHub]._satellites.push(idx);
+          console.log(`[NIGHTS] ${step.name} → satellite de ${steps[finalHub].name}`);
         }
       }
     } else {
