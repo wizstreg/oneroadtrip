@@ -707,7 +707,9 @@
                 stop_audio: "⏹ Arrêter",
                 new_photo: "📸 Nouvelle photo",
                 modify_question: "✏️ Modifier demande",
-                back_btn: "⬅️ Retour"
+                back_btn: "⬅️ Retour",
+                geo_permission: "Afin que l'IA puisse connaître votre lieu, vous devez permettre l'accès à la localisation. Sinon, vous devrez indiquer la ville dans l'onglet suivant.",
+                city_prompt: "Quelle ville vous trouvez-vous ?"
             },
             en: {
                 camera_ready: "Ready to capture a photo",
@@ -720,7 +722,9 @@
                 stop_audio: "⏹ Stop",
                 new_photo: "📸 New photo",
                 modify_question: "✏️ Change question",
-                back_btn: "⬅️ Back"
+                back_btn: "⬅️ Back",
+                geo_permission: "For the AI to know your location, you must allow access to your location. Otherwise, you will need to indicate the city in the next tab.",
+                city_prompt: "Which city are you in?"
             },
             es: {
                 camera_ready: "Listo para capturar una foto",
@@ -733,7 +737,9 @@
                 stop_audio: "⏹ Detener",
                 new_photo: "📸 Nueva foto",
                 modify_question: "✏️ Cambiar pregunta",
-                back_btn: "⬅️ Atrás"
+                back_btn: "⬅️ Atrás",
+                geo_permission: "Para que la IA conozca su ubicación, debe permitir el acceso a la ubicación. De lo contrario, deberá indicar la ciudad en la siguiente pestaña.",
+                city_prompt: "¿En qué ciudad se encuentra?"
             },
             it: {
                 camera_ready: "Pronto per catturare una foto",
@@ -746,7 +752,9 @@
                 stop_audio: "⏹ Ferma",
                 new_photo: "📸 Nuova foto",
                 modify_question: "✏️ Cambia domanda",
-                back_btn: "⬅️ Indietro"
+                back_btn: "⬅️ Indietro",
+                geo_permission: "Affinché l'IA conosca la tua posizione, devi consentire l'accesso alla posizione. Altrimenti, dovrai indicare la città nella scheda successiva.",
+                city_prompt: "In quale città ti trovi?"
             },
             de: {
                 camera_ready: "Bereit, ein Foto zu machen",
@@ -759,7 +767,9 @@
                 stop_audio: "⏹ Stopp",
                 new_photo: "📸 Neues Foto",
                 modify_question: "✏️ Frage ändern",
-                back_btn: "⬅️ Zurück"
+                back_btn: "⬅️ Zurück",
+                geo_permission: "Damit die KI Ihren Standort kennt, müssen Sie den Zugriff auf den Standort zulassen. Andernfalls müssen Sie die Stadt im nächsten Tab angeben.",
+                city_prompt: "In welcher Stadt befinden Sie sich?"
             },
             pt: {
                 camera_ready: "Pronto para capturar uma foto",
@@ -772,7 +782,9 @@
                 stop_audio: "⏹ Parar",
                 new_photo: "📸 Nova foto",
                 modify_question: "✏️ Alterar pergunta",
-                back_btn: "⬅️ Voltar"
+                back_btn: "⬅️ Voltar",
+                geo_permission: "Para que a IA conheça sua localização, você deve permitir o acesso à localização. Caso contrário, você precisará indicar a cidade na próxima guia.",
+                city_prompt: "Em qual cidade você está?"
             },
             ja: {
                 camera_ready: "写真を撮る準備ができています",
@@ -785,7 +797,9 @@
                 stop_audio: "⏹ 停止",
                 new_photo: "📸 新しい写真",
                 modify_question: "✏️ 質問を変更",
-                back_btn: "⬅️ 戻る"
+                back_btn: "⬅️ 戻る",
+                geo_permission: "AIがあなたの位置を知るためには、位置情報へのアクセスを許可する必要があります。そうでない場合は、次のタブで都市を指定する必要があります。",
+                city_prompt: "あなたはどの都市にいますか？"
             },
             zh: {
                 camera_ready: "准备好拍照",
@@ -798,7 +812,9 @@
                 stop_audio: "⏹ 停止",
                 new_photo: "📸 新照片",
                 modify_question: "✏️ 更改问题",
-                back_btn: "⬅️ 返回"
+                back_btn: "⬅️ 返回",
+                geo_permission: "为了让AI知道您的位置,您必须允许访问位置。否则,您需要在下一个选项卡中指定城市。",
+                city_prompt: "你在哪个城市？"
             }
         };
 
@@ -967,9 +983,15 @@
                 return;
             }
             
+            // Afficher le message I18N
+            const lang = state.language;
+            const t = I18N_LABELS[lang] || I18N_LABELS.en;
+            showAlert(t.geo_permission, 'info');
+            
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
+                        // ✅ Géoloc acceptée
                         state.location = `${pos.coords.latitude},${pos.coords.longitude}`;
                         state.geolocationApproved = true;
                         localStorage.setItem('visionPhotoGeoApproved', 'true');
@@ -978,17 +1000,19 @@
                         switchScreen('questions');
                     },
                     (err) => {
-                        console.log('⚠️ Géoloc échouée/refusée:', err.message);
-                        // Demander le lieu manuellement
-                        const lieu = prompt('Lieu/Ville ? (pour plus de précisions)') || 'inconnu';
+                        // ❌ Géoloc refusée ou échouée - demander la ville
+                        console.log('⚠️ Géoloc refusée:', err.message);
+                        const cityPrompt = t.city_prompt;
+                        const lieu = prompt(cityPrompt) || 'inconnu';
                         state.location = lieu;
                         switchScreen('questions');
                     },
                     {timeout: 3000, enableHighAccuracy: false}
                 );
             } else {
-                // Pas de géoloc dispo
-                const lieu = prompt('Lieu/Ville ?') || 'inconnu';
+                // Pas de géoloc dispo - demander la ville
+                const cityPrompt = t.city_prompt;
+                const lieu = prompt(cityPrompt) || 'inconnu';
                 state.location = lieu;
                 switchScreen('questions');
             }
