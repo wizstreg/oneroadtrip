@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORT - Extracteur de Réservations</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .input-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .input-section h2 {
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            color: #fff;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 12px;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: #fff;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 195, 247, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-section.visible {
+            display: block;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px 20px;
+            min-width: 120px;
+        }
+        
+        .stat-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        
+        .stat-card .label {
+            font-size: 0.85em;
+            color: #888;
+        }
+        
+        .booking-card {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4fc3f7;
+        }
+        
+        .booking-card.flight { border-left-color: #ff9800; }
+        .booking-card.lodging { border-left-color: #4caf50; }
+        .booking-card.car { border-left-color: #9c27b0; }
+        .booking-card.event { border-left-color: #e91e63; }
+        .booking-card.restaurant { border-left-color: #f44336; }
+        .booking-card.train { border-left-color: #00bcd4; }
+        .booking-card.bus { border-left-color: #795548; }
+        
+        .booking-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .booking-icon {
+            font-size: 1.5em;
+        }
+        
+        .booking-type {
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+        }
+        
+        .booking-title {
+            font-size: 1.3em;
+            font-weight: 600;
+        }
+        
+        .booking-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            padding: 10px 12px;
+        }
+        
+        .detail-label {
+            font-size: 0.75em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        
+        .detail-value {
+            font-size: 0.95em;
+            word-break: break-word;
+        }
+        
+        .detail-value a {
+            color: #4fc3f7;
+            text-decoration: none;
+        }
+        
+        .detail-value a:hover {
+            text-decoration: underline;
+        }
+        
+        .raw-json {
+            margin-top: 15px;
+        }
+        
+        .raw-json summary {
+            cursor: pointer;
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .raw-json pre {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+            overflow-x: auto;
+            font-size: 11px;
+            color: #aaa;
+        }
+        
+        .no-results {
+            background: rgba(255,152,0,0.1);
+            border: 1px solid rgba(255,152,0,0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .no-results h3 {
+            color: #ff9800;
+            margin-bottom: 10px;
+        }
+        
+        .tips {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .tips h4 {
+            margin-bottom: 10px;
+            color: #4fc3f7;
+        }
+        
+        .tips ul {
+            margin-left: 20px;
+            color: #aaa;
+        }
+        
+        .tips li {
+            margin-bottom: 5px;
+        }
+        
+        .all-links {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .all-links h3 {
+            margin-bottom: 15px;
+            color: #4fc3f7;
+        }
+        
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .link-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .link-item a {
+            color: #4fc3f7;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .link-domain {
+            color: #888;
+            font-size: 0.85em;
+        }
+        
+        .microdata-section {
+            background: rgba(156, 39, 176, 0.1);
+            border: 1px solid rgba(156, 39, 176, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .microdata-section h4 {
+            color: #ce93d8;
+            margin-bottom: 10px;
+        }
+
+        .export-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 8px;
+        }
+
+        .export-section h4 {
+            color: #4caf50;
+            margin-bottom: 10px;
+        }
+
+        #exportJson {
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧳 ORT - Extracteur de Réservations</h1>
+        <p class="subtitle">Collez le code source HTML d'un email de confirmation pour extraire les données structurées</p>
+        
+        <div class="input-section">
+            <h2>📧 Source de l'email</h2>
+            <textarea id="emailInput" placeholder="Collez ici le code source HTML de votre email de confirmation...
+
+Pour obtenir le source :
+• Gmail : Menu ⋮ → Afficher l'original → Copier dans le presse-papier
+• Outlook : Fichier → Propriétés → En-têtes Internet
+• Apple Mail : Affichage → Message → Source brute"></textarea>
+            <div class="buttons">
+                <button class="btn-primary" onclick="extractData()">🔍 Extraire les données</button>
+                <button class="btn-secondary" onclick="loadExample()">📋 Charger un exemple</button>
+                <button class="btn-secondary" onclick="clearAll()">🗑️ Effacer</button>
+            </div>
+        </div>
+        
+        <div class="results-section" id="resultsSection">
+            <div class="stats" id="stats"></div>
+            <div id="bookingsContainer"></div>
+            <div id="linksContainer"></div>
+            <div class="export-section" id="exportSection" style="display:none;">
+                <h4>📤 Export pour ORT</h4>
+                <div id="exportJson"></div>
+                <button class="btn-secondary" style="margin-top:10px;" onclick="copyExport()">📋 Copier</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Types de réservation Schema.org et leurs icônes
+        const BOOKING_TYPES = {
+            'FlightReservation': { icon: '✈️', label: 'Vol', class: 'flight' },
+            'LodgingReservation': { icon: '🏨', label: 'Hébergement', class: 'lodging' },
+            'RentalCarReservation': { icon: '🚗', label: 'Location voiture', class: 'car' },
+            'BusReservation': { icon: '🚌', label: 'Bus', class: 'bus' },
+            'TrainReservation': { icon: '🚆', label: 'Train', class: 'train' },
+            'EventReservation': { icon: '🎫', label: 'Événement', class: 'event' },
+            'FoodEstablishmentReservation': { icon: '🍽️', label: 'Restaurant', class: 'restaurant' },
+            'TaxiReservation': { icon: '🚕', label: 'Taxi', class: 'car' },
+            'BoatReservation': { icon: '⛴️', label: 'Bateau', class: 'train' },
+            'Hotel': { icon: '🏨', label: 'Hôtel', class: 'lodging' },
+            'Flight': { icon: '✈️', label: 'Vol', class: 'flight' },
+            'Order': { icon: '📦', label: 'Commande', class: 'event' },
+            'Ticket': { icon: '🎟️', label: 'Billet', class: 'event' }
+        };
+        
+        function extractData() {
+            const input = document.getElementById('emailInput').value;
+            const resultsSection = document.getElementById('resultsSection');
+            const bookingsContainer = document.getElementById('bookingsContainer');
+            const linksContainer = document.getElementById('linksContainer');
+            const statsContainer = document.getElementById('stats');
+            
+            // Reset
+            bookingsContainer.innerHTML = '';
+            linksContainer.innerHTML = '';
+            statsContainer.innerHTML = '';
+            
+            const results = {
+                jsonLd: [],
+                microdata: [],
+                links: [],
+                emails: [],
+                phones: []
+            };
+            
+            // 1. Extraire JSON-LD
+            const jsonLdRegex = /<script[^>]*type\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+            let match;
+            while ((match = jsonLdRegex.exec(input)) !== null) {
+                try {
+                    let jsonStr = match[1].trim();
+                    // Nettoyer les caractères problématiques
+                    jsonStr = jsonStr.replace(/[\x00-\x1F\x7F]/g, ' ');
+                    const data = JSON.parse(jsonStr);
+                    
+                    // Peut être un tableau ou un objet
+                    if (Array.isArray(data)) {
+                        results.jsonLd.push(...data);
+                    } else {
+                        results.jsonLd.push(data);
+                    }
+                } catch (e) {
+                    console.log('Erreur parsing JSON-LD:', e);
+                }
+            }
+            
+            // 2. Extraire tous les liens
+            const linkRegex = /href\s*=\s*["']([^"']+)["']/gi;
+            const seenLinks = new Set();
+            while ((match = linkRegex.exec(input)) !== null) {
+                const url = match[1];
+                if (url.startsWith('http') && !seenLinks.has(url)) {
+                    seenLinks.add(url);
+                    results.links.push(url);
+                }
+            }
+            
+            // 3. Extraire les emails
+            const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+            const seenEmails = new Set();
+            while ((match = emailRegex.exec(input)) !== null) {
+                if (!seenEmails.has(match[0])) {
+                    seenEmails.add(match[0]);
+                    results.emails.push(match[0]);
+                }
+            }
+            
+            // 4. Extraire les téléphones
+            const phoneRegex = /(?:\+\d{1,3}[-.\s]?)?\(?\d{2,4}\)?[-.\s]?\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{0,4}/g;
+            const seenPhones = new Set();
+            while ((match = phoneRegex.exec(input)) !== null) {
+                const phone = match[0].trim();
+                if (phone.length >= 10 && !seenPhones.has(phone)) {
+                    seenPhones.add(phone);
+                    results.phones.push(phone);
+                }
+            }
+            
+            // 5. Chercher des patterns de microdata itemtype
+            const microdataRegex = /itemtype\s*=\s*["']([^"']*schema\.org[^"']*)["']/gi;
+            while ((match = microdataRegex.exec(input)) !== null) {
+                results.microdata.push(match[1]);
+            }
+            
+            // Afficher les stats
+            resultsSection.classList.add('visible');
+            
+            const bookings = results.jsonLd.filter(item => 
+                item['@type'] && (
+                    item['@type'].includes('Reservation') || 
+                    BOOKING_TYPES[item['@type']] ||
+                    item['@type'] === 'Order'
+                )
+            );
+            
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <div class="number">${bookings.length}</div>
+                    <div class="label">Réservations</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${results.jsonLd.length}</div>
+                    <div class="label">Objets JSON-LD</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${results.links.length}</div>
+                    <div class="label">Liens</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number">${results.emails.length}</div>
+                    <div class="label">Emails</div>
+                </div>
+            `;
+            
+            // Afficher les réservations
+            if (bookings.length > 0) {
+                bookings.forEach((booking, index) => {
+                    bookingsContainer.innerHTML += renderBookingCard(booking, index);
+                });
+                
+                // Préparer l'export
+                const exportData = bookings.map(b => normalizeForORT(b));
+                document.getElementById('exportSection').style.display = 'block';
+                document.getElementById('exportJson').textContent = JSON.stringify(exportData, null, 2);
+            } else if (results.jsonLd.length > 0) {
+                // Afficher tous les JSON-LD même si pas des réservations
+                bookingsContainer.innerHTML = `
+                    <div class="no-results">
+                        <h3>Aucune réservation standard détectée</h3>
+                        <p>Mais ${results.jsonLd.length} objet(s) JSON-LD trouvé(s) :</p>
+                    </div>
+                `;
+                results.jsonLd.forEach((item, index) => {
+                    bookingsContainer.innerHTML += `
+                        <div class="booking-card">
+                            <div class="booking-header">
+                                <span class="booking-icon">📄</span>
+                                <div>
+                                    <div class="booking-type">${item['@type'] || 'Inconnu'}</div>
+                                    <div class="booking-title">${item.name || item.description || 'Données structurées'}</div>
+                                </div>
+                            </div>
+                            <details class="raw-json" open>
+                                <summary>Données brutes</summary>
+                                <pre>${JSON.stringify(item, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                });
+                document.getElementById('exportSection').style.display = 'none';
+            } else {
+                bookingsContainer.innerHTML = `
+                    <div class="no-results">
+                        <h3>⚠️ Aucune donnée structurée trouvée</h3>
+                        <p>Cet email ne contient pas de données JSON-LD exploitables.</p>
+                    </div>
+                    <div class="tips">
+                        <h4>💡 Conseils</h4>
+                        <ul>
+                            <li>Vérifiez que vous avez copié le <strong>code source complet</strong> de l'email</li>
+                            <li>Les données structurées sont plus courantes chez : Booking.com, Airbnb, compagnies aériennes majeures, Expedia, SNCF, etc.</li>
+                            <li>Certains emails utilisent uniquement des formats propriétaires non standardisés</li>
+                        </ul>
+                    </div>
+                `;
+                document.getElementById('exportSection').style.display = 'none';
+            }
+            
+            // Afficher les microdata si présentes
+            if (results.microdata.length > 0) {
+                bookingsContainer.innerHTML += `
+                    <div class="microdata-section">
+                        <h4>📊 Microdata Schema.org détectées</h4>
+                        <p>Types trouvés : ${[...new Set(results.microdata)].join(', ')}</p>
+                        <p style="color:#888; font-size:0.85em; margin-top:10px;">
+                            Note : L'extraction des microdata HTML est plus complexe que JSON-LD. 
+                            Ces données existent mais nécessiteraient un parser dédié.
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // Afficher les liens utiles
+            if (results.links.length > 0) {
+                const categorizedLinks = categorizeLinks(results.links);
+                linksContainer.innerHTML = `
+                    <div class="all-links">
+                        <h3>🔗 Liens extraits (${results.links.length})</h3>
+                        <div class="links-grid">
+                            ${categorizedLinks.map(link => `
+                                <div class="link-item">
+                                    <span>${link.icon}</span>
+                                    <a href="${link.url}" target="_blank" title="${link.url}">
+                                        ${link.display}
+                                    </a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderBookingCard(booking, index) {
+            const type = booking['@type'];
+            const typeInfo = BOOKING_TYPES[type] || { icon: '📄', label: type, class: '' };
+            
+            let details = [];
+            
+            // Numéro de réservation
+            if (booking.reservationNumber) {
+                details.push({ label: 'N° Réservation', value: booking.reservationNumber });
+            }
+            if (booking.confirmationNumber) {
+                details.push({ label: 'N° Confirmation', value: booking.confirmationNumber });
+            }
+            
+            // Dates
+            if (booking.checkinTime || booking.checkinDate) {
+                details.push({ label: 'Check-in', value: formatDate(booking.checkinTime || booking.checkinDate) });
+            }
+            if (booking.checkoutTime || booking.checkoutDate) {
+                details.push({ label: 'Check-out', value: formatDate(booking.checkoutTime || booking.checkoutDate) });
+            }
+            if (booking.startTime) {
+                details.push({ label: 'Début', value: formatDate(booking.startTime) });
+            }
+            if (booking.endTime) {
+                details.push({ label: 'Fin', value: formatDate(booking.endTime) });
+            }
+            
+            // Lieu / Établissement
+            const place = booking.reservationFor || booking.provider;
+            if (place) {
+                if (place.name) {
+                    details.push({ label: 'Établissement', value: place.name });
+                }
+                if (place.address) {
+                    const addr = typeof place.address === 'string' 
+                        ? place.address 
+                        : formatAddress(place.address);
+                    details.push({ label: 'Adresse', value: addr });
+                }
+                if (place.telephone) {
+                    details.push({ label: 'Téléphone', value: place.telephone });
+                }
+                if (place.email) {
+                    details.push({ label: 'Email', value: place.email });
+                }
+                if (place.geo) {
+                    const lat = place.geo.latitude;
+                    const lng = place.geo.longitude;
+                    details.push({ 
+                        label: 'Coordonnées', 
+                        value: `<a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank">${lat}, ${lng}</a>` 
+                    });
+                }
+                if (place.url) {
+                    details.push({ label: 'Site web', value: `<a href="${place.url}" target="_blank">Voir</a>` });
+                }
+            }
+            
+            // Vol spécifique
+            if (type === 'FlightReservation' || type === 'Flight') {
+                const flight = booking.reservationFor || booking;
+                if (flight.flightNumber) {
+                    details.push({ label: 'N° Vol', value: flight.flightNumber });
+                }
+                if (flight.airline?.name) {
+                    details.push({ label: 'Compagnie', value: flight.airline.name });
+                }
+                if (flight.departureAirport) {
+                    details.push({ label: 'Départ', value: `${flight.departureAirport.name || ''} (${flight.departureAirport.iataCode || ''})` });
+                }
+                if (flight.arrivalAirport) {
+                    details.push({ label: 'Arrivée', value: `${flight.arrivalAirport.name || ''} (${flight.arrivalAirport.iataCode || ''})` });
+                }
+                if (flight.departureTime) {
+                    details.push({ label: 'Heure départ', value: formatDate(flight.departureTime) });
+                }
+                if (flight.arrivalTime) {
+                    details.push({ label: 'Heure arrivée', value: formatDate(flight.arrivalTime) });
+                }
+            }
+            
+            // Location de voiture
+            if (type === 'RentalCarReservation') {
+                if (booking.pickupLocation?.name) {
+                    details.push({ label: 'Prise en charge', value: booking.pickupLocation.name });
+                }
+                if (booking.pickupTime) {
+                    details.push({ label: 'Date prise en charge', value: formatDate(booking.pickupTime) });
+                }
+                if (booking.dropoffLocation?.name) {
+                    details.push({ label: 'Restitution', value: booking.dropoffLocation.name });
+                }
+                if (booking.dropoffTime) {
+                    details.push({ label: 'Date restitution', value: formatDate(booking.dropoffTime) });
+                }
+            }
+            
+            // Prix
+            if (booking.totalPrice) {
+                details.push({ label: 'Prix total', value: `${booking.totalPrice} ${booking.priceCurrency || ''}` });
+            }
+            if (booking.price) {
+                details.push({ label: 'Prix', value: `${booking.price} ${booking.priceCurrency || ''}` });
+            }
+            
+            // Personne
+            if (booking.underName?.name) {
+                details.push({ label: 'Au nom de', value: booking.underName.name });
+            }
+            
+            const title = place?.name || booking.name || booking.reservationNumber || 'Réservation';
+            
+            return `
+                <div class="booking-card ${typeInfo.class}">
+                    <div class="booking-header">
+                        <span class="booking-icon">${typeInfo.icon}</span>
+                        <div>
+                            <div class="booking-type">${typeInfo.label}</div>
+                            <div class="booking-title">${title}</div>
+                        </div>
+                    </div>
+                    <div class="booking-details">
+                        ${details.map(d => `
+                            <div class="detail-item">
+                                <div class="detail-label">${d.label}</div>
+                                <div class="detail-value">${d.value}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <details class="raw-json">
+                        <summary>Voir le JSON brut</summary>
+                        <pre>${JSON.stringify(booking, null, 2)}</pre>
+                    </details>
+                </div>
+            `;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleString('fr-FR', {
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch {
+                return dateStr;
+            }
+        }
+        
+        function formatAddress(addr) {
+            if (typeof addr === 'string') return addr;
+            const parts = [
+                addr.streetAddress,
+                addr.postalCode,
+                addr.addressLocality,
+                addr.addressRegion,
+                addr.addressCountry
+            ].filter(Boolean);
+            return parts.join(', ');
+        }
+        
+        function categorizeLinks(links) {
+            return links.map(url => {
+                let icon = '🔗';
+                try {
+                    const domain = new URL(url).hostname;
+                    if (domain.includes('booking.com')) icon = '🏨';
+                    else if (domain.includes('airbnb')) icon = '🏠';
+                    else if (domain.includes('maps') || domain.includes('goo.gl')) icon = '📍';
+                    else if (domain.includes('expedia')) icon = '✈️';
+                    else if (domain.includes('hotels.com')) icon = '🏨';
+                    else if (domain.includes('tripadvisor')) icon = '⭐';
+                    else if (domain.includes('sncf') || domain.includes('trainline')) icon = '🚆';
+                    else if (domain.includes('rentalcars') || domain.includes('europcar')) icon = '🚗';
+                    else if (domain.includes('airline') || domain.includes('air')) icon = '✈️';
+                    
+                    return {
+                        url,
+                        icon,
+                        display: domain + (url.length > 60 ? '...' : '')
+                    };
+                } catch {
+                    return { url, icon, display: url.substring(0, 50) + '...' };
+                }
+            });
+        }
+        
+        function normalizeForORT(booking) {
+            const type = booking['@type'];
+            const place = booking.reservationFor || booking.provider || {};
+            
+            const base = {
+                type: type,
+                confirmationNumber: booking.reservationNumber || booking.confirmationNumber,
+                name: place.name || booking.name,
+                price: booking.totalPrice || booking.price,
+                currency: booking.priceCurrency
+            };
+            
+            if (type.includes('Lodging') || type === 'Hotel') {
+                return {
+                    ...base,
+                    category: 'lodging',
+                    checkin: booking.checkinTime || booking.checkinDate,
+                    checkout: booking.checkoutTime || booking.checkoutDate,
+                    address: place.address,
+                    phone: place.telephone,
+                    email: place.email,
+                    coords: place.geo ? [place.geo.latitude, place.geo.longitude] : null,
+                    url: place.url
+                };
+            }
+            
+            if (type.includes('Flight')) {
+                const flight = booking.reservationFor || booking;
+                return {
+                    ...base,
+                    category: 'flight',
+                    flightNumber: flight.flightNumber,
+                    airline: flight.airline?.name,
+                    departure: {
+                        airport: flight.departureAirport?.iataCode,
+                        name: flight.departureAirport?.name,
+                        time: flight.departureTime
+                    },
+                    arrival: {
+                        airport: flight.arrivalAirport?.iataCode,
+                        name: flight.arrivalAirport?.name,
+                        time: flight.arrivalTime
+                    }
+                };
+            }
+            
+            if (type.includes('RentalCar')) {
+                return {
+                    ...base,
+                    category: 'car',
+                    pickup: {
+                        location: booking.pickupLocation?.name,
+                        time: booking.pickupTime
+                    },
+                    dropoff: {
+                        location: booking.dropoffLocation?.name,
+                        time: booking.dropoffTime
+                    }
+                };
+            }
+            
+            return base;
+        }
+        
+        function loadExample() {
+            const exampleData = `
+<!-- Exemple de données JSON-LD comme dans un vrai email -->
+<scr` + `ipt type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "LodgingReservation",
+  "reservationNumber": "BK-2024-987654",
+  "reservationStatus": "http://schema.org/ReservationConfirmed",
+  "checkinTime": "2024-07-15T15:00:00+02:00",
+  "checkoutTime": "2024-07-18T11:00:00+02:00",
+  "totalPrice": "450.00",
+  "priceCurrency": "EUR",
+  "underName": {
+    "@type": "Person",
+    "name": "Marc Dupont"
+  },
+  "reservationFor": {
+    "@type": "LodgingBusiness",
+    "name": "Hôtel & Spa des Gorges du Verdon",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "123 Route des Gorges",
+      "postalCode": "04120",
+      "addressLocality": "Castellane",
+      "addressCountry": "FR"
+    },
+    "telephone": "+33 4 92 83 00 00",
+    "email": "contact@hotel-gorges-verdon.com",
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": 43.8456,
+      "longitude": 6.5123
+    },
+    "url": "https://www.hotel-gorges-verdon.com"
+  }
+}
+</scr` + `ipt>
+
+<scr` + `ipt type="application/ld+json">
+{
+  "@context": "http://schema.org",
+  "@type": "FlightReservation",
+  "reservationNumber": "AF-XYZ123",
+  "reservationStatus": "http://schema.org/ReservationConfirmed",
+  "reservationFor": {
+    "@type": "Flight",
+    "flightNumber": "AF1234",
+    "airline": {
+      "@type": "Airline",
+      "name": "Air France",
+      "iataCode": "AF"
+    },
+    "departureAirport": {
+      "@type": "Airport",
+      "name": "Paris Charles de Gaulle",
+      "iataCode": "CDG"
+    },
+    "arrivalAirport": {
+      "@type": "Airport",
+      "name": "Nice Côte d'Azur",
+      "iataCode": "NCE"
+    },
+    "departureTime": "2024-07-14T08:30:00+02:00",
+    "arrivalTime": "2024-07-14T10:00:00+02:00"
+  },
+  "underName": {
+    "@type": "Person",
+    "name": "Marc Dupont"
+  }
+}
+</scr` + `ipt>
+
+<!-- Quelques liens typiques -->
+<a href="https://www.booking.com/hotel/fr/gorges-verdon.html">Voir la réservation</a>
+<a href="https://www.google.com/maps?q=43.8456,6.5123">Voir sur la carte</a>
+<a href="https://www.airfrance.fr/manage-booking">Gérer ma réservation</a>
+            `;
+            document.getElementById('emailInput').value = exampleData;
+            extractData();
+        }
+        
+        function clearAll() {
+            document.getElementById('emailInput').value = '';
+            document.getElementById('resultsSection').classList.remove('visible');
+        }
+        
+        function copyExport() {
+            const text = document.getElementById('exportJson').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Données copiées !');
+            });
+        }
+    </script>
+</body>
+</html>

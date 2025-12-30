@@ -1,0 +1,2763 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OneRoadTrip — Mon tableau de bord</title>
+<style>
+  :root{
+    --bg:#113f7a; --panel:#113f7a; --card:#fff; --ink:#113f7a;
+    --chip:#113f7a; --primary:#113f7a; --accent:#113f7a; --muted:#6c7b87;
+    --bd:#c3d6b6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#e7f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  a{color:inherit}
+
+  /* ==== Header ORT (repris du questionnaire) ==== */
+  header.ort-hdr{position:sticky;top:0;z-index:10;background:#113f7a;color:#fff;
+    padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #113f7a}
+  header.ort-hdr .brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+  header.ort-hdr .brandlink img{width:80px;height:80px}
+  header.ort-hdr .brand{font-weight:800;font-size:20px}
+  header.ort-hdr .spacer{flex:1}
+  header.ort-hdr .langpick{appearance:none;background:#fff;border:1px solid #113f7a;border-radius:10px;
+    padding:8px 10px;cursor:pointer;color:#113f7a}
+  header.ort-hdr .auth{position:relative}
+  header.ort-hdr .hdr-btn{padding:8px 12px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer}
+  header.ort-hdr .hdr-btn:hover{background:#ffffff2b}
+  header.ort-hdr .auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid var(--bd);
+    border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px}
+  header.ort-hdr .auth-pop .hdr-btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
+  header.ort-hdr .auth-pop .hdr-btn.out{background:#fff;color:#113f7a}
+
+/* Harmonisation avec quest_simple (la popin peut contenir .btn) */
+  header.ort-hdr .auth-pop .btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
+  header.ort-hdr .auth-pop .btn.out{background:#fff;color:#113f7a}
+
+  /* ==== Layout ==== */
+  .wrap{max-width:1200px;margin:0 auto;padding:16px}
+  .topbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .topbar h1{margin:0;font-size:1.4rem}
+  .btn{padding:10px 14px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer}
+  .btn:hover{background:#ffffff2b}
+  .btn.primary{background:#fff;color:var(--ink);border-color:#fff}
+  .btn.danger{background:#cb2b2b;border-color:#cb2b2b;color:#fff}
+  .btn.icon{display:inline-flex;align-items:center;gap:8px}
+  .muted{opacity:.85}
+
+  .notice{margin:12px 0;background:#113f7a;color:#fafffc;border:1px solid #113f7a;border-radius:10px;padding:10px 12px}
+
+  .grid{display:grid;gap:14px;grid-template-columns:1fr}
+  @media(min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
+  @media(min-width:1200px){ .grid{grid-template-columns:1fr 1fr 1fr} }
+
+  .card{background:var(--card);color:var(--ink);border-radius:14px;border:1px solid rgba(0,0,0,.08);padding:14px;display:flex;flex-direction:column;gap:8px}
+  .card h3{margin:0 0 6px 0;font-size:1.05rem}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .meta{display:flex;gap:8px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#113f7a;padding:6px 10px;border-radius:999px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:6px 10px;background:#eef5ff;color:#113f7a;font-weight:700}
+
+  .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .actions .btn{background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0}
+  .actions .btn:hover{background:#eaf1fb}
+
+  .empty{padding:20px;border:1px dashed #ffffff70;border-radius:12px;text-align:center}
+
+  footer{margin:18px 0 28px;text-align:center;font-size:14px;opacity:.9}
+  footer a, footer button.link{color:#c3d6b6;text-decoration:none;background:none;border:0;cursor:pointer}
+  footer a:hover, footer button.link:hover{text-decoration:underline}
+
+  /* Modal partage image */
+  .share-modal{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+  .share-modal.active{display:flex}
+  .share-modal-content{background:#fff;border-radius:16px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;text-align:center}
+  .share-modal-content h2{margin:0 0 12px 0;color:#113f7a;font-size:1.4rem}
+  .share-modal-content p{margin:0 0 16px 0;color:#555;line-height:1.5}
+  .share-modal-content img{width:100%;border-radius:8px;margin:16px 0;box-shadow:0 4px 12px rgba(0,0,0,.1)}
+  .share-modal-content .modal-actions{display:flex;gap:12px;margin-top:16px;justify-content:center}
+  .share-modal-content .btn{padding:12px 24px;font-size:1rem;text-decoration:none;display:inline-block}
+
+  /* A11y */
+  :focus-visible { outline: 3px solid #113f7a; outline-offset: 2px; border-radius: 10px; }
+  .btn:focus-visible { outline: 3px solid #113f7a; }
+</style>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- ⬇️ IDENTIQUE À quest_simple -->
+<script src="/js/ort-config.js"></script>
+
+<!-- STATE MANAGER -->
+<script src="/js/ort-state-manager.js"></script>
+<script src="/js/ort-dashboard-adapter.js"></script>
+
+<script>
+// === Firebase config (préprod / prod) — via ORT_CONFIG (copié de quest_simple) ===
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  window.__FIREBASE_CONFIG__ = safe;
+})();   <!-- ⬅️ ne rien ajouter après -->
+</script>
+
+</head>
+<body>
+
+  <!-- ==== Header ORT (logo, langue, auth) ==== -->
+  <header class="ort-hdr">
+    <a class="brandlink" id="homeLink" href="#"><img src="../assets/symbol.webp" alt="Logo"><div class="brand">OneRoadTrip</div></a>
+    <div class="spacer"></div>
+    <select id="langSel" class="langpick" aria-label="Langue">
+      <option value="fr">Français</option><option value="en">English</option>
+      <option value="it">Italiano</option><option value="es">Español</option>
+      <option value="pt">Português</option><option value="ar">العربية</option>
+    </select>
+    <div class="auth">
+      <button id="openAuth" class="btn" type="button">Se connecter</button>
+      <div id="authPop" class="auth-pop" role="dialog" aria-label="Connexion">
+        <button id="btnGoogle" class="btn" type="button">Google</button>
+        <button id="btnEmail" class="btn" type="button">E‑mail</button>
+        <button id="btnLogout" class="btn out" type="button" style="display:none">Déconnexion</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <div class="topbar">
+      <h1 id="title">Mon tableau de bord</h1>
+      <div class="spacer"></div>
+      <button id="btnNew" class="btn primary icon" type="button">➕ <span id="lblNew">Nouveau voyage</span></button>
+      <button id="btnImport" class="btn icon" type="button">📥 <span id="lblImport">Importer</span></button>
+      <button id="btnExportAll" class="btn icon" type="button">📤 <span id="lblExport">Exporter tout</span></button>
+      <button id="btnExportModules" class="btn icon" type="button" style="display:none">📦 <span>Export modules</span></button>
+      <button id="btnDeleteAll" class="btn danger icon" type="button">🗑️ <span id="lblDeleteAll">Tout supprimer</span></button>
+    </div>
+
+    <div id="hint" class="notice muted" style="display:none"></div>
+
+    <div id="list" class="grid" aria-live="polite"></div>
+
+    <div id="emptyState" class="empty" style="display:none">
+      <div id="lblEmpty">Aucun voyage enregistré pour le moment.</div>
+      <div style="margin-top:10px">
+        <button id="btnStart" class="btn primary" type="button">Démarrer avec le questionnaire</button>
+      </div>
+    </div>
+
+    <footer>
+      <a href="mentions-legales.html">Mentions légales</a> ·
+      <a href="politique-confidentialite.html">Confidentialité</a> ·
+      <a href="politique-cookies.html">Cookies</a>
+    </footer>
+  </div>
+
+<script>
+// ================= I18N minimal =================
+const I18N={
+  fr:{title:'Mon tableau de bord', new:'Nouveau voyage', import:'Importer', export:'Exporter tout',
+      hint:'Conseil : vos voyages sont sauvegardés automatiquement dans votre espace.',
+      empty:'Aucun voyage enregistré pour le moment.', start:'Démarrer avec le questionnaire',
+      metas:(n,k)=>`${n} nuits · ${k} km`, needLogin:'Connectez-vous pour voir vos voyages.',
+      share:'Lien copié dans le presse-papiers',
+      count:(n)=> n>1 ? `${n} voyages enregistrés` : `${n} voyage enregistré`,
+      btn:{open:'↗ Ouvrir', rename:'✏️ Renommer', settings:'⚙️ Paramètres', del:'🗑 Supprimer',
+           link:'🔗 Lien', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Valider', cancel:'Annuler',
+           addPhotoUrl:'Ajouter une photo (URL)', replaceWhich:'Quelle photo remplacer ?', add:'Ajouter', replace:'Remplacer'},
+      toast:{deleted:'✅ Voyage supprimé', saved:'✅ Voyage enregistré', copied:'🔗 Lien copié', 
+             renamed:'✅ Voyage renommé', photosSaved:'📸 Photos enregistrées', noPhotos:'Aucune photo disponible', 
+             maxPhotos:'Maximum 4 photos', invalidUrl:'❌ URL invalide', photoAdded:'✅ Photo ajoutée',
+             photoReplaced:'✅ Photo remplacée', enterUrl:'Entrez une URL', clickToReplace:'Cliquez sur une photo à remplacer',
+             imageLoadError:'❌ Cette image ne peut pas être chargée.<br>Raisons possibles :<br>• URL incorrecte<br>• Image Google (CORS bloqué)<br>• Site qui bloque le partage<br><br>💡 Hébergez votre photo sur Imgur ou Dropbox'},
+labels:{steps:'étapes', pace:'Rythme'},
+untitled:'Sans titre',
+btn_extra:{share:'📤 Partager'},
+shareModal:{title:'📸 Votre image est prête !', 
+           text:'Nous avons généré une image complète de votre voyage. Téléchargez-la et partagez-la sur vos réseaux sociaux préférés !',
+           download:'⬇️ Télécharger l\'image', close:'Fermer', generating:'🎨 Génération de votre image...'},
+shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très prochainement !'}
+  },
+  en:{title:'My dashboard', new:'New trip', import:'Import', export:'Export all',
+      hint:'Tip: trips are auto-saved.',
+      empty:'No saved trips yet.', start:'Start with the questionnaire',
+      metas:(n,k)=>`${n} nights · ${k} km`, needLogin:'Sign in to see your trips.',
+      share:'Share link copied to clipboard',
+      count:(n)=> n>1 ? `${n} trips saved` : `${n} trip saved`,
+      btn:{open:'↗ Open', rename:'✏️ Rename', settings:'⚙️ Settings', del:'🗑 Delete',
+           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Save', cancel:'Cancel',
+           addPhotoUrl:'Add a photo (URL)', replaceWhich:'Which photo to replace?', add:'Add', replace:'Replace'},
+      toast:{deleted:'✅ Trip deleted', saved:'✅ Trip saved', copied:'🔗 Link copied',
+             renamed:'✅ Trip renamed', photosSaved:'📸 Photos saved', noPhotos:'No photos available', 
+             maxPhotos:'Maximum 4 photos', invalidUrl:'❌ Invalid URL', photoAdded:'✅ Photo added',
+             photoReplaced:'✅ Photo replaced', enterUrl:'Enter a URL', clickToReplace:'Click on a photo to replace',
+             imageLoadError:'❌ Cannot load this image. Check the URL or CORS permissions.'},
+      labels:{steps:'steps', pace:'Pace'},
+      untitled:'Untitled',
+      btn_extra:{share:'📤 Share'},
+      shareModal:{title:'📸 Your image is ready!', 
+                 text:'We have generated a complete image of your trip. Download it and share it on your favorite social networks!',
+                 download:'⬇️ Download image', close:'Close', generating:'🎨 Generating your image...'},
+      shareImage:{intro:'And here is our next trip! More information coming soon!'}
+  },
+  it:{title:'La mia dashboard', new:'Nuovo viaggio', import:'Importa', export:'Esporta tutto',
+      hint:'Suggerimento: i viaggi sono salvati automaticamente.',
+      empty:'Nessun viaggio salvato.', start:'Inizia col questionario',
+      metas:(n,k)=>`${n} notti · ${k} km`, needLogin:'Accedi per vedere i tuoi viaggi.',
+      share:'Link copiato',
+      count:(n)=> n>1 ? `${n} viaggi salvati` : `${n} viaggio salvato`,
+      btn:{open:'↗ Apri', rename:'✏️ Rinomina', settings:'⚙️ Impostazioni', del:'🗑 Elimina',
+           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f'},
+      toast:{deleted:'✅ Viaggio eliminato', saved:'✅ Viaggio salvato', copied:'🔗 Link copiato'},
+      labels:{steps:'tappe', pace:'Ritmo'},
+      untitled:'Senza titolo',
+      btn_extra:{share:'📤 Condividi'},
+      shareModal:{title:'📸 La tua immagine è pronta!', 
+                 text:'Abbiamo generato un\'immagine completa del tuo viaggio. Scaricala e condividila sui tuoi social network preferiti!',
+                 download:'⬇️ Scarica immagine', close:'Chiudi', generating:'🎨 Generazione della tua immagine...'},
+      shareImage:{intro:'Ed ecco il nostro prossimo viaggio! Maggiori informazioni presto!'}
+  },
+  es:{title:'Mi panel', new:'Nuevo viaje', import:'Importar', export:'Exportar todo',
+      hint:'Truco: los viajes se guardan automáticamente.',
+      empty:'Aún no hay viajes guardados.', start:'Empezar con el cuestionario',
+      metas:(n,k)=>`${n} noches · ${k} km`, needLogin:'Inicie sesión para ver sus viajes.',
+      share:'Enlace copiado',
+      count:(n)=> n>1 ? `${n} viajes guardados` : `${n} viaje guardado`,
+      btn:{open:'↗ Abrir', rename:'✏️ Renombrar', settings:'⚙️ Ajustes', del:'🗑 Borrar',
+           link:'🔗 Enlace', mail:'✉️ E-mail', x:'𝕏', fb:'f'},
+      toast:{deleted:'✅ Viaje eliminado', saved:'✅ Viaje guardado', copied:'🔗 Enlace copiado'},
+      labels:{steps:'etapas', pace:'Ritmo'},
+      untitled:'Sin título',
+      btn_extra:{share:'📤 Compartir'},
+      shareModal:{title:'📸 ¡Tu imagen está lista!', 
+                 text:'Hemos generado una imagen completa de tu viaje. ¡Descárgala y compártela en tus redes sociales favoritas!',
+                 download:'⬇️ Descargar imagen', close:'Cerrar', generating:'🎨 Generando tu imagen...'},
+      shareImage:{intro:'¡Y aquí está nuestro próximo viaje! ¡Más información próximamente!'}
+  },
+  pt:{title:'Meu painel', new:'Nova viagem', import:'Importar', export:'Exportar tudo',
+      hint:'Dica: as viagens são salvas automaticamente.',
+      empty:'Nenhuma viagem salva.', start:'Comece com o questionário',
+      metas:(n,k)=>`${n} noites · ${k} km`, needLogin:'Entre para ver suas viagens.',
+      share:'Link copiado',
+      count:(n)=> n>1 ? `${n} viagens salvas` : `${n} viagem salva`,
+      btn:{open:'↗ Abrir', rename:'✏️ Renomear', settings:'⚙️ Definições', del:'🗑 Excluir',
+           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f'},
+      toast:{deleted:'✅ Viagem excluída', saved:'✅ Viagem salva', copied:'🔗 Link copiado'},
+      labels:{steps:'etapas', pace:'Ritmo'},
+      untitled:'Sem título',
+      btn_extra:{share:'📤 Partilhar'},
+      shareModal:{title:'📸 A sua imagem está pronta!', 
+                 text:'Geramos uma imagem completa da sua viagem. Descarregue-a e partilhe-a nas suas redes sociais favoritas!',
+                 download:'⬇️ Descarregar imagem', close:'Fechar', generating:'🎨 A gerar a sua imagem...'},
+      shareImage:{intro:'E aqui está a nossa próxima viagem! Mais informações em breve!'}
+  },
+  ar:{title:'لوحة التحكم الخاصة بي', new:'رحلة جديدة', import:'استيراد', export:'تصدير الكل',
+      hint:'تلميح: تُحفَظ الرحلات تلقائيًا.',
+      empty:'لا رحلات محفوظة بعد.', start:'ابدأ بالاستبيان',
+      metas:(n,k)=>`${n} ليالٍ · ${k} كم`, needLogin:'سجّل الدخول لعرض رحلاتك.',
+      share:'تم نسخ الرابط',
+      count:(n)=> n>1 ? `تم حفظ ${n} رحلات` : `تم حفظ رحلة واحدة`,
+      btn:{open:'↗ فتح', rename:'✏️ إعادة تسمية', settings:'⚙️ الإعدادات', del:'🗑 حذف',
+           link:'🔗 رابط', mail:'✉️ بريد', x:'𝕏', fb:'f'},
+      toast:{deleted:'✅ تم الحذف', saved:'✅ تم الحفظ', copied:'🔗 تم النسخ'},
+      labels:{steps:'مراحل', pace:'الإيقاع'},
+      untitled:'بدون عنوان',
+      btn_extra:{share:'📤 مشاركة'},
+      shareModal:{title:'📸 صورتك جاهزة!', 
+                 text:'لقد قمنا بإنشاء صورة كاملة لرحلتك. قم بتنزيلها ومشاركتها على شبكات التواصل الاجتماعي المفضلة لديك!',
+                 download:'⬇️ تنزيل الصورة', close:'إغلاق', generating:'🎨 جارٍ إنشاء صورتك...'},
+      shareImage:{intro:'وإليكم رحلتنا القادمة! المزيد من المعلومات قريبًا!'}
+  }
+};
+
+
+// ================= Langue & navigation =================
+(function(){
+  // 1) lecture tolérante (URL → ORT_LANG → lang → <html>)
+  const p   = new URLSearchParams(location.search).get('lang');
+  const had = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang');
+  const htmlAttr = document.documentElement.lang || 'fr';
+  const lang = (p || had || htmlAttr || 'fr').slice(0,2).toLowerCase();
+
+  // 2) persistance unifiée
+  localStorage.setItem('ORT_LANG', lang);
+  localStorage.setItem('lang', lang);
+
+  // 3) applique lang + sens d’écriture
+  document.documentElement.lang = lang;
+  document.documentElement.dir  = (lang === 'ar') ? 'rtl' : 'ltr';
+
+  // 4) dictionnaire + sélecteur
+  const L = I18N[lang] || I18N.fr;
+  const sel = document.getElementById('langSel');
+  if(sel){
+    sel.value = lang;
+    sel.addEventListener('change', e=>{
+      const code = e.target.value.slice(0,2).toLowerCase();
+      localStorage.setItem('ORT_LANG', code);
+      localStorage.setItem('lang', code);
+      const u = new URL(location.href);
+      u.searchParams.set('lang', code);
+      location.replace(u.toString()); // reload → recalc UI
+    });
+  }
+
+  // 5) lien accueil garde la langue courante
+  const home = document.getElementById('homeLink');
+  if(home){
+    home.addEventListener('click', e=>{
+      e.preventDefault();
+      const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+      location.href = 'index.html?lang=' + code;
+    });
+  }
+
+  // 6) UI labels
+  document.getElementById('title').textContent    = L.title;
+  document.getElementById('lblNew').textContent   = L.new;
+  document.getElementById('lblImport').textContent= L.import;
+  document.getElementById('lblExport').textContent= L.export;
+  document.getElementById('lblEmpty').textContent = L.empty;
+  document.getElementById('btnStart').textContent = L.start;
+  const hint = document.getElementById('hint');
+  hint.textContent = L.hint; hint.style.display='block';
+})();
+
+(function(){
+  const $ = (id)=>document.getElementById(id);
+
+  const openAuth=$('openAuth'), pop=$('authPop'), btnGoogle=$('btnGoogle'), btnEmail=$('btnEmail'), btnLogout=$('btnLogout');
+  function loadScript(src){ return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>ko(new Error('load '+src));document.head.appendChild(s);}); }
+  async function ensureFirebase(){
+    if(window.firebase?.apps?.length) return window.firebase;
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+    window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+    return window.firebase;
+  }
+window.ensureFirebase = ensureFirebase;
+  function setHeaderLabel(user){
+    if(!openAuth) return;
+    const lang = document.documentElement.lang || 'fr';
+    const LABELS = {fr:{signin:'Se connecter',account:'Mon compte'},en:{signin:'Sign in',account:'My account'},it:{signin:'Accedi',account:'Il mio account'},es:{signin:'Iniciar sesión',account:'Mi cuenta'},pt:{signin:'Entrar',account:'Minha conta'},ar:{signin:'تسجيل الدخول',account:'حسابي'}};
+    const LBL = LABELS[lang] || LABELS.fr;
+    if(user){ openAuth.textContent = user.displayName || user.email || LBL.account; btnLogout.style.display=''; btnGoogle.style.display='none'; btnEmail.style.display='none'; }
+    else { openAuth.textContent = LBL.signin; btnLogout.style.display='none'; btnGoogle.style.display=''; btnEmail.style.display=''; }
+  }
+  if(openAuth&&pop){ openAuth.addEventListener('click',e=>{e.stopPropagation();pop.style.display=pop.style.display==='block'?'none':'block';}); document.addEventListener('click',()=>{pop.style.display='none';}); }
+  if(btnGoogle){ btnGoogle.addEventListener('click', async()=>{ try{ const fb=await ensureFirebase(); await fb.auth().signInWithPopup(new fb.auth.GoogleAuthProvider()); pop.style.display='none'; }catch(_){ } }); }
+  if(btnEmail){ btnEmail.addEventListener('click', async()=>{
+    // ⬇️ Mini-formulaire inline dans la popin (pas de redirection)
+    let box = document.getElementById('emailInline');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'emailInline';
+      box.style.cssText = 'border-top:1px solid #c3d6b6;margin-top:6px;padding-top:6px';
+      box.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <input id="eml" type="email" placeholder="E-mail" style="padding:8px;border:1px solid #113f7a;border-radius:8px">
+          <input id="pwd" type="password" placeholder="Mot de passe" style="padding:8px;border:1px solid #113f7a;border-radius:8px">
+          <div id="pwd2wrap" style="display:none"><input id="pwd2" type="password" placeholder="Répéter mot de passe" style="padding:8px;border:1px solid #113f7a;border-radius:8px"></div>
+          <div id="emlMsg" style="display:none;padding:8px;border:1px solid #fecaca;background:#fef2f2;color:#b91c1c;border-radius:8px"></div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button id="doLogin"  class="hdr-btn" type="button">Continuer</button>
+            <button id="doSignup" class="hdr-btn" type="button">Créer un compte</button>
+            <button id="doReset"  class="hdr-btn out" type="button">Mot de passe oublié</button>
+          </div>
+        </div>`;
+      pop.appendChild(box);
+
+      const eml = box.querySelector('#eml');
+      const pwd = box.querySelector('#pwd');
+      const pwd2w= box.querySelector('#pwd2wrap');
+      const pwd2 = box.querySelector('#pwd2');
+      const msg = box.querySelector('#emlMsg');
+      const showErr = (t)=>{ msg.textContent=t; msg.style.display='block'; };
+      const clearMsg = ()=>{ msg.style.display='none'; msg.textContent=''; };
+
+      // Mode inscription toggle
+      let signup = false;
+      box.querySelector('#doSignup').addEventListener('click', ()=>{ signup = !signup; clearMsg(); pwd2w.style.display = signup ? '' : 'none'; });
+
+      // Reset mdp
+      box.querySelector('#doReset').addEventListener('click', async()=>{
+        clearMsg();
+        try{
+          const fb = await ensureFirebase();
+          const email = (eml.value||'').trim();
+          if(!email) return showErr('Saisissez votre e-mail.');
+          await fb.auth().sendPasswordResetEmail(email);
+          msg.style.cssText = 'display:block;padding:8px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:8px';
+          msg.textContent = 'E-mail de réinitialisation envoyé.';
+        }catch(e){ showErr(e?.message||'Échec de l’envoi.'); }
+      });
+
+      // Login / Signup
+      box.querySelector('#doLogin').addEventListener('click', async()=>{
+        clearMsg();
+        try{
+          const fb = await ensureFirebase();
+          const email = (eml.value||'').trim();
+          const pass  = (pwd.value||'').trim();
+          if(!email || !pass) return showErr('E-mail et mot de passe requis.');
+          if(signup){
+            const pass2 = (pwd2?.value||'').trim();
+            if(pass!==pass2) return showErr('Les mots de passe ne correspondent pas.');
+            const cred = await fb.auth().createUserWithEmailAndPassword(email, pass);
+            try{ await cred.user.sendEmailVerification(); }catch(_){}
+            msg.style.cssText = 'display:block;padding:8px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;border-radius:8px';
+            msg.textContent = 'Compte créé. Vérifiez votre e-mail puis reconnectez-vous.';
+            await fb.auth().signOut();
+          }else{
+            await fb.auth().signInWithEmailAndPassword(email, pass);
+            pop.style.display='none';
+          }
+        }catch(e){ showErr(e?.message||'Erreur d’authentification.'); }
+      });
+    }
+    // focus email au premier affichage
+    const eml = box.querySelector('#eml'); if(eml) eml.focus();
+  }); }
+  if(btnLogout){ btnLogout.addEventListener('click', async()=>{ try{ const fb=await ensureFirebase(); await fb.auth().signOut(); }catch(_){ } }); }
+ ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(async u=>{ 
+  setHeaderLabel(u); 
+  Dashboard.setUser(u);
+  // Update State Manager avec le user
+  if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+    await window.ORT_STATE.updateUser(u);
+    // Rafraîchir l'affichage du dashboard après connexion
+  if (u && typeof Dashboard !== 'undefined' && typeof Dashboard.render === 'function') {
+      console.log('🔄 [DASHBOARD] Rafraîchissement après connexion...');
+      await Dashboard.render();
+    }
+  }
+  // Afficher Export modules uniquement pour admin
+  const btnExportModules = document.getElementById('btnExportModules');
+  if(btnExportModules) {
+    // Hash simple des emails admin (marcsorci@free.fr OU sorcimarc1967@gmail.com)
+    const adminHashes = ['12929525', '5494611b'];
+    const userHash = u && u.email ? u.email.split('').reduce((h,c)=>((h<<5)-h+c.charCodeAt(0))|0,0).toString(16) : '';
+    console.log('🔑 [ADMIN CHECK] Email:', u?.email, 'Hash:', userHash, 'Match:', adminHashes.includes(userHash));
+    btnExportModules.style.display = adminHashes.includes(userHash) ? '' : 'none';
+  }
+}))
+
+.catch(()=>{ 
+  Dashboard.setUser(null); 
+  if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+    window.ORT_STATE.updateUser(null);
+  }
+});
+})();
+
+// ================= Persistance des voyages (par utilisateur) =================
+
+// === Covers RT (photos_rt.json) pour fallback image ===
+let PHOTOS_RT = null;
+async function loadRtCoversOnce(){
+  if (PHOTOS_RT) return PHOTOS_RT;
+  try{
+    const r = await fetch('./data/photos-json/photos_rt.json', { cache: 'no-store' });
+    PHOTOS_RT = r.ok ? (await r.json()) : {};
+  }catch(_){ PHOTOS_RT = {}; }
+  return PHOTOS_RT;
+}
+
+// === Photos des lieux (photos_lieux.json) pour carrousel ===
+let PHOTOS_LIEUX = null;
+async function loadPhotosLieuxOnce(){
+  if (PHOTOS_LIEUX) return PHOTOS_LIEUX;
+  try{
+    const r = await fetch('./data/photos-json/photos_lieux.json', { cache: 'no-store' });
+    PHOTOS_LIEUX = r.ok ? (await r.json()) : {};
+  }catch(_){ PHOTOS_LIEUX = {}; }
+  return PHOTOS_LIEUX;
+}
+function getPhotosForPlace(pid){
+  if (!PHOTOS_LIEUX) return [];
+  const entry = PHOTOS_LIEUX[pid];
+  if (!entry) return [];
+  return Array.isArray(entry.photos) ? entry.photos : [];
+}
+
+// Collecter jusqu'à 4 photos du voyage (depuis tous les steps)
+function getTripPhotos(rt, maxPhotos = 4){
+  const photos = [];
+  if (!rt.steps || !Array.isArray(rt.steps)) return photos;
+  
+  for (const step of rt.steps) {
+    if (photos.length >= maxPhotos) break;
+    const pid = step.place_id || step.pid;
+    if (!pid) continue;
+    
+    const stepPhotos = getPhotosForPlace(pid);
+    for (const photo of stepPhotos) {
+      if (photos.length >= maxPhotos) break;
+      photos.push(photo);
+    }
+  }
+  
+  return photos;
+}
+function coverKeyFromDetailUrl(rt){
+  try{
+    if(rt?.detailUrl){
+      const u = new URL(rt.detailUrl, location.href);
+      const cc = (u.searchParams.get('cc')||'').toUpperCase();
+      const itin = u.searchParams.get('itin')||'';
+      if(cc && itin) return `${cc}::${decodeURIComponent(itin)}`;
+    }
+    const cc2 = (rt.country||rt.cc||'').toUpperCase();
+    const rin = rt.region || rt.itin || '';
+    if (cc2 && rin) return `${cc2}::${rin}`;
+    return null;
+  }catch(_){ return null; }
+}
+function getRtCoverUrl(rt){
+  const k = coverKeyFromDetailUrl(rt);
+  if(!k || !PHOTOS_RT) return null;
+  const entry = PHOTOS_RT[k];
+  if (!entry) return null;
+  if (typeof entry === 'string') return entry;
+  if (entry && Array.isArray(entry.photos) && entry.photos.length) return entry.photos[0];
+  if (entry && typeof entry.url === 'string') return entry.url;
+  return null;
+}
+
+// -- helpers Leaflet (init tardive) --
+function onLeafletReady(cb){
+  if (window.L) return cb();
+  const i = setInterval(()=>{ if(window.L){ clearInterval(i); cb(); } }, 50);
+}
+function initLeafletMap(div, rt){
+  try{
+    const m = window.L.map(div,{zoomControl:false,attributionControl:false,dragging:false,scrollWheelZoom:false});
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(m);
+    if (rt.coordsPath && rt.coordsPath.length>=2) {
+      const line = window.L.polyline(rt.coordsPath,{weight:3}).addTo(m);
+      m.fitBounds(line.getBounds(),{padding:[8,8]});
+      L.marker(rt.coordsPath[0]).addTo(m);
+      L.marker(rt.coordsPath[rt.coordsPath.length-1]).addTo(m);
+    } else if (rt.coords) {
+      L.marker(rt.coords).addTo(m); m.setView(rt.coords,6);
+    }
+  }catch(_){}
+}
+
+
+const Dashboard = (()=>{
+  const listEl = document.getElementById('list');
+  const emptyEl= document.getElementById('emptyState');
+  const lang = localStorage.getItem('lang') || document.documentElement.lang || 'fr';
+  const L = I18N[lang] || I18N.fr;
+  let currentUser = null;
+
+  // Utilise le State Manager au lieu de localStorage direct
+  async function load(uid) {
+    if (!window.ORT_STATE) return [];
+    const trips = await window.ORT_STATE.getAllTrips();
+    return trips || [];
+  }
+  
+  async function save(uid, arr) {
+    if (!window.ORT_STATE || !Array.isArray(arr)) return;
+    
+    // Sauvegarde chaque voyage via le State Manager
+    for (const trip of arr) {
+      if (trip && trip.id) {
+        await window.ORT_STATE.saveTrip(trip);
+      }
+    }
+  }
+  
+// helper de traduction titre (non bloquant)
+async function trTitleIfNeeded(txt){
+  const lang = (document.documentElement.lang||'fr').toLowerCase();
+  if(!txt || lang==='fr') return txt;
+  try{
+    const r = await fetch((localStorage.ORT_TR_API||'http://localhost:8055')+'/tr-inline',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text: txt, from:'auto', to: lang })
+    });
+    const d = await r.json().catch(()=>null);
+    return (d && d.ok && d.text) ? d.text : txt;
+  }catch(_){ return txt; }
+}
+  async function render(){
+    listEl.innerHTML='';
+    if(!currentUser){ emptyEl.style.display='block'; document.getElementById('lblEmpty').textContent=L.needLogin; return; }
+    
+    // Charge les voyages depuis le State Manager
+    const data = await window.ORT_STATE.getAllTrips();
+    
+    if(!data.length){ emptyEl.style.display='block'; document.getElementById('lblEmpty').textContent=L.empty; return; }
+    emptyEl.style.display='none';
+    data.sort((a,b)=> (b.updatedAt||b.createdAt||0) - (a.updatedAt||a.createdAt||0));
+    data.forEach(rt=> listEl.appendChild(card(rt)) );
+  }
+
+  function chip(txt){ const s=document.createElement('span'); s.className='chip'; s.textContent=txt; return s; }
+
+  function card(rt){
+    const c = document.createElement('div'); c.className='card';
+
+// ==== Carrousel de photos (4 photos qui défilent au hover) ====
+const carouselWrap = document.createElement('div');
+Object.assign(carouselWrap.style,{
+  height:'200px',
+  borderRadius:'10px',
+  marginBottom:'8px',
+  overflow:'hidden',
+  background:'#eef3ff',
+  position:'relative',
+  cursor:'pointer'
+});
+c.appendChild(carouselWrap);
+
+const photos = rt.selectedPhotos && rt.selectedPhotos.length > 0 
+  ? rt.selectedPhotos 
+  : getTripPhotos(rt, 4);
+if (photos.length > 0) {
+  let currentIndex = 0;
+  let carouselInterval = null;
+  
+  // Container pour les images
+  const imgContainer = document.createElement('div');
+  Object.assign(imgContainer.style, {
+    width:'100%',
+    height:'100%',
+    backgroundSize:'cover',
+    backgroundPosition:'center',
+    backgroundImage:`url("${photos[0]}")`,
+    transition:'opacity 0.5s ease'
+  });
+  carouselWrap.appendChild(imgContainer);
+  
+  // Indicateurs (points)
+  if (photos.length > 1) {
+    const indicators = document.createElement('div');
+    Object.assign(indicators.style, {
+      position:'absolute',
+      bottom:'10px',
+      left:'50%',
+      transform:'translateX(-50%)',
+      display:'flex',
+      gap:'6px',
+      zIndex:'10'
+    });
+    
+    photos.forEach((_, i) => {
+      const dot = document.createElement('div');
+      Object.assign(dot.style, {
+        width:'8px',
+        height:'8px',
+        borderRadius:'50%',
+        background: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)',
+        border:'1px solid rgba(0,0,0,0.2)',
+        cursor:'pointer',
+        transition:'all 0.3s'
+      });
+      dot.onclick = (e) => {
+        e.stopPropagation();
+        showPhoto(i);
+      };
+      indicators.appendChild(dot);
+    });
+    carouselWrap.appendChild(indicators);
+    
+    // Fonction pour afficher une photo
+    function showPhoto(index) {
+      currentIndex = index;
+      imgContainer.style.backgroundImage = `url("${photos[index]}")`;
+      Array.from(indicators.children).forEach((dot, i) => {
+        dot.style.background = i === index ? '#fff' : 'rgba(255,255,255,0.5)';
+      });
+    }
+    
+    // Démarrer le carrousel automatiquement
+    function startCarousel() {
+      if (carouselInterval) return;
+      carouselInterval = setInterval(() => {
+        currentIndex = (currentIndex + 1) % photos.length;
+        showPhoto(currentIndex);
+      }, 5000);
+    }
+    
+    // Arrêter le carrousel
+    function stopCarousel() {
+      if (carouselInterval) {
+        clearInterval(carouselInterval);
+        carouselInterval = null;
+      }
+    }
+    
+    // Démarrer automatiquement au chargement
+    startCarousel();
+    
+    // Events pour pause/reprise
+    carouselWrap.addEventListener('mouseenter', startCarousel);
+    carouselWrap.addEventListener('mouseleave', () => {}); // Ne rien faire, le carrousel continue
+  }
+} else {
+  // Pas de photos : afficher image de couverture ou placeholder
+  const chooseCover = ()=>{
+    const url = rt.coverUrl || getRtCoverUrl(rt);
+    if (url){
+      carouselWrap.style.backgroundImage = `url("${url}")`;
+      carouselWrap.style.backgroundSize = 'cover';
+      carouselWrap.style.backgroundPosition = 'center';
+      carouselWrap.style.backgroundColor = '#dfe7f7';
+    } else {
+      carouselWrap.style.background = '#e8ecf7';
+      carouselWrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6c7b87;font-size:48px;">📸</div>';
+    }
+  };
+  if (PHOTOS_RT) chooseCover(); else { loadRtCoversOnce().then(chooseCover).catch(()=>{ carouselWrap.style.background='#e8ecf7'; }); }
+}
+
+
+
+// ==== Titre ====
+const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'; c.appendChild(h);
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.appendChild(chip(rt.country||rt.cc||'–'));
+    meta.appendChild(chip(L.metas(rt.nights||rt.nb_nights||0, rt.kms||0)));
+   if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+" étapes"));
+    if(rt.pace)  meta.appendChild(chip('Rythme '+rt.pace));
+    c.appendChild(meta);
+
+    if(rt.tags && rt.tags.length){ const chips=document.createElement('div'); chips.className='chips'; rt.tags.forEach(t=>chips.appendChild(chip('#'+t))); c.appendChild(chips); }
+
+    const actions = document.createElement('div'); actions.className='actions'; c.appendChild(actions);
+
+    // ↗ Ouvrir / Modifier (redirige vers votre_roadtrip / roadtrip_detail selon votre flux)
+ const openBtn = btn(L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
+const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
+const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); actions.appendChild(photosBtn);
+const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn);
+const delBtn  = btn(L.btn.del, ()=> delRT(rt), true); actions.appendChild(delBtn);
+const linkBtn = btn(L.btn.link, ()=> shareLink(rt)); actions.appendChild(linkBtn);
+const mailBtn = btn(L.btn.mail, ()=> shareEmail(rt)); actions.appendChild(mailBtn);
+const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> generateAndShowImage(rt)); actions.appendChild(shareBtn);
+;
+
+
+    return c;
+  }
+
+  function btn(lbl, onclick, danger=false){ const b=document.createElement('button'); b.className='btn'+(danger?' danger':''); b.type='button'; b.textContent=lbl; b.onclick=onclick; return b; }
+
+function openRT(rt){
+    const lang = localStorage.getItem('lang') || 'fr';
+    const url = `roadtrip_detail.html?tripId=${encodeURIComponent(rt.id)}&lang=${lang}`;
+    location.href = url;
+  }
+
+  async function renameRT(rt){
+    const msg = L.btn.rename || 'Renommer';
+    const nv = prompt(msg, rt.title||'');
+    if(!nv || nv === rt.title) return;
+    
+    // Utiliser le State Manager
+    const updated = await window.ORT_STATE.saveTrip({
+      ...rt,
+      title: nv,
+      updatedAt: Date.now()
+    });
+    
+    if(updated) {
+      toast(L.toast?.renamed || 'Voyage renommé');
+      render();
+    }
+  }
+
+  function editParams(rt){
+    const url = `your_roadtrip.html?rid=${encodeURIComponent(rt.id)}&tab=settings&lang=${localStorage.getItem('lang')||'fr'}`;
+    location.href = url;
+  }
+
+  async function delRT(rt){
+    const msg = (lang==='fr') ? 'Supprimer ce voyage ?' :
+                (lang==='en') ? 'Delete this trip?' :
+                (lang==='it') ? 'Eliminare questo viaggio?' :
+                (lang==='es') ? '¿Borrar este viaje?' :
+                (lang==='pt') ? 'Excluir esta viagem?' :
+                'حذف هذه الرحلة؟';
+    if(!confirm(msg)) return;
+    
+    // Utiliser le State Manager
+const deleted = await window.ORT_STATE.deleteTrip(rt.id);
+    
+    if(deleted) {
+      // Forcer le rechargement depuis Firestore
+      await window.ORT_STATE.init();
+      toast(L.toast.deleted || 'Voyage supprimé');
+      render();
+    }
+  }
+
+  // Sélectionner 4 photos pour le carrousel
+  function selectPhotos(rt){
+    // Collecter TOUTES les photos du voyage
+    const allPhotos = [];
+    if (rt.steps && Array.isArray(rt.steps)) {
+      rt.steps.forEach(step => {
+        const pid = step.place_id || step.pid;
+        if (pid) {
+          const stepPhotos = getPhotosForPlace(pid);
+          stepPhotos.forEach(photo => {
+            if (!allPhotos.includes(photo)) allPhotos.push(photo);
+          });
+        }
+      });
+    }
+    
+    // Ajouter les photos custom déjà sélectionnées (URLs ajoutées manuellement)
+    if (rt.selectedPhotos && Array.isArray(rt.selectedPhotos)) {
+      rt.selectedPhotos.forEach(photo => {
+        if (!allPhotos.includes(photo)) {
+          allPhotos.push(photo);
+        }
+      });
+    }
+    
+    if (allPhotos.length === 0) {
+      toast(L.toast?.noPhotos || 'Aucune photo disponible');
+      return;
+    }
+    
+    // Photos actuellement sélectionnées (ou les 4 premières par défaut)
+    const currentPhotos = rt.selectedPhotos || allPhotos.slice(0, 4);
+    const selected = [...currentPhotos];
+    
+    // Créer le modal
+    const modal = document.createElement('div');
+    Object.assign(modal.style, {
+      position:'fixed',
+      top:'0',
+      left:'0',
+      right:'0',
+      bottom:'0',
+      background:'rgba(0,0,0,0.8)',
+      zIndex:'10000',
+      display:'flex',
+      alignItems:'center',
+      justifyContent:'center',
+      padding:'20px',
+      overflow:'auto'
+    });
+    
+    const box = document.createElement('div');
+    Object.assign(box.style, {
+      background:'#fff',
+      borderRadius:'14px',
+      padding:'20px',
+      maxWidth:'800px',
+      width:'100%',
+      maxHeight:'90vh',
+      overflow:'auto'
+    });
+    
+    const title = document.createElement('h2');
+    title.style.color = '#113f7a';
+    title.style.marginTop = '0';
+    title.textContent = L.btn?.photos || 'Sélectionner 4 photos';
+    box.appendChild(title);
+    
+    const info = document.createElement('p');
+    info.style.color = '#6c7b87';
+    info.textContent = `${selected.length}/4 photos sélectionnées`;
+    info.id = 'photo-counter';
+    box.appendChild(info);
+    
+    // Bouton pour ajouter une URL custom
+    const addUrlBtn = document.createElement('button');
+    addUrlBtn.className = 'btn primary';
+    addUrlBtn.textContent = '+ ' + (L.btn?.addPhotoUrl || 'Ajouter une photo (URL)');
+    addUrlBtn.style.marginBottom = '15px';
+    addUrlBtn.onclick = () => {
+      // Créer un modal pour saisir l'URL
+      const urlModal = document.createElement('div');
+      Object.assign(urlModal.style, {
+        position:'fixed',
+        top:'0',
+        left:'0',
+        right:'0',
+        bottom:'0',
+        background:'rgba(0,0,0,0.9)',
+        zIndex:'11000',
+        display:'flex',
+        alignItems:'center',
+        justifyContent:'center',
+        padding:'20px'
+      });
+      
+      const urlBox = document.createElement('div');
+      Object.assign(urlBox.style, {
+        background:'#fff',
+        borderRadius:'14px',
+        padding:'20px',
+        maxWidth:'500px',
+        width:'100%'
+      });
+      
+      const urlTitle = document.createElement('h3');
+      urlTitle.style.color = '#113f7a';
+      urlTitle.style.marginTop = '0';
+      urlTitle.textContent = L.btn?.addPhotoUrl || 'Ajouter une photo (URL)';
+      urlBox.appendChild(urlTitle);
+      
+      // Instructions
+      const instructions = document.createElement('div');
+      Object.assign(instructions.style, {
+        background: '#f0f7ff',
+        border: '1px solid #b3d9ff',
+        borderRadius: '8px',
+        padding: '12px',
+        marginBottom: '15px',
+        fontSize: '14px',
+        color: '#113f7a'
+      });
+      instructions.innerHTML = `
+        <strong>💡 Conseils :</strong><br>
+        ✅ URL directe d'image : <code>https://example.com/photo.jpg</code><br>
+        ❌ Évitez Google Images (CORS bloqué)<br>
+        ❌ Certains sites bloquent le partage d'images<br>
+        💾 Hébergez vos photos sur : Imgur, Flickr, Dropbox...
+      `;
+      urlBox.appendChild(instructions);
+      
+      // Input pour l'URL
+      const urlInput = document.createElement('input');
+      urlInput.type = 'text';
+      urlInput.placeholder = 'https://example.com/photo.jpg';
+      Object.assign(urlInput.style, {
+        width:'100%',
+        padding:'12px',
+        borderRadius:'8px',
+        border:'2px solid #ddd',
+        fontSize:'16px',
+        marginBottom:'15px',
+        fontFamily:'system-ui'
+      });
+      urlBox.appendChild(urlInput);
+      
+      // Si 4 photos déjà sélectionnées, proposer de remplacer
+      if (selected.length >= 4) {
+        const replaceInfo = document.createElement('p');
+        replaceInfo.style.color = '#6c7b87';
+        replaceInfo.style.fontSize = '14px';
+        replaceInfo.innerHTML = '💡 <strong>' + (L.btn?.replaceWhich || 'Quelle photo remplacer ?') + '</strong>';
+        urlBox.appendChild(replaceInfo);
+        
+        const replaceGrid = document.createElement('div');
+        Object.assign(replaceGrid.style, {
+          display:'grid',
+          gridTemplateColumns:'repeat(4, 1fr)',
+          gap:'10px',
+          marginBottom:'15px'
+        });
+        
+        selected.forEach((photo, index) => {
+          const thumb = document.createElement('div');
+          Object.assign(thumb.style, {
+            position:'relative',
+            paddingTop:'100%',
+            borderRadius:'8px',
+            overflow:'hidden',
+            cursor:'pointer',
+            border:'2px solid #ddd',
+            backgroundImage:`url("${photo}")`,
+            backgroundSize:'cover',
+            backgroundPosition:'center',
+            transition:'border 0.2s'
+          });
+          
+          thumb.onclick = async () => {
+            const url = urlInput.value.trim();
+            if (!url || url === 'https://') {
+              toast(L.toast?.enterUrl || 'Entrez une URL');
+              return;
+            }
+            
+            // Vérifier URL valide
+            try {
+              new URL(url);
+            } catch {
+              toast(L.toast?.invalidUrl || 'URL invalide');
+              return;
+            }
+            
+            // GARDE-FOU : Vérifier que l'image charge vraiment
+            toast('🔍 Vérification de l\'image...');
+            const imgTest = new Image();
+            imgTest.crossOrigin = 'anonymous';
+            
+            imgTest.onload = async () => {
+              // Image OK, on peut remplacer
+              selected[index] = url;
+              
+              // Sauvegarder
+              const updated = await window.ORT_STATE.saveTrip({
+                ...rt,
+                selectedPhotos: selected,
+                updatedAt: Date.now()
+              });
+              
+              if(updated) {
+                toast(L.toast?.photoReplaced || '✅ Photo remplacée');
+                urlModal.remove();
+                modal.remove();
+                render();
+              }
+            };
+            
+            imgTest.onerror = () => {
+              toast(L.toast?.imageLoadError || '❌ Impossible de charger cette image. Vérifiez l\'URL ou les permissions CORS.', true, 5000);
+            };
+            
+            // Démarrer le chargement de test
+            imgTest.src = url;
+          };
+          
+          const replaceBtn = document.createElement('div');
+          replaceBtn.textContent = '↻';
+          Object.assign(replaceBtn.style, {
+            position:'absolute',
+            top:'50%',
+            left:'50%',
+            transform:'translate(-50%, -50%)',
+            background:'rgba(17, 63, 122, 0.9)',
+            color:'#fff',
+            borderRadius:'50%',
+            width:'32px',
+            height:'32px',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            fontSize:'20px',
+            fontWeight:'bold'
+          });
+          thumb.appendChild(replaceBtn);
+          
+          replaceGrid.appendChild(thumb);
+        });
+        
+        urlBox.appendChild(replaceGrid);
+      }
+      
+      // Boutons
+      const urlActions = document.createElement('div');
+      Object.assign(urlActions.style, {
+        display:'flex',
+        gap:'10px',
+        justifyContent:'flex-end'
+      });
+      
+      const urlCancelBtn = document.createElement('button');
+      urlCancelBtn.className = 'btn';
+      urlCancelBtn.textContent = L.btn?.cancel || 'Annuler';
+      urlCancelBtn.onclick = () => urlModal.remove();
+      
+      const urlOkBtn = document.createElement('button');
+      urlOkBtn.className = 'btn primary';
+      urlOkBtn.textContent = selected.length < 4 ? (L.btn?.add || 'Ajouter') : (L.btn?.replace || 'Remplacer');
+      urlOkBtn.onclick = async () => {
+        const url = urlInput.value.trim();
+        if (!url || url === 'https://') {
+          toast(L.toast?.enterUrl || 'Entrez une URL');
+          return;
+        }
+        
+        // Vérifier URL valide
+        try {
+          new URL(url);
+        } catch {
+          toast(L.toast?.invalidUrl || 'URL invalide');
+          return;
+        }
+        
+        if (selected.length < 4) {
+          // GARDE-FOU : Vérifier que l'image charge
+          toast('🔍 Vérification de l\'image...');
+          const imgTest = new Image();
+          imgTest.crossOrigin = 'anonymous';
+          
+          imgTest.onload = async () => {
+            // Image OK, on peut ajouter
+            selected.push(url);
+            
+            const updated = await window.ORT_STATE.saveTrip({
+              ...rt,
+              selectedPhotos: selected,
+              updatedAt: Date.now()
+            });
+            
+            if(updated) {
+              toast(L.toast?.photoAdded || '✅ Photo ajoutée');
+              urlModal.remove();
+              modal.remove();
+              render();
+            }
+          };
+          
+          imgTest.onerror = () => {
+            toast(L.toast?.imageLoadError || '❌ Impossible de charger cette image. Vérifiez l\'URL ou les permissions CORS.', true, 5000);
+          };
+          
+          // Démarrer le test
+          imgTest.src = url;
+        } else {
+          toast(L.toast?.clickToReplace || 'Cliquez sur une photo à remplacer');
+        }
+      };
+      
+      urlActions.appendChild(urlCancelBtn);
+      urlActions.appendChild(urlOkBtn);
+      urlBox.appendChild(urlActions);
+      
+      urlModal.appendChild(urlBox);
+      document.body.appendChild(urlModal);
+      
+      urlInput.focus();
+      
+      urlModal.onclick = (e) => {
+        if (e.target === urlModal) urlModal.remove();
+      };
+    };
+    box.appendChild(addUrlBtn);
+    
+    // Grille de photos
+    const grid = document.createElement('div');
+    Object.assign(grid.style, {
+      display:'grid',
+      gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))',
+      gap:'10px',
+      marginBottom:'20px'
+    });
+    
+    allPhotos.forEach(photo => {
+      const item = document.createElement('div');
+      Object.assign(item.style, {
+        position:'relative',
+        paddingTop:'100%',
+        borderRadius:'8px',
+        overflow:'hidden',
+        cursor:'pointer',
+        border: selected.includes(photo) ? '3px solid #113f7a' : '2px solid #ddd',
+        backgroundImage:`url("${photo}")`,
+        backgroundSize:'cover',
+        backgroundPosition:'center',
+        transition:'border 0.2s'
+      });
+      
+      // Checkmark
+      const check = document.createElement('div');
+      check.textContent = '✓';
+      Object.assign(check.style, {
+        position:'absolute',
+        top:'5px',
+        right:'5px',
+        background:'#113f7a',
+        color:'#fff',
+        borderRadius:'50%',
+        width:'24px',
+        height:'24px',
+        display: selected.includes(photo) ? 'flex' : 'none',
+        alignItems:'center',
+        justifyContent:'center',
+        fontWeight:'bold',
+        transition:'opacity 0.2s'
+      });
+      item.appendChild(check);
+      
+      item.onclick = () => {
+        const index = selected.indexOf(photo);
+        if (index >= 0) {
+          // Désélectionner
+          selected.splice(index, 1);
+          item.style.border = '2px solid #ddd';
+          check.style.display = 'none';
+        } else {
+          // Sélectionner
+          if (selected.length < 4) {
+            selected.push(photo);
+            item.style.border = '3px solid #113f7a';
+            check.style.display = 'flex';
+          } else {
+            toast(L.toast?.maxPhotos || 'Maximum 4 photos');
+            return;
+          }
+        }
+        
+        // Mettre à jour le compteur
+        info.textContent = `${selected.length}/4 photos sélectionnées`;
+      };
+      
+      grid.appendChild(item);
+    });
+    
+    box.appendChild(grid);
+    
+    // Boutons
+    const actions = document.createElement('div');
+    Object.assign(actions.style, {
+      display:'flex',
+      gap:'10px',
+      justifyContent:'flex-end'
+    });
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn';
+    cancelBtn.textContent = L.btn?.cancel || 'Annuler';
+    cancelBtn.onclick = () => modal.remove();
+    
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'btn primary';
+    saveBtn.textContent = L.btn?.save || 'Valider';
+    saveBtn.onclick = async () => {
+      // Sauvegarder les photos sélectionnées
+      const updated = await window.ORT_STATE.saveTrip({
+        ...rt,
+        selectedPhotos: selected,
+        updatedAt: Date.now()
+      });
+      
+      if(updated) {
+        toast(L.toast?.photosSaved || 'Photos enregistrées');
+        modal.remove();
+        render();
+      }
+    };
+    
+    actions.appendChild(cancelBtn);
+    actions.appendChild(saveBtn);
+    box.appendChild(actions);
+    
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+    
+    // Fermer au clic sur le fond
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.remove();
+    };
+  }
+
+
+  // Générer une image Canvas pour partage viral
+  async function generateViralImage(rt) {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Format Instagram/Facebook optimal
+      canvas.width = 1080;
+      canvas.height = 1350;
+      
+      // Fond blanc
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Photos sélectionnées (4 max)
+      const photos = rt.selectedPhotos && rt.selectedPhotos.length > 0 
+        ? rt.selectedPhotos 
+        : getTripPhotos(rt, 4);
+      
+      const photoHeight = 600;
+      let loadedCount = 0;
+      const totalPhotos = Math.min(photos.length, 4);
+      
+      if (totalPhotos === 0) {
+        // Pas de photos, dessiner juste le texte
+        drawTextContent();
+        resolve(canvas.toDataURL('image/png'));
+        return;
+      }
+      
+      // Charger et dessiner les photos en mosaïque 2x2
+      photos.slice(0, 4).forEach((photoUrl, i) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const x = (i % 2) * 540;
+          const y = Math.floor(i / 2) * 300;
+          ctx.drawImage(img, x, y, 540, 300);
+          
+          loadedCount++;
+          if (loadedCount === totalPhotos) {
+            drawTextContent();
+            resolve(canvas.toDataURL('image/png'));
+          }
+        };
+        img.onerror = () => {
+          loadedCount++;
+          if (loadedCount === totalPhotos) {
+            drawTextContent();
+            resolve(canvas.toDataURL('image/png'));
+          }
+        };
+        img.src = photoUrl;
+      });
+      
+      function drawTextContent() {
+        // Overlay semi-transparent sur les photos pour le titre
+        ctx.fillStyle = 'rgba(17, 63, 122, 0.85)';
+        ctx.fillRect(0, photoHeight - 100, 1080, 100);
+        
+        // Titre du voyage
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 42px system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        const title = rt.title || 'Mon Roadtrip';
+        ctx.fillText(title.substring(0, 40), 540, photoHeight - 45);
+        
+        // Section infos (fond blanc)
+        let y = photoHeight + 40;
+        
+        // Dates du voyage
+        if (rt.steps && rt.steps.length > 0 && rt.steps[0].date) {
+          const firstDate = rt.steps[0].date;
+          const lastStep = rt.steps[rt.steps.length - 1];
+          const lastDate = lastStep.date;
+          
+          ctx.fillStyle = '#113f7a';
+          ctx.font = 'bold 32px system-ui';
+          ctx.textAlign = 'left';
+          ctx.fillText('📅 ' + formatDateRange(firstDate, lastDate), 60, y);
+          y += 60;
+        }
+        
+        // Stats
+        ctx.fillStyle = '#113f7a';
+        ctx.font = '28px system-ui';
+        const nights = rt.nights || rt.nb_nights || 0;
+        const kms = rt.kms || 0;
+        ctx.fillText(`🌙 ${nights} nuits · 🚗 ${kms} km`, 60, y);
+        y += 80;
+        
+        // Étapes
+        ctx.font = 'bold 26px system-ui';
+        ctx.fillText('📍 Nos étapes :', 60, y);
+        y += 50;
+        
+        ctx.font = '24px system-ui';
+        if (rt.steps && rt.steps.length > 0) {
+          rt.steps.slice(0, 8).forEach((step, i) => {
+            const stepName = step.name || step.place_id?.split('::')[1] || `Étape ${i+1}`;
+            ctx.fillText(`   → ${stepName}`, 60, y);
+            y += 40;
+          });
+        }
+        
+        // Footer avec logo et CTA
+        y = 1280;
+        ctx.fillStyle = '#113f7a';
+        ctx.font = 'bold 24px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('Créez votre roadtrip sur OneRoadTrip.com', 540, y);
+      }
+      
+      function formatDateRange(start, end) {
+        if (!start) return '';
+        const startDate = new Date(start);
+        const endDate = end ? new Date(end) : startDate;
+        
+        const options = { day: '2-digit', month: 'short' };
+        const startStr = startDate.toLocaleDateString('fr-FR', options);
+        const endStr = endDate.toLocaleDateString('fr-FR', options);
+        
+        if (startStr === endStr) return startStr;
+        return `Du ${startStr} au ${endStr}`;
+      }
+      
+      // Timeout de sécurité si les images ne chargent pas
+      setTimeout(() => {
+        if (loadedCount < totalPhotos) {
+          drawTextContent();
+          resolve(canvas.toDataURL('image/png'));
+        }
+      }, 5000);
+    });
+  }
+  
+  // Découpe un texte en lignes selon la largeur max
+  function wrapText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = '';
+    
+    words.forEach(word => {
+      const testLine = currentLine + (currentLine ? ' ' : '') + word;
+      const metrics = ctx.measureText(testLine);
+      
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+    
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+    
+    // Limite à 3 lignes max pour l'intro
+    return lines.slice(0, 3);
+  }
+
+  // Génère une belle image professionnelle pour les réseaux sociaux
+  async function generateViralImagePro(rt, customIntroText = '') {
+    console.log('[GEN] 🎨 Génération image pour:', rt.title);
+    console.log('[GEN] 📊 Steps totales:', rt.steps?.length);
+    if (rt.steps && rt.steps.length > 0) {
+      console.log('[GEN] 📍 Premier step:', JSON.stringify(rt.steps[0]));
+      console.log('[GEN] 📍 Dernier step:', JSON.stringify(rt.steps[rt.steps.length - 1]));
+    }
+    
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Format Instagram portrait (4:5)
+      const width = 1080;
+      const height = 1600; // Augmenté de 1550 à 1600 pour carte 250px au lieu de 200px
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Background blanc
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      
+      // Header avec logo et "Généré par OneRoadTrip.com"
+      const headerHeight = 100;
+      ctx.fillStyle = '#113f7a';
+      ctx.fillRect(0, 0, width, headerHeight);
+      
+      // Logo et texte header
+      const logoImg = new Image();
+      logoImg.crossOrigin = 'anonymous';
+      logoImg.onload = () => {
+        // Logo
+        const logoSize = 70;
+        ctx.drawImage(logoImg, 20, 15, logoSize, logoSize);
+        
+        // Texte "Généré par OneRoadTrip.com"
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 28px system-ui';
+        ctx.fillText('Généré par OneRoadTrip.com', 110, 58);
+        
+        // Grid photos 2x2 (taille réduite pour laisser place au texte)
+        const photoSize = 300; // 300x300 par photo au lieu de 540x540
+        const photoY = headerHeight + 20;
+        const photosStartX = (width - (photoSize * 2 + 10)) / 2; // Centrer les photos
+        
+        // Photos du voyage (max 4) - utiliser selectedPhotos ou getTripPhotos
+        const photos = rt.selectedPhotos && rt.selectedPhotos.length > 0 
+          ? rt.selectedPhotos 
+          : getTripPhotos(rt, 4);
+        let loadedPhotos = 0;
+        const totalPhotos = Math.min(photos.length, 4);
+        
+        if (totalPhotos === 0) {
+          // Pas de photos : continuer avec le reste
+          drawTextContent();
+          return;
+        }
+        
+        photos.slice(0, 4).forEach((photoUrl, idx) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          img.onload = async () => {
+            const col = idx % 2;
+            const row = Math.floor(idx / 2);
+            const x = photosStartX + col * (photoSize + 10);
+            const y = photoY + row * (photoSize + 10);
+            
+            // Centrer et crop l'image
+            const scale = Math.max(photoSize / img.width, photoSize / img.height);
+            const scaledW = img.width * scale;
+            const scaledH = img.height * scale;
+            const offsetX = (photoSize - scaledW) / 2;
+            const offsetY = (photoSize - scaledH) / 2;
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(x, y, photoSize, photoSize);
+            ctx.clip();
+            ctx.drawImage(img, x + offsetX, y + offsetY, scaledW, scaledH);
+            ctx.restore();
+            
+            // Border
+            ctx.strokeStyle = '#e0e0e0';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, photoSize, photoSize);
+            
+            loadedPhotos++;
+            if (loadedPhotos === totalPhotos) {
+              await drawMap(); // Dessiner la carte d'abord (async)
+            }
+          };
+          
+          img.onerror = async () => {
+            loadedPhotos++;
+            if (loadedPhotos === totalPhotos) {
+              await drawMap(); // Dessiner la carte même si erreur photo (async)
+            }
+          };
+          
+          img.src = photoUrl;
+        });
+        
+        // Dessine la carte avec les étapes (carte Leaflet interactive)
+        async function drawMap() {
+          console.log('[CARTE] 📍 Début drawMap()');
+          
+          // Attendre que Leaflet soit chargé (max 5 secondes)
+          let attempts = 0;
+          while ((typeof window.L === 'undefined' || typeof window.L.map !== 'function') && attempts < 50) {
+            console.log('[CARTE] ⏳ Attente Leaflet... tentative', attempts, '- window.L existe:', typeof window.L !== 'undefined', '- window.L.map:', typeof window.L?.map);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+          }
+          
+          // Vérifier que Leaflet est chargé
+          if (typeof window.L === 'undefined' || typeof window.L.map !== 'function') {
+            console.error('[CARTE] ❌ Leaflet non chargé après 5s, utilisation du fallback');
+            console.error('[CARTE] État: window.L existe=', typeof window.L !== 'undefined', ', window.L.map=', typeof window.L?.map);
+            const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
+            const mapHeight = 200;
+            const mapWidth = width - 40;
+            const mapX = 20;
+            const steps = rt.steps || [];
+            const coords = steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon));
+            if (coords.length >= 2) {
+              drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords);
+            }
+            drawTextContent();
+            return;
+          }
+          console.log('[CARTE] ✅ Leaflet disponible (version', window.L.version, ')');
+          
+          const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
+          const mapHeight = 250; // Augmenté de 200 à 250px pour mieux cadrer
+          const mapWidth = width - 40;
+          const mapX = 20;
+          
+          console.log('[CARTE] 📐 Position:', { mapX, mapY, mapWidth, mapHeight });
+          
+          const steps = rt.steps || [];
+          const coords = steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon));
+          
+          console.log('[CARTE] 📊 Steps:', steps.length, '→ Coords valides:', coords.length);
+          
+          if (coords.length >= 2) {
+            try {
+              console.log('[CARTE] 🗺️ Génération carte Leaflet - Solution NINJA');
+              
+              const mapBg = '#e8f4f8';
+              
+              // === Container avec visibility:hidden (NINJA) ===
+              const mapContainer = document.createElement('div');
+              const mapId = 'temp-map-' + Date.now();
+              mapContainer.id = mapId;
+              mapContainer.style.width = mapWidth + 'px';
+              mapContainer.style.height = mapHeight + 'px';
+              mapContainer.style.position = 'absolute';
+              mapContainer.style.left = '0px';
+              mapContainer.style.top = '0px';
+              mapContainer.style.visibility = 'hidden'; // Ninja: au lieu de left:-9999px
+              mapContainer.style.zIndex = '-1000';
+              
+              document.body.appendChild(mapContainer);
+              console.log('[CARTE] ✅ Container créé:', mapId);
+              
+              // === Initialisation Leaflet (passer l'ID, pas l'élément) ===
+              const leafletMap = window.L.map(mapId, {
+                zoomControl: false,
+                attributionControl: false,
+                center: [0, 0],
+                zoom: 1,
+                preferCanvas: true // Ninja: améliore performances
+              });
+              
+              window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20,
+                attribution: ''
+              }).addTo(leafletMap);
+              console.log('[CARTE] ✅ Carte initialisée');
+              
+              // === Données ===
+              const latlngs = coords.map(s => [s.lat, s.lon]);
+              const lats = coords.map(s => s.lat);
+              const lons = coords.map(s => s.lon);
+              const latRange = Math.max(...lats) - Math.min(...lats);
+              const lonRange = Math.max(...lons) - Math.min(...lons);
+              const itinRatio = lonRange / latRange;
+              
+              console.log('[CARTE] 📐 Ratio:', itinRatio.toFixed(2), 'latRange:', latRange.toFixed(2), 'lonRange:', lonRange.toFixed(2));
+              
+              // === Polyligne + Markers ===
+              window.L.polyline(latlngs, {
+                color: '#113f7a',
+                weight: 4,
+                opacity: 0.9,
+                smoothFactor: 1
+              }).addTo(leafletMap);
+              
+              coords.forEach((step, idx) => {
+                const isStart = idx === 0;
+                const isEnd = idx === coords.length - 1;
+                const color = isStart ? '#2ecc71' : (isEnd ? '#e74c3c' : '#3498db');
+                
+                window.L.circleMarker([step.lat, step.lon], {
+                  radius: isStart || isEnd ? 7 : 5,
+                  fillColor: color,
+                  color: '#fff',
+                  weight: 2,
+                  opacity: 1,
+                  fillOpacity: 0.9
+                }).addTo(leafletMap);
+              });
+              console.log('[CARTE] ✅ Polyligne + markers ajoutés');
+              
+              // === PADDING INTELLIGENT NINJA ===
+              function calculateOptimalPadding(itinRatio) {
+                let paddingTopBottom = 20;
+                let paddingLeftRight = 20;
+                
+                if (itinRatio < 0.5) {
+                  // Très vertical (Nord-Sud)
+                  paddingTopBottom = 10;
+                  paddingLeftRight = 80;
+                  console.log('[CARTE] 📍 Itinéraire très vertical détecté');
+                } else if (itinRatio > 2.0) {
+                  // Très horizontal (Est-Ouest)
+                  paddingTopBottom = 60;
+                  paddingLeftRight = 20;
+                  console.log('[CARTE] 📍 Itinéraire très horizontal détecté');
+                } else {
+                  // Équilibré
+                  const paddingFactor = Math.abs(itinRatio - 1.0);
+                  paddingTopBottom = 20 + (paddingFactor * 20);
+                  paddingLeftRight = 20 + (paddingFactor * 15);
+                }
+                
+                return [paddingTopBottom, paddingLeftRight];
+              }
+              
+              // === MAXZOOM INTELLIGENT NINJA (selon rangeSize!) ===
+              function calculateOptimalMaxZoom(latRange, lonRange) {
+                const rangeSize = Math.max(latRange, lonRange);
+                
+                if (rangeSize < 0.5) return 14;      // Très local
+                if (rangeSize < 1.0) return 12;      // Régional
+                if (rangeSize < 2.0) return 11;      // National
+                if (rangeSize < 5.0) return 10;      // International
+                return 9;                            // Continental
+              }
+              
+              const optimalPadding = calculateOptimalPadding(itinRatio);
+              const optimalMaxZoom = calculateOptimalMaxZoom(latRange, lonRange);
+              
+              console.log('[CARTE] 🎯 Padding:', optimalPadding, 'maxZoom:', optimalMaxZoom);
+              
+              // === Attendre que la carte soit prête ===
+              await new Promise(resolve => {
+                leafletMap.whenReady(() => {
+                  setTimeout(resolve, 100);
+                });
+              });
+              
+              // === FitBounds avec options NINJA ===
+              const bounds = window.L.latLngBounds(latlngs);
+              leafletMap.fitBounds(bounds, {
+                padding: optimalPadding,
+                maxZoom: optimalMaxZoom,
+                animate: false
+              });
+              console.log('[CARTE] ✅ fitBounds appliqué');
+              
+              // === ATTENTE INTELLIGENTE DES TILES (NINJA) ===
+              await new Promise((resolve) => {
+                const startTime = Date.now();
+                let tilesChecked = 0;
+                const maxChecks = 20;
+                
+                const checkTiles = () => {
+                  tilesChecked++;
+                  
+                  const tiles = leafletMap.getPanes().tilePane.querySelectorAll('img');
+                  let loadedCount = 0;
+                  let totalCount = tiles.length;
+                  
+                  tiles.forEach(tile => {
+                    if (tile.complete && tile.naturalHeight > 0) {
+                      loadedCount++;
+                    }
+                  });
+                  
+                  const allLoaded = totalCount === 0 || loadedCount >= totalCount * 0.9; // 90% minimum
+                  const timeElapsed = Date.now() - startTime;
+                  
+                  if (allLoaded || timeElapsed > 5000 || tilesChecked >= maxChecks) {
+                    console.log('[CARTE] ✅ Tiles:', loadedCount, '/', totalCount, 'en', timeElapsed, 'ms');
+                    resolve();
+                  } else {
+                    setTimeout(checkTiles, 200);
+                  }
+                };
+                
+                setTimeout(checkTiles, 300);
+              });
+              
+              // === Rendre visible avant capture (NINJA) ===
+              mapContainer.style.visibility = 'visible';
+              mapContainer.style.left = '-9999px';
+              
+              // === Capture ===
+              console.log('[CARTE] 📸 Capture...');
+              const mapCanvas = await window.html2canvas(mapContainer, {
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: mapBg,
+                scale: 1,
+                logging: false,
+                width: mapWidth,
+                height: mapHeight,
+                x: 0,
+                y: 0
+              });
+              console.log('[CARTE] ✅ Capture réussie');
+              
+              // === Dessin CENTRÉ ===
+              const centeredMapX = Math.round((width - mapWidth) / 2);
+              ctx.drawImage(mapCanvas, centeredMapX, mapY, mapWidth, mapHeight);
+              
+              // Bordure
+              ctx.strokeStyle = '#b0d4e3';
+              ctx.lineWidth = 2;
+              ctx.strokeRect(centeredMapX, mapY, mapWidth, mapHeight);
+              
+              console.log('[CARTE] ✅ Carte intégrée à X=', centeredMapX);
+              
+              // Nettoyage
+              leafletMap.remove();
+              document.body.removeChild(mapContainer);
+              console.log('[CARTE] 🧹 Nettoyage terminé');
+              
+            } catch (error) {
+              console.error('[CARTE] ❌ ERREUR:', error);
+              console.error('[CARTE] Stack:', error.stack);
+              // Fallback
+              drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords);
+            }
+          } else {
+            console.warn('[CARTE] ⚠️ Pas assez de coordonnées:', coords.length, '< 2');
+            // Pas assez de coordonnées
+            ctx.fillStyle = '#e8f4f8';
+            ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
+            ctx.strokeStyle = '#b0d4e3';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
+            
+            ctx.fillStyle = '#113f7a';
+            ctx.font = '18px system-ui';
+            ctx.textAlign = 'center';
+            ctx.fillText('Carte non disponible', mapX + mapWidth / 2, mapY + mapHeight / 2);
+          }
+          
+          // Texte après la carte
+          console.log('[CARTE] 📝 Appel drawTextContent()...');
+          drawTextContent();
+        }
+        
+        function drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords) {
+          console.log('[CARTE] Génération carte fallback');
+          
+          // Fond
+          ctx.fillStyle = '#e8f4f8';
+          ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
+          
+          // Bordure
+          ctx.strokeStyle = '#b0d4e3';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
+          
+          if (coords.length >= 2) {
+            const lats = coords.map(s => s.lat);
+            const lons = coords.map(s => s.lon);
+            const minLat = Math.min(...lats);
+            const maxLat = Math.max(...lats);
+            const minLon = Math.min(...lons);
+            const maxLon = Math.max(...lons);
+            
+            const latRange = maxLat - minLat || 0.1;
+            const lonRange = maxLon - minLon || 0.1;
+            const paddedMinLat = minLat - latRange * 0.2;
+            const paddedMaxLat = maxLat + latRange * 0.2;
+            const paddedMinLon = minLon - lonRange * 0.2;
+            const paddedMaxLon = maxLon + lonRange * 0.2;
+            
+            const toMapX = (lon) => mapX + ((lon - paddedMinLon) / (paddedMaxLon - paddedMinLon)) * mapWidth;
+            const toMapY = (lat) => mapY + mapHeight - ((lat - paddedMinLat) / (paddedMaxLat - paddedMinLat)) * mapHeight;
+            
+            // Ligne pointillée
+            ctx.strokeStyle = '#113f7a';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([8, 8]);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            coords.forEach((step, idx) => {
+              const x = toMapX(step.lon);
+              const y = toMapY(step.lat);
+              if (idx === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Points avec noms
+            coords.forEach((step, idx) => {
+              const x = toMapX(step.lon);
+              const y = toMapY(step.lat);
+              
+              // Couleur
+              if (idx === 0) ctx.fillStyle = '#2ecc71';
+              else if (idx === coords.length - 1) ctx.fillStyle = '#e74c3c';
+              else ctx.fillStyle = '#3498db';
+              
+              // Point
+              ctx.beginPath();
+              ctx.arc(x, y, 10, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#fff';
+              ctx.lineWidth = 3;
+              ctx.stroke();
+              
+              // Nom de la ville
+              const cityName = step.name || step.place_id?.split('::')[1] || '';
+              if (cityName) {
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 16px system-ui';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 4;
+                ctx.strokeText(cityName, x, y - 18);
+                ctx.fillText(cityName, x, y - 18);
+              }
+            });
+          }
+        }
+        
+        function drawTextContent() {
+          console.log('[TEXTE] 📝 Début drawTextContent()');
+          // Calcul correct de la position Y de départ du texte
+          // Header: 100px, Photos: 120px + 610px = 730px
+          // Carte: 730px + 20px + 200px = 950px
+          // Texte commence à: 950px + 40px (marge) = 990px
+          const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
+          const mapHeight = 200;
+          const textStartY = mapY + mapHeight + 40; // Augmenté de 20 à 40px
+          
+          console.log('[TEXTE] 📐 Position texte Y:', textStartY);
+          
+          // Texte d'accroche en haut (personnalisé ou par défaut)
+          const lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+          const L = I18N[lang] || I18N.fr;
+          const introText = customIntroText || (L.shareImage?.intro || 'Et voici notre prochain voyage ! Plus d\'informations très prochainement !');
+          
+          // Dessine le texte d'accroche (peut être sur plusieurs lignes si long)
+          ctx.fillStyle = '#113f7a';
+          ctx.font = 'bold 28px system-ui'; // Augmenté de 24 à 28px
+          ctx.textAlign = 'center';
+          
+          // Découpe le texte en lignes si trop long
+          const maxIntroWidth = width - 60;
+          const introLines = wrapText(ctx, introText, maxIntroWidth);
+          let introY = textStartY;
+          introLines.forEach((line, idx) => {
+            ctx.fillText(line, width / 2, introY + idx * 34); // Espacement 34px au lieu de 30px
+          });
+          
+          // Titre du voyage (décalé vers le bas selon nombre de lignes d'intro)
+          let currentY = introY + (introLines.length * 34) + 45;
+          ctx.fillStyle = '#113f7a';
+          ctx.font = 'bold 44px system-ui';
+          ctx.textAlign = 'center';
+          
+          const title = rt.title || 'Mon voyage';
+          const maxTitleWidth = width - 80;
+          let fontSize = 44;
+          ctx.font = `bold ${fontSize}px system-ui`;
+          
+          while (ctx.measureText(title).width > maxTitleWidth && fontSize > 24) {
+            fontSize -= 2;
+            ctx.font = `bold ${fontSize}px system-ui`;
+          }
+          
+          ctx.fillText(title, width / 2, currentY);
+          
+          // Dates avec format "Du X au Y"
+          currentY += 60;
+          ctx.font = '28px system-ui';
+          ctx.fillStyle = '#555555';
+          
+          if (rt.start_date || rt.end_date) {
+            const startDate = rt.start_date ? new Date(rt.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) : '?';
+            const endDate = rt.end_date ? new Date(rt.end_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '?';
+            ctx.fillText(`📅 Du ${startDate} au ${endDate}`, width / 2, currentY);
+            currentY += 60;
+          }
+          
+          // Étapes en multi-colonnes selon le nombre
+          ctx.font = 'bold 32px system-ui';
+          ctx.fillStyle = '#113f7a';
+          ctx.fillText('📍 Nos étapes :', width / 2, currentY);
+          
+          currentY += 50;
+          ctx.font = '24px system-ui'; // Réduit pour tenir plus d'étapes
+          ctx.fillStyle = '#333333';
+          
+          const steps = rt.steps || [];
+          const stepCount = steps.length;
+          
+          // Déterminer le nombre de colonnes selon le nombre d'étapes (max 5 colonnes)
+          let numCols = 1;
+          if (stepCount >= 25) numCols = 5;       // 25+ étapes → 5 colonnes
+          else if (stepCount >= 17) numCols = 4;  // 17-24 étapes → 4 colonnes
+          else if (stepCount >= 9) numCols = 3;   // 9-16 étapes → 3 colonnes
+          else if (stepCount >= 5) numCols = 2;   // 5-8 étapes → 2 colonnes
+          
+          const colWidth = (width - 80) / numCols; // Largeur de chaque colonne
+          const stepHeight = 32; // Hauteur entre chaque étape
+          const stepsPerCol = Math.ceil(stepCount / numCols);
+          
+          console.log(`[ÉTAPES] ${stepCount} étapes → ${numCols} colonnes (${stepsPerCol} par colonne)`);
+          
+          steps.forEach((step, idx) => {
+            const stepName = step.name || step.place_id?.split('::')[1] || `Étape ${idx+1}`;
+            
+            // Calculer colonne et position dans la colonne
+            const colIdx = Math.floor(idx / stepsPerCol);
+            const rowInCol = idx % stepsPerCol;
+            
+            // Position X : centrer les colonnes
+            const totalWidth = numCols * colWidth;
+            const startX = (width - totalWidth) / 2 + colWidth / 2;
+            const x = startX + colIdx * colWidth;
+            
+            // Position Y
+            const y = currentY + rowInCol * stepHeight;
+            
+            ctx.textAlign = 'center';
+            ctx.fillText(`• ${stepName}`, x, y);
+          });
+          
+          // Stats finales avec calcul des km
+          const statsY = height - 100; // Position fixe en bas
+          ctx.font = 'bold 30px system-ui';
+          ctx.fillStyle = '#113f7a';
+          ctx.textAlign = 'center';
+          
+          const nights = rt.nights || rt.nb_nights || 0;
+          // Calculer les km si rt.kms est vide ou 0
+          let kms = rt.kms || 0;
+          if (!kms && steps.length >= 2) {
+            kms = calculateTotalKm(steps);
+          }
+          ctx.fillText(`🌙 ${nights} nuits · 🚗 ${kms} km`, width / 2, statsY);
+          
+          console.log('[TEXTE] ✅ Rendu terminé, génération image...');
+          // Retourner l'image
+          const imageData = canvas.toDataURL('image/png');
+          console.log('[IMAGE] ✅ Image générée, taille:', imageData.length, 'caractères');
+          resolve(imageData);
+        }
+      };
+      
+      logoImg.onerror = () => reject(new Error('Logo introuvable'));
+      logoImg.src = '../assets/symbol.webp';
+    });
+  }
+  
+  // Affiche la modal avec l'image complète à télécharger
+  
+  // Générer le texte viral pour le post
+  function generateViralText(rt, publicUrl) {
+    const lang = localStorage.getItem('lang') || 'fr';
+    const L = I18N[lang] || I18N.fr;
+    
+    const title = rt.title || (L?.untitled || 'Mon roadtrip');
+    const nights = rt.nights || rt.nb_nights || 0;
+    const kms = rt.kms || 0;
+    
+    let text = `🗺️ Mon roadtrip OneRoadTrip : ${title}\n\n`;
+    
+    // Dates
+    if (rt.steps && rt.steps.length > 0 && rt.steps[0].date) {
+      const firstDate = rt.steps[0].date;
+      const lastStep = rt.steps[rt.steps.length - 1];
+      const lastDate = lastStep.date;
+      text += `📅 ${formatDateRange(firstDate, lastDate)}\n`;
+    }
+    
+    text += `🌙 ${nights} nuits inoubliables\n`;
+    text += `🚗 ${kms} km\n\n`;
+    
+    // Étapes
+    if (rt.steps && rt.steps.length > 0) {
+      text += `📍 Nos étapes :\n`;
+      rt.steps.forEach((step, i) => {
+        const stepName = step.name || step.place_id?.split('::')[1] || `Étape ${i+1}`;
+        text += `   → ${stepName}\n`;
+      });
+      text += `\n`;
+    }
+    
+    text += `Créez votre roadtrip sur mesure ! 👉 ${publicUrl}\n\n`;
+    text += `#OneRoadTrip #Roadtrip #Voyage #Travel`;
+    
+    // Ajouter hashtag du pays
+    const country = rt.country || rt.cc;
+    if (country) {
+      const countryNames = {
+        'FR': 'France', 'IT': 'Italy', 'ES': 'Spain', 'PT': 'Portugal',
+        'DE': 'Germany', 'UK': 'UnitedKingdom', 'US': 'USA'
+      };
+      const countryName = countryNames[country.toUpperCase()];
+      if (countryName) text += ` #${countryName}`;
+    }
+    
+    return text;
+    
+    function formatDateRange(start, end) {
+      if (!start) return '';
+      const startDate = new Date(start);
+      const endDate = end ? new Date(end) : startDate;
+      
+      const options = { day: 'numeric', month: 'long', year: 'numeric' };
+      const startStr = startDate.toLocaleDateString('fr-FR', options);
+      const endStr = endDate.toLocaleDateString('fr-FR', options);
+      
+      if (startDate.toDateString() === endDate.toDateString()) {
+        return `Le ${startStr}`;
+      }
+      return `Du ${startStr} au ${endStr}`;
+    }
+  }
+
+  function sharePayload(rt){
+    // Package minimal de partage (id + titre + paramètres clés)
+    const p = {id:rt.id, title:rt.title, cc:rt.country||rt.cc, nights:rt.nights||rt.nb_nights, kms:rt.kms, steps:rt.steps, pace:rt.pace};
+    return btoa(unescape(encodeURIComponent(JSON.stringify(p))));
+  }
+  async function shareLink(rt){
+    const base = location.origin + location.pathname.replace(/[^\/]*$/,'');
+    const lang = localStorage.getItem('lang') || 'fr';
+    // Page détail non modifiable = ro=1
+    const url  = `${base}your_roadtrip.html?share=${sharePayload(rt)}&lang=${lang}&ro=1`;
+    try{
+      await navigator.clipboard.writeText(url);
+      toast(I18N[lang]?.share || 'Lien copié');
+    }catch(_){
+      alert(url);
+    }
+  }
+
+    function shareEmail(rt){
+    const lang = localStorage.getItem('lang') || 'fr';
+    const base = location.origin + location.pathname.replace(/[^\/]*$/,'');
+    const roUrl = `${base}your_roadtrip.html?share=${sharePayload(rt)}&lang=${lang}&ro=1`;
+    const title = rt.title || (I18N[lang]?.untitled || 'Sans titre');
+    const nights = rt.nights || rt.nb_nights || 0;
+    const kms = rt.kms || 0;
+    const stepsLbl = (I18N[lang]?.labels?.steps || 'étapes');
+    const meta = `${nights} ${lang==='fr'?'nuits':'nights'} · ${kms} km · ${(rt.steps||0)} ${stepsLbl}`;
+
+    const subj = encodeURIComponent(`Partage ORT — ${title}`);
+    const body = encodeURIComponent(
+`Voici mon voyage ORT :
+${title}
+${meta}
+
+Lien (lecture seule) :
+${roUrl}`
+    );
+    // Ouvre le client mail par défaut :
+    location.href = `mailto:?subject=${subj}&body=${body}`;
+  }
+
+  // Calcul distance Haversine entre deux points (fallback si rt.kms vide)
+  function calculateTotalKm(steps) {
+    if (!Array.isArray(steps) || steps.length < 2) return 0;
+    
+    const R = 6371; // Rayon de la Terre en km
+    const toRad = (deg) => deg * Math.PI / 180;
+    
+    let totalKm = 0;
+    for (let i = 0; i < steps.length - 1; i++) {
+      const a = steps[i];
+      const b = steps[i + 1];
+      
+      if (!Number.isFinite(a.lat) || !Number.isFinite(a.lon) ||
+          !Number.isFinite(b.lat) || !Number.isFinite(b.lon)) {
+        continue;
+      }
+      
+      const dLat = toRad(b.lat - a.lat);
+      const dLon = toRad(b.lon - a.lon);
+      const sinDLat = Math.sin(dLat / 2);
+      const sinDLon = Math.sin(dLon / 2);
+      
+      const a_calc = sinDLat * sinDLat +
+                     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) *
+                     sinDLon * sinDLon;
+      
+      const c = 2 * Math.atan2(Math.sqrt(a_calc), Math.sqrt(1 - a_calc));
+      totalKm += R * c;
+    }
+    
+    return Math.round(totalKm);
+  }
+
+  // Affiche une box de confirmation avant génération
+  async function generateAndShowImage(rt) {
+    const lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+    const L = I18N[lang] || I18N.fr;
+    
+    // Textes de confirmation par langue
+    const confirmTexts = {
+      fr: {
+        title: '📸 Générer une image de partage ?',
+        text: 'Cliquer ci-dessous pour générer le détail de votre voyage et le partager sur les réseaux sociaux. Vous pouvez générer un texte de présentation avant de créer l\'image.',
+        placeholder: 'Message personnalisé (optionnel, 300 caractères max)...',
+        generate: 'Générer l\'image',
+        cancel: 'Annuler'
+      },
+      en: {
+        title: '📸 Generate share image?',
+        text: 'Click below to generate your trip details and share them on social networks. You can generate a presentation text before creating the image.',
+        placeholder: 'Custom message (optional, 300 characters max)...',
+        generate: 'Generate image',
+        cancel: 'Cancel'
+      },
+      it: {
+        title: '📸 Generare immagine di condivisione?',
+        text: 'Clicca qui sotto per generare i dettagli del tuo viaggio e condividerli sui social network. Puoi generare un testo di presentazione prima di creare l\'immagine.',
+        placeholder: 'Messaggio personalizzato (facoltativo, 300 caratteri max)...',
+        generate: 'Genera immagine',
+        cancel: 'Annulla'
+      },
+      es: {
+        title: '📸 ¿Generar imagen para compartir?',
+        text: 'Haz clic a continuación para generar los detalles de tu viaje y compartirlos en las redes sociales. Puedes generar un texto de presentación antes de crear la imagen.',
+        placeholder: 'Mensaje personalizado (opcional, 300 caracteres máx)...',
+        generate: 'Generar imagen',
+        cancel: 'Cancelar'
+      },
+      pt: {
+        title: '📸 Gerar imagem de partilha?',
+        text: 'Clique abaixo para gerar os detalhes da sua viagem e partilhá-los nas redes sociais. Pode gerar um texto de apresentação antes de criar a imagem.',
+        placeholder: 'Mensagem personalizada (opcional, 300 caracteres máx)...',
+        generate: 'Gerar imagem',
+        cancel: 'Cancelar'
+      },
+      ar: {
+        title: '📸 إنشاء صورة للمشاركة؟',
+        text: 'انقر أدناه لإنشاء تفاصيل رحلتك ومشاركتها على الشبكات الاجتماعية. يمكنك إنشاء نص تقديمي قبل إنشاء الصورة.',
+        placeholder: 'رسالة مخصصة (اختياري، 300 حرف كحد أقصى)...',
+        generate: 'إنشاء الصورة',
+        cancel: 'إلغاء'
+      }
+    };
+    
+    const texts = confirmTexts[lang] || confirmTexts.fr;
+    
+    // Créer modal de confirmation avec zone de texte
+    return new Promise((resolve) => {
+      const confirmModal = document.createElement('div');
+      confirmModal.className = 'share-modal active';
+      confirmModal.innerHTML = `
+        <div class="share-modal-content" style="max-width:550px">
+          <h2>${texts.title}</h2>
+          <p style="font-size:1.05rem;line-height:1.6;margin-bottom:16px">${texts.text}</p>
+          <textarea id="customIntroText" 
+                    placeholder="${texts.placeholder}"
+                    maxlength="300"
+                    style="width:100%;min-height:100px;padding:12px;border:1px solid #d9e4f0;border-radius:8px;font-family:inherit;font-size:0.95rem;resize:vertical;margin-bottom:8px"></textarea>
+          <div style="font-size:0.85rem;color:#666;margin-bottom:16px" id="charCount">0 / 300 caractères</div>
+          <div class="modal-actions" style="margin-top:16px">
+            <button id="confirmGenerate" class="btn primary">${texts.generate}</button>
+            <button id="cancelGenerate" class="btn">${texts.cancel}</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(confirmModal);
+      
+      // Compteur de caractères
+      const textarea = document.getElementById('customIntroText');
+      const charCount = document.getElementById('charCount');
+      textarea.addEventListener('input', () => {
+        const charLength = textarea.value.length;
+        const label = lang === 'fr' ? 'caractères' : 
+                      lang === 'en' ? 'characters' :
+                      lang === 'it' ? 'caratteri' :
+                      lang === 'es' ? 'caracteres' :
+                      lang === 'pt' ? 'caracteres' : 'حروف';
+        charCount.textContent = `${charLength} / 300 ${label}`;
+        if (charLength > 300) {
+          charCount.style.color = '#cb2b2b';
+        } else {
+          charCount.style.color = '#666';
+        }
+      });
+      
+      document.getElementById('cancelGenerate').addEventListener('click', () => {
+        confirmModal.remove();
+        resolve(false);
+      });
+      
+      document.getElementById('confirmGenerate').addEventListener('click', async () => {
+        const customText = textarea.value.trim();
+        
+        if (customText.length > 300) {
+          const msg = lang === 'fr' ? 'Maximum 300 caractères !' :
+                      lang === 'en' ? 'Maximum 300 characters!' :
+                      lang === 'it' ? 'Massimo 300 caratteri!' :
+                      lang === 'es' ? '¡Máximo 300 caracteres!' :
+                      lang === 'pt' ? 'Máximo 300 caracteres!' : 'الحد الأقصى 300 حرف!';
+          alert(msg);
+          return;
+        }
+        
+        confirmModal.remove();
+        
+        // Lancer la génération avec le texte custom
+        toast(L.shareModal?.generating || '🎨 Génération de votre image...');
+        
+        try {
+          const imageDataUrl = await generateViralImagePro(rt, customText);
+          
+          // Téléchargement automatique
+          const link = document.createElement('a');
+          link.href = imageDataUrl;
+          link.download = `${(rt.title || 'mon-voyage').replace(/[^a-z0-9]/gi, '-')}-oneroadtrip.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Toast de succès
+          const successTexts = {
+            fr: '✅ Image téléchargée !',
+            en: '✅ Image downloaded!',
+            it: '✅ Immagine scaricata!',
+            es: '✅ ¡Imagen descargada!',
+            pt: '✅ Imagem descarregada!',
+            ar: '✅ تم تنزيل الصورة!'
+          };
+          toast(successTexts[lang] || successTexts.fr);
+          resolve(true);
+          
+        } catch (error) {
+          console.error('Erreur génération image:', error);
+          toast('❌ Erreur lors de la génération de l\'image', true);
+          resolve(false);
+        }
+      });
+      
+      // Fermer si clic sur le fond
+      confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+          confirmModal.remove();
+          resolve(false);
+        }
+      });
+    });
+  }
+
+   async function shareSocial(rt, net){
+    const lang = localStorage.getItem('lang') || 'fr';
+    const base = location.origin + location.pathname.replace(/[^\/]*$/,'');
+    // Lien public lecture seule :
+    const publicUrl = `${base}your_roadtrip.html?share=${sharePayload(rt)}&lang=${lang}&ro=1`;
+    const encUrl = encodeURIComponent(publicUrl);
+    const encTxt = encodeURIComponent(rt.title || 'Mon voyage ORT');
+
+    let href = '#';
+    if(net === 'x'){
+      href = `https://x.com/intent/tweet?text=${encTxt}&url=${encUrl}`;
+      window.open(href, '_blank');
+      return;
+    }
+    if(net === 'fb'){
+      // Génération d'une belle image pro avec modal
+      toast('🎨 Génération de votre post viral...');
+      
+      try {
+        const imageDataUrl = await generateViralImagePro(rt);
+        const viralText = generateViralText(rt, publicUrl);
+        
+        // Affiche modal avec image + texte à copier
+        showShareModal(imageDataUrl, viralText);
+      } catch (error) {
+        console.error('Erreur génération image:', error);
+        toast('❌ Erreur lors de la génération de l\'image', true);
+        // Fallback : partage simple
+        const viralText = generateViralText(rt, publicUrl);
+        const encQuote = encodeURIComponent(viralText);
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encUrl}&quote=${encQuote}`, '_blank');
+      }
+      return;
+    }
+    if(net === 'ig'){
+      // Instagram : belle image avec légende
+      toast('🎨 Génération de votre post Instagram...');
+      
+      try {
+        const L = I18N[lang] || I18N.fr;
+        const captionTpl = L?.insta?.caption || 'Mon voyage ORT : {title} — {nights} nuits · {kms} km · {steps} {stepsLbl}';
+        const caption = captionTpl
+          .replace('{title}', rt.title || (L?.untitled || 'Sans titre'))
+          .replace('{nights}', rt.nights || rt.nb_nights || 0)
+          .replace('{kms}', rt.kms || 0)
+          .replace('{steps}', rt.steps || 0)
+          .replace('{stepsLbl}', (L?.labels?.steps || 'étapes'));
+        
+        const viralText = `${caption}\n\n${publicUrl}`;
+        const imageDataUrl = await generateViralImagePro(rt);
+        
+        // Affiche modal avec image + texte
+        showShareModal(imageDataUrl, viralText);
+      } catch (error) {
+        console.error('Erreur génération image:', error);
+        toast('❌ Erreur lors de la génération de l\'image', true);
+      }
+      return;
+    }
+    // Par défaut : ouvrir juste la page publique (lecture seule)
+    window.open(publicUrl, '_blank');
+  }
+
+
+  async function update(id, patch){
+    const trip = await window.ORT_STATE.getTrip(id);
+    if (!trip) return;
+    
+    const updatedTrip = Object.assign({}, trip, patch, { updatedAt: Date.now() });
+    await window.ORT_STATE.saveTrip(updatedTrip);
+    render();
+  }
+
+function ensureSeed(){
+  // Désactivé - pas de voyage démo automatique
+  return;
+  
+  /* Code original commenté :
+  const arr = load(currentUser?.uid);
+  if(arr.length) return;
+  const demo = [...];
+  save(currentUser.uid, demo);
+  */
+}
+  // API publique
+  return {
+    setUser(u){ currentUser = u; if(u){ ensureSeed(); } loadRtCoversOnce().finally(render); },
+
+    async import(data){ 
+      if(!currentUser) return;
+      
+      let trips = [];
+      
+      // Format 1: tableau de trips (export standard)
+      if(Array.isArray(data)) {
+        trips = data;
+      }
+      // Format 2: module.json (avec itineraries)
+      else if(data && typeof data === 'object') {
+        const itins = data.itineraries || data.itins || [];
+        // Convertir chaque itinéraire en trip
+        for(const itin of itins) {
+          trips.push({
+            id: itin.id || itin.itin_id,
+            country: itin.dept_code,
+            dept_name: itin.dept_name,
+            title: itin.title,
+            notes: itin.notes,
+            specialties: itin.specialties,
+            pacing_rules: itin.pacing_rules,
+            days_plan: itin.days_plan,
+            segments: itin.segments,
+            variants: itin.variants,
+            regions: itin.regions,
+            meta: itin.meta,
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+        }
+      }
+      
+      // Sauvegarder tous les trips
+      for (const trip of trips) {
+        if (trip && trip.id) {
+          await window.ORT_STATE.saveTrip(trip);
+        }
+      }
+      
+      render();
+      return trips.length;
+    },
+    async exportAll(){ 
+      if(!currentUser) return '[]'; 
+      const trips = await window.ORT_STATE.getAllTrips();
+      return JSON.stringify(trips); 
+    },
+    
+    // Export au format importable (.itins.modules.json)
+    async exportAsModules() {
+      if(!currentUser) return null;
+      const tripsList = await window.ORT_STATE.getAllTrips();
+      
+      if(tripsList.length === 0) return null;
+      
+      // Charger chaque trip complètement (avec steps depuis Firestore)
+      const trips = [];
+      for(const t of tripsList) {
+        if(t.id) {
+          const fullTrip = await window.ORT_STATE.getTrip(t.id);
+          if(fullTrip) {
+            // Convertir steps → days_plan si nécessaire
+            if(fullTrip.steps && Array.isArray(fullTrip.steps) && !fullTrip.days_plan) {
+              fullTrip.days_plan = fullTrip.steps.map((step, idx) => {
+                // Extraire les coordonnées
+                const coords = step.coords || step.lat && step.lon ? [step.lat, step.lon] : [0, 0];
+                
+                // Extraire place_id et nom
+                const placeId = step.place_id || step.placeId || '';
+                
+                // Convertir visits et activities
+                const visits = (step.visits || []).map(v => ({
+                  text: typeof v === 'string' ? v : (v.text || v.name || ''),
+                  visit_duration_min: v.visit_duration_min || 75
+                }));
+                
+                const activities = (step.activities || []).map(a => ({
+                  text: typeof a === 'string' ? a : (a.text || a.name || ''),
+                  visit_duration_min: a.visit_duration_min || 60
+                }));
+                
+                return {
+                  day: idx + 1,
+                  slice: 1,
+                  region_code: step.region || step.region_code || '',
+                  night: {
+                    place_id: placeId,
+                    coords: coords
+                  },
+                  visits: visits,
+                  activities: activities,
+                  to_next_leg: step.to_next_leg || {}
+                };
+              });
+              
+              // Générer segments basiques
+              if(!fullTrip.segments && fullTrip.steps.length > 0) {
+                fullTrip.segments = [{
+                  n: 1,
+                  range: [1, fullTrip.steps.length],
+                  label: `Segment 1 — J1–J${fullTrip.steps.length}`,
+                  from_day: 1,
+                  to_day: fullTrip.steps.length
+                }];
+              }
+              
+              // Générer variants basiques
+              if(!fullTrip.variants && fullTrip.steps.length > 0) {
+                fullTrip.variants = [{
+                  from_day: 1,
+                  to_day: fullTrip.steps.length,
+                  label: `Var ${fullTrip.steps.length}j`
+                }];
+              }
+            }
+            trips.push(fullTrip);
+          }
+        }
+      }
+      
+      // Grouper par pays
+      const byCountry = {};
+      for(const trip of trips) {
+        // Extraire le code pays de différentes sources
+        let cc = trip.country || trip.dept_code;
+        if(!cc && trip.id) {
+          // Essayer d'extraire depuis l'ID (format: "CC::slug")
+          const match = trip.id.match(/^([A-Z]{2})::/i);
+          if(match) cc = match[1].toUpperCase();
+        }
+        if(!cc) cc = 'XX'; // Fallback
+        
+        if(!byCountry[cc]) byCountry[cc] = [];
+        byCountry[cc].push(trip);
+      }
+      
+      // Créer un fichier par pays
+      const exports = [];
+      for(const [cc, tripList] of Object.entries(byCountry)) {
+        const moduleData = {
+          version: 'v1',
+          country: cc,
+          itineraries: tripList.map(t => {
+            // S'assurer que l'ID est au bon format
+            let itinId = t.id || t.itin_id;
+            if(itinId && !itinId.startsWith(`${cc}::`)) {
+              // Si l'ID n'a pas le préfixe pays, l'ajouter
+              itinId = `${cc}::${itinId}`;
+            }
+            if(!itinId) {
+              // Générer un ID depuis le titre
+              const slug = (t.title || 'untitled').toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retirer accents
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/^-+|-+$/g, '');
+              itinId = `${cc}::${slug}`;
+            }
+            
+            return {
+              itin_id: itinId,
+              id: itinId,
+              dept_code: cc,
+              dept_name: t.dept_name || t.country_name || '',
+              title: t.title || '',
+              notes: t.notes || '',
+              specialties: t.specialties || [],
+              pacing_rules: t.pacing_rules || {
+                factors: { soft: 2, standard: 1, fast: 0.5 },
+                day_budgets_min: { soft: 300, standard: 420, fast: 540 },
+                merge_threshold: 0.85
+              },
+              days_plan: t.days_plan || [],
+              segments: t.segments || [],
+              variants: t.variants || [],
+              regions: t.regions || [],
+              merge_suggestions: t.merge_suggestions || [],
+              meta: t.meta || { themes: [], audience: [] }
+            };
+          })
+        };
+        
+        exports.push({
+          filename: `${cc}.itins.modules.json`,
+          country: cc,
+          count: tripList.length,
+          withDays: tripList.filter(t => t.days_plan && t.days_plan.length > 0).length,
+          data: moduleData
+        });
+      }
+      
+      return exports;
+    }
+  };
+})();
+
+// ===== Synchronisation auto depuis your_roadtrip =====
+(async function syncLastSave(){
+  try {
+    const last = localStorage.getItem('ort.last_save');
+    if(!last) return;
+    const rt = JSON.parse(last);
+    if(!rt.id) return;
+    
+    // Attendre que Firebase et ORT_STATE soient prêts
+    await ensureFirebase();
+    const user = firebase.auth().currentUser;
+    if (!user || !window.ORT_STATE) return;
+    
+    console.log('📥 [SYNC] Migration dernier RT sauvegardé:', rt.id);
+    
+    // Sauvegarder via le State Manager (Firestore)
+    await window.ORT_STATE.saveTrip(rt);
+    
+    // Nettoyer
+    localStorage.removeItem('ort.last_save');
+    
+    console.log('✅ [SYNC] RT migré vers Firestore');
+  } catch(e){
+    console.error('❌ [SYNC] Erreur migration:', e);
+  }
+})();
+
+// ===== Boutons barre haute =====
+(function(){
+document.getElementById('btnNew').addEventListener('click',()=>{
+  const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+  location.href = 'quest_simple.html?lang=' + code;
+});
+document.getElementById('btnStart').addEventListener('click',()=>{
+  const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+  location.href = 'quest_simple.html?lang=' + code;
+});
+  document.getElementById('btnImport').addEventListener('click',async()=>{
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async(e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      try {
+        const txt = await file.text();
+        const obj = JSON.parse(txt);
+        const count = await Dashboard.import(obj);
+        toast(`${count} voyage(s) importé(s)`);
+      } catch(err) {
+        alert('Erreur: ' + err.message);
+      }
+    };
+    input.click();
+  });
+  document.getElementById('btnExportAll').addEventListener('click',async()=>{
+    const data = Dashboard.exportAll();
+    try{ await navigator.clipboard.writeText(data); toast('Export copié dans le presse‑papiers'); }catch(_){ alert(data); }
+  });
+  document.getElementById('btnExportModules')?.addEventListener('click',async()=>{
+    const exports = await Dashboard.exportAsModules();
+    if(!exports || exports.length === 0) {
+      alert('Aucun voyage à exporter');
+      return;
+    }
+    
+    // Afficher un message avec les stats
+    const totalTrips = exports.reduce((sum, e) => sum + e.count, 0);
+    const tripsWithDays = exports.reduce((sum, e) => sum + e.withDays, 0);
+    
+    if(tripsWithDays === 0) {
+      alert(`${totalTrips} voyage(s) trouvé(s) mais aucun n'a de days_plan.\nLes itinéraires sont peut-être en cours de création.`);
+      return;
+    }
+    
+    if(tripsWithDays < totalTrips) {
+      const cont = confirm(`${totalTrips} voyage(s) trouvé(s), ${tripsWithDays} complet(s).\n${totalTrips - tripsWithDays} voyage(s) sans days_plan seront exportés vides.\n\nContinuer ?`);
+      if(!cont) return;
+    }
+    
+    // Pour chaque pays, télécharger un fichier séparé
+    for(const exp of exports) {
+      const blob = new Blob([JSON.stringify(exp.data, null, 2)], {type: 'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = exp.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      await new Promise(r => setTimeout(r, 300)); // délai entre téléchargements
+    }
+    
+    toast(`${exports.length} fichier(s) téléchargé(s) (${tripsWithDays}/${totalTrips} complets)`);
+  });
+  
+  document.getElementById('btnDeleteAll')?.addEventListener('click',async()=>{
+    if(!firebase.auth().currentUser) {
+      alert('Vous devez être connecté');
+      return;
+    }
+    
+    const trips = await window.ORT_STATE.getAllTrips();
+    if(trips.length === 0) {
+      alert('Aucun voyage à supprimer');
+      return;
+    }
+    
+    const conf = confirm(`⚠️ ATTENTION ⚠️\n\nVous êtes sur le point de supprimer ${trips.length} voyage(s).\n\nCette action est IRRÉVERSIBLE.\n\nVoulez-vous continuer ?`);
+    if(!conf) return;
+    
+
+    
+    // Supprimer tous les voyages
+    let deleted = 0;
+    for(const trip of trips) {
+      if(trip.id) {
+        const success = await window.ORT_STATE.deleteTrip(trip.id);
+        if(success) deleted++;
+      }
+    }
+    
+toast(`${deleted} voyage(s) supprimé(s)`);
+    // Rafraîchir l'affichage sans recharger la page
+    setTimeout(async () => {
+      await window.ORT_DASHBOARD_ADAPTER.refresh();
+    }, 1000);
+  });
+})();
+
+// ===== mini toast =====
+function toast(msg, isHtml = false, duration = 1800){ 
+  const d=document.createElement('div'); 
+  if(isHtml) {
+    d.innerHTML = msg;
+  } else {
+    d.textContent = msg;
+  }
+  d.style.position='fixed'; 
+  d.style.left='50%'; 
+  d.style.transform='translateX(-50%)'; 
+  d.style.bottom='16px'; 
+  d.style.background='#fff'; 
+  d.style.color='#113f7a'; 
+  d.style.border='1px solid #c3d6b6'; 
+  d.style.borderRadius='10px'; 
+  d.style.padding='10px 14px'; 
+  d.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'; 
+  d.style.zIndex='9999';
+  d.style.maxWidth='400px';
+  d.style.textAlign='left';
+  document.body.appendChild(d); 
+  setTimeout(()=>{ d.remove(); }, duration); 
+}
+
+// ===== INITIALISATION STATE MANAGER =====
+(async function initDashboard() {
+  console.log('🎯 [DASHBOARD] Initialisation...');
+  
+// Attendre que Firebase Auth soit prêt
+const user = await new Promise(resolve => {
+  if (window.firebase?.auth) {
+    firebase.auth().onAuthStateChanged(user => resolve(user));
+  } else {
+    resolve(null);
+  }
+});
+
+await window.ORT_STATE.init({
+  user: user,
+  premium: false
+});
+
+//// ===== MIGRATION DÉSACTIVÉE - localStorage ignoré =====
+console.log('ℹ️ [MIGRATION] Migration localStorage désactivée');
+
+  // Charger les photos des lieux pour le carrousel
+  await loadPhotosLieuxOnce();
+
+  await window.ORT_DASHBOARD_ADAPTER.init();
+  
+  console.log('✅ [DASHBOARD] Prêt');
+})();
+
+</script>
+
+<!-- html2canvas pour capturer la carte Leaflet -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,3821 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TOUR COMPLET DE LA CORSE EN 3 SEMAINES | OneRoadTrip</title>
+<meta name="description" content="TOUR COMPLET DE LA CORSE EN 3 SEMAINES. 32 jours, 697 km.">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+/* ===== VARIABLES ET RESET ===== */
+:root {
+    --primary: #113f7a;
+    --primary-dark: #0a2a57;
+    --secondary: #00b2ff;
+    --accent-start: #4a1d1d;
+    --accent-end: #cf8282;
+    --text: #2c3e50;
+    --text-light: #7f8c8d;
+    --text-lighter: #95a5a6;
+    --border: #e1e8ed;
+    --border-light: #f0f3f5;
+    --bg: #ffffff;
+    --bg-light: #f8f9fa;
+    --bg-lighter: #fafbfc;
+    --shadow-sm: 0 2px 4px rgba(0,0,0,0.06);
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 25px rgba(0,0,0,0.12);
+    --shadow-xl: 0 15px 35px rgba(0,0,0,0.15);
+    --radius: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-xxl: 20px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-lighter);
+    color: var(--text);
+    line-height: 1.6;
+    font-weight: 400;
+    overflow-x: hidden;
+}
+
+/* ===== HERO SECTION AVANCÉE ===== */
+.hero-advanced {
+    position: relative;
+    min-height: 80vh;
+    background: linear-gradient(135deg, rgba(17,63,122,0.45), rgba(17,63,122,0.55)), url('https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg') center/cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.hero-particles {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(0,178,255,0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 80% 20%, rgba(207,130,130,0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 40% 40%, rgba(17,63,122,0.2) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-20px); }
+}
+
+.hero-content-advanced {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    max-width: 900px;
+    padding: 0 30px;
+}
+
+.hero-country-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    font-weight: 500;
+}
+
+.hero-title-advanced {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 5vw, 2.8rem);
+    font-weight: 700;
+    margin-bottom: 25px;
+    line-height: 1.15;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+    animation: fadeInUp 1s ease-out;
+    padding: 0 10px;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-stats-advanced {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 40px;
+    flex-wrap: wrap;
+}
+
+.stat-item-advanced {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    padding: 20px 30px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.2);
+    min-width: 140px;
+}
+
+.stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+}
+
+/* ===== CONTAINER PRINCIPAL ===== */
+.container-advanced {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px 30px;
+}
+
+.section-title-advanced {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: 50px;
+    text-align: center;
+    font-weight: 700;
+    position: relative;
+}
+
+.section-title-advanced::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+    border-radius: 2px;
+}
+
+/* ===== CARTES JOURS AMÉLIORÉES ===== */
+.days-grid-advanced {
+    display: grid;
+    gap: 40px;
+    margin-bottom: 80px;
+}
+
+.day-card-enhanced {
+    background: var(--bg);
+    border-radius: var(--radius-xxl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid var(--border-light);
+    position: relative;
+}
+
+.day-card-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--accent-start), var(--accent-end));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.day-card-enhanced:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-xl);
+}
+
+.day-card-enhanced:hover::before {
+    opacity: 1;
+}
+
+.day-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 25px 30px;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.day-badge-advanced {
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(74,29,29,0.4);
+    flex-shrink: 0;
+    position: relative;
+}
+
+.day-badge-advanced::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
+    opacity: 0.3;
+    z-index: -1;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.1; }
+}
+
+.day-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.day-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+.day-meta {
+    flex: 1;
+}
+
+.day-title-evocative {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.ort-stars {
+    font-size: 1.1rem;
+    margin-left: 8px;
+    letter-spacing: 2px;
+}
+
+.day-duration-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.duration-icon {
+    font-size: 1rem;
+}
+
+/* ===== CONTENU DU JOUR ===== */
+.day-content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+}
+
+.day-image-section {
+    position: relative;
+    overflow: hidden;
+}
+
+.image-container {
+    position: relative;
+    height: 100%;
+    min-height: 350px;
+}
+
+.day-main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.day-card-enhanced:hover .day-main-image {
+    transform: scale(1.1);
+}
+
+.image-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    padding: 20px;
+    color: white;
+}
+
+.overlay-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.day-content-section {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* ===== HÉBERGEMENT AMÉLIORÉ ===== */
+.accommodation-enhanced {
+    background: linear-gradient(135deg, rgba(0,178,255,0.08), rgba(0,178,255,0.03));
+    border-left: 4px solid var(--secondary);
+    padding: 20px;
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.accommodation-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.accommodation-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0,178,255,0.3));
+}
+
+.accommodation-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.accommodation-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 5px;
+}
+
+.accommodation-description {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    line-height: 1.5;
+}
+
+/* ===== SECTIONS CONTENU ===== */
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.section-icon {
+    font-size: 1.3rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.section-title {
+    font-size: 1.1rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* ===== VISITES ===== */
+.discover-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.discover-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    background: var(--bg-light);
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+}
+
+.discover-item:hover {
+    background: var(--border-light);
+    transform: translateX(5px);
+}
+
+.discover-number {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.discover-text {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+/* ===== ACTIVITÉS ===== */
+.activities-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(207,130,130,0.08);
+    border-radius: var(--radius);
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    background: rgba(207,130,130,0.12);
+    transform: translateX(5px);
+}
+
+.activity-bullet {
+    color: var(--accent-end);
+    font-size: 1.2rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.activity-text {
+    font-size: 0.95rem;
+    color: var(--text);
+    line-height: 1.4;
+}
+
+/* ===== HIGHLIGHTS ===== */
+.highlights-section {
+    background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,215,0,0.05));
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(255,215,0,0.2);
+}
+
+.highlights-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+
+.highlight-icon {
+    font-size: 1.1rem;
+}
+
+/* ===== INFORMATIONS DE VOYAGE ===== */
+.travel-info {
+    background: linear-gradient(135deg, var(--bg-lighter), var(--bg-light));
+    padding: 20px;
+    border-radius: var(--radius-lg);
+    border-top: 2px solid var(--border);
+    margin-top: auto;
+}
+
+.travel-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.travel-icon {
+    font-size: 1.3rem;
+}
+
+.travel-title {
+    font-size: 1rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.travel-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.travel-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--bg);
+    border-radius: var(--radius);
+}
+
+.travel-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    font-weight: 500;
+}
+
+.travel-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* ===== AVERTISSEMENTS TRAJET LONG ===== */
+.travel-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.travel-warning.flight {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    color: #1565c0;
+    border: 1px solid #90caf9;
+}
+
+.travel-warning.long-drive {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    color: #e65100;
+    border: 1px solid #ffcc80;
+}
+
+.travel-info.flight-day {
+    border-top-color: #1565c0;
+    background: linear-gradient(135deg, #e3f2fd, #f5f5f5);
+}
+
+.travel-info.long-drive-day {
+    border-top-color: #e65100;
+    background: linear-gradient(135deg, #fff3e0, #f5f5f5);
+}
+
+/* ===== MORE ITEMS ===== */
+.more-items {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-lighter);
+    font-style: italic;
+    margin-top: 10px;
+}
+
+/* ===== MAP SECTION ===== */
+.map-section-advanced {
+    background: var(--bg);
+    border-radius: var(--radius-xxl);
+    padding: 40px;
+    margin-bottom: 80px;
+    box-shadow: var(--shadow-lg);
+}
+
+#map {
+    height: 500px;
+    border-radius: var(--radius-lg);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* ===== CTA AVANCÉ ===== */
+.cta-advanced {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    text-align: center;
+    padding: 80px 30px;
+    border-radius: var(--radius-xxl);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-advanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 80%, rgba(0,178,255,0.2) 0%, transparent 50%),
+                radial-gradient(circle at 70% 20%, rgba(207,130,130,0.2) 0%, transparent 50%);
+    animation: float 15s ease-in-out infinite;
+}
+
+.cta-content {
+    position: relative;
+    z-index: 2;
+}
+
+.cta-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    font-weight: 700;
+}
+
+.cta-description {
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+    opacity: 0.9;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-btn-advanced {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--secondary), #0099e6);
+    color: white;
+    padding: 18px 40px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(0,178,255,0.4);
+}
+
+.cta-btn-advanced:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0,178,255,0.5);
+}
+
+.cta-btn-advanced::after {
+    content: '→';
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.cta-btn-advanced:hover::after {
+    transform: translateX(5px);
+}
+
+/* ===== FOOTER ===== */
+.footer-advanced {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    padding: 50px 30px;
+    text-align: center;
+}
+
+.footer-logo-advanced {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 15px;
+    font-weight: 700;
+}
+
+.footer-content {
+    opacity: 0.8;
+    font-size: 0.95rem;
+}
+
+/* ===== BOUTON IMPRESSION ===== */
+.action-btns-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.print-btn-advanced, .share-btn-advanced, .customize-btn-advanced {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.25);
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.print-btn-advanced:hover, .share-btn-advanced:hover, .customize-btn-advanced:hover {
+    background: rgba(255,255,255,0.3);
+    transform: scale(1.1);
+}
+
+.customize-btn-advanced {
+    background: rgba(74, 29, 29, 0.6);
+}
+
+.customize-btn-advanced:hover {
+    background: rgba(74, 29, 29, 0.85);
+}
+
+/* Masquer le texte, garder seulement les icônes */
+.customize-btn-advanced, .print-btn-advanced, .share-btn-advanced {
+    font-size: 0;
+}
+
+.customize-btn-advanced::before {
+    content: '✏️';
+    font-size: 1.1rem;
+}
+
+.print-btn-advanced::before {
+    content: '🖨️';
+    font-size: 1.1rem;
+}
+
+.share-btn-advanced::before {
+    content: '🔗';
+    font-size: 1.1rem;
+}
+
+.share-container {
+    position: relative;
+}
+.share-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    padding: 8px 0;
+    min-width: 180px;
+    display: none;
+    z-index: 1001;
+}
+
+.share-menu.active {
+    display: block;
+}
+
+.share-menu a, .share-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    color: #333;
+    font-size: 0.9rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.share-menu a:hover, .share-menu button:hover {
+    background: rgba(17, 63, 122, 0.1);
+}
+
+.share-menu .share-icon {
+    font-size: 1.1rem;
+    width: 24px;
+    text-align: center;
+}
+
+.share-container {
+    position: relative;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+    .day-content-wrapper {
+        grid-template-columns: 1fr;
+    }
+    
+    .day-image-section {
+        height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .hero-stats-advanced {
+        gap: 15px;
+    }
+    
+    .stat-item-advanced {
+        min-width: 100px;
+        padding: 12px 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+    }
+    
+    .stat-label {
+        font-size: 0.65rem;
+    }
+    
+    .day-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .travel-details {
+        grid-template-columns: 1fr;
+    }
+    
+    .highlights-list {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-btns-container {
+        top: 10px;
+        right: 10px;
+        gap: 6px;
+    }
+    
+    .print-btn-advanced, .share-btn-advanced, .customize-btn-advanced {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .hero-badge {
+        font-size: 0.7rem;
+        padding: 6px 14px;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+    }
+    
+    .day-number {
+        font-size: 2.5rem;
+    }
+    
+    .day-location {
+        font-size: 1.1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content-advanced {
+        padding: 0 15px;
+    }
+    
+    .hero-stats-advanced {
+        gap: 10px;
+    }
+    
+    .stat-item-advanced {
+        min-width: 85px;
+        padding: 10px 12px;
+    }
+    
+    .stat-value {
+        font-size: 1.5rem;
+    }
+    
+    .day-card {
+        margin: 20px 10px;
+        border-radius: 15px;
+    }
+    
+    .day-image-section {
+        height: 200px;
+    }
+    
+    .day-content {
+        padding: 20px 15px;
+    }
+    
+    .highlight-item {
+        padding: 12px;
+    }
+    
+    .share-menu {
+        min-width: 160px;
+        right: -50px;
+    }
+}
+
+/* === VERSION PRINT CACHÉE À L'ÉCRAN === */
+.print-version { display: none; }
+
+@media print {
+    @page { size: A4 portrait; margin: 0; }
+    
+    /* Cacher tout le web */
+    .hero-advanced, .container-advanced, .footer-advanced, .action-btns-container { display: none !important; }
+    
+    /* Afficher le print */
+    .print-version { display: block !important; }
+    body { margin: 0; padding: 0; background: white; font-family: 'Inter', sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    
+    /* === PAGE DE COUVERTURE STYLE PASSY === */
+    .print-cover {
+        width: 210mm; height: 297mm;
+        display: flex; flex-direction: column;
+        background: white;
+        page-break-after: always;
+        box-sizing: border-box;
+    }
+    .print-cover-logo {
+        padding: 20mm 0 15mm;
+        text-align: center;
+    }
+    .print-logo-img {
+        height: 25mm;
+        width: auto;
+    }
+    .print-cover-photo {
+        flex: 1;
+        padding: 0 15mm;
+        overflow: hidden;
+    }
+    .print-cover-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 3mm;
+    }
+    .print-cover-info {
+        padding: 15mm 20mm 20mm;
+        text-align: center;
+    }
+    .print-cover-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 28pt; font-weight: 700;
+        color: #113f7a; margin: 0 0 8mm;
+        line-height: 1.2;
+    }
+    .print-cover-meta {
+        font-size: 11pt; color: #666;
+        margin-bottom: 5mm;
+    }
+    .print-sep { margin: 0 8px; color: #ccc; }
+    .print-cover-country {
+        font-size: 10pt; text-transform: uppercase;
+        letter-spacing: 2px; color: #999;
+    }
+    
+    /* === PAGES JOURS - BASE === */
+    .print-page {
+        width: 210mm; height: 297mm;
+        page-break-after: always;
+        box-sizing: border-box;
+        position: relative;
+    }
+    
+    /* === FORMAT PAYSAGE : Photos en haut, texte en bas === */
+    .print-landscape {
+        display: flex; flex-direction: column;
+        padding: 10mm 12mm;
+    }
+    .print-landscape .print-page-top {
+        height: 130mm;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .print-landscape .print-page-bottom {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-top: 8mm;
+    }
+    
+    /* === FORMAT PORTRAIT : Photos à gauche, texte à droite === */
+    .print-portrait {
+        display: flex; flex-direction: row;
+        padding: 10mm 12mm;
+    }
+    .print-portrait .print-page-side {
+        width: 85mm;
+        margin-right: 10mm;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .print-portrait .print-page-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    .print-portrait .print-side-photos {
+        height: 100%;
+        overflow: hidden;
+    }
+    
+    /* === GRILLES PHOTOS === */
+    .print-photos-1 {
+        width: 100%; height: 100%;
+        overflow: hidden;
+    }
+    .print-photos-1 img {
+        width: 100%; height: 100%;
+        object-fit: cover; border-radius: 2mm;
+    }
+    .print-photos-2 {
+        display: grid; grid-template-columns: 1fr 1fr;
+        gap: 3mm; width: 100%; height: 100%;
+        overflow: hidden;
+    }
+    .print-photos-2 img {
+        width: 100%; height: 100%;
+        object-fit: cover; border-radius: 2mm;
+    }
+    .print-photos-grid {
+        display: grid; grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 3mm; width: 100%; height: 100%;
+        overflow: hidden;
+    }
+    .print-photos-grid img {
+        width: 100%; height: 100%;
+        object-fit: cover; border-radius: 2mm;
+    }
+    
+    /* === EN-TÊTE LIEU === */
+    .print-place-header {
+        display: flex; align-items: center;
+        gap: 12px; margin-bottom: 8mm;
+        padding-bottom: 5mm;
+        border-bottom: 2px solid #113f7a;
+    }
+    .print-badge {
+        background: linear-gradient(135deg, #4a1d1d, #cf8282);
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        color: white; padding: 6px 14px; border-radius: 5px;
+        font-weight: 700; font-size: 9pt;
+        white-space: nowrap;
+    }
+    .print-place-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 18pt; color: #113f7a;
+        font-weight: 700; margin: 0;
+    }
+    
+    /* === HÉBERGEMENT === */
+    .print-accom {
+        background: rgba(0, 178, 255, 0.08);
+        -webkit-print-color-adjust: exact; print-color-adjust: exact;
+        border-left: 3px solid #00b2ff;
+        padding: 8px 12px; border-radius: 0 5px 5px 0;
+        margin-bottom: 6mm; font-size: 10pt;
+    }
+    .print-accom-icon { margin-right: 6px; }
+    
+    /* === COLONNES POUR PAYSAGE === */
+    .print-columns {
+        display: flex; gap: 15mm;
+    }
+    .print-col { flex: 1; }
+    
+    /* === SECTIONS === */
+    .print-section { margin-bottom: 5mm; }
+    .print-section-title {
+        font-size: 9pt; font-weight: 600;
+        text-transform: uppercase;
+        color: #113f7a; margin-bottom: 4mm;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 2mm;
+    }
+    .print-list {
+        list-style: none; margin: 0; padding: 0;
+    }
+    .print-list li {
+        padding: 3px 0;
+        font-size: 9pt; line-height: 1.4;
+        color: #333;
+    }
+    .print-list li:before {
+        content: "→ "; color: #00b2ff; font-weight: 600;
+    }
+    
+    /* === PAGE ITINÉRAIRE === */
+    .print-itin-page {
+        padding: 15mm;
+        display: flex;
+        flex-direction: column;
+    }
+    .print-itin-header {
+        text-align: center;
+        margin-bottom: 12mm;
+        padding-bottom: 8mm;
+        border-bottom: 2px solid #113f7a;
+    }
+    .print-itin-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 22pt;
+        color: #113f7a;
+        margin: 0 0 5mm;
+    }
+    .print-itin-summary {
+        font-size: 11pt;
+        color: #666;
+    }
+    .print-itin-list {
+        flex: 1;
+    }
+    .print-itin-step {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .print-itin-step:last-child {
+        border-bottom: none;
+    }
+    .print-itin-num {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #4a1d1d, #cf8282);
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 12pt;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    .print-itin-info {
+        flex: 1;
+    }
+    .print-itin-place {
+        font-family: 'Playfair Display', serif;
+        font-size: 13pt;
+        color: #113f7a;
+        font-weight: 600;
+    }
+    .print-itin-days {
+        font-size: 9pt;
+        color: #666;
+        margin-top: 2px;
+    }
+    .print-itin-distance {
+        text-align: right;
+        font-size: 10pt;
+        color: #333;
+        min-width: 70px;
+    }
+    .print-itin-time {
+        font-size: 8pt;
+        color: #999;
+    }
+    .print-itin-end {
+        color: #00b2ff;
+        font-weight: 600;
+    }
+    
+    /* === FOOTER TOUTES PAGES === */
+    .print-page-footer {
+        display: flex; align-items: center;
+        justify-content: space-between;
+        padding-top: 5mm;
+        margin-top: auto;
+        border-top: 1px solid #eee;
+        font-size: 8pt; color: #999;
+    }
+    .print-footer-logo {
+        height: 8mm; width: auto;
+    }
+    .print-footer-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 9pt; color: #113f7a;
+    }
+    .print-footer-page {
+        font-size: 8pt; color: #999;
+    }
+}
+</style>
+</head>
+<body>
+
+<div class="action-btns-container">
+    <a href="/roadtrip_detail.html?cc=FR&itin=FR%3A%3Atemp_1763495271887&lang=fr&days=32" class="customize-btn-advanced" title="Personnaliser cet itinéraire"></a>
+    <button class="print-btn-advanced" onclick="window.print()" title="Imprimer"></button>
+    <div class="share-container">
+        <button class="share-btn-advanced" id="shareToggle" title="Partager"></button>
+        <div class="share-menu" id="shareMenu">
+            <button id="shareCopyBtn"><span class="share-icon">📋</span><span id="shareCopyText">Copier le lien</span></button>
+            <a id="shareEmailLink" href="#"><span class="share-icon">✉️</span>Envoyer par email</a>
+            <a id="shareWhatsappLink" href="#" target="_blank"><span class="share-icon">💬</span>WhatsApp</a>
+            <a id="shareFacebookLink" href="#" target="_blank"><span class="share-icon">📘</span>Facebook</a>
+            <a id="shareTwitterLink" href="#" target="_blank"><span class="share-icon">𝕏</span>X / Twitter</a>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    const title = "TOUR COMPLET DE LA CORSE EN 3 SEMAINES";
+    const shareToggle = document.getElementById('shareToggle');
+    const shareMenu = document.getElementById('shareMenu');
+    const shareCopyBtn = document.getElementById('shareCopyBtn');
+    const shareCopyText = document.getElementById('shareCopyText');
+    
+    shareToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shareMenu.classList.toggle('active');
+    });
+    
+    document.addEventListener('click', () => shareMenu.classList.remove('active'));
+    shareMenu.addEventListener('click', (e) => e.stopPropagation());
+    
+    shareCopyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(window.location.href);
+        shareCopyText.textContent = 'Lien copié !';
+        setTimeout(() => shareCopyText.textContent = 'Copier le lien', 2000);
+        shareMenu.classList.remove('active');
+    });
+    
+    const url = encodeURIComponent(window.location.href);
+    const txt = encodeURIComponent(title);
+    document.getElementById('shareEmailLink').href = 'mailto:?subject=' + txt + '&body=' + url;
+    document.getElementById('shareWhatsappLink').href = 'https://wa.me/?text=' + txt + '%20' + url;
+    document.getElementById('shareFacebookLink').href = 'https://www.facebook.com/sharer/sharer.php?u=' + url;
+    document.getElementById('shareTwitterLink').href = 'https://twitter.com/intent/tweet?url=' + url + '&text=' + txt;
+})();
+</script>
+
+<!-- HERO SECTION AVANCÉE -->
+<section class="hero-advanced">
+    <div class="hero-particles"></div>
+    <div class="hero-content-advanced">
+        <div class="hero-country-tag">
+            <span>📍</span>
+            <span>France</span>
+        </div>
+        <h1 class="hero-title-advanced">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</h1>
+        <div class="hero-stats-advanced">
+            <div class="stat-item-advanced">
+                <div class="stat-value">32</div>
+                <div class="stat-label">Jours</div>
+            </div>
+            <div class="stat-item-advanced">
+                <div class="stat-value">697</div>
+                <div class="stat-label">Km</div>
+            </div>
+            <div class="stat-item-advanced">
+                <div class="stat-value">19</div>
+                <div class="stat-label">Étapes</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CONTENU PRINCIPAL -->
+<div class="container-advanced">
+    <h2 class="section-title-advanced">Votre itinéraire jour par jour</h2>
+    <div class="days-grid-advanced">
+        <div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">1</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg" alt="Ajaccio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 1</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Cathédrale Notre-Dame-de-l'Assomption où a été baptisé Napoléon</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Maison Bonaparte - enfance de Napoléon</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Place d'Austerlitz et grotte de Bonaparte</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Plage Marinella - plage populaire d'Ajaccio</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+3 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Marché d'Ajaccio sur la place Foch</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Visite du musée Fesch - collection de peintures italiennes</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade à la plage de l'Ariadne</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+3 Activités optionnelles</div>
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">34 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h08</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">4</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Cargese <span class="ort-stars" style="color:#78909C">★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Cargese_2.jpg" alt="Cargese" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 4</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Église byzantine de Cargèse - unique en Corse</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Église latine de Cargèse</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Plage de Chiuni</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Plage de Peru</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">20.8 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">42min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">5</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Porto <span class="ort-stars" style="color:#7CB342">★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/Porto_Golfe1JPG.jpg" alt="Porto" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 5</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Calanques de Piana - falaises de porphyre rouge</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Points de vue panoramiques sur le Golfe de Porto</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Réserve naturelle de Scandola - UNESCO</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Girolata - hameau de pêcheurs accessible uniquement par bateau</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Excursion en bateau dans les calanques de Piana</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Croisière commentée à Scandola et Girolata</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">12.2 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">24min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">7</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Evisa <span class="ort-stars" style="color:#B0BEC5">★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Evisa-panorama.JPG" alt="Evisa" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 7</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Gorges de Spelunca - randonnée entre Evisa et Ota</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Pont de Zaglia - monument historique</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Forêt d'Aïtone - pins laricio centenaires</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade dans la rivière des gorges</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Randonnée dans la forêt d'Aïtone</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade dans les piscines naturelles</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">43.5 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h27</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">9</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Calvi <span class="ort-stars" style="color:#7CB342">★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/48/Corsica-calvi-panorama.jpg" alt="Calvi" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 9</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Vieille ville de Calvi - rues pavées et boutiques</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Citadelle de Calvi</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Plage de Calvi</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Forêt de Bonifatu - rivière et bassins naturels</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+2 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Activités nautiques à Calvi</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Randonnée sur la Revellata</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">8.4 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">17min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">11</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Lumio <span class="ort-stars" style="color:#B0BEC5">★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Lumio-eglise-interieur.jpg" alt="Lumio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 11</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Sant'Antonino - village médiéval en Balagne</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Village abandonné d'Oci</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Speloncato - village ancien avec vue panoramique</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Tour des villages de Balagne - Zilia, Lumio, Montemaggiore</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">14 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">28min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">12</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Ile Rousse <span class="ort-stars" style="color:#78909C">★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c0/Corse-04776-ile-Rousse-buste_de_pascal_Paoli.jpg" alt="Ile Rousse" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 12</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Vieille ville de l'Île Rousse</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Place Paoli</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Presqu'île de Pietra et son phare</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Plage de Bodri - plage sauvage</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">46.4 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h33</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">13</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Galeria <span class="ort-stars" style="color:#78909C">★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://images.pexels.com/photos/18687073/pexels-photo-18687073.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Galeria" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 13</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Vallée du Fango - réserve de biosphère UNESCO</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Bassins naturels du Fango</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Location de canoë à Galéria</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade et pique-nique en famille</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">81.5 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h22</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">14</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Saint Florent <span class="ort-stars" style="color:#43A047">★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Saint-Florent_%28%C3%A9glise%29_1.jpg" alt="Saint Florent" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 14</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Saint-Florent - le Saint-Tropez corse</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Citadelle de Saint-Florent</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Cathédrale Santa Maria Assunta en calcaire blanc</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Désert des Agriates - navette maritime</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+2 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Balade dans les ruelles et sur le port</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade et détente sur les plages paradisiaques</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">15.8 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">32min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">16</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Bastia <span class="ort-stars" style="color:#43A047">★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Place_Saint-Nicolas_%28Bastia%29_%281%29.jpg" alt="Bastia" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 16</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Rue Napoléon - shopping et promenade</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Quartier de Terra Nova et citadelle de Bastia</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Cathédrale Sainte-Marie avec peintures italiennes</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Musée d'histoire de Bastia au Palais des gouverneurs</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Place Saint-Nicolas - restaurants et cafés</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">37.8 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h16</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">17</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Macinaggio <span class="ort-stars" style="color:#B0BEC5">★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Corse-04623-Macinaggio-plage_posidonie.jpg" alt="Macinaggio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 17</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Croisière commentée au Cap Corse depuis Macinaggio</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Nonza - village avec plage de galets noirs</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Erbalunga - village pittoresque</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Sentier des douaniers - randonnée de Macinaggio à Barcaggio</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Route des vins de Patrimonio</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">100.2 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h40</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">18</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Corte <span class="ort-stars" style="color:#43A047">★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9d/20250_Corte%2C_France_-_panoramio.jpg" alt="Corte" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 18</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Vieille ville de Corte</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Cours Paoli - rue commerçante principale</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Citadelle de Corte et musée régional d'anthropologie</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Chapelle Sainte-Croix</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+2 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Exploration de la ville universitaire</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Randonnée à la bergerie de Grotelle</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade dans les vasques et piscines naturelles</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">70.9 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h11</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">20</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Solenzara <span class="ort-stars" style="color:#B0BEC5">★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/4/40/Vautour_IIN_-_BA_126_-_Nose.jpg" alt="Solenzara" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 20</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Plage de Paludone près de l'étang de Diane</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Étang de Diane - cadre sauvage et naturel</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Plage de Fautea avec tour génoise</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Côte des Nacres - plages entre Fautea et Solenzara</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Plage de Canella - tranquille et familiale</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">40.5 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h21</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">21</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Porto Vecchio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://images.pexels.com/photos/27356815/pexels-photo-27356815.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Porto Vecchio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 21</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Vieille ville de Porto-Vecchio</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Plage de Palombaggia - l'une des plus belles plages au monde</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Plage de Santa Giulia</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Plage de Rondinara - baie magnifique élue plus belle plage</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+2 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade aux plages paradisiaques</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Vallée du Cavu - piscines naturelles translucides</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">11.5 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">23min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">23</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Ospedale <span class="ort-stars" style="color:#B0BEC5">★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Salpetriere_Mazarin_Entrance.jpg" alt="Ospedale" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 23</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Forêt de l'Ospedale</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Cascade di Piscia di Gallo - plus grande cascade de Corse</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Lac de l'Ospedale</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Randonnée de 2h à la cascade</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Points de vue sur la baie de Porto-Vecchio</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">16.2 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">32min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">24</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Zonza <span class="ort-stars" style="color:#7CB342">★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d8/Zonza_-_Aiguilles_Bavella.jpg" alt="Zonza" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 24</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Aiguilles de Bavella - pics rocheux spectaculaires</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Trou de la Bombe - tafoni de 8 mètres</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Randonnée au Col de Bavella</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Escalade aux Aiguilles de Bavella</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">52.3 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">52min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">25</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Bonifacio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/da/Bonifacio.jpg" alt="Bonifacio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 25</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Citadelle de Bonifacio et bastion de l'étendard - plus haut de France</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Port de Bonifacio</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Sentier depuis le Col Saint Roch - meilleurs spots photo</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">4</div>
+                            <div class="discover-text">Plage du Petit Sperone - l'une des plus belles de Corse</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+4 Les lieux traversés</div>
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Croisière pour voir Bonifacio depuis la mer et les grottes</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Baignade aux plages de Bonifacio</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Tour de l'île principale - randonnée 1h à 2h30</div>
+                        </div>
+                    
+                </div>
+                <div class="more-items">+1 Activités optionnelles</div>
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">39.3 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h19</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">28</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Sartene <span class="ort-stars" style="color:#78909C">★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://images.pexels.com/photos/27643714/pexels-photo-27643714.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Sartene" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 28</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Village de Sartène - maisons en pierre</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Église Sainte-Marie sur la place de la Libération</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Vieille ville avec audioguide</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Visite des boutiques et restaurants typiques</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">10.7 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">21min</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">29</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Propriano <span class="ort-stars" style="color:#7CB342">★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">1 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Propriano_1.jpg" alt="Propriano" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 29</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Propriano - station balnéaire</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">2</div>
+                            <div class="discover-text">Plage de Portigliolo - sauvage et peu fréquentée</div>
+                        </div>
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">3</div>
+                            <div class="discover-text">Campomoro - site naturel en bord de mer</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Excursions en bateau vers Scandola ou îles Sanguinaires</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Parachutisme à Propriano</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="travel-info">
+                <div class="travel-header">
+                    <span class="travel-icon">🚗</span>
+                    <h5 class="travel-title">Prochaine étape</h5>
+                </div>
+                
+                <div class="travel-details">
+                    <div class="travel-item">
+                        <span class="travel-label">Distance:</span>
+                        <span class="travel-value">40.5 km</span>
+                    </div>
+                    <div class="travel-item">
+                        <span class="travel-label">Temps de route:</span>
+                        <span class="travel-value">1h21</span>
+                    </div>
+                </div>
+            </div>
+                </div>
+            </div>
+        </div><div class="day-card-enhanced">
+            <div class="day-header">
+                <div class="day-badge-advanced">
+                    <div class="day-number">30</div>
+                    <div class="day-label">Jour</div>
+                </div>
+                <div class="day-meta">
+                    <h3 class="day-title-evocative">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h3>
+                    <div class="day-duration-enhanced">
+                        <span class="duration-icon">⏱️</span>
+                        <span class="duration-text">2 jour</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="day-content-wrapper">
+                <div class="day-image-section">
+                    <div class="image-container">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg" alt="Ajaccio" class="day-main-image">
+                        <div class="image-overlay">
+                            <div class="overlay-text">Jour 30</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="day-content-section">
+                    
+                    <div class="discover-section">
+                <div class="section-header">
+                    <span class="section-icon">🔍</span>
+                    <h4 class="section-title">À découvrir</h4>
+                </div>
+                <div class="discover-list">
+                    
+                        <div class="discover-item">
+                            <div class="discover-number">1</div>
+                            <div class="discover-text">Retour à Ajaccio - dernières visites</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    <div class="activities-section">
+                <div class="section-header">
+                    <span class="section-icon">🎯</span>
+                    <h4 class="section-title">Activités</h4>
+                </div>
+                <div class="activities-list">
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Dégustation de spécialités corses - figatellu, lonzu, brocciu</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Découverte de la bière Pietra et des canistrelli</div>
+                        </div>
+                    
+                        <div class="activity-item">
+                            <div class="activity-bullet">→</div>
+                            <div class="activity-text">Route des vins - dégustation des 9 AOP corses</div>
+                        </div>
+                    
+                </div>
+                
+            </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="map-section-advanced">
+        <h2 class="section-title-advanced">Carte de l'itinéraire</h2>
+        <div id="map"></div>
+    </div>
+</div>
+
+<footer class="footer-advanced">
+    <div class="footer-logo-advanced">OneRoadTrip</div>
+    <p class="footer-content">Des road trips inoubliables, partout dans le monde</p>
+    <p>© 2025 | Tous droits réservés</p>
+</footer>
+
+<!-- VERSION PRINT DÉDIÉE -->
+<div class="print-version">
+    <!-- PAGE DE GARDE -->
+    <div class="print-cover">
+        <div class="print-cover-logo">
+            <img src="/assets/symbol.png" alt="OneRoadTrip" class="print-logo-img">
+        </div>
+        <div class="print-cover-photo">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg" alt="TOUR COMPLET DE LA CORSE EN 3 SEMAINES">
+        </div>
+        <div class="print-cover-info">
+            <h1 class="print-cover-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</h1>
+            <div class="print-cover-meta">
+                <span>32 Jours</span>
+                <span class="print-sep">•</span>
+                <span>697 Km</span>
+                <span class="print-sep">•</span>
+                <span>19 Étapes</span>
+            </div>
+            <div class="print-cover-country">France</div>
+        </div>
+    </div>
+    <!-- PAGE ITINÉRAIRE -->
+    
+    <div class="print-page print-itin-page">
+        <div class="print-itin-header">
+            <h2 class="print-itin-title">Votre itinéraire jour par jour</h2>
+            <div class="print-itin-summary">32 Jours • 697 Km • 19 Étapes</div>
+        </div>
+        <div class="print-itin-list">
+            
+        <div class="print-itin-step">
+            <div class="print-itin-num">1</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></div>
+                <div class="print-itin-days">Jours 1-3</div>
+            </div>
+            <div class="print-itin-distance">34 km<br><span class="print-itin-time">1h08</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">2</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Cargese <span class="ort-stars" style="color:#78909C">★★</span></div>
+                <div class="print-itin-days">Jour 4</div>
+            </div>
+            <div class="print-itin-distance">20.8 km<br><span class="print-itin-time">42min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">3</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Porto <span class="ort-stars" style="color:#7CB342">★★★</span></div>
+                <div class="print-itin-days">Jours 5-6</div>
+            </div>
+            <div class="print-itin-distance">12.2 km<br><span class="print-itin-time">24min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">4</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Evisa <span class="ort-stars" style="color:#B0BEC5">★</span></div>
+                <div class="print-itin-days">Jours 7-8</div>
+            </div>
+            <div class="print-itin-distance">43.5 km<br><span class="print-itin-time">1h27</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">5</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Calvi <span class="ort-stars" style="color:#7CB342">★★★</span></div>
+                <div class="print-itin-days">Jours 9-10</div>
+            </div>
+            <div class="print-itin-distance">8.4 km<br><span class="print-itin-time">17min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">6</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Lumio <span class="ort-stars" style="color:#B0BEC5">★</span></div>
+                <div class="print-itin-days">Jour 11</div>
+            </div>
+            <div class="print-itin-distance">14 km<br><span class="print-itin-time">28min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">7</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Ile Rousse <span class="ort-stars" style="color:#78909C">★★</span></div>
+                <div class="print-itin-days">Jour 12</div>
+            </div>
+            <div class="print-itin-distance">46.4 km<br><span class="print-itin-time">1h33</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">8</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Galeria <span class="ort-stars" style="color:#78909C">★★</span></div>
+                <div class="print-itin-days">Jour 13</div>
+            </div>
+            <div class="print-itin-distance">81.5 km<br><span class="print-itin-time">1h22</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">9</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Saint Florent <span class="ort-stars" style="color:#43A047">★★★★</span></div>
+                <div class="print-itin-days">Jours 14-15</div>
+            </div>
+            <div class="print-itin-distance">15.8 km<br><span class="print-itin-time">32min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">10</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Bastia <span class="ort-stars" style="color:#43A047">★★★★</span></div>
+                <div class="print-itin-days">Jour 16</div>
+            </div>
+            <div class="print-itin-distance">37.8 km<br><span class="print-itin-time">1h16</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">11</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Macinaggio <span class="ort-stars" style="color:#B0BEC5">★</span></div>
+                <div class="print-itin-days">Jour 17</div>
+            </div>
+            <div class="print-itin-distance">100.2 km<br><span class="print-itin-time">1h40</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">12</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Corte <span class="ort-stars" style="color:#43A047">★★★★</span></div>
+                <div class="print-itin-days">Jours 18-19</div>
+            </div>
+            <div class="print-itin-distance">70.9 km<br><span class="print-itin-time">1h11</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">13</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Solenzara <span class="ort-stars" style="color:#B0BEC5">★</span></div>
+                <div class="print-itin-days">Jour 20</div>
+            </div>
+            <div class="print-itin-distance">40.5 km<br><span class="print-itin-time">1h21</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">14</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Porto Vecchio <span class="ort-stars" style="color:#1565C0">★★★★★</span></div>
+                <div class="print-itin-days">Jours 21-22</div>
+            </div>
+            <div class="print-itin-distance">11.5 km<br><span class="print-itin-time">23min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">15</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Ospedale <span class="ort-stars" style="color:#B0BEC5">★</span></div>
+                <div class="print-itin-days">Jour 23</div>
+            </div>
+            <div class="print-itin-distance">16.2 km<br><span class="print-itin-time">32min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">16</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Zonza <span class="ort-stars" style="color:#7CB342">★★★</span></div>
+                <div class="print-itin-days">Jour 24</div>
+            </div>
+            <div class="print-itin-distance">52.3 km<br><span class="print-itin-time">52min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">17</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Bonifacio <span class="ort-stars" style="color:#1565C0">★★★★★</span></div>
+                <div class="print-itin-days">Jours 25-27</div>
+            </div>
+            <div class="print-itin-distance">39.3 km<br><span class="print-itin-time">1h19</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">18</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Sartene <span class="ort-stars" style="color:#78909C">★★</span></div>
+                <div class="print-itin-days">Jour 28</div>
+            </div>
+            <div class="print-itin-distance">10.7 km<br><span class="print-itin-time">21min</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">19</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Propriano <span class="ort-stars" style="color:#7CB342">★★★</span></div>
+                <div class="print-itin-days">Jour 29</div>
+            </div>
+            <div class="print-itin-distance">40.5 km<br><span class="print-itin-time">1h21</span></div>
+        </div>
+        <div class="print-itin-step">
+            <div class="print-itin-num">20</div>
+            <div class="print-itin-info">
+                <div class="print-itin-place">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></div>
+                <div class="print-itin-days">Jour 30</div>
+            </div>
+            <div class="print-itin-distance print-itin-end">Arrivée</div>
+        </div>
+        </div>
+        <div class="print-page-footer">
+            <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+            <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+            <span class="print-footer-page"></span>
+        </div>
+    </div>
+    <!-- PAGES JOURS -->
+    
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/Ajaccio_Cit%C3%A91JPG.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Ajaccio_Bon_Sta.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/5/54/H%C3%B4tel_de_pr%C3%A9fecture_de_Corse-du-Sud.jpg" alt="Ajaccio"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 1-3</div>
+                        <h2 class="print-place-name">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Cathédrale Notre-Dame-de-l'Assomption où a été baptisé Napoléon</li><li>Maison Bonaparte - enfance de Napoléon</li><li>Place d'Austerlitz et grotte de Bonaparte</li><li>Plage Marinella - plage populaire d'Ajaccio</li><li>Plage de Terre Sacrée - rochers pittoresques</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Marché d'Ajaccio sur la place Foch</li><li>Visite du musée Fesch - collection de peintures italiennes</li><li>Baignade à la plage de l'Ariadne</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">1 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3d/Cargese_2.jpg" alt="Cargese"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e8/Cargese_3.jpg" alt="Cargese"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6c/Carg%C3%A8se_Golfe_JPG1.jpg" alt="Cargese"><img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Cargese.jpg" alt="Cargese"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 4</div>
+                        <h2 class="print-place-name">Cargese <span class="ort-stars" style="color:#78909C">★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Église byzantine de Cargèse - unique en Corse</li><li>Église latine de Cargèse</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Plage de Chiuni</li><li>Plage de Peru</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">2 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/8/8f/Porto_Golfe1JPG.jpg" alt="Porto"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7f/Porto-Vechio_Port1a.jpg" alt="Porto"><img src="https://upload.wikimedia.org/wikipedia/commons/6/65/Stones_Porto_DSCF0572.jpg" alt="Porto"><img src="https://upload.wikimedia.org/wikipedia/commons/9/96/PNRC_littoral_nord_Porto_1.jpg" alt="Porto"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 5-6</div>
+                        <h2 class="print-place-name">Porto <span class="ort-stars" style="color:#7CB342">★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Calanques de Piana - falaises de porphyre rouge</li><li>Points de vue panoramiques sur le Golfe de Porto</li><li>Réserve naturelle de Scandola - UNESCO</li><li>Girolata - hameau de pêcheurs accessible uniquement par bateau</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Excursion en bateau dans les calanques de Piana</li><li>Croisière commentée à Scandola et Girolata</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">3 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e4/Evisa-panorama.JPG" alt="Evisa"><img src="https://upload.wikimedia.org/wikipedia/commons/0/0d/Evisa_-_A%C3%AFtone_JPG1.jpg" alt="Evisa"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Evisa_corse_sud.jpg" alt="Evisa"><img src="https://upload.wikimedia.org/wikipedia/commons/8/89/Bocca_di_Verghju.jpg" alt="Evisa"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 7-8</div>
+                        <h2 class="print-place-name">Evisa <span class="ort-stars" style="color:#B0BEC5">★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Gorges de Spelunca - randonnée entre Evisa et Ota</li><li>Pont de Zaglia - monument historique</li><li>Forêt d'Aïtone - pins laricio centenaires</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Baignade dans la rivière des gorges</li><li>Randonnée dans la forêt d'Aïtone</li><li>Baignade dans les piscines naturelles</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">4 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/4/48/Corsica-calvi-panorama.jpg" alt="Calvi"><img src="https://upload.wikimedia.org/wikipedia/commons/6/64/Calvi_272.jpg" alt="Calvi"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6d/Calvi-%C3%A9copage_p%C3%A9licans.jpg" alt="Calvi"><img src="https://upload.wikimedia.org/wikipedia/commons/b/bc/Calvi_omgeving.jpg" alt="Calvi"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 9-10</div>
+                        <h2 class="print-place-name">Calvi <span class="ort-stars" style="color:#7CB342">★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Vieille ville de Calvi - rues pavées et boutiques</li><li>Citadelle de Calvi</li><li>Plage de Calvi</li><li>Forêt de Bonifatu - rivière et bassins naturels</li><li>Notre-Dame de la Serra - chapelle avec vue sur la baie</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Activités nautiques à Calvi</li><li>Randonnée sur la Revellata</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">5 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/1/19/Lumio-eglise-interieur.jpg" alt="Lumio"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e2/Lumio-eglise-orgue.jpg" alt="Lumio"><img src="https://upload.wikimedia.org/wikipedia/commons/2/21/Lumio-village.jpg" alt="Lumio"><img src="https://upload.wikimedia.org/wikipedia/commons/9/9c/Lumiu.JPG" alt="Lumio"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 11</div>
+                        <h2 class="print-place-name">Lumio <span class="ort-stars" style="color:#B0BEC5">★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Sant'Antonino - village médiéval en Balagne</li><li>Village abandonné d'Oci</li><li>Speloncato - village ancien avec vue panoramique</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Tour des villages de Balagne - Zilia, Lumio, Montemaggiore</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">6 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/c/c0/Corse-04776-ile-Rousse-buste_de_pascal_Paoli.jpg" alt="Ile Rousse"><img src="https://images.pexels.com/photos/35007903/pexels-photo-35007903.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Ile Rousse"><img src="https://images.pexels.com/photos/35007904/pexels-photo-35007904.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Ile Rousse"><img src="https://images.pexels.com/photos/35007913/pexels-photo-35007913.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Ile Rousse"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 12</div>
+                        <h2 class="print-place-name">Ile Rousse <span class="ort-stars" style="color:#78909C">★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Vieille ville de l'Île Rousse</li><li>Place Paoli</li><li>Presqu'île de Pietra et son phare</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Plage de Bodri - plage sauvage</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">7 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://images.pexels.com/photos/18687073/pexels-photo-18687073.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Galeria"><img src="https://upload.wikimedia.org/wikipedia/commons/d/dc/Agglomerate.jpg" alt="Galeria"><img src="https://upload.wikimedia.org/wikipedia/commons/7/73/Galeria_village.jpg" alt="Galeria"><img src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Gal%C3%A9ria_Prezzuna_casa_di_i_Pueti_1.jpg" alt="Galeria"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 13</div>
+                        <h2 class="print-place-name">Galeria <span class="ort-stars" style="color:#78909C">★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Vallée du Fango - réserve de biosphère UNESCO</li><li>Bassins naturels du Fango</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Location de canoë à Galéria</li><li>Baignade et pique-nique en famille</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">8 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Saint-Florent_%28%C3%A9glise%29_1.jpg" alt="Saint Florent"><img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Exterior_of_%C3%A9glise_Saint-Florent_de_Thil_%28Ain%29_-_2014_-_1.JPG" alt="Saint Florent"><img src="https://upload.wikimedia.org/wikipedia/commons/4/48/Saint-Florent-le-Vieil_du_v%C3%A9lo.jpg" alt="Saint Florent"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 14-15</div>
+                        <h2 class="print-place-name">Saint Florent <span class="ort-stars" style="color:#43A047">★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Saint-Florent - le Saint-Tropez corse</li><li>Citadelle de Saint-Florent</li><li>Cathédrale Santa Maria Assunta en calcaire blanc</li><li>Désert des Agriates - navette maritime</li><li>Plage du Lotu - crique paradisiaque</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Balade dans les ruelles et sur le port</li><li>Baignade et détente sur les plages paradisiaques</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">9 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/5/51/Place_Saint-Nicolas_%28Bastia%29_%281%29.jpg" alt="Bastia"><img src="https://upload.wikimedia.org/wikipedia/commons/d/dd/Bastia%2C_France_-_panoramio.jpg" alt="Bastia"><img src="https://upload.wikimedia.org/wikipedia/commons/0/0c/Bastia%2C_France_-_panoramio_%281%29.jpg" alt="Bastia"><img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Port_of_Bastia_-_Bastia%2C_Corsica%2C_France_-_August_20%2C_2009.jpg" alt="Bastia"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 16</div>
+                        <h2 class="print-place-name">Bastia <span class="ort-stars" style="color:#43A047">★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Rue Napoléon - shopping et promenade</li><li>Quartier de Terra Nova et citadelle de Bastia</li><li>Cathédrale Sainte-Marie avec peintures italiennes</li><li>Musée d'histoire de Bastia au Palais des gouverneurs</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Place Saint-Nicolas - restaurants et cafés</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">10 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Corse-04623-Macinaggio-plage_posidonie.jpg" alt="Macinaggio"><img src="https://upload.wikimedia.org/wikipedia/commons/6/69/Corse-04625-Macinaggio-Punta_di_a_Coscia.jpg" alt="Macinaggio"><img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Corse-04628-Macinaggio-baie.jpg" alt="Macinaggio"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7d/Rogliano_Macinaggio.jpg" alt="Macinaggio"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 17</div>
+                        <h2 class="print-place-name">Macinaggio <span class="ort-stars" style="color:#B0BEC5">★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Croisière commentée au Cap Corse depuis Macinaggio</li><li>Nonza - village avec plage de galets noirs</li><li>Erbalunga - village pittoresque</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Sentier des douaniers - randonnée de Macinaggio à Barcaggio</li><li>Route des vins de Patrimonio</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">11 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/9/9d/20250_Corte%2C_France_-_panoramio.jpg" alt="Corte"><img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/20250_Corte%2C_France_-_panoramio_%281%29.jpg" alt="Corte"><img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/20250_Corte%2C_France_-_panoramio_%282%29.jpg" alt="Corte"><img src="https://images.pexels.com/photos/583475/pexels-photo-583475.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Corte"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 18-19</div>
+                        <h2 class="print-place-name">Corte <span class="ort-stars" style="color:#43A047">★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Vieille ville de Corte</li><li>Cours Paoli - rue commerçante principale</li><li>Citadelle de Corte et musée régional d'anthropologie</li><li>Chapelle Sainte-Croix</li><li>Gorges de la Restonica</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Exploration de la ville universitaire</li><li>Randonnée à la bergerie de Grotelle</li><li>Baignade dans les vasques et piscines naturelles</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">12 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/4/40/Vautour_IIN_-_BA_126_-_Nose.jpg" alt="Solenzara"><img src="https://upload.wikimedia.org/wikipedia/commons/e/e2/Vautour_IIN_-_BA_126_-_Rear_vue.jpg" alt="Solenzara"><img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Sari-Solenzara_-_mairie_annexe.JPG" alt="Solenzara"><img src="https://upload.wikimedia.org/wikipedia/commons/8/8c/Sari-Solenzara_-_%C3%89glise.JPG" alt="Solenzara"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 20</div>
+                        <h2 class="print-place-name">Solenzara <span class="ort-stars" style="color:#B0BEC5">★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Plage de Paludone près de l'étang de Diane</li><li>Étang de Diane - cadre sauvage et naturel</li><li>Plage de Fautea avec tour génoise</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Côte des Nacres - plages entre Fautea et Solenzara</li><li>Plage de Canella - tranquille et familiale</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">13 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://images.pexels.com/photos/27356815/pexels-photo-27356815.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Porto Vecchio"><img src="https://images.pexels.com/photos/27356808/pexels-photo-27356808.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Porto Vecchio"><img src="https://images.pexels.com/photos/27356812/pexels-photo-27356812.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Porto Vecchio"><img src="https://images.pexels.com/photos/32135626/pexels-photo-32135626.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Porto Vecchio"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 21-22</div>
+                        <h2 class="print-place-name">Porto Vecchio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Vieille ville de Porto-Vecchio</li><li>Plage de Palombaggia - l'une des plus belles plages au monde</li><li>Plage de Santa Giulia</li><li>Plage de Rondinara - baie magnifique élue plus belle plage</li><li>Plage de Pinarellu</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Baignade aux plages paradisiaques</li><li>Vallée du Cavu - piscines naturelles translucides</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">14 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/0/05/Salpetriere_Mazarin_Entrance.jpg" alt="Ospedale"><img src="https://upload.wikimedia.org/wikipedia/commons/3/39/Salpetriere_Chapel.jpg" alt="Ospedale"><img src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Salp%C3%A9tri%C3%A8re-Piti%C3%A9.jpg" alt="Ospedale"><img src="https://upload.wikimedia.org/wikipedia/commons/5/57/Hospital_room_ubt.jpeg" alt="Ospedale"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 23</div>
+                        <h2 class="print-place-name">Ospedale <span class="ort-stars" style="color:#B0BEC5">★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Forêt de l'Ospedale</li><li>Cascade di Piscia di Gallo - plus grande cascade de Corse</li><li>Lac de l'Ospedale</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Randonnée de 2h à la cascade</li><li>Points de vue sur la baie de Porto-Vecchio</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">15 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/d/d8/Zonza_-_Aiguilles_Bavella.jpg" alt="Zonza"><img src="https://upload.wikimedia.org/wikipedia/commons/9/9f/Zonza_Monument_aux_Morts.jpg" alt="Zonza"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5f/Zonza_Bavelle_1JPG.jpg" alt="Zonza"><img src="https://upload.wikimedia.org/wikipedia/commons/6/61/Rivi%C3%A8re-Cavo.jpg" alt="Zonza"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 24</div>
+                        <h2 class="print-place-name">Zonza <span class="ort-stars" style="color:#7CB342">★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Aiguilles de Bavella - pics rocheux spectaculaires</li><li>Trou de la Bombe - tafoni de 8 mètres</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Randonnée au Col de Bavella</li><li>Escalade aux Aiguilles de Bavella</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">16 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/d/da/Bonifacio.jpg" alt="Bonifacio"><img src="https://upload.wikimedia.org/wikipedia/commons/7/74/Bonifacio_MV1.jpg" alt="Bonifacio"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Maison_Charles_Quint_Bonifacio.JPG" alt="Bonifacio"><img src="https://upload.wikimedia.org/wikipedia/commons/6/61/Bonifacio_falaises_escalier_roi_Aragon.jpg" alt="Bonifacio"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jours 25-27</div>
+                        <h2 class="print-place-name">Bonifacio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Citadelle de Bonifacio et bastion de l'étendard - plus haut de France</li><li>Port de Bonifacio</li><li>Sentier depuis le Col Saint Roch - meilleurs spots photo</li><li>Plage du Petit Sperone - l'une des plus belles de Corse</li><li>Plage du Grand Sperone</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Croisière pour voir Bonifacio depuis la mer et les grottes</li><li>Baignade aux plages de Bonifacio</li><li>Tour de l'île principale - randonnée 1h à 2h30</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">17 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://images.pexels.com/photos/27643714/pexels-photo-27643714.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Sartene"><img src="https://images.pexels.com/photos/27643710/pexels-photo-27643710.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Sartene"><img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Sartene_Vi1aJPG.jpg" alt="Sartene"><img src="https://upload.wikimedia.org/wikipedia/commons/5/57/Sart%C3%A8ne_Paoli_JPG1.jpg" alt="Sartene"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 28</div>
+                        <h2 class="print-place-name">Sartene <span class="ort-stars" style="color:#78909C">★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Village de Sartène - maisons en pierre</li><li>Église Sainte-Marie sur la place de la Libération</li><li>Vieille ville avec audioguide</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Visite des boutiques et restaurants typiques</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">18 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-landscape">
+                <div class="print-page-top">
+                    <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/7/7b/Propriano_1.jpg" alt="Propriano"><img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Propriano_1a.jpg" alt="Propriano"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Propriano_1b.jpg" alt="Propriano"><img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Propriano_baie_%28vue_depuis_Viggianello%29_1.jpg" alt="Propriano"></div>
+                </div>
+                <div class="print-page-bottom">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 29</div>
+                        <h2 class="print-place-name">Propriano <span class="ort-stars" style="color:#7CB342">★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-columns">
+                        <div class="print-col"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Propriano - station balnéaire</li><li>Plage de Portigliolo - sauvage et peu fréquentée</li><li>Campomoro - site naturel en bord de mer</li></ul></div>
+                        <div class="print-col"><div class="print-section-title">Activités</div><ul class="print-list"><li>Excursions en bateau vers Scandola ou îles Sanguinaires</li><li>Parachutisme à Propriano</li></ul></div>
+                    </div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">19 / 20</span>
+                    </div>
+                </div>
+            </div>
+            <div class="print-page print-portrait">
+                <div class="print-page-side">
+                    <div class="print-side-photos">
+                        <div class="print-photos-grid"><img src="https://upload.wikimedia.org/wikipedia/commons/5/5d/Ajaccio_Sanguinaires_1.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/6/6a/Ajaccio_Cit%C3%A91JPG.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Ajaccio_Bon_Sta.jpg" alt="Ajaccio"><img src="https://upload.wikimedia.org/wikipedia/commons/5/54/H%C3%B4tel_de_pr%C3%A9fecture_de_Corse-du-Sud.jpg" alt="Ajaccio"></div>
+                    </div>
+                </div>
+                <div class="print-page-main">
+                    <div class="print-place-header">
+                        <div class="print-badge">Jour 30</div>
+                        <h2 class="print-place-name">Ajaccio <span class="ort-stars" style="color:#1565C0">★★★★★</span></h2>
+                    </div>
+                    
+                    <div class="print-section"><div class="print-section-title">À découvrir</div><ul class="print-list"><li>Retour à Ajaccio - dernières visites</li></ul></div>
+                    <div class="print-section"><div class="print-section-title">Activités</div><ul class="print-list"><li>Dégustation de spécialités corses - figatellu, lonzu, brocciu</li><li>Découverte de la bière Pietra et des canistrelli</li><li>Route des vins - dégustation des 9 AOP corses</li></ul></div>
+                    <div class="print-page-footer">
+                        <img src="/assets/symbol.png" class="print-footer-logo" alt="OneRoadTrip">
+                        <span class="print-footer-title">TOUR COMPLET DE LA CORSE EN 3 SEMAINES</span>
+                        <span class="print-footer-page">20 / 20</span>
+                    </div>
+                </div>
+            </div>
+</div>
+
+<!-- SCRIPT CARTE INTERACTIVE -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var coords = [{"name":"Ajaccio","coords":[41.9267,8.7369],"label":"Jours 1-3"},{"name":"Cargese","coords":[42.1369,8.5961],"label":"Jour 4"},{"name":"Porto","coords":[42.2619,8.6931],"label":"Jours 5-6"},{"name":"Evisa","coords":[42.2686,8.8072],"label":"Jours 7-8"},{"name":"Calvi","coords":[42.5675,8.7578],"label":"Jours 9-10"},{"name":"Lumio","coords":[42.5761,8.8361],"label":"Jour 11"},{"name":"Ile Rousse","coords":[42.6378,8.9372],"label":"Jour 12"},{"name":"Galeria","coords":[42.4058,8.6367],"label":"Jour 13"},{"name":"Saint Florent","coords":[42.6803,9.3047],"label":"Jours 14-15"},{"name":"Bastia","coords":[42.7025,9.4506],"label":"Jour 16"},{"name":"Macinaggio","coords":[42.9639,9.4581],"label":"Jour 17"},{"name":"Corte","coords":[42.3086,9.1506],"label":"Jours 18-19"},{"name":"Solenzara","coords":[41.8556,9.4042],"label":"Jour 20"},{"name":"Porto Vecchio","coords":[41.5914,9.2797],"label":"Jours 21-22"},{"name":"Ospedale","coords":[41.64,9.195],"label":"Jour 23"},{"name":"Zonza","coords":[41.7317,9.1628],"label":"Jour 24"},{"name":"Bonifacio","coords":[41.3892,9.1592],"label":"Jours 25-27"},{"name":"Sartene","coords":[41.6222,8.9728],"label":"Jour 28"},{"name":"Propriano","coords":[41.6767,8.9039],"label":"Jour 29"},{"name":"Ajaccio","coords":[41.9267,8.7369],"label":"Jour 30"}];
+    if (coords.length && typeof L !== 'undefined') {
+        var map = L.map('map', { scrollWheelZoom: false }).setView(coords[0].coords, 6);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+        
+        coords.forEach(function(stop, i) {
+            var icon = L.divIcon({
+                html: '<div style="background:linear-gradient(135deg,#4a1d1d,#cf8282);width:35px;height:35px;border-radius:50%;border:3px solid #fff;box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;font-family:Inter,sans-serif">' + (i+1) + '</div>',
+                iconSize: [35, 35],
+                iconAnchor: [17.5, 17.5]
+            });
+            L.marker(stop.coords, { icon: icon }).addTo(map).bindPopup('<div style="font-family:Inter,sans-serif;font-size:14px"><strong>' + stop.name + '</strong><br><span style="color:#666">' + stop.label + '</span></div>');
+        });
+        
+        L.polyline(coords.map(function(s) { return s.coords; }), {
+            color: '#113f7a',
+            weight: 4,
+            opacity: 0.8,
+            lineCap: 'round',
+            lineJoin: 'round'
+        }).addTo(map);
+        
+        map.fitBounds(coords.map(function(s) { return s.coords; }), { padding: [50, 50] });
+    }
+});
+</script>
+
+</body>
+</html>

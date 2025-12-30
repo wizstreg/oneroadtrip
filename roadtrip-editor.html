@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carnet de Voyage — OneRoadTrip</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        /* ===========================================
+           STYLES ÉCRAN (mode édition)
+           =========================================== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+        }
+
+        /* Toolbar fixe */
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: #113f7a;
+            color: white;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .toolbar-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: white;
+        }
+        .toolbar-logo img { height: 36px; }
+        .toolbar-title {
+            font-weight: 700;
+            font-size: 1rem;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .toolbar-spacer { flex: 1; }
+        .toolbar-btn {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toolbar-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        .toolbar-btn.primary {
+            background: white;
+            color: #113f7a;
+            border-color: white;
+        }
+        .toolbar-btn.primary:hover {
+            background: #f0f0f0;
+        }
+
+        /* Boutons d'édition */
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.9);
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        .carousel-btn:hover { background: white; }
+        .carousel-btn.prev { left: 12px; }
+        .carousel-btn.next { right: 12px; }
+        
+        .photo-counter {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .add-item-btn {
+            border: 1px dashed #ccc;
+            background: transparent;
+            color: #666;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-top: 8px;
+            width: 100%;
+            transition: all 0.2s;
+        }
+        .add-item-btn:hover {
+            border-color: #113f7a;
+            color: #113f7a;
+            background: rgba(17,63,122,0.05);
+        }
+
+        /* Structure des pages pour l'écran */
+        .page {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        /* Page de couverture */
+        .cover-page {
+            text-align: center;
+            position: relative;
+        }
+
+        .cover-hero {
+            position: relative;
+            height: 400px;
+            overflow: hidden;
+            background: #1a1a2e;
+        }
+        .cover-hero img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .cover-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+        }
+        .cover-title-box {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            text-align: left;
+            color: white;
+        }
+        .cover-title {
+            font-size: 2.2em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .cover-subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .cover-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            padding: 25px;
+            background: #f8f9fa;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #113f7a;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Page résumé */
+        .summary-page {
+            padding: 30px;
+        }
+
+        .summary-title {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #113f7a;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #113f7a;
+        }
+
+        .steps-list {
+            list-style: none;
+            columns: 2;
+            column-gap: 30px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            gap: 15px;
+        }
+        .step-item:last-child { border-bottom: none; }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            background: #113f7a;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .step-info { flex: 1; }
+        .step-name {
+            font-weight: 600;
+            font-size: 1.05em;
+            color: #333;
+        }
+        .step-nights {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .step-distance {
+            color: #666;
+            font-size: 0.85em;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Pages étapes */
+        .step-page {
+            display: flex;
+            min-height: 500px;
+        }
+
+        .step-photo {
+            flex: 0 0 50%;
+            position: relative;
+            background: #1a1a2e;
+            overflow: hidden;
+        }
+
+        .step-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .step-no-photo {
+            width: 100%;
+            height: 100%;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
+            color: #9ca3af;
+            font-size: 4rem;
+        }
+
+        .step-content {
+            flex: 1;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .day-badge {
+            background: rgba(17,63,122,0.1);
+            color: #113f7a;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-size: 12px;
+            border: 1px solid rgba(17,63,122,0.2);
+            width: fit-content;
+        }
+
+        .step-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #113f7a;
+            margin-bottom: 18px;
+        }
+
+        .section-block {
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-weight: 600;
+            color: #113f7a;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .section-items {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .section-items li {
+            padding: 4px 0;
+            position: relative;
+            padding-left: 16px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .section-items li:before {
+            content: "•";
+            color: #113f7a;
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .next-step-info {
+            background: #f8f9fa;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: auto;
+            border-left: 4px solid #113f7a;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 100px;
+            color: #666;
+        }
+        .loading-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        /* ===========================================
+           STYLES IMPRESSION (CSS PRINT) - CORRIGÉ
+           =========================================== */
+        @media print {
+            /* Page A4 paysage SANS marges navigateur (supprime header/footer) */
+            @page {
+                size: 297mm 210mm;
+                margin: 0;
+            }
+
+            /* Masquer éléments non imprimables */
+            .toolbar,
+            .carousel-btn,
+            .photo-counter,
+            .add-item-btn,
+            .no-print {
+                display: none !important;
+            }
+
+            /* Reset body */
+            html, body {
+                width: 297mm;
+                height: 210mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+
+            .container {
+                max-width: none !important;
+                width: 297mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            /* ===========================================
+               CHAQUE PAGE = UNE FEUILLE A4 PAYSAGE
+               =========================================== */
+            .page {
+                width: 297mm !important;
+                height: 210mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                overflow: hidden !important;
+                page-break-after: always !important;
+                page-break-inside: avoid !important;
+            }
+            .page:last-child {
+                page-break-after: auto !important;
+            }
+
+            /* ===========================================
+               PAGE COUVERTURE
+               =========================================== */
+            .cover-page {
+                display: flex !important;
+                flex-direction: column !important;
+                width: 297mm !important;
+                height: 210mm !important;
+            }
+
+            .cover-hero {
+                flex: 1 !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                position: relative !important;
+            }
+
+            .cover-hero img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+            }
+
+            .cover-title-box {
+                position: absolute !important;
+                bottom: 20px !important;
+                left: 25px !important;
+                right: 25px !important;
+            }
+
+            .cover-title {
+                font-size: 28pt !important;
+                line-height: 1.2 !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                max-width: 100% !important;
+            }
+
+            .cover-subtitle {
+                font-size: 14pt !important;
+            }
+
+            .cover-stats {
+                flex-shrink: 0 !important;
+                height: 25mm !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 50px !important;
+                background: #f8f9fa !important;
+                padding: 0 !important;
+            }
+
+            .stat-number {
+                font-size: 22pt !important;
+                color: #113f7a !important;
+            }
+
+            .stat-label {
+                font-size: 10pt !important;
+            }
+
+            /* ===========================================
+               PAGE RÉSUMÉ - COLONNE UNIQUE
+               =========================================== */
+            .summary-page {
+                width: 297mm !important;
+                height: 210mm !important;
+                padding: 15mm 20mm !important;
+                display: flex !important;
+                flex-direction: column !important;
+            }
+
+            .summary-title {
+                font-size: 20pt !important;
+                margin-bottom: 10mm !important;
+                padding-bottom: 5mm !important;
+                flex-shrink: 0 !important;
+            }
+
+            .steps-list {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                gap: 0 !important;
+            }
+
+            .step-item {
+                display: flex !important;
+                align-items: center !important;
+                padding: 8px 0 !important;
+                border-bottom: 1px solid #ddd !important;
+                gap: 12px !important;
+            }
+
+            .step-num {
+                width: 28px !important;
+                height: 28px !important;
+                font-size: 12pt !important;
+                background: #113f7a !important;
+                color: white !important;
+            }
+
+            .step-name {
+                font-size: 12pt !important;
+            }
+
+            .step-nights {
+                font-size: 10pt !important;
+            }
+
+            .step-distance {
+                font-size: 10pt !important;
+            }
+
+            /* ===========================================
+               PAGES ÉTAPES - PHOTO GAUCHE / TEXTE DROITE
+               =========================================== */
+            .step-page {
+                width: 297mm !important;
+                height: 210mm !important;
+                display: flex !important;
+                flex-direction: row !important;
+                overflow: hidden !important;
+            }
+
+            .step-photo {
+                width: 148.5mm !important;
+                height: 210mm !important;
+                flex: none !important;
+                overflow: hidden !important;
+            }
+
+            .step-photo img {
+                width: 148.5mm !important;
+                height: 210mm !important;
+                object-fit: cover !important;
+            }
+
+            .step-no-photo {
+                width: 148.5mm !important;
+                height: 210mm !important;
+            }
+
+            .step-content {
+                width: 148.5mm !important;
+                height: 210mm !important;
+                flex: none !important;
+                padding: 12mm 15mm !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+            }
+
+            .day-badge {
+                font-size: 10pt !important;
+                padding: 4px 10px !important;
+                margin-bottom: 8px !important;
+                background: rgba(17,63,122,0.1) !important;
+                color: #113f7a !important;
+            }
+
+            .step-title {
+                font-size: 18pt !important;
+                margin-bottom: 12px !important;
+                color: #113f7a !important;
+                line-height: 1.2 !important;
+            }
+
+            .section-block {
+                margin-bottom: 10px !important;
+                flex-shrink: 0 !important;
+            }
+
+            .section-title {
+                font-size: 10pt !important;
+                margin-bottom: 6px !important;
+                color: #113f7a !important;
+            }
+
+            .section-items {
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .section-items li {
+                font-size: 9pt !important;
+                line-height: 1.35 !important;
+                padding: 2px 0 2px 14px !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                display: block !important;
+            }
+
+            .section-items li:before {
+                font-size: 9pt !important;
+            }
+
+            .next-step-info {
+                margin-top: auto !important;
+                padding: 8px 12px !important;
+                font-size: 9pt !important;
+                background: #f8f9fa !important;
+                border-left: 3px solid #113f7a !important;
+                flex-shrink: 0 !important;
+            }
+
+            /* Empêcher coupures */
+            * {
+                page-break-inside: avoid !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toolbar (cachée à l'impression) -->
+    <div class="toolbar no-print">
+        <a href="/" class="toolbar-logo">
+            <img src="/assets/symbol.webp" alt="ORT">
+        </a>
+        <span class="toolbar-title" id="toolbarTitle">Mon carnet de voyage</span>
+        <div class="toolbar-spacer"></div>
+        <button class="toolbar-btn" id="btnClose">✕ Fermer</button>
+        <button class="toolbar-btn" id="btnSave">💾 Sauvegarder</button>
+        <button class="toolbar-btn primary" id="btnPrint">🖨️ Imprimer / PDF</button>
+    </div>
+
+    <div class="container" id="container">
+        <div class="loading">
+            <div class="loading-icon">⏳</div>
+            <div>Chargement du carnet...</div>
+        </div>
+    </div>
+
+    <script src="/js/ort-config.js"></script>
+    <script src="/js/ort-state-manager.js"></script>
+    <script>
+    (function() {
+        'use strict';
+        
+        let tripData = null;
+        let tripId = null;
+        let hasChanges = false;
+        let photosCache = {};
+        
+        // ===== INIT =====
+        async function init() {
+            console.log('[CARNET] Initialisation...');
+            
+            // Récupérer données depuis sessionStorage
+            const stored = sessionStorage.getItem('ort_editor_trip');
+            if (stored) {
+                tripData = JSON.parse(stored);
+                tripId = tripData.id || generateId();
+                tripData.id = tripId;
+            }
+            
+            if (!tripData || !tripData.steps || tripData.steps.length === 0) {
+                document.getElementById('container').innerHTML = `
+                    <div class="loading">
+                        <div class="loading-icon">❌</div>
+                        <div>Aucune donnée de voyage trouvée.</div>
+                        <div style="margin-top:16px"><a href="/" style="color:#113f7a">Retour à l'accueil</a></div>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Charger cache photos
+            await loadPhotosCache();
+            
+            // Générer le carnet
+            renderBook();
+            
+            // Titre
+            document.getElementById('toolbarTitle').textContent = tripData.title || 'Mon carnet';
+            document.title = (tripData.title || 'Carnet') + ' — OneRoadTrip';
+            
+            // Events
+            setupEvents();
+            
+            console.log('[CARNET] ✅ Prêt');
+        }
+        
+        // ===== PHOTOS =====
+        async function loadPhotosCache() {
+            try {
+                const r = await fetch('./data/photos-json/photos_lieux.json', { cache: 'no-store' });
+                if (r.ok) photosCache = await r.json() || {};
+            } catch(e) {}
+        }
+        
+        function getPhotos(step) {
+            const photos = [];
+            if (step.photo) photos.push(step.photo);
+            if (step.photos?.length) photos.push(...step.photos);
+            if (step.images?.length) photos.push(...step.images);
+            if (step.place_id && photosCache[step.place_id]?.photos) {
+                photosCache[step.place_id].photos.forEach(p => {
+                    if (!photos.includes(p)) photos.push(p);
+                });
+            }
+            return photos.filter(p => p && typeof p === 'string');
+        }
+        
+        function optimizeImg(url, w = 1200) {
+            if (!url) return '';
+            if (url.includes('wsrv.nl')) return url;
+            // Wikimedia/Wikipedia déjà optimisé, ne pas proxifier
+            if (url.includes('wikimedia.org') || url.includes('wikipedia.org')) return url;
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&q=85&output=webp`;
+        }
+        
+        // Gestion erreurs images - bascule vers la suivante
+        function handleImageError(img, stepIdx) {
+            const photos = img.dataset.photos ? JSON.parse(img.dataset.photos) : [];
+            let currentIdx = parseInt(img.dataset.currentIdx || 0);
+            currentIdx++;
+            
+            if (currentIdx < photos.length) {
+                img.dataset.currentIdx = currentIdx;
+                const nextPhoto = photos[currentIdx];
+                img.src = nextPhoto.includes('wikimedia.org') || nextPhoto.includes('wikipedia.org') 
+                    ? nextPhoto 
+                    : optimizeImg(nextPhoto);
+                console.log(`[IMG] Erreur sur image ${stepIdx}, essai photo ${currentIdx + 1}/${photos.length}`);
+            } else {
+                // Plus de photos, placeholder
+                img.style.display = 'none';
+                img.parentElement.innerHTML = '<div class="step-no-photo">📷</div>';
+                console.log(`[IMG] Aucune image valide pour ${stepIdx}`);
+            }
+        }
+        
+        // ===== RENDER =====
+        function renderBook() {
+            const container = document.getElementById('container');
+            const steps = tripData.steps;
+            
+            // Stats
+            const totalDays = steps.reduce((s, st) => s + (st.nights || 1), 0);
+            const totalKm = Math.round(steps.reduce((s, st) => s + (st.to_next_leg?.distance_km || 0), 0));
+            const country = tripData.country ? getCountryName(tripData.country) : '';
+            
+            // Photo couverture
+            const coverPhotos = getPhotos(steps[0]);
+            const coverPhoto = coverPhotos[tripData.coverPhotoIdx || 0] || coverPhotos[0] || '';
+            
+            let html = `
+            <!-- PAGE COUVERTURE -->
+            <div class="page cover-page">
+                <div class="cover-hero">
+                    ${coverPhoto ? `
+                        <img src="${optimizeImg(coverPhoto)}" alt="Couverture" id="coverImg" data-photos='${JSON.stringify(coverPhotos)}' data-current-idx="0" onerror="handleImageError(this, 'cover')">
+                        ${coverPhotos.length > 1 ? `
+                            <button class="carousel-btn prev no-print" onclick="changePhoto('cover',-1)">‹</button>
+                            <button class="carousel-btn next no-print" onclick="changePhoto('cover',1)">›</button>
+                            <div class="photo-counter no-print" id="coverCounter">1/${coverPhotos.length}</div>
+                        ` : ''}
+                    ` : '<div class="step-no-photo">📷</div>'}
+                    <div class="cover-overlay"></div>
+                    <div class="cover-title-box">
+                        <h1 class="cover-title" contenteditable="true" data-field="title">${esc(tripData.title || 'Mon voyage')}</h1>
+                        <p class="cover-subtitle">${country ? '🌍 ' + country : ''}</p>
+                    </div>
+                </div>
+                <div class="cover-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">${totalDays}</div>
+                        <div class="stat-label">Jours</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${steps.length}</div>
+                        <div class="stat-label">Étapes</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${totalKm}</div>
+                        <div class="stat-label">km</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- PAGE RÉSUMÉ -->
+            <div class="page summary-page">
+                <h2 class="summary-title">📋 Votre itinéraire</h2>
+                <ul class="steps-list">
+                    ${steps.map((st, i) => `
+                        <li class="step-item">
+                            <div class="step-num">${i + 1}</div>
+                            <div class="step-info">
+                                <div class="step-name">${esc(st.name)}</div>
+                                <div class="step-nights">${st.nights ?? 1} ${(st.nights ?? 1) > 1 ? 'nuits' : 'nuit'}</div>
+                            </div>
+                            <div class="step-distance">
+                                ${st.to_next_leg?.distance_km ? Math.round(st.to_next_leg.distance_km) + ' km' : ''}
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            </div>
+            `;
+            
+            // Pages étapes
+            let dayNum = 1;
+            steps.forEach((step, idx) => {
+                const photos = getPhotos(step);
+                const photoIdx = step.selectedPhotoIdx || 0;
+                const photo = photos[photoIdx] || photos[0] || '';
+                
+                const dayEnd = dayNum + (step.nights || 1) - 1;
+                const dayLabel = dayEnd > dayNum 
+                    ? `Jours ${dayNum}-${dayEnd}` 
+                    : `Jour ${dayNum}`;
+                dayNum = dayEnd + 1;
+                
+                const nextStep = steps[idx + 1];
+                const distKm = step.distanceKm || step.to_next_leg?.distance_km ? Math.round(step.distanceKm || step.to_next_leg?.distance_km) : 0;
+                const driveMin = step.driveMin || step.to_next_leg?.drive_min || 0;
+                
+                // Limiter les items pour tenir sur la page
+                const visits = (step.visits || []).slice(0, 5);
+                const activities = (step.activities || []).slice(0, 4);
+                
+                html += `
+                <!-- PAGE ÉTAPE ${idx + 1} -->
+                <div class="page step-page">
+                    <div class="step-photo">
+                        ${photo ? `
+                            <img src="${optimizeImg(photo)}" alt="${esc(step.name)}" id="stepImg${idx}" data-photos='${JSON.stringify(photos)}' data-current-idx="0" onerror="handleImageError(this, ${idx})">
+                            ${photos.length > 1 ? `
+                                <button class="carousel-btn prev no-print" onclick="changePhoto(${idx},-1)">‹</button>
+                                <button class="carousel-btn next no-print" onclick="changePhoto(${idx},1)">›</button>
+                                <div class="photo-counter no-print" id="stepCounter${idx}">1/${photos.length}</div>
+                            ` : ''}
+                        ` : '<div class="step-no-photo">📷</div>'}
+                    </div>
+                    <div class="step-content">
+                        <span class="day-badge">${dayLabel}</span>
+                        <h2 class="step-title" contenteditable="true" data-step="${idx}" data-field="name">${esc(step.name)}</h2>
+                        
+                        ${visits.length > 0 ? `
+                            <div class="section-block">
+                                <div class="section-title">🔍 À découvrir</div>
+                                <ul class="section-items" id="visits${idx}">
+                                    ${visits.map((v, vi) => `
+                                        <li contenteditable="true" data-step="${idx}" data-field="visits" data-idx="${vi}">${esc(typeof v === 'string' ? v : v.name || v.text || '')}</li>
+                                    `).join('')}
+                                </ul>
+                                <button class="add-item-btn no-print" onclick="addItem(${idx},'visits')">+ Ajouter un lieu</button>
+                            </div>
+                        ` : ''}
+                        
+                        ${activities.length > 0 ? `
+                            <div class="section-block">
+                                <div class="section-title">🎯 Activités</div>
+                                <ul class="section-items" id="activities${idx}">
+                                    ${activities.map((a, ai) => `
+                                        <li contenteditable="true" data-step="${idx}" data-field="activities" data-idx="${ai}">${esc(typeof a === 'string' ? a : a.name || a.text || '')}</li>
+                                    `).join('')}
+                                </ul>
+                                <button class="add-item-btn no-print" onclick="addItem(${idx},'activities')">+ Ajouter une activité</button>
+                            </div>
+                        ` : ''}
+                        
+                        ${nextStep ? `
+                            <div class="next-step-info">
+                                <strong>➡️ ${esc(nextStep.name)}</strong>
+                                ${distKm ? ` — ${distKm} km` : ''}
+                                ${driveMin ? ` • ${formatTime(driveMin)}` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            // Stocker photos pour carrousel
+            window._photos = {
+                cover: coverPhotos,
+                cover_idx: tripData.coverPhotoIdx || 0
+            };
+            steps.forEach((st, i) => {
+                window._photos[i] = getPhotos(st);
+                window._photos[i + '_idx'] = st.selectedPhotoIdx || 0;
+            });
+        }
+        
+        // ===== CARROUSEL =====
+        window.changePhoto = function(key, dir) {
+            const photos = window._photos[key];
+            if (!photos || photos.length <= 1) return;
+            
+            const idxKey = key + '_idx';
+            let idx = window._photos[idxKey] || 0;
+            idx = (idx + dir + photos.length) % photos.length;
+            window._photos[idxKey] = idx;
+            
+            const imgId = key === 'cover' ? 'coverImg' : `stepImg${key}`;
+            const counterId = key === 'cover' ? 'coverCounter' : `stepCounter${key}`;
+            
+            const img = document.getElementById(imgId);
+            const counter = document.getElementById(counterId);
+            
+            if (img) img.src = optimizeImg(photos[idx]);
+            if (counter) counter.textContent = `${idx + 1}/${photos.length}`;
+            
+            // Sauvegarder sélection
+            if (key === 'cover') {
+                tripData.coverPhotoIdx = idx;
+            } else {
+                tripData.steps[key].selectedPhotoIdx = idx;
+                tripData.steps[key].photo = photos[idx];
+            }
+            markChanged();
+        };
+        
+        // ===== AJOUTER ITEM =====
+        window.addItem = function(stepIdx, field) {
+            const ul = document.getElementById(field + stepIdx);
+            if (!ul) return;
+            
+            const li = document.createElement('li');
+            li.contentEditable = 'true';
+            li.dataset.step = stepIdx;
+            li.dataset.field = field;
+            li.dataset.idx = ul.children.length;
+            li.textContent = field === 'visits' ? 'Nouveau lieu...' : 'Nouvelle activité...';
+            
+            li.addEventListener('input', handleInput);
+            ul.appendChild(li);
+            li.focus();
+            document.execCommand('selectAll', false, null);
+            
+            markChanged();
+        };
+        
+        // ===== EVENTS =====
+        function setupEvents() {
+            document.querySelectorAll('[contenteditable="true"]').forEach(el => {
+                el.addEventListener('input', handleInput);
+            });
+            
+            document.getElementById('btnClose').onclick = () => {
+                if (hasChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
+                window.close();
+            };
+            
+            document.getElementById('btnSave').onclick = saveTrip;
+            document.getElementById('btnPrint').onclick = printBook;
+        }
+        
+        function handleInput(e) {
+            const el = e.target;
+            const field = el.dataset.field;
+            const stepIdx = el.dataset.step;
+            const idx = el.dataset.idx;
+            const text = el.textContent.trim();
+            
+            if (field === 'title') {
+                tripData.title = text;
+                document.getElementById('toolbarTitle').textContent = text;
+            } else if (stepIdx !== undefined) {
+                const step = tripData.steps[parseInt(stepIdx)];
+                if (field === 'name') {
+                    step.name = text;
+                } else if (field === 'visits' && idx !== undefined) {
+                    if (!step.visits) step.visits = [];
+                    step.visits[parseInt(idx)] = text;
+                } else if (field === 'activities' && idx !== undefined) {
+                    if (!step.activities) step.activities = [];
+                    step.activities[parseInt(idx)] = text;
+                }
+            }
+            markChanged();
+        }
+        
+        function markChanged() {
+            hasChanges = true;
+            document.getElementById('btnSave').textContent = '💾 Sauvegarder *';
+        }
+        
+        // ===== SAVE =====
+        async function saveTrip() {
+            const btn = document.getElementById('btnSave');
+            btn.textContent = '⏳ Sauvegarde...';
+            btn.disabled = true;
+            
+            try {
+                tripData.updatedAt = new Date().toISOString();
+                tripData.saved = true;
+                
+                if (window.ORT_STATE) {
+                    await ORT_STATE.saveTrip(tripData);
+                } else {
+                    localStorage.setItem('ort_trip_' + tripId, JSON.stringify(tripData));
+                }
+                
+                hasChanges = false;
+                btn.textContent = '✅ Sauvegardé';
+                setTimeout(() => { btn.textContent = '💾 Sauvegarder'; }, 2000);
+            } catch(e) {
+                console.error('[CARNET] Erreur save:', e);
+                btn.textContent = '❌ Erreur';
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        // ===== PRINT =====
+        async function printBook() {
+            // Attendre chargement images
+            const imgs = [...document.images];
+            await Promise.all(imgs.map(img => {
+                if (img.complete) return Promise.resolve();
+                return new Promise(res => {
+                    img.onload = res;
+                    img.onerror = res;
+                });
+            }));
+            
+            window.print();
+        }
+        
+        // ===== UTILS =====
+        function esc(s) {
+            if (!s) return '';
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+        
+        function formatTime(min) {
+            if (!min) return '';
+            const h = Math.floor(min / 60);
+            const m = min % 60;
+            return h > 0 ? (m > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${h}h`) : `${m}min`;
+        }
+        
+        function getCountryName(iso) {
+            try {
+                return new Intl.DisplayNames(['fr'], { type: 'region' }).of(iso.toUpperCase());
+            } catch { return iso; }
+        }
+        
+        function generateId() {
+            return `trip_${Date.now()}_${Math.random().toString(36).substr(2,9)}`;
+        }
+        
+        // ===== START =====
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    })();
+    </script>
+</body>
+</html>

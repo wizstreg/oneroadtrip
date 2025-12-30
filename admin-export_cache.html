@@ -1,0 +1,2424 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<meta charset="utf-8">
+<title>ORT Admin - RT Editor & Enrichir</title>
+<style>
+body { font-family: system-ui; padding: 20px; max-width: 1600px; margin: 0 auto; background: #f8fafc; }
+h1 { color: #0f172a; margin: 0; }
+.header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* Onglets */
+.tabs { display: flex; gap: 10px; margin: 15px 0; border-bottom: 2px solid #e2e8f0; }
+.tab { padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 15px; font-weight: 500; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.2s; }
+.tab:hover { color: #1e40af; background: #f1f5f9; }
+.tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+
+/* Sections */
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+.stat-card { background: #eff6ff; padding: 15px; border-radius: 8px; border: 1px solid #bfdbfe; }
+.stat-card h3 { margin: 0 0 5px; color: #1e40af; font-size: 14px; }
+.stat-card .value { font-size: 24px; font-weight: bold; color: #0f172a; }
+.rt-item, .itin-card { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin: 10px 0; }
+.rt-item h4, .itin-card h4 { margin: 0 0 10px; color: #1e40af; }
+.btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; margin-right: 8px; font-size: 14px; transition: all 0.2s; }
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-export { background: #059669; color: white; }
+.btn-delete { background: #dc2626; color: white; }
+.btn-primary { background: #2563eb; color: white; }
+.btn-warning { background: #f59e0b; color: white; }
+.btn-sm { padding: 4px 8px; font-size: 12px; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+pre { background: #f8fafc; padding: 10px; border-radius: 6px; font-size: 12px; max-height: 400px; overflow: auto; border: 1px solid #e2e8f0; }
+.status { padding: 10px; border-radius: 6px; margin: 10px 0; font-size: 13px; }
+.status.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.status.error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+.status.warning { background: #fef3c7; border: 1px solid #fde047; color: #92400e; }
+#statusMsg { display: none; }
+.filter { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+.filter input { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; width: 300px; }
+
+.place-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center; }
+.modal img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+.modal-close { position: absolute; top: 20px; right: 20px; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; }
+
+/* Creators Table */
+.creators-table { width: 100%; border-collapse: collapse; }
+.creators-table th, .creators-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.creators-table th { background: #f1f5f9; color: #1e40af; font-weight: 600; }
+.creators-table tr:hover { background: #f8fafc; }
+.status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.status-pending { background: #fef3c7; color: #92400e; }
+.status-approved { background: #d1fae5; color: #065f46; }
+.status-rejected { background: #fee2e2; color: #991b1b; }
+.creators-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+
+/* RT Editor */
+.itin-list { display: flex; flex-direction: column; gap: 10px; }
+.itin-card { cursor: pointer; transition: all 0.2s; }
+.itin-card:hover { border-color: #2563eb; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1); }
+.itin-card.selected { border-color: #2563eb; background: #eff6ff; }
+.itin-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; font-size: 13px; color: #64748b; }
+.itin-editor { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin-top: 20px; }
+
+/* Themes Manager */
+.itin-item { display: flex; align-items: center; gap: 10px; padding: 10px; background: white; border: 1px solid #e2e8f0; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.itin-item:hover { border-color: #2563eb; background: #f8fafc; }
+.itin-item.selected { border-color: #2563eb; background: #eff6ff; }
+.itin-item .status-icon { font-size: 18px; }
+.itin-item .itin-info { flex: 1; overflow: hidden; }
+.itin-item .itin-title { font-weight: 500; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.itin-item .itin-meta { font-size: 12px; color: #64748b; }
+
+.editor-header { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+.editor-header h4 { margin: 0 0 8px; color: #1e293b; }
+.editor-meta { display: flex; gap: 15px; font-size: 13px; color: #64748b; }
+
+.themes-section { margin-bottom: 25px; }
+.themes-section h5 { margin: 0 0 10px; color: #475569; font-size: 14px; }
+.themes-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; min-height: 36px; }
+.theme-tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; background: #dbeafe; color: #1e40af; border-radius: 20px; font-size: 13px; }
+.theme-tag.non-canon { background: #fef3c7; color: #92400e; }
+.theme-tag .tag-remove { background: none; border: none; cursor: pointer; font-size: 12px; padding: 0; opacity: 0.7; }
+.theme-tag .tag-remove:hover { opacity: 1; }
+.no-themes { color: #94a3b8; font-style: italic; }
+.add-theme-row { display: flex; gap: 8px; }
+.add-theme-row select { flex: 1; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; }
+
+.days-section h5 { margin: 0 0 10px; color: #475569; font-size: 14px; }
+.days-list { display: flex; flex-direction: column; gap: 10px; }
+.day-item { padding: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; }
+.day-header { font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.day-header strong { color: #1e40af; }
+.region-badge { font-size: 11px; background: #e0e7ff; color: #3730a3; padding: 2px 8px; border-radius: 10px; }
+.day-details { font-size: 13px; color: #475569; }
+.day-details .visits { margin-bottom: 4px; }
+.day-details .activities { margin-bottom: 4px; color: #059669; }
+.day-details .distance { color: #64748b; font-size: 12px; }
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-weight: 500; color: #1e40af; margin-bottom: 5px; }
+.form-group input, .form-group textarea { width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-family: inherit; }
+.form-group textarea { min-height: 80px; resize: vertical; }
+.days-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.day-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; }
+.day-item h5 { margin: 0 0 5px; color: #1e40af; font-size: 13px; }
+
+/* Auth overlay */
+#authLock { position: fixed; inset: 0; background: rgba(15,23,42,.6); display: none; align-items: center; justify-content: center; z-index: 9999; }
+#authCard { background: #fff; padding: 20px; border-radius: 12px; width: 360px; box-shadow: 0 10px 30px rgba(0,0,0,.2); }
+#authCard h2 { margin: 0 0 10px; color: #0f172a; }
+#authCard input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
+#authCard .btn { width: 100%; margin-top: 10px; }
+#app.locked { filter: blur(3px); pointer-events: none; user-select: none; }
+
+.input-group { display: flex; gap: 5px; margin-top: 8px; }
+.input-group input { flex: 1; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 12px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; transition: all 0.3s; }
+.two-col.list-hidden { grid-template-columns: 1fr; }
+.two-col.list-hidden .panel:first-child { display: none; }
+.panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; }
+
+.enrichir-toolbar { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; }
+.enrichir-toolbar select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+.day-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin: 20px 0;
+  width: 100%;
+}
+
+.current-visits, .suggestions {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  width: 100%;
+}
+
+.current-visits h3, .suggestions h3 {
+  margin: 0 0 15px;
+  color: #1e40af;
+  font-size: 17px;
+}
+.visit-item, .suggestion-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; margin: 8px 0; display: flex; align-items: center; gap: 10px; }
+.visit-item input[type="checkbox"], .suggestion-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+.visit-item.to-delete { background: #fee; border-color: #fca5a5; text-decoration: line-through; opacity: 0.6; }
+.suggestion-item.to-add { background: #d1fae5; border-color: #6ee7b7; }
+.visit-text { flex: 1; font-size: 14px; }
+.visit-badge { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.visit-badge.visite { background: #dbeafe; color: #1e40af; }
+.visit-badge.activite { background: #fef3c7; color: #92400e; }
+.enrichir-progress { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+.progress-bar { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+.progress-fill { background: #22c55e; height: 100%; transition: width 0.3s; }
+.verified-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+.verified-table th, .verified-table td { padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+.verified-table th { background: #f8fafc; font-weight: 600; color: #1e40af; }
+.loading-spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #e2e8f0; border-top-color: #2563eb; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* Menu flottant en bas */
+.sticky-bottom-menu {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: 30px -20px -20px -20px;
+  padding: 20px;
+  background: linear-gradient(to top, #f8fafc 0%, #f8fafc 90%, transparent 100%);
+  border-top: 2px solid #cbd5e1;
+  z-index: 100;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.sticky-bottom-menu .btn-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.sticky-bottom-menu .btn-wide {
+  width: 100%;
+}
+</style>
+</head>
+<body>
+
+<!-- Auth overlay -->
+<div id="authLock">
+  <div id="authCard">
+    <h2>🔐 Accès admin</h2>
+    <p style="font-size:13px;color:#475569;margin:8px 0 12px">Entrez le mot de passe pour ouvrir cette page.</p>
+    <input id="adminPwd" type="password" placeholder="Mot de passe admin" autocomplete="current-password">
+    <button id="authBtn" type="button" class="btn btn-primary">Ouvrir</button>
+    <div id="authMsg" class="status error" style="display:none;margin-top:8px">Mot de passe incorrect.</div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="header">
+    <h1>🛠️ ORT Admin - RT Editor & Enrichir</h1>
+    
+    <!-- Onglets -->
+        <div class="tabs">
+      <button class="tab active" data-tab="rteditor">🗺️ RT Editor</button>
+      <button class="tab" data-tab="creators">👥 Créateurs</button>
+      <button class="tab" data-tab="themes">🏷️ Thèmes</button>
+      <button class="tab" data-tab="enrichir">✨ Enrichir Visites</button>
+    </div>
+  </div>
+
+  <div id="statusMsg" class="status"></div>
+
+  <!-- ONGLET CRÉATEURS -->
+  <div id="tab-creators" class="tab-content">
+    <div class="creators-stats">
+      <div class="stat-card">
+        <h3>En attente</h3>
+        <div class="value" id="creatorsPending">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Approuvés</h3>
+        <div class="value" id="creatorsApproved">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Rejetés</h3>
+        <div class="value" id="creatorsRejected">-</div>
+      </div>
+    </div>
+
+    <div class="filter">
+      <select id="creatorFilter" style="padding:8px;border:1px solid #cbd5e1;border-radius:6px;">
+        <option value="all">Tous les créateurs</option>
+        <option value="pending">En attente</option>
+        <option value="approved">Approuvés</option>
+        <option value="rejected">Rejetés</option>
+      </select>
+      <input type="text" id="searchCreators" placeholder="🔍 Rechercher par nom..." style="margin-left:10px;padding:8px;border:1px solid #cbd5e1;border-radius:6px;width:300px" />
+    </div>
+
+    <table class="creators-table">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Email</th>
+          <th>Bio</th>
+          <th>Spécialités</th>
+          <th>Statut</th>
+          <th>Candidature</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="creatorsTableBody">
+        <tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b;">Chargement...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="statusMsg" class="status"></div>
+
+
+
+  <!-- ONGLET RT EDITOR -->
+  <div id="tab-rteditor" class="tab-content active">
+    <div class="stats">
+      <div class="stat-card">
+        <h3>Total itinéraires</h3>
+        <div class="value" id="rtTotalCount">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Pays chargés</h3>
+        <div class="value" id="rtCountriesCount">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Total jours</h3>
+        <div class="value" id="rtDaysCount">-</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="loadExcelManual" class="btn btn-primary">📂 Charger GLOBAL_ITINERARIES.xlsx</button>
+      <button id="loadReviewedJSON" class="btn btn-primary">📥 Charger RT revus</button>
+      <button id="exportExcelChanges" class="btn btn-export">💾 Exporter modifications</button>
+      <button id="saveReviewedJSON" class="btn btn-export">💾 Sauvegarder RT revus</button>
+      <input type="file" id="uploadExcel" accept=".xlsx" style="display:none">
+      <input type="file" id="uploadReviewedJSON" accept=".json" style="display:none">
+    </div>
+    
+    <div style="background:#dbeafe;border:1px solid #93c5fd;padding:12px;border-radius:8px;margin-bottom:15px;font-size:13px">
+      <strong>📍 Fichiers :</strong><br>
+      <code style="background:#fff;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px">
+        C:\OneRoadTrip\data\Roadtripsprefabriques\countries\GLOBAL_ITINERARIES.xlsx
+      </code><br>
+      <code style="background:#fff;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px">
+        C:\OneRoadTrip\data\Roadtripsprefabriques\countries\reviewed_itineraries.json
+      </code>
+    </div>
+
+    <div class="filter">
+      <input type="text" id="searchItins" placeholder="🔍 Rechercher un itinéraire..." />
+      <select id="filterReviewed" style="margin-left:10px;padding:8px;border:1px solid #cbd5e1;border-radius:6px;">
+        <option value="all">Tous les RT</option>
+        <option value="not-reviewed">Non revus</option>
+        <option value="reviewed">Revus</option>
+        <option value="to-delete">Marqués à supprimer</option>
+      </select>
+      <span id="reviewedStats" style="margin-left:15px;color:#64748b;font-size:13px;"></span>
+    </div>
+    </div>
+
+    <button id="toggleRTList" class="btn btn-primary" style="margin:15px 0;">◀️ Masquer la liste RT</button>
+
+    <div class="two-col">
+      <div class="panel">
+        <h3>📋 Itinéraires</h3>
+        <div id="itinsList" class="itin-list"></div>
+      </div>
+      <div class="panel">
+        <h3>✏️ Éditeur</h3>
+        <div id="itinEditor"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+ <!-- ONGLET THÈMES -->
+  <div id="tab-themes" class="tab-content">
+    <div class="stats">
+      <div class="stat-card">
+        <h3>Itinéraires</h3>
+        <div class="value" id="themesItinCount">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Sans thèmes</h3>
+        <div class="value" id="themesEmptyCount">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>Non canoniques</h3>
+        <div class="value" id="themesNonCanonCount">-</div>
+      </div>
+      <div class="stat-card">
+        <h3>OK</h3>
+        <div class="value" id="themesOkCount">-</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <button id="loadExcelThemes" class="btn btn-primary">📂 Charger GLOBAL_ITINERARIES.xlsx</button>
+      <button id="exportExcelThemes" class="btn btn-export" disabled>💾 Exporter Excel modifié</button>
+      <input type="file" id="uploadExcelThemes" accept=".xlsx" style="display:none">
+    </div>
+    
+    <div style="background:#fef3c7;border:1px solid #fde047;padding:12px;border-radius:8px;margin-bottom:15px;font-size:13px">
+      <strong>📍 Emplacement du fichier :</strong>
+      <code style="background:#fff;padding:4px 8px;border-radius:4px;display:inline-block;margin-top:5px">
+        C:\OneRoadTrip\data\Roadtripsprefabriques\countries\GLOBAL_ITINERARIES.xlsx
+      </code>
+    </div>
+
+    <div class="filter" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+      <input type="text" id="searchThemesItin" placeholder="🔍 Rechercher un itinéraire..." style="flex:1;min-width:200px;" />
+      <select id="filterByTheme" style="padding:8px;border-radius:4px;border:1px solid #cbd5e1;">
+        <option value="">-- Filtrer par thème --</option>
+        <option value="__empty__">⚠️ SANS THÈMES</option>
+        <option value="__noncanon__">⚠️ NON CANONIQUES</option>
+        <optgroup label="Thèmes canoniques" id="filterCanonGroup"></optgroup>
+        <optgroup label="Thèmes trouvés (non canoniques)" id="filterFoundGroup"></optgroup>
+      </select>
+    </div>
+
+    <div class="two-col" style="margin-top:15px;">
+      <div class="panel" style="max-height:70vh;overflow-y:auto;">
+        <h3>📋 Itinéraires (<span id="themesFilteredCount">0</span>)</h3>
+        <div id="themesItinList" class="itin-list"></div>
+      </div>
+      <div class="panel" style="max-height:70vh;overflow-y:auto;">
+        <h3>✏️ Éditeur de thèmes</h3>
+        <div id="themesEditor">
+          <p style="color:#64748b;text-align:center;padding:40px;">Sélectionnez un itinéraire</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+ <!-- ONGLET ENRICHIR VISITES -->                            
+  <div id="tab-enrichir" class="tab-content">                 
+    <div class="enrichir-toolbar">                            
+      <label>Pays :</label>                                   
+      <select id="enrichirCountrySelect">                     
+        <option value="">-- Sélectionner --</option>          
+      </select>                                                
+      <button id="enrichirLoadAll" class="btn btn-primary">📥 Charger tous les pays</button>
+      <button id="enrichirStart" class="btn btn-primary" disabled>▶️ Démarrer</button>
+    </div>                                                     
+                                                               
+    <div id="enrichirProgress" class="enrichir-progress" style="display:none">
+      <div style="display:flex; justify-content:space-between; margin-bottom:5px">
+        <strong>Progression</strong>                          
+        <span id="enrichirProgressText">0 / 0</span>          
+      </div>                                                   
+      <div class="progress-bar">                              
+        <div id="enrichirProgressBar" class="progress-fill" style="width:0%"></div>
+      </div>                                                   
+      <details style="margin-top:15px">                       
+        <summary style="cursor:pointer; font-weight:600; color:#059669">✅ Itinéraires vérifiés (<span id="verifiedCount">0</span>)</summary>
+        <table class="verified-table">                        
+          <thead><tr><th>ID</th><th>Titre</th><th>Jours traités</th></tr></thead>
+          <tbody id="verifiedTableBody"></tbody>              
+        </table>                                               
+      </details>                                               
+    </div>                                                     
+                                                               
+        </div>                                                     
+                                                               
+    <div id="enrichirCurrentItin" style="display:none">      
+      <div class="itin-card">                                 
+        <h3 id="enrichirItinTitle">-</h3>                     
+        <div class="itin-meta">                               
+          <div><strong>ID:</strong> <span id="enrichirItinId">-</span></div>
+          <div><strong>Jours:</strong> <span id="enrichirItinDays">-</span></div>
+          <div><strong>Jour actuel:</strong> <span id="enrichirCurrentDay">-</span></div>
+        </div>                                                 
+      </div>                                                   
+
+<div style="max-width:800px">
+<div style="display:grid; grid-template-columns:2fr 1fr; gap:20px">
+  <div class="current-visits">
+    <h3>📍 Visites et activités</h3>
+
+    <div id="currentVisitsList"></div>
+  </div>
+
+  <div class="suggestions">
+    <h3>🔍 Recherche</h3>
+    <div id="searchHelper" style="background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #e2e8f0">
+      <p style="font-size:14px;font-weight:600;margin:0 0 10px;color:#1e40af" id="searchQuery">-</p>
+      <button class="btn btn-primary btn-sm" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent(document.getElementById('searchQuery').textContent), '_blank')">🔍 Rechercher sur Google</button>
+      <div style="margin-top:15px;padding-top:15px;border-top:1px solid #e2e8f0">
+        <h4 style="margin:0 0 10px;font-size:13px;color:#64748b">📍 Infos lieu</h4>
+        <div id="placeInfo" style="font-size:13px;color:#475569"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+html<div style="display:grid; grid-template-columns:1fr 300px; gap:20px">
+  <div class="current-visits">
+    <h3>📍 Visites et activités</h3>
+    <div id="currentVisitsList"></div>
+  </div>
+
+  <div class="suggestions">
+    <h3>📍 Informations lieu</h3>
+    <div id="placeInfo" style="font-size:13px;color:#475569"></div>
+  </div>
+</div>                                   
+                                                               
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px">
+  <button id="btnDeleteSelected" class="btn btn-delete">🗑️ Marquer suppressions</button>
+  <button id="btnAddSelected"    class="btn btn-primary">➕ Marquer ajouts</button>
+  <button id="btnSaveDay"        class="btn btn-export">💾 Sauvegarder le jour</button>
+
+  <button id="btnPrevDay"  class="btn btn-primary">⬅️ Jour précédent</button>
+  <button id="btnNextDay"  class="btn btn-primary">➡️ Jour suivant</button>
+  <button id="btnFinishItin" class="btn btn-warning">✅ Terminer itinéraire & Télécharger JSON</button>
+</div>                                              
+    </div>                                                     
+  </div>       
+   
+
+<!-- Modal image -->
+<div id="imageModal" class="modal">
+  <button class="modal-close" onclick="closeModal()">×</button>
+  <img id="modalImage" src="" alt="">
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// Helper: lie un event si l'élément existe (sinon log soft)
+const $on = (id, evt, handler) => {
+  const el = $(id);
+  if (el) el.addEventListener(evt, handler);
+  else console.warn('[ADMIN] Element introuvable #'+id+' pour '+evt);
+};
+
+let AUTH_OK = false;
+
+
+
+let rtData = { itineraries: [], days: [], places: [] };
+let reviewedRTs = new Set();
+let selectedItin = null;
+
+// Chemins par défaut
+const DEFAULT_EXCEL_PATH = 'C:\\OneRoadTrip\\data\\Roadtripsprefabriques\\countries\\GLOBAL_ITINERARIES.xlsx';
+
+// Auth
+const PASS_HASH  = '4d75fca34eae0563f57dd5e78f65d9d78398292d46485316961fdb41308043d6';
+const PASS_PLAIN = 'Omegane2530n!';
+
+async function sha256Hex(text){
+  try{
+    if(!('crypto' in window) || !window.isSecureContext || !crypto.subtle) throw new Error('no-webcrypto');
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }catch(e){
+    let x=0; for(let i=0;i<text.length;i++) x=(x+text.charCodeAt(i))>>>0;
+    return x.toString(16).padStart(8,'0');
+  }
+}
+
+function lockUI(on=true){
+  $('app').classList.toggle('locked', on);
+  $('authLock').style.display = on ? 'flex' : 'none';
+}
+
+async function checkAuth(pwd){
+  const p = (pwd||'').trim();
+  const qs=new URLSearchParams(location.search); 
+  if(qs.get('unsafe')==='1'){ return true; }
+  if(PASS_PLAIN && p===PASS_PLAIN) return true;
+  const h = await sha256Hex(p);
+  return h === PASS_HASH;
+}
+
+function authInit(){
+  // On n'autorisera le bypass que si ?remember=1 ET non expiré (<=30 min)
+  const qs = new URLSearchParams(location.search);
+  const remember = qs.get('remember') === '1';
+  const okFlag   = localStorage.getItem('ADMIN_OK') === '1';
+const ts       = Number(localStorage.getItem('ADMIN_OK_AT') || 0);
+const fresh    = (Date.now() - ts) <= (24 * 60 * 60 * 1000); // 24h
+
+if (okFlag && fresh) {
+    AUTH_OK = true;
+    lockUI(false);
+    return;
+  }
+
+  // Par défaut → toujours demander le mot de passe
+  lockUI(true);
+  $('adminPwd').addEventListener('keydown',(ev)=>{ if(ev.key==='Enter') $('authBtn').click(); });
+  $('authBtn').onclick = async ()=>{
+
+    const msg = $('authMsg');
+    msg.style.display='none';
+    const ok = await checkAuth(($('adminPwd').value||''));
+       if(ok){
+   AUTH_OK = true;
+localStorage.setItem('ADMIN_OK','1');
+localStorage.setItem('ADMIN_OK_AT', String(Date.now()));
+      lockUI(false);
+    }else{
+
+      msg.style.display='block';
+    }
+  };
+}
+
+// Gestion des onglets
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabName = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    $(`tab-${tabName}`).classList.add('active');
+    
+   if(tabName === 'rteditor' && rtData.itineraries.length === 0) {
+      showStatus('💡 Cliquez sur "Charger GLOBAL_ITINERARIES.xlsx" pour commencer', 'warning');
+    }
+    
+    if(tabName === 'enrichir') {
+      enrichirPopulateCountries();
+    }
+  });
+});
+
+function showStatus(msg, type = 'success') {
+  const el = $('statusMsg');
+  el.textContent = msg;
+  el.className = `status ${type}`;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+
+// ========================================
+// ========================================
+
+// RT EDITOR
+
+// ============================================
+// THÈMES MANAGER
+// ============================================
+
+const ALLOWED_THEMES = [
+  "Montagne",
+  "Mer & Côtes", 
+  "Ville & Histoire",
+  "Nature",
+  "Culture",
+  "Gastronomie & Vin",
+  "Aventure & Outdoor",
+  "Route & Exploration",
+  "Insolite & Hors sentiers battus",
+  "Faune & Vie sauvage",
+  "Spiritualité & Religion",
+  "Bien-être & Détente",
+  "Détente",
+  "Testé & approuvé ORT",
+  "Les plus beaux villages"
+];
+
+let themesData = { itineraries: [], days: [], places: [] };
+let themesModified = new Set(); // Track modified itin_ids
+let selectedThemesItin = null;
+
+$('loadExcelThemes').onclick = () => $('uploadExcelThemes').click();
+
+$('uploadExcelThemes').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  showStatus('⏳ Chargement Excel...');
+  
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    
+    // Parse ITINERARIES
+    const itinSheet = workbook.Sheets['ITINERARIES'];
+    const itinRows = XLSX.utils.sheet_to_json(itinSheet);
+    themesData.itineraries = itinRows;
+    
+    // Parse DAYS
+    const daysSheet = workbook.Sheets['DAYS'];
+    const daysRows = XLSX.utils.sheet_to_json(daysSheet);
+    themesData.days = daysRows;
+    
+    // Parse PLACES
+    const placesSheet = workbook.Sheets['PLACES'];
+    const placesRows = XLSX.utils.sheet_to_json(placesSheet);
+    themesData.places = placesRows;
+    
+    themesModified.clear();
+    updateThemesStats();
+    populateThemeFilters();
+    renderThemesItinList();
+    
+    $('exportExcelThemes').disabled = false;
+    showStatus(`✅ Excel chargé : ${themesData.itineraries.length} itinéraires`);
+  } catch (err) {
+    showStatus(`❌ Erreur: ${err.message}`, 'error');
+  }
+};
+
+function parseThemes(themesStr) {
+  if (!themesStr) return [];
+  return String(themesStr).split('|').map(t => t.trim()).filter(t => t);
+}
+
+function isCanonicalTheme(theme) {
+  return ALLOWED_THEMES.includes(theme);
+}
+
+function hasNonCanonicalThemes(themesStr) {
+  const themes = parseThemes(themesStr);
+  return themes.some(t => !isCanonicalTheme(t));
+}
+
+function updateThemesStats() {
+  const total = themesData.itineraries.length;
+  let empty = 0;
+  let nonCanon = 0;
+  let ok = 0;
+  
+  themesData.itineraries.forEach(itin => {
+    const themes = parseThemes(itin.themes);
+    if (themes.length === 0) {
+      empty++;
+    } else if (hasNonCanonicalThemes(itin.themes)) {
+      nonCanon++;
+    } else {
+      ok++;
+    }
+  });
+  
+  $('themesItinCount').textContent = total;
+  $('themesEmptyCount').textContent = empty;
+  $('themesNonCanonCount').textContent = nonCanon;
+  $('themesOkCount').textContent = ok;
+}
+
+function populateThemeFilters() {
+  // Collecter tous les thèmes utilisés
+  const foundThemes = new Map();
+  themesData.itineraries.forEach(itin => {
+    parseThemes(itin.themes).forEach(t => {
+      foundThemes.set(t, (foundThemes.get(t) || 0) + 1);
+    });
+  });
+  
+  // Remplir groupe canonique
+  const canonGroup = $('filterCanonGroup');
+  canonGroup.innerHTML = '';
+  ALLOWED_THEMES.forEach(theme => {
+    const count = foundThemes.get(theme) || 0;
+    const opt = document.createElement('option');
+    opt.value = theme;
+    opt.textContent = `${theme} (${count})`;
+    canonGroup.appendChild(opt);
+  });
+  
+  // Remplir groupe non canonique
+  const foundGroup = $('filterFoundGroup');
+  foundGroup.innerHTML = '';
+  const nonCanon = [...foundThemes.entries()]
+    .filter(([t]) => !isCanonicalTheme(t))
+    .sort((a, b) => b[1] - a[1]);
+  
+  nonCanon.forEach(([theme, count]) => {
+    const opt = document.createElement('option');
+    opt.value = theme;
+    opt.textContent = `⚠️ ${theme} (${count})`;
+    foundGroup.appendChild(opt);
+  });
+}
+
+function renderThemesItinList(filter = '') {
+  const container = $('themesItinList');
+  const searchVal = $('searchThemesItin').value.toLowerCase();
+  const themeFilter = $('filterByTheme').value;
+  
+  let filtered = themesData.itineraries.filter(itin => {
+    // Filtre texte
+    if (searchVal && !itin.itin_id.toLowerCase().includes(searchVal) && 
+        !(itin.title || '').toLowerCase().includes(searchVal)) {
+      return false;
+    }
+    
+    // Filtre thème
+    if (themeFilter === '__empty__') {
+      return parseThemes(itin.themes).length === 0;
+    } else if (themeFilter === '__noncanon__') {
+      return hasNonCanonicalThemes(itin.themes);
+    } else if (themeFilter) {
+      return parseThemes(itin.themes).includes(themeFilter);
+    }
+    
+    return true;
+  });
+  
+  $('themesFilteredCount').textContent = filtered.length;
+  
+  container.innerHTML = filtered.map(itin => {
+    const themes = parseThemes(itin.themes);
+    const hasNonCanon = hasNonCanonicalThemes(itin.themes);
+    const isEmpty = themes.length === 0;
+    const isModified = themesModified.has(itin.itin_id);
+    
+    let statusIcon = '✅';
+    if (isEmpty) statusIcon = '⚠️';
+    else if (hasNonCanon) statusIcon = '🔶';
+    if (isModified) statusIcon = '📝';
+    
+    const selected = selectedThemesItin?.itin_id === itin.itin_id ? 'selected' : '';
+    
+    return `
+      <div class="itin-item ${selected}" onclick="selectThemesItin('${itin.itin_id}')">
+        <span class="status-icon">${statusIcon}</span>
+        <div class="itin-info">
+          <div class="itin-title">${itin.title || itin.itin_id}</div>
+          <div class="itin-meta">${itin.country} | ${themes.length} thème(s)</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function selectThemesItin(itinId) {
+  // === DEBUG ===
+  const countWithThemes = () => themesData.itineraries.filter(i => i.themes && i.themes.trim()).length;
+  const listWithThemes = () => themesData.itineraries.filter(i => i.themes && i.themes.trim()).map(i => `${i.itin_id}: "${i.themes}"`);
+  
+  console.log(`\n========== SÉLECTION RT ==========`);
+  console.log(`[SELECT] Demandé: ${itinId}`);
+  console.log(`[SELECT] RT avec thèmes AVANT sélection: ${countWithThemes()}`);
+  console.log(`[SELECT] Liste:`, listWithThemes());
+  
+  selectedThemesItin = themesData.itineraries.find(i => i.itin_id === itinId);
+  
+  console.log(`[SELECT] Trouvé: themes="${selectedThemesItin?.themes}"`);
+  console.log(`[SELECT] Index dans tableau: ${themesData.itineraries.indexOf(selectedThemesItin)}`);
+  
+  renderThemesItinList();
+  
+  console.log(`[SELECT] RT avec thèmes APRÈS renderList: ${countWithThemes()}`);
+  console.log(`==========================================\n`);
+  
+  renderThemesEditor();
+}
+
+function renderThemesEditor() {
+  const editor = $('themesEditor');
+  
+  if (!selectedThemesItin) {
+    editor.innerHTML = '<p style="color:#64748b;text-align:center;padding:40px;">Sélectionnez un itinéraire</p>';
+    return;
+  }
+  
+  const itin = selectedThemesItin;
+  const themes = parseThemes(itin.themes);
+  const days = themesData.days.filter(d => d.itin_id === itin.itin_id).sort((a, b) => a.day - b.day);
+  
+  // Générer les tags de thèmes
+  const themeTags = themes.map(t => {
+    const isCanon = isCanonicalTheme(t);
+    return `<span class="theme-tag ${isCanon ? '' : 'non-canon'}" data-theme="${t}">
+      ${t} <button onclick="removeTheme('${t}')" class="tag-remove">❌</button>
+    </span>`;
+  }).join('');
+  
+  // Générer le dropdown des thèmes à ajouter
+  const availableThemes = ALLOWED_THEMES.filter(t => !themes.includes(t));
+  const themeOptions = availableThemes.map(t => `<option value="${t}">${t}</option>`).join('');
+  
+  // Générer les jours avec visites/activités
+  const daysHtml = days.map(day => {
+    const place = themesData.places.find(p => p.place_id === day.place_id);
+    return `
+      <div class="day-item">
+        <div class="day-header">
+          <strong>Jour ${day.day}</strong> - ${day.place_id?.split('::')[1] || day.place_id}
+          ${day.region_code ? `<span class="region-badge">${day.region_code}</span>` : ''}
+        </div>
+        <div class="day-details">
+          ${day.visits ? `<div class="visits">📍 ${day.visits}</div>` : ''}
+          ${day.activities ? `<div class="activities">🎯 ${day.activities}</div>` : ''}
+          ${day.distance_km ? `<div class="distance">🚗 ${day.distance_km} km</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+  
+  editor.innerHTML = `
+    <div class="editor-header">
+      <div class="form-group" style="margin-bottom:10px;">
+        <label style="font-size:12px;color:#64748b;">Titre</label>
+        <input type="text" id="editItinTitle" value="${(itin.title || '').replace(/"/g, '&quot;')}" 
+               onchange="updateItinTitle(this.value)" 
+               style="font-weight:500;font-size:16px;padding:8px;width:100%;border:1px solid #cbd5e1;border-radius:6px;">
+      </div>
+      <div class="editor-meta">
+        <span>🌍 ${itin.country}</span>
+        <span>📅 ${itin.total_days || days.length} jours</span>
+        <span>📍 ${days.length} étapes</span>
+      </div>
+    </div>
+    
+    <div class="themes-section">
+      <h5>Thèmes actuels</h5>
+      <div class="themes-tags">
+        ${themeTags || '<span class="no-themes">Aucun thème défini</span>'}
+      </div>
+      
+      <div class="add-theme-row">
+        <select id="addThemeSelect">
+          <option value="">-- Ajouter un thème --</option>
+          ${themeOptions}
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="addThemeToItin()">➕</button>
+      </div>
+    </div>
+    
+    <div class="days-section">
+      <h5>Programme (${days.length} jours)</h5>
+      <div class="days-list">
+        ${daysHtml || '<p>Aucune étape</p>'}
+      </div>
+    </div>
+  `;
+}
+
+function removeTheme(theme) {
+  if (!selectedThemesItin) return;
+  
+  const themes = parseThemes(selectedThemesItin.themes);
+  const newThemes = themes.filter(t => t !== theme);
+  selectedThemesItin.themes = newThemes.join(' | ');
+  
+  // FORCER la mise à jour dans themesData.itineraries
+  const itinInData = themesData.itineraries.find(i => i.itin_id === selectedThemesItin.itin_id);
+  if (itinInData) {
+    itinInData.themes = selectedThemesItin.themes;
+  }
+  
+  themesModified.add(selectedThemesItin.itin_id);
+  updateThemesStats();
+  populateThemeFilters();
+  renderThemesItinList();
+  renderThemesEditor();
+  showStatus(`✅ Thème "${theme}" supprimé`);
+}
+
+function addThemeToItin() {
+  const select = $('addThemeSelect');
+  const theme = select.value;
+  if (!theme || !selectedThemesItin) return;
+  
+  // === DEBUG MASSIF ===
+  const countWithThemes = () => themesData.itineraries.filter(i => i.themes && i.themes.trim()).length;
+  const listWithThemes = () => themesData.itineraries.filter(i => i.themes && i.themes.trim()).map(i => `${i.itin_id}: "${i.themes}"`);
+  
+  console.log(`\n========== AVANT AJOUT ==========`);
+  console.log(`[DEBUG] RT avec thèmes: ${countWithThemes()}`);
+  console.log(`[DEBUG] Liste:`, listWithThemes());
+  console.log(`[DEBUG] selectedThemesItin.itin_id = "${selectedThemesItin.itin_id}"`);
+  console.log(`[DEBUG] selectedThemesItin.themes AVANT = "${selectedThemesItin.themes}"`);
+  
+  // Vérifier si selectedThemesItin EST dans le tableau
+  const indexInArray = themesData.itineraries.indexOf(selectedThemesItin);
+  console.log(`[DEBUG] selectedThemesItin est à l'index ${indexInArray} dans themesData.itineraries`);
+  
+  // Vérifier les doublons
+  const duplicates = themesData.itineraries.filter(i => i.itin_id === selectedThemesItin.itin_id);
+  console.log(`[DEBUG] Nombre de RT avec même itin_id: ${duplicates.length}`);
+  
+  const themes = parseThemes(selectedThemesItin.themes);
+  if (!themes.includes(theme)) {
+    themes.push(theme);
+    selectedThemesItin.themes = themes.join(' | ');
+    console.log(`[DEBUG] selectedThemesItin.themes APRÈS = "${selectedThemesItin.themes}"`);
+    
+    // FORCER la mise à jour dans themesData.itineraries
+    const itinInData = themesData.itineraries.find(i => i.itin_id === selectedThemesItin.itin_id);
+    console.log(`[DEBUG] itinInData === selectedThemesItin ? ${itinInData === selectedThemesItin}`);
+    
+    if (itinInData) {
+      itinInData.themes = selectedThemesItin.themes;
+    }
+    console.log(`[DEBUG] itinInData.themes APRÈS = "${itinInData?.themes}"`);
+    
+    themesModified.add(selectedThemesItin.itin_id);
+    
+    console.log(`\n[DEBUG] === AVANT updateThemesStats ===`);
+    console.log(`[DEBUG] RT avec thèmes: ${countWithThemes()}`);
+    updateThemesStats();
+    console.log(`[DEBUG] === APRÈS updateThemesStats ===`);
+    console.log(`[DEBUG] RT avec thèmes: ${countWithThemes()}`);
+    
+    console.log(`[DEBUG] === AVANT populateThemeFilters ===`);
+    populateThemeFilters();
+    console.log(`[DEBUG] === APRÈS populateThemeFilters ===`);
+    console.log(`[DEBUG] RT avec thèmes: ${countWithThemes()}`);
+    
+    console.log(`[DEBUG] === AVANT renderThemesItinList ===`);
+    renderThemesItinList();
+    console.log(`[DEBUG] === APRÈS renderThemesItinList ===`);
+    console.log(`[DEBUG] RT avec thèmes: ${countWithThemes()}`);
+    
+    console.log(`\n========== APRÈS AJOUT COMPLET ==========`);
+    console.log(`[DEBUG] Liste finale:`, listWithThemes());
+    console.log(`==========================================\n`);
+    
+    renderThemesEditor();
+    showStatus(`✅ Thème "${theme}" ajouté`);
+  }
+}
+
+function updateItinTitle(newTitle) {
+  if (!selectedThemesItin) return;
+  
+  selectedThemesItin.title = newTitle;
+  
+  // FORCER la mise à jour dans themesData.itineraries
+  const itinInData = themesData.itineraries.find(i => i.itin_id === selectedThemesItin.itin_id);
+  if (itinInData) {
+    itinInData.title = newTitle;
+  }
+  themesModified.add(selectedThemesItin.itin_id);
+  renderThemesItinList();
+  showStatus(`✅ Titre mis à jour`);
+}
+
+$('searchThemesItin').addEventListener('input', () => renderThemesItinList());
+$('filterByTheme').addEventListener('change', () => renderThemesItinList());
+
+$('exportExcelThemes').onclick = () => {
+  if (themesData.itineraries.length === 0) return;
+  
+  try {
+    const wb = XLSX.utils.book_new();
+    
+    // ITINERARIES sheet
+    const itinWs = XLSX.utils.json_to_sheet(themesData.itineraries);
+    XLSX.utils.book_append_sheet(wb, itinWs, 'ITINERARIES');
+    
+    // DAYS sheet
+    const daysWs = XLSX.utils.json_to_sheet(themesData.days);
+    XLSX.utils.book_append_sheet(wb, daysWs, 'DAYS');
+    
+    // PLACES sheet
+    const placesWs = XLSX.utils.json_to_sheet(themesData.places);
+    XLSX.utils.book_append_sheet(wb, placesWs, 'PLACES');
+    
+    XLSX.writeFile(wb, 'GLOBAL_ITINERARIES_modified.xlsx');
+    showStatus(`✅ Excel exporté (${themesModified.size} itinéraires modifiés)`);
+  } catch (err) {
+    showStatus(`❌ Erreur export: ${err.message}`, 'error');
+  }
+};
+
+// ============================================
+// RT EDITOR (original)
+// ========================================
+
+$('loadExcelManual').onclick = () => {
+  $('uploadExcel').click();
+};
+
+// Toggle liste RT
+$('toggleRTList').onclick = () => {
+  const twoCol = document.querySelector('.two-col');
+  const btn = $('toggleRTList');
+  
+  if (twoCol.classList.contains('list-hidden')) {
+    twoCol.classList.remove('list-hidden');
+    btn.textContent = '◀️ Masquer la liste RT';
+  } else {
+    twoCol.classList.add('list-hidden');
+    btn.textContent = '▶️ Afficher la liste RT';
+  }
+};
+
+
+$('uploadExcel').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    showStatus('🔄 Chargement de l\'Excel...', 'warning');
+    
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    
+    // Charger les 3 feuilles
+    const itinsSheet = workbook.Sheets['ITINERARIES'];
+    const daysSheet = workbook.Sheets['DAYS'];
+    const placesSheet = workbook.Sheets['PLACES'];
+    
+    if (!itinsSheet) throw new Error('Feuille ITINERARIES manquante');
+    
+    rtData.itineraries = XLSX.utils.sheet_to_json(itinsSheet);
+    rtData.days = daysSheet ? XLSX.utils.sheet_to_json(daysSheet) : [];
+    rtData.places = placesSheet ? XLSX.utils.sheet_to_json(placesSheet) : [];
+    
+    renderItineraries();
+    updateRTStats();
+    showStatus('✅ Excel chargé !');
+  } catch (error) {
+    showStatus(`❌ Erreur: ${error.message}`, 'error');
+  }
+};
+
+function updateRTStats() {
+  $('rtTotalCount').textContent = rtData.itineraries.length;
+  const countries = new Set(rtData.itineraries.map(i => i.country));
+  $('rtCountriesCount').textContent = countries.size;
+  $('rtDaysCount').textContent = rtData.days.length;
+}
+
+
+function toggleReviewed(itinId) {
+  if (reviewedRTs.has(itinId)) {
+    reviewedRTs.delete(itinId);
+  } else {
+    reviewedRTs.add(itinId);
+  }
+  renderItineraries();
+}
+
+
+function renderItineraries(filter = '') {
+function updateReviewedStats() {
+  const statsElem = $('reviewedStats');
+  if (!statsElem) return;
+  
+  const total = rtData.itineraries.length;
+  const reviewed = reviewedRTs.size;
+  const notReviewed = total - reviewed;
+  const toDelete = rtData.itineraries.filter(i => i.DELETE === 'yes').length;
+  
+  console.log(`[RENDER] Début renderItineraries - Total RT: ${total}, À supprimer: ${toDelete}`);
+  
+  statsElem.textContent = `Total: ${total} | Revus: ${reviewed} | Non revus: ${notReviewed} | À supprimer: ${toDelete}`;
+}
+
+  const container = $('itinsList');
+  container.innerHTML = '';
+  
+  if (rtData.itineraries.length === 0) {
+    container.innerHTML = '<p style="text-align:center;color:#64748b;padding:20px">Chargez un fichier Excel</p>';
+    return;
+  }
+  
+  // Filtre par reviewed status
+  const reviewedFilter = $('filterReviewed') ? $('filterReviewed').value : 'all';
+  let filtered = rtData.itineraries;
+  
+  if (reviewedFilter === 'not-reviewed') {
+    filtered = filtered.filter(i => !reviewedRTs.has(i.itin_id));
+  } else if (reviewedFilter === 'reviewed') {
+    filtered = filtered.filter(i => reviewedRTs.has(i.itin_id));
+  } else if (reviewedFilter === 'to-delete') {
+    filtered = filtered.filter(i => i.DELETE === 'yes');
+  }
+  
+  // EXCLURE les RT supprimés de la liste normale (sauf si filtre "to-delete")
+  if (reviewedFilter !== 'to-delete') {
+    const beforeFilter = filtered.length;
+    filtered = filtered.filter(i => {
+      const deleteValue = i.DELETE;
+      // Accepter yes, YES, oui, OUI, 1, true
+      return !(deleteValue === 'yes' || deleteValue === 'YES' || 
+               deleteValue === 'oui' || deleteValue === 'OUI' || 
+               deleteValue === '1' || deleteValue === 1 || 
+               deleteValue === true || deleteValue === 'x' || deleteValue === 'X');
+    });
+    const afterFilter = filtered.length;
+    if (beforeFilter !== afterFilter) {
+      console.log(`[FILTER] ${beforeFilter - afterFilter} RT supprimés filtrés (${afterFilter} restants)`);
+    }
+  }
+  
+  // Filtre par recherche
+  if (filter) {
+    filtered = filtered.filter(i => 
+      (i.itin_id || '').toLowerCase().includes(filter) ||
+      (i.title || '').toLowerCase().includes(filter) ||
+      (i.country || '').toLowerCase().includes(filter)
+    );
+  }
+  
+  filtered.forEach(itin => {
+    const card = document.createElement('div');
+    card.className = 'itin-card';
+    if (selectedItin && selectedItin.itin_id === itin.itin_id) {
+      card.classList.add('selected');
+    }
+    
+    const isReviewed = reviewedRTs.has(itin.itin_id);
+    const isDeleted = itin.DELETE === 'yes';
+    
+    // Badges
+    let badges = '';
+    if (isDeleted) {
+      badges += '<span style="background:#dc2626;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">🗑️ À SUPPRIMER</span>';
+    }
+    if (isReviewed) {
+      badges += '<span style="background:#059669;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-left:8px;">✅ Revu</span>';
+    }
+    
+    // Style si deleted
+    if (isDeleted) {
+      card.style.background = '#fee';
+      card.style.opacity = '0.7';
+    }
+    
+    card.innerHTML = `
+      <div style="display:flex;align-items:start;gap:10px;">
+        <input type="checkbox" 
+               ${isReviewed ? 'checked' : ''}
+               onclick="event.stopPropagation();toggleReviewed('${itin.itin_id}')"
+               title="Marquer comme revu"
+               style="width:18px;height:18px;cursor:pointer;margin-top:2px;">
+        <div style="flex:1;">
+          <h4>${itin.title || itin.itin_id}${badges}</h4>
+          <div class="itin-meta">
+            <div><strong>ID:</strong> ${itin.itin_id}</div>
+            <div><strong>Pays:</strong> ${itin.country}</div>
+            <div><strong>Jours:</strong> ${itin.total_days || 0}</div>
+            <div><strong>Région:</strong> ${itin.dept_name || '-'}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    card.onclick = (e) => {
+      if (e.target.type !== 'checkbox') {
+        selectItin(itin);
+      }
+    };
+    
+    container.appendChild(card);
+  });
+  
+  // Mettre à jour les stats
+  updateReviewedStats();
+}
+
+function selectItin(itin) {
+  selectedItin = itin;
+  renderItineraries();
+  renderItinEditor(itin);
+  window.scrollTo(0, 0);
+}
+
+function renderItinEditor(itin) {
+  const editor = $('itinEditor');
+  const days = rtData.days.filter(d => d.itin_id === itin.itin_id);
+  const isReviewed = reviewedRTs.has(itin.itin_id);
+  
+  editor.innerHTML = `
+    <h4>${itin.title}</h4>
+    <div class="form-group">
+      <label>Titre</label>
+      <input type="text" id="edit-title" value="${itin.title || ''}">
+    </div>
+    <div class="form-group">
+      <label>Thèmes</label>
+      <input type="text" id="edit-themes" value="${itin.themes || ''}">
+    </div>
+    <div class="form-group">
+      <label>Audience</label>
+      <input type="text" id="edit-audience" value="${itin.audience || ''}">
+    </div>
+    <div class="form-group">
+      <label>Language</label>
+      <input type="text" id="edit-language" value="${itin.language || ''}">
+    </div>
+    <h5 style="margin-top:20px;color:#1e40af">Jours (${days.length})</h5>
+    <div class="days-list">
+      ${days.map((d, dayIdx) => {
+        let visits = [];
+        let activities = [];
+        if (d.visits && typeof d.visits === 'string') {
+          visits = d.visits.split('|').map(v => v.trim()).filter(v => v);
+        } else if (Array.isArray(d.visits)) {
+          visits = d.visits;
+        }
+        if (d.activities && typeof d.activities === 'string') {
+          activities = d.activities.split('|').map(a => a.trim()).filter(a => a);
+        } else if (Array.isArray(d.activities)) {
+          activities = d.activities;
+        }
+        return `
+        <div class="day-item" style="margin-bottom:15px;">
+          <h5 style="margin:0 0 10px;">Jour ${d.day} - ${d.place_id || 'N/A'}</h5>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+            <div>
+              <strong style="font-size:13px;">📍 Visites (${visits.length})</strong>
+              ${visits.map((v, vIdx) => `
+                <div style="display:flex;gap:8px;padding:4px 0;font-size:12px;align-items:center;">
+                  <input type="text" value="${(v.text || v).replace(/"/g, '&quot;')}" 
+                         onblur="updateVisit('${itin.itin_id}', ${dayIdx}, ${vIdx}, this.value)"
+                         style="flex:1;padding:4px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+                  <button class="btn btn-delete btn-sm" onclick="deleteVisit('${itin.itin_id}', ${dayIdx}, ${vIdx})">✕</button>
+                </div>
+              `).join('') || '<div style="color:#999;font-size:12px;">Aucune</div>'}
+            </div>
+            <div>
+              <strong style="font-size:13px;">⚡ Activités (${activities.length})</strong>
+              ${activities.map((a, aIdx) => `
+                <div style="display:flex;gap:8px;padding:4px 0;font-size:12px;align-items:center;">
+                  <input type="text" value="${(a.text || a).replace(/"/g, '&quot;')}" 
+                         onblur="updateActivity('${itin.itin_id}', ${dayIdx}, ${aIdx}, this.value)"
+                         style="flex:1;padding:4px;border:1px solid #cbd5e1;border-radius:4px;font-size:12px;">
+                  <button class="btn btn-delete btn-sm" onclick="deleteActivity('${itin.itin_id}', ${dayIdx}, ${aIdx})">✕</button>
+                </div>
+              `).join('') || '<div style="color:#999;font-size:12px;">Aucune</div>'}
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('')}
+    </div>
+    
+    
+    <div class="sticky-bottom-menu">
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveItinChanges()">💾 Sauvegarder</button>
+        <button class="btn btn-warning" onclick="viewItinJSON()">📄 Voir JSON</button>
+        <button class="btn btn-delete" onclick="deleteCurrentItin()">🗑️ Supprimer cet itinéraire</button>
+        <button class="btn ${isReviewed ? 'btn-export' : 'btn-primary'}" onclick="toggleReviewedAndNext('${itin.itin_id}')">
+          ${isReviewed ? '✅ Revu - Passer au suivant' : '☑️ Marquer revu et passer au suivant'}
+        </button>
+      </div>
+      <button class="btn btn-primary btn-wide" onclick="goToNextUnreviewed()">
+        ▶️ RT suivant (non revu)
+      </button>
+      <button class="btn btn-export btn-wide" onclick="finishAndExport()" style="margin-top:10px;">
+        🎯 Finir et exporter fichiers (Excel + JSON)
+      </button>
+    </div>
+  `;
+}
+
+function saveItinChanges() {
+  if (!selectedItin) return;
+  
+  selectedItin.title = $('edit-title').value;
+  selectedItin.themes = $('edit-themes').value;
+  selectedItin.audience = $('edit-audience').value;
+  selectedItin.language = $('edit-language').value;
+  
+  renderItineraries();
+  renderItinEditor(selectedItin);
+  showStatus('✅ Modifications enregistrées (en mémoire)');
+  window.scrollTo(0, 0);
+}
+
+function viewItinJSON() {
+  if (!selectedItin) return;
+  
+  const days = rtData.days.filter(d => d.itin_id === selectedItin.itin_id);
+  const full = { ...selectedItin, days };
+  
+  const blob = new Blob([JSON.stringify(full, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
+$('exportExcelChanges').onclick = () => {
+  const wb = XLSX.utils.book_new();
+  
+  const itinsWS = XLSX.utils.json_to_sheet(rtData.itineraries);
+  XLSX.utils.book_append_sheet(wb, itinsWS, "ITINERARIES");
+  
+  if (rtData.days.length > 0) {
+    const daysWS = XLSX.utils.json_to_sheet(rtData.days);
+    XLSX.utils.book_append_sheet(wb, daysWS, "DAYS");
+  }
+  
+  if (rtData.places.length > 0) {
+    const placesWS = XLSX.utils.json_to_sheet(rtData.places);
+    XLSX.utils.book_append_sheet(wb, placesWS, "PLACES");
+  }
+  
+  XLSX.writeFile(wb, 'GLOBAL_ITINERARIES_modified.xlsx');
+  showStatus('✅ Excel exporté !');
+};
+
+$('searchItins').addEventListener('input', (e) => {
+  renderItineraries(e.target.value.toLowerCase());
+});
+
+// Charger reviewed_itineraries.json
+$('loadReviewedJSON').onclick = () => {
+  $('uploadReviewedJSON').click();
+};
+
+$('uploadReviewedJSON').onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    
+    if (Array.isArray(data.reviewed)) {
+      reviewedRTs = new Set(data.reviewed);
+      showStatus(`✅ ${reviewedRTs.size} RT revus chargés`);
+      renderItineraries();
+    } else {
+      throw new Error('Format invalide - propriété "reviewed" manquante');
+    }
+  } catch (error) {
+    alert('Erreur lors du chargement : ' + error.message);
+  }
+  
+  e.target.value = '';
+};
+
+// Sauvegarder reviewed_itineraries.json
+$('saveReviewedJSON').onclick = () => {
+  const data = {
+    reviewed: Array.from(reviewedRTs),
+    last_updated: new Date().toISOString(),
+    total_count: reviewedRTs.size
+  };
+  
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reviewed_itineraries.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  showStatus(`✅ ${reviewedRTs.size} RT revus sauvegardés - Remplacez l'ancien fichier dans C:\\OneRoadTrip\\data\\Roadtripsprefabriques\\countries\\`);
+  
+  // Message plus visible
+  setTimeout(() => {
+    alert(`✅ Fichier téléchargé: reviewed_itineraries.json\n\n📁 IMPORTANT: Remplacez le fichier à cet emplacement:\nC:\\OneRoadTrip\\data\\Roadtripsprefabriques\\countries\\reviewed_itineraries.json\n\n💡 L'ancien fichier sera automatiquement renommé en backup.`);
+  }, 300);
+};
+
+// Filtre par reviewed status
+if ($('filterReviewed')) {
+  $('filterReviewed').addEventListener('change', () => {
+    renderItineraries();
+  });
+}
+
+
+
+// ============================================
+// ENRICHIR VISITES - CODE PROPRE
+// ============================================
+
+let enrichirState = {
+  countries: [],
+  selectedCountry: null,
+  allItins: [],
+  currentItinIndex: 0,
+  currentDayIndex: 0,
+  verifiedItins: [],
+  suggestions: [],
+  toDelete: new Set(),
+  toAdd: new Set(),
+  jsonData: {} // Stocke les JSON chargés par pays
+};
+
+// Charger un JSON depuis le disque
+async function enrichirLoadCountryJSON(countryCode) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  return new Promise((resolve, reject) => {
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        reject('Aucun fichier sélectionné');
+        return;
+      }
+      
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        enrichirState.jsonData[countryCode] = data;
+        resolve(data);
+      } catch (err) {
+        reject(err);
+      }
+    };
+    
+    input.click();
+  });
+}
+
+// Charger tous les pays disponibles (demande à l'utilisateur de sélectionner les JSON)
+async function enrichirLoadAllCountries() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.multiple = true;
+  
+  return new Promise((resolve) => {
+    input.onchange = async (e) => {
+      const files = Array.from(e.target.files);
+      const countries = [];
+      
+      for (const file of files) {
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (data.country && data.itineraries) {
+            enrichirState.jsonData[data.country] = data;
+            countries.push(data.country);
+          }
+        } catch (err) {
+          console.error(`Erreur chargement ${file.name}:`, err);
+        }
+      }
+      
+      resolve(countries);
+    };
+    
+    input.click();
+  });
+}
+
+// Remplir le sélecteur de pays
+function enrichirPopulateCountries() {
+  const countries = Object.keys(enrichirState.jsonData).sort();
+  const select = $('enrichirCountrySelect');
+  select.innerHTML = '<option value="">-- Sélectionner --</option>';
+  
+  countries.forEach(cc => {
+    const opt = document.createElement('option');
+    opt.value = cc;
+    opt.textContent = cc;
+    select.appendChild(opt);
+  });
+  
+  enrichirState.countries = countries;
+}
+
+// Event: Charger tous les pays
+$('enrichirLoadAll').onclick = async () => {
+  try {
+    const countries = await enrichirLoadAllCountries();
+    enrichirPopulateCountries();
+    showStatus(`✅ ${countries.length} pays chargé(s)`, 'success');
+    $('enrichirStart').disabled = countries.length === 0;
+  } catch (err) {
+    showStatus(`❌ Erreur: ${err}`, 'error');
+  }
+};
+
+// Event: Sélection d'un pays
+$('enrichirCountrySelect').onchange = (e) => {
+  const cc = e.target.value;
+  if (!cc) {
+    $('enrichirStart').disabled = true;
+    return;
+  }
+  
+  enrichirState.selectedCountry = cc;
+  const data = enrichirState.jsonData[cc];
+  
+  if (!data || !data.itineraries) {
+    showStatus('⚠️ Aucun itinéraire pour ce pays', 'warning');
+    $('enrichirStart').disabled = true;
+    return;
+  }
+  
+  enrichirState.allItins = data.itineraries.filter(itin => 
+    !enrichirState.verifiedItins.some(v => v.itin_id === itin.itin_id)
+  );
+  
+  $('enrichirStart').disabled = enrichirState.allItins.length === 0;
+  showStatus(`✅ ${enrichirState.allItins.length} itinéraire(s) disponible(s)`, 'success');
+};
+
+// Event: Démarrer l'enrichissement
+$('enrichirStart').onclick = () => {
+  if (enrichirState.allItins.length === 0) return;
+  
+  enrichirState.currentItinIndex = 0;
+  enrichirState.currentDayIndex = 0;
+  enrichirState.toDelete.clear();
+  enrichirState.toAdd.clear();
+  
+  $('enrichirProgress').style.display = 'block';
+  $('enrichirCurrentItin').style.display = 'block';
+  
+  enrichirUpdateProgress();
+  enrichirLoadDay();
+};
+
+// Mettre à jour la barre de progression
+function enrichirUpdateProgress() {
+  const total = enrichirState.allItins.length;
+  const done = enrichirState.verifiedItins.length;
+  const percent = total > 0 ? Math.round((done / total) * 100) : 0;
+  
+  $('enrichirProgressText').textContent = `${done} / ${total}`;
+  $('enrichirProgressBar').style.width = `${percent}%`;
+  $('verifiedCount').textContent = done;
+  
+  const tbody = $('verifiedTableBody');
+  tbody.innerHTML = enrichirState.verifiedItins.map(v => `
+    <tr>
+      <td>${v.itin_id}</td>
+      <td>${v.title}</td>
+      <td>${v.days_processed}</td>
+    </tr>
+  `).join('');
+}
+
+// Charger un jour spécifique
+async function enrichirLoadDay() {
+  const itin = enrichirState.allItins[enrichirState.currentItinIndex];
+  if (!itin) {
+    showStatus('✅ Tous les itinéraires traités!', 'success');
+    $('enrichirCurrentItin').style.display = 'none';
+    return;
+  }
+  const days = itin.days_plan || [];
+  const dayIndex = enrichirState.currentDayIndex;
+  if (dayIndex >= days.length) {
+    showStatus('✅ Itinéraire terminé', 'success');
+    return;
+  }
+  const day = days[dayIndex];
+  $('enrichirItinTitle').textContent = itin.title || itin.itin_id;
+  $('enrichirItinId').textContent = itin.itin_id;
+  $('enrichirItinDays').textContent = days.length;
+  $('enrichirCurrentDay').textContent = `J${day.day}`;
+enrichirRenderCurrentVisits(day);
+enrichirLoadPlaceInfo(day);
+}
+// Afficher visites/activités actuelles
+
+
+function enrichirRenderCurrentVisits(day) {
+  const visits = day.visits || [];
+  const activities = day.activities || [];
+  const container = $('currentVisitsList');
+  
+  container.innerHTML = '<h4 style="margin:0 0 10px;color:#1e40af">Visites</h4>';
+  
+  visits.forEach((v, idx) => {
+    const div = document.createElement('div');
+    div.className = 'visit-item';
+    div.innerHTML = `
+      <input type="checkbox" data-type="visit" data-idx="${idx}">
+      <span class="visit-badge visite">Visite</span>
+      <input type="text" class="visit-text" value="${v.text}" data-type="visit" data-idx="${idx}" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px">
+      <input type="number" value="${v.visit_duration_min || 75}" data-type="visit" data-idx="${idx}" style="width:60px;padding:6px;border:1px solid #cbd5e1;border-radius:4px">min
+    `;
+    container.appendChild(div);
+  });
+  
+  container.innerHTML += '<h4 style="margin:15px 0 10px;color:#1e40af">Activités</h4>';
+  
+  activities.forEach((a, idx) => {
+    const div = document.createElement('div');
+    div.className = 'visit-item';
+    div.innerHTML = `
+      <input type="checkbox" data-type="activity" data-idx="${idx}">
+      <span class="visit-badge activite">Activité</span>
+      <input type="text" class="visit-text" value="${a.text}" data-type="activity" data-idx="${idx}" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px">
+      <input type="number" value="${a.visit_duration_min || 60}" data-type="activity" data-idx="${idx}" style="width:60px;padding:6px;border:1px solid #cbd5e1;border-radius:4px">min
+    `;
+    container.appendChild(div);
+  });
+  
+  container.innerHTML += '<h4 style="margin:15px 0 10px;color:#059669">➕ Nouvelles</h4>';
+  for (let i = 0; i < 5; i++) {
+    const div = document.createElement('div');
+    div.className = 'visit-item';
+    div.innerHTML = `
+      <select data-new-idx="${i}" style="padding:6px;border:1px solid #cbd5e1;border-radius:4px">
+        <option value="visit">Visite</option>
+        <option value="activity">Activité</option>
+      </select>
+      <input type="text" placeholder="Nouvelle..." data-new-idx="${i}" style="flex:1;padding:6px;border:1px solid #cbd5e1;border-radius:4px">
+      <input type="number" value="75" data-new-idx="${i}" style="width:60px;padding:6px;border:1px solid #cbd5e1;border-radius:4px">min
+    `;
+    container.appendChild(div);
+  }
+  
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.onchange = e => {
+      const parent = e.target.closest('.visit-item');
+      const key = `${e.target.dataset.type}::${e.target.dataset.idx}`;
+      if (e.target.checked) {
+        parent.classList.add('to-delete');
+        enrichirState.toDelete.add(key);
+      } else {
+        parent.classList.remove('to-delete');
+        enrichirState.toDelete.delete(key);
+      }
+    };
+  });
+}
+
+
+
+function enrichirLoadPlaceInfo(day) {
+  const placeId = day.night?.place_id || '';
+  const placeInfo = $('placeInfo');
+  const searchQuery = $('searchQuery');
+
+  if (!placeId) {
+    placeInfo.innerHTML = '<p style="color:#94a3b8">Aucun lieu défini</p>';
+    searchQuery.textContent = '5 choses indispensables à faire';
+    return;
+  }
+
+  const cc = enrichirState.selectedCountry;
+  const jsonData = enrichirState.jsonData[cc];
+  const places = jsonData?.places || [];
+  const place = places.find(p => p.place_id === placeId);
+
+  // Nom "humain" par défaut si pas trouvé
+  const fallbackName = placeId.split('::')[1]?.replace(/-/g, ' ') || placeId;
+  const name = (place && place.name) ? place.name : fallbackName;
+
+  // Construit listes Visites / Activités à partir du schéma fourni
+  const visits = (place?.visits || []).map(v => {
+    const dur = Number.isFinite(v.visit_duration_min) ? ` <span style="color:#64748b">(${v.visit_duration_min} min)</span>` : '';
+    return `<li>${v.text}${dur}</li>`;
+  }).join('');
+
+  const activities = (place?.activities || []).map(a => {
+    const dur = Number.isFinite(a.visit_duration_min) ? ` <span style="color:#64748b">(${a.visit_duration_min} min)</span>` : '';
+    return `<li>${a.text}${dur}</li>`;
+  }).join('');
+
+  placeInfo.innerHTML = `
+    <div>
+      <p style="margin:0 0 8px"><strong>${name}</strong></p>
+      ${visits ? `<h4 style="margin:10px 0 6px;font-size:13px;color:#1e40af">Visites</h4><ul style="padding-left:18px;margin:0 0 8px">${visits}</ul>` : '<p style="color:#94a3b8;margin:8px 0">Aucune visite renseignée</p>'}
+      ${activities ? `<h4 style="margin:10px 0 6px;font-size:13px;color:#1e40af">Activités</h4><ul style="padding-left:18px;margin:0">${activities}</ul>` : '<p style="color:#94a3b8;margin:8px 0">Aucune activité renseignée</p>'}
+    </div>
+  `;
+
+  // Conserve le texte de recherche Google (utile)
+  const countryNames = { 'AE':'Émirats arabes unis','GR':'Grèce','FR':'France','UK':'Royaume-Uni','ES':'Espagne','IT':'Italie','PT':'Portugal','DE':'Allemagne' };
+  const countryName = countryNames[(cc||'').toUpperCase()] || (cc||'');
+  searchQuery.textContent = `5 choses indispensables à faire à ${name}, ${countryName}`;
+}
+
+// Récupérer suggestions depuis le web
+async function enrichirFetchSuggestions(day) {
+  const placeId = day.night?.place_id || '';
+  const container = $('suggestionsList');
+  const status = $('suggestionStatus');
+  
+  if (!placeId) {
+    $('suggestionsCity').textContent = '(lieu inconnu)';
+    status.innerHTML = '⚠️ Aucun place_id';
+    container.innerHTML = '';
+    return;
+  }
+  
+  // Extraire le nom du lieu depuis place_id (format: "AE::liwa-mezairaa")
+  const placeName = placeId.split('::')[1]?.replace(/-/g, ' ') || placeId;
+  
+  $('suggestionsCity').textContent = placeName;
+  status.innerHTML = '<span class="loading-spinner"></span> Recherche...';
+  container.innerHTML = '';
+  enrichirState.toAdd.clear();
+  try {
+  const searchUrl = `https://www.google.com/search?q=${encodeURIComponent('things to do ' + placeName)}`;
+  const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(searchUrl)}`);
+  const data = await response.json();
+  const html = data.contents;
+  enrichirState.suggestions = [];
+  const matches = html.match(/<h3[^>]*>([^<]+)<\/h3>/g) || [];
+  matches.slice(0, 10).forEach(match => {
+    const text = match.replace(/<[^>]+>/g, '').trim();
+    if (text.length > 10 && text.length < 100) {
+      enrichirState.suggestions.push({text, type: 'visit'});
+    }
+  });
+  if (enrichirState.suggestions.length === 0) {
+    enrichirState.suggestions = [{text: `Explorer ${placeName}`, type: 'visit'}];
+  }
+  status.innerHTML = `✅ ${enrichirState.suggestions.length} suggestion(s)`;
+  enrichirState.suggestions.forEach((sug, idx) => {
+    const div = document.createElement('div');
+    div.className = 'suggestion-item';
+    div.innerHTML = `<input type="checkbox" data-idx="${idx}"><span class="visit-badge ${sug.type}">${sug.type === 'visit' ? 'Visite' : 'Activité'}</span><span class="visit-text">${sug.text}</span>`;
+    container.appendChild(div);
+  });
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.onchange = e => {
+      const parent = e.target.closest('.suggestion-item');
+      const idx = e.target.dataset.idx;
+      if (e.target.checked) {
+        parent.classList.add('to-add');
+        enrichirState.toAdd.add(idx);
+      } else {
+        parent.classList.remove('to-add');
+        enrichirState.toAdd.delete(idx);
+      }
+    };
+  });
+} catch (err) {
+  status.innerHTML = `⚠️ Erreur: ${err.message}`;
+  console.error(err);
+}
+
+
+    
+    if (!response.ok) throw new Error('Search failed');
+    
+    const data = await response.json();
+    const results = data.web?.results || [];
+    
+    // Extraire suggestions des résultats
+    enrichirState.suggestions = [];
+    results.slice(0, 10).forEach(r => {
+      const title = r.title || '';
+      if (title.length > 10 && title.length < 100) {
+        enrichirState.suggestions.push({
+          text: title,
+          type: 'visit'
+        });
+      }
+    });
+    
+    // Fallback si aucune suggestion
+    if (enrichirState.suggestions.length === 0) {
+      enrichirState.suggestions = [
+        { text: `Explorer ${placeName}`, type: 'visit' }
+      ];
+    }
+    
+    // Afficher suggestions
+    status.innerHTML = `✅ ${enrichirState.suggestions.length} suggestion(s)`;
+    
+    enrichirState.suggestions.forEach((sug, idx) => {
+      const div = document.createElement('div');
+      div.className = 'suggestion-item';
+      div.innerHTML = `
+        <input type="checkbox" data-idx="${idx}">
+        <span class="visit-badge ${sug.type}">${sug.type === 'visit' ? 'Visite' : 'Activité'}</span>
+        <span class="visit-text">${sug.text}</span>
+      `;
+      container.appendChild(div);
+    });
+    
+    // Gérer les coches
+    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.onchange = (e) => {
+        const parent = e.target.closest('.suggestion-item');
+        const idx = e.target.dataset.idx;
+        
+        if (e.target.checked) {
+          parent.classList.add('to-add');
+          enrichirState.toAdd.add(idx);
+        } else {
+          parent.classList.remove('to-add');
+          enrichirState.toAdd.delete(idx);
+        }
+      };
+    });
+    
+}
+
+// Boutons d'action
+$('btnDeleteSelected').onclick = () => {
+  if (enrichirState.toDelete.size === 0) {
+    showStatus('⚠️ Rien à supprimer', 'warning');
+    return;
+  }
+  showStatus(`✅ ${enrichirState.toDelete.size} marqué(s) pour suppression`);
+};
+
+$('btnAddSelected').onclick = () => {
+  if (enrichirState.toAdd.size === 0) {
+    showStatus('⚠️ Rien à ajouter', 'warning');
+    return;
+  }
+  showStatus(`✅ ${enrichirState.toAdd.size} marqué(s) pour ajout`);
+};
+
+$('btnPrevDay').onclick = () => {
+  if (enrichirState.currentDayIndex > 0) {
+    enrichirState.currentDayIndex--;
+    enrichirLoadDay();
+  }
+};
+
+$('btnNextDay').onclick = () => {
+  const itin = enrichirState.allItins[enrichirState.currentItinIndex];
+  const days = itin?.days_plan || [];
+  
+  if (enrichirState.currentDayIndex < days.length - 1) {
+    enrichirState.currentDayIndex++;
+    enrichirLoadDay();
+  }
+};
+
+$('btnSaveDay').onclick = () => {
+  const itin = enrichirState.allItins[enrichirState.currentItinIndex];
+  const day = itin.days_plan[enrichirState.currentDayIndex];
+  
+  // Appliquer suppressions
+  const visits = (day.visits || []).filter((_, idx) => 
+    !enrichirState.toDelete.has(`visit::${idx}`)
+  );
+  
+  const activities = (day.activities || []).filter((_, idx) => 
+    !enrichirState.toDelete.has(`activity::${idx}`)
+  );
+  
+  // Appliquer ajouts
+  enrichirState.toAdd.forEach(idxStr => {
+    const idx = parseInt(idxStr);
+    const sug = enrichirState.suggestions[idx];
+    
+    if (sug) {
+      if (sug.type === 'visit') {
+        visits.push({ text: sug.text, visit_duration_min: 75 });
+      } else {
+        activities.push({ text: sug.text, visit_duration_min: 60 });
+      }
+    }
+  });
+  
+  day.visits = visits;
+  day.activities = activities;
+  
+  showStatus('✅ Jour sauvegardé', 'success');
+  enrichirState.toDelete.clear();
+  enrichirState.toAdd.clear();
+};
+
+$('btnFinishItin').onclick = () => {
+  const itin = enrichirState.allItins[enrichirState.currentItinIndex];
+  
+  enrichirState.verifiedItins.push({
+    itin_id: itin.itin_id,
+    title: itin.title,
+    days_processed: (itin.days_plan || []).length
+  });
+  
+  enrichirState.currentItinIndex++;
+  enrichirState.currentDayIndex = 0;
+  enrichirUpdateProgress();
+  
+  if (enrichirState.currentItinIndex >= enrichirState.allItins.length) {
+    showStatus('🎉 Tous les itinéraires traités!', 'success');
+    $('enrichirCurrentItin').style.display = 'none';
+  } else {
+    enrichirLoadDay();
+  }
+};
+
+                                                             
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  authInit();
+});
+
+
+
+</script>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/ort-config.js"></script>
+
+<script>
+// Initialiser Firebase
+if (window.ORT_CONFIG?.PROD) {
+  firebase.initializeApp(window.ORT_CONFIG.PROD);
+  console.log('✅ Firebase initialisé');
+}
+// Ajouter avant fetchImportedTrips()
+async function loginAdmin() {
+  try {
+    const result = await firebase.auth().signInWithPopup(
+      new firebase.auth.GoogleAuthProvider()
+    );
+    console.log('✅ Connecté:', result.user.email);
+    alert('Connecté : ' + result.user.email);
+  } catch (error) {
+    alert('Erreur connexion : ' + error.message);
+  }
+}
+
+
+
+// Fonction pour récupérer tous les RT créés par import
+async function fetchImportedTrips() {
+  if (!firebase.apps.length) {
+    alert('Firebase non initialisé');
+    return;
+  }
+  
+  const db = firebase.firestore();
+  const allTrips = [];
+  
+  try {
+    // Récupérer tous les users
+    const usersSnap = await db.collection('users').get();
+    console.log(`📊 ${usersSnap.size} utilisateurs trouvés`);
+    
+    // Pour chaque user, récupérer ses trips
+    for (const userDoc of usersSnap.docs) {
+      const tripsSnap = await db.collection('users')
+        .doc(userDoc.id)
+        .collection('trips')
+        .get();
+      
+      tripsSnap.forEach(tripDoc => {
+        const trip = tripDoc.data();
+        
+        // Filtrer : trips créés par import (baseItinerary existe)
+        if (trip.baseItinerary || trip.from === 'temp') {
+          allTrips.push({
+            userId: userDoc.id,
+            tripId: tripDoc.id,
+            ...trip
+          });
+        }
+      });
+    }
+    
+    console.log(`✅ ${allTrips.length} trips importés trouvés`);
+    
+    // Télécharger en JSON
+    const json = JSON.stringify(allTrips, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `imported_trips_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    alert(`✅ ${allTrips.length} trips exportés`);
+    
+  } catch (error) {
+    console.error('❌ Erreur:', error);
+    alert('Erreur : ' + error.message);
+  }
+}
+
+// Ajouter un bouton dans l'interface
+document.addEventListener('DOMContentLoaded', () => {
+  const toolbar = document.querySelector('.toolbar');
+  if (toolbar) {
+    // Bouton connexion
+    const loginBtn = document.createElement('button');
+    loginBtn.className = 'btn btn-primary';
+    loginBtn.textContent = '🔑 Connexion Admin';
+    loginBtn.onclick = loginAdmin;
+    toolbar.appendChild(loginBtn);
+    
+    // Bouton récupération
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-warning';
+    btn.textContent = '☁️ Récupérer RT Firestore';
+    btn.onclick = fetchImportedTrips;
+    toolbar.appendChild(btn);
+  }
+});
+function deleteCurrentItin() {
+  if (!selectedItin) return;
+  if (!confirm(`⚠️ MARQUER L'ITINÉRAIRE POUR SUPPRESSION ?\n\n"${selectedItin.title || selectedItin.itin_id}"\n\nIl sera supprimé lors de la synchronisation.\n\nContinuer ?`)) return;
+  
+  // Trouver l'objet dans rtData.itineraries et marquer pour suppression
+  const itinInData = rtData.itineraries.find(i => i.itin_id === selectedItin.itin_id);
+  if (itinInData) {
+    itinInData.DELETE = 'yes';
+    console.log(`[DELETE] RT ${itinInData.itin_id} marqué DELETE=yes`);
+  }
+  selectedItin.DELETE = 'yes';
+  
+  // Désélectionner
+  selectedItin = null;
+  renderItineraries();
+  
+  // Passer au suivant au lieu d'écran vide
+  showStatus(`🗑️ Itinéraire marqué pour suppression (DELETE=yes)`);
+  goToNextUnreviewed();
+}
+
+function updateVisit(itinId, dayIdx, visitIdx, newValue) {
+  const days = rtData.days.filter(d => d.itin_id === itinId);
+  const day = days[dayIdx];
+  if (!day) return;
+  
+  let visits = [];
+  if (day.visits && typeof day.visits === 'string') {
+    visits = day.visits.split('|').map(v => v.trim()).filter(v => v);
+  } else if (Array.isArray(day.visits)) {
+    visits = day.visits;
+  }
+  
+  visits[visitIdx] = newValue;
+  day.visits = visits.join(' | ');
+  showStatus('✅ Visite modifiée');
+}
+
+function updateActivity(itinId, dayIdx, activityIdx, newValue) {
+  const days = rtData.days.filter(d => d.itin_id === itinId);
+  const day = days[dayIdx];
+  if (!day) return;
+  
+  let activities = [];
+  if (day.activities && typeof day.activities === 'string') {
+    activities = day.activities.split('|').map(a => a.trim()).filter(a => a);
+  } else if (Array.isArray(day.activities)) {
+    activities = day.activities;
+  }
+  
+  activities[activityIdx] = newValue;
+  day.activities = activities.join(' | ');
+  showStatus('✅ Activité modifiée');
+}
+
+function deleteVisit(itinId, dayIdx, visitIdx) {
+  if (!confirm('Supprimer cette visite ?')) return;
+  const days = rtData.days.filter(d => d.itin_id === itinId);
+  const day = days[dayIdx];
+  if (!day) return;
+  
+  let visits = [];
+  if (day.visits && typeof day.visits === 'string') {
+    visits = day.visits.split('|').map(v => v.trim()).filter(v => v);
+  } else if (Array.isArray(day.visits)) {
+    visits = day.visits;
+  }
+  
+  visits.splice(visitIdx, 1);
+  day.visits = visits.join(' | ');
+  renderItinEditor(selectedItin);
+  showStatus('✅ Visite supprimée');
+}
+
+
+function toggleReviewedAndNext(itinId) {
+  // Sauvegarder automatiquement les modifications
+  if (selectedItin) {
+    selectedItin.title = $('edit-title').value;
+    selectedItin.themes = $('edit-themes').value;
+    selectedItin.audience = $('edit-audience').value;
+    selectedItin.language = $('edit-language').value;
+    console.log(`[SAVE] RT ${selectedItin.itin_id} sauvegardé - DELETE=${selectedItin.DELETE}`);
+  }
+  
+  // Marquer comme revu
+  if (!reviewedRTs.has(itinId)) {
+    reviewedRTs.add(itinId);
+  }
+  renderItineraries();
+  
+  // Passer au suivant
+  goToNextUnreviewed();
+}
+
+function goToNextUnreviewed() {
+  const filterValue = $('filterReviewed') ? $('filterReviewed').value : 'all';
+  
+  // Fonction helper pour vérifier si un RT est supprimé
+  const isDeleted = (itin) => {
+    const deleteValue = itin.DELETE;
+    const deleted = (deleteValue === 'yes' || deleteValue === 'YES' || 
+            deleteValue === 'oui' || deleteValue === 'OUI' || 
+            deleteValue === '1' || deleteValue === 1 || 
+            deleteValue === true || deleteValue === 'x' || deleteValue === 'X');
+    if (deleted) {
+      console.log(`[SKIP] RT ${itin.itin_id} ignoré (DELETE=${deleteValue})`);
+    }
+    return deleted;
+  };
+  
+  console.log(`[NEXT] Recherche prochain RT non revu (filtre=${filterValue})`);
+  
+  // Si le filtre est sur "Non revus", prendre le premier de la liste filtrée
+  if (filterValue === 'not-reviewed') {
+    const notReviewed = rtData.itineraries.filter(i => !reviewedRTs.has(i.itin_id) && !isDeleted(i));
+    console.log(`[NEXT] ${notReviewed.length} RT non revus disponibles`);
+    if (notReviewed.length > 0) {
+      console.log(`[NEXT] Sélection RT ${notReviewed[0].itin_id} (DELETE=${notReviewed[0].DELETE})`);
+      selectItin(notReviewed[0]);
+      window.scrollTo(0, 0);
+      return;
+    }
+  }
+  
+  // Sinon, chercher le prochain non revu dans la liste complète
+  const currentIndex = selectedItin ? rtData.itineraries.findIndex(i => i.itin_id === selectedItin.itin_id) : -1;
+  console.log(`[NEXT] Index actuel: ${currentIndex}`);
+  
+  for (let i = currentIndex + 1; i < rtData.itineraries.length; i++) {
+    const itin = rtData.itineraries[i];
+    if (!reviewedRTs.has(itin.itin_id) && !isDeleted(itin)) {
+      console.log(`[NEXT] Sélection RT ${itin.itin_id} (DELETE=${itin.DELETE})`);
+      selectItin(itin);
+      window.scrollTo(0, 0);
+      return;
+    }
+  }
+  
+  // Si pas trouvé après, chercher depuis le début
+  console.log(`[NEXT] Pas trouvé après, recherche depuis le début`);
+  for (let i = 0; i <= currentIndex; i++) {
+    const itin = rtData.itineraries[i];
+    if (!reviewedRTs.has(itin.itin_id) && !isDeleted(itin)) {
+      console.log(`[NEXT] Sélection RT ${itin.itin_id} (DELETE=${itin.DELETE})`);
+      selectItin(itin);
+      window.scrollTo(0, 0);
+      return;
+    }
+  }
+  
+  // Tous revus
+  console.log(`[NEXT] Aucun RT non revu trouvé`);
+  showStatus('✅ Tous les RT ont été revus !');
+  window.scrollTo(0, 0);
+}
+
+function finishAndExport() {
+  if (!confirm('🎯 FINIR ET EXPORTER\n\nCeci va télécharger :\n1. GLOBAL_ITINERARIES_modified.xlsx\n2. reviewed_itineraries.json\n\nContinuer ?')) {
+    return;
+  }
+  
+  showStatus('🔄 Export en cours...', 'warning');
+  
+  // 1. Exporter l'Excel
+  const wb = XLSX.utils.book_new();
+  
+  const itinsWS = XLSX.utils.json_to_sheet(rtData.itineraries);
+  XLSX.utils.book_append_sheet(wb, itinsWS, "ITINERARIES");
+  
+  if (rtData.days.length > 0) {
+    const daysWS = XLSX.utils.json_to_sheet(rtData.days);
+    XLSX.utils.book_append_sheet(wb, daysWS, "DAYS");
+  }
+  
+  if (rtData.places.length > 0) {
+    const placesWS = XLSX.utils.json_to_sheet(rtData.places);
+    XLSX.utils.book_append_sheet(wb, placesWS, "PLACES");
+  }
+  
+  XLSX.writeFile(wb, 'GLOBAL_ITINERARIES_modified.xlsx');
+  
+  // 2. Exporter le JSON reviewed (avec un délai pour que l'Excel se télécharge d'abord)
+  setTimeout(() => {
+    const data = {
+      reviewed: Array.from(reviewedRTs),
+      last_updated: new Date().toISOString(),
+      total_count: reviewedRTs.size
+    };
+    
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'reviewed_itineraries.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showStatus('✅ Fichiers exportés ! Excel + JSON reviewed');
+    
+    // Message avec instructions
+    setTimeout(() => {
+      alert(`✅ EXPORT TERMINÉ !\n\n2 fichiers téléchargés :\n\n1. GLOBAL_ITINERARIES_modified.xlsx\n   → À renommer et placer dans :\n   C:\\OneRoadTrip\\data\\Roadtripsprefabriques\\countries\\\n\n2. reviewed_itineraries.json\n   → À placer dans :\n   C:\\OneRoadTrip\\data\\Roadtripsprefabriques\\countries\\\n\nEnsuite, lancer le script Node.js pour synchroniser les JSON.`);
+    }, 500);
+  }, 1000);
+}
+
+function deleteActivity(itinId, dayIdx, activityIdx) {
+  if (!confirm('Supprimer cette activité ?')) return;
+  const days = rtData.days.filter(d => d.itin_id === itinId);
+  const day = days[dayIdx];
+  if (!day) return;
+  
+  let activities = [];
+  if (day.activities && typeof day.activities === 'string') {
+    activities = day.activities.split('|').map(a => a.trim()).filter(a => a);
+  } else if (Array.isArray(day.activities)) {
+    activities = day.activities;
+  }
+  
+  activities.splice(activityIdx, 1);
+  day.activities = activities.join(' | ');
+  renderItinEditor(selectedItin);
+  showStatus('✅ Activité supprimée');
+}
+
+// ========== CRÉATEURS MANAGEMENT ==========
+let creatorsData = [];
+
+async function ensureFirebase() {
+  if(window.firebase?.apps?.length) return window.firebase;
+  return window.firebase;
+}
+
+async function loadCreators() {
+  try {
+    const fb = await ensureFirebase();
+    const user = fb.auth().currentUser;
+    
+    if(!user) {
+      showStatus('❌ Non authentifié. Connecte-toi d\'abord!', 'error');
+      return;
+    }
+    
+    const db = fb.firestore();
+    const snapshot = await db.collection('creator_applications').orderBy('submittedAt', 'desc').get();
+    
+    creatorsData = [];
+    snapshot.forEach(doc => {
+      creatorsData.push({docId: doc.id, ...doc.data()});
+    });
+    
+    renderCreatorsTable();
+    updateCreatorsStats();
+    console.log(`✅ ${creatorsData.length} créateurs chargés`);
+  } catch(e) {
+    console.error('Erreur Firestore:', e);
+    showStatus('❌ Erreur: ' + e.message, 'error');
+  }
+}
+
+function renderCreatorsTable() {
+  const filterStatus = document.getElementById('creatorFilter')?.value || 'all';
+  const searchTerm = (document.getElementById('searchCreators')?.value || '').toLowerCase();
+  
+  let filtered = creatorsData;
+  if(filterStatus !== 'all') filtered = filtered.filter(c => c.status === filterStatus);
+  if(searchTerm) filtered = filtered.filter(c => (c.name || '').toLowerCase().includes(searchTerm));
+  
+  const tbody = document.getElementById('creatorsTableBody');
+  if(!tbody) return;
+  
+  if(filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;color:#64748b;">Aucun créateur</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = filtered.map((c, i) => `
+    <tr>
+      <td><strong>${c.name || '-'}</strong></td>
+      <td><small>${c.email || '-'}</small></td>
+      <td><small>${(c.bio || '').substring(0, 50)}...</small></td>
+      <td><small>${(c.specialties || []).join(', ') || '-'}</small></td>
+      <td><span class="status-badge status-${c.status || 'pending'}">${c.status === 'approved' ? '✅ Approuvé' : c.status === 'rejected' ? '❌ Rejeté' : '⏳ En attente'}</span></td>
+      <td><small>${new Date(c.submittedAt).toLocaleDateString('fr-FR')}</small></td>
+      <td>
+        ${c.status !== 'approved' ? `<button class="btn btn-primary btn-sm" onclick="approveCreator('${c.docId}')">✅ Approuver</button>` : ''}
+        ${c.status !== 'rejected' ? `<button class="btn btn-delete btn-sm" onclick="rejectCreator('${c.docId}')">❌ Rejeter</button>` : ''}
+        <button class="btn btn-sm" onclick="viewCreatorDetails('${c.docId}')" style="background:#64748b;color:white">👁️ Voir</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function updateCreatorsStats() {
+  const pending = creatorsData.filter(c => c.status === 'pending').length;
+  const approved = creatorsData.filter(c => c.status === 'approved').length;
+  const rejected = creatorsData.filter(c => c.status === 'rejected').length;
+  
+  const pendingEl = document.getElementById('creatorsPending');
+  const approvedEl = document.getElementById('creatorsApproved');
+  const rejectedEl = document.getElementById('creatorsRejected');
+  
+  if(pendingEl) pendingEl.textContent = pending;
+  if(approvedEl) approvedEl.textContent = approved;
+  if(rejectedEl) rejectedEl.textContent = rejected;
+}
+
+async function approveCreator(docId) {
+  if(!confirm('Approuver ce créateur ?')) return;
+  try {
+    const fb = await ensureFirebase();
+    const db = fb.firestore();
+    await db.collection('creator_applications').doc(docId).update({
+      status: 'approved',
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: 'admin'
+    });
+    showStatus('✅ Créateur approuvé!', 'success');
+    await loadCreators();
+  } catch(e) {
+    showStatus('❌ Erreur: ' + e.message, 'error');
+  }
+}
+
+async function rejectCreator(docId) {
+  const notes = prompt('Notes de rejet (optionnel):');
+  if(notes === null) return;
+  
+  try {
+    const fb = await ensureFirebase();
+    const db = fb.firestore();
+    await db.collection('creator_applications').doc(docId).update({
+      status: 'rejected',
+      reviewedAt: new Date().toISOString(),
+      reviewedBy: 'admin',
+      reviewNotes: notes
+    });
+    showStatus('✅ Créateur rejeté', 'success');
+    await loadCreators();
+  } catch(e) {
+    showStatus('❌ Erreur: ' + e.message, 'error');
+  }
+}
+
+function viewCreatorDetails(docId) {
+  const creator = creatorsData.find(c => c.docId === docId);
+  if(!creator) return;
+  
+  alert(`📋 DÉTAILS CRÉATEUR\n\n` +
+    `Nom: ${creator.name}\n` +
+    `Email: ${creator.email}\n` +
+    `Téléphone: ${creator.phone || '-'}\n` +
+    `Pays: ${creator.country}\n` +
+    `Bio: ${creator.bio}\n\n` +
+    `Spécialités: ${(creator.specialties || []).join(', ')}\n\n` +
+    `Réseaux:\n` +
+    `${(creator.socials || []).map(s => `${s.network}: ${s.handle} (${s.followers || '?'} followers)`).join('\n')}\n\n` +
+    `Statut: ${creator.status}\n` +
+    `Candidature: ${new Date(creator.submittedAt).toLocaleDateString('fr-FR')}` +
+    `${creator.reviewNotes ? '\n\nNotes: ' + creator.reviewNotes : ''}`);
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('creatorFilter')?.addEventListener('change', renderCreatorsTable);
+  document.getElementById('searchCreators')?.addEventListener('input', renderCreatorsTable);
+  
+  // Charger créateurs au clic sur onglet
+  document.querySelectorAll('[data-tab="creators"]').forEach(btn => {
+    btn.addEventListener('click', loadCreators);
+  });
+});
+
+// Charger au démarrage
+setTimeout(() => { if(document.getElementById('tab-creators')) loadCreators(); }, 500);
+
+</script>
+</body>
+</html>

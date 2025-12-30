@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OneRoadTrip - Étape du voyage</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="css/ort.css?v=step-20251031-1">
+<link rel="stylesheet" href="css/ort-step.css?v=step-20251031-1">
+
+<!-- FIX SCROLL TACTILE TABLETTE -->
+<style>
+  html, body {
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+  }
+  
+  /* Permettre scroll page mais pas interférence carte */
+  .leaflet-container {
+    touch-action: none;
+  }
+</style>
+
+</head>
+<body>
+
+<!-- HEADER 2 LIGNES -->
+<header id="mainHeader">
+  <!-- Ligne 1 : Logo + Langue + Auth -->
+  <div class="header-line-1">
+    <a href="index.html" class="brandlink">
+  <img src="./assets/symbol.png" alt="OneRoadTrip" width="40" height="40">
+  <span class="brand">OneRoadTrip</span>
+</a>
+
+    <div class="sp"></div>
+    
+    <!-- Sélecteur de langue -->
+    <select id="langSelector" class="hdr-btn" aria-label="Langue">
+      <option value="fr">🇫🇷 FR</option>
+      <option value="en">🇬🇧 EN</option>
+      <option value="it">🇮🇹 IT</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="pt">🇵🇹 PT</option>
+      <option value="ar">🇸🇦 AR</option>
+    </select>
+    
+    <!-- Auth -->
+    <button id="authBtn" class="hdr-btn" data-i18n="header.login">Connexion</button>
+  </div>
+  
+  <!-- Ligne 2 : Bulles de navigation (chips) -->
+  <div class="header-line-2">
+    <!-- Obligatoires (toujours visibles) -->
+    <button class="chip active" data-section="visits" data-i18n="nav.visits">Visites</button>
+    <button class="chip" data-section="journal" data-i18n="nav.journal">Carnet</button>
+    <button class="chip" data-section="map" data-i18n="nav.map">Carte</button>
+    <button class="chip" data-section="recap" data-i18n="nav.recap">Récap</button>
+    
+    <!-- Optionnels (toggleables) -->
+    <button class="chip optional" data-section="hotels" data-i18n="nav.hotels">Hôtels</button>
+    <button class="chip optional" data-section="activities" data-i18n="nav.activities">Activités+</button>
+    <button class="chip optional" data-section="around" data-i18n="nav.around">Autour</button>
+    <button class="chip optional" data-section="links" data-i18n="nav.links">Liens</button>
+    
+    <div class="sp"></div>
+    
+    <!-- Bouton retour -->
+    <button id="backToTrip" class="hdr-btn" data-i18n="header.back">← Retour au voyage</button>
+  </div>
+</header>
+
+<!-- CONTENEUR PRINCIPAL -->
+<div class="wrap">
+  
+  <!-- En-tête d'étape -->
+  <div id="stepHeader"></div>
+  
+  <!-- Cases (sections) -->
+  <main id="sectionsContainer">
+    
+    <!-- OBLIGATOIRES -->
+    <section id="section-visits" class="step-box mandatory"></section>
+    <section id="section-journal" class="step-box mandatory"></section>
+    <section id="section-map" class="step-box mandatory"></section>
+    <section id="section-recap" class="step-box mandatory"></section>
+    
+    <!-- OPTIONNELLES -->
+    <section id="section-hotels" class="step-box optional" style="display:none"></section>
+    <section id="section-activities" class="step-box optional" style="display:none"></section>
+    <section id="section-around" class="step-box optional" style="display:none"></section>
+    <section id="section-links" class="step-box optional" style="display:none"></section>
+    
+  </main>
+  
+</div>
+
+<!-- FOOTER (aligné sur quest_simple) -->
+<footer style="text-align:center;margin:18px 0 28px;font-size:14px;opacity:.9">
+  <a href="mentions-legales.html" style="color:#c3d6b6;text-decoration:none">Mentions légales</a> ·
+  <a href="politique-confidentialite.html" style="color:#c3d6b6;text-decoration:none">Confidentialité</a> ·
+  <a href="politique-cookies.html" style="color:#c3d6b6;text-decoration:none">Cookies</a>
+  · <button id="manageCookies" class="btn" style="background:none;border:0;color:#c3d6b6;padding:0">Gérer mes cookies</button>
+</footer>
+
+<!-- SCRIPTS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="components/steps/step-i18n.js"></script>
+<script src="js/ort-step-common.js"></script>
+<script src="js/ort-step-loader.js"></script>
+<!-- STATE MANAGER -->
+<script src="js/ort-state-manager.js"></script>
+<script src="js/ort-step-adapter.js"></script>
+<script>
+// ===== INITIALISATION =====
+(function() {
+  'use strict';
+  
+  // Récupération des paramètres URL
+  const params = new URLSearchParams(window.location.search);
+  const tripId = params.get('tripId');
+  const stepId = params.get('stepId');
+  const lang = params.get('lang') || localStorage.getItem('ORT_LANG') || 'fr';
+  const focus = params.get('focus'); // section à focus (ex: journal)
+  const expand = params.get('expand'); // section à agrandir
+  
+  if (!tripId || !stepId) {
+    alert('Erreur : tripId et stepId requis');
+    window.location.href = 'index.html';
+    return;
+  }
+  
+  // État global
+  window.ORT_STEP_STATE = {
+    tripId,
+    stepId,
+    lang,
+    userId: null, // sera rempli après auth
+    data: null,   // données de l'étape
+    modified: false
+  };
+  
+  // Appliquer la langue
+  document.documentElement.lang = lang;
+  if (lang === 'ar') {
+    document.documentElement.dir = 'rtl';
+  }
+  window.ORT_I18N.setLanguage(lang);
+  
+    // Sélecteur de langue
+  document.getElementById('langSelector').value = lang;
+  document.getElementById('langSelector').addEventListener('change', (e) => {
+    const newLang = e.target.value;
+    localStorage.setItem('ORT_LANG', newLang);
+    const newUrl = new URL(window.location.href);
+    newUrl.searchParams.set('lang', newLang);
+    window.location.href = newUrl.toString();
+  });
+
+  // Bouton retour — préserve les paramètres d'origine
+  document.getElementById('backToTrip').addEventListener('click', () => {
+    console.log('═══════════════════════════════════════════════════');
+    console.log('🔙 [RETOUR] Clic sur bouton retour');
+    console.log('═══════════════════════════════════════════════════');
+    
+    const cur = new URL(window.location.href);
+    
+    // Récupérer TOUS les paramètres possibles (URL + localStorage)
+    const fromParam = cur.searchParams.get('from') || localStorage.getItem('ort.lastRtFrom');
+    const rtKeyParam = cur.searchParams.get('rtKey') || localStorage.getItem('ort.lastRtKey');
+    const ccParam = cur.searchParams.get('cc') || localStorage.getItem('ort.lastCc');
+    const itinParam = cur.searchParams.get('itin') || localStorage.getItem('ort.lastItin');
+    const tripIdParam = cur.searchParams.get('tripId');
+
+    console.log('📋 [RETOUR] Tous les paramètres détectés:', {
+      from: fromParam,
+      rtKey: rtKeyParam,
+      cc: ccParam,
+      itin: itinParam,
+      tripId: tripIdParam
+    });
+
+    const u = new URL('roadtrip_detail.html', location.origin);
+    u.searchParams.set('lang', lang);
+
+    // NOUVELLE LOGIQUE DE PRIORITÉ CORRIGÉE
+    // Priorité 1 : RT temporaire (from=temp + rtKey)
+    if (fromParam === 'temp' && rtKeyParam) {
+      u.searchParams.set('from', 'temp');
+      u.searchParams.set('rtKey', rtKeyParam);
+      console.log('   ✅ [RETOUR] Mode RT TEMPORAIRE détecté');
+    } 
+    // Priorité 2 : RT standard avec cc + itin (AVANT tripId!)
+    else if (ccParam && itinParam) {
+      u.searchParams.set('cc', ccParam);
+      u.searchParams.set('itin', itinParam);
+      console.log('   ✅ [RETOUR] Mode RT STANDARD (cc+itin) détecté');
+    }
+    // Priorité 3 : tripId seul (voyage sauvegardé sans autres params)
+    else if (tripIdParam) {
+      u.searchParams.set('tripId', tripIdParam);
+      console.log('   ✅ [RETOUR] Mode RT SAUVEGARDÉ (tripId) détecté');
+    }
+    // Fallback : retour à l'accueil si aucun param trouvé
+    else {
+      console.warn('   ⚠️ [RETOUR] Aucun paramètre valide trouvé → Retour index');
+      location.href = 'index.html';
+      return;
+    }
+
+    console.log('🎯 [RETOUR] URL de retour construite:', u.toString());
+    console.log('🚀 [RETOUR] Redirection...');
+    location.href = u.toString();
+  });
+
+
+  /// Mémorise les paramètres d'origine s'ils existent (utile au retour)
+  (function rememberOriginParams(){
+    const cur = new URL(window.location.href);
+    const fromParam = cur.searchParams.get('from');
+    const rtKeyParam = cur.searchParams.get('rtKey');
+    const ccParam = cur.searchParams.get('cc');
+    const itinParam = cur.searchParams.get('itin');
+    
+    console.log('💾 [MEMO] Mémorisation paramètres origine:', { 
+      from: fromParam, 
+      rtKey: rtKeyParam,
+      cc: ccParam,
+      itin: itinParam
+    });
+    
+    if (fromParam) {
+      localStorage.setItem('ort.lastRtFrom', fromParam);
+      console.log('  ✅ ort.lastRtFrom =', fromParam);
+    }
+    if (rtKeyParam) {
+      localStorage.setItem('ort.lastRtKey', rtKeyParam);
+      console.log('  ✅ ort.lastRtKey =', rtKeyParam);
+    }
+    if (ccParam) {
+      localStorage.setItem('ort.lastCc', ccParam);
+      console.log('  ✅ ort.lastCc =', ccParam);
+    }
+    if (itinParam) {
+      localStorage.setItem('ort.lastItin', itinParam);
+      console.log('  ✅ ort.lastItin =', itinParam);
+    }
+  })();
+
+  // Empêche la restauration auto de scroll + force top immédiatement (compat mobile/tablette)
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+// --- Chips + scroll correct sous header sticky via scroll-margin-top dynamique ---
+  (() => {
+    const headerEl = document.getElementById('mainHeader');
+
+    // calcule et pousse un scroll-margin-top sur toutes les sections
+    const applyScrollMarginTop = () => {
+      const extra = 12; // petit espace visuel sous le header
+      const headerH = headerEl ? headerEl.getBoundingClientRect().height : 130;
+      const margin = Math.round(headerH + extra) + 'px';
+
+      document.querySelectorAll('[id^="section-"]').forEach(sec => {
+        sec.style.scrollMarginTop = margin;
+      });
+    };
+
+    // applique au départ
+    applyScrollMarginTop();
+
+    // suit les changements de taille du header (sticky, responsive, etc.)
+    if (window.ResizeObserver && headerEl) {
+      const ro = new ResizeObserver(applyScrollMarginTop);
+      ro.observe(headerEl);
+    }
+    window.addEventListener('resize', applyScrollMarginTop);
+
+    // gestion des chips
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const section = chip.dataset.section;
+        const isOptional = chip.classList.contains('optional');
+        const sectionEl = document.getElementById(`section-${section}`);
+        if (!sectionEl) return;
+
+        if (isOptional) {
+          // toggle visibilité (inchangé)
+          const isVisible = sectionEl.style.display !== 'none';
+          sectionEl.style.display = isVisible ? 'none' : 'block';
+          chip.classList.toggle('active');
+        } else {
+          // assure qu'on a bien la bonne marge puis scroll smooth
+          applyScrollMarginTop();
+          sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          // état actif
+          document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+        }
+      });
+    });
+  })();
+  
+  // Charger les données de l'étape
+  window.ORT_STEP_LOADER.loadStep(tripId, stepId).then(() => {
+    // Re-forcer scroll en haut après le chargement (empêche dérive sur tablette)
+    requestAnimationFrame(() => window.scrollTo(0, 0));
+  }).catch(() => {
+    // Toujours forcer scroll même en cas d'erreur
+    window.scrollTo(0, 0);
+  });
+  
+   // Focus/expand si spécifié — DESACTIVE sur écrans < 900px
+  const isWide = window.innerWidth >= 900;
+  if (focus && isWide) {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`section-${focus}`);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    });
+  }
+
+  if (expand && isWide && typeof window.ORT_STEP_COMMON.expandSection === 'function') {
+    requestAnimationFrame(() => window.ORT_STEP_COMMON.expandSection(expand));
+  }
+
+  
+  // Écoute des postMessage (pour communication inter-fenêtre)
+  window.addEventListener('message', (event) => {
+    const { action, payload } = event.data;
+    
+    switch(action) {
+      case 'setLanguage':
+        document.getElementById('langSelector').value = payload.lang;
+        document.getElementById('langSelector').dispatchEvent(new Event('change'));
+        break;
+      case 'toggleSection':
+        const chip = document.querySelector(`.chip[data-section="${payload.section}"]`);
+        if (chip) chip.click();
+        break;
+      case 'expandSection':
+        window.ORT_STEP_COMMON.expandSection(payload.section);
+        break;
+      case 'preselectPOI':
+        if (window.ORT_STEP_MAP && typeof window.ORT_STEP_MAP.preselectPOI === 'function') {
+          window.ORT_STEP_MAP.preselectPOI(payload.poiId);
+        }
+        break;
+      case 'returnToDetail':
+        document.getElementById('backToTrip').click();
+        break;
+    }
+  });
+  
+})();
+
+// ===== INITIALISATION STATE MANAGER =====
+(async function initStateManagerStep() {
+  console.log('🔧 [INIT-STEP] Initialisation State Manager...');
+  
+  // Charger Firebase si pas déjà chargé
+  if (!window.firebase?.apps?.length) {
+    console.log('[INIT-STEP] 🔄 Chargement Firebase...');
+    const load = (src) => new Promise((ok, ko) => {
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = ok;
+      s.onerror = () => ko(new Error('load ' + src));
+      document.head.appendChild(s);
+    });
+    
+    try {
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
+      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
+      window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
+      await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+      console.log('[INIT-STEP] ✅ Firebase chargé');
+    } catch (e) {
+      console.warn('[INIT-STEP] ⚠️ Erreur chargement Firebase:', e);
+    }
+  }
+  
+  // Attendre l'auth
+  const user = await new Promise(resolve => {
+    if (window.firebase?.auth) {
+      const unsubscribe = firebase.auth().onAuthStateChanged(user => {
+        unsubscribe();
+        resolve(user);
+      });
+    } else {
+      resolve(null);
+    }
+  });
+  
+  await window.ORT_STATE.init({
+    user: user,
+    premium: false
+  });
+  
+  // Mettre à jour le user pour activer Firestore
+  if (user) {
+    await window.ORT_STATE.updateUser(user);
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const tripId = params.get('tripId');
+  const stepId = params.get('stepId');
+
+  if (tripId && stepId) {
+    window.ORT_STEP_ADAPTER.init(tripId, stepId);
+    console.log('✅ [INIT-STEP] State Manager initialisé pour:', tripId, '/', stepId);
+  }
+})();
+</script>
+
+</body>
+</html>

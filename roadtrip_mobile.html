@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>OneRoadTrip</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JK3QGQGDDL');
+</script>
+<!-- Clean redirect marker on mobile arrival -->
+<script>
+(function(){
+  // Clear all redirect markers when arriving on mobile (successful redirect)
+  for (let i = 0; i < 24; i++) {
+    localStorage.removeItem('ort_redirect_in_progress_' + i);
+  }
+  console.log('[ORT-MOBILE] Redirect markers cleaned');
+})();
+</script>
+<style>
+:root {
+  --ort-blue: #113f7a;
+  --ort-green: #c3d6b6;
+  --ort-light: #f8fafc;
+  --ort-border: #e2e8f0;
+  --tab-height: 56px;
+  --header-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { 
+  height: 100%; 
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--ort-light);
+  color: #1e293b;
+}
+
+/* === HEADER === */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--ort-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-back {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-title {
+  flex: 1;
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-menu {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* === MAIN CONTENT === */
+.main-content {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tab-height) + var(--safe-bottom));
+  overflow: hidden;
+}
+
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  display: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* === MAP TAB === */
+#mapPanel { overflow: hidden; }
+#map { width: 100%; height: 100%; }
+.leaflet-container { font-family: inherit; }
+
+/* === LIST TAB === */
+#listPanel {
+  padding: 12px;
+  padding-bottom: 24px;
+  background: var(--ort-light);
+}
+
+/* Summary card */
+.summary-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 70px;
+}
+
+.summary-stat .value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ort-blue);
+}
+
+.summary-stat .label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Bookings styles */
+#bookingsContainer {
+  padding: 12px;
+  overflow-y: auto;
+  height: calc(100% - 12px);
+}
+
+.booking-day {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border-left: 4px solid #113f7a;
+}
+
+.booking-day-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #113f7a;
+  margin: 0 0 10px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.booking-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.booking-type {
+  font-size: 12px;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.booking-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 4px;
+}
+
+.booking-detail {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+  margin: 4px 0;
+}
+
+.booking-price {
+  font-size: 13px;
+  font-weight: 600;
+  color: #047857;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #f0fdf4;
+}
+
+/* Step cards */
+.step-card {
+  background: #fff;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: stretch;
+  min-height: 90px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.step-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.step-card-num {
+  width: 44px;
+  background: var(--ort-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.step-card-photo {
+  width: 80px;
+  height: 90px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #e2e8f0;
+}
+
+.step-card-info {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.step-card-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ort-blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-card-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.step-card-nights {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--ort-green);
+  color: var(--ort-blue);
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 6px;
+  width: fit-content;
+}
+
+.step-card-chevron {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* === TAB BAR === */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--tab-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: #fff;
+  border-top: 1px solid var(--ort-border);
+  display: flex;
+  z-index: 100;
+}
+
+.tab-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: inherit;
+  font-size: 10px;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-btn.active {
+  color: var(--ort-blue);
+}
+
+.tab-btn .tab-icon {
+  font-size: 22px;
+}
+
+.tab-btn.active .tab-icon {
+  transform: scale(1.1);
+}
+
+/* === BOTTOM SHEET === */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s, visibility 0.25s;
+}
+
+.sheet-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  z-index: 201;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-sheet.show {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 5px;
+  background: #d1d5db;
+  border-radius: 3px;
+  margin: 10px auto;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--ort-border);
+  flex-shrink: 0;
+}
+
+.sheet-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ort-blue);
+}
+
+.sheet-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-photo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background: #e2e8f0;
+}
+
+.sheet-desc {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.sheet-section {
+  margin-bottom: 16px;
+}
+
+.sheet-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* Nights control */
+.nights-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  background: var(--ort-light);
+  border-radius: 12px;
+}
+
+.nights-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--ort-blue);
+  background: #fff;
+  color: var(--ort-blue);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nights-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.nights-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ort-blue);
+  min-width: 80px;
+  text-align: center;
+}
+
+.nights-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Booking buttons */
+.sheet-booking-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.booking-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.booking-btn:active {
+  transform: scale(0.98);
+}
+
+.booking-btn-gyg {
+  background: linear-gradient(135deg, #ff5533 0%, #ff7744 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(255,85,51,0.3);
+}
+
+.booking-btn-tiqets {
+  background: linear-gradient(135deg, #00a0e3 0%, #0077b6 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0,119,182,0.3);
+}
+
+.booking-btn-hotel {
+  background: var(--ort-green);
+  color: var(--ort-blue);
+  box-shadow: 0 4px 12px rgba(195,214,182,0.5);
+}
+
+/* Sheet actions */
+.sheet-actions {
+  padding: 12px 16px calc(12px + var(--safe-bottom));
+  border-top: 1px solid var(--ort-border);
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.sheet-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.sheet-btn-primary {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.sheet-btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  flex: 0 0 auto;
+  padding: 14px 18px;
+}
+
+/* === MENU SHEET === */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ort-border);
+  font-size: 16px;
+  color: #1e293b;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background: var(--ort-light);
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.menu-icon {
+  font-size: 22px;
+  width: 32px;
+  text-align: center;
+}
+
+.menu-item.desktop-only {
+  color: #94a3b8;
+}
+
+/* === SERVICES SHEET === */
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  background: #fff;
+  border-radius: 14px;
+  border: 2px solid var(--ort-border);
+  text-decoration: none;
+  color: #1e293b;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.service-card:active {
+  transform: scale(0.97);
+  border-color: var(--ort-blue);
+  box-shadow: 0 4px 12px rgba(17,63,122,0.15);
+}
+
+.service-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.service-desc {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+  left: 16px;
+  right: 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  z-index: 300;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* === LOADING === */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ort-blue);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  color: #fff;
+}
+
+.loading-overlay.hide {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+}
+
+/* === POPUP LEAFLET MOBILE === */
+.leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
+.leaflet-popup-content { margin: 0; width: 200px !important; }
+
+.map-popup-mini {
+  padding: 12px;
+  text-align: center;
+}
+
+.map-popup-mini img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.map-popup-mini .name {
+  font-weight: 700;
+  color: var(--ort-blue);
+  font-size: 14px;
+}
+
+.map-popup-mini .btn-details {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* Step marker */
+.step-marker {
+  background: var(--ort-blue);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 26px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Chargement...</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <button class="header-back" id="btnBack" aria-label="Retour">←</button>
+  <div class="header-title" id="headerTitle">Roadtrip</div>
+  <button class="header-menu" id="btnMenu" aria-label="Menu">☰</button>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Map Panel -->
+  <!-- Bookings Panel (NEW) -->
+  <div class="tab-panel" id="bookingsPanel">
+    <div id="bookingsContainer">
+      <p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>
+    </div>
+  </div>
+  
+  <!-- Map Panel -->
+  <div class="tab-panel" id="mapPanel">
+    <div id="map"></div>
+  </div>
+  
+  <!-- List Panel -->
+  <div class="tab-panel active" id="listPanel">
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-stat">
+        <div class="value" id="statSteps">-</div>
+        <div class="label">Étapes</div>
+      </div>
+      <div class="summary-stat">
+        <div class="value" id="statNights">-</div>
+        <div class="label">Nuits</div>
+      </div>
+      <div class="summary-stat">
+        <div class="value" id="statKm">-</div>
+        <div class="label">Km</div>
+      </div>
+    </div>
+    <div id="stepsList"></div>
+  </div>
+</main>
+
+<!-- Tab Bar -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tabList" data-panel="listPanel">
+    <span class="tab-icon">📋</span>
+    <span>Itinéraire</span>
+  </button>
+  <button class="tab-btn" id="tabMap" data-panel="mapPanel">
+    <span class="tab-icon">🗺️</span>
+    <span>Carte</span>
+  </button>
+  <button class="tab-btn" id="tabBookings" data-panel="bookingsPanel">
+    <span class="tab-icon">🏨</span>
+    <span>Réservations</span>
+  </button>
+  <button class="tab-btn" id="tabServices">
+    <span class="tab-icon">🛎️</span>
+    <span>Services</span>
+  </button>
+</nav>
+
+<!-- Sheet Overlay -->
+<div class="sheet-overlay" id="sheetOverlay"></div>
+
+<!-- Step Detail Bottom Sheet -->
+<div class="bottom-sheet" id="stepSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="sheetStepName">-</div>
+    <div class="sheet-subtitle" id="sheetStepMeta">-</div>
+  </div>
+  <div class="sheet-body">
+    <img class="sheet-photo" id="sheetStepPhoto" src="" alt="">
+    <div class="sheet-desc" id="sheetStepDesc"></div>
+    
+    <!-- Booking buttons pour l'étape -->
+    <div class="sheet-section">
+      <div class="sheet-section-title">Visites & Hébergement</div>
+      <div class="sheet-booking-btns">
+        <a class="booking-btn booking-btn-gyg" id="btnGyg" href="#" target="_blank" rel="noopener">
+          🎫 Activités & Tours
+        </a>
+        <a class="booking-btn booking-btn-tiqets" id="btnTiqets" href="#" target="_blank" rel="noopener">
+          🎟️ Billets & Musées
+        </a>
+        <a class="booking-btn booking-btn-hotel" id="btnHotel" href="#" target="_blank" rel="noopener">
+          🏨 Trouver un hôtel
+        </a>
+      </div>
+    </div>
+    
+    <div class="sheet-section">
+      <div class="sheet-section-title">Nombre de nuits</div>
+      <div class="nights-control">
+        <button class="nights-btn" id="btnNightsMinus">−</button>
+        <div>
+          <div class="nights-value" id="nightsValue">0</div>
+          <div class="nights-label">nuit(s)</div>
+        </div>
+        <button class="nights-btn" id="btnNightsPlus">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-actions">
+    <button class="sheet-btn sheet-btn-danger" id="btnDeleteStep">🗑️</button>
+    <button class="sheet-btn sheet-btn-primary" id="btnCloseSheet">Fermer</button>
+  </div>
+</div>
+
+<!-- Services Bottom Sheet -->
+<div class="bottom-sheet" id="servicesSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">🛎️ Services voyage</div>
+    <div class="sheet-subtitle">Réservez tout pour votre roadtrip</div>
+  </div>
+  <div class="sheet-body">
+    <div class="service-grid">
+      <a class="service-card" href="https://ektatraveling.tpo.li/KrBrIrRc" target="_blank" rel="noopener">
+        <span class="service-icon">🛡️</span>
+        <span class="service-name">Assurance</span>
+        <span class="service-desc">Voyage serein</span>
+      </a>
+      <a class="service-card" href="https://trip.tpo.li/ljpidUUf" target="_blank" rel="noopener">
+        <span class="service-icon">✈️</span>
+        <span class="service-name">Vols</span>
+        <span class="service-desc">Meilleurs prix</span>
+      </a>
+      <a class="service-card" href="https://qeeq.tpo.li/rMRoXmko" target="_blank" rel="noopener">
+        <span class="service-icon">🚗</span>
+        <span class="service-name">Location auto</span>
+        <span class="service-desc">Comparer les offres</span>
+      </a>
+      <a class="service-card" href="https://gettransfer.tpo.li/NQ4bVvpZ" target="_blank" rel="noopener">
+        <span class="service-icon">🚐</span>
+        <span class="service-name">Transferts</span>
+        <span class="service-desc">Aéroport & plus</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Menu Bottom Sheet -->
+<div class="bottom-sheet" id="menuSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Menu</div>
+  </div>
+  <div class="sheet-body">
+    <div class="menu-item" id="menuSave">
+      <span class="menu-icon">💾</span>
+      <span>Sauvegarder</span>
+    </div>
+    <div class="menu-item" id="menuShare">
+      <span class="menu-icon">📤</span>
+      <span>Partager</span>
+    </div>
+    <div class="menu-item" id="menuPdf">
+      <span class="menu-icon">📄</span>
+      <span>Voir / Imprimer (PDF)</span>
+    </div>
+    <div class="menu-item" id="menuCenter">
+      <span class="menu-icon">🎯</span>
+      <span>Centrer la carte</span>
+    </div>
+    <div class="menu-item desktop-only" id="menuDesktop">
+      <span class="menu-icon">💻</span>
+      <span>Édition avancée (sur ordi)</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-i18n.js"></script>
+<script>
+// === GLOBAL REDIRECT PROTECTION ===
+// Intercept location.replace/assign to ensure desktop redirects include mobile=0
+(function(){
+  const originalReplace = window.location.replace.bind(window.location);
+  const originalAssign = window.location.assign.bind(window.location);
+
+  window.location.replace = function(url) {
+    if (typeof url === 'string' && (url.includes('roadtrip_detail') || url.includes('route_builder'))) {
+      if (!url.includes('mobile=0')) {
+        const sep = url.includes('?') ? '&' : '?';
+        url = url + sep + 'mobile=0';
+        console.log('[ORT-MOBILE] Protected redirect with mobile=0:', url);
+      }
+    }
+    return originalReplace(url);
+  };
+
+  window.location.assign = function(url) {
+    if (typeof url === 'string' && (url.includes('roadtrip_detail') || url.includes('route_builder'))) {
+      if (!url.includes('mobile=0')) {
+        const sep = url.includes('?') ? '&' : '?';
+        url = url + sep + 'mobile=0';
+        console.log('[ORT-MOBILE] Protected assignment with mobile=0:', url);
+      }
+    }
+    return originalAssign(url);
+  };
+})();
+
+// === AFFILIATE LINKS ===
+// Stay22 Config (aligné avec RT detail)
+const STAY22_CONFIG = {
+  AID: 'oneroadtrip',
+  BASE_ALLEZ: 'https://www.stay22.com/allez/roam',
+  MAINCOLOR: '113f7a'
+};
+
+const AFFILIATE = {
+  // GetYourGuide (lien tpo.li)
+  gyg: (city) => `https://getyourguide.tpo.li/YQ9RFXj5?q=${encodeURIComponent(city)}`,
+  // Tiqets (lien tpo.li)
+  tiqets: (city, lang) => `https://tiqets.tpo.li/L1uxd085?q=${encodeURIComponent(city)}&lang=${lang}`,
+  // Stay22 Hotels - utilise allez/roam pour comparateur de prix
+  hotel: (lat, lng, city, nights, checkIn, campaign) => {
+    const params = new URLSearchParams({
+      aid: STAY22_CONFIG.AID,
+      campaign: campaign || 'oneroadtrip_mobile',
+      lat: lat?.toFixed?.(6) || lat,
+      lng: lng?.toFixed?.(6) || lng,
+      address: city,
+      checkin: checkIn,
+      nights: nights
+    });
+    return `${STAY22_CONFIG.BASE_ALLEZ}?${params.toString()}`;
+  }
+};
+
+// Placeholder image
+const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTJlOGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+TtyBQaG90bzwvdGV4dD48L3N2Zz4=';
+
+// Photo cache
+let PHOTOS_CACHE = {};
+
+// Convertir un nom en slug pour matcher les place_id
+function toSlug(name) {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // accents
+    .replace(/['']/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Trouver les photos pour un lieu (essaie plusieurs formats)
+function findPhotosForPlace(name, cc) {
+  if (!name || !PHOTOS_CACHE) return [];
+  
+  const slug = toSlug(name);
+  const ccUp = (cc || '').toUpperCase();
+  
+  // Formats à essayer
+  const keys = [
+    `${ccUp}::${slug}`,
+    `${ccUp}::${name.toLowerCase()}`,
+    slug,
+    name.toLowerCase()
+  ];
+  
+  for (const key of keys) {
+    if (PHOTOS_CACHE[key]?.photos?.length) {
+      return PHOTOS_CACHE[key].photos;
+    }
+  }
+  
+  // Recherche partielle par nom
+  const found = Object.keys(PHOTOS_CACHE).find(k => {
+    const kName = k.split('::').pop() || k;
+    return kName === slug || kName.includes(slug) || slug.includes(kName);
+  });
+  
+  if (found && PHOTOS_CACHE[found]?.photos?.length) {
+    return PHOTOS_CACHE[found].photos;
+  }
+  
+  return [];
+}
+
+async function loadPhotosCache() {
+  try {
+    // Essayer plusieurs chemins possibles
+    const paths = [
+      './data/photos-json/photos_lieux.json',
+      '/data/photos-json/photos_lieux.json',
+      '../data/photos-json/photos_lieux.json'
+    ];
+    for (const path of paths) {
+      try {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (r.ok) {
+          PHOTOS_CACHE = await r.json() || {};
+          console.log('[PHOTOS] Cache chargé:', Object.keys(PHOTOS_CACHE).length, 'lieux');
+          return;
+        }
+      } catch (e) { /* try next */ }
+    }
+    // Fallback localStorage
+    const cached = localStorage.getItem('ort.photos_cache');
+    if (cached) PHOTOS_CACHE = JSON.parse(cached) || {};
+  } catch (e) {
+    console.warn('[PHOTOS] Cache non disponible:', e);
+  }
+}
+
+function getPhotosForPlace(placeId) {
+  if (!placeId) return [];
+  return (PHOTOS_CACHE[placeId]?.photos) || (PHOTOS_CACHE[placeId]?.images) || [];
+}
+
+// === STATE ===
+let state = { title: 'Roadtrip', steps: [], cc: '', lang: 'fr', _originalItinId: null };
+let map = null;
+let markers = [];
+let routeLayer = null;
+let currentStepIndex = null;
+let hasUnsavedChanges = false;
+let totalRouteKm = 0;
+
+// === DOM REFS ===
+const $ = id => document.getElementById(id);
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', init);
+
+setTimeout(() => {
+  const overlay = $('loadingOverlay');
+  if (overlay && !overlay.classList.contains('hide')) {
+    overlay.classList.add('hide');
+  }
+}, 8000);
+
+async function init() {
+  console.log('[MOBILE] Init');
+  
+  // Charger le cache de photos AVANT tout le reste
+  await loadPhotosCache();
+  
+  const params = new URLSearchParams(location.search);
+  const cc = params.get('cc')?.toUpperCase() || '';
+  const itinId = params.get('itin') || '';
+  const rtKey = params.get('rtKey') || '';
+  const lang = params.get('lang') || localStorage.getItem('ort_lang') || 'fr';
+  const fromTemp = params.get('from') === 'temp';
+  const builderMode = params.get('mode') === 'builder' || params.get('from') === 'builder';
+  const fromBuilderResult = params.get('fromBuilder') === '1';
+  
+  state.cc = cc;
+  state.lang = lang;
+  localStorage.setItem('ort_lang', lang);
+  
+  setupTabs();
+  setupEvents();
+  
+  try {
+    if (fromBuilderResult) {
+      // Retour de RT Detail avec résultat calculé
+      await loadBuilderResult();
+    } else if (builderMode) {
+      // Mode builder: rediriger vers RT Detail pour calcul
+      await initRouteBuilder(params);
+    } else if (fromTemp && rtKey) {
+      // Mode temp: charger depuis localStorage
+      await loadFromTemp(rtKey);
+    } else if (rtKey) {
+      // Mode Firebase
+      await loadFromFirebase(rtKey);
+    } else if (cc && itinId) {
+      // Mode itinéraire existant
+      await loadItinerary(cc, itinId, lang);
+    } else {
+      // Aucun itinéraire → message d'erreur
+      throw new Error('Aucun itinéraire spécifié');
+    }
+    
+    renderList();
+    renderBookings();
+    updateSummary();
+    initMap();
+    $('headerTitle').textContent = state.title || 'Roadtrip';
+    
+  } catch (err) {
+    console.error('[MOBILE] Error:', err);
+    if (err.message !== 'Redirection en cours...') {
+      showToast('❌ ' + (err.message || 'Erreur'));
+      // Afficher message d'erreur au lieu de démo
+      state.title = '❌ Erreur';
+      state.steps = [];
+      renderList();
+      renderBookings();
+      updateSummary();
+      initMap();
+    }
+  }
+  
+  setTimeout(() => $('loadingOverlay')?.classList.add('hide'), 300);
+}
+
+// === LOAD FROM TEMP (localStorage) ===
+async function loadFromTemp(rtKey) {
+  console.log('[MOBILE] loadFromTemp:', rtKey);
+  
+  const rawItins = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_itins`);
+  const rawPlaces = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_places`);
+  
+  if (!rawItins) throw new Error('Itinéraire temporaire non trouvé');
+  
+  let itinsObj, placesObj;
+  try {
+    itinsObj = JSON.parse(rawItins);
+    placesObj = rawPlaces ? JSON.parse(rawPlaces) : {};
+  } catch (e) {
+    throw new Error('Données corrompues');
+  }
+  
+  // Trouver l'itinéraire à utiliser
+  let toUse = null;
+  if (Array.isArray(itinsObj.days_plan) || Array.isArray(itinsObj.places)) {
+    toUse = itinsObj;
+  } else if (itinsObj.itineraries?.[0]) {
+    toUse = itinsObj.itineraries[0];
+  } else if (itinsObj.itins?.[0]) {
+    toUse = itinsObj.itins[0];
+  }
+  
+  if (!toUse) throw new Error('Structure itinéraire invalide');
+  
+  // Extraire les étapes
+  const rawSteps = toUse.days_plan || toUse.places || toUse.steps || [];
+  state.title = toUse.title || toUse.name || 'Roadtrip';
+  state.cc = toUse.itin_id ? toUse.itin_id.split('::')[0].toUpperCase() : (itinsObj.country || 'XX');
+  state._originalItinId = rtKey;
+  
+  state.steps = rawSteps.map((s, idx) => {
+    let photos = [];
+    if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (s.image) photos = [s.image];
+    else if (s.photo) photos = [s.photo];
+    else if (s.placeId && placesObj[s.placeId]?.photos) photos = placesObj[s.placeId].photos;
+    
+    return {
+      _idx: idx,
+      name: s.name || s.place_name || `Étape ${idx + 1}`,
+      lat: s.lat || s.latitude,
+      lng: s.lng || s.lon || s.longitude,
+      nights: s.nights || s.adjustedDays || 0,
+      description: s.description || s.desc || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      placeId: s.placeId || s.place_id || null
+    };
+  });
+  
+  console.log(`[MOBILE] Loaded ${state.steps.length} steps from temp`);
+}
+
+// === ROUTE BUILDER ===
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
+
+async function initRouteBuilder(params) {
+  console.log('[MOBILE-BUILDER] Redirection vers RT Detail pour calcul...');
+  
+  // Construire l'URL vers RT Detail avec returnTo=mobile
+  const newParams = new URLSearchParams(params);
+  newParams.set('returnTo', 'mobile');
+  
+  // Rediriger vers RT Detail qui fera le calcul
+  const url = `roadtrip_detail.html?${newParams.toString()}`;
+  console.log('[MOBILE-BUILDER] Redirect:', url);
+  
+  showToast('🔄 Calcul de l\'itinéraire...');
+  
+  // Petit délai pour voir le toast
+  setTimeout(() => {
+    window.location.href = url;
+  }, 500);
+  
+  // Ne jamais arriver ici, mais au cas où
+  throw new Error('Redirection en cours...');
+}
+
+// Charger le résultat du builder depuis localStorage
+async function loadBuilderResult() {
+  console.log('[MOBILE] Chargement résultat builder...');
+  
+  const raw = localStorage.getItem('ORT_BUILDER_RESULT');
+  if (!raw) throw new Error('Résultat builder non trouvé');
+  
+  const data = JSON.parse(raw);
+  if (!data || !data.steps?.length) throw new Error('Données builder invalides');
+  
+  state.title = data.title || 'Roadtrip';
+  state.cc = data.cc || 'XX';
+  state._fromBuilder = true;
+  
+  state.steps = data.steps.map((s, idx) => {
+    // Récupérer photos
+    let photos = s.images || s.photos || [];
+    if (!photos.length && s.name) {
+      photos = findPhotosForPlace(s.name, s.cc || state.cc);
+    }
+    
+    return {
+      _idx: idx,
+      name: s.name,
+      lat: s.lat,
+      lng: s.lng || s.lon,
+      nights: s.nights || 0,
+      description: s.description || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      placeId: s.place_id || null,
+      visits: s.visits || [],
+      activities: s.activities || []
+    };
+  });
+  
+  // === RESTAURER LES RÉSERVATIONS ===
+  if (data.bookings && typeof globalMobileBookingManager !== 'undefined' && globalMobileBookingManager) {
+    state.bookings = data.bookings;
+    
+    // Charger dans le gestionnaire de réservations mobile
+    Object.entries(data.bookings).forEach(([stepIdx, bookings]) => {
+      if (Array.isArray(bookings)) {
+        bookings.forEach(booking => {
+          globalMobileBookingManager.addBooking(booking);
+        });
+      }
+    });
+    
+    console.log('[MOBILE] ✅ Réservations restaurées:', Object.keys(data.bookings).length, 'étapes');
+  }
+  
+  console.log(`[MOBILE] Builder result: ${state.steps.length} étapes`);
+  
+  // Nettoyer localStorage
+  localStorage.removeItem('ORT_BUILDER_RESULT');
+}
+
+async function calculateOSRMRoute(start, end) {
+  const urlCoords = `${start.lon},${start.lat};${end.lon},${end.lat}`;
+  const url = `https://router.project-osrm.org/route/v1/driving/${urlCoords}?overview=full&geometries=geojson`;
+  
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const data = await resp.json();
+    
+    if (data.code === 'Ok' && data.routes?.[0]) {
+      const route = data.routes[0];
+      const rawCoords = route.geometry.coordinates; // [lon, lat]
+      
+      // Simplifier à ~100 points et convertir en [lat, lon]
+      const step = Math.max(1, Math.floor(rawCoords.length / 100));
+      const routeCoords = [];
+      for (let i = 0; i < rawCoords.length; i += step) {
+        routeCoords.push([rawCoords[i][1], rawCoords[i][0]]);
+      }
+      if (routeCoords[routeCoords.length-1][0] !== rawCoords[rawCoords.length-1][1]) {
+        routeCoords.push([rawCoords[rawCoords.length-1][1], rawCoords[rawCoords.length-1][0]]);
+      }
+      
+      // Distances cumulées
+      const cumDist = [0];
+      for (let i = 1; i < routeCoords.length; i++) {
+        cumDist.push(cumDist[i-1] + haversineDistance(routeCoords[i-1][0], routeCoords[i-1][1], routeCoords[i][0], routeCoords[i][1]));
+      }
+      
+      return {
+        coords: routeCoords,
+        distance: Math.round(route.distance / 1000),
+        cumDist,
+        isReal: true
+      };
+    }
+  } catch (e) {
+    console.warn('[MOBILE-BUILDER] OSRM failed:', e);
+  }
+  
+  // Fallback: ligne droite
+  const totalDist = haversineDistance(start.lat, start.lon, end.lat, end.lon);
+  const numPoints = Math.max(10, Math.ceil(totalDist / 50));
+  const fallbackCoords = [];
+  for (let i = 0; i <= numPoints; i++) {
+    const t = i / numPoints;
+    fallbackCoords.push([start.lat + t * (end.lat - start.lat), start.lon + t * (end.lon - start.lon)]);
+  }
+  const cumDist = [0];
+  for (let i = 1; i < fallbackCoords.length; i++) {
+    cumDist.push(cumDist[i-1] + haversineDistance(fallbackCoords[i-1][0], fallbackCoords[i-1][1], fallbackCoords[i][0], fallbackCoords[i][1]));
+  }
+  return { coords: fallbackCoords, distance: Math.round(totalDist), cumDist, isReal: false };
+}
+
+async function loadPlacesForRoute(config, routeData) {
+  const SEARCH_RADIUS = 50; // km
+  const countries = new Set();
+  if (config.start.cc) countries.add(config.start.cc);
+  if (config.end.cc) countries.add(config.end.cc);
+  
+  // Détecter pays traversés via bbox
+  const COUNTRY_BBOX = {
+    'FR': { minLat: 41, maxLat: 51.5, minLon: -5.5, maxLon: 10 },
+    'ES': { minLat: 35.5, maxLat: 44, minLon: -10, maxLon: 5 },
+    'PT': { minLat: 36.5, maxLat: 42.5, minLon: -10, maxLon: -6 },
+    'IT': { minLat: 35.5, maxLat: 47.5, minLon: 6, maxLon: 19 },
+    'CH': { minLat: 45.5, maxLat: 48, minLon: 5.5, maxLon: 10.5 },
+    'DE': { minLat: 47, maxLat: 55.5, minLon: 5.5, maxLon: 15.5 },
+    'BE': { minLat: 49.5, maxLat: 51.5, minLon: 2.5, maxLon: 6.5 },
+    'NL': { minLat: 50.5, maxLat: 53.5, minLon: 3, maxLon: 7.5 },
+    'AT': { minLat: 46.5, maxLat: 49, minLon: 9.5, maxLon: 17 },
+    'PL': { minLat: 49, maxLat: 55, minLon: 14, maxLon: 24 }
+  };
+  
+  for (const [lat, lon] of routeData.coords) {
+    for (const [cc, bbox] of Object.entries(COUNTRY_BBOX)) {
+      if (lat >= bbox.minLat && lat <= bbox.maxLat && lon >= bbox.minLon && lon <= bbox.maxLon) {
+        countries.add(cc);
+      }
+    }
+  }
+  
+  console.log('[MOBILE-BUILDER] Pays:', Array.from(countries).join(', '));
+  
+  // Charger les places de chaque pays
+  const allPlaces = {};
+  const lang = state.lang || 'fr';
+  
+  for (const cc of countries) {
+    try {
+      const url = `./data/places-json/${cc.toLowerCase()}.places-${lang}.json`;
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      
+      const placesArray = data.places || data;
+      for (const p of placesArray) {
+        if (!p.lat || !p.lng && !p.lon) continue;
+        const plat = p.lat;
+        const plon = p.lng || p.lon;
+        
+        // Vérifier si proche de la route
+        let minDist = Infinity;
+        for (const [rlat, rlon] of routeData.coords) {
+          const d = haversineDistance(plat, plon, rlat, rlon);
+          if (d < minDist) minDist = d;
+        }
+        
+        if (minDist <= SEARCH_RADIUS) {
+          const slug = toSlug(p.name);
+          const id = p.place_id || `${cc}::${slug}`;
+          
+          // Récupérer photos du cache
+          let photos = p.photos || (p.photo ? [p.photo] : []);
+          if (!photos.length) {
+            photos = findPhotosForPlace(p.name, cc);
+          }
+          
+          allPlaces[id] = { ...p, lat: plat, lng: plon, _distToRoute: minDist, cc, photos, placeId: id };
+        }
+      }
+    } catch (e) {
+      console.warn(`[MOBILE-BUILDER] Failed to load ${cc}:`, e);
+    }
+  }
+  
+  return allPlaces;
+}
+
+function selectStepsAlongRoute(config, routeData, places) {
+  const totalDist = routeData.distance;
+  const targetSteps = Math.max(2, Math.ceil(totalDist / config.maxKm));
+  const stepDist = totalDist / targetSteps;
+  
+  console.log(`[MOBILE-BUILDER] Target: ${targetSteps} étapes, ~${Math.round(stepDist)}km entre chaque`);
+  
+  // Ajouter départ avec recherche de photos
+  const startPhotos = findPhotosForPlace(config.start.name, config.start.cc);
+  const steps = [{
+    name: config.start.name,
+    lat: config.start.lat,
+    lng: config.start.lon,
+    nights: 1,
+    description: 'Point de départ',
+    photos: startPhotos,
+    placeId: `${config.start.cc}::${toSlug(config.start.name)}`,
+    _progress: 0,
+    _isEndpoint: true
+  }];
+  
+  // Convertir places en array avec progress
+  const placesList = Object.values(places).map(p => {
+    // Calculer progress sur la route
+    let bestProgress = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < routeData.coords.length; i++) {
+      const d = haversineDistance(p.lat, p.lng, routeData.coords[i][0], routeData.coords[i][1]);
+      if (d < minDist) {
+        minDist = d;
+        bestProgress = routeData.cumDist[i] / totalDist;
+      }
+    }
+    return { ...p, _progress: bestProgress };
+  });
+  
+  // Sélectionner étapes intermédiaires
+  for (let i = 1; i < targetSteps; i++) {
+    const targetProgress = i / targetSteps;
+    
+    // Trouver le meilleur candidat
+    let best = null;
+    let bestScore = -Infinity;
+    
+    for (const p of placesList) {
+      // Déjà utilisé ?
+      if (steps.some(s => s.name === p.name)) continue;
+      
+      const progressDiff = Math.abs(p._progress - targetProgress);
+      if (progressDiff > 0.3) continue; // Trop loin du target
+      
+      // Score basé sur: proximité du target progress + rating + faible détour
+      const score = (1 - progressDiff * 3) * 50 + 
+                    (p.global_rating || p.rating || 3) * 10 -
+                    (p._distToRoute || 0) * 0.5;
+      
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    
+    if (best) {
+      // Récupérer photos du cache
+      const placeId = best.placeId || best.place_id || `${best.cc}::${toSlug(best.name)}`;
+      let photos = best.photos || [];
+      
+      // Chercher dans PHOTOS_CACHE si pas de photos
+      if (!photos.length) {
+        photos = findPhotosForPlace(best.name, best.cc);
+      }
+      
+      steps.push({
+        name: best.name || best.place_name,
+        lat: best.lat,
+        lng: best.lng,
+        nights: 1,
+        description: best.description || best.desc || '',
+        photos: photos,
+        placeId: placeId,
+        _progress: best._progress
+      });
+    }
+  }
+  
+  // Ajouter arrivée avec recherche de photos
+  const endPhotos = findPhotosForPlace(config.end.name, config.end.cc);
+  steps.push({
+    name: config.end.name,
+    lat: config.end.lat,
+    lng: config.end.lon,
+    nights: 1,
+    description: 'Point d\'arrivée',
+    photos: endPhotos,
+    placeId: `${config.end.cc}::${toSlug(config.end.name)}`,
+    _progress: 1,
+    _isEndpoint: true
+  });
+  
+  // Trier par progress
+  steps.sort((a, b) => a._progress - b._progress);
+  
+  // Calculer distances entre étapes
+  for (let i = 0; i < steps.length - 1; i++) {
+    steps[i].distance_km = Math.round(haversineDistance(
+      steps[i].lat, steps[i].lng,
+      steps[i+1].lat, steps[i+1].lng
+    ));
+  }
+  steps[steps.length - 1].distance_km = 0;
+  
+  return steps;
+}
+
+function autoCalculateNights(totalDays) {
+  if (!state.steps.length) return;
+  
+  const total = totalDays || 7;
+  const perStep = Math.floor(total / state.steps.length);
+  let remaining = total - perStep * state.steps.length;
+  
+  state.steps.forEach((s, i) => {
+    s.nights = perStep + (i < remaining ? 1 : 0);
+  });
+  
+  // Dernière étape = 0 nuit (fin du voyage)
+  if (state.steps.length > 1) {
+    state.steps[state.steps.length - 1].nights = 0;
+  }
+}
+
+// === DATA LOADING ===
+async function loadItinerary(cc, itinId, lang) {
+  const baseUrl = './data/Roadtripsprefabriques/countries';
+  const ccLower = cc.toLowerCase();
+  const url = `${baseUrl}/${ccLower}/${ccLower}.itins.modules-${lang}.json`;
+  
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  
+  const data = await resp.json();
+  const itins = data.itins || data.itineraries || data || [];
+  const itin = itins.find(i => (i.id || i.itin_id) === itinId);
+  if (!itin) throw new Error('Itinéraire non trouvé');
+  
+  state.title = itin.title || itin.name || 'Roadtrip';
+  state._originalItinId = itinId;
+  state.cc = cc;
+  
+  const steps = [];
+  const daysPlan = itin.days_plan || itin.steps || [];
+  
+  daysPlan.forEach((day, idx) => {
+    const nightData = day.night || {};
+    const placeId = nightData.place_id || day.place_id || '';
+    const coords = nightData.coords || [];
+    const suggestedDays = day.suggested_days || 1;
+    const driveMin = day.to_next_leg?.drive_min || 0;
+    const distanceKm = day.to_next_leg?.distance_km || 0;
+    
+    let transportBonus = driveMin > 300 ? 1.0 : driveMin > 180 ? 0.5 : 0;
+    const nights = Math.max(0, Math.round(suggestedDays + transportBonus));
+    
+    let name = day.name || '';
+    if (!name && placeId) {
+      const parts = placeId.split('::');
+      name = parts[parts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || `Étape ${idx + 1}`;
+    }
+    
+    const visits = Array.isArray(day.visits) ? day.visits : [];
+    const description = visits.map(v => typeof v === 'string' ? v : v.text).filter(Boolean).join(' ');
+    
+    // Récupérer les photos avec plusieurs fallbacks
+    let photos = [];
+    if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
+    else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+    else if (typeof day.image === 'string' && day.image) photos = [day.image];
+    else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
+    else if (typeof day.thumb === 'string' && day.thumb) photos = [day.thumb];
+    
+    steps.push({
+      _idx: steps.length,
+      name: name || `Étape ${idx + 1}`,
+      lat: coords[0] || day.lat,
+      lng: coords[1] || day.lng || day.lon,
+      nights, description,
+      photos: photos,
+      distance_km: distanceKm,
+      placeId: day.place_id || day.placeId || placeId
+    });
+  });
+  
+  state.steps = steps;
+}
+
+async function loadFromFirebase(rtKey) {
+  if (typeof firebase === 'undefined') {
+    await new Promise(r => setTimeout(r, 1000));
+    if (typeof firebase === 'undefined') throw new Error('Firebase non disponible');
+  }
+  
+  const doc = await firebase.firestore().collection('trips').doc(rtKey).get();
+  if (!doc.exists) throw new Error('Voyage non trouvé');
+  
+  const data = doc.data();
+  state.title = data.title || 'Roadtrip';
+  state._originalItinId = rtKey;
+  state.cc = data.cc || 'FR';
+  state.steps = (data.steps || []).map((s, idx) => {
+    // Récupérer les photos avec plusieurs fallbacks
+    let photos = [];
+    if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (typeof s.image === 'string' && s.image) photos = [s.image];
+    else if (typeof s.photo === 'string' && s.photo) photos = [s.photo];
+    else if (typeof s.thumb === 'string' && s.thumb) photos = [s.thumb];
+    else if (typeof s.img === 'string' && s.img) photos = [s.img];
+    // Fallback: chercher dans cachedPhotos si disponible
+    else if (s.placeId && window._cachedPhotos?.[s.placeId]) {
+      photos = [window._cachedPhotos[s.placeId]];
+    }
+    
+    return {
+      _idx: idx,
+      name: s.name || `Étape ${idx + 1}`,
+      lat: s.lat, lng: s.lng || s.lon,
+      nights: s.nights || s.adjustedDays || 0,
+      description: s.description || '',
+      photos: photos,
+      distance_km: s.distance_km || 0,
+      placeId: s.placeId || null
+    };
+  });
+}
+
+// === RENDER BOOKINGS (4e onglet) ===
+function renderBookings() {
+  const container = $('bookingsContainer');
+  if (!container) return;
+  
+  // Vérifier s'il y a des réservations
+  if (!state.bookings || Object.keys(state.bookings).length === 0) {
+    container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>';
+    return;
+  }
+  
+  let html = '';
+  let currentDay = 1;
+  
+  // Parcourir chaque étape et ses réservations
+  state.steps.forEach((step, stepIdx) => {
+    const bookings = state.bookings[stepIdx] || [];
+    const nights = step.nights || 1;
+    
+    // Afficher chaque jour de cette étape
+    for (let d = 0; d < nights; d++) {
+      const dayNum = currentDay + d;
+      const dayBookings = bookings.filter(b => {
+        // Vérifier si la réservation concerne ce jour
+        if (b.checkin) {
+          const bookingDay = calculateDayNumber(b.checkin, state._tripStartDate);
+          return bookingDay === dayNum;
+        }
+        return false;
+      });
+      
+      if (dayBookings.length > 0) {
+        html += `<div class="booking-day">
+          <h3 class="booking-day-header">📅 Jour ${dayNum} — ${step.name}</h3>`;
+        
+        dayBookings.forEach(booking => {
+          const categoryIcon = getCategoryIcon(booking.category);
+          html += `
+            <div class="booking-item">
+              <div class="booking-type">${categoryIcon} ${booking.category || 'Autre'}</div>
+              <div class="booking-name">${booking.name || 'N/A'}</div>
+              ${booking.confirmationNumber ? `<div class="booking-detail">N°: ${booking.confirmationNumber}</div>` : ''}
+              ${booking.price ? `<div class="booking-price">€ ${booking.price}</div>` : ''}
+            </div>
+          `;
+        });
+        
+        html += '</div>';
+      }
+    }
+    
+    currentDay += nights;
+  });
+  
+  if (!html) {
+    container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>';
+  } else {
+    container.innerHTML = html;
+  }
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    lodging: '🏨',
+    hotel: '🏨',
+    flight: '✈️',
+    car: '🚗',
+    train: '🚆',
+    restaurant: '🍽️',
+    activity: '🎯',
+    other: '📄'
+  };
+  return icons[category] || '📄';
+}
+
+function calculateDayNumber(dateStr, startDate) {
+  // Simplifié: assume que c'est le jour calculé depuis la date de départ
+  if (!startDate) return 1;
+  const date = new Date(dateStr);
+  const start = new Date(startDate);
+  const diffTime = date - start;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1;
+}
+
+// === TABS ===
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.id === 'tabServices') {
+        openSheet($('servicesSheet'));
+        return;
+      }
+      
+      const panelId = btn.dataset.panel;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      $(panelId)?.classList.add('active');
+      
+      if (panelId === 'mapPanel' && map) {
+        setTimeout(() => { map.invalidateSize(); fitMapBounds(); }, 100);
+      }
+    });
+  });
+}
+
+// === EVENTS ===
+function setupEvents() {
+  $('btnBack').onclick = () => {
+    if (hasUnsavedChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
+    history.back();
+  };
+  
+  $('btnMenu').onclick = () => openSheet($('menuSheet'));
+  $('sheetOverlay').onclick = closeAllSheets;
+  
+  $('btnNightsMinus').onclick = () => adjustNights(-1);
+  $('btnNightsPlus').onclick = () => adjustNights(1);
+  $('btnDeleteStep').onclick = deleteCurrentStep;
+  $('btnCloseSheet').onclick = closeAllSheets;
+  
+  $('menuSave').onclick = saveTrip;
+  $('menuShare').onclick = shareTrip;
+  $('menuPdf').onclick = exportPdf;
+  $('menuCenter').onclick = centerMap;
+  $('menuDesktop').onclick = showDesktopMessage;
+}
+
+// === RENDERING ===
+function getStepPhoto(step) {
+  // 1. Photo directe dans les données
+  if (step.photos?.length) return step.photos[0];
+  // 2. Cache via placeId
+  if (step.placeId) {
+    const cached = getPhotosForPlace(step.placeId);
+    if (cached.length) return cached[0];
+  }
+  // 3. Chercher par nom avec la fonction smart
+  const found = findPhotosForPlace(step.name, state.cc);
+  if (found.length) return found[0];
+  // 4. Placeholder
+  return PLACEHOLDER_IMG;
+}
+
+function renderList() {
+  const list = $('stepsList');
+  list.innerHTML = '';
+  
+  state.steps.forEach((step, idx) => {
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.onclick = () => openStepSheet(idx);
+    
+    const photoUrl = getStepPhoto(step);
+    const nightsText = step.nights > 0 ? `${step.nights} nuit${step.nights > 1 ? 's' : ''}` : '';
+    const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
+    
+    card.innerHTML = `
+      <div class="step-card-num">${idx + 1}</div>
+      <img class="step-card-photo" src="${photoUrl}" alt="" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
+      <div class="step-card-info">
+        <div class="step-card-name">${step.name}</div>
+        <div class="step-card-meta">${distText}</div>
+        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
+      </div>
+      <div class="step-card-chevron">›</div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function updateSummary() {
+  const totalSteps = state.steps.length;
+  const totalNights = state.steps.reduce((sum, s) => sum + (s.nights || 0), 0);
+  const km = totalRouteKm || state.steps.reduce((sum, s) => sum + (s.distance_km || 0), 0);
+  
+  $('statSteps').textContent = totalSteps;
+  $('statNights').textContent = totalNights;
+  $('statKm').textContent = Math.round(km);
+}
+
+// === MAP ===
+function initMap() {
+  if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
+  if (map) return;
+  
+  map = L.map('map', { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
+  }).addTo(map);
+  
+  renderMarkers();
+  fetchAndDrawRoute();
+  fitMapBounds();
+}
+
+function renderMarkers() {
+  if (!map) return;
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  
+  state.steps.forEach((step, idx) => {
+    if (!step.lat || !step.lng) return;
+    
+    const icon = L.divIcon({
+      className: 'step-marker',
+      html: `${idx + 1}`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+    
+    const marker = L.marker([step.lat, step.lng], { icon });
+    marker.on('click', () => {
+      const currentStep = state.steps[idx];
+      const photoUrl = getStepPhoto(currentStep);
+      marker.bindPopup(`
+        <div class="map-popup-mini">
+          <img src="${photoUrl}" onerror="this.src='${PLACEHOLDER_IMG}'">
+          <div class="name">${currentStep.name}</div>
+          <button class="btn-details" onclick="openStepSheet(${idx})">Voir détails</button>
+        </div>
+      `).openPopup();
+    });
+    marker.addTo(map);
+    markers.push(marker);
+  });
+}
+
+async function fetchAndDrawRoute() {
+  if (!map) return;
+  const coords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lng, s.lat]);
+  if (coords.length < 2) return;
+  
+  try {
+    const coordsStr = coords.map(c => c.join(',')).join(';');
+    const resp = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`, { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    
+    const data = await resp.json();
+    if (data.code !== 'Ok' || !data.routes?.[0]) throw new Error('No route');
+    
+    const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    totalRouteKm = Math.round(data.routes[0].distance / 1000);
+    
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = L.polyline(routeCoords, { color: '#113f7a', weight: 4, opacity: 0.8 }).addTo(map);
+    $('statKm').textContent = totalRouteKm;
+  } catch (err) {
+    console.warn('[ROUTE] Fallback:', err.message);
+    const fallbackCoords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = L.polyline(fallbackCoords, { color: '#113f7a', weight: 3, opacity: 0.7, dashArray: '8,8' }).addTo(map);
+  }
+}
+
+function fitMapBounds() {
+  if (!map) return;
+  const coords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
+  if (coords.length > 0) map.fitBounds(coords, { padding: [30, 30] });
+}
+
+function centerMap() {
+  closeAllSheets();
+  fitMapBounds();
+  $('tabMap').click();
+  showToast('🎯 Carte centrée');
+}
+
+// === SHEETS ===
+function openSheet(sheet) {
+  $('sheetOverlay').classList.add('show');
+  sheet.classList.add('show');
+}
+
+function closeAllSheets() {
+  $('sheetOverlay').classList.remove('show');
+  $('stepSheet').classList.remove('show');
+  $('menuSheet').classList.remove('show');
+  $('servicesSheet').classList.remove('show');
+  currentStepIndex = null;
+}
+
+function openStepSheet(idx) {
+  currentStepIndex = idx;
+  const step = state.steps[idx];
+  
+  $('sheetStepName').textContent = step.name;
+  $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
+  $('sheetStepPhoto').src = getStepPhoto(step);
+  $('sheetStepPhoto').onerror = function() { this.src = PLACEHOLDER_IMG; };
+  $('sheetStepDesc').textContent = step.description || 'Aucune description disponible.';
+  $('nightsValue').textContent = step.nights || 0;
+  
+  // Liens affiliés pour cette étape
+  const cityName = step.name || '';
+  const checkIn = new Date().toISOString().split('T')[0];
+  const nights = step.nights || 1;
+  const campaign = `ort_mobile_step${idx + 1}`;
+  
+  $('btnGyg').href = AFFILIATE.gyg(cityName);
+  $('btnTiqets').href = AFFILIATE.tiqets(cityName, state.lang);
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, nights, checkIn, campaign);
+  
+  openSheet($('stepSheet'));
+}
+
+// === ACTIONS ===
+function adjustNights(delta) {
+  if (currentStepIndex === null) return;
+  const step = state.steps[currentStepIndex];
+  step.nights = Math.max(0, (step.nights || 0) + delta);
+  $('nightsValue').textContent = step.nights;
+  hasUnsavedChanges = true;
+  
+  // MAJ lien hôtel
+  const checkIn = new Date().toISOString().split('T')[0];
+  const campaign = `ort_mobile_step${currentStepIndex + 1}`;
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, step.nights || 1, checkIn, campaign);
+  
+  renderList();
+  renderBookings();
+  updateSummary();
+}
+
+function deleteCurrentStep() {
+  if (currentStepIndex === null) return;
+  const step = state.steps[currentStepIndex];
+  if (!confirm(`Supprimer "${step.name}" ?`)) return;
+  
+  state.steps.splice(currentStepIndex, 1);
+  hasUnsavedChanges = true;
+  closeAllSheets();
+  renderList();
+  renderBookings();
+  updateSummary();
+  renderMarkers();
+  fetchAndDrawRoute();
+  showToast('🗑️ Étape supprimée');
+}
+
+async function saveTrip() {
+  closeAllSheets();
+  try {
+    const saveKey = `ort_trip_${state._originalItinId || Date.now()}`;
+    localStorage.setItem(saveKey, JSON.stringify({ ...state, savedAt: new Date().toISOString() }));
+    hasUnsavedChanges = false;
+    showToast('✅ Sauvegardé !');
+  } catch (err) {
+    showToast('❌ Erreur');
+  }
+}
+
+function shareTrip() {
+  closeAllSheets();
+  if (navigator.share) {
+    navigator.share({ title: state.title, text: `Découvre mon roadtrip : ${state.title}`, url: location.href });
+  } else {
+    navigator.clipboard.writeText(location.href);
+    showToast('📋 Lien copié !');
+  }
+}
+
+function exportPdf() {
+  closeAllSheets();
+  showToast('📄 Ouverture version imprimable...');
+  
+  // Ouvre la version desktop avec trigger PDF
+  // Note: utilise roadtrip_detail_simple.html car c'est le fichier déployé
+  const sep = location.search ? '&' : '?';
+  let desktopUrl = location.href
+    .replace('roadtrip_mobile.html', 'roadtrip_detail_simple.html')
+    .replace('roadtrip_mobile', 'roadtrip_detail_simple');
+  desktopUrl += sep + 'action=pdf&mobile=0';
+  window.open(desktopUrl, '_blank');
+}
+
+function showDesktopMessage() {
+  closeAllSheets();
+  const url = location.href.replace('roadtrip_mobile.html', 'roadtrip_detail.html') + '&mobile=0';
+  if (navigator.share) {
+    navigator.share({ title: 'Continuer sur ordinateur', text: 'Ouvrez ce lien sur un écran plus grand', url });
+  } else {
+    navigator.clipboard.writeText(url);
+    showToast('📋 Lien copié !');
+  }
+}
+
+// === TOAST ===
+function showToast(message, duration = 2500) {
+  const toast = $('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// Expose
+window.openStepSheet = openStepSheet;
+</script>
+</body>
+</html>

@@ -1,0 +1,1147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vision Photo - OneRoadTrip</title>
+    
+    <script src="./js/ort-config.js"></script>
+    <script src="./js/ort-i18n-auth.js"></script>
+    <script src="./js/ort-auth-modal.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2196f3;
+            --primary-dark: #1976d2;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --error: #f44336;
+            --light: #f5f5f5;
+            --dark: #333;
+            --border: #e0e0e0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fff;
+            color: var(--dark);
+        }
+
+        /* Layout principal */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            width: 100%;
+        }
+
+        /* Header */
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .header-logo {
+            font-size: 1.3rem;
+        }
+
+        .header-title {
+            font-size: 1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .header-quota {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .header-quota.warning {
+            background: rgba(255,193,7,0.4);
+        }
+
+        .header-quota.limit {
+            background: rgba(244,67,54,0.4);
+        }
+
+        /* Main content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .main-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        /* Screens */
+        .screen {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Screen: Camera */
+        .screen-camera {
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .camera-box {
+            width: 100%;
+            max-width: 280px;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        canvas {
+            display: none;
+        }
+
+        .instruction {
+            font-size: 0.9rem;
+            color: #666;
+            margin: 8px 0;
+            max-width: 300px;
+        }
+
+        /* Screen: Preview + Form */
+        .screen-preview {
+            align-items: flex-start;
+            justify-content: flex-start;
+        }
+
+        .preview-image {
+            width: 100%;
+            max-width: 280px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .preview-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .form-group {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, textarea, input[type="text"] {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--dark);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 50px;
+            max-height: 100px;
+        }
+
+        select:focus, textarea:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(33,150,243,0.1);
+        }
+
+        /* Screen: Response */
+        .screen-response {
+            justify-content: flex-start;
+        }
+
+        .response-box {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid var(--success);
+        }
+
+        .response-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .response-text {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #333;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .audio-btn {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .audio-btn.play {
+            background: var(--success);
+            color: white;
+        }
+
+        .audio-btn.play:hover {
+            background: #45a049;
+        }
+
+        .audio-btn.play:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .audio-btn.stop {
+            background: var(--error);
+            color: white;
+        }
+
+        .audio-btn.stop:hover {
+            background: #da190b;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #da190b;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Alert */
+        .alert {
+            background: rgba(244,67,54,0.1);
+            border: 1px solid rgba(244,67,54,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: var(--error);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .alert.warning {
+            background: rgba(255,193,7,0.1);
+            border-color: rgba(255,193,7,0.3);
+            color: var(--warning);
+        }
+
+        .alert.success {
+            background: rgba(76,175,80,0.1);
+            border-color: rgba(76,175,80,0.3);
+            color: var(--success);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .empty-state-text {
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-hint {
+            font-size: 0.8rem;
+            color: #bbb;
+        }
+
+        /* Footer */
+        footer {
+            padding: 8px 16px 16px;
+            font-size: 0.75rem;
+            color: #999;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        /* Mobile friendly */
+        @media (max-width: 480px) {
+            header {
+                padding: 10px 12px;
+            }
+
+            .main-content {
+                padding: 12px;
+            }
+
+            button {
+                font-size: 0.85rem;
+                padding: 10px 14px;
+            }
+
+            .header-title {
+                font-size: 0.95rem;
+            }
+            
+            /* Mettre bouton capture en haut */
+            .screen-camera {
+                display: flex;
+                flex-direction: column;
+            }
+            
+            .screen-camera .btn-group {
+                order: -2;
+                padding: 12px 0;
+                margin-bottom: 12px;
+                border-bottom: 2px solid var(--primary);
+            }
+            
+            .screen-camera .empty-state {
+                order: -1;
+            }
+            
+            .screen-camera .camera-box {
+                order: 0;
+            }
+            
+            .screen-camera .instruction {
+                order: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <span class="header-logo">📸</span>
+                <span class="header-title">Vision Photo</span>
+            </div>
+            <div class="header-quota" id="quotaDisplay">--/--</div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Screen: Camera -->
+            <div class="screen screen-camera active" id="screenCamera">
+                <div class="empty-state" style="margin-top: 40px;">
+                    <div class="empty-state-icon">📸</div>
+                    <p class="empty-state-text">Prêt à capturer une photo</p>
+                </div>
+                <div class="camera-box">
+                    <video id="video" autoplay playsinline></video>
+                </div>
+                <p class="instruction">Prenez une photo avec votre caméra mobile</p>
+                <div class="btn-group">
+                    <button class="btn-primary" id="btnCapture">
+                        <span>📷 Capturer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen: Preview -->
+            <div class="screen screen-preview" id="screenPreview">
+                <div class="preview-image">
+                    <img id="previewImg" alt="Capture">
+                </div>
+                
+                <div class="form-group">
+                    <label for="language">Langue</label>
+                    <select id="language">
+                        <option value="fr">Français</option>
+                        <option value="en">English</option>
+                        <option value="es">Español</option>
+                        <option value="it">Italiano</option>
+                        <option value="de">Deutsch</option>
+                        <option value="pt">Português</option>
+                        <option value="ja">日本語</option>
+                        <option value="zh">中文</option>
+                    </select>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" id="btnGoQuestions">
+                        <span>➡️ Continuer</span>
+                    </button>
+                    <button class="btn-secondary" id="btnRetake">
+                        <span>🔄 Recommencer</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen: Questions -->
+            <div class="screen screen-questions" id="screenQuestions">
+                <div class="preview-image">
+                    <img id="previewImg2" alt="Capture">
+                </div>
+                
+                <p style="text-align: center; margin: 12px 0; font-size: 0.9rem; color: #666;" id="questionsLabel">Choisissez une question</p>
+
+                <div class="btn-group" style="flex-direction: column;">
+                    <button class="btn-primary" id="btnQ1" style="flex: 1; text-align: left;">
+                        <span>📖 <span id="q1Text">Raconte-moi l'histoire</span></span>
+                    </button>
+                    <button class="btn-primary" id="btnQ2" style="flex: 1; text-align: left;">
+                        <span>🤔 <span id="q2Text">Dis-moi ce que c'est</span></span>
+                    </button>
+                    <button class="btn-primary" id="btnQ3" style="flex: 1; text-align: left;">
+                        <span>🌍 <span id="q3Text">Traduis-moi le texte</span></span>
+                    </button>
+                    <button class="btn-primary" id="btnQ4" style="flex: 1; text-align: left;">
+                        <span>✨ <span id="q4Text">Qu'est-ce qui rend ce lieu unique</span></span>
+                    </button>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-secondary" id="btnBackQuestions">
+                        <span>⬅️ Retour</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Screen: Response -->
+            <div class="screen screen-response" id="screenResponse">
+                <div id="responseAlert"></div>
+                
+                <div class="response-box">
+                    <div class="response-title">Réponse de l'IA</div>
+                    <div class="response-text" id="responseText"></div>
+                    <div class="audio-controls">
+                        <button class="audio-btn play" id="btnPlayAudio">
+                            <span>🔊 Lire à haute voix</span>
+                        </button>
+                        <button class="audio-btn stop" id="btnStopAudio" style="display: none;">
+                            <span>⏹ Arrêter</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.05); border-radius: 8px; padding: 10px; font-size: 0.8rem; color: #666; margin-top: 8px;">
+                    <strong>Utilisation:</strong> 
+                    <span id="usageText">--</span>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn-primary" id="btnNewPhoto">
+                        <span>📸 Nouvelle photo</span>
+                    </button>
+                    <button class="btn-secondary" id="btnRetakeAnalyze">
+                        <span>✏️ Modifier demande</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            OneRoadTrip © 2024 — Vision IA v1.0
+        </footer>
+    </div>
+
+    <!-- Canvas pour capture -->
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // ===== AUTH SCREEN I18N =====
+        const AUTH_MESSAGES = {
+            fr: {
+                title: "Connexion requise",
+                message: "Vous devez être connecté pour utiliser Vision Photo",
+                button: "Se connecter"
+            },
+            en: {
+                title: "Login Required",
+                message: "You must be logged in to use Vision Photo",
+                button: "Sign In"
+            },
+            es: {
+                title: "Inicio de sesión requerido",
+                message: "Debe iniciar sesión para usar Vision Photo",
+                button: "Iniciar sesión"
+            },
+            it: {
+                title: "Login richiesto",
+                message: "Devi essere connesso per utilizzare Vision Photo",
+                button: "Accedi"
+            },
+            de: {
+                title: "Anmeldung erforderlich",
+                message: "Sie müssen angemeldet sein, um Vision Photo zu nutzen",
+                button: "Anmelden"
+            },
+            pt: {
+                title: "Login obrigatório",
+                message: "Você deve estar conectado para usar Vision Photo",
+                button: "Fazer login"
+            }
+        };
+
+        // ===== AUTH MODAL =====
+        let authModal = null;
+
+        function showAuthModal() {
+            if (!authModal) {
+                authModal = new OrtAuthModal();
+                authModal.init(window.__FIREBASE_CONFIG__);
+            }
+            authModal.show();
+        }
+
+        function showAuthScreen(lang = 'fr') {
+            // Compatibilité - utiliser la nouvelle modal
+            showAuthModal();
+        }
+
+        // ===== FIREBASE =====
+        function loadScript(src) {
+            return new Promise((ok, ko) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.onload = ok;
+                s.onerror = () => ko(new Error('load ' + src));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function ensureFirebase() {
+            if (window.firebase?.apps?.length) return window.firebase;
+            
+            await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+            await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+            
+            const cfg = window.__FIREBASE_CONFIG__ || {};
+            if (!cfg.apiKey) {
+                const lang = localStorage.getItem('lang') || 'fr';
+                showAuthScreen(lang);
+                throw new Error('Missing Firebase apiKey');
+            }
+            
+            window.firebase.initializeApp(cfg);
+            await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+            return window.firebase;
+        }
+
+        // ===== CONFIG =====
+        const API_URL = '/.netlify/functions/parse-vision';
+
+        const QUESTIONS = {
+            fr: {
+                q1: "Raconte-moi l'histoire de cette photo",
+                q2: "Dis-moi ce que c'est",
+                q3: "Traduis-moi le texte que tu vois",
+                q4: "Qu'est-ce qui rend ce lieu unique ?"
+            },
+            en: {
+                q1: "Tell me the story of this photo",
+                q2: "What is this?",
+                q3: "Translate the text you see",
+                q4: "What makes this place unique?"
+            },
+            es: {
+                q1: "Cuéntame la historia de esta foto",
+                q2: "Dime qué es esto",
+                q3: "Traduce el texto que ves",
+                q4: "¿Qué hace que este lugar sea único?"
+            },
+            it: {
+                q1: "Raccontami la storia di questa foto",
+                q2: "Dimmi cos'è",
+                q3: "Traduci il testo che vedi",
+                q4: "Cosa rende questo luogo unico?"
+            },
+            de: {
+                q1: "Erzählen Sie mir die Geschichte dieses Fotos",
+                q2: "Sagen Sie mir, was das ist",
+                q3: "Übersetzen Sie den Text, den Sie sehen",
+                q4: "Was macht diesen Ort einzigartig?"
+            },
+            pt: {
+                q1: "Conte-me a história desta foto",
+                q2: "Diga-me o que é",
+                q3: "Traduza o texto que você vê",
+                q4: "O que torna este lugar único?"
+            },
+            ja: {
+                q1: "この写真の話をしてください",
+                q2: "これが何かを教えてください",
+                q3: "見えるテキストを翻訳してください",
+                q4: "この場所を特別にするものは何ですか？"
+            },
+            zh: {
+                q1: "讲述这张照片的故事",
+                q2: "告诉我这是什么",
+                q3: "翻译你看到的文字",
+                q4: "是什么让这个地方独特？"
+            }
+        };
+
+        const I18N_LABELS = {
+            fr: { choose: "Choisissez une question", using: "Utilisation:" },
+            en: { choose: "Choose a question", using: "Usage:" },
+            es: { choose: "Elija una pregunta", using: "Uso:" },
+            it: { choose: "Scegli una domanda", using: "Utilizzo:" },
+            de: { choose: "Wählen Sie eine Frage", using: "Nutzung:" },
+            pt: { choose: "Escolha uma pergunta", using: "Uso:" },
+            ja: { choose: "質問を選択してください", using: "使用法:" },
+            zh: { choose: "选择一个问题", using: "用法:" }
+        };
+
+        // ===== STATE =====
+        let state = {
+            photo: null,
+            photoBase64: null,
+            isRequesting: false,
+            quotaData: null,
+            authToken: null
+        };
+
+        // ===== DOM ELEMENTS =====
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const screenCamera = document.getElementById('screenCamera');
+        const screenPreview = document.getElementById('screenPreview');
+        const screenResponse = document.getElementById('screenResponse');
+        const btnCapture = document.getElementById('btnCapture');
+        const btnRetake = document.getElementById('btnRetake');
+        const btnPlayAudio = document.getElementById('btnPlayAudio');
+        const btnStopAudio = document.getElementById('btnStopAudio');
+        const btnNewPhoto = document.getElementById('btnNewPhoto');
+        const btnRetakeAnalyze = document.getElementById('btnRetakeAnalyze');
+        const quotaDisplay = document.getElementById('quotaDisplay');
+        const languageSelect = document.getElementById('language');
+
+        // ===== INIT =====
+        async function init() {
+            try {
+                // Charger Firebase
+                const fb = await ensureFirebase();
+                
+                // Vérifier authentification
+                await new Promise((resolve) => {
+                    fb.auth().onAuthStateChanged((user) => {
+                        if (!user) {
+                            const lang = localStorage.getItem('lang') || 'fr';
+                            showAuthScreen(lang);
+                            throw new Error('User not authenticated');
+                        }
+                        state.authToken = null; // Sera défini après
+                        resolve();
+                    });
+                });
+                
+                // Récupérer le token
+                const user = fb.auth().currentUser;
+                if (user) {
+                    state.authToken = await user.getIdToken();
+                }
+                
+            } catch (e) {
+                console.error('Auth error:', e);
+                const lang = localStorage.getItem('lang') || 'fr';
+                showAuthScreen(lang);
+                return;
+            }
+
+            // Initialiser la caméra
+            initCamera();
+
+            // Event listeners
+            btnCapture.addEventListener('click', capturePhoto);
+            document.getElementById('btnGoQuestions').addEventListener('click', () => {
+                document.getElementById('previewImg2').src = state.photoBase64;
+                updateQuestionsLabels();
+                switchScreen('questions');
+            });
+            btnRetake.addEventListener('click', () => switchScreen('camera'));
+            
+            document.getElementById('btnQ1').addEventListener('click', () => askQuestion('q1'));
+            document.getElementById('btnQ2').addEventListener('click', () => askQuestion('q2'));
+            document.getElementById('btnQ3').addEventListener('click', () => askQuestion('q3'));
+            document.getElementById('btnQ4').addEventListener('click', () => askQuestion('q4'));
+            
+            document.getElementById('btnBackQuestions').addEventListener('click', () => switchScreen('preview'));
+            
+            btnPlayAudio.addEventListener('click', playAudio);
+            btnStopAudio.addEventListener('click', stopAudio);
+            btnNewPhoto.addEventListener('click', () => switchScreen('camera'));
+            btnRetakeAnalyze.addEventListener('click', () => switchScreen('questions'));
+
+            // Charger les quotas depuis localStorage
+            loadQuotaFromStorage();
+        }
+
+        // ===== CAMERA =====
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                video.srcObject = stream;
+                console.log('✅ Caméra initialisée');
+            } catch (e) {
+                console.error('❌ Caméra échouée:', e.message);
+                showAlert('Caméra non disponible sur ce navigateur', 'error');
+                btnCapture.disabled = true;
+            }
+        }
+
+        function capturePhoto() {
+            console.log('📷 Tentative capture:', video.videoWidth, 'x', video.videoHeight);
+            
+            if (!video.srcObject) {
+                showAlert('Caméra non initialisée', 'error');
+                return;
+            }
+            
+            if (video.videoWidth === 0 || video.videoHeight === 0) {
+                showAlert('Attends que la vidéo se charge...', 'warning');
+                return;
+            }
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            state.photoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            console.log('✅ Photo capturée:', state.photoBase64.substring(0, 50));
+            
+            if (state.photoBase64 === 'data:,') {
+                console.error('❌ Canvas vide!');
+                showAlert('Erreur: capture vide. Réessaie.', 'error');
+                return;
+            }
+            
+            document.getElementById('previewImg').src = state.photoBase64;
+            document.getElementById('previewImg2').src = state.photoBase64;
+            
+            switchScreen('preview');
+        }
+
+        // ===== ANALYZE =====
+        async function askQuestion(questionKey) {
+            console.log('🔍 askQuestion appelée', questionKey);
+            console.log('📍 API_URL:', API_URL);
+            console.log('🔍 state.photoBase64 existe?', !!state.photoBase64);
+            console.log('🔍 state.authToken existe?', !!state.authToken);
+            const lang = languageSelect.value;
+            console.log('🔍 langue:', lang, 'QUESTIONS:', QUESTIONS);
+            const prompt = QUESTIONS[lang][questionKey];
+            console.log('🔍 prompt:', prompt);
+            
+            if (!state.photoBase64) {
+                console.error('❌ PAS DE PHOTO!');
+                showAlert('Pas de photo', 'error');
+                return;
+            }
+
+            document.getElementById('btnQ1').disabled = true;
+            document.getElementById('btnQ2').disabled = true;
+            document.getElementById('btnQ3').disabled = true;
+            document.getElementById('btnQ4').disabled = true;
+
+            try {
+                console.log('✅ Avant fetch, appel API...');
+                window.DEBUG_LOG('📍 Appel API...');
+                const payload = {
+                    photo: state.photoBase64,
+                    prompt,
+                    language: lang
+                };
+
+                console.log('📤 Envoi API:', payload);
+                console.log('🔑 Token:', state.authToken);
+
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(state.authToken && { 'Authorization': `Bearer ${state.authToken}` })
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                console.log('📡 Requête envoyée, status:', response.status);
+                const result = await response.json();
+
+                console.log('📥 Réponse API:', result);
+                console.log('Status:', response.ok, response.status);
+                
+                window.DEBUG_LOG('📡 Status: ' + response.status);
+                window.DEBUG_LOG('✅ Réponse reçue');
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Erreur API');
+                }
+
+                document.getElementById('responseText').textContent = result.data.response;
+                document.getElementById('usageText').textContent = 
+                    `${result.usage.count}/${result.usage.limit} (${result.usage.remaining} restantes)`;
+
+                state.quotaData = result.usage;
+                updateQuotaDisplay();
+
+                speakText(result.data.response, lang);
+
+                switchScreen('response');
+
+            } catch (e) {
+                window.DEBUG_LOG('❌ Erreur: ' + e.message);
+                window.DEBUG_LOG('Stack: ' + e.stack);
+                showAlert('Erreur: ' + e.message, 'error');
+            } finally {
+                document.getElementById('btnQ1').disabled = false;
+                document.getElementById('btnQ2').disabled = false;
+                document.getElementById('btnQ3').disabled = false;
+                document.getElementById('btnQ4').disabled = false;
+            }
+        }
+
+        // ===== QUOTA LOCAL =====
+        function checkLocalQuota() {
+            const today = new Date().toISOString().split('T')[0];
+            const stored = localStorage.getItem('vision_quota');
+            
+            let quota = { date: today, count: 0 };
+            if (stored) {
+                quota = JSON.parse(stored);
+                if (quota.date !== today) {
+                    quota = { date: today, count: 0 };
+                }
+            }
+
+            if (quota.count >= 2) return false;
+
+            quota.count++;
+            localStorage.setItem('vision_quota', JSON.stringify(quota));
+            return true;
+        }
+
+        function loadQuotaFromStorage() {
+            const today = new Date().toISOString().split('T')[0];
+            const stored = localStorage.getItem('vision_quota');
+            
+            if (stored) {
+                const quota = JSON.parse(stored);
+                if (quota.date === today) {
+                    // Afficher le quota du jour
+                    updateQuotaDisplay(quota.count);
+                } else {
+                    updateQuotaDisplay(0);
+                }
+            } else {
+                updateQuotaDisplay(0);
+            }
+        }
+
+        function saveQuotaToStorage() {
+            // Non nécessaire car checkLocalQuota le fait
+        }
+
+        // ===== AUDIO =====
+        let synth = window.speechSynthesis;
+        let currentUtterance = null;
+
+        function speakText(text, langCode) {
+            if (!synth) return;
+
+            const langMap = {
+                'fr': 'fr-FR',
+                'en': 'en-US',
+                'es': 'es-ES',
+                'it': 'it-IT',
+                'de': 'de-DE',
+                'pt': 'pt-BR',
+                'ja': 'ja-JP',
+                'zh': 'zh-CN'
+            };
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langMap[langCode] || 'fr-FR';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            utterance.onstart = () => {
+                btnPlayAudio.style.display = 'none';
+                btnStopAudio.style.display = 'flex';
+            };
+
+            utterance.onend = () => {
+                btnPlayAudio.style.display = 'flex';
+                btnStopAudio.style.display = 'none';
+            };
+
+            currentUtterance = utterance;
+            synth.speak(utterance);
+        }
+
+        function playAudio() {
+            const text = document.getElementById('responseText').textContent;
+            const lang = languageSelect.value;
+            if (text) speakText(text, lang);
+        }
+
+        function stopAudio() {
+            if (synth) {
+                synth.cancel();
+                btnPlayAudio.style.display = 'flex';
+                btnStopAudio.style.display = 'none';
+            }
+        }
+
+        // ===== UI =====
+        function updateQuestionsLabels() {
+            const lang = languageSelect.value;
+            const labels = QUESTIONS[lang] || QUESTIONS.en;
+            document.getElementById('questionsLabel').textContent = I18N_LABELS[lang]?.choose || "Choose a question";
+            document.getElementById('q1Text').textContent = labels.q1;
+            document.getElementById('q2Text').textContent = labels.q2;
+            document.getElementById('q3Text').textContent = labels.q3;
+            document.getElementById('q4Text').textContent = labels.q4;
+        }
+
+        function switchScreen(screen) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            if (screen === 'camera') {
+                document.getElementById('screenCamera').classList.add('active');
+            } else if (screen === 'preview') {
+                document.getElementById('screenPreview').classList.add('active');
+            } else if (screen === 'questions') {
+                document.getElementById('screenQuestions').classList.add('active');
+            } else if (screen === 'response') {
+                document.getElementById('screenResponse').classList.add('active');
+            }
+        }
+
+        function showAlert(message, type = 'error') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`;
+            alertDiv.textContent = message;
+            
+            const responseAlert = document.getElementById('responseAlert');
+            responseAlert.innerHTML = '';
+            responseAlert.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        function updateQuotaDisplay(dailyCount = null) {
+            if (state.quotaData) {
+                quotaDisplay.textContent = `${state.quotaData.count}/${state.quotaData.limit}`;
+                if (state.quotaData.remaining === 0) {
+                    quotaDisplay.classList.add('limit');
+                } else if (state.quotaData.remaining <= 2) {
+                    quotaDisplay.classList.add('warning');
+                }
+            } else if (dailyCount !== null) {
+                quotaDisplay.textContent = `${dailyCount}/2`;
+            }
+        }
+
+        // ===== INIT ON LOAD =====
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+        window.DEBUG_LOG = function(msg) {
+            if (!window.debugLogs) window.debugLogs = [];
+            window.debugLogs.push(new Date().toLocaleTimeString() + ' > ' + msg);
+            const debugBox = document.getElementById('debugBox');
+            if (debugBox) {
+                debugBox.innerHTML = window.debugLogs.slice(-8).join('<br>');
+            }
+            console.log(msg);
+        };
+
+    </script>
+    
+    <!-- DEBUG BOX MOBILE -->
+    <div id="debugBox" style="position:fixed;bottom:40px;left:0;right:0;background:rgba(0,0,0,0.9);color:#0f0;font-size:9px;max-height:120px;overflow-y:auto;padding:5px;font-family:monospace;z-index:9999;display:none;border-top:1px solid #0f0;"></div>
+    <button id="debugToggle" onclick="document.getElementById('debugBox').style.display=document.getElementById('debugBox').style.display==='none'?'block':'none'" style="position:fixed;bottom:5px;right:10px;z-index:10000;padding:5px 10px;background:#f00;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:bold;">📋</button>
+
+</body>
+</html>

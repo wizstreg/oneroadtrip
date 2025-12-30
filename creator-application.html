@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="fr" data-page="creator_application">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JK3QGQGDDL');
+</script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title data-i18n="app.title">Candidature créateur - OneRoadTrip</title>
+<style>
+  :root{ --bg:#f6f9fb; --panel:#113f7a; --card:#fff; --ink:#113f7a; --accent:#113f7a; --bd:#c3d6b6 }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:#333;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.6}
+  .wrap{max-width:900px;margin:0 auto;padding:16px}
+  
+  header{position:sticky;top:0;z-index:10;background:var(--panel);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #0d2f5e;flex-wrap:wrap}
+  .brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+  .brandlink img{width:40px;height:40px}
+  .brandlink span{font-weight:800;font-size:18px}
+  header .sp{flex:1}
+  header select{appearance:none;background:#fff;border:1px solid #113f7a;border-radius:10px;padding:8px 10px;color:#113f7a;cursor:pointer;font-weight:600}
+  .hdr-btn{padding:8px 12px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer;text-decoration:none;font-size:14px;transition:all .2s;font-weight:600}
+  .hdr-btn:hover{background:#ffffff2b}
+  
+  .auth{position:relative}
+  .auth-pop{position:absolute;right:0;top:44px;background:#fff;color:var(--ink);border:1px solid var(--bd);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px;z-index:10001}
+  .auth-pop .hdr-btn{display:block;width:100%;margin:6px 0;background:var(--panel);border:1px solid var(--panel);color:#fff;text-align:left;padding:10px 12px}
+  .auth-pop .hdr-btn.out{background:#fff;color:var(--panel);border:1px solid var(--panel)}
+  
+  .card{background:var(--card);color:var(--ink);border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:20px;margin-bottom:14px}
+  
+  .section-group{border:2px solid var(--panel);border-radius:14px;padding:20px;margin-bottom:40px;margin-top:50px;position:relative;background:#fff}
+  .section-group-title{position:absolute;top:-14px;left:20px;background:var(--bg);padding:4px 12px;font-weight:700;font-size:14px;color:var(--panel);border-radius:6px}
+  
+  label{display:block;margin-bottom:8px;font-weight:600;font-size:15px;color:var(--panel)}
+  input[type="text"],input[type="email"],input[type="url"],textarea{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;margin-bottom:16px;font-size:15px;box-sizing:border-box;font-family:inherit;color:#333}
+  textarea{resize:vertical;min-height:120px}
+  
+  .checkbox-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px;margin-bottom:16px}
+  .checkbox-label{display:flex;align-items:center;gap:8px;font-weight:400;margin:0;cursor:pointer;font-size:15px;color:#333}
+  .checkbox-label input{width:18px;height:18px;margin:0;cursor:pointer}
+  
+  .social-row{display:grid;grid-template-columns:2fr 1.5fr 1fr;gap:12px;margin-bottom:16px;align-items:flex-end}
+  @media(max-width:768px){.social-row{grid-template-columns:1fr}}
+  
+  .btn{padding:12px 24px;border-radius:12px;border:1px solid #ffffff80;background:var(--panel);color:#fff;cursor:pointer;text-decoration:none;font-size:15px;transition:all .2s;font-weight:700}
+  .btn:hover{background:#0d2f5e}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--panel);border:1px solid var(--panel)}
+  .btn.ghost:hover{background:#f8fafc}
+  
+  .status{margin-top:10px;padding:12px;border-radius:8px;border:1px solid;display:none;font-weight:600}
+  .status.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+  .status.err{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+  
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;margin-top:30px}
+  
+  footer{margin:26px 0 20px;text-align:center;font-size:14px}
+  footer a{color:var(--panel);text-decoration:none}
+  
+  .modal-card{width:min(440px,92vw);background:#fff;border-radius:14px;border:1px solid var(--bd);padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.16);color:var(--ink)}
+  .modal-card h3{margin:0 0 6px;font-size:18px;font-weight:700}
+  .input{width:100%;padding:10px 12px;border:1px solid var(--panel);border-radius:10px;margin:8px 0;font-size:14px;box-sizing:border-box}
+  .muted{font-size:13px;color:#475569}
+  .links{display:flex;align-items:center;gap:10px;margin:10px 0}
+  .link{background:none;border:0;color:var(--panel);cursor:pointer;text-decoration:underline;padding:0;font-size:14px}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .btn-outline{background:#fff;color:var(--panel);border:1px solid var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
+  .btn-primary{background:var(--panel);color:#fff;border:1px solid var(--panel);border-radius:10px;padding:8px 12px;cursor:pointer;font-weight:600}
+  .alert{padding:12px;border-radius:8px;margin:8px 0;border:1px solid}
+  .alert-success{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+  .alert-error{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+  .input-wrap{position:relative}
+  .eye-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;cursor:pointer;padding:6px;border-radius:8px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:var(--panel)}
+  
+  #emailModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000}
+  #emailModal.show{display:flex}
+  
+  [dir="rtl"] .section-group-title{right:20px;left:auto}
+  [dir="rtl"] .checkbox-grid{direction:rtl}
+  
+  @media(max-width:768px){
+    .wrap{padding:8px}
+    .section-group{margin-top:30px;padding:16px}
+    header{flex-direction:column;align-items:stretch}
+    header .sp{display:none}
+    .hdr-btn{width:100%;text-align:center}
+  }
+</style>
+</head>
+<body>
+<header>
+  <a class="brandlink" href="presentation.html"><img src="assets/symbol.png" alt="Logo"><span>OneRoadTrip</span></a>
+  <div class="sp"></div>
+  <select id="langSel" onchange="setLanguage(this.value)">
+    <option value="fr">Français</option>
+    <option value="en">English</option>
+    <option value="es">Español</option>
+    <option value="it">Italiano</option>
+    <option value="pt">Português</option>
+    <option value="ar">العربية</option>
+  </select>
+  <div class="auth">
+    <button id="openAuth" class="hdr-btn" type="button">Se connecter</button>
+    <div id="authPop" class="auth-pop" role="dialog" aria-label="Connexion">
+      <button id="btnGoogle" class="hdr-btn" type="button">Google</button>
+      <button id="btnEmail" class="hdr-btn" type="button">E-mail</button>
+      <button id="btnLogout" class="hdr-btn out" type="button" style="display:none">Déconnexion</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card" style="text-align:center;margin-bottom:30px;margin-top:20px">
+    <h1 style="margin:0 0 8px;font-size:32px;color:var(--panel)" data-i18n="app.title">Candidature créateur</h1>
+    <p style="margin:0;font-size:14px;color:#666" data-i18n="app.subtitle">Complétez le questionnaire ci-dessous</p>
+  </div>
+
+  <div id="notConnectedMsg" class="status err" style="display:none">
+    <span data-i18n="app.msg.login_required">Vous devez être connecté avec un email vérifié pour soumettre votre candidature.</span>
+  </div>
+
+  <div id="successMsg" class="status ok"></div>
+  <div id="errorMsg" class="status err"></div>
+
+  <form id="appForm" onsubmit="submitApplication(event)">
+    <div class="section-group">
+      <div class="section-group-title" data-i18n="app.s1.title">Qui êtes-vous?</div>
+      
+      <div>
+        <label for="appName" data-i18n="app.label.name">Nom complet / Nom de marque *</label>
+        <input type="text" id="appName" required placeholder="Jean Dupont ou VoyageVlog">
+      </div>
+      
+      <div>
+        <label for="appEmail" data-i18n="app.label.email">Email principal *</label>
+        <input type="email" id="appEmail" required placeholder="contact@example.com">
+      </div>
+      
+      <div>
+        <label for="appPhone" data-i18n="app.label.phone">Téléphone (optionnel)</label>
+        <input type="text" id="appPhone" placeholder="+33 6 12 34 56 78">
+      </div>
+      
+      <div>
+        <label for="appCountry" data-i18n="app.label.country">Basé(e) à *</label>
+        <input type="text" id="appCountry" required placeholder="France">
+      </div>
+      
+      <div>
+        <label for="appBio" data-i18n="app.label.bio">Brève présentation *</label>
+        <textarea id="appBio" required placeholder="Qui êtes-vous? Votre parcours dans le voyage..."></textarea>
+      </div>
+    </div>
+
+    <div class="section-group">
+      <div class="section-group-title" data-i18n="app.s3.title">Vos réseaux sociaux</div>
+      
+      <p style="font-size:14px;color:#666;margin-bottom:20px" data-i18n="app.social.note">Ajoutez jusqu'à 5 réseaux sociaux. Remplissez les champs pertinents.</p>
+      
+      <div class="social-row">
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.network">Réseau social</label>
+          <input type="text" id="social0" placeholder="Instagram, YouTube, Blog, etc.">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.handle">Identifiant/URL</label>
+          <input type="text" id="social0-handle" placeholder="@username ou URL">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.followers">Abonnés</label>
+          <input type="text" id="social0-followers" placeholder="10000">
+        </div>
+      </div>
+
+      <div class="social-row">
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.network">Réseau social</label>
+          <input type="text" id="social1" placeholder="Instagram, YouTube, Blog, etc.">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.handle">Identifiant/URL</label>
+          <input type="text" id="social1-handle" placeholder="@username ou URL">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.followers">Abonnés</label>
+          <input type="text" id="social1-followers" placeholder="10000">
+        </div>
+      </div>
+
+      <div class="social-row">
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.network">Réseau social</label>
+          <input type="text" id="social2" placeholder="Instagram, YouTube, Blog, etc.">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.handle">Identifiant/URL</label>
+          <input type="text" id="social2-handle" placeholder="@username ou URL">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.followers">Abonnés</label>
+          <input type="text" id="social2-followers" placeholder="10000">
+        </div>
+      </div>
+
+      <div class="social-row">
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.network">Réseau social</label>
+          <input type="text" id="social3" placeholder="Instagram, YouTube, Blog, etc.">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.handle">Identifiant/URL</label>
+          <input type="text" id="social3-handle" placeholder="@username ou URL">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.followers">Abonnés</label>
+          <input type="text" id="social3-followers" placeholder="10000">
+        </div>
+      </div>
+
+      <div class="social-row">
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.network">Réseau social</label>
+          <input type="text" id="social4" placeholder="Instagram, YouTube, Blog, etc.">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.handle">Identifiant/URL</label>
+          <input type="text" id="social4-handle" placeholder="@username ou URL">
+        </div>
+        <div>
+          <label style="margin-bottom:4px" data-i18n="app.social.followers">Abonnés</label>
+          <input type="text" id="social4-followers" placeholder="10000">
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <button type="submit" class="btn" data-i18n="app.btn.submit">Soumettre ma candidature</button>
+      <button type="button" class="btn ghost" onclick="window.location.href='presentation.html'" data-i18n="app.btn.cancel">Annuler</button>
+    </div>
+  </form>
+
+  <footer>
+    <a href="presentation.html">← Retour à l'accueil</a>
+  </footer>
+</div>
+
+<!-- Email Modal -->
+<div id="emailModal">
+  <div class="modal-card">
+    <h3 id="emailTitle">Se connecter par e-mail</h3>
+    <div id="emailMsg" class="alert" style="display:none"></div>
+    <input id="emailInput" class="input" type="email" placeholder="mon-email@exemple.com">
+    <div class="input-wrap">
+      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe">
+      <button id="eyeBtn" class="eye-btn" type="button" aria-label="Montrer/cacher">
+        <svg fill="currentColor" viewBox="0 0 24 24" width="18" height="18"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 110-9 4.5 4.5 0 010 9zm0-7.2a2.7 2.7 0 100 5.4 2.7 2.7 0 000-5.4z"/></svg>
+      </button>
+    </div>
+    <div class="input-wrap" id="pwd2Wrap" style="display:none">
+      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe">
+    </div>
+    <p class="muted" id="emailNote"></p>
+    <div class="links">
+      <button id="toggleMode" class="link">Créer un compte</button>
+      <button id="forgotPwd" class="link" style="margin-left:auto">Mot de passe oublié ?</button>
+    </div>
+    <button id="resendBtn" class="link" style="display:none;margin-top:8px">Renvoyer le lien de vérification</button>
+    <div class="actions">
+      <button id="btnCancel" class="btn-outline">Annuler</button>
+      <button id="btnValider" class="btn-primary">Valider</button>
+    </div>
+  </div>
+</div>
+
+<script src="./js/ort-config.js"></script>
+<script>
+const T = {
+  fr: {login: "Se connecter", create: "Créer un compte", already_account: "J'ai déjà un compte"},
+  en: {login: "Sign in", create: "Create account", already_account: "I already have an account"},
+  es: {login: "Iniciar sesión", create: "Crear cuenta", already_account: "Ya tengo una cuenta"},
+  it: {login: "Accedi", create: "Crea account", already_account: "Ho già un account"},
+  pt: {login: "Entrar", create: "Criar conta", already_account: "Já tenho uma conta"},
+  ar: {login: "تسجيل الدخول", create: "إنشاء حساب", already_account: "لدي حساب بالفعل"}
+};
+
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  window.__FIREBASE_CONFIG__ = safe;
+})();
+
+function loadScript(src){
+  return new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=()=>ko(new Error('load '+src)); document.head.appendChild(s); });
+}
+async function ensureFirebase(){
+  if(window.firebase?.apps?.length) return window.firebase;
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js');
+  const cfg = window.__FIREBASE_CONFIG__ || {};
+  if(!cfg.apiKey){
+    alert('Config Firebase absente : ./js/ort-config.js introuvable ou vide.');
+    throw new Error('Missing Firebase apiKey');
+  }
+  window.firebase.initializeApp(cfg);
+  await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+  return window.firebase;
+}
+</script>
+
+<script>
+const i18nApp = {
+  fr: {
+    "app.title": "Candidature créateur",
+    "app.subtitle": "Complétez le questionnaire ci-dessous",
+    "app.msg.login_required": "Vous devez être connecté avec un email vérifié pour soumettre votre candidature.",
+    "app.s1.title": "Qui êtes-vous?",
+    "app.label.name": "Nom complet / Nom de marque *",
+    "app.label.email": "Email principal *",
+    "app.label.phone": "Téléphone (optionnel)",
+    "app.label.country": "Basé(e) à *",
+    "app.label.bio": "Brève présentation *",
+    "app.s3.title": "Vos réseaux sociaux",
+    "app.social.note": "Ajoutez jusqu'à 5 réseaux sociaux. Remplissez les champs pertinents.",
+    "app.social.network": "Réseau social",
+    "app.social.handle": "Identifiant/URL",
+    "app.social.followers": "Abonnés",
+    "app.btn.submit": "Soumettre ma candidature",
+    "app.btn.cancel": "Annuler"
+  },
+  en: {
+    "app.title": "Creator Application",
+    "app.subtitle": "Fill out the form below",
+    "app.msg.login_required": "You must be logged in with a verified email to submit your application.",
+    "app.s1.title": "Who are you?",
+    "app.label.name": "Full name / Brand name *",
+    "app.label.email": "Primary email *",
+    "app.label.phone": "Phone (optional)",
+    "app.label.country": "Based in *",
+    "app.label.bio": "Brief introduction *",
+    "app.s3.title": "Your social networks",
+    "app.social.note": "Add up to 5 social networks. Fill in the relevant fields.",
+    "app.social.network": "Social network",
+    "app.social.handle": "Handle/URL",
+    "app.social.followers": "Followers",
+    "app.btn.submit": "Submit my application",
+    "app.btn.cancel": "Cancel"
+  },
+  es: {
+    "app.title": "Solicitud de creador",
+    "app.subtitle": "Complete el formulario a continuación",
+    "app.msg.login_required": "Debe estar conectado con un correo electrónico verificado para enviar su solicitud.",
+    "app.s1.title": "¿Quién eres?",
+    "app.label.name": "Nombre completo / Nombre de marca *",
+    "app.label.email": "Correo electrónico principal *",
+    "app.label.phone": "Teléfono (opcional)",
+    "app.label.country": "Ubicado en *",
+    "app.label.bio": "Breve presentación *",
+    "app.s3.title": "Tus redes sociales",
+    "app.social.note": "Agrega hasta 5 redes sociales. Completa los campos relevantes.",
+    "app.social.network": "Red social",
+    "app.social.handle": "Identificador/URL",
+    "app.social.followers": "Seguidores",
+    "app.btn.submit": "Enviar mi solicitud",
+    "app.btn.cancel": "Cancelar"
+  },
+  it: {
+    "app.title": "Candidatura creatore",
+    "app.subtitle": "Compila il modulo di seguito",
+    "app.msg.login_required": "Devi essere connesso con un'email verificata per inviare la tua candidatura.",
+    "app.s1.title": "Chi sei?",
+    "app.label.name": "Nome completo / Nome marchio *",
+    "app.label.email": "Email principale *",
+    "app.label.phone": "Telefono (opzionale)",
+    "app.label.country": "Con base a *",
+    "app.label.bio": "Breve presentazione *",
+    "app.s3.title": "I tuoi social network",
+    "app.social.note": "Aggiungi fino a 5 social network. Compila i campi pertinenti.",
+    "app.social.network": "Social network",
+    "app.social.handle": "Identificativo/URL",
+    "app.social.followers": "Follower",
+    "app.btn.submit": "Invia la mia candidatura",
+    "app.btn.cancel": "Annulla"
+  },
+  pt: {
+    "app.title": "Candidatura para criador",
+    "app.subtitle": "Preencha o formulário abaixo",
+    "app.msg.login_required": "Você deve estar conectado com um email verificado para enviar sua candidatura.",
+    "app.s1.title": "Quem é você?",
+    "app.label.name": "Nome completo / Nome da marca *",
+    "app.label.email": "Email principal *",
+    "app.label.phone": "Telefone (opcional)",
+    "app.label.country": "Baseado em *",
+    "app.label.bio": "Breve apresentação *",
+    "app.s3.title": "Suas redes sociais",
+    "app.social.note": "Adicione até 5 redes sociais. Preencha os campos relevantes.",
+    "app.social.network": "Rede social",
+    "app.social.handle": "Identificador/URL",
+    "app.social.followers": "Seguidores",
+    "app.btn.submit": "Enviar minha candidatura",
+    "app.btn.cancel": "Cancelar"
+  },
+  ar: {
+    "app.title": "طلب المنشئ",
+    "app.subtitle": "أكمل النموذج أدناه",
+    "app.msg.login_required": "يجب أن تكون متصلاً برسالة بريد إلكترونية تم التحقق منها لإرسال طلبك.",
+    "app.s1.title": "من أنت؟",
+    "app.label.name": "الاسم الكامل / اسم العلامة التجارية *",
+    "app.label.email": "البريد الإلكتروني الرئيسي *",
+    "app.label.phone": "الهاتف (اختياري)",
+    "app.label.country": "مقر العمل *",
+    "app.label.bio": "عرض موجز *",
+    "app.s3.title": "شبكاتك الاجتماعية",
+    "app.social.note": "أضف ما يصل إلى 5 شبكات اجتماعية. أكمل الحقول ذات الصلة.",
+    "app.social.network": "شبكة اجتماعية",
+    "app.social.handle": "المعرّف/URL",
+    "app.social.followers": "متابعون",
+    "app.btn.submit": "إرسال طلبي",
+    "app.btn.cancel": "إلغاء"
+  }
+};
+
+let currentLang = localStorage.getItem('ORT_LANG') || 'fr';
+
+function setLanguage(lang){
+  currentLang = lang;
+  localStorage.setItem('ORT_LANG', lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.getElementById('langSel').value = lang;
+  
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = i18nApp[lang]?.[key] || key;
+  });
+}
+
+function showMsg(msg, kind){
+  const el = kind === 'ok' ? document.getElementById('successMsg') : document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+  if(kind === 'ok') document.getElementById('errorMsg').style.display = 'none';
+  else document.getElementById('successMsg').style.display = 'none';
+}
+
+async function submitApplication(e){
+  e.preventDefault();
+  
+  const fb = await ensureFirebase();
+  const user = fb.auth().currentUser;
+  
+  if(!user || !user.emailVerified){
+    document.getElementById('notConnectedMsg').style.display = 'block';
+    showMsg(currentLang === 'en' ? 'You must be logged in with a verified email.' : 'Vous devez être connecté avec un email vérifié.', 'err');
+    return;
+  }
+
+  const socials = [];
+  for(let i = 0; i < 5; i++){
+    const network = document.getElementById(`social${i}`).value;
+    const handle = document.getElementById(`social${i}-handle`).value;
+    const followers = document.getElementById(`social${i}-followers`).value;
+    
+    if(network && (handle || followers)){
+      socials.push({network, handle, followers});
+    }
+  }
+
+  const formData = {
+    name: document.getElementById('appName').value,
+    email: document.getElementById('appEmail').value,
+    phone: document.getElementById('appPhone').value,
+    country: document.getElementById('appCountry').value,
+    bio: document.getElementById('appBio').value,
+    socials: socials,
+    userId: user.uid,
+    userEmail: user.email,
+    status: 'pending',
+    submittedAt: new Date().toISOString(),
+    language: currentLang,
+    agreedTermsAt: localStorage.getItem('creatorTermsDate') || new Date().toISOString()
+  };
+
+  try{
+    // Sauvegarder dans Firestore
+    const fb = await ensureFirebase();
+    const db = fb.firestore();
+    await db.collection('creator_applications').add(formData);
+
+    const apps = JSON.parse(localStorage.getItem('creatorApplications') || '[]');
+    apps.push(formData);
+    localStorage.setItem('creatorApplications', JSON.stringify(apps));
+
+    const msg = currentLang === 'en' ? 'Application submitted! Check your email shortly.' :
+                currentLang === 'es' ? '¡Solicitud enviada! Revise su correo electrónico pronto.' :
+                currentLang === 'it' ? 'Candidatura inviata! Controlla la tua email tra poco.' :
+                currentLang === 'pt' ? 'Candidatura enviada! Verifique seu email em breve.' :
+                currentLang === 'ar' ? 'تم إرسال الطلب! تحقق من بريدك الإلكتروني قريبًا.' :
+                'Candidature envoyée! Vérifiez votre email très bientôt.';
+    showMsg(msg, 'ok');
+    setTimeout(() => window.location.href = 'presentation.html', 3000);
+  }catch(e){
+    console.error('Error:', e);
+    showMsg('Erreur: ' + (e.message || e), 'err');
+  }
+}
+
+setLanguage(currentLang);
+
+// Pré-remplir le formulaire avec infos du user connecté
+async function prefillForm() {
+  try {
+    const fb = await ensureFirebase();
+    const user = fb.auth().currentUser;
+    
+    if(user && user.emailVerified) {
+      // Pré-remplir l'email
+      const emailInput = document.getElementById('appEmail');
+      if(emailInput && !emailInput.value) {
+        emailInput.value = user.email;
+      }
+      
+      // Géolocalisation pour le pays
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        const countryInput = document.getElementById('appCountry');
+        if(countryInput && !countryInput.value && data.country_name) {
+          countryInput.value = data.country_name;
+        }
+      } catch(e) {
+        console.warn('Géolocalisation indisponible:', e);
+      }
+    }
+  } catch(e) {
+    console.warn('Erreur pré-remplissage:', e);
+  }
+}
+
+// Appeler pré-remplissage au démarrage
+setTimeout(prefillForm, 500);
+
+</script>
+
+<script>
+(()=>{
+  const btnOpen=document.getElementById('openAuth');
+  const pop=document.getElementById('authPop');
+  const btnGoogle=document.getElementById('btnGoogle');
+  const btnEmail=document.getElementById('btnEmail');
+  const btnLogout=document.getElementById('btnLogout');
+
+  function setHeaderLabel(u){
+    if(u && u.emailVerified){
+      const name = u.displayName || (u.email||'').split('@')[0];
+      btnOpen.textContent = '🧑 '+ name.slice(0,12);
+      btnLogout.style.display='';
+    }else{
+      const lang=(localStorage.getItem('ORT_LANG')||'fr').toLowerCase();
+      btnOpen.textContent=T[lang]?.login||'Se connecter';
+      btnLogout.style.display='none';
+    }
+  }
+  
+  btnOpen?.addEventListener('click',(e)=>{ e.stopPropagation(); pop.style.display=pop.style.display?'':'block'; });
+  document.addEventListener('click',(e)=>{
+    if(!btnOpen.contains(e.target) && !pop.contains(e.target)) pop.style.display='none';
+  });
+
+  btnGoogle?.addEventListener('click', async()=>{
+    try{
+      const fb = await ensureFirebase(); const a = fb.auth();
+      const p  = new firebase.auth.GoogleAuthProvider();
+      p.setCustomParameters({ prompt: 'select_account' });
+      await a.signInWithPopup(p);
+      setHeaderLabel(a.currentUser); pop.style.display='none';
+    }catch(e){
+      alert('Connexion Google impossible (popup bloquée ?): '+(e.message||e.code));
+    }
+  });
+
+  btnLogout?.addEventListener('click', async()=>{
+    try{
+      const fb=await ensureFirebase(); await fb.auth().signOut();
+      setHeaderLabel(null); pop.style.display='none';
+    }catch(e){ console.warn(e); }
+  });
+
+  (async()=>{
+    try{
+      const fb=await ensureFirebase();
+      fb.auth().onAuthStateChanged(u=>{ setHeaderLabel(u); });
+    }catch(_){}
+  })();
+
+  const modal=document.getElementById('emailModal');
+  const email=document.getElementById('emailInput');
+  const pwd=document.getElementById('pwdInput');
+  const pwd2=document.getElementById('pwd2Input');
+  const pwd2Wrap=document.getElementById('pwd2Wrap');
+  const toggleMode=document.getElementById('toggleMode');
+  const forgotPwd=document.getElementById('forgotPwd');
+  const resendBtn=document.getElementById('resendBtn');
+  const btnCancel=document.getElementById('btnCancel');
+  const btnValider=document.getElementById('btnValider');
+  const msgDiv=document.getElementById('emailMsg');
+  const eyeBtn=document.getElementById('eyeBtn');
+
+  let isSignup=false;
+
+  btnEmail?.addEventListener('click',()=>{ modal.style.display='flex'; isSignup=false; updateModalUI(); resendBtn.style.display='none'; });
+  btnCancel?.addEventListener('click',()=>{ modal.style.display='none'; });
+  modal?.addEventListener('click',e=>{ if(e.target===modal) modal.style.display='none'; });
+  toggleMode?.addEventListener('click',()=>{ isSignup=!isSignup; updateModalUI(); msgDiv.style.display='none'; resendBtn.style.display='none'; });
+  eyeBtn?.addEventListener('click',()=>{
+    const t=pwd.type==='password'?'text':'password'; pwd.type=t; if(pwd2) pwd2.type=t;
+  });
+
+  function updateModalUI(){
+    const L=T[localStorage.getItem('ORT_LANG')||'fr']||T.fr;
+    if(isSignup){
+      document.getElementById('emailTitle').textContent=L.create||'Créer un compte';
+      toggleMode.textContent=L.already_account||'J\'ai déjà un compte';
+      pwd2Wrap.style.display='';
+      forgotPwd.style.display='none';
+      btnValider.textContent=L.create||'Créer';
+    }else{
+      document.getElementById('emailTitle').textContent='Se connecter par e-mail';
+      toggleMode.textContent=L.create||'Créer un compte';
+      pwd2Wrap.style.display='none';
+      forgotPwd.style.display='';
+      btnValider.textContent='Valider';
+    }
+  }
+
+  function showMsg(txt,type){ msgDiv.textContent=txt; msgDiv.className='alert alert-'+type; msgDiv.style.display=''; }
+
+  async function handleEmailSubmit(){
+    msgDiv.style.display='none'; resendBtn.style.display='none';
+    const mail=(email.value||'').trim().toLowerCase();
+    const pass=(pwd.value||'').trim();
+    if(!mail || !pass){ showMsg("Veuillez remplir les champs.","error"); return; }
+    if(isSignup && pwd2.value!==pass){ showMsg("Les mots de passe ne correspondent pas.","error"); return; }
+    const old=btnValider.textContent; btnValider.disabled=true; btnValider.textContent='...';
+    try{
+      const fb=await ensureFirebase(); const a=fb.auth();
+      if(isSignup){
+        const r=await a.createUserWithEmailAndPassword(mail,pass);
+        await r.user.sendEmailVerification({url:location.origin+location.pathname.replace(/[^\/]+$/,'auth-handler.html')});
+        showMsg("Un e-mail de vérification a été envoyé à "+mail,'success');
+        resendBtn.style.display='';
+      }else{
+        try{ await a.signOut(); }catch(_){}
+        const r2=await a.signInWithEmailAndPassword(mail,pass);
+        await r2.user.reload();
+        if(r2.user.emailVerified){
+          showMsg("Connexion réussie.",'success'); setHeaderLabel(r2.user); modal.style.display='none';
+        }else{
+          showMsg("Ton e-mail n'est pas vérifié. Clique sur le lien, puis reviens ici.",'error'); resendBtn.style.display='';
+        }
+      }
+    }catch(e){
+      let msg="Une erreur s'est produite. ";
+      if(e.code==='auth/wrong-password' || e.code==='auth/user-not-found' || e.code==='auth/invalid-credential') msg+="Identifiants incorrects.";
+      else if(e.code==='auth/email-already-in-use') msg+="Cet e-mail est déjà utilisé.";
+      else if(e.code==='auth/weak-password') msg+="Mot de passe trop faible.";
+      else msg+="Veuillez réessayer.";
+      showMsg(msg,'error');
+    }finally{
+      btnValider.disabled=false; btnValider.textContent=old;
+    }
+  }
+  btnValider?.addEventListener('click',handleEmailSubmit);
+  [email,pwd,pwd2].forEach(el=> el?.addEventListener('keydown',e=>{ if(e.key==='Enter') handleEmailSubmit(); }));
+
+  forgotPwd?.addEventListener('click', async()=>{
+    const mail=(email.value||'').trim().toLowerCase();
+    if(!mail){ showMsg("Veuillez saisir un e-mail.","error"); email.focus(); return; }
+    try{
+      const fb=await ensureFirebase(); const a=fb.auth();
+      await a.sendPasswordResetEmail(mail,{url:location.origin+location.pathname.replace(/[^\/]+$/,'auth-handler.html')});
+      showMsg("Si l'adresse existe, un e-mail de réinitialisation a été envoyé.",'success');
+    }catch(e){ showMsg("Erreur lors de l'envoi. Réessayez.",'error'); }
+  });
+
+  resendBtn?.addEventListener('click', async()=>{
+    try{
+      const fb=await ensureFirebase(); const u=fb.auth().currentUser;
+      if(u) await u.sendEmailVerification({url:location.origin+location.pathname.replace(/[^\/]+$/,'auth-handler.html')});
+      showMsg("Lien de vérification renvoyé.",'success');
+    }catch(e){ showMsg("Erreur. Réessayez.",'error'); }
+  });
+
+  updateModalUI();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3098 @@
+<!doctype html>
+<!-- ORT Import v2.4 - Build 2025-11-13 - Added multi-itinerary fusion instruction: when source lists multiple separate roadtrips, AI will merge all places into ONE coherent roadtrip -->
+<html lang="fr" data-page="import_ia">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>OneRoadTrip – Importer & Générer JSON</title>
+<style>
+  :root{ --bg:#113f7a; --panel:#113f7a; --card:#fff; --ink:#113f7a; --accent:#113f7a; --bd:#c3d6b6; --danger:#e11d48; --danger-bg:#fee2e2; --warning:#f59e0b; --warning-bg:#fef3c7 }
+  *{box-sizing:border-box}
+  body{margin:0;background:url("/assets/image_index.webp") center/cover fixed #113f7a;color:#e7f6fb;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
+  /* Accordéon progressif mobile */
+  @media (max-width: 768px) {
+    .section-collapsed {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    .section-expanded {
+      max-height: none;
+      opacity: 1;
+      transition: all 0.3s ease;
+      pointer-events: auto;
+    }
+    
+    /* Indicateur de progression */
+    .section-pending {
+      opacity: 0.5;
+      position: relative;
+    }
+    .section-pending::before {
+      content: '🔒';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+    }
+    
+    /* Passer les deux cadres en 1 colonne sur mobile */
+  #section2Container {
+    grid-template-columns: 1fr !important;
+  }
+  
+  #section34Container {
+    display: none !important;
+  }
+    
+    /* Ajuster les paddings sur mobile */
+    .section-premium, .section-group {
+      padding: 12px !important;
+      font-size: 14px;
+    }
+    
+    .section-premium-title, .section-group-title {
+      font-size: 12px !important;
+      padding: 3px 8px !important;
+    }
+    
+    textarea, pre {
+      font-size: 12px !important;
+    }
+    
+    /* Header mobile */
+    header {
+      flex-wrap: wrap;
+      padding: 8px 12px !important;
+    }
+    
+    .brand {
+      font-size: 14px !important;
+    }
+    
+    header select, .hdr-btn {
+      font-size: 13px !important;
+      padding: 6px 8px !important;
+    }
+    
+    /* Wrap responsive */
+    .wrap {
+      padding: 12px !important;
+    }
+    
+    /* Cards plus compactes */
+    .card {
+      padding: 12px !important;
+    }
+    
+    .card h2 {
+      font-size: 16px !important;
+    }
+    
+    /* Boutons mobile - plus grands pour le tactile */
+    .btn {
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+      min-height: 44px; /* Taille tactile recommandée */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Liens externes */
+    .btn.link {
+      font-size: 13px !important;
+      padding: 10px 12px !important;
+    }
+    
+    /* Modales mobile */
+    .modal-card {
+      max-width: 95% !important;
+      margin: 10px !important;
+    }
+  }
+
+  header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp") center/cover no-repeat #113f7a;border-bottom:2px solid rgba(255,255,255,0.2);box-shadow:0 2px 12px rgba(0,0,0,0.2);padding:10px 16px;display:flex;gap:12px;align-items:center}
+  .brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+  .brandlink img{width:40px;height:40px}
+  header .brand{font-weight:800}
+  header .sp{flex:1}
+  header select{appearance:none;background:#fff;border:1px solid #113f7a;border-radius:10px;padding:8px 10px;color:#113f7a}
+  .auth{position:relative}
+  .hdr-btn{padding:8px 10px;border-radius:10px;border:1px solid #113f7a;background:#fff;color:#113f7a;font-weight:600;cursor:pointer}
+  .hdr-btn:hover{background:#f0f4f8}
+  .auth-pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;color:var(--ink);border:1px solid var(--bd);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px}
+  .auth-pop .hdr-btn{display:block;width:100%;margin:6px 0;background:var(--panel);border:1px solid var(--panel);color:#fff}
+  .auth-pop .hdr-btn.out{background:#fff;color:var(--panel)}
+  .userline{display:none;padding:6px 8px;border-bottom:1px solid #c3d6b6;margin-bottom:6px}
+  .userline .name{font-weight:700}
+  .userline .mail{font-size:.9em;color:#475569}
+
+  .grid{display:block}
+.card{background:var(--card);color:var(--ink);border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:14px;margin-bottom:14px}
+.section-group .card{border:none;box-shadow:none}
+.section-group .card:first-of-type{margin-top:20px}
+  .card h2{margin:0 0 8px;font-size:18px}
+  textarea{width:100%;height:140px;min-height:140px;max-height:140px;border:1px solid #cbd5e1;border-radius:10px;padding:10px;resize:none;font-family:ui-monospace,Consolas,monospace;font-size:13px;overflow:auto}
+  pre{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:10px;overflow:auto;color:#0f172a;font-size:12px;height:140px;min-height:140px;max-height:140px}
+  
+ .section-group{border:2px solid #113f7a;border-radius:14px;padding:18px;margin-bottom:40px;margin-top:50px;position:relative}
+  .section-group-title{position:absolute;top:-14px;left:20px;background:#fff;padding:4px 12px;font-weight:600;font-size:13px;color:#113f7a;line-height:1.5;max-width:calc(100% - 40px);border-radius:6px;box-shadow:0 2px 4px rgba(17,63,122,0.1)}
+  .section-premium{border:2px solid #f59e0b;border-radius:14px;padding:18px;margin-bottom:14px;position:relative}
+  .section-premium-title{position:absolute;top:-14px;left:20px;background:#fff;padding:4px 12px;font-weight:600;font-size:13px;color:#f59e0b;line-height:1.5;border-radius:6px;box-shadow:0 2px 4px rgba(245,158,11,0.1)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{padding:10px 14px;border-radius:12px;border:1px solid #ffffff80;background:#113f7a;color:#fff;cursor:pointer;text-decoration:none;font-size:14px;transition:all .2s}
+  .btn:hover{background:#0d2f5e}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+  .btn.ghost:hover{background:#f8fafc}
+  .btn.link{background:#ffffff1a;border:1px solid #ffffff80}
+  .btn.link:hover{background:#ffffff2b}
+  .status{margin-top:10px;padding:10px;border-radius:8px;border:1px solid}
+  .status.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+  .status.err{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+  .status.warn{background:var(--warning-bg);border-color:#fde047;color:#92400e}
+  .muted{font-size:13px;color:#475569;margin-top:6px}
+  .info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;margin-top:8px;font-size:13px;color:#1e40af}
+  .step-num{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;background:var(--accent);color:#fff;border-radius:50%;font-weight:700;font-size:14px;margin-right:8px}
+
+  footer{margin:16px 0 26px;text-align:center;font-size:14px}
+  footer a{color:#c3d6b6;text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  #emailModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000}
+  .modal-card{width:min(440px,92vw);background:#fff;border-radius:14px;border:1px solid #c3d6b6;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.16);color:var(--ink)}
+  .modal-card h3{margin:0 0 6px}
+  .input{width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0}
+  .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+  .btn-outline{background:#fff;color:#113f7a;border:1px solid #113f7a;border-radius:10px;padding:8px 12px;cursor:pointer}
+  .btn-primary{background:#113f7a;color:#fff;border:1px solid #113f7a;border-radius:10px;padding:8px 12px;cursor:pointer}
+
+  .loader{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-top:2px solid transparent;border-radius:50%;animation:spin 1s linear infinite;margin-left:8px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* === NEW: Options card fine-tune */
+  .opt-row{display:grid;grid-template-columns: 28px 1fr;gap:10px;align-items:flex-start}
+  .opt-row+.opt-row{margin-top:10px}
+  .opt-note{font-size:12px;color:#334155;margin-top:6px}
+  .opt-inline{display:flex;gap:10px;align-items:center;margin-top:8px}
+  .opt-disabled{opacity:.5}
+
+  /* === Interpretation options grid (4 columns) */
+  .interp-grid{display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-top:14px}
+  @media(max-width:1024px){ .interp-grid{grid-template-columns:repeat(2, 1fr)} }
+  @media(max-width:640px){ .interp-grid{grid-template-columns:1fr} }
+  .interp-option{border:2px solid #cbd5e1;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;background:#fff;position:relative}
+  .interp-option:hover{border-color:#113f7a;background:#f8fafc}
+  .interp-option input[type="radio"]{position:absolute;top:12px;right:12px;width:20px;height:20px;cursor:pointer}
+  .interp-option.selected{border-color:#113f7a;background:#eff6ff}
+  .interp-option h3{margin:0 0 8px;font-size:15px;font-weight:700;color:#113f7a;padding-right:30px}
+  .interp-option p{margin:0;font-size:13px;color:#475569;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <a class="brandlink" href="presentation.html"><img src="../assets/symbol.webp" alt="Logo"><div class="brand">OneRoadTrip</div></a>
+  <div class="sp"></div>
+  <select id="langSel" aria-label="Langue">
+    <option value="fr">Français</option><option value="en">English</option>
+    <option value="it">Italiano</option><option value="es">Español</option>
+    <option value="pt">Português</option><option value="ar">العربية</option>
+  </select>
+  <div class="auth">
+    <button id="openAuth" class="hdr-btn" type="button">Se connecter</button>
+    <div id="authPop" class="auth-pop" role="dialog" aria-label="Connexion">
+      <div class="userline" id="userLine"><div class="name" id="meName"></div><div class="mail" id="meEmail"></div></div>
+      <button id="btnGoogle" class="hdr-btn" type="button">Google</button>
+      <button id="btnEmail" class="hdr-btn" type="button">E-mail</button>
+      <button id="btnLogout" class="hdr-btn out" type="button" style="display:none">Déconnexion</button>
+    </div>
+  </div>
+
+<script>
+!function(){
+  try{
+    var hdr = document.querySelector('header'); if(!hdr) return;
+    hdr.style.display = (getComputedStyle(hdr).display==='flex' ? 'flex' : hdr.style.display || 'flex');
+    hdr.style.flexWrap = 'wrap';
+    if(document.getElementById('ortDashRow')) return;
+
+    var lang = (localStorage.getItem('ORT_LANG') || document.documentElement.lang || 'fr').toLowerCase();
+    var MSG = ({
+      fr:'Vous devez être enregistré pour accéder au Dashboard.',
+      en:'You must be signed in to access the Dashboard.',
+      it:'Devi essere registrato per accedere alla Dashboard.',
+      es:'Debe estar registrado para accedere al Panel.',
+      pt:'Você precisa estar conectado para acessar o Dashboard.',
+      ar:'يجب أن تكون مسجّلًا للوصول إلى لوحة التحكم.'
+    })[lang] || 'Vous devez être enregistré pour accéder au Dashboard.';
+
+    var row = document.createElement('div');
+    row.id = 'ortDashRow';
+    row.style.flexBasis = '100%';
+    row.style.display = 'flex';
+    row.style.justifyContent = 'center';
+    row.style.alignItems = 'center';
+    row.style.marginTop = '-15px';
+    row.style.marginBottom = '0';
+
+    var a = document.createElement('a');
+    a.href = 'dashboard_user.html?lang=' + lang;
+    a.textContent = 'Dashboard';
+    a.className = 'hdr-btn';
+    a.style.textDecoration = 'none';
+    a.style.whiteSpace = 'nowrap';
+    a.style.padding = a.style.padding || '6px 12px';
+    a.style.borderRadius = a.style.borderRadius || '10px';
+
+    a.addEventListener('click', function(ev){
+      var user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+      if(!user){
+        ev.preventDefault();
+        var box = document.createElement('div');
+        Object.assign(box.style, {
+          position:'fixed', left:'50%', top:'18px', transform:'translateX(-50%)',
+          background:'#fff', color:'#113f7a',
+          padding:'10px 14px', borderRadius:'10px',
+          border:'1px solid #c3d6b6', boxShadow:'0 6px 18px rgba(0,0,0,.15)',
+          zIndex:9999, maxWidth:'90%', fontFamily:'system-ui,Segoe UI,Roboto,Arial,sans-serif'
+        });
+        box.textContent = MSG;
+        document.body.appendChild(box);
+        setTimeout(function(){ box.remove(); }, 2400);
+      }
+    });
+
+    row.appendChild(a);
+    hdr.appendChild(row);
+  }catch(_){}
+}();
+</script>
+
+</header>
+
+<div class="wrap">
+  <!-- 1) Options d'interprétation (I18N) - EN HAUT -->
+  <section class="card" style="margin-bottom:14px">
+    <h2><span class="step-num">1</span><span id="optTitle"></span></h2>
+    <div class="interp-grid">
+      <label class="interp-option" for="opt-follow">
+        <input id="opt-follow" name="opt-mode" type="radio" value="follow" checked />
+        <h3 id="opt1Title"></h3>
+        <p id="opt1Desc"></p>
+      </label>
+      
+      <label class="interp-option" for="opt-logic">
+        <input id="opt-logic" name="opt-mode" type="radio" value="logic" />
+        <h3 id="opt2Title"></h3>
+        <p id="opt2Desc"></p>
+      </label>
+      
+      <label class="interp-option" for="opt-seed">
+        <input id="opt-seed" name="opt-mode" type="radio" value="seed" />
+        <h3 id="opt3Title"></h3>
+        <p id="opt3Desc"></p>
+      </label>
+      
+      <label class="interp-option" for="opt-citytrip">
+        <input id="opt-citytrip" name="opt-mode" type="radio" value="citytrip" />
+        <h3 id="opt4Title"></h3>
+        <p id="opt4Desc"></p>
+      </label>
+      
+      <!-- Option 5: Model JSON (réservé admin) -->
+      <label class="interp-option" for="opt-model" id="opt-model-wrapper" style="display:none">
+        <input id="opt-model" name="opt-mode" type="radio" value="model" />
+        <h3>🔧 Model JSON</h3>
+        <p>JSON propre pour intégration au modèle</p>
+      </label>
+    </div>
+    
+    <!-- Sous-options pour Model JSON -->
+    <div id="modelSubOptionsWrap" style="display:none;margin-top:16px;padding:16px;background:#f8fafc;border:2px solid #113f7a;border-radius:12px">
+      <label style="font-weight:600;margin-bottom:12px;display:block;color:#113f7a">Choisir le type de parcours :</label>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
+          <input type="radio" name="model-sub" value="follow" checked style="width:18px;height:18px">
+          <span>Parcours strict</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
+          <input type="radio" name="model-sub" value="logic" style="width:18px;height:18px">
+          <span>Parcours logique</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
+          <input type="radio" name="model-sub" value="seed" style="width:18px;height:18px">
+          <span>Essaimage villes d'attache</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
+          <input type="radio" name="model-sub" value="citytrip" style="width:18px;height:18px">
+          <span>Parcours de ville</span>
+        </label>
+      </div>
+      
+      <!-- Champ villes pour essaimage dans model mode -->
+      <div id="modelSeedWrap" style="display:none;margin-top:12px">
+        <input id="modelSeedCities" class="input" type="text" placeholder="Ex.: Nice, Marseille, Toulon" style="width:100%;border:1px solid #113f7a;padding:8px 12px;border-radius:8px">
+      </div>
+    </div>
+    
+    <!-- Champ pour saisir les villes (affiché uniquement si opt-seed est sélectionné) -->
+    <div class="opt-inline" id="seedCitiesWrap" style="margin-top:12px;display:none">
+      <input id="seedCities" class="input" type="text" placeholder="" style="flex:1;border:1px solid #113f7a;padding:8px 12px;border-radius:8px">
+    </div>
+    
+    <p class="muted" id="optNote" style="margin-top:12px"></p>
+  </section>
+
+  <!-- Grille 2 colonnes pour pavés 2 et 2bis -->
+  <div id="section2Container" class="section-collapsed" style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:30px">
+    
+  <!-- 2) I18N - Import avec traduction automatique (Silver/Gold uniquement) - COMMENTÉE TEMPORAIREMENT
+  <div class="section-premium">
+    <div class="section-premium-title" id="premiumSectionTitle"></div>
+    <section class="card" style="margin-bottom:0;border:none;padding:14px 0">
+      <h2 style="height:75px;display:flex;align-items:center;margin:0 0 20px"><span class="step-num">2</span><span id="i18nTitle"></span></h2>
+      <div class="info-box" style="height:75px;display:flex;align-items:center;margin-bottom:20px">
+        <strong id="i18nNote"></strong>
+      </div>
+      <div style="margin-top:20px">
+        <label for="i18nSource" style="display:block;margin-bottom:8px;font-weight:600" id="i18nSourceLabel"></label>
+        <textarea id="i18nSource" placeholder="" style="width:100%;height:120px;min-height:120px;max-height:120px;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font-family:ui-monospace,Consolas,monospace;font-size:13px"></textarea>
+        <div class="row" style="margin-top:20px">
+          <button id="btnI18nProcess" class="btn" type="button" disabled style="opacity:1"></button>
+          <button id="btnI18nClear" class="btn ghost" type="button"></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  -->
+
+  <!-- 2bis) Coller la page web - GRATUIT -->
+  <div class="section-premium" style="border-color:#10b981;grid-column:1/-1;width:100%;">
+    <div class="section-premium-title" style="color:#10b981;box-shadow:0 2px 4px rgba(16,185,129,0.1)">Gratuit</div>
+    <section class="card" style="margin-bottom:0;border:none;padding:14px 0">
+      <h2 id="t1" style="height:75px;display:flex;align-items:center;margin:0 0 20px"><span class="step-num">2</span><span id="t1text">Collez la page web</span></h2>
+      <div class="info-box" style="background:#d1fae5;border-color:#86efac;color:#065f46;height:75px;display:flex;align-items:center;margin-bottom:20px">
+        <strong id="hint2bis"></strong>
+      </div>
+      <div style="margin-top:20px">
+        <label for="src" style="display:block;margin-bottom:8px;font-weight:600" id="labelSrc">Collez le texte source ici :</label>
+        <textarea id="src" placeholder="" aria-label="Source text" style="height:120px;min-height:120px;max-height:120px"></textarea>
+        <div class="row" style="margin-top:20px">
+          <button class="btn" id="btn-gen" type="button"></button>
+          <button class="btn ghost" id="btn-clear" type="button"></button>
+        </div>
+      </div>
+    </section>
+  </div>
+  
+  </div><!-- Fin grille 2 colonnes -->
+
+  <!-- Sections 3-4 groupées avec titre gratuit -->
+  <div id="section34Container" class="section-group section-collapsed">
+    <div class="section-group-title" id="freeSectionTitle"></div>
+    
+
+<script>
+// === Gestion Accordéon Progressif Mobile ===
+(function(){
+  // Vérifier si on est sur mobile
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  function expandSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    
+    if (isMobile()) {
+      section.classList.remove('section-collapsed');
+      section.classList.add('section-expanded');
+      
+      // Scroll vers la section avec un délai pour l'animation
+      setTimeout(() => {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    }
+  }
+  
+  function collapseSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (!section) return;
+    
+    if (isMobile()) {
+      section.classList.remove('section-expanded');
+      section.classList.add('section-collapsed');
+    }
+  }
+  
+  // Initialiser : sections 2-4 masquées sur mobile
+  if (isMobile()) {
+    document.getElementById('section2Container')?.classList.add('section-collapsed');
+    document.getElementById('section34Container')?.classList.add('section-collapsed');
+  }
+  
+  // Rendre les fonctions accessibles globalement
+  window.ORT_expandSection = expandSection;
+  window.ORT_collapseSection = collapseSection;
+  window.ORT_isMobile = isMobile;
+})();
+
+// === Gestion Options d'interprétation ===
+(function(){
+  const optionCards = document.querySelectorAll('.interp-option');
+  const seedWrap = document.getElementById('seedCitiesWrap');
+  const seedInput = document.getElementById('seedCities');
+  const radios = document.querySelectorAll('input[name="opt-mode"]');
+
+  // Gestion du clic sur les cartes
+  optionCards.forEach(card => {
+    card.addEventListener('click', function(e){
+      // Si on clique sur le radio, laisser le comportement par défaut
+      if(e.target.tagName === 'INPUT') return;
+      
+      // Sinon, cocher le radio correspondant
+      const radio = this.querySelector('input[type="radio"]');
+      if(radio) radio.checked = true;
+      
+      // Mettre à jour l'affichage
+      updateSelection();
+    });
+  });
+
+  // Gestion du changement de sélection
+  radios.forEach(radio => {
+    radio.addEventListener('change', updateSelection);
+  });
+
+  function updateSelection(){
+    const selected = document.querySelector('input[name="opt-mode"]:checked');
+    
+    // Mettre à jour l'apparence des cartes
+    optionCards.forEach(card => {
+      const radio = card.querySelector('input[type="radio"]');
+      if(radio && radio.checked){
+        card.classList.add('selected');
+      }else{
+        card.classList.remove('selected');
+      }
+    });
+    
+    // Ouvrir la section 2 sur mobile quand un mode est sélectionné
+    if(selected && window.ORT_expandSection){
+      window.ORT_expandSection('section2Container');
+    }
+
+    // Afficher/masquer le champ villes selon la sélection (mode normal)
+    if(seedWrap && seedInput){
+      if(selected && selected.value === 'seed'){
+        seedWrap.style.display = '';
+        seedInput.disabled = false;
+      }else{
+        seedWrap.style.display = 'none';
+        seedInput.disabled = true;
+        seedInput.value = '';
+      }
+    }
+    
+    // Afficher/masquer la box de sous-options Model JSON
+    const modelSubWrap = document.getElementById('modelSubOptionsWrap');
+    if(modelSubWrap){
+      if(selected && selected.value === 'model'){
+        modelSubWrap.style.display = '';
+        updateModelSubSelection(); // Mise à jour des sous-options
+      }else{
+        modelSubWrap.style.display = 'none';
+      }
+    }
+  }
+  
+  // Gestion des sous-options Model JSON
+  function updateModelSubSelection(){
+    const modelSeedWrap = document.getElementById('modelSeedWrap');
+    const selectedSub = document.querySelector('input[name="model-sub"]:checked');
+    
+    if(modelSeedWrap){
+      if(selectedSub && selectedSub.value === 'seed'){
+        modelSeedWrap.style.display = '';
+      }else{
+        modelSeedWrap.style.display = 'none';
+      }
+    }
+  }
+  
+  // Écouter les changements de sous-options
+  const modelSubRadios = document.querySelectorAll('input[name="model-sub"]');
+  modelSubRadios.forEach(radio => {
+    radio.addEventListener('change', updateModelSubSelection);
+  });
+
+  // Initialiser l'état au chargement
+  if(optionCards.length > 0) updateSelection();
+})();
+</script>
+
+  <main class="grid" aria-live="polite">
+    <!-- 3) Prompt généré -->
+    <section class="card">
+      <h2 id="t2"><span class="step-num">3</span><span id="t2text">Prompt IA généré</span></h2>
+      <pre id="prompt" aria-label="Prompt IA à copier"></pre>
+      <div class="row">
+        <button class="btn" id="btn-copy" type="button"></button>
+        <button class="btn ghost" id="btn-clear-prompt" type="button"></button>
+        <a class="btn link" href="https://chat.openai.com/" target="_blank" rel="noopener">ChatGPT</a>
+        <a class="btn link" href="https://claude.ai/" target="_blank" rel="noopener">Claude</a>
+        <a class="btn link" href="https://gemini.google.com/" target="_blank" rel="noopener">Gemini</a>
+      </div>
+      <div class="muted" id="hint2"></div>
+    </section>
+
+    <!-- 4) Coller la réponse JSON -->
+    <section class="card">
+      <h2 id="t3"><span class="step-num">4</span><span id="t3text">Collez la réponse de l'IA</span></h2>
+      <textarea id="json-return" placeholder="" aria-label="JSON response"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btn-validate-json" type="button"></button>
+        <button class="btn ghost" id="btn-clear-json" type="button"></button>
+      </div>
+      <div id="json-status" class="status" style="display:none"></div>
+      <div id="json-info" class="info-box" style="display:none"></div>
+    </section>
+  </main>
+  </div><!-- /section-group -->
+
+  <footer>
+    <a href="mentions-legales.html">Mentions légales</a> ·
+    <a href="politique-confidentialite.html">Confidentialité</a> ·
+    <a href="politique-cookies.html">Cookies</a>
+  </footer>
+</div>
+
+<!-- Email modal (aligné sur quest_simple) -->
+<div id="emailModal">
+  <div class="modal-card">
+    <h3>Connexion par e-mail</h3>
+    <input id="emailInput" class="input" type="email" placeholder="E-mail">
+    <div class="input-wrap">
+      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe">
+      <button type="button" class="eye-btn" id="togglePwd">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+      </button>
+    </div>
+    <div id="pwd2Wrap" style="display:none">
+      <input id="pwd2Input" class="input" type="password" placeholder="Répéter mot de passe">
+    </div>
+    <div id="emailAlert" class="alert" style="display:none"></div>
+    <div class="actions">
+      <button id="btnCancelEmail" class="btn-outline" type="button">Annuler</button>
+      <button id="btnDoEmail" class="btn-primary" type="button">Continuer</button>
+    </div>
+      <div class="links">
+      <button id="btnForgot" class="link" type="button">Mot de passe oublié ?</button>
+      <button id="btnSignup" class="link" type="button">Créer un compte</button>
+    </div>
+  </div><!-- /modal-card -->
+</div><!-- /emailModal -->
+
+<!-- Modal Configuration Voyage -->
+<div id="configTripModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000">
+  <div class="modal-card" style="max-width:500px">
+    <h3 id="cfgTitleText" style="color:#113f7a;margin-bottom:16px">Configurez votre voyage</h3>
+    
+    <div style="margin-bottom:14px">
+      <label id="cfgStartDateLabel" style="display:block;font-weight:600;margin-bottom:6px">Date de départ :</label>
+      <input type="date" id="cfgStartDate" class="input" style="width:100%">
+    </div>
+    
+    <div style="margin-bottom:14px">
+      <label id="cfgNbDaysLabel" style="display:block;font-weight:600;margin-bottom:6px">Nombre de jours souhaités :</label>
+      <input type="number" id="cfgNbDays" class="input" value="7" min="1" max="60" style="width:100%">
+    </div>
+    
+    <div style="margin-bottom:14px">
+      <label id="cfgBudgetLabel" style="display:block;font-weight:600;margin-bottom:6px">Budget hôtel (€/jour/personne) :</label>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="0-50"> 0–50</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="50-100" checked> 50–100</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="100-150"> 100–150</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="150-200"> 150–200</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="200-250"> 200–250</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="250-300"> 250–300</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="300-500"> 300–500</label>
+        <label style="cursor:pointer"><input type="checkbox" name="cfgBudget" value="500+"> 500+</label>
+      </div>
+    </div>
+    
+    <div class="actions" style="margin-top:20px">
+      <button id="btnCancelConfig" class="btn-outline" type="button">Annuler</button>
+      <button id="btnValidateConfig" class="btn-primary" type="button">Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- Charge la config centralisée AVANT l’init Firebase -->
+<script src="/js/ort-config.js"></script>
+
+<script>
+// === Firebase config (préprod/prod) — via ORT_CONFIG ===
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  window.__FIREBASE_CONFIG__ = safe;
+})();
+</script>
+
+<script>
+(function(){
+  function loadScript(src){
+    return new Promise((ok,ko)=>{
+      const s=document.createElement('script');
+      s.src=src; s.onload=ok; s.onerror=()=>ko(new Error('load '+src));
+      document.head.appendChild(s);
+    });
+  }
+  window.__ensureFirebase__ = async function(){
+    if (window.firebase?.apps?.length) return window.firebase;
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+    window.firebase.initializeApp(window.__FIREBASE_CONFIG__ || {});
+    await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+    return window.firebase;
+  };
+})();
+</script>
+
+<script>
+// === PROMPT TEMPLATES I18N — REWORKED (themes supprimés) ===
+// Base stricte + variantes selon le mode sélectionné (follow/logic/seed/citytrip)
+const PROMPTS = {
+  fr: ({mode, seeds, modelSubMode, modelSeeds}) => `Transforme le contenu ci-dessous en un JSON "itins" (UN SEUL objet) complet et strictement valide.
+
+⚠️ SI LE TEXTE LISTE PLUSIEURS ROADTRIPS/ITINÉRAIRES DISTINCTS :
+- Extrais TOUS les lieux mentionnés dans tous les itinéraires
+- Réorganise-les en UN SEUL roadtrip cohérent et logique
+- Chaque lieu = 1 jour (day) distinct dans le JSON final
+- Optimise l'ordre pour minimiser les allers-retours
+
+RÈGLES GÉNÉRALES (NON NÉGOCIABLES) :
+- Inclure TOUTES les visites et TOUTES les activités (ne rien omettre).
+- Aucune invention : coordonnées GPS réelles et vérifiables, distances/durées réalistes.
+- Respecter le schéma ORT fourni ci-dessous (tous les champs obligatoires).
+- Répondre UNIQUEMENT par le JSON valide (aucun texte avant/après).
+- Ajouter un champ "created_at" au format ISO 8601 (date actuelle) dans chaque objet itins
+- Ajouter un champ "source_url" avec l'URL de la page source dans chaque objet itins (si disponible)
+
+**STYLE D'ÉCRITURE - TON AGENCE DE VOYAGE (OBLIGATOIRE POUR TOUS LES MODES) :**
+- Écris comme une agence de voyage professionnelle. Rends les lieux attractifs et engageants.
+- Chaque texte de visite/activité DOIT faire 2-3 phrases (minimum 40-80 mots) qui inspirent les voyageurs.
+- Utilise un langage descriptif et engageant qui met en valeur la beauté et l'intérêt de chaque lieu.
+- Inclus le contexte historique, les caractéristiques uniques ou des détails sensoriels qui rendent le lieu spécial.
+- Exemple : {"text": "Émerveillez-vous devant le Palais des Papes, le plus grand palais gothique d'Europe. Ce chef-d'œuvre classé UNESCO vous transporte au XIVe siècle lorsqu'Avignon était le siège puissant de la chrétienté. Ne manquez pas les fresques époustouflantes des appartements privés du pape et la vue panoramique depuis la tour."}
+- Reste 100% factuel - n'invente jamais de détails absents de la source.
+
+${mode==='model' ? atob('CuKaoO+4jyBBTlRJLUNPUFlSSUdIVCBSVUxFUyAoQURNSU4gTU9ERSAtIE1BTkRBVE9SWSk6Ci0gKipBRE9QVCBBIFRSQVZFTCBBR0VOQ1kgVE9ORSoqOiBNYWtlIGxvY2F0aW9ucyBhcHBlYWxpbmcgYW5kIGludml0aW5nIHdoaWxlIHN0YXlpbmcgc3RyaWN0bHkgZmFjdHVhbC4gVXNlIGVuZ2FnaW5nIGxhbmd1YWdlIHRoYXQgaGlnaGxpZ2h0cyB0aGUgaW50ZXJlc3QgYW5kIGJlYXV0eSBvZiBwbGFjZXMsIGJ1dCBuZXZlciBpbnZlbnQgZGV0YWlscyBvciBleGFnZ2VyYXRlLiBZb3VyIGRlc2NyaXB0aW9ucyBzaG91bGQgaW5zcGlyZSB0cmF2ZWwgd2hpbGUgcmVtYWluaW5nIDEwMCUgYWNjdXJhdGUgdG8gdGhlIHNvdXJjZS4KLSBSZW1vdmUgQUxMIHBlcnNvbmFsIGFuZWNkb3RlcywgZXhwZXJpZW5jZSBzdG9yaWVzLCBzZW5zYXRpb25zLCBlbW90aW9ucywgb3BpbmlvbnMKLSBSZW1vdmUgQUxMIHJlY29tbWVuZGVkIHJlc3RhdXJhbnRzLCBiYXJzLCBjYWbDqXMsIGhvdGVscywgYWNjb21tb2RhdGlvbnMKLSBSZW1vdmUgQUxMIHBlcnNvbmFsIHByYWN0aWNhbCBhZHZpY2UgKHdoZXJlIHRvIGVhdCwgd2hlcmUgdG8gc2xlZXAsIGluc2lkZXIgdGlwcykKLSBSZW1vdmUgQUxMIHF1b3RlcywgbWVtb3JhYmxlIHBocmFzZXMsIHVuaXF1ZSBleHByZXNzaW9ucyBmcm9tIHRoZSBhdXRob3IKLSBDT01QTEVURUxZIHJlcGhyYXNlIGRlc2NyaXB0aW9ucyBpbiB5b3VyIG93biB3b3JkcyAobm8gaWRlbnRpY2FsIHBocmFzZXMpCi0gQ3JlYXRlIGEgQ09NUExFVEVMWSBESUZGRVJFTlQgdGl0bGUgKG5ldmVyIGNvcHkgdGhlIG9yaWdpbmFsIHRpdGxlKQotIENoYW5nZSB0aGUgb3JkZXIgb2Ygc3RlcHMgaWYgcG9zc2libGUgKGdlb2dyYXBoaWNhbCBvcHRpbWl6YXRpb24pCi0gS2VlcCBvbmx5OiBvYmplY3RpdmUgdG91cmlzdCBzaXRlcywgbW9udW1lbnRzLCBuYXR1cmFsIHNpdGVzLCBtdXNldW1zLCBwdWJsaWMgYWN0aXZpdGllcwotIFJlcGxhY2Ugc3ViamVjdGl2ZSBkZXNjcmlwdGlvbnMgd2l0aCBvYmplY3RpdmUgYW5kIHZlcmlmaWFibGUgZmFjdHMKLSBUaGUgInNvdXJjZV91cmwiIGZpZWxkIGtlZXBzIHRoZSBvcmlnaW5hbCBVUkwgZm9yIGludGVybmFsIHRyYWNlYWJpbGl0eQotIFlvdXIgSlNPTiBtdXN0IGJlIGZhY3R1YWwsIG5ldXRyYWwgYW5kIGltcGVyc29uYWwsIGxpa2UgYW4gb2ZmaWNpYWwgdHJhdmVsIGd1aWRlCi0gTk8gZWxlbWVudCBzaG91bGQgYWxsb3cgaWRlbnRpZnlpbmcgdGhlIG9yaWdpbmFsIGF1dGhvcidzIHN0eWxlCi0gKipzdWdnZXN0ZWRfZGF5cyoqOiBSZXF1aXJlZCByZWNvbW1lbmRlZCB2aXNpdCB0aW1lIGZvciBlYWNoIGRheSAoMC41LCAxLCAxLjUsIDIsIDMuLi4pCg==') : ``}
+
+⚠️ EXIGENCES CRITIQUES :
+1. itin_id et place_id DOIVENT commencer par le code pays ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
+2. INTERDIT d'utiliser CC:: ou XX:: (invalide)
+3. Chaque "night" DOIT avoir "coords": [latitude, longitude] (obligatoire)
+4. Le dept_code doit correspondre au pays du namespace
+5. to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter dans activities : {"text":"Vol vers [destination]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: OBLIGATOIRE pour CHAQUE day. Attribuer selon l'intérêt :**
+   - 0.5 = Passage rapide (1-2 visites)
+   - 1.0 = Journée standard (3-4 visites)
+   - 1.5 = Destination riche (5-6 visites)
+   - 2.0 = Destination majeure (7+ visites)
+8. **Bonus temps de transport : Ajouter au suggested_days de l'étape de DÉPART :**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FORMULE : CEIL(Σ suggested_days_ajustés) + 1**
+   - Où suggested_days_ajusté = suggested_days + bonus_transport
+   - VÉRIFIER : Σ suggested_days ≈ estimated_days_base - 1 (tolérance ±1)
+10. **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language : Champ OBLIGATOIRE dans chaque objet itin - doit être : fr, en, pt, es, it ou ar**
+
+
+CONTRAINTES SPÉCIFIQUES AU MODE :
+${mode==='follow' ? `- SUIVIS STRICT : conserve l’ordre et les étapes exactement comme dans la source. Aucun réagencement, aucune insertion/suppression.` : ``}
+${mode==='logic' ? `- PARCOURS LOGIQUE : réorganise les étapes et jours pour éviter les zig-zags, regrouper les lieux proches et fluidifier l’itinéraire, sans supprimer aucune visite/activité.` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODE BASES + BOUCLES D'EXCURSIONS
+BASES : ${seeds||'[extraire du texte ou spécifier]'}
+═══════════════════════════════════════════════════════════════
+
+RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
+
+PRINCIPE :
+1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
+2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
+3. place_id = "CC::slug", coords partout
+4. Retours base : text "Retour à [BASE] — repos"
+
+EXEMPLE (Bases: Locorotondo, Lecce) :
+
+NODE_LIST :
+Locorotondo (J1) → Alberobello (J2) → Martina Franca (J3) → Cisternino (J4) → Locorotondo (J5-retour) 
+→ Monopoli (J6) → Grottes Castellana (J7) → Locorotondo (J8-retour) 
+→ Polignano (J9) → Ostuni (J10) → Locorotondo (J11-retour) 
+→ Lecce (J12-nouvelle base) → Otranto (J13) → Gallipoli (J14) → Lecce (J15-retour)
+
+STRUCTURE JSON :
+
+Jour 1 (BASE) :
+{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Locorotondo — installation"}]}
+
+Jour 2 (VISITE) :
+{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
+ "visits": [{"text": "Alberobello — Trulli UNESCO"}],
+ "to_next_leg": {"distance_km": 12, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}}
+
+Jour 5 (RETOUR BASE) :
+{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Retour à Locorotondo — repos/temps libre"}]}
+
+Jour 12 (NOUVELLE BASE) :
+{"day": 12, "slice": 1, "region_code": "IT-PUG", "suggested_days": 2,
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]}, 
+ "visits": [{"text": "Lecce — installation, basilique Santa Croce"}]}
+
+⚠️ RÈGLES CRITIQUES :
+- Chaque nœud = 1 day distinct (JAMAIS fusionner)
+- Les BASES apparaissent plusieurs fois : installation, retours périodiques, changement de base
+- Pas de limite stricte de km (regrouper par proximité géographique logique)
+- Tous les place_id = "CC::slug" (CC = ISO2 pays)
+- to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter vol dans activities
+- \${LANG_INSTRUCTION}
+- **estimated_days_base : Compter le nombre de days_plan (entier)**
+- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
+- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5 (site majeur), 2+ (grande ville)**
+` : ``}
+${mode==='citytrip' ? `- PARCOURS DE VILLE : Chaque visite/attraction = 1 DAY distinct avec retour à la base le soir.
+  
+  ⚠️ RÈGLE CRITIQUE : 
+  - Chaque visite (Tour Eiffel, Arc de Triomphe, etc.) = 1 DAY séparé
+  - Le champ "night.place_id" = le lieu visité (ex: "FR::tour_eiffel")
+  - Le champ "night.coords" = coordonnées GPS PRÉCISES du lieu visité
+  - Le champ "visits" répète le nom du lieu visité
+  - NE PAS regrouper plusieurs visites dans un seul day
+  - Le front-end regroupera visuellement les jours avec retour à la base
+  - **suggested_days** = temps conseillé pour cette visite (0.5 = demi-journée, 1 = journée complète)
+  
+  EXEMPLE CONCRET (Paris - 4 jours) :
+  
+  {"day": 1, "suggested_days": 0.5, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Tour Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "suggested_days": 0.5, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "suggested_days": 1, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Musée du Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "suggested_days": 1, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRECT : night = lieu visité avec coords précises, 1 visite = 1 day, suggested_days obligatoire
+  ❌ INTERDIT : Regrouper plusieurs visites, ou mettre des coords génériques de ville
+  
+  \${LANG_INSTRUCTION}
+  Ne supprime aucune visite/activité. Ne mets pas « parcours de ville » dans le titre.
+  **estimated_days_base = nombre de days (= nombre de visites)**
+  **pacing_rules.factors : {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+${mode==='model' && !modelSubMode ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODE BASES + BOUCLES (PAR DÉFAUT ADMIN)
+BASES : ${modelSeeds||'locorotondo'}
+═══════════════════════════════════════════════════════════════
+
+RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
+
+PRINCIPE :
+1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
+2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
+3. place_id = "CC::slug", coords partout
+4. Retours base : text "Retour à [BASE] — repos"
+
+STRUCTURE JSON :
+
+Jour 1 (BASE) :
+{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Locorotondo — installation"}]}
+
+Jour 2 (VISITE) :
+{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
+ "visits": [{"text": "Alberobello — Trulli"}]}
+
+Jour 5 (RETOUR BASE) :
+{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Retour à Locorotondo — repos"}]}
+
+⚠️ RÈGLES CRITIQUES :
+- Chaque nœud = 1 day distinct (JAMAIS fusionner)
+- Les BASES apparaissent plusieurs fois
+- Pas de limite km (proximité logique)
+- Tous place_id = "CC::slug"
+- \${LANG_INSTRUCTION}
+- **estimated_days_base : Compter le nombre de days_plan (entier)**
+- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
+- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5+ (site majeur)**
+` : ``}
+${mode==='model' && modelSubMode==='follow' ? `- SUIVIS STRICT : conserve l'ordre et les étapes exactement comme dans la source. Aucun réagencement, aucune insertion/suppression.` : ``}
+${mode==='model' && modelSubMode==='logic' ? `- PARCOURS LOGIQUE : réorganise les étapes et jours pour éviter les zig-zags, regrouper les lieux proches et fluidifier l'itinéraire, sans supprimer aucune visite/activité.` : ``}
+${mode==='model' && modelSubMode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODE BASES + BOUCLES D'EXCURSIONS (MODEL)
+BASES : ${modelSeeds||'[extraire du texte ou spécifier]'}
+═══════════════════════════════════════════════════════════════
+
+RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
+
+PRINCIPE :
+1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
+2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
+3. place_id = "CC::slug", coords partout
+4. Retours base : text "Retour à [BASE] — repos"
+
+EXEMPLE (Bases: Locorotondo, Lecce) :
+
+NODE_LIST :
+Locorotondo (J1) → Alberobello (J2) → Martina Franca (J3) → Cisternino (J4) → Locorotondo (J5-retour) 
+→ Monopoli (J6) → Grottes Castellana (J7) → Locorotondo (J8-retour) 
+→ Polignano (J9) → Ostuni (J10) → Locorotondo (J11-retour) 
+→ Lecce (J12-nouvelle base) → Otranto (J13) → Gallipoli (J14) → Lecce (J15-retour)
+
+STRUCTURE JSON :
+
+Jour 1 (BASE) :
+{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Locorotondo — installation"}]}
+
+Jour 2 (VISITE) :
+{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
+ "visits": [{"text": "Alberobello — Trulli UNESCO"}]}
+
+Jour 5 (RETOUR BASE) :
+{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
+ "visits": [{"text": "Retour à Locorotondo — repos/temps libre"}]}
+
+Jour 12 (NOUVELLE BASE) :
+{"day": 12, "slice": 1, "region_code": "IT-PUG", "suggested_days": 2,
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]}, 
+ "visits": [{"text": "Lecce — installation, basilique Santa Croce"}]}
+
+⚠️ RÈGLES CRITIQUES :
+- Chaque nœud = 1 day distinct (JAMAIS fusionner)
+- Les BASES apparaissent plusieurs fois : installation, retours périodiques, changement de base
+- Pas de limite stricte de km (regrouper par proximité géographique logique)
+- Tous les place_id = "CC::slug" (CC = ISO2 pays)
+- to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter vol dans activities
+- \${LANG_INSTRUCTION}
+- **estimated_days_base : Compter le nombre de days_plan (entier)**
+- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
+- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5 (site majeur), 2+ (grande ville)**
+
+Ne mets pas Parcours logique dans le titre.` : ``}
+${mode==='model' && modelSubMode==='citytrip' ? `- PARCOURS DE VILLE : Chaque visite/attraction = 1 DAY distinct avec retour à la base le soir.
+  
+  ⚠️ RÈGLE CRITIQUE : 
+  - Chaque visite (Tour Eiffel, Arc de Triomphe, etc.) = 1 DAY séparé
+  - Le champ "night.place_id" = le lieu visité (ex: "FR::tour_eiffel")
+  - Le champ "night.coords" = coordonnées GPS PRÉCISES du lieu visité
+  - Le champ "visits" répète le nom du lieu visité
+  - NE PAS regrouper plusieurs visites dans un seul day
+  - Le front-end regroupera visuellement les jours avec retour à la base
+  - **suggested_days** = temps conseillé pour cette visite (0.5 = demi-journée, 1 = journée complète)
+  
+  EXEMPLE CONCRET (Paris - 4 jours) :
+  
+  {"day": 1, "suggested_days": 0.5, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Tour Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "suggested_days": 0.5, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "suggested_days": 1, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Musée du Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "suggested_days": 1, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRECT : night = lieu visité avec coords précises, 1 visite = 1 day, suggested_days obligatoire
+  ❌ INTERDIT : Regrouper plusieurs visites, ou mettre des coords génériques de ville
+  
+  \${LANG_INSTRUCTION}
+  Ne supprime aucune visite/activité. Ne mets pas « parcours de ville » dans le titre.
+  **estimated_days_base = nombre de days (= nombre de visites)**
+  **pacing_rules.factors : {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+SCHÉMA CIBLE EXEMPLE :
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "language": "fr",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "dept_code": "84",
+    "dept_name": "Vaucluse",
+    "title": "Villages de lavande en Provence",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palais des Papes"}
+      ],
+      "activities": [
+        {"text": "Pont d'Avignon"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+`,
+  en: ({mode, seeds, modelSubMode, modelSeeds}) => `Convert the content below into a JSON "itins" (SINGLE object), strictly valid and complete.
+
+⚠️ IF THE TEXT LISTS MULTIPLE SEPARATE ROADTRIPS/ITINERARIES:
+- Extract ALL places mentioned across all itineraries
+- Reorganize them into ONE coherent and logical roadtrip
+- Each place = 1 distinct day in the final JSON
+- Optimize the order to minimize back-and-forth travel
+
+NON-NEGOTIABLE RULES:
+- Include ALL visits and ALL activities (do not omit anything).
+- No invention: real GPS coordinates only, realistic distances/durations.
+- Follow the ORT schema below (all fields required).
+- Reply ONLY with valid JSON (no extra text).
+- Add a "created_at" field in ISO 8601 format (current date) to each itins object
+- Add a "source_url" field with the source page URL in each itins object (if available)
+
+**WRITING STYLE - TRAVEL AGENCY TONE (MANDATORY FOR ALL MODES):**
+- Write like a professional travel agency. Make locations appealing and inviting.
+- Each visit/activity text MUST be 2-3 sentences (40-80 words minimum) that inspire travelers.
+- Use engaging, descriptive language that highlights the beauty and interest of each place.
+- Include historical context, unique features, or sensory details that make it special.
+- Example: {"text": "Marvel at the Palais des Papes, Europe's largest Gothic palace. This UNESCO World Heritage masterpiece transports you back to the 14th century when Avignon was the powerful seat of Christendom. Don't miss the stunning frescoes in the private papal apartments and the breathtaking views from the tower."}
+- Stay 100% factually accurate - never invent details not in the source.
+
+${mode==='model' ? atob('CuKaoO+4jyBBTlRJLUNPUFlSSUdIVCBSVUxFUyAoQURNSU4gTU9ERSAtIE1BTkRBVE9SWSk6Ci0gKipBRE9QVCBBIFRSQVZFTCBBR0VOQ1kgVE9ORSoqOiBNYWtlIGxvY2F0aW9ucyBhcHBlYWxpbmcgYW5kIGludml0aW5nIHdoaWxlIHN0YXlpbmcgc3RyaWN0bHkgZmFjdHVhbC4gVXNlIGVuZ2FnaW5nIGxhbmd1YWdlIHRoYXQgaGlnaGxpZ2h0cyB0aGUgaW50ZXJlc3QgYW5kIGJlYXV0eSBvZiBwbGFjZXMsIGJ1dCBuZXZlciBpbnZlbnQgZGV0YWlscyBvciBleGFnZ2VyYXRlLiBZb3VyIGRlc2NyaXB0aW9ucyBzaG91bGQgaW5zcGlyZSB0cmF2ZWwgd2hpbGUgcmVtYWluaW5nIDEwMCUgYWNjdXJhdGUgdG8gdGhlIHNvdXJjZS4KLSBSZW1vdmUgQUxMIHBlcnNvbmFsIGFuZWNkb3RlcywgZXhwZXJpZW5jZSBzdG9yaWVzLCBzZW5zYXRpb25zLCBlbW90aW9ucywgb3BpbmlvbnMKLSBSZW1vdmUgQUxMIHJlY29tbWVuZGVkIHJlc3RhdXJhbnRzLCBiYXJzLCBjYWbDqXMsIGhvdGVscywgYWNjb21tb2RhdGlvbnMKLSBSZW1vdmUgQUxMIHBlcnNvbmFsIHByYWN0aWNhbCBhZHZpY2UgKHdoZXJlIHRvIGVhdCwgd2hlcmUgdG8gc2xlZXAsIGluc2lkZXIgdGlwcykKLSBSZW1vdmUgQUxMIHF1b3RlcywgbWVtb3JhYmxlIHBocmFzZXMsIHVuaXF1ZSBleHByZXNzaW9ucyBmcm9tIHRoZSBhdXRob3IKLSBDT01QTEVURUxZIHJlcGhyYXNlIGRlc2NyaXB0aW9ucyBpbiB5b3VyIG93biB3b3JkcyAobm8gaWRlbnRpY2FsIHBocmFzZXMpCi0gQ3JlYXRlIGEgQ09NUExFVEVMWSBESUZGRVJFTlQgdGl0bGUgKG5ldmVyIGNvcHkgdGhlIG9yaWdpbmFsIHRpdGxlKQotIENoYW5nZSB0aGUgb3JkZXIgb2Ygc3RlcHMgaWYgcG9zc2libGUgKGdlb2dyYXBoaWNhbCBvcHRpbWl6YXRpb24pCi0gS2VlcCBvbmx5OiBvYmplY3RpdmUgdG91cmlzdCBzaXRlcywgbW9udW1lbnRzLCBuYXR1cmFsIHNpdGVzLCBtdXNldW1zLCBwdWJsaWMgYWN0aXZpdGllcwotIFJlcGxhY2Ugc3ViamVjdGl2ZSBkZXNjcmlwdGlvbnMgd2l0aCBvYmplY3RpdmUgYW5kIHZlcmlmaWFibGUgZmFjdHMKLSBUaGUgInNvdXJjZV91cmwiIGZpZWxkIGtlZXBzIHRoZSBvcmlnaW5hbCBVUkwgZm9yIGludGVybmFsIHRyYWNlYWJpbGl0eQotIFlvdXIgSlNPTiBtdXN0IGJlIGZhY3R1YWwsIG5ldXRyYWwgYW5kIGltcGVyc29uYWwsIGxpa2UgYW4gb2ZmaWNpYWwgdHJhdmVsIGd1aWRlCi0gTk8gZWxlbWVudCBzaG91bGQgYWxsb3cgaWRlbnRpZnlpbmcgdGhlIG9yaWdpbmFsIGF1dGhvcidzIHN0eWxlCi0gKipzdWdnZXN0ZWRfZGF5cyoqOiBSZXF1aXJlZCByZWNvbW1lbmRlZCB2aXNpdCB0aW1lIGZvciBlYWNoIGRheSAoMC41LCAxLCAxLjUsIDIsIDMuLi4pCg==') : ``}
+
+⚠️ CRITICAL REQUIREMENTS:
+1. itin_id and place_id MUST start with ISO2 country code (FR::, IT::, ES::, PT::, TR::, etc.)
+2. FORBIDDEN to use CC:: or XX:: (invalid)
+3. Each "night" MUST have "coords": [latitude, longitude] (mandatory)
+4. dept_code must correspond to the namespace country
+5. to_next_leg: include transport_mode ("car", "train", "flight"). If distance >= 600km, add in activities: {"text":"Flight to [destination]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: MANDATORY for EACH day. Assign based on interest:**
+   - 0.5 = Quick stop (1-2 visits)
+   - 1.0 = Standard day (3-4 visits)
+   - 1.5 = Rich destination (5-6 visits)
+   - 2.0 = Major destination (7+ visits)
+8. **Transport time bonus: Add to suggested_days of DEPARTURE step:**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FORMULA: CEIL(Σ suggested_days_adjusted) + 1**
+   - Where suggested_days_adjusted = suggested_days + transport_bonus
+   - VERIFY: Σ suggested_days ≈ estimated_days_base - 1 (tolerance ±1)
+10. **pacing_rules.factors: ALWAYS {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: MANDATORY field in each itin object - must be one of: fr, en, pt, es, it, ar**
+
+RULES FOR suggested_days (recommended visit time):
+- 0.5 day: Small village, isolated castle, simple natural site
+- 1 day: Medium city, single major site, natural park
+- 1.5 days: Major tourist city, area with multiple attractions
+- 2 days: Regional capital, major destination (Prague, Barcelona...)
+- 3+ days: National capital, exceptional destination (Paris, Rome...)
+The sum of suggested_days should be close to estimated_days_base.
+
+MODE-SPECIFIC CONSTRAINTS:
+${mode==='follow' ? `- STRICT FOLLOW: keep order and stages exactly as in the source. No reordering, no insertion/deletion.` : ``}
+${mode==='logic' ? `- LOGICAL ROUTE: reorder days/stages to avoid zig-zags, cluster nearby places, keep all visits/activities.` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 BASES + EXCURSION LOOPS MODE
+BASES: ${seeds||'[extract from text or specify]'}
+═══════════════════════════════════════════════════════════════
+
+RULE: Build a NODE_LIST with periodic returns to BASES
+
+PRINCIPLE:
+1. NODE_LIST = BASE → nearby places → BASE (return every 3-5 days) → other places → BASE → new BASE → etc.
+2. 1 node = 1 day: night.place_id = node, visits[0] = echo node (real coords [lat,lon])
+3. place_id = "CC::slug", coords everywhere
+4. Base returns: text "Return to [BASE] — rest"
+
+EXAMPLE (Bases: Locorotondo, Lecce):
+
+NODE_LIST:
+Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-return)
+→ Monopoli (D6) → Castellana Caves (D7) → Locorotondo (D8-return)
+→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-return)
+→ Lecce (D12-new base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-return)
+
+JSON STRUCTURE:
+
+Day 1 (BASE):
+{"day": 1, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Locorotondo — arrival", }]}
+
+Day 2 (VISIT):
+{"day": 2, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
+ "visits": [{"text": "Alberobello — UNESCO Trulli", }]}
+
+Day 5 (RETURN TO BASE):
+{"day": 5, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Return to Locorotondo — rest/free time", }]}
+
+Day 12 (NEW BASE):
+{"day": 12, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
+ "visits": [{"text": "Lecce — arrival, Santa Croce basilica", }]}
+
+⚠️ CRITICAL RULES:
+- Each node = 1 distinct day (NEVER merge)
+- BASES appear multiple times: arrival, periodic returns, base change
+- No strict km limit (group by logical geographic proximity)
+- All place_id = "CC::slug" (CC = ISO2 country code)
+- All visits have real coords [lat, lon]
+` : ``}
+${mode==='citytrip' ? `- CITY TRIP: Each visit/attraction = 1 DISTINCT DAY with return to base in the evening.
+  
+  ⚠️ CRITICAL RULE:
+  - Each visit (Eiffel Tower, Arc de Triomphe, etc.) = 1 separate DAY
+  - The "night.place_id" field = the visited place (e.g.: "FR::tour_eiffel")
+  - The "night.coords" field = PRECISE GPS coordinates of the visited place
+  - The "visits" field repeats the name of the visited place
+  - DO NOT group multiple visits in a single day
+  - The front-end will visually group days with return to base
+  
+  CONCRETE EXAMPLE (Paris - 4 days):
+  
+  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Eiffel Tower"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Louvre Museum"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRECT: night = visited place with precise coords, 1 visit = 1 day
+  ❌ FORBIDDEN: Group multiple visits, or use generic city coords
+  
+  Keep all visits/activities. Do not put "city trip" in the title.
+  **estimated_days_base = number of days (= number of visits)**
+  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+TARGET SCHEMA EXAMPLE:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "language": "en",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "dept_name": "Vaucluse",
+    "title": "Lavender villages in Provence",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palais des Papes"}
+      ],
+      "activities": [
+        {"text": "Pont d'Avignon"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+`,
+  it: ({mode, seeds, modelSubMode, modelSeeds}) => `Converti il contenuto seguente in un JSON "itins" (UN SOLO oggetto), valido e completo.
+
+⚠️ SE IL TESTO ELENCA PIÙ ROADTRIP/ITINERARI DISTINTI:
+- Estrai TUTTI i luoghi menzionati in tutti gli itinerari
+- Riorganizzali in UN SOLO roadtrip coerente e logico
+- Ogni luogo = 1 giorno (day) distinto nel JSON finale
+- Ottimizza l'ordine per minimizzare gli spostamenti avanti e indietro
+
+REGOLE NON NEGOZIABILI:
+- Includi TUTTE le visite e TUTTE le attività.
+- Nessuna invenzione: coordinate GPS reali, distanze/durate realistiche.
+- Rispetta lo schema ORT (tutti i campi obbligatori).
+- Rispondi SOLO con JSON valido.
+
+**STILE DI SCRITTURA - TONO AGENZIA DI VIAGGI (OBBLIGATORIO PER TUTTI I MODI):**
+- Scrivi come un'agenzia di viaggi professionale. Rendi i luoghi attraenti e coinvolgenti.
+- Ogni testo di visita/attività DEVE essere di 2-3 frasi (minimo 40-80 parole) che ispirano i viaggiatori.
+- Usa un linguaggio descrittivo e coinvolgente che evidenzi la bellezza e l'interesse di ogni luogo.
+- Includi contesto storico, caratteristiche uniche o dettagli sensoriali che rendono speciale il luogo.
+- Esempio: {"text": "Ammira il Palazzo dei Papi, il più grande palazzo gotico d'Europa. Questo capolavoro UNESCO ti trasporta nel XIV secolo quando Avignone era la potente sede della cristianità. Non perdere gli affreschi mozzafiato negli appartamenti privati del papa e la vista panoramica dalla torre."}
+- Rimani 100% fattuale - non inventare mai dettagli assenti dalla fonte.
+
+
+⚠️ REQUISITI CRITICI:
+1. itin_id e place_id DEVONO iniziare con il codice paese ISO2 (FR::, IT::, ES::, PT::, TR::, ecc.)
+2. VIETATO usare CC:: o XX:: (non valido)
+3. Ogni "night" DEVE avere "coords": [latitudine, longitudine] (obbligatorio)
+4. Il dept_code deve corrispondere al paese del namespace
+5. to_next_leg: includere transport_mode ("car", "train", "flight"). Se distanza >= 600km, aggiungere in activities: {"text":"Volo per [destinazione]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: OBBLIGATORIO per OGNI day. Assegnare in base all'interesse:**
+   - 0.5 = Sosta rapida (1-2 visite)
+   - 1.0 = Giornata standard (3-4 visite)
+   - 1.5 = Destinazione ricca (5-6 visite)
+   - 2.0 = Destinazione importante (7+ visite)
+8. **Bonus tempo di viaggio: Aggiungere al suggested_days della tappa di PARTENZA:**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FORMULA: CEIL(Σ suggested_days_adattati) + 1**
+   - Dove suggested_days_adattato = suggested_days + bonus_trasporto
+   - VERIFICARE: Σ suggested_days ≈ estimated_days_base - 1 (tolleranza ±1)
+10. **pacing_rules.factors: SEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: Campo OBBLIGATORIO in ogni oggetto itin - deve essere: fr, en, pt, es, it o ar**
+
+
+VINCOLI PER MODALITÀ:
+${mode==='follow' ? `- SEGUITO STRETTO: mantieni ordine e tappe come in origine.` : ``}
+${mode==='logic' ? `- PERCORSO LOGICO: riordina per evitare zig-zag, raggruppa i luoghi vicini, mantieni tutte le visite/attività.` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODALITÀ BASI + CIRCUITI ESCURSIONI
+BASI: ${seeds||'[estrarre dal testo o specificare]'}
+═══════════════════════════════════════════════════════════════
+
+REGOLA: Costruire una NODE_LIST con ritorni periodici alle BASI
+
+PRINCIPIO:
+1. NODE_LIST = BASE → luoghi vicini → BASE (ritorno ogni 3-5 giorni) → altri luoghi → BASE → nuova BASE → ecc.
+2. 1 nodo = 1 day: night.place_id = nodo, visits[0] = eco nodo (coords reali [lat,lon])
+3. place_id = "CC::slug", coords ovunque
+4. Ritorni base: text "Ritorno a [BASE] — riposo"
+
+ESEMPIO (Basi: Locorotondo, Lecce):
+
+NODE_LIST:
+Locorotondo (G1) → Alberobello (G2) → Martina Franca (G3) → Cisternino (G4) → Locorotondo (G5-ritorno)
+→ Monopoli (G6) → Grotte Castellana (G7) → Locorotondo (G8-ritorno)
+→ Polignano (G9) → Ostuni (G10) → Locorotondo (G11-ritorno)
+→ Lecce (G12-nuova base) → Otranto (G13) → Gallipoli (G14) → Lecce (G15-ritorno)
+
+STRUTTURA JSON:
+
+Giorno 1 (BASE):
+{"day": 1, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Locorotondo — arrivo", }]}
+
+Giorno 2 (VISITA):
+{"day": 2, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
+ "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
+
+Giorno 5 (RITORNO BASE):
+{"day": 5, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Ritorno a Locorotondo — riposo/tempo libero", }]}
+
+Giorno 12 (NUOVA BASE):
+{"day": 12, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
+ "visits": [{"text": "Lecce — arrivo, basilica Santa Croce", }]}
+
+⚠️ REGOLE CRITICHE:
+- Ogni nodo = 1 day distinto (MAI fondere)
+- Le BASI appaiono più volte: arrivo, ritorni periodici, cambio base
+- Nessun limite km stretto (raggruppare per prossimità geografica logica)
+- Tutti place_id = "CC::slug" (CC = codice ISO2 paese)
+- Tutte le visits hanno coords reali [lat, lon]
+` : ``}
+${mode==='citytrip' ? `- CITY TRIP: Ogni visita/attrazione = 1 DAY distinto con ritorno alla base la sera.
+  
+  ⚠️ REGOLA CRITICA:
+  - Ogni visita (Torre Eiffel, Arco di Trionfo, ecc.) = 1 DAY separato
+  - Il campo "night.place_id" = il luogo visitato (es: "FR::tour_eiffel")
+  - Il campo "night.coords" = coordinate GPS PRECISE del luogo visitato
+  - Il campo "visits" ripete il nome del luogo visitato
+  - NON raggruppare più visite in un singolo day
+  - Il front-end raggrupperà visivamente i giorni con ritorno alla base
+  
+  ESEMPIO CONCRETO (Parigi - 4 giorni):
+  
+  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco di Trionfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museo del Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRETTO: night = luogo visitato con coord precise, 1 visita = 1 day
+  ❌ VIETATO: Raggruppare più visite, o usare coord generiche della città
+  
+  Mantieni tutte le visite/attività. Non mettere "city trip" nel titolo.
+  **estimated_days_base = numero di giorni (= numero di visite)**
+  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+SCHEMA DI RIFERIMENTO:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "dept_name": "Vaucluse",
+    "language": "it",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "title": "Villaggi della lavanda in Provenza",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palazzo dei Papi"}
+      ],
+      "activities": [
+        {"text": "Ponte di Avignone"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+`,
+  es: ({mode, seeds, modelSubMode, modelSeeds}) => `Convierte el contenido en JSON "itins" (UN SOLO objeto), válido y completo.
+
+⚠️ SI EL TEXTO LISTA VARIOS ROADTRIPS/ITINERARIOS DISTINTOS:
+- Extrae TODOS los lugares mencionados en todos los itinerarios
+- Reorganízalos en UN SOLO roadtrip coherente y lógico
+- Cada lugar = 1 día (day) distinto en el JSON final
+- Optimiza el orden para minimizar los desplazamientos
+
+REGLAS:
+- TODAS las visitas y actividades.
+- Sin invenciones: coordenadas reales, distancias realistas.
+- Sigue el esquema ORT (todos los campos).
+- Responde SOLO con JSON.
+
+**ESTILO DE ESCRITURA - TONO AGENCIA DE VIAJES (OBLIGATORIO PARA TODOS LOS MODOS):**
+- Escribe como una agencia de viajes profesional. Haz que los lugares sean atractivos y atrayentes.
+- Cada texto de visita/actividad DEBE tener 2-3 frases (mínimo 40-80 palabras) que inspiren a los viajeros.
+- Usa lenguaje descriptivo y atractivo que resalte la belleza y el interés de cada lugar.
+- Incluye contexto histórico, características únicas o detalles sensoriales que hacen especial el lugar.
+- Ejemplo: {"text": "Maravíllate con el Palacio de los Papas, el palacio gótico más grande de Europa. Esta obra maestra de la UNESCO te transporta al siglo XIV cuando Aviñón era la poderosa sede de la cristiandad. No te pierdas los impresionantes frescos de los apartamentos privados del papa y las vistas panorámicas desde la torre."}
+- Mantente 100% fiel a los hechos - nunca inventes detalles ausentes de la fuente.
+
+
+⚠️ REQUISITOS CRÍTICOS:
+1. itin_id y place_id DEBEN comenzar con el código país ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
+2. PROHIBIDO usar CC:: o XX:: (inválido)
+3. Cada "night" DEBE tener "coords": [latitud, longitud] (obligatorio)
+4. El dept_code debe corresponder al país del namespace
+5. to_next_leg : incluir transport_mode ("car", "train", "flight"). Si distancia >= 600km, añadir en activities : {"text":"Vuelo a [destino]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: OBLIGATORIO para CADA day. Asignar según el interés:**
+   - 0.5 = Parada rápida (1-2 visitas)
+   - 1.0 = Día estándar (3-4 visitas)
+   - 1.5 = Destino rico (5-6 visitas)
+   - 2.0 = Destino importante (7+ visitas)
+8. **Bonus tiempo de transporte: Añadir al suggested_days de la etapa de SALIDA:**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FÓRMULA: CEIL(Σ suggested_days_ajustados) + 1**
+   - Donde suggested_days_ajustado = suggested_days + bonus_transporte
+   - VERIFICAR: Σ suggested_days ≈ estimated_days_base - 1 (tolerancia ±1)
+10. **pacing_rules.factors : SIEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: Campo OBLIGATORIO en cada objeto itin - debe ser: fr, en, pt, es, it o ar**
+
+
+MODO:
+${mode==='follow' ? `- SEGUIR ESTRICTO.` : ``}
+${mode==='logic' ? `- RECORRIDO LÓGICO (evitar zig-zag).` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODO BASES + CIRCUITOS EXCURSIONES
+BASES: ${seeds||'[extraer del texto o especificar]'}
+═══════════════════════════════════════════════════════════════
+
+REGLA: Construir una NODE_LIST con retornos periódicos a las BASES
+
+PRINCIPIO:
+1. NODE_LIST = BASE → lugares cercanos → BASE (retorno cada 3-5 días) → otros lugares → BASE → nueva BASE → etc.
+2. 1 nodo = 1 day: night.place_id = nodo, visits[0] = eco nodo (coords reales [lat,lon])
+3. place_id = "CC::slug", coords en todas partes
+4. Retornos base: text "Regreso a [BASE] — descanso"
+
+EJEMPLO (Bases: Locorotondo, Lecce):
+
+NODE_LIST:
+Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-retorno)
+→ Monopoli (D6) → Grutas Castellana (D7) → Locorotondo (D8-retorno)
+→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-retorno)
+→ Lecce (D12-nueva base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-retorno)
+
+ESTRUCTURA JSON:
+
+Día 1 (BASE):
+{"day": 1, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Locorotondo — llegada", }]}
+
+Día 2 (VISITA):
+{"day": 2, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
+ "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
+
+Día 5 (RETORNO BASE):
+{"day": 5, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Regreso a Locorotondo — descanso/tiempo libre", }]}
+
+Día 12 (NUEVA BASE):
+{"day": 12, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
+ "visits": [{"text": "Lecce — llegada, basílica Santa Croce", }]}
+
+⚠️ REGLAS CRÍTICAS:
+- Cada nodo = 1 day distinto (NUNCA fusionar)
+- Las BASES aparecen varias veces: llegada, retornos periódicos, cambio base
+- Sin límite km estricto (agrupar por proximidad geográfica lógica)
+- Todos place_id = "CC::slug" (CC = código ISO2 país)
+- Todas las visits tienen coords reales [lat, lon]
+` : ``}
+${mode==='citytrip' ? `- CITY TRIP: Cada visita/atracción = 1 DAY distinto con regreso a la base por la noche.
+  
+  ⚠️ REGLA CRÍTICA:
+  - Cada visita (Torre Eiffel, Arco de Triunfo, etc.) = 1 DAY separado
+  - El campo "night.place_id" = el lugar visitado (ej: "FR::tour_eiffel")
+  - El campo "night.coords" = coordenadas GPS PRECISAS del lugar visitado
+  - El campo "visits" repite el nombre del lugar visitado
+  - NO agrupar varias visitas en un solo day
+  - El front-end agrupará visualmente los días con regreso a la base
+  
+  EJEMPLO CONCRETO (París - 4 días):
+  
+  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco de Triunfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museo del Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRECTO: night = lugar visitado con coords precisas, 1 visita = 1 day
+  ❌ PROHIBIDO: Agrupar varias visitas, o usar coords genéricas de ciudad
+  
+  Mantén todas las visitas/actividades. No pongas "city trip" en el título.
+  **estimated_days_base = número de días (= número de visitas)**
+  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+ESQUEMA:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "dept_name": "Vaucluse",
+    "title": "Pueblos de lavanda en Provenza",
+    "language": "es",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palacio de los Papas"}
+      ],
+      "activities": [
+        {"text": "Puente de Aviñón"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+`,
+  pt: ({mode, seeds, modelSubMode, modelSeeds}) => `Converta em JSON "itins" (UM ÚNICO objeto), válido e completo.
+
+⚠️ SE O TEXTO LISTA VÁRIOS ROADTRIPS/ITINERÁRIOS DISTINTOS:
+- Extraia TODOS os locais mencionados em todos os itinerários
+- Reorganize-os em UM ÚNICO roadtrip coerente e lógico
+- Cada local = 1 dia (day) distinto no JSON final
+- Otimize a ordem para minimizar deslocamentos
+
+REGRAS:
+- TODAS as visitas e atividades.
+- Sem invenções: coordenadas reais, distâncias realistas.
+- Siga o esquema ORT.
+- Responda APENAS com JSON.
+
+**ESTILO DE ESCRITA - TOM AGÊNCIA DE VIAGENS (OBRIGATÓRIO PARA TODOS OS MODOS):**
+- Escreva como uma agência de viagens profissional. Torne os lugares atraentes e envolventes.
+- Cada texto de visita/atividade DEVE ter 2-3 frases (mínimo 40-80 palavras) que inspirem os viajantes.
+- Use linguagem descritiva e envolvente que destaque a beleza e o interesse de cada lugar.
+- Inclua contexto histórico, características únicas ou detalhes sensoriais que tornam o lugar especial.
+- Exemplo: {"text": "Maravilhe-se com o Palácio dos Papas, o maior palácio gótico da Europa. Esta obra-prima da UNESCO transporta-o ao século XIV quando Avignon era a poderosa sede da cristandade. Não perca os frescos deslumbrantes nos apartamentos privados do papa e as vistas panorâmicas da torre."}
+- Mantenha-se 100% fiel aos factos - nunca invente detalhes ausentes da fonte.
+
+
+⚠️ REQUISITOS CRÍTICOS:
+1. itin_id e place_id DEVEM começar com código país ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
+2. PROIBIDO usar CC:: ou XX:: (inválido)
+3. Cada "night" DEVE ter "coords": [latitude, longitude] (obrigatório)
+4. O dept_code deve corresponder ao país do namespace
+5. to_next_leg: incluir transport_mode ("car", "train", "flight"). Se distância >= 600km, adicionar em activities: {"text":"Voo para [destino]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: OBRIGATÓRIO para CADA day. Atribuir segundo o interesse:**
+   - 0.5 = Paragem rápida (1-2 visitas)
+   - 1.0 = Dia padrão (3-4 visitas)
+   - 1.5 = Destino rico (5-6 visitas)
+   - 2.0 = Destino importante (7+ visitas)
+8. **Bónus tempo de transporte: Adicionar ao suggested_days da etapa de PARTIDA:**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FÓRMULA: CEIL(Σ suggested_days_ajustados) + 1**
+   - Onde suggested_days_ajustado = suggested_days + bónus_transporte
+   - VERIFICAR: Σ suggested_days ≈ estimated_days_base - 1 (tolerância ±1)
+10. **pacing_rules.factors: SEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: Campo OBRIGATÓRIO em cada objeto itin - deve ser: fr, en, pt, es, it ou ar**
+
+
+MODO:
+${mode==='follow' ? `- SEGUIMENTO ESTRITO.` : ``}
+${mode==='logic' ? `- ROTEIRO LÓGICO (evitar zigue-zague).` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 MODO BASES + CIRCUITOS EXCURSÕES
+BASES: ${seeds||'[extrair do texto ou especificar]'}
+═══════════════════════════════════════════════════════════════
+
+REGRA: Construir uma NODE_LIST com retornos periódicos às BASES
+
+PRINCÍPIO:
+1. NODE_LIST = BASE → locais próximos → BASE (retorno a cada 3-5 dias) → outros locais → BASE → nova BASE → etc.
+2. 1 nó = 1 day: night.place_id = nó, visits[0] = eco nó (coords reais [lat,lon])
+3. place_id = "CC::slug", coords em todos os lugares
+4. Retornos base: text "Retorno a [BASE] — descanso"
+
+EXEMPLO (Bases: Locorotondo, Lecce):
+
+NODE_LIST:
+Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-retorno)
+→ Monopoli (D6) → Grutas Castellana (D7) → Locorotondo (D8-retorno)
+→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-retorno)
+→ Lecce (D12-nova base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-retorno)
+
+ESTRUTURA JSON:
+
+Dia 1 (BASE):
+{"day": 1, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Locorotondo — chegada", }]}
+
+Dia 2 (VISITA):
+{"day": 2, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
+ "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
+
+Dia 5 (RETORNO BASE):
+{"day": 5, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Retorno a Locorotondo — descanso/tempo livre", }]}
+
+Dia 12 (NOVA BASE):
+{"day": 12, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
+ "visits": [{"text": "Lecce — chegada, basílica Santa Croce", }]}
+
+⚠️ REGRAS CRÍTICAS:
+- Cada nó = 1 day distinto (NUNCA fundir)
+- As BASES aparecem várias vezes: chegada, retornos periódicos, mudança de base
+- Sem limite km estrito (agrupar por proximidade geográfica lógica)
+- Todos place_id = "CC::slug" (CC = código ISO2 país)
+- Todas as visits têm coords reais [lat, lon]
+` : ``}
+${mode==='citytrip' ? `- CITY TRIP: Cada visita/atração = 1 DAY distinto com retorno à base à noite.
+  
+  ⚠️ REGRA CRÍTICA:
+  - Cada visita (Torre Eiffel, Arco do Triunfo, etc.) = 1 DAY separado
+  - O campo "night.place_id" = o local visitado (ex: "FR::tour_eiffel")
+  - O campo "night.coords" = coordenadas GPS PRECISAS do local visitado
+  - O campo "visits" repete o nome do local visitado
+  - NÃO agrupar várias visitas em um único day
+  - O front-end agrupará visualmente os dias com retorno à base
+  
+  EXEMPLO CONCRETO (Paris - 4 dias):
+  
+  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco do Triunfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museu do Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
+  
+  ✅ CORRETO: night = local visitado com coords precisas, 1 visita = 1 day
+  ❌ PROIBIDO: Agrupar várias visitas, ou usar coords genéricas da cidade
+  
+  Mantenha todas as visitas/atividades. Não coloque "city trip" no título.
+  **estimated_days_base = número de dias (= número de visitas)**
+  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+ESQUEMA:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "dept_name": "Vaucluse",
+    "title": "Aldeias de lavanda na Provença",
+    "estimated_days_base": 5,
+    "language": "pt",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palácio dos Papas"}
+      ],
+      "activities": [
+        {"text": "Ponte de Avignon"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+`,
+  ar: ({mode, seeds, modelSubMode, modelSeeds}) => `حوّل المحتوى إلى JSON "itins" (كائن واحد)، صالح وكامل.
+
+⚠️ إذا كان النص يسرد عدة رحلات/مسارات منفصلة:
+- استخرج جميع الأماكن المذكورة في جميع المسارات
+- أعد تنظيمها في رحلة واحدة متماسكة ومنطقية
+- كل مكان = يوم واحد (day) مميز في JSON النهائي
+- حسّن الترتيب لتقليل التنقلات
+
+القواعد:
+- تضمين جميع الزيارات والأنشطة.
+- دون اختلاق: إحداثيات حقيقية ومسافات/أزمنة واقعية.
+- اتبع مخطط ORT.
+- أجب بـ JSON فقط.
+
+**أسلوب الكتابة - نبرة وكالة السفر (إلزامي لجميع الأوضاع):**
+- اكتب كوكالة سفر محترفة. اجعل الأماكن جذابة ومثيرة للاهتمام.
+- كل نص زيارة/نشاط يجب أن يكون 2-3 جمل (40-80 كلمة كحد أدنى) تلهم المسافرين.
+- استخدم لغة وصفية وجذابة تبرز جمال وأهمية كل مكان.
+- ضمّن السياق التاريخي أو الميزات الفريدة أو التفاصيل الحسية التي تجعل المكان مميزاً.
+- مثال: {"text": "تعجّب من قصر البابوات، أكبر قصر قوطي في أوروبا. هذه التحفة المدرجة في اليونسكو تنقلك إلى القرن الرابع عشر عندما كانت أفينيون مقر المسيحية القوي. لا تفوت اللوحات الجدارية المذهلة في الشقق الخاصة للبابا والمنظر البانورامي من البرج."}
+- ابق 100% دقيقاً - لا تخترع أبداً تفاصيل غير موجودة في المصدر.
+
+
+⚠️ المتطلبات الحرجة:
+1. itin_id و place_id يجب أن يبدأوا برمز البلد ISO2 (FR::، IT::، ES::، PT::، TR::، إلخ.)
+2. ممنوع استخدام CC:: أو XX:: (غير صالح)
+3. كل "night" يجب أن يحتوي على "coords": [خط العرض، خط الطول] (إلزامي)
+4. يجب أن يتطابق dept_code مع بلد namespace
+5. to_next_leg: تضمين transport_mode ("car"، "train"، "flight"). إذا كانت المسافة >= 600 كم، أضف في activities: {"text":"رحلة إلى [الوجهة]"}
+6. \${LANG_INSTRUCTION}
+7. **suggested_days: إلزامي لكل day. التعيين حسب الأهمية:**
+   - 0.5 = توقف سريع (1-2 زيارة)
+   - 1.0 = يوم قياسي (3-4 زيارات)
+   - 1.5 = وجهة غنية (5-6 زيارات)
+   - 2.0 = وجهة مهمة (7+ زيارات)
+8. **مكافأة وقت النقل: إضافة إلى suggested_days للمرحلة المغادرة:**
+   - drive_min ≤180 (≤3 ساعات) → +0
+   - drive_min 181-300 (3-5 ساعات) → +0.5
+   - drive_min >300 (>5 ساعات) → +1.0
+9. **estimated_days_base الصيغة: CEIL(Σ suggested_days_معدل) + 1**
+   - حيث suggested_days_معدل = suggested_days + مكافأة_النقل
+   - التحقق: Σ suggested_days ≈ estimated_days_base - 1 (تفاوت ±1)
+10. **pacing_rules.factors: دائمًا {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: حقل إلزامي في كل كائن itin - يجب أن يكون: fr أو en أو pt أو es أو it أو ar**
+
+
+وضع التشغيل:
+${mode==='follow' ? `- اتباع صارم.` : ``}
+${mode==='logic' ? `- مسار منطقي (تجنب المتعرجات).` : ``}
+${mode==='seed' ? `
+═══════════════════════════════════════════════════════════════
+🏠 وضع القواعد + حلقات الرحلات
+القواعد: ${seeds||'[استخراج من النص أو تحديد]'}
+═══════════════════════════════════════════════════════════════
+
+القاعدة: بناء NODE_LIST مع عودة دورية للقواعد
+
+المبدأ:
+1. NODE_LIST = قاعدة → أماكن قريبة → قاعدة (عودة كل 3-5 أيام) → أماكن أخرى → قاعدة → قاعدة جديدة → إلخ.
+2. 1 عقدة = 1 يوم: night.place_id = عقدة، visits[0] = صدى العقدة (إحداثيات حقيقية [lat,lon])
+3. place_id = "CC::slug"، إحداثيات في كل مكان
+4. عودة القاعدة: text "العودة إلى [القاعدة] — راحة"
+
+مثال (القواعد: Locorotondo، Lecce):
+
+NODE_LIST:
+Locorotondo (ي1) → Alberobello (ي2) → Martina Franca (ي3) → Cisternino (ي4) → Locorotondo (ي5-عودة)
+→ Monopoli (ي6) → كهوف Castellana (ي7) → Locorotondo (ي8-عودة)
+→ Polignano (ي9) → Ostuni (ي10) → Locorotondo (ي11-عودة)
+→ Lecce (ي12-قاعدة جديدة) → Otranto (ي13) → Gallipoli (ي14) → Lecce (ي15-عودة)
+
+بنية JSON:
+
+اليوم 1 (قاعدة):
+{"day": 1, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "Locorotondo — وصول", }]}
+
+اليوم 2 (زيارة):
+{"day": 2, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
+ "visits": [{"text": "Alberobello — تروللي اليونسكو", }]}
+
+اليوم 5 (عودة للقاعدة):
+{"day": 5, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
+ "visits": [{"text": "العودة إلى Locorotondo — راحة/وقت حر", }]}
+
+اليوم 12 (قاعدة جديدة):
+{"day": 12, "slice": 1, "region_code": "IT-PUG",
+ "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
+ "visits": [{"text": "Lecce — وصول، كنيسة سانتا كروتشي", }]}
+
+⚠️ قواعد حاسمة:
+- كل عقدة = يوم واحد متميز (لا تدمج أبدًا)
+- تظهر القواعد عدة مرات: وصول، عودات دورية، تغيير القاعدة
+- بدون حد كم صارم (التجميع حسب القرب الجغرافي المنطقي)
+- جميع place_id = "CC::slug" (CC = كود ISO2 للبلد)
+- جميع الزيارات لديها إحداثيات حقيقية [lat، lon]
+` : ``}
+${mode==='citytrip' ? `- مسار داخل المدينة: كل زيارة/معلم = يوم واحد (DAY) متميز مع العودة إلى القاعدة في المساء.
+  
+  ⚠️ قاعدة حرجة:
+  - كل زيارة (برج إيفل، قوس النصر، إلخ.) = يوم واحد (DAY) منفصل
+  - حقل "night.place_id" = المكان المُزار (مثال: "FR::tour_eiffel")
+  - حقل "night.coords" = إحداثيات GPS دقيقة للمكان المُزار
+  - حقل "visits" يكرر اسم المكان المُزار
+  - لا تجمع عدة زيارات في يوم واحد
+  - الواجهة الأمامية ستجمع الأيام بصريًا مع العودة إلى القاعدة
+  
+  مثال ملموس (باريس - 4 أيام):
+  
+  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "برج إيفل"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "قوس النصر"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "متحف اللوفر"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
+  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "مونمارتر"}]}
+  
+  ✅ صحيح: night = المكان المُزار مع إحداثيات دقيقة، زيارة واحدة = يوم واحد
+  ❌ ممنوع: تجميع عدة زيارات، أو استخدام إحداثيات عامة للمدينة
+  
+  احتفظ بجميع الزيارات/الأنشطة. لا تضع "مسار المدينة" في العنوان.
+  **estimated_days_base = عدد الأيام (= عدد الزيارات)**
+  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
+
+المخطط:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "dept_name": "Vaucluse",
+    "title": "قرى الخزامى في بروفانس",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "قصر الباباوات"}
+      ],
+      "activities": [
+        {"text": "جسر أفينيون"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+المصدر:
+---
+`
+};
+
+// === LANG INSTRUCTIONS (I18N) ===
+const LANG_INSTRUCTIONS = {
+  fr: '**LANGUE : TOUS les textes (title, notes, visits, activities) DOIVENT être en FRANÇAIS**',
+  en: '**LANGUAGE: ALL texts (title, notes, visits, activities) MUST be in ENGLISH**',
+  it: '**LINGUA: TUTTI i testi (title, notes, visits, activities) DEVONO essere in ITALIANO**',
+  es: '**IDIOMA: TODOS los textos (title, notes, visits, activities) DEBEN estar en ESPAÑOL**',
+  pt: '**IDIOMA: TODOS os textos (title, notes, visits, activities) DEVEM estar em PORTUGUÊS**',
+  ar: '**اللغة: جميع النصوص (title، notes، visits، activities) يجب أن تكون بالعربية**'
+};
+
+// helper restitution
+function getPromptTemplate(lang,{mode, seeds, modelSubMode, modelSeeds}) {
+  const l = (lang||document.documentElement.lang||'fr').toLowerCase();
+  const LANG_INSTRUCTION = LANG_INSTRUCTIONS[l] || LANG_INSTRUCTIONS.fr;
+  const fn = PROMPTS[l] || PROMPTS.fr;
+  let prompt = fn({mode, seeds, modelSubMode, modelSeeds});
+  // Remplacer la variable ${LANG_INSTRUCTION}
+  prompt = prompt.replace(/\$\{LANG_INSTRUCTION\}/g, LANG_INSTRUCTION);
+  return prompt;
+}
+
+// === I18N UI labels (ajout des libellés options) ===
+const I18N={
+  fr:{
+    t1text:"Coller la page",
+    t2text:"Prompt IA généré",
+    t3text:"Coller la réponse IA",
+    btnValidate:"Générer le prompt",
+    btnClear:"Effacer",
+    btnCopy:"Copier",
+    btnValidateJson:"Valider et ouvrir",
+    btnCancel:"Annuler",
+    btnGo:"Valider",
+    srcPlaceholder:"Collez ici le contenu complet de la page (titre, jours, descriptions...)",
+    jsonPlaceholder:"Collez ici la réponse JSON complète de l'IA",
+    emailPlaceholder:"Votre e-mail",
+    pwdPlaceholder:"Mot de passe",
+    hint1:"Collez le texte source puis cliquez sur 'Générer' pour créer automatiquement le prompt optimisé.",
+    hint2:"Copiez ce prompt dans ChatGPT/Claude/Gemini, puis collez la réponse dans la section 3.",
+    copied:"✓ Copié !",
+    needSrc:"Veuillez d'abord coller le texte source.",
+    needSeeds:"Veuillez spécifier au moins une ville de base (vos hôtels), séparées par des virgules.",
+    needRet:"Veuillez d'abord coller la réponse JSON de l'IA.",
+    badJson:"JSON invalide.",
+    missingItins:"La clé 'itins' est manquante ou vide.",
+    okSaved:"✅ Enregistré avec succès ! Redirection...",
+    cleanedChars:"✓ Nettoyé : {count} caractères supprimés (navigation, publicités, etc.)",
+    jsonRepaired:"⚠️ JSON réparé automatiquement. Vérifiez ci-dessous.",
+    jsonUnrepairable:"❌ JSON invalide, irréparable : {error}",
+    validating:"Validation...",
+    jsonValid:"✓ JSON valide ({count} itinéraire(s))",
+    autoRepairAttempt:"Tentative de réparation automatique...",
+    repairSuccess:"✓ Réparation réussie ! JSON corrigé et formaté.",
+    processing:"Traitement...",
+
+    // NEW
+    optTitle:"Que voulez-vous faire ?",
+    opt1Title:"Suivre l'itinéraire exactement",
+    opt1Desc:"L'ordre des éléments collés est respecté tel quel",
+    opt2Title:"Adopter un parcours logique",
+    opt2Desc:"Idéal si vous avez collé des noms de lieux",
+    opt3Title:"Partir de quelques villes",
+    opt3Desc:"À spécifier lors de la génération",
+    opt4Title:"Tour de ville",
+    opt4Desc:"1 visite = 1 bloc dans le(s) jour(s)",
+    opt1Lbl:"Suivre exactement l’itinéraire tel que copié",
+    opt2Lbl:"Laisser l'IA adopter un parcours logique (si vous avez collé des noms de lieux)",
+    opt3Lbl:"Partir de quelques villes choisies (à spécifier)",
+    opt4Lbl:"Tour de ville (chaque visite = un bloc ordonné du jour)",
+    optNote:"Vous pouvez éditer votre voyage après.",
+    seedPlaceholder:"ex : Nice, Gênes, La Spezia",
+
+    // Config voyage modal
+    cfgTitle:"Configurer votre voyage",
+    cfgStartDate:"Date de départ :",
+    cfgNbDays:"Nombre de jours souhaité :",
+    cfgPace:"Rythme :",
+    cfgPaceSlow:"Relaxé",
+    cfgPaceStandard:"Normal",
+    cfgPaceFast:"Rapide",
+    cfgMaxHotels:"Changements d'hôtel maximum :",
+    cfgBudget:"Budget hôtel (€/jour/pers.) :",
+    cfgBtnCancel:"Annuler",
+    cfgBtnValidate:"Valider",
+
+    // Titres sections
+    premiumSectionTitle:"Réservé aux abonnés",
+    freeSectionTitle:"Gratuit : copiez une page web (Ctrl+A, Ctrl+C), collez-la dans le générateur de prompt, copiez le résultat dans une IA de votre choix et revenez coller sa réponse sans la modifier dans l'onglet 3, votre voyage est prêt",
+
+    // I18N section (1bis)
+    i18nTitle:"Copiez le fichier source et laissez notre IA intégrée faire le travail",
+    i18nSourceLabel:"Collez votre fichier source ici :",
+    btnI18nProcess:"Transformer",
+
+    // Section 2 et 2bis - textes dans les info-box
+    i18nNote:"Réservé aux utilisateurs Silver et Gold. Notre IA intégrée transformera automatiquement votre contenu en format structuré. Fonctionnalité en développement.",
+    hint2bis:"Générez le prompt et copiez le résultat de l'onglet 3 dans une IA de votre choix sans le modifier",
+    labelSrc:"Collez le texte source ici :",
+    
+    // Placeholders des textareas
+    i18nSourcePlaceholder:"Collez ici le contenu complet de la page (titre, jours, descriptions...). Notre IA intégrée transformera automatiquement votre contenu en format structuré. Fonctionnalité en développement.",
+    srcPlaceholder2:"Collez ici le contenu complet de la page (titre, jours, descriptions...). Générez le prompt et copiez le résultat de l'onglet 3 dans une IA de votre choix sans le modifier"
+  },
+  en:{
+    t1text:"Paste the page",
+    t2text:"AI prompt generated",
+    t3text:"Paste AI response",
+    btnValidate:"Generate prompt",
+    btnClear:"Clear",
+    btnCopy:"Copy",
+    btnValidateJson:"Validate and open",
+    btnCancel:"Cancel",
+    btnGo:"Validate",
+    srcPlaceholder:"Paste the complete page content here (title, days, descriptions...)",
+    jsonPlaceholder:"Paste the complete AI JSON response here",
+    emailPlaceholder:"Your email",
+    pwdPlaceholder:"Password",
+    hint1:"Paste source text then click 'Generate' to create the optimized prompt automatically.",
+    hint2:"Copy this prompt into ChatGPT/Claude/Gemini, then paste the response in section 3.",
+    copied:"✓ Copied!",
+    needSrc:"Please paste the source text first.",
+    needSeeds:"Please specify at least one base city (your hotels), separated by commas.",
+    needRet:"Please paste the AI JSON response first.",
+    badJson:"Invalid JSON.",
+    missingItins:"The 'itins' key is missing or empty.",
+    okSaved:"✅ Saved successfully! Redirecting...",
+    cleanedChars:"✓ Cleaned: {count} characters removed (navigation, ads, etc.)",
+    jsonRepaired:"⚠️ JSON auto-repaired. Check below.",
+    jsonUnrepairable:"❌ Invalid JSON, unrepairable: {error}",
+    validating:"Validating...",
+    jsonValid:"✓ Valid JSON ({count} itinerary(ies))",
+    autoRepairAttempt:"Attempting automatic repair...",
+    repairSuccess:"✓ Repair successful! JSON corrected and formatted.",
+    processing:"Processing...",
+
+    // NEW
+    optTitle:"What do you want to do?",
+    opt1Title:"Follow the itinerary exactly",
+    opt1Desc:"The order of pasted elements is respected as is",
+    opt2Title:"Adopt a logical route",
+    opt2Desc:"Ideal if you pasted place names",
+    opt3Title:"Spread from a few cities",
+    opt3Desc:"To be specified during generation",
+    opt4Title:"City tour",
+    opt4Desc:"1 visit = 1 block in the day(s)",
+    opt1Lbl:"Follow exactly the copied itinerary",
+    opt2Lbl:"Let AI adopt a logical route (if you pasted place names)",
+    opt3Lbl:"Seed from a few chosen cities (specify)",
+    opt4Lbl:"City trip (each visit = an ordered block in the day)",
+    optNote:"You can edit your trip afterwards.",
+    seedPlaceholder:"e.g., Nice, Genoa, La Spezia",
+
+    // Config trip modal
+    cfgTitle:"Configure your trip",
+    cfgStartDate:"Departure date:",
+    cfgNbDays:"Desired number of days:",
+    cfgPace:"Pace:",
+    cfgPaceSlow:"Relaxed",
+    cfgPaceStandard:"Normal",
+    cfgPaceFast:"Fast",
+    cfgMaxHotels:"Maximum hotel changes:",
+    cfgBudget:"Hotel budget (€/day/person):",
+    cfgBtnCancel:"Cancel",
+    cfgBtnValidate:"Validate",
+
+    // Section titles
+    premiumSectionTitle:"Reserved for subscribers",
+    freeSectionTitle:"Free: copy a web page (select all, copy), paste it in the prompt generator, copy the result into an AI of your choice and come back to paste its response without modifying it in the third tab, your trip is ready",
+
+    // I18N section (1bis)
+    i18nTitle:"Copy the source file and let our integrated AI do it",
+    i18nSourceLabel:"Paste your source file here:",
+    btnI18nProcess:"Transform",
+
+    // Section 2 and 2bis - info-box texts
+    i18nNote:"Reserved for Silver and Gold users. Our integrated AI will automatically transform your content into structured format. Feature in development.",
+    hint2bis:"Generate the prompt and copy the result found in 3 to an AI of your choice without modifying it",
+    labelSrc:"Paste the source text here:",
+    
+    // Textarea placeholders
+    i18nSourcePlaceholder:"Paste the complete page content here (title, days, descriptions...). Our integrated AI will automatically transform your content into structured format. Feature in development.",
+    srcPlaceholder2:"Paste the complete page content here (title, days, descriptions...). Generate the prompt and copy the result found in 3 to an AI of your choice without modifying it"
+  },
+  it:{
+    t1text:"Incolla la pagina",
+    t2text:"Prompt IA generato",
+    t3text:"Incolla risposta IA",
+    btnValidate:"Genera prompt",
+    btnClear:"Cancella",
+    btnCopy:"Copia",
+    btnValidateJson:"Convalida e apri",
+    btnCancel:"Annulla",
+    btnGo:"Convalida",
+    srcPlaceholder:"Incolla qui il contenuto completo (titolo, giorni, descrizioni...)",
+    jsonPlaceholder:"Incolla qui la risposta JSON completa",
+    hint1:"Incolla il testo e clicca 'Genera'.",
+    hint2:"Copia questo prompt in ChatGPT/Claude/Gemini e incolla la risposta nella sezione 3.",
+    copied:"✓ Copiato!",
+    needSrc:"Incolla prima il testo.",
+    needSeeds:"Indica almeno una città base (i tuoi hotel), separate da virgole.",
+    needRet:"Incolla prima la risposta JSON.",
+    badJson:"JSON non valido.",
+    missingItins:"Chiave 'itins' mancante o vuota.",
+    okSaved:"✅ Salvato! Reindirizzamento...",
+    cleanedChars:"✓ Pulito: {count} caratteri rimossi.",
+    jsonRepaired:"⚠️ JSON riparato automaticamente.",
+    jsonUnrepairable:"❌ JSON non riparabile: {error}",
+    validating:"Convalida...",
+    jsonValid:"✓ JSON valido ({count})",
+    autoRepairAttempt:"Tentativo di riparazione...",
+    repairSuccess:"✓ Riparazione riuscita!",
+    processing:"Elaborazione...",
+
+    optTitle:"Cosa vuoi fare?",
+    opt1Title:"Seguire esattamente l'itinerario",
+    opt1Desc:"L'ordine degli elementi incollati è rispettato",
+    opt2Title:"Adottare un percorso logico",
+    opt2Desc:"Ideale se hai incollato nomi di luoghi",
+    opt3Title:"Diramare da alcune città",
+    opt3Desc:"Da specificare durante la generazione",
+    opt4Title:"Tour della città",
+    opt4Desc:"1 visita = 1 blocco nel giorno/i",
+    opt1Lbl:"Seguire esattamente l’itinerario copiato",
+    opt2Lbl:"Percorso logico (se hai incollato nomi di luoghi)",
+    opt3Lbl:"Diramare da alcune città scelte (specificare)",
+    opt4Lbl:"City trip (ogni visita = blocco ordinato nel giorno)",
+    optNote:"Potrai modificare il percorso a tuo piacimento.",
+    seedPlaceholder:"Es.: Nizza, Genova, La Spezia",
+
+    // Config trip modal
+    cfgTitle:"Configura il tuo viaggio",
+    cfgStartDate:"Data di partenza:",
+    cfgNbDays:"Numero di giorni desiderati:",
+    cfgPace:"Ritmo:",
+    cfgPaceSlow:"Rilassato",
+    cfgPaceStandard:"Normale",
+    cfgPaceFast:"Sostenuto",
+    cfgMaxHotels:"Cambi hotel massimi:",
+    cfgBudget:"Budget hotel (€/giorno/persona):",
+    cfgBtnCancel:"Annulla",
+    cfgBtnValidate:"Convalida",
+
+    // Titoli sezioni
+    premiumSectionTitle:"Riservato agli abbonati",
+    freeSectionTitle:"Gratuito: copia una pagina internet (seleziona tutto, copia), incolla nel generatore di prompt, copia il risultato in un'IA di tua scelta e torna a incollare la sua risposta senza modificarla nella terza scheda, il tuo viaggio è pronto",
+
+    // I18N section (1bis)
+    i18nTitle:"Copia il file sorgente e lascia fare alla nostra IA integrata",
+    i18nSourceLabel:"Incolla qui il tuo file sorgente:",
+    btnI18nProcess:"Trasforma",
+
+    // Sezione 2 e 2bis - testi nelle info-box
+    i18nNote:"Riservato agli utenti Silver e Gold. La nostra IA integrata trasformerà automaticamente i tuoi contenuti in formato strutturato. Funzionalità in sviluppo.",
+    hint2bis:"Genera il prompt e copia il risultato trovato in 3 in un'IA di tua scelta senza modificarlo",
+    labelSrc:"Incolla qui il testo sorgente:",
+    
+    // Placeholder delle textarea
+    i18nSourcePlaceholder:"Incolla qui il contenuto completo (titolo, giorni, descrizioni...). La nostra IA integrata trasformerà automaticamente i tuoi contenuti in formato strutturato. Funzionalità in sviluppo.",
+    srcPlaceholder2:"Incolla qui il contenuto completo (titolo, giorni, descrizioni...). Genera il prompt e copia il risultato trovato in 3 in un'IA di tua scelta senza modificarlo"
+  },
+  es:{
+    t1text:"Pega la página",
+    t2text:"Prompt IA generado",
+    t3text:"Pega respuesta IA",
+    btnValidate:"Generar prompt",
+    btnClear:"Borrar",
+    btnCopy:"Copiar",
+    btnValidateJson:"Validar y abrir",
+    btnCancel:"Cancelar",
+    btnGo:"Validar",
+    srcPlaceholder:"Pega aquí el contenido completo",
+    jsonPlaceholder:"Pega aquí la respuesta JSON",
+    hint1:"Pega y pulsa 'Generar'.",
+    hint2:"Copia el prompt a ChatGPT/Claude/Gemini.",
+    copied:"✓ ¡Copiado!",
+    needSrc:"Pega el texto fuente.",
+    needSeeds:"Indica al menos una ciudad base (tus hoteles), separadas por comas.",
+    needRet:"Pega la respuesta JSON.",
+    badJson:"JSON no válido.",
+    missingItins:"Falta 'itins' o está vacío.",
+    okSaved:"✅ ¡Guardado! Redirigiendo...",
+    cleanedChars:"✓ Limpiado: {count} caracteres.",
+    jsonRepaired:"⚠️ JSON reparado automáticamente.",
+    jsonUnrepairable:"❌ JSON no reparable: {error}",
+    validating:"Validando...",
+    jsonValid:"✓ JSON válido ({count})",
+    autoRepairAttempt:"Intentando reparar...",
+    repairSuccess:"✓ ¡Reparado!",
+    processing:"Procesando...",
+
+    optTitle:"¿Qué quieres hacer?",
+    opt1Title:"Seguir el itinerario exactamente",
+    opt1Desc:"El orden de los elementos pegados se respeta",
+    opt2Title:"Adoptar una ruta lógica",
+    opt2Desc:"Ideal si pegaste nombres de lugares",
+    opt3Title:"Esparcir desde algunas ciudades",
+    opt3Desc:"A especificar durante la generación",
+    opt4Title:"Tour de la ciudad",
+    opt4Desc:"1 visita = 1 bloque en el/los día(s)",
+    opt1Lbl:"Seguir exactamente el itinerario copiado",
+    opt2Lbl:"Recorrido lógico (si pegaste nombres de lugares)",
+    opt3Lbl:"Esparcir desde ciudades semilla (especificar)",
+    opt4Lbl:"City trip (cada visita = bloque ordenado en el día)",
+    optNote:"Luego podrás modificar tu recorrido a tu gusto.",
+    seedPlaceholder:"Ej.: Niza, Génova, La Spezia",
+
+    // Config trip modal
+    cfgTitle:"Configura tu viaje",
+    cfgStartDate:"Fecha de salida:",
+    cfgNbDays:"Número de días deseados:",
+    cfgPace:"Ritmo:",
+    cfgPaceSlow:"Tranquilo",
+    cfgPaceStandard:"Normal",
+    cfgPaceFast:"Intenso",
+    cfgMaxHotels:"Cambios de hotel máximos:",
+    cfgBudget:"Presupuesto hotel (€/día/persona):",
+    cfgBtnCancel:"Cancelar",
+    cfgBtnValidate:"Validar",
+
+    // Títulos secciones
+    premiumSectionTitle:"Reservado para suscriptores",
+    freeSectionTitle:"Gratis: copie una página de internet (seleccionar todo, copiar), péguela en el generador de prompt, copie el resultado en una IA de su elección y vuelva a pegar su respuesta sin modificarla en la tercera pestaña, su viaje está listo",
+
+    // I18N section (1bis)
+    i18nTitle:"Copia el archivo fuente y deja que nuestra IA integrada lo haga",
+    i18nSourceLabel:"Pega tu archivo fuente aquí:",
+    btnI18nProcess:"Transformar",
+
+    // Sección 2 y 2bis - textos en las info-box
+    i18nNote:"Reservado para usuarios Silver y Gold. Nuestra IA integrada transformará automáticamente tu contenido en formato estructurado. Funcionalidad en desarrollo.",
+    hint2bis:"Genera el prompt y copia el resultado encontrado en 3 en una IA de tu elección sin modificarlo",
+    labelSrc:"Pega el texto fuente aquí:",
+    
+    // Placeholders de las textarea
+    i18nSourcePlaceholder:"Pega aquí el contenido completo (título, días, descripciones...). Nuestra IA integrada transformará automáticamente tu contenido en formato estructurado. Funcionalidad en desarrollo.",
+    srcPlaceholder2:"Pega aquí el contenido completo (título, días, descripciones...). Genera el prompt y copia el resultado encontrado en 3 en una IA de tu elección sin modificarlo"
+  },
+  pt:{
+    t1text:"Cole a página",
+    t2text:"Prompt IA gerado",
+    t3text:"Cole a resposta IA",
+    btnValidate:"Gerar prompt",
+    btnClear:"Limpar",
+    btnCopy:"Copiar",
+    btnValidateJson:"Validar e abrir",
+    btnCancel:"Cancelar",
+    btnGo:"Validar",
+    srcPlaceholder:"Cole o conteúdo completo",
+    jsonPlaceholder:"Cole a resposta JSON",
+    hint1:"Cole e clique 'Gerar'.",
+    hint2:"Copie o prompt para ChatGPT/Claude/Gemini.",
+    copied:"✓ Copiado!",
+    needSrc:"Cole o texto fonte primeiro.",
+    needSeeds:"Indique pelo menos uma cidade base (seus hotéis), separadas por vírgulas.",
+    needRet:"Cole a resposta JSON primeiro.",
+    badJson:"JSON inválido.",
+    missingItins:"'itins' ausente ou vazio.",
+    okSaved:"✅ Salvo! Redirecionando...",
+    cleanedChars:"✓ Limpo: {count} caracteres.",
+    jsonRepaired:"⚠️ JSON reparado automaticamente.",
+    jsonUnrepairable:"❌ JSON irrecuperável: {error}",
+    validating:"Validando...",
+    jsonValid:"✓ JSON válido ({count})",
+    autoRepairAttempt:"Tentando reparo...",
+    repairSuccess:"✓ Reparo bem-sucedido!",
+    processing:"Processando...",
+
+    optTitle:"O que você quer fazer?",
+    opt1Title:"Seguir o itinerário exatamente",
+    opt1Desc:"A ordem dos elementos colados é respeitada",
+    opt2Title:"Adotar uma rota lógica",
+    opt2Desc:"Ideal se você colou nomes de lugares",
+    opt3Title:"Espalhar de algumas cidades",
+    opt3Desc:"A ser especificado durante a geração",
+    opt4Title:"Tour pela cidade",
+    opt4Desc:"1 visita = 1 bloco no(s) dia(s)",
+    opt1Lbl:"Seguir exatamente o itinerário copiado",
+    opt2Lbl:"Roteiro lógico (se colou nomes de lugares)",
+    opt3Lbl:"Partir de cidades semente (especificar)",
+    opt4Lbl:"City trip (cada visita = bloco ordenado no dia)",
+    optNote:"Você poderá editar o roteiro como quiser.",
+    seedPlaceholder:"Ex.: Nice, Gênova, La Spezia",
+
+    // Config trip modal
+    cfgTitle:"Configure sua viagem",
+    cfgStartDate:"Data de partida:",
+    cfgNbDays:"Número de dias desejados:",
+    cfgPace:"Ritmo:",
+    cfgPaceSlow:"Tranquilo",
+    cfgPaceStandard:"Normal",
+    cfgPaceFast:"Intenso",
+    cfgMaxHotels:"Mudanças de hotel máximas:",
+    cfgBudget:"Orçamento hotel (€/dia/pessoa):",
+    cfgBtnCancel:"Cancelar",
+    cfgBtnValidate:"Validar",
+
+    // Títulos das seções
+    premiumSectionTitle:"Reservado para assinantes",
+    freeSectionTitle:"Grátis: copie uma página da internet (selecionar tudo, copiar), cole no gerador de prompt, copie o resultado em uma IA de sua escolha e volte para colar sua resposta sem modificá-la na terceira aba, sua viagem está pronta",
+
+    // I18N section (1bis)
+    i18nTitle:"Copie o arquivo fonte e deixe nossa IA integrada fazer",
+    i18nSourceLabel:"Cole seu arquivo fonte aqui:",
+    btnI18nProcess:"Transformar",
+
+    // Seção 2 e 2bis - textos nas info-box
+    i18nNote:"Reservado para usuários Silver e Gold. Nossa IA integrada transformará automaticamente seu conteúdo em formato estruturado. Funcionalidade em desenvolvimento.",
+    hint2bis:"Gere o prompt e copie o resultado encontrado em 3 em uma IA de sua escolha sem modificá-lo",
+    labelSrc:"Cole o texto fonte aqui:",
+    
+    // Placeholders das textarea
+    i18nSourcePlaceholder:"Cole o conteúdo completo (título, dias, descrições...). Nossa IA integrada transformará automaticamente seu conteúdo em formato estruturado. Funcionalidade em desenvolvimento.",
+    srcPlaceholder2:"Cole o conteúdo completo (título, dias, descrições...). Gere o prompt e copie o resultado encontrado em 3 em uma IA de sua escolha sem modificá-lo"
+  },
+  ar:{
+    t1text:"الصق الصفحة",
+    t2text:"تم إنشاء الطلب",
+    t3text:"الصق إجابة JSON",
+    btnValidate:"إنشاء الطلب",
+    btnClear:"مسح",
+    btnCopy:"نسخ",
+    btnValidateJson:"تثبيت وفتح",
+    btnCancel:"إلغاء",
+    btnGo:"تثبيت",
+    srcPlaceholder:"الصق المحتوى الكامل",
+    jsonPlaceholder:"الصق إجابة JSON الكاملة",
+    hint1:"الصق ثم اضغط 'إنشاء'.",
+    hint2:"انسخ الطلب إلى ChatGPT/Claude/Gemini.",
+    copied:"✓ تم النسخ!",
+    needSrc:"الصق النص أولاً.",
+    needSeeds:"حدد مدينة قاعدة واحدة على الأقل (فنادقك)، مفصولة بفواصل.",
+    needRet:"الصق إجابة JSON أولاً.",
+    badJson:"JSON غير صالح.",
+    missingItins:"'itins' مفقودة أو فارغة.",
+    okSaved:"✅ تم الحفظ! إعادة توجيه...",
+    cleanedChars:"✓ تم التنظيف: {count} حرفًا.",
+    jsonRepaired:"⚠️ تم إصلاح JSON تلقائيًا.",
+    jsonUnrepairable:"❌ غير قابل للإصلاح: {error}",
+    validating:"جاري التحقق...",
+    jsonValid:"✓ JSON صالح ({count})",
+    autoRepairAttempt:"محاولة إصلاح تلقائي...",
+    repairSuccess:"✓ تم الإصلاح!",
+    processing:"جارٍ المعالجة...",
+
+    optTitle:"ماذا تريد أن تفعل؟",
+    opt1Title:"اتّباع المسار بالضبط",
+    opt1Desc:"ترتيب العناصر الملصقة محترم كما هو",
+    opt2Title:"اعتماد طريق منطقي",
+    opt2Desc:"مثالي إذا لصقت أسماء أماكن",
+    opt3Title:"الانطلاق من بعض المدن",
+    opt3Desc:"يتم تحديدها عند الإنشاء",
+    opt4Title:"جولة في المدينة",
+    opt4Desc:"زيارة واحدة = كتلة واحدة في اليوم/الأيام",
+    opt1Lbl:"اتّباع المسار المنسوخ حرفيًا",
+    opt2Lbl:"مسار منطقي (إذا لصقت أسماء أماكن)",
+    opt3Lbl:"الانطلاق من مدن أساسية (اذكرها)",
+    opt4Lbl:"مسار داخل المدينة (كل زيارة = كتلة مرتبة)",
+    optNote:"يمكنك تعديل مسارك كما تشاء لاحقًا.",
+    seedPlaceholder:"مثال: نيس، جنوة، لا سبيتسيا",
+
+    // Config trip modal
+    cfgTitle:"قم بتكوين رحلتك",
+    cfgStartDate:"تاريخ المغادرة:",
+    cfgNbDays:"عدد الأيام المطلوبة:",
+    cfgPace:"الإيقاع:",
+    cfgPaceSlow:"هادئ",
+    cfgPaceStandard:"عادي",
+    cfgPaceFast:"سريع",
+    cfgMaxHotels:"الحد الأقصى لتغيير الفنادق:",
+    cfgBudget:"ميزانية الفندق (€/يوم/شخص):",
+    cfgBtnCancel:"إلغاء",
+    cfgBtnValidate:"تأكيد",
+
+    // عناوين الأقسام
+    premiumSectionTitle:"محجوز للمشتركين",
+    freeSectionTitle:"مجاني: انسخ صفحة إنترنت (تحديد الكل، نسخ)، الصقها في مولد الطلب، انسخ النتيجة في ذكاء اصطناعي من اختيارك وعد للصق إجابته دون تعديلها في علامة التبويب الثالثة، رحلتك جاهزة",
+
+    // I18N section (1bis)
+    i18nTitle:"انسخ الملف المصدر ودع الذكاء الاصطناعي المدمج يقوم بذلك",
+    i18nSourceLabel:"الصق ملفك المصدر هنا:",
+    btnI18nProcess:"تحويل",
+
+    // القسم 2 و 2bis - نصوص في صناديق المعلومات
+    i18nNote:"محجوز لمستخدمي Silver و Gold. سيقوم الذكاء الاصطناعي المدمج لدينا بتحويل المحتوى الخاص بك تلقائيًا إلى تنسيق منظم. الميزة قيد التطوير.",
+    hint2bis:"أنشئ الطلب وانسخ النتيجة الموجودة في 3 إلى ذكاء اصطناعي من اختيارك دون تعديلها",
+    labelSrc:"الصق النص المصدر هنا:",
+    
+    // عناصر نائبة لمناطق النص
+    i18nSourcePlaceholder:"الصق المحتوى الكامل (العنوان، الأيام، الأوصاف...). سيقوم الذكاء الاصطناعي المدمج لدينا بتحويل المحتوى الخاص بك تلقائيًا إلى تنسيق منظم. الميزة قيد التطوير.",
+    srcPlaceholder2:"الصق المحتوى الكامل (العنوان، الأيام، الأوصاف...). أنشئ الطلب وانسخ النتيجة الموجودة في 3 إلى ذكاء اصطناعي من اختيارك دون تعديلها"
+  }
+};
+
+// DOM helpers
+const $ = (s, r=document)=>r.querySelector(s);
+
+// Nettoyage source (inchangé)
+function cleanSourceText(raw) {
+  let text = raw;
+  const originalLength = text.length;
+  const removePatterns = [
+    /(?:menu|navigation|nav-|navbar|header-menu|footer-menu)[\s\S]{0,300}?(?=\n\n|\n[A-ZÀÂÄÉÈÊËÍÎÓÙÛÜ]|$)/gi,
+    /(?:cookie|cookies?|politique des cookies)[\s\S]{0,200}?(?=\n\n|$)/gi,
+    /(?:newsletter|subscribe|abonnez-vous|inscrivez-vous)[\s\S]{0,150}?(?=\n\n|$)/gi,
+    /(?:réseaux sociaux|social media|follow us|suivez-nous)[\s\S]{0,150}?(?=\n\n|$)/gi,
+    /(?:publicité|advertisement|sponsored|sponsorisé)[\s\S]{0,200}?(?=\n\n|$)/gi,
+    /(?:©|copyright|tous droits réservés|all rights reserved).*$/gim,
+    /(?:mentions légales|politique de confidentialité|conditions d'utilisation|terms of service|privacy policy|legal notice)[\s\S]{0,100}?(?=\n|$)/gim,
+    /(?:contactez-nous|contact us|about us|à propos|qui sommes-nous)[\s\S]{0,100}?(?=\n\n|$)/gim,
+    /\b(?:facebook|twitter|instagram|linkedin|youtube|pinterest|tiktok)\b[\s\S]{0,100}?(?=\n|$)/gim,
+    /(?:share|partager|share this|partager cet article)[\s\S]{0,80}?(?=\n|$)/gi
+  ];
+  removePatterns.forEach(pattern => { text = text.replace(pattern, ''); });
+  text = text.replace(/https?:\/\/[^\s]+/g, '');
+  text = text.replace(/[\w.-]+@[\w.-]+\.[a-z]{2,}/gi, '');
+  text = text.split('\n').filter(line => {
+    const trimmed = line.trim();
+    return trimmed.length === 0 || trimmed.length > 15;
+  }).join('\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.trim();
+  const removed = originalLength - text.length;
+  return { cleaned: text, removed };
+}
+
+// Réparation JSON (inchangé)
+function tryRepairJSON(raw) { /* ... identique à ta version ... */ 
+  let text = raw.trim();
+  const repairs = [];
+  if(text.includes('```')){
+    text = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'');
+    repairs.push('markdown removed');
+  }
+  const firstBrace = text.indexOf('{');
+  const lastBrace = text.lastIndexOf('}');
+  if(firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) { throw new Error('No valid JSON structure found'); }
+  if(firstBrace > 0 || lastBrace < text.length - 1) { text = text.substring(firstBrace, lastBrace + 1); repairs.push('extracted JSON from text'); }
+  let quoteCount = (text.match(/(?<!\\)"/g) || []).length;
+  if(quoteCount % 2 !== 0) {
+    const lastCloseBrace = text.lastIndexOf('}');
+    const lastColon = text.lastIndexOf(':', lastCloseBrace);
+    const lastComma = text.lastIndexOf(',', lastCloseBrace);
+    const insertPos = Math.max(lastColon, lastComma) + 1;
+    if(insertPos > 0 && insertPos < lastCloseBrace) { text = text.substring(0, insertPos) + '"' + text.substring(insertPos); repairs.push('balanced quotes'); }
+  }
+  text = text.replace(/,(\s*[}\]])/g, '$1');
+  repairs.push('removed trailing commas');
+  text = text.replace(/}(\s*)(\{)/g, '},$1$2');
+  text = text.replace(/\](\s*)(\{)/g, '],$1$2');
+  text = text.replace(/}(\s*)(\[)/g, '},$1$2');
+  text = text.replace(/"([^"]+)"\s+(["{[])/g, '"$1":$2');
+  text = text.replace(/:\s*"([^"]*)\n([^"]*?)"/g, ':"$1 $2"');
+  text = text.replace(/\/\*[\s\S]*?\*\//g, '');
+  text = text.replace(/\/\/.*/g, '');
+  if(repairs.length > 0) { console.log('JSON repairs applied:', repairs); }
+  return text;
+}
+
+// Auto-correction namespace (v2.3)
+function autoCorrectNamespace(data) {
+  const corrections = [];
+  if(!data.itins || !Array.isArray(data.itins)) return {data, corrections};
+  
+  data.itins.forEach((itin, idx) => {
+    if(!itin.itin_id) return;
+    
+    const parts = String(itin.itin_id).split('::');
+    const ns = parts[0] || '';
+    
+    // Si namespace invalide (CC, XX, etc.), essayer de détecter le pays via dept_code
+    if(ns === 'CC' || ns === 'XX' || ns.length !== 2 || !/^[A-Z]{2}$/.test(ns)) {
+      let country = null;
+      const deptCode = String(itin.dept_code || '').toUpperCase();
+      
+      // Mappings basiques
+      if(/^\d{2}[AB]?$/.test(deptCode)) country = 'FR';
+      else if(['RM','MI','FI','TO','NA','PA','GE','BO','VE','PD','VR','TS'].includes(deptCode)) country = 'IT';
+      else if(['MA','BA','SE','VA','CA','BI','MU','AL','CO','GR'].includes(deptCode)) country = 'ES';
+      else if(['LI','PO','FA','CO','AV','BR','EV','PT','VC','BJ','CB','GU'].includes(deptCode)) country = 'PT';
+      else if(['AN','IS','IZ','BU','AD','AY','DI','ER'].includes(deptCode)) country = 'TR';
+      
+      if(country) {
+        const oldId = itin.itin_id;
+        parts[0] = country;
+        itin.itin_id = parts.join('::');
+        corrections.push(`itin_id: "${oldId}" → "${itin.itin_id}"`);
+        
+        // Corriger aussi les place_id
+        if(itin.days_plan && Array.isArray(itin.days_plan)) {
+          itin.days_plan.forEach((day, dayIdx) => {
+            if(day.night && day.night.place_id) {
+              const placeParts = String(day.night.place_id).split('::');
+              const placeNs = placeParts[0] || '';
+              if(placeNs === 'CC' || placeNs === 'XX' || placeNs.length !== 2) {
+                const oldPlaceId = day.night.place_id;
+                placeParts[0] = country;
+                day.night.place_id = placeParts.join('::');
+                corrections.push(`place_id jour ${day.day || dayIdx+1}: "${oldPlaceId}" → "${day.night.place_id}"`);
+              }
+            }
+          });
+        }
+      }
+    }
+  });
+  
+  return {data, corrections};
+}
+
+// Validation structure (inchangé)
+function validateItinStructure(data) {
+  const errors = [];
+  if(!data.itins || !Array.isArray(data.itins)) { errors.push("Missing 'itins' array"); return { valid: false, errors }; }
+  if(data.itins.length === 0) { errors.push("'itins' array is empty"); return { valid: false, errors }; }
+  data.itins.forEach((itin, idx) => {
+    if(!itin.itin_id) errors.push(`Itin ${idx}: missing itin_id`);
+    if(!itin.title) errors.push(`Itin ${idx}: missing title`);
+    if(!itin.days_plan || !Array.isArray(itin.days_plan)) { errors.push(`Itin ${idx}: missing or invalid days_plan`); }
+  });
+  return { valid: errors.length === 0, errors };
+}
+
+// Places auto (inchangé)
+function generatePlacesFromItin(data) {
+  const placesMap = new Map();
+  (data.itins || []).forEach(itin => {
+    (itin.days_plan || []).forEach(day => {
+      const night = day.night || {};
+      const pid = night.place_id; if (!pid) return;
+      const coords = Array.isArray(night.coords) ? night.coords : [0,0];
+      const [lat, lon] = coords;
+      if (!placesMap.has(pid)) {
+        const parts = String(pid).split('::');
+        const cc = (parts[0] || 'XX').toUpperCase();
+        const slug = parts[1] || 'unknown';
+        const name = slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        placesMap.set(pid, { place_id: pid, name, lat: lat || 0, lon: lon || 0, cc, kinds: ["city"], visits: [], hotels: [], images: [] });
+      }
+      const place = placesMap.get(pid);
+      if (Array.isArray(day.visits))     place.visits.push(...day.visits);
+      if (Array.isArray(day.activities)) place.visits.push(...day.activities);
+    });
+  });
+  const firstId = data?.itins?.[0]?.itin_id || '';
+  const country = (String(firstId).split('::')[0] || 'XX').toUpperCase();
+  return { version: "1.0", country, places: Array.from(placesMap.values()) };
+}
+
+function slugify(s){
+  return (s||'trip').toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+// Applique I18N
+function setLang(lang){
+  localStorage.setItem('ORT_LANG', lang);
+  localStorage.removeItem('lang'); // Nettoyer l'ancienne clé
+  const t=I18N[lang]||I18N.fr;
+  
+  // Text content
+  const t1 = $('#t1text'); if(t1) t1.textContent=t.t1text;
+  const t2 = $('#t2text'); if(t2) t2.textContent=t.t2text;
+  const t3 = $('#t3text'); if(t3) t3.textContent=t.t3text;
+  const h1 = $('#hint1'); if(h1) h1.textContent=t.hint1;
+  const h2 = $('#hint2'); if(h2) h2.textContent=t.hint2;
+  
+  // Buttons
+  const btnGen = $('#btn-gen'); if(btnGen) btnGen.textContent=t.btnValidate;
+  const btnClear = $('#btn-clear'); if(btnClear) btnClear.textContent=t.btnClear;
+  const btnClearPrompt = $('#btn-clear-prompt'); if(btnClearPrompt) btnClearPrompt.textContent=t.btnClear;
+  const btnClearJson = $('#btn-clear-json'); if(btnClearJson) btnClearJson.textContent=t.btnClear;
+  const btnCopy = $('#btn-copy'); if(btnCopy) btnCopy.textContent=t.btnCopy;
+  const btnValidateJson = $('#btn-validate-json'); if(btnValidateJson) btnValidateJson.textContent=t.btnValidateJson;
+  const bCancel = $('#btnCancelEmail'); if (bCancel) bCancel.textContent = t.btnCancel;
+  const bDo     = $('#btnDoEmail');     if (bDo)     bDo.textContent     = t.btnGo;
+  
+  // Placeholders
+  const i18nSource = $('#i18nSource'); if(i18nSource) i18nSource.placeholder=t.i18nSourcePlaceholder;
+  const src = $('#src'); if(src) src.placeholder=t.srcPlaceholder2;
+  const jsonReturn = $('#json-return'); if(jsonReturn) jsonReturn.placeholder=t.jsonPlaceholder;
+
+  // NEW: options labels
+  const optTitle = $('#optTitle'); if(optTitle) optTitle.textContent = t.optTitle;
+  const opt1Title = $('#opt1Title'); if(opt1Title) opt1Title.textContent = t.opt1Title;
+  const opt1Desc = $('#opt1Desc'); if(opt1Desc) opt1Desc.textContent = t.opt1Desc;
+  const opt2Title = $('#opt2Title'); if(opt2Title) opt2Title.textContent = t.opt2Title;
+  const opt2Desc = $('#opt2Desc'); if(opt2Desc) opt2Desc.textContent = t.opt2Desc;
+  const opt3Title = $('#opt3Title'); if(opt3Title) opt3Title.textContent = t.opt3Title;
+  const opt3Desc = $('#opt3Desc'); if(opt3Desc) opt3Desc.textContent = t.opt3Desc;
+  const opt4Title = $('#opt4Title'); if(opt4Title) opt4Title.textContent = t.opt4Title;
+  const opt4Desc = $('#opt4Desc'); if(opt4Desc) opt4Desc.textContent = t.opt4Desc;
+  const optNote = $('#optNote'); if(optNote) optNote.textContent = t.optNote;
+  const seed = $('#seedCities'); if(seed) seed.placeholder = t.seedPlaceholder;
+
+  // Section titles
+  const premiumSectionTitle = $('#premiumSectionTitle'); if(premiumSectionTitle) premiumSectionTitle.textContent = t.premiumSectionTitle;
+  const freeSectionTitle = $('#freeSectionTitle'); if(freeSectionTitle) freeSectionTitle.textContent = t.freeSectionTitle;
+
+  // I18N section (1bis)
+  const i18nTitle = $('#i18nTitle'); if(i18nTitle) i18nTitle.textContent = t.i18nTitle;
+  const i18nNote = $('#i18nNote'); if(i18nNote) i18nNote.textContent = t.i18nNote;
+  const i18nSourceLabel = $('#i18nSourceLabel'); if(i18nSourceLabel) i18nSourceLabel.textContent = t.i18nSourceLabel;
+  const btnI18nProcess = $('#btnI18nProcess'); if(btnI18nProcess) btnI18nProcess.textContent = t.btnI18nProcess;
+  const btnI18nClear = $('#btnI18nClear'); if(btnI18nClear) btnI18nClear.textContent = t.btnClear;
+
+  // Section 2bis
+  const hint2bis = $('#hint2bis'); if(hint2bis) hint2bis.textContent = t.hint2bis;
+  const labelSrc = $('#labelSrc'); if(labelSrc) labelSrc.textContent = t.labelSrc;
+
+  // Config trip modal I18N
+  const cfgTitleText = $('#cfgTitleText'); if(cfgTitleText) cfgTitleText.textContent = t.cfgTitle || 'Configurez votre voyage';
+  const cfgStartDateLabel = $('#cfgStartDateLabel'); if(cfgStartDateLabel) cfgStartDateLabel.textContent = t.cfgStartDate || 'Date de départ :';
+  const cfgNbDaysLabel = $('#cfgNbDaysLabel'); if(cfgNbDaysLabel) cfgNbDaysLabel.textContent = t.cfgNbDays || 'Nombre de jours souhaités :';
+  const cfgPaceLabel = $('#cfgPaceLabel'); if(cfgPaceLabel) cfgPaceLabel.textContent = t.cfgPace || 'Rythme :';
+  const cfgPaceSlowOpt = $('#cfgPaceSlowOpt'); if(cfgPaceSlowOpt) cfgPaceSlowOpt.textContent = t.cfgPaceSlow || 'Tranquille';
+  const cfgPaceStandardOpt = $('#cfgPaceStandardOpt'); if(cfgPaceStandardOpt) cfgPaceStandardOpt.textContent = t.cfgPaceStandard || 'Normal';
+  const cfgPaceFastOpt = $('#cfgPaceFastOpt'); if(cfgPaceFastOpt) cfgPaceFastOpt.textContent = t.cfgPaceFast || 'Soutenu';
+  const cfgMaxHotelsLabel = $('#cfgMaxHotelsLabel'); if(cfgMaxHotelsLabel) cfgMaxHotelsLabel.textContent = t.cfgMaxHotels || 'Changements d\'hôtel maximum :';
+  const cfgBudgetLabel = $('#cfgBudgetLabel'); if(cfgBudgetLabel) cfgBudgetLabel.textContent = t.cfgBudget || 'Budget hôtel (€/jour/personne) :';
+  const btnCancelConfig = $('#btnCancelConfig'); if(btnCancelConfig) btnCancelConfig.textContent = t.cfgBtnCancel || 'Annuler';
+  const btnValidateConfig = $('#btnValidateConfig'); if(btnValidateConfig) btnValidateConfig.textContent = t.cfgBtnValidate || 'Valider';
+
+  const ei = $('#emailInput'); if(ei) ei.placeholder = t.emailPlaceholder || ei.placeholder;
+  const pi = $('#pwdInput');   if(pi) pi.placeholder = t.pwdPlaceholder   || pi.placeholder;
+
+  document.documentElement.lang=lang;
+  document.querySelector('.brandlink')?.setAttribute('href', 'presentation.html?lang='+lang);
+
+  if (window.__refreshAuthLabel) { try { window.__refreshAuthLabel(); } catch(_){} }
+
+  try {
+    const open = document.getElementById('openAuth');
+    if (open) {
+      const LABELS = {
+        fr:{signin:'Se connecter',  account:'Mon compte'},
+        en:{signin:'Sign in',        account:'My account'},
+        it:{signin:'Accedi',         account:'Il mio account'},
+        es:{signin:'Iniciar sesión', account:'Mi cuenta'},
+        pt:{signin:'Iniciar sessão', account:'Minha conta'},
+        ar:{signin:'تسجيل الدخول',   account:'حسابي'}
+      };
+      const LBL = (LABELS[lang] || LABELS.fr);
+      const user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+      open.textContent = user ? (user.displayName || user.email || LBL.account) : LBL.signin;
+    }
+  } catch(_) {}
+}
+
+// Init langue
+(function(){
+  const urlLang = new URLSearchParams(location.search).get('lang');
+  const saved   = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang');
+  const lang    = urlLang || saved || 'fr';
+  $('#langSel').value = lang;
+  setLang(lang);
+  $('#langSel').addEventListener('change', (e)=>{
+    const code = e.target.value || 'fr';
+    setLang(code);
+    try {
+      const u = new URL(location.href);
+      u.searchParams.set('lang', code);
+      history.replaceState(null, '', u.toString());
+    } catch(e) {
+      // Ignore history errors in iframe/restricted contexts
+    }
+  });
+})();
+
+// === NEW: gestion UI options (enable/disable seed input)
+(function(){
+  const optSeed = $('#opt-seed');
+  const seed = $('#seedCities');
+  const radios = ['#opt-follow','#opt-logic','#opt-seed','#opt-citytrip'].map(s=>$(s));
+  function refresh(){
+    if(optSeed.checked){ seed.disabled = false; seed.classList.remove('opt-disabled'); }
+    else { seed.disabled = true; seed.classList.add('opt-disabled'); }
+  }
+  radios.forEach(r=> r.addEventListener('change', refresh));
+  refresh();
+})();
+
+// Générer le prompt (MAJ: utilise options + supprime thèmes imposés)
+$('#btn-gen').onclick = ()=>{
+  const raw = $('#src').value.trim();
+  const t = I18N[document.documentElement.lang]||I18N.fr;
+  const btn = $('#btn-gen');
+  if(!raw){ alert(t.needSrc); return; }
+
+  // récupère le mode
+  let mode = 'follow';
+  let modelSubMode = null;
+  
+  if($('#opt-logic').checked) {
+    mode = 'logic';
+  } else if($('#opt-seed').checked) {
+    mode = 'seed';
+  } else if($('#opt-citytrip').checked) {
+    mode = 'citytrip';
+  } else if($('#opt-model') && $('#opt-model').checked) {
+    mode = 'model';
+    // Récupérer la sous-option sélectionnée
+    const modelSubRadio = document.querySelector('input[name="model-sub"]:checked');
+    modelSubMode = modelSubRadio ? modelSubRadio.value : 'follow';
+  }
+  
+  const seeds = ($('#seedCities').value||'').trim();
+  const modelSeedsEl = $('#modelSeedCities');
+  const modelSeeds = ((modelSeedsEl ? modelSeedsEl.value : '') || '').trim();
+
+  // Validation : si mode seed, au moins une ville requise
+  if(mode === 'seed' && !seeds){
+    alert(t.needSeeds || 'Veuillez indiquer au moins une ville d\'attache (vos hôtels), séparées par des virgules.');
+    return;
+  }
+  
+  // Validation : si mode model avec sous-option seed
+  if(mode === 'model' && modelSubMode === 'seed' && !modelSeeds){
+    alert('Veuillez indiquer au moins une ville d\'attache pour le mode essaimage.');
+    return;
+  }
+  
+  // Validation : si mode model SANS sous-option (par défaut = bases + boucles)
+  if(mode === 'model' && !modelSubMode && !modelSeeds){
+    alert('Veuillez indiquer au moins une ville d\'attache (vos bases/hôtels).');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = t.processing + '<span class="loader"></span>';
+
+  setTimeout(() => {
+    const {cleaned, removed} = cleanSourceText(raw);
+    const lang = (document.documentElement.lang || localStorage.getItem('ORT_LANG') || 'en').toLowerCase();
+    const head = getPromptTemplate(lang,{mode, seeds, modelSubMode, modelSeeds});
+    $('#prompt').textContent = head + cleaned;
+
+    btn.disabled = false;
+    btn.textContent = t.btnValidate;
+
+    if(removed > 100) {
+      $('#hint1').textContent = t.cleanedChars.replace('{count}', removed);
+      $('#hint1').style.color = '#059669';
+      $('#hint1').style.fontWeight = '600';
+    } else {
+      $('#hint1').textContent = t.hint1;
+      $('#hint1').style.color = '';
+      $('#hint1').style.fontWeight = '';
+    }
+    
+    // Ouvrir la section 3 (prompt) sur mobile
+    if(window.ORT_expandSection){
+      window.ORT_expandSection('section34Container');
+    }
+  }, 100);
+};
+
+$('#btn-copy').onclick = ()=>{
+  const text = $('#prompt').textContent||'';
+  if(!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const t = I18N[document.documentElement.lang]||I18N.fr;
+    const btn = $('#btn-copy');
+    const orig = btn.textContent;
+    btn.textContent = t.copied;
+    btn.style.background = '#059669';
+    setTimeout(()=> { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  });
+};
+
+$('#btn-clear').onclick = ()=>{
+  $('#src').value='';
+  $('#prompt').textContent='';
+  $('#json-return').value='';
+  $('#hint1').textContent='';
+  $('#hint1').style.color='';
+  $('#hint1').style.fontWeight='';
+  $('#json-status').style.display='none';
+  $('#json-info').style.display='none';
+};
+$('#btn-clear-prompt').onclick = ()=>{ $('#prompt').textContent=''; };
+$('#btn-clear-json').onclick = ()=>{
+  $('#json-return').value='';
+  $('#json-status').style.display='none';
+  $('#json-info').style.display='none';
+};
+
+// Validation JSON (inchangé)
+$('#btn-validate-json').addEventListener('click', ()=>{
+  const lang = document.documentElement.lang || 'fr';
+  const t = I18N[lang]||I18N.fr;
+  const raw = $('#json-return').value.trim();
+  const st = $('#json-status');
+  const info = $('#json-info');
+  const btn = $('#btn-validate-json');
+
+  if(!raw){
+    st.className='status err';
+    st.textContent=t.needRet;
+    st.style.display='block';
+    info.style.display='none';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = t.validating + '<span class="loader"></span>';
+  st.style.display='none';
+  info.style.display='none';
+
+  setTimeout(() => {
+    let data; let repaired = false;
+    try{
+let cleaned = raw;
+if(raw.includes('```')){
+  cleaned = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+}
+cleaned = cleaned
+  .replace(/[""]/g, '"')
+  .replace(/['']/g, "'")
+  .replace(/[—–]/g, '-')
+  .replace(/\u00A0/g, ' ')
+  .normalize('NFC');
+      data = JSON.parse(cleaned);
+    }catch(e){
+      info.textContent = t.autoRepairAttempt;
+      info.style.display = 'block';
+      try{
+        const repairedText = tryRepairJSON(raw);
+        data = JSON.parse(repairedText);
+        repaired = true;
+        $('#json-return').value = JSON.stringify(data, null, 2);
+        info.textContent = t.repairSuccess;
+      }catch(e2){
+        st.className='status err';
+        st.textContent=t.jsonUnrepairable.replace('{error}', e2.message);
+        st.style.display='block';
+        info.style.display='none';
+        btn.disabled = false;
+        btn.textContent = t.btnValidateJson;
+        return;
+      }
+    }
+
+    // Auto-correction namespace (v2.3)
+    const correctionResult = autoCorrectNamespace(data);
+    data = correctionResult.data;
+    if(correctionResult.corrections.length > 0) {
+      $('#json-return').value = JSON.stringify(data, null, 2);
+      info.innerHTML = '✅ Corrections: ' + correctionResult.corrections.map(c => '<br>• ' + c).join('');
+      info.style.display = 'block';
+    }
+
+    const validation = validateItinStructure(data);
+    if(!validation.valid){
+      st.className='status err';
+      st.textContent= validation.errors.join('; ');
+      st.style.display='block';
+      info.style.display='none';
+      btn.disabled = false;
+      btn.textContent = t.btnValidateJson;
+      return;
+    }
+
+    const itins = data;
+    const itin = data.itins[0];
+    const title = itin.title || 'roadtrip';
+    const country = itin.itin_id ? itin.itin_id.split('::')[0] : 'XX';
+
+    if(!repaired) {
+      info.textContent = t.jsonValid.replace('{count}', data.itins.length);
+      info.style.display = 'block';
+    }
+
+    const places = generatePlacesFromItin(itins);
+
+    function cleanJSON(obj) {
+      let str = JSON.stringify(obj);
+      str = str.replace(/[""]/g, '"');
+      str = str.replace(/['']/g, "'");
+      str = str.replace(/œ/g, 'oe');
+      str = str.replace(/Œ/g, 'OE');
+      str = str.normalize('NFC');
+      return JSON.parse(str);
+    }
+
+    const key = `${country}_${slugify(title)}_${Date.now()}`;
+
+    try{
+      const cleanedItins = cleanJSON(itins);
+      const cleanedPlaces = cleanJSON(places);
+      localStorage.setItem(`ORT_TEMP_TRIP_${key}_itins`, JSON.stringify(cleanedItins));
+      localStorage.setItem(`ORT_TEMP_TRIP_${key}_places`, JSON.stringify(cleanedPlaces));
+
+      (async function saveToIndexedDB() {
+        try {
+          const firstItinId = (itins?.itins?.[0]?.itin_id) || '';
+          const cc = (firstItinId.split('::')[0] || '').toUpperCase();
+          if (!cc || cc === 'XX') { console.warn('⚠️ Code pays invalide:', cc); return; }
+          const Cc = cc.charAt(0) + cc.slice(1).toLowerCase();
+          const seqKey = `ORT_ADD_SEQ_${cc}`;
+          let seq = (parseInt(localStorage.getItem(seqKey) || '0', 10) || 0) + 1;
+          localStorage.setItem(seqKey, String(seq));
+          const fname = `${Cc}.add.${seq}.json`;
+          if (navigator.storage?.estimate) {
+            const estimate = await navigator.storage.estimate();
+            const availableMB = (estimate.quota - estimate.usage) / 1024 / 1024;
+            console.log(`💾 Espace: ${availableMB.toFixed(2)} MB disponible`);
+          }
+          return new Promise((resolve, reject) => {
+            const request = indexedDB.open('ORT_CACHE', 2);
+            request.onerror = () => { reject(request.error); };
+            request.onupgradeneeded = (e) => {
+              const db = e.target.result;
+              if (db.objectStoreNames.contains('itineraries')) { db.deleteObjectStore('itineraries'); }
+              db.createObjectStore('itineraries', { keyPath: 'id' });
+            };
+            request.onsuccess = (e) => {
+              const db = e.target.result;
+              try {
+                const transaction = db.transaction(['itineraries'], 'readwrite');
+                const store = transaction.objectStore('itineraries');
+                const payload = {
+                  id: `${cc}/${fname}`,
+                  country: cc,
+                  filename: fname,
+                  timestamp: Date.now(),
+                  itins: itins?.itins || [],
+                  places: places?.places || []
+                };
+                const putRequest = store.put(payload);
+                putRequest.onsuccess = () => { resolve(true); };
+                putRequest.onerror = () => { reject(putRequest.error); };
+                transaction.oncomplete = () => { db.close(); };
+                transaction.onerror = () => { db.close(); reject(transaction.error); };
+              } catch (err) { db.close(); reject(err); }
+            };
+          });
+        } catch (e) { console.error('❌ Erreur IndexedDB:', e); }
+      })();
+
+    }catch(e){
+      console.error('Storage error:', e);
+      st.className='status err';
+      st.textContent='Erreur de stockage local. Données trop volumineuses ?';
+      st.style.display='block';
+      btn.disabled = false;
+      btn.textContent = t.btnValidateJson;
+      return;
+    }
+
+    st.className='status ok';
+    st.textContent = t.okSaved;
+    st.style.display='block';
+    
+    // Stocker la clé pour la redirection après config
+    window.__pendingTripKey = key;
+    
+    // Afficher la modale de configuration
+    const configModal = document.getElementById('configTripModal');
+    if(configModal){
+      // Initialiser la date à aujourd'hui
+      const today = new Date().toISOString().split('T')[0];
+      const startDateInput = document.getElementById('cfgStartDate');
+      if(startDateInput) startDateInput.value = today;
+      
+      // Initialiser le nombre de jours avec estimated_days_base
+      const nbDaysInput = document.getElementById('cfgNbDays');
+      if(nbDaysInput && itin.estimated_days_base) {
+        nbDaysInput.value = Math.round(itin.estimated_days_base);
+      }
+      
+      configModal.style.display = 'flex';
+    }
+  }, 200);
+});
+
+// === Gestion de la modale de configuration voyage ===
+(function(){
+  const configModal = document.getElementById('configTripModal');
+  const btnCancel = document.getElementById('btnCancelConfig');
+  const btnValidate = document.getElementById('btnValidateConfig');
+  
+  if(!configModal) return;
+  
+  // Annuler - fermer la modale
+  if(btnCancel){
+    btnCancel.addEventListener('click', ()=>{
+      configModal.style.display = 'none';
+    });
+  }
+  
+  // Valider - récupérer les valeurs et rediriger
+  if(btnValidate){
+    btnValidate.addEventListener('click', ()=>{
+      const key = window.__pendingTripKey;
+      if(!key) return;
+      
+      const startDate = document.getElementById('cfgStartDate')?.value || '';
+      const nbDays = document.getElementById('cfgNbDays')?.value || '7';
+      
+      // Récupérer tous les budgets cochés (multichoix)
+      const budgetCheckboxes = document.querySelectorAll('input[name="cfgBudget"]:checked');
+      const budgets = Array.from(budgetCheckboxes).map(cb => cb.value);
+      const budget = budgets.length > 0 ? budgets.join(',') : '50-100';
+      
+      // Récupérer l'itinéraire stocké pour vérifier les themes
+      const pendingKey = window.__pendingTripKey;
+      const itinsStr = localStorage.getItem(`ORT_TEMP_TRIP_${pendingKey}_itins`);
+      const itinsData = itinsStr ? JSON.parse(itinsStr) : null;
+      const itin = itinsData?.itins?.[0];
+      const isCreator = itin?.themes?.includes('creator');
+      
+      if(isCreator) {
+        // Redirection CREATOR via sessionStorage
+        sessionStorage.setItem('ortCurrentItinerary', JSON.stringify(itin));
+        window.location.href = `./roadtrip_detail_simple.html?from=import`;
+      } else {
+        // Redirection EXPERT (comportement actuel)
+        // Construire l'URL avec tous les paramètres
+        const params = new URLSearchParams({
+          from: 'temp',
+          rtKey: key,
+          startDate: startDate,
+          nbDays: nbDays,
+          budget: budget
+        });
+        
+        window.location.href = `./roadtrip_detail.html?${params.toString()}`;
+      }
+    });
+  }
+  
+  // Fermer si clic en dehors
+  configModal.addEventListener('click', (e)=>{
+    if(e.target === configModal) configModal.style.display = 'none';
+  });
+})();
+
+// === Header Auth popup + Firebase (identique, conservé)
+(function(){
+  const $id = (id)=>document.getElementById(id);
+  const btnOpen = $id('openAuth'), pop = $id('authPop');
+  const btnGoogle = $id('btnGoogle'), btnEmail = $id('btnEmail'), btnLogout = $id('btnLogout');
+  if(!btnOpen || !pop) return;
+
+  const toggle = () => { pop.style.display = (pop.style.display==='none'||!pop.style.display) ? 'block' : 'none'; };
+  const hide   = (e) => { if(!pop.contains(e.target) && e.target !== btnOpen) pop.style.display = 'none'; };
+  btnOpen.addEventListener('click', (e)=>{ e.stopPropagation(); toggle(); });
+  document.addEventListener('click', hide);
+  pop.addEventListener('click', e => e.stopPropagation());
+
+  function loadScript(src){
+    return new Promise((ok,ko)=>{
+      const s=document.createElement('script');
+      s.src=src; s.onload=ok; s.onerror=()=>ko(new Error('load '+src));
+      document.head.appendChild(s);
+    });
+  }
+  async function ensureFirebase(){
+    if(window.firebase?.apps?.length) return window.firebase;
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+    window.firebase.initializeApp(window.__FIREBASE_CONFIG__ || {});
+    await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+    return window.firebase;
+  }
+
+  function setHeaderLabel(user){
+    const lang = localStorage.getItem('ORT_LANG') || document.documentElement.lang || 'fr';
+    const LABELS = {
+      fr:{signin:'Se connecter',  account:'Mon compte'},
+      en:{signin:'Sign in',        account:'My account'},
+      it:{signin:'Accedi',         account:'Il mio account'},
+      es:{signin:'Iniciar sesión', account:'Mi cuenta'},
+      pt:{signin:'Iniciar sessão', account:'Minha conta'},
+      ar:{signin:'تسجيل الدخول',   account:'حسابي'}
+    };
+    const LBL = LABELS[lang] || LABELS.fr;
+    if(user){
+      btnOpen.textContent = user.displayName || user.email || LBL.account;
+      const ul = document.getElementById('userLine');
+      const nm = document.getElementById('meName');
+      const em = document.getElementById('meEmail');
+      if(ul){ ul.style.display='block'; }
+      if(nm){ nm.textContent = user.displayName || ''; }
+      if(em){ em.textContent = user.email || ''; }
+      btnLogout.style.display=''; btnGoogle.style.display='none'; btnEmail.style.display='none';
+    }else{
+      btnOpen.textContent = LBL.signin;
+      const ul = document.getElementById('userLine');
+      if(ul){ ul.style.display='none'; }
+      btnLogout.style.display='none'; btnGoogle.style.display=''; btnEmail.style.display='';
+    }
+  }
+  window.__refreshAuthLabel = function(){ try{ const u = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null; setHeaderLabel(u); }catch{ setHeaderLabel(null); } };
+
+  if(btnGoogle){
+    btnGoogle.addEventListener('click', async()=>{
+      try{
+        const fb = await ensureFirebase();
+        await fb.auth().signInWithPopup(new fb.auth.GoogleAuthProvider());
+        pop.style.display='none';
+      }catch(_){}
+    });
+  }
+  if(btnEmail){
+    btnEmail.addEventListener('click', ()=>{
+      pop.style.display = 'none';
+      const m = document.getElementById('emailModal');
+      if(m){
+        m.style.display = 'flex';
+        const inp = document.getElementById('emailInput');
+        if(inp) inp.focus();
+      }
+    });
+  }
+  if(btnLogout){
+    btnLogout.addEventListener('click', async()=>{
+      try{ const fb=await ensureFirebase(); await fb.auth().signOut(); }catch(_){}
+    });
+  }
+  ensureFirebase().then(fb=>{ fb.auth().onAuthStateChanged((user)=>{ setHeaderLabel(user); checkModelOptionVisibility(user); }); }).catch(()=>{ setHeaderLabel(null); checkModelOptionVisibility(null); });
+
+  // Fonction pour afficher/masquer l'option Model JSON
+  function checkModelOptionVisibility(user){
+    const optModelWrapper = document.getElementById('opt-model-wrapper');
+    if(!optModelWrapper) return;
+    
+    if(user && user.email === 'marcsorci@free.fr'){
+      optModelWrapper.style.display = '';
+    } else {
+      optModelWrapper.style.display = 'none';
+      // Si l'option était sélectionnée, revenir à "follow"
+      const optModel = document.getElementById('opt-model');
+      if(optModel && optModel.checked){
+        const optFollow = document.getElementById('opt-follow');
+        if(optFollow) optFollow.checked = true;
+      }
+    }
+  }
+
+  const modal = document.getElementById('emailModal');
+  const emailInput = document.getElementById('emailInput');
+  const pwdInput   = document.getElementById('pwdInput');
+  const pwd2Wrap   = document.getElementById('pwd2Wrap');
+  const pwd2Input  = document.getElementById('pwd2Input');
+  const emailAlert = document.getElementById('emailAlert');
+  const btnDo      = document.getElementById('btnDoEmail');
+  const btnCancel  = document.getElementById('btnCancelEmail');
+  const btnForgot  = document.getElementById('btnForgot');
+  const btnSignup  = document.getElementById('btnSignup');
+  const togglePwd  = document.getElementById('togglePwd');
+
+  let mode = 'login';
+
+  function showAlert(kind, msg){
+    if(!emailAlert) return;
+    emailAlert.className = 'alert ' + (kind==='ok' ? 'alert-success' : 'alert-error');
+    emailAlert.textContent = msg;
+    emailAlert.style.display = 'block';
+  }
+  function clearAlert(){ if(emailAlert){ emailAlert.style.display='none'; emailAlert.textContent=''; } }
+
+  function setMode(next){
+    mode = next; clearAlert();
+    if(next === 'signup'){
+      pwd2Wrap.style.display = '';
+      btnDo.textContent = 'Créer mon compte';
+      btnSignup.textContent = 'J’ai déjà un compte';
+    }else{
+      pwd2Wrap.style.display = 'none';
+      btnDo.textContent = 'Continuer';
+      btnSignup.textContent = 'Créer un compte';
+    }
+  }
+  setMode('login');
+
+  function closeModal(){ if(modal) modal.style.display='none'; }
+  btnCancel?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && modal?.style.display==='flex') closeModal(); });
+  togglePwd?.addEventListener('click', ()=>{ const t = pwdInput?.getAttribute('type') === 'password' ? 'text' : 'password'; pwdInput?.setAttribute('type', t); });
+  btnSignup?.addEventListener('click', ()=>{ setMode(mode === 'signup' ? 'login' : 'signup'); });
+  btnForgot?.addEventListener('click', async ()=>{
+    clearAlert();
+    try{
+      const fb = await __ensureFirebase__();
+      const email = (emailInput?.value||'').trim();
+      if(!email){ showAlert('err','Saisissez votre e-mail.'); return; }
+      await fb.auth().sendPasswordResetEmail(email);
+      showAlert('ok','E-mail de réinitialisation envoyé.');
+    }catch(e){ showAlert('err', e?.message || 'Échec de l’envoi.'); }
+  });
+  btnDo?.addEventListener('click', async ()=>{
+    clearAlert();
+    const email = (emailInput?.value||'').trim();
+    const pwd   = (pwdInput?.value||'').trim();
+    const pwd2  = (pwd2Input?.value||'').trim();
+    if(!email || !pwd){ showAlert('err','E-mail et mot de passe requis.'); return; }
+    if(mode==='signup' && pwd!==pwd2){ showAlert('err','Les mots de passe ne correspondent pas.'); return; }
+    try{
+      const fb = await __ensureFirebase__();
+      if(mode==='signup'){
+        const cred = await fb.auth().createUserWithEmailAndPassword(email, pwd);
+        try{ await cred.user.sendEmailVerification(); }catch(_){}
+        await fb.auth().signOut();
+        showAlert('ok','Compte créé. Vérifiez votre e-mail puis reconnectez-vous.');
+      }else{
+        await fb.auth().signInWithEmailAndPassword(email, pwd);
+        closeModal(); pop.style.display='none';
+      }
+    }catch(e){ showAlert('err', e?.message || 'Erreur d’authentification.'); }
+  });
+})();
+</script>
+</body>
+</html>

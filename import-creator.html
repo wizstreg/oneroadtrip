@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit Itinerary - OneRoadTrip</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JK3QGQGDDL');
+</script>
+<style>
+/* === VARIABLES GLOBALES === */
+:root {
+  --bg: #113f7a;
+  --panel: #113f7a;
+  --card: #ffffff;
+  --ink: #113f7a;
+  --accent: #113f7a;
+  --bd: #c3d6b6;
+  --danger: #e11d48;
+  --danger-bg: #fee2e2;
+  --warning: #f59e0b;
+  --warning-bg: #fef3c7;
+}
+
+/* === RESET & BASE === */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background: url("/assets/image_index.webp") center/cover fixed #113f7a;
+  color: #e7f6fb;
+  min-height: 100vh;
+}
+
+/* === HEADER === */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: url("/assets/image_index.webp") center/cover no-repeat #113f7a;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  padding: 12px 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.brandlink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.brandlink img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+header .brand {
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+}
+
+header .sp {
+  flex: 1;
+}
+
+header select {
+  appearance: none;
+  background: #fff;
+  border: 1px solid #113f7a;
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #113f7a;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth {
+  position: relative;
+}
+
+.hdr-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid #113f7a;
+  background: #fff;
+  color: #113f7a;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.hdr-btn:hover {
+  background: #f0f4f8;
+}
+
+.auth-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 8px;
+  display: none;
+  min-width: 260px;
+  z-index: 1001;
+}
+
+.auth-pop .hdr-btn {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  background: var(--panel);
+  border: 1px solid var(--panel);
+  color: #fff;
+}
+
+.auth-pop .hdr-btn.out {
+  background: #fff;
+  color: var(--panel);
+}
+
+.userline {
+  display: none;
+  padding: 6px 8px;
+  border-bottom: 1px solid #c3d6b6;
+  margin-bottom: 6px;
+}
+
+.userline .name {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.userline .mail {
+  font-size: 0.9em;
+  color: #475569;
+}
+
+#site-header {
+  /* Hook pour header externe */
+}
+
+/* === CONTAINER === */
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  width: 100%;
+}
+
+/* === TYPOGRAPHY === */
+h1 {
+  margin: 20px 0 10px;
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin: 0 0 30px;
+}
+
+/* === CARDS & SECTIONS === */
+.card {
+  background: var(--card);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.stage {
+  display: none;
+}
+
+.stage.active {
+  display: block;
+}
+
+.stage h2 {
+  margin: 0 0 20px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.stage h3 {
+  margin: 20px 0 15px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* === FORMS === */
+label {
+  display: block;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 15px 0 8px;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="url"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #333;
+  transition: all 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 63, 122, 0.1);
+}
+
+input[type="checkbox"] {
+  margin-right: 8px;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 200px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin-bottom: 20px;
+  background: #f0f0f0;
+  color: #999;
+}
+
+textarea.cleared {
+  display: none;
+}
+
+/* === RESPONSIVE MOBILE === */
+@media (max-width: 768px) {
+  .wrap {
+    padding: 12px 8px;
+  }
+  
+  h1 {
+    font-size: 24px;
+    margin: 15px 0 10px;
+  }
+  
+  .card {
+    padding: 16px;
+    margin-bottom: 15px;
+  }
+  
+  .photo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+  
+  .photo-item, .photo-add {
+    height: 100px;
+    font-size: 12px;
+  }
+  
+  .buttons {
+    flex-direction: column;
+  }
+  
+  .buttons button {
+    width: 100%;
+  }
+  
+  input[type="number"] {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  header {
+    padding: 10px 8px;
+    gap: 8px;
+  }
+  
+  header .brand {
+    font-size: 14px;
+  }
+  
+  header select {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  h1 {
+    font-size: 20px;
+  }
+  
+  .stage h2 {
+    font-size: 16px;
+  }
+  
+  .photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .photo-item, .photo-add {
+    height: 90px;
+  }
+}
+
+/* === FORM LAYOUT === */
+.form-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+
+.form-row .form-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+.form-row label {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .form-row .form-group {
+    width: 100%;
+  }
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* === PHOTO GRID === */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.photo-add {
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #64748b;
+  font-weight: 600;
+  transition: all 0.2s;
+  background: #fafbfc;
+}
+
+.photo-add:hover {
+  border-color: var(--accent);
+  background: #eff6ff;
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.photo-item {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-remove {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 24px;
+  text-align: center;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-remove:hover {
+  background: #b91c1c;
+  transform: scale(1.1);
+}
+
+/* === CREATOR INFO === */
+.creator-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .creator-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === BUTTONS === */
+.btn {
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #0d2f5e;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(17, 63, 122, 0.3);
+}
+
+.btn-secondary {
+  background: #e2e8f0;
+  color: var(--ink);
+}
+
+.btn-secondary:hover {
+  background: #cbd5e1;
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+/* === STATUS MESSAGES === */
+.status {
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin: 15px 0;
+  border: 1px solid;
+  display: none;
+  font-size: 14px;
+}
+
+.status.show {
+  display: block;
+}
+
+.status.ok {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.status.err {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+/* === RESTRICTED ACCESS === */
+.restricted {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.restricted h2 {
+  color: #e11d48;
+  font-size: 24px;
+  margin: 0 0 15px;
+}
+
+.restricted p {
+  font-size: 15px;
+  color: #666;
+  margin: 0 0 20px;
+}
+
+/* === MODAL === */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: center;
+  justify-content: center;
+  z-index: 5000;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  width: min(500px, 90vw);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.modal-card h3 {
+  margin: 0 0 15px;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.modal-card input {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+/* === BUTTON GROUPS === */
+.buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.buttons button {
+  flex: 1;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  header {
+    padding: 10px 12px;
+    flex-wrap: wrap;
+  }
+
+  .brandlink {
+    font-size: 14px;
+  }
+
+  .brandlink img {
+    width: 36px;
+    height: 36px;
+  }
+
+  header select,
+  .hdr-btn {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .wrap {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .stage h2 {
+    font-size: 16px;
+  }
+
+  .stage h3 {
+    font-size: 14px;
+  }
+
+  .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
+  .photo-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  .photo-item,
+  .photo-add {
+    height: 100px;
+  }
+
+  .modal-card {
+    padding: 16px;
+  }
+
+  .creator-info {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Header ORT -->
+<header id="site-header"></header>
+
+<div class="wrap">
+  <h1>Submit Your Itinerary</h1>
+  <p class="subtitle">Build your roadtrip step by step</p>
+  
+  <div id="statusMsg" class="status"></div>
+  <div id="restrictedMsg" class="restricted" style="display:none;">
+    <h2>🔒 Access Restricted</h2>
+    <p>You must be an approved creator to submit.</p>
+    <button class="btn btn-primary" onclick="window.location.href='creator-application.html'">Apply as Creator</button>
+  </div>
+
+  <div id="formArea" style="display:none;">
+    
+    <!-- STAGE 0 -->
+    <div id="stage-0" class="stage active card">
+      <h2>Creator Info & Stage 1 <span style="color:#999; font-size:14px;">(Day 1)</span></h2>
+      
+      <h3>Creator Information</h3>
+      <div class="creator-info">
+        <div>
+          <label>Name</label>
+          <input type="text" id="creatorName" readonly placeholder="Auto-filled">
+        </div>
+        <div>
+          <label>Logo URL</label>
+          <input type="url" id="creatorLogo" placeholder="https://...">
+        </div>
+        <div>
+          <label>Link in Bio</label>
+          <input type="url" id="linkInBio" placeholder="https://linktr.ee/... or personal site">
+        </div>
+      </div>
+      
+      <label>Bio (max 400 characters)</label>
+      <textarea id="creatorBio" maxlength="400" placeholder="Tell travelers about yourself, your expertise, and travel style..." style="min-height:100px;"></textarea>
+      <div style="font-size:12px; color:#999; margin-top:4px;">
+        <span id="bioCharCount">0</span>/400
+      </div>
+      
+      <h3>Hotel Photos (Optional - up to 2)</h3>
+      <label>Hotel Photo 1 URL</label>
+      <input type="url" id="hotelPhoto1" placeholder="https://...">
+      
+      <label>Hotel Photo 2 URL</label>
+      <input type="url" id="hotelPhoto2" placeholder="https://...">
+      
+      <h3>Stage 1 - Arrival</h3>
+      <label>Hotel URL (optional)</label>
+      <input type="url" id="stage-0-hotel" placeholder="https://booking.com/...">
+      
+      <label>Nights</label>
+      <input type="number" id="stage-0-nights" min="1" max="15" value="1" style="width:100px;">
+      
+      <label>
+        <input type="checkbox" id="stage-0-etape"> Stopover only (no hotel)
+      </label>
+      
+      <label>Photos (max 4)</label>
+      <div class="photo-grid" id="stage-0-photos">
+        <div class="photo-add" onclick="openPhotoModal(0)">+ Add Photo</div>
+      </div>
+      
+      <div class="buttons">
+        <button class="btn btn-primary" onclick="nextStage()">Next Stage →</button>
+        <button class="btn btn-secondary" onclick="skipToText()">Skip to Text</button>
+      </div>
+    </div>
+
+    <!-- STAGES 1-15 (created dynamically) -->
+    <div id="stagesContainer"></div>
+
+    <!-- TEXT STAGE -->
+    <div id="stage-text" class="stage card">
+      <h2>Itinerary Text</h2>
+      
+      <label>Paste your itinerary (any language)</label>
+      <textarea id="textInput" placeholder="Click to start typing...">Brittany Discovery Escape – 3 Days of Heritage, Sea & Scenic Landscapes
+
+Day 1 – Rennes, the Gateway to Brittany
+
+Your journey begins in Rennes, the vibrant capital of Brittany. Upon arrival in the morning, start with a leisurely walk through the historic city center, where half-timbered houses, cobbled streets and lively squares set the tone.
+Visit the iconic Parliament of Brittany, then stroll around Place des Lices, one of the city's most atmospheric areas.
+For lunch, enjoy a refined yet relaxed meal at La Table des Lices (fictional restaurant), offering a modern take on Breton classics, with buckwheat galettes and fresh local produce.
+In the afternoon, unwind in the beautiful Thabor Gardens, a peaceful blend of French formal gardens, rose gardens and shaded paths. Later, enjoy free time for shopping or a coffee break in the Saint-Anne district.
+Dinner at leisure in the city center, then overnight at the Hôtel du Parlement (fictional), a charming boutique hotel perfectly located for your first night in Brittany.
+
+Day 2 – From Rennes to Saint-Malo, Between Legends and the Open Sea
+
+After breakfast, depart around 9:00 AM for Saint-Malo (approximately 1 hour's drive).
+Upon arrival, step straight into the world of the famous corsair city. Begin your exploration inside the walled old town, wandering through narrow streets, historic buildings and lively squares.
+Late morning is dedicated to a complete walk along the city ramparts, offering spectacular views over the beaches, offshore islands and dramatic tides.
+Lunch is served seaside at Le Corsaire Bleu (fictional restaurant), known for its fresh seafood and panoramic ocean views.
+The afternoon is free to enjoy the beach, walk to the nearby tidal islands depending on the tide, or visit a historic shipowner's house or maritime museum.
+In the evening, check in at the Hôtel Remparts & Ocean (fictional). Dinner inside the old town, followed by a peaceful evening stroll along the ramparts as Saint-Malo reveals its most magical atmosphere.
+
+Day 3 – The Pink Granite Coast, A Natural Masterpiece
+
+After breakfast, depart around 8:30 AM towards the Pink Granite Coast (approximately 2 hours' drive).
+Arrive in Ploumanac'h, one of Brittany's most iconic natural sites. Start with a scenic walk along the Coastal Customs Path, winding between sculpted pink granite rocks, hidden coves and the famous lighthouse overlooking the sea.
+Late morning is devoted to soaking in the serenity of the coastline before lunch at Les Rochers Roses (fictional restaurant), offering local, sea-inspired cuisine in a stunning setting.
+In the afternoon, continue on to Perros-Guirec for a final seaside stroll, a coffee with ocean views or some time to relax on the beach.
+Your Breton escape comes to an end in the late afternoon, leaving you with lasting memories of rugged coastlines, historic towns and authentic coastal charm.</textarea>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>Submit Language</label>
+          <select id="submitLang">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Português</option>
+            <option value="ar">العربية</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Identifier</label>
+          <input type="text" id="creatorId" placeholder="Your handle">
+        </div>
+      </div>
+      
+      <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn btn-primary" onclick="generatePrompt()" style="flex:2;">→ Generate Prompt</button>
+        <button class="btn btn-secondary" onclick="backToStages()">← Back</button>
+      </div>
+    </div>
+
+    <!-- PROMPT STAGE -->
+    <div id="stage-prompt" class="stage card">
+      <h2>AI Prompt (Box 1)</h2>
+      <p style="color:#666; font-size:14px; margin-bottom:15px;">Copy this prompt and paste it into ChatGPT, Claude, or your preferred AI. Then copy the JSON response and paste it below.</p>
+      
+      <label>Your Prompt (Click to select all)</label>
+      <textarea id="promptOutput" readonly style="background:#f5f5f5; color:#333; cursor:text;" onclick="this.select()"></textarea>
+      
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="btn btn-primary" onclick="copyPrompt()" style="flex:1;">📋 Copy Prompt</button>
+        <button class="btn btn-secondary" onclick="skipPrompt()" style="flex:1;">Next →</button>
+      </div>
+    </div>
+
+    <!-- JSON STAGE -->
+    <div id="stage-json" class="stage card">
+      <h2>JSON Response (Box 3)</h2>
+      <p style="color:#666; font-size:14px; margin-bottom:15px;">Paste the complete JSON response from the AI below.</p>
+      
+      <label>Paste JSON Response</label>
+      <textarea id="jsonInput" placeholder='{"itins":[...]}' style="min-height:300px;"></textarea>
+      
+      <div id="jsonStatus"></div>
+      
+      <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="validateAndSubmit()" style="flex:2;">✓ Validate & Submit</button>
+        <button class="btn btn-secondary" onclick="sendEmailToTeam()" style="flex:1;">📧 Send to Team</button>
+        <button class="btn btn-secondary" onclick="backToPrompt()">← Back</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PHOTO MODAL -->
+<div id="photoModal" class="modal">
+  <div class="modal-card">
+    <h3>Add Photo</h3>
+    <label>Photo URL</label>
+    <input type="url" id="photoUrl" placeholder="https://...">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closePhotoModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addPhoto()">Add</button>
+    </div>
+  </div>
+</div>
+
+<!-- Footer ORT -->
+<footer id="footer-legal"></footer>
+
+<!-- Scripts ORT modulaires -->
+<script src="js/ort-config.js"></script>
+<script src="js/ort-i18n-auth.js"></script>
+<script src="js/ort-header.js"></script>
+<script src="js/ort-footer.js"></script>
+
+<script>
+let currentStage = 0;
+let maxStages = 0;
+let stagesData = Array(16).fill(null).map(() => ({ hotel:'', hotelPhoto1:'', hotelPhoto2:'', nights:1, etape:false, photos:[] }));
+let creatorData = {};
+let photoStageNum = null;
+
+function showStatus(msg, type) {
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status show ' + (type === 'err' ? 'err' : 'ok');
+  setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+function createStageHTML() {
+  const container = document.getElementById('stagesContainer');
+  
+  for(let i = 1; i <= 15; i++) {
+    container.innerHTML += `
+      <div id="stage-${i}" class="stage card">
+        <h2>Stage ${i + 1} <span style="color:#999; font-size:14px;">(Day ${i + 1})</span></h2>
+        
+        <label>Hotel URL (optional)</label>
+        <input type="url" id="stage-${i}-hotel" placeholder="https://booking.com/...">
+        
+        <label>Hotel Photo 1 URL (optional)</label>
+        <input type="url" id="stage-${i}-hotel-photo-1" placeholder="https://...">
+        
+        <label>Hotel Photo 2 URL (optional)</label>
+        <input type="url" id="stage-${i}-hotel-photo-2" placeholder="https://...">
+        
+        <label>Nights</label>
+        <input type="number" id="stage-${i}-nights" min="1" max="15" value="1" style="width:100px;">
+        
+        <label>
+          <input type="checkbox" id="stage-${i}-etape"> Stopover only (no hotel)
+        </label>
+        
+        <label>Stage Photos (max 4)</label>
+        <div class="photo-grid" id="stage-${i}-photos">
+          <div class="photo-add" onclick="openPhotoModal(${i})">+ Add Photo</div>
+        </div>
+        
+        <div class="buttons">
+          <button class="btn btn-primary" onclick="nextStage()">Next Stage →</button>
+          <button class="btn btn-secondary" onclick="skipToText()">Skip to Text</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function showStage(n) {
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('stage-' + n);
+  if(target) target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function nextStage() {
+  saveStage(currentStage);
+  if(currentStage < 15) {
+    currentStage++;
+    showStage(currentStage);
+  } else {
+    skipToText();
+  }
+}
+
+function skipToText() {
+  saveStage(currentStage);
+  maxStages = currentStage;
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  const textStage = document.getElementById('stage-text');
+  if(textStage) textStage.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function backToStages() {
+  showStage(currentStage);
+}
+
+function saveStage(n) {
+  const hotel = document.getElementById(`stage-${n}-hotel`)?.value || '';
+  const hotelPhoto1 = document.getElementById(`stage-${n}-hotel-photo-1`)?.value || '';
+  const hotelPhoto2 = document.getElementById(`stage-${n}-hotel-photo-2`)?.value || '';
+  const nights = parseInt(document.getElementById(`stage-${n}-nights`)?.value || 1);
+  const etape = document.getElementById(`stage-${n}-etape`)?.checked || false;
+  stagesData[n] = { hotel, hotelPhoto1, hotelPhoto2, nights, etape, photos: stagesData[n].photos };
+}
+
+function openPhotoModal(n) {
+  photoStageNum = n;
+  document.getElementById('photoUrl').value = '';
+  document.getElementById('photoModal').classList.add('show');
+}
+
+function closePhotoModal() {
+  document.getElementById('photoModal').classList.remove('show');
+  photoStageNum = null;
+}
+
+function addPhoto() {
+  const url = document.getElementById('photoUrl').value.trim();
+  if(!url) { alert('Enter a photo URL'); return; }
+  
+  // Valider URL
+  try {
+    new URL(url);
+  } catch(e) {
+    alert('Invalid photo URL');
+    return;
+  }
+  
+  if(stagesData[photoStageNum].photos.length >= 4) { alert('Max 4 photos per stage'); return; }
+  stagesData[photoStageNum].photos.push(url);
+  renderPhotos(photoStageNum);
+  closePhotoModal();
+}
+
+function removePhoto(n, idx) {
+  stagesData[n].photos.splice(idx, 1);
+  renderPhotos(n);
+}
+
+function renderPhotos(n) {
+  const grid = document.getElementById(`stage-${n}-photos`);
+  if(!grid) return;
+  
+  let html = '';
+  stagesData[n].photos.forEach((url, idx) => {
+    html += `<div class="photo-item"><img src="${url}" alt="Photo" onerror="this.src='https://via.placeholder.com/120?text=Photo'"><button class="photo-remove" onclick="removePhoto(${n},${idx})">✕</button></div>`;
+  });
+  
+  if(stagesData[n].photos.length < 4) {
+    html += `<div class="photo-add" onclick="openPhotoModal(${n})">+ Add Photo</div>`;
+  }
+  
+  grid.innerHTML = html;
+}
+
+function generatePrompt() {
+  saveStage(currentStage);
+  
+  const creatorName = document.getElementById('creatorName').value || 'Unknown';
+  const creatorLogo = document.getElementById('creatorLogo').value || '';
+  const creatorBio = document.getElementById('creatorBio').value || '';
+  const linkInBio = document.getElementById('linkInBio').value || '';
+  const hotelPhoto1 = document.getElementById('hotelPhoto1').value || '';
+  const hotelPhoto2 = document.getElementById('hotelPhoto2').value || '';
+  const itineraryText = document.getElementById('textInput').value.trim();
+  const lang = document.getElementById('submitLang').value;
+  const creatorId = document.getElementById('creatorId').value.trim();
+  
+  if(!itineraryText) { alert('Please enter your itinerary text'); return; }
+  if(!creatorId) { alert('Please enter your identifier'); return; }
+  
+  // Calculer estimated_days_base
+  const totalNights = stagesData.slice(0, maxStages + 1).reduce((sum, s) => sum + (s.nights || 1), 0);
+  const estimatedDays = totalNights + 1;
+  
+  // Construire DAY_MAPPING
+  let dayMapping = 'STAGE-BY-STAGE MAPPING:\n\n';
+  for(let i = 0; i <= maxStages; i++) {
+    const s = stagesData[i];
+    if(s.hotel || s.etape || s.photos.length > 0) {
+      dayMapping += `Day ${i + 1}:\n`;
+      dayMapping += `  - Nights: ${s.nights || 1}\n`;
+      dayMapping += `  - Hotel URL: ${s.hotel || '(none)'}\n`;
+      dayMapping += `  - Hotel Photos: ${[s.hotelPhoto1, s.hotelPhoto2].filter(p => p).join(', ') || '(none)'}\n`;
+      dayMapping += `  - Stage Photos: ${s.photos.join(', ') || '(none)'}\n\n`;
+    }
+  }
+  
+  // Générer le prompt
+  let prompt = `You are a JSON itinerary generator for OneRoadTrip. Your task is to convert creator-provided itinerary data into a structured JSON format.
+
+⚠️ CRITICAL: You MUST strictly follow all creator data. NO invention, NO rewriting, NO reordering.
+
+CREATOR INFORMATION:
+- Name: ${creatorName}
+- Bio: ${creatorBio || '(none)'}
+- Logo URL: ${creatorLogo || '(none)'}
+- Link in Bio: ${linkInBio || '(none)'}
+- Language: ${lang}
+
+ITINERARY TEXT (PROVIDED BY CREATOR):
+${itineraryText}
+
+${dayMapping}
+
+GENERATION RULES:
+
+1. **LANGUAGE**: All text fields MUST be in ${lang}. If text is in another language, translate it while preserving meaning.
+
+2. **TEXT HANDLING**: 
+   - You MUST segment the provided itinerary text logically across days
+   - Each visit/activity text: 2-3 sentences (40-80 words), travel agency tone
+   - Keep factual accuracy - never invent details
+   - Use engaging, descriptive language (describe beauty, history, unique features)
+
+3. **DAY STRUCTURE**:
+   - Respect creator's order: Day 1 = Stage 0, Day 2 = Stage 1, etc.
+   - Each day uses ONLY data provided (hotel_url, nights, photos from that stage)
+   - **HOTEL RULE**: Every day must have hotel_url field
+     - If hotel provided for that stage, use it
+     - If NO hotel for that stage AND it's a stopover (etape=true), omit hotel_url field
+     - If NO hotel for that stage AND it's NOT a stopover, copy hotel_url from previous day
+   - If no photos provided, omit photos arrays
+
+4. **PLACE_IDs & COORDINATES**:
+   - Format: "CC::city_name" where CC = ISO 2-letter country code
+   - Use REAL GPS coordinates only (no invented data)
+   - Verify distances/durations are realistic
+
+5. **suggested_days** (visit richness):
+   - 0.5 = Quick stop (1-2 visits)
+   - 1.0 = Standard day (3-4 visits)
+   - 1.5 = Rich destination (5-6 visits)
+   - 2.0+ = Major destination (7+ visits)
+
+6. **estimated_days_base** (AUTO-CALCULATED):
+   - Formula: SUM(all stage nights) + 1
+   - Must be ${estimatedDays}
+
+7. **Transport (to_next_leg)**:
+   - transport_mode: "car" | "train" | "flight"
+   - If distance >= 600km, add flight entry in activities
+   - Use realistic drive times
+
+8. **Photos**:
+   - Use ONLY photos provided by creator
+   - Up to 4 per day in stage_photos array
+   - If stage has hotel photos, use for hotel_photos array (optional field)
+
+9. **THEMES (MANDATORY)**:
+   - ALWAYS include "creator" as first theme (to identify creator itineraries)
+   - Add 2-3 additional themes based on content:
+     - "cultural" = museums, historical sites, heritage
+     - "romantic" = couples, scenic, intimate experiences
+     - "gastronomic" = restaurants, food, dining
+     - "beach" = coastal, sea, swimming
+     - "adventure" = active, outdoor, hiking
+     - "historical" = archaeology, monuments, ancient sites
+     - "urban" = cities, modern attractions
+     - "nature" = parks, natural sites, wildlife
+   - themes array example: ["creator", "cultural", "romantic", "gastronomic"]
+
+10. **FORBIDDEN**:
+    - Do NOT invent places, activities, or details
+    - Do NOT reorder days
+    - Do NOT skip any creator-provided stage
+    - Do NOT use placeholder coordinates
+    - Do NOT omit "creator" from themes array
+
+11. **RESPONSE FORMAT**: Reply ONLY with valid JSON (no extra text, no markdown, no comments)
+
+JSON SCHEMA:
+{
+  "itins": [{
+    "itin_id": "CC::slug::${creatorId}",
+    "creator_name": "${creatorName}",
+    "creator_bio": "${creatorBio.replace(/"/g, '\\"').replace(/\n/g, '\\n')}",
+    "creator_logo": "${creatorLogo || ''}",
+    "creator_link_in_bio": "${linkInBio || ''}",
+    "language": "${lang}",
+    "created_at": "${new Date().toISOString()}",
+    "title": "AUTO_GENERATED_TITLE_FROM_ITINERARY",
+    "estimated_days_base": ${estimatedDays},
+    "themes": ["creator", "theme2", "theme3"],
+    "pacing_rules": {
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [
+      {
+        "day": 1,
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "CC::place_name",
+          "coords": [LATITUDE, LONGITUDE],
+          "hotel_url": "HOTEL_URL"
+        },
+        "hotel_photos": ["PHOTO_1", "PHOTO_2"],
+        "visits": [
+          {"text": "Visit name - 2-3 sentences, travel agency tone"}
+        ],
+        "activities": [
+          {"text": "Activity - 2-3 sentences, descriptive"}
+        ],
+        "stage_photos": ["PHOTO_1"],
+        "to_next_leg": {
+          "distance_km": NUMBER,
+          "drive_min": NUMBER,
+          "transport_mode": "car|train|flight"
+        }
+      }
+    ]
+  }]
+}
+
+EXAMPLE VISIT TEXT (REQUIRED FORMAT):
+"Discover the breathtaking Colosseum, an ancient Roman amphitheater that once hosted gladiatorial contests. Built between 70-80 AD, this UNESCO World Heritage Site remains one of history's greatest architectural achievements. Walk through the ancient corridors and imagine the roar of 50,000 spectators."
+
+Now generate the JSON for the provided itinerary data.`;
+  
+  document.getElementById('promptOutput').value = prompt;
+  
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  document.getElementById('stage-prompt').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function copyPrompt() {
+  const textarea = document.getElementById('promptOutput');
+  textarea.select();
+  document.execCommand('copy');
+  showStatus('✓ Prompt copied to clipboard!', 'ok');
+}
+
+function skipPrompt() {
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  document.getElementById('stage-json').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function backToPrompt() {
+  document.querySelectorAll('.stage').forEach(el => el.classList.remove('active'));
+  document.getElementById('stage-prompt').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function sendEmailToTeam() {
+  const jsonStr = document.getElementById('jsonInput').value.trim();
+  
+  if(!jsonStr) {
+    showStatus('❌ Please paste the JSON first', 'err');
+    return;
+  }
+  
+  let jsonData;
+  try {
+    jsonData = JSON.parse(jsonStr);
+  } catch(e) {
+    showStatus('❌ Invalid JSON: ' + e.message, 'err');
+    return;
+  }
+  
+  const itin = jsonData.itins[0];
+  const creatorName = itin.creator_name || 'Unknown Creator';
+  const title = itin.title || 'New Itinerary';
+  
+  // Créer le sujet et le body
+  const subject = encodeURIComponent(`[Nouvelle itinéraire] ${title} - ${creatorName}`);
+  const body = encodeURIComponent(
+    `Bonjour,\n\nVoici une nouvelle itinéraire créée par ${creatorName}.\n\n` +
+    `Titre: ${title}\n` +
+    `Langue: ${itin.language}\n` +
+    `Jours: ${itin.estimated_days_base}\n\n` +
+    `JSON Complet:\n\n${jsonStr}\n\n` +
+    `Cordialement`
+  );
+  
+  // Ouvrir le client email
+  window.location.href = `mailto:contact@oneroadtrip.com?subject=${subject}&body=${body}`;
+  
+  showStatus('✓ Opening email client...', 'ok');
+}
+
+function validateAndSubmit() {
+  const jsonStr = document.getElementById('jsonInput').value.trim();
+  const statusEl = document.getElementById('jsonStatus');
+  
+  if(!jsonStr) {
+    showStatus('Please paste the JSON response', 'err');
+    return;
+  }
+  
+  let jsonData;
+  try {
+    jsonData = JSON.parse(jsonStr);
+  } catch(e) {
+    showStatus('❌ Invalid JSON: ' + e.message, 'err');
+    return;
+  }
+  
+  if(!jsonData.itins || !Array.isArray(jsonData.itins) || jsonData.itins.length === 0) {
+    showStatus('❌ JSON must contain "itins" array', 'err');
+    return;
+  }
+  
+  showStatus('✓ JSON valid! Submitting...', 'ok');
+  submitItinerary(jsonData);
+}
+
+async function submitItinerary(jsonData) {
+  const creatorId = document.getElementById('creatorId').value.trim();
+  const lang = document.getElementById('submitLang').value;
+  
+  try {
+    const fb = window.firebase;
+    if(!fb) throw new Error('Firebase not loaded');
+    
+    const user = fb.auth().currentUser;
+    if(!user) throw new Error('Not authenticated');
+    
+    const db = fb.firestore();
+    
+    // Ajouter métadonnées additionnelles
+    const finalData = {
+      ...jsonData.itins[0],
+      creator_uid: user.uid,
+      creator_email: user.email,
+      submitted_at: new Date().toISOString(),
+      status: 'pending_review'
+    };
+    
+    const itinId = user.uid + '_' + Date.now();
+    const path = `creator_itineraries/${user.uid}/itineraries/${itinId}`;
+    
+    await db.doc(path).set(finalData);
+    
+    // Aussi envoyer à Marc en temps réel
+    await db.collection('admin_submissions').doc(itinId).set({
+      creator_name: finalData.creator_name,
+      creator_email: user.email,
+      creator_uid: user.uid,
+      itin_data: finalData,
+      submitted_at: new Date().toISOString(),
+      status: 'pending_review'
+    });
+    
+    showStatus('✅ Submitted! Under review. Redirecting...', 'ok');
+    setTimeout(() => window.location.href = 'rt-detail-creator.html?id=' + itinId, 2000);
+  } catch(e) {
+    console.error('Submit error:', e);
+    showStatus('❌ Error: ' + e.message, 'err');
+  }
+}
+
+async function checkAndLoad() {
+  // Attendre que Firebase soit chargé par ort-header.js
+  let attempts = 0;
+  while(!window.firebase && attempts < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    attempts++;
+  }
+  
+  if(!window.firebase) {
+    console.error('Firebase not loaded');
+    showStatus('Error: Firebase not loaded', 'err');
+    return;
+  }
+  
+  // Charger Firestore si pas déjà chargé
+  if(!window.firebase.firestore) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+  
+  // Attendre l'auth
+  await new Promise(resolve => {
+    const unsub = window.firebase.auth().onAuthStateChanged(user => {
+      unsub();
+      resolve();
+    });
+  });
+  
+  try {
+    const user = window.firebase.auth().currentUser;
+    
+    if(!user) {
+      document.getElementById('restrictedMsg').style.display = 'block';
+      return;
+    }
+    
+    const db = window.firebase.firestore();
+    
+    // Vérifier si créateur approuvé
+    const snap = await db.collection('creator_applications')
+      .where('userEmail', '==', user.email)
+      .where('status', '==', 'approved')
+      .limit(1)
+      .get();
+    
+    if(snap.empty) {
+      document.getElementById('restrictedMsg').style.display = 'block';
+      return;
+    }
+    
+    creatorData = snap.docs[0].data();
+    const creatorIdentifier = creatorData.email?.split('@')[0] || '';
+    
+    document.getElementById('creatorName').value = creatorData.name || '';
+    document.getElementById('creatorId').value = creatorIdentifier;
+    
+    document.getElementById('formArea').style.display = 'block';
+    
+    createStageHTML();
+    showStage(0);
+    
+  } catch(e) {
+    console.error('Load error:', e);
+    showStatus('❌ ' + e.message, 'err');
+  }
+}
+
+// Lancer après chargement DOM
+document.addEventListener('DOMContentLoaded', () => {
+  // Compteur bio
+  const bioInput = document.getElementById('creatorBio');
+  const bioCount = document.getElementById('bioCharCount');
+  if(bioInput && bioCount) {
+    bioInput.addEventListener('input', () => {
+      bioCount.textContent = bioInput.value.length;
+    });
+  }
+  
+  // Textarea disparition au premier clic
+  const textarea = document.getElementById('textInput');
+  if(textarea) {
+    textarea.addEventListener('focus', function() {
+      if(!this.dataset.cleared) {
+        this.value = '';
+        this.dataset.cleared = 'true';
+        this.style.color = '#333';
+        this.style.background = '#fff';
+      }
+    }, { once: true });
+  }
+  
+  setTimeout(checkAndLoad, 500);
+});
+</script>
+</body>
+</html>
