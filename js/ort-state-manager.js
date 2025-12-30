@@ -88,6 +88,12 @@
    * Initialise Firebase et Firestore
    */
   async function initFirebase() {
+    // Si déjà initialisé, ne rien faire
+    if (firestoreDb) {
+      console.log('✅ [STATE] Firestore déjà initialisé, skip');
+      return;
+    }
+    
     console.log('🔧 [STATE] Initialisation Firebase...');
     
     // Charge les SDK Firebase dynamiquement
@@ -118,10 +124,15 @@
     firestoreDb = firebase.firestore();
     console.log('✅ [STATE] Firestore initialisé');
 
-    // Configure les paramètres Firestore
-    firestoreDb.settings({
-      cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-    });
+    // Configure les paramètres Firestore (seulement si pas déjà fait)
+    try {
+      firestoreDb.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+        merge: true  // Permet de merger avec settings existants
+      });
+    } catch (settingsErr) {
+      console.warn('⚠️ [STATE] Settings Firestore déjà configurés');
+    }
 
     // Active la persistance offline
     try {
@@ -133,7 +144,7 @@
       } else if (err.code === 'unimplemented') {
         console.warn('⚠️ [STATE] Persistance non supportée par ce navigateur');
       } else {
-        console.error('❌ [STATE] Erreur persistance:', err);
+        console.warn('⚠️ [STATE] Persistance déjà activée ou erreur:', err.code || err);
       }
     }
   }

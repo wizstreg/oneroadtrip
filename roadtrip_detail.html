@@ -3209,6 +3209,7 @@ function getTripId() {
   const params = new URLSearchParams(location.search);
   const cc = params.get('cc');
   const itin = params.get('itin');
+  const from = params.get('from');
   
   // Pour les RT standards (cc+itin), créer un tripId STABLE
   if (cc && itin) {
@@ -3217,7 +3218,18 @@ function getTripId() {
     return tripId;
   }
   
-  // Pour RT temporaires, vérifier si on a déjà un tripId en cours
+  // ══════════════════════════════════════════════════════════════
+  // ROUTE BUILDER : Toujours créer un NOUVEAU tripId
+  // Sinon on réutilise un ancien voyage = BUG CRITIQUE
+  // ══════════════════════════════════════════════════════════════
+  if (from === 'builder') {
+    const newId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('ORT_CURRENT_TRIP_ID', newId);
+    console.log('[getTripId] 🆕 Nouveau tripId (Route Builder):', newId);
+    return newId;
+  }
+  
+  // Pour RT temporaires (import, etc.), vérifier si on a déjà un tripId en cours
   const tempId = localStorage.getItem('ORT_CURRENT_TRIP_ID');
   if (tempId) {
     console.log('[getTripId] ✅ TripId temporaire existant:', tempId);
