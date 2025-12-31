@@ -250,7 +250,7 @@ async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1')
                 {
                   type: 'image_url',
                   image_url: {
-                    url: photoBase64  // Déjà au format data:image/jpeg;base64,...
+                    url: photoBase64
                   }
                 }
               ]
@@ -261,10 +261,20 @@ async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1')
         })
       });
 
-      if (!res.ok) continue;
+      console.log('  responseStatus:', res.status);
+      
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error('  ❌ Erreur:', JSON.stringify(errData).substring(0, 200));
+        continue;
+      }
 
       const data = await res.json();
+      console.log('  ✅ Response OK, choices:', data.choices?.length);
+      
       const text = data.choices?.[0]?.message?.content?.trim();
+      console.log('  text:', text?.substring(0, 100));
+      
       if (text) {
         console.log('✅ Succès avec:', model);
         return { text, model };
