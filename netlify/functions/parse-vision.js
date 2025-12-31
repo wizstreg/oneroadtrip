@@ -20,6 +20,7 @@ const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
 const DAILY_LIMIT = parseInt(process.env.VISION_DAILY_LIMIT || '2', 10);
 const MONTHLY_LIMIT = parseInt(process.env.VISION_MONTHLY_LIMIT || '15', 10);
 
+// Prompts par langue (clés simples: fr, en, es, etc.)
 const SYSTEM_PROMPTS = {
   fr: `Tu es un assistant d'IA spécialisé dans l'analyse d'images pour les voyageurs.
 RÈGLES:
@@ -154,18 +155,11 @@ async function checkQuota(uid, email) {
 }
 
 // ===== GEMINI VISION =====
-async function callGemini(photoBase64, prompt, language, questionKey = 'q1') {
+async function callGemini(photoBase64, prompt, language) {
   console.log('📸 Essai Gemini Flash Vision...');
   
-  // Chercher le SYSTEM_PROMPT avec la clé correcte (fr_q1, en_q2, etc)
-  const promptKey = `${language}_q${questionKey.replace('q', '')}`;
-  let systemPrompt = SYSTEM_PROMPTS[promptKey];
-  
-  // Fallback sur langue simple si pas trouvé
-  if (!systemPrompt) {
-    systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
-  }
-  
+  // Récupérer le prompt système pour la langue (fallback sur EN)
+  const systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
   const fullPrompt = `${systemPrompt}\n\nDemande utilisateur: ${prompt}`;
   
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
@@ -223,7 +217,7 @@ async function getOpenRouterVisionModels() {
   return visionModels;
 }
 
-async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1') {
+async function callOpenRouter(photoBase64, prompt, language) {
   console.log('📸 Fallback OpenRouter Vision...');
   
   const models = await getOpenRouterVisionModels();
@@ -231,15 +225,8 @@ async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1')
   
   if (models.length === 0) throw new Error('Aucun modèle vision gratuit');
   
-  // Chercher le SYSTEM_PROMPT avec la clé correcte (fr_q1, en_q2, etc)
-  const promptKey = `${language}_q${questionKey.replace('q', '')}`;
-  let systemPrompt = SYSTEM_PROMPTS[promptKey];
-  
-  // Fallback sur langue simple si pas trouvé
-  if (!systemPrompt) {
-    systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
-  }
-  
+  // Récupérer le prompt système pour la langue (fallback sur EN)
+  const systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
   const fullPrompt = `${systemPrompt}\n\nDemande utilisateur: ${prompt}`;
   
   for (const model of models) {
@@ -300,11 +287,11 @@ async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1')
 }
 
 // ===== PARSE =====
-async function analyzePhoto(photoBase64, prompt, language, questionKey = 'q1') {
+async function analyzePhoto(photoBase64, prompt, language) {
   // 1. Gemini
   if (GEMINI_KEY) {
     try {
-      return await callGemini(photoBase64, prompt, language, questionKey);
+      return await callGemini(photoBase64, prompt, language);
     } catch (e) {
       console.warn('❌ Gemini échoué:', e.message);
     }
@@ -312,7 +299,7 @@ async function analyzePhoto(photoBase64, prompt, language, questionKey = 'q1') {
   
   // 2. OpenRouter
   if (OPENROUTER_KEY) {
-    return await callOpenRouter(photoBase64, prompt, language, questionKey);
+    return await callOpenRouter(photoBase64, prompt, language);
   }
   
   throw new Error('Aucune API configurée');
@@ -336,7 +323,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { photo, prompt, language, questionKey } = JSON.parse(event.body || '{}');
+    const { photo, prompt, language } = JSON.parse(event.body || '{}');
     
     // Validation
     if (!photo || !photo.startsWith('data:image')) {
@@ -366,8 +353,8 @@ exports.handler = async (event) => {
       return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: quota.error, usage: quota }) };
     }
 
-    // Analyze - passer la questionKey
-    const result = await analyzePhoto(photo, prompt, language || 'fr', questionKey || 'q1');
+    // Analyze
+    const result = await analyzePhoto(photo, prompt, language || 'fr');
     
     return {
       statusCode: 200,

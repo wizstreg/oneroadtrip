@@ -513,6 +513,11 @@
 
             <!-- Screen: Questions -->
             <div class="screen screen-questions" id="screenQuestions">
+                <!-- Aperçu de la photo capturée -->
+                <div class="preview-image" id="questionPreview" style="max-width: 200px; margin: 0 auto 12px;">
+                    <img id="previewImg" src="" alt="Photo capturée" style="width: 100%; border-radius: 8px;">
+                </div>
+                
                 <p style="text-align: center; margin: 12px 0; font-size: 0.9rem; color: #666;" id="questionsLabel">Choisissez une question</p>
 
                 <div class="btn-group" style="flex-direction: column;">
@@ -963,6 +968,9 @@
             state.photoBase64 = canvas.toDataURL('image/jpeg', 0.85);
             console.log('✅ Photo capturée:', state.photoBase64.substring(0, 50));
             
+            // Mettre à jour le preview
+            document.getElementById('previewImg').src = state.photoBase64;
+            
             if (state.photoBase64 === 'data:,') {
                 console.error('❌ Canvas vide!');
                 showAlert('Erreur: capture vide. Réessaie.', 'error');
@@ -980,7 +988,6 @@
         async function getLocationAndGoToQuestions() {
             console.log('📍 Demande géolocation...');
             
-            // Pas de preview photo - direct aux questions
             updateQuestionsLabels();
             
             // Si déjà approuvée par géoloc, utiliser directement
@@ -990,10 +997,12 @@
                 return;
             }
             
-            // Afficher le message I18N
+            // D'ABORD aller aux questions pour que l'user voie sa photo
+            switchScreen('questions');
+            
+            // ENSUITE demander la localisation (non-bloquant visuellement)
             const lang = state.language;
             const t = I18N_LABELS[lang] || I18N_LABELS.en;
-            showAlert(t.geo_permission, 'info');
             
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
@@ -1003,28 +1012,31 @@
                         state.geolocationApproved = true;
                         localStorage.setItem('visionPhotoGeoApproved', 'true');
                         localStorage.setItem('visionPhotoLocation', state.location);
-                        localStorage.removeItem('visionPhotoCity'); // Supprimer la ville si géoloc acceptée
+                        localStorage.removeItem('visionPhotoCity');
                         console.log('✅ Géoloc acceptée:', state.location);
-                        switchScreen('questions');
                     },
                     (err) => {
-                        // ❌ Géoloc refusée ou échouée - demander la ville
+                        // ❌ Géoloc refusée - demander la ville APRÈS affichage questions
                         console.log('⚠️ Géoloc refusée:', err.message);
-                        const lang = state.language;
-                        const t = I18N_LABELS[lang] || I18N_LABELS.en;
-                        const lieu = prompt(t.city_prompt) || 'inconnu';
-                        state.location = lieu;
-                        switchScreen('questions');
+                        setTimeout(() => {
+                            const lieu = prompt(t.city_prompt) || '';
+                            state.location = lieu;
+                            if (lieu) {
+                                localStorage.setItem('visionPhotoCity', lieu);
+                            }
+                        }, 300); // Petit délai pour que l'écran questions soit visible
                     },
                     {timeout: 3000, enableHighAccuracy: false}
                 );
             } else {
-                // Pas de géoloc dispo - demander la ville
-                const lang = state.language;
-                const t = I18N_LABELS[lang] || I18N_LABELS.en;
-                const lieu = prompt(t.city_prompt) || 'inconnu';
-                state.location = lieu;
-                switchScreen('questions');
+                // Pas de géoloc dispo - demander la ville après affichage
+                setTimeout(() => {
+                    const lieu = prompt(t.city_prompt) || '';
+                    state.location = lieu;
+                    if (lieu) {
+                        localStorage.setItem('visionPhotoCity', lieu);
+                    }
+                }, 300);
             }
         }
 
