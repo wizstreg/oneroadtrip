@@ -1008,57 +1008,23 @@
                         switchScreen('questions');
                     },
                     (err) => {
-                        // ❌ Géoloc refusée ou échouée - proposer ville précédente ou demander
+                        // ❌ Géoloc refusée ou échouée - demander la ville
                         console.log('⚠️ Géoloc refusée:', err.message);
-                        const previousCity = localStorage.getItem('visionPhotoCity');
-                        
-                        if (previousCity) {
-                            // Proposer la ville précédente avec confirmation
-                            const confirmed = confirm(`${t.city_prompt}\n\n(${previousCity})`);
-                            if (confirmed) {
-                                state.location = previousCity;
-                                switchScreen('questions');
-                            } else {
-                                // Demander une nouvelle ville
-                                const lieu = prompt(t.city_prompt) || previousCity;
-                                state.location = lieu;
-                                localStorage.setItem('visionPhotoCity', lieu);
-                                switchScreen('questions');
-                            }
-                        } else {
-                            // Première fois - demander la ville
-                            const lieu = prompt(t.city_prompt) || 'inconnu';
-                            state.location = lieu;
-                            localStorage.setItem('visionPhotoCity', lieu);
-                            switchScreen('questions');
-                        }
+                        const lang = state.language;
+                        const t = I18N_LABELS[lang] || I18N_LABELS.en;
+                        const lieu = prompt(t.city_prompt) || 'inconnu';
+                        state.location = lieu;
+                        switchScreen('questions');
                     },
                     {timeout: 3000, enableHighAccuracy: false}
                 );
             } else {
-                // Pas de géoloc dispo - proposer ville précédente ou demander
-                const previousCity = localStorage.getItem('visionPhotoCity');
-                
-                if (previousCity) {
-                    // Proposer la ville précédente avec confirmation
-                    const confirmed = confirm(`${t.city_prompt}\n\n(${previousCity})`);
-                    if (confirmed) {
-                        state.location = previousCity;
-                        switchScreen('questions');
-                    } else {
-                        // Demander une nouvelle ville
-                        const lieu = prompt(t.city_prompt) || previousCity;
-                        state.location = lieu;
-                        localStorage.setItem('visionPhotoCity', lieu);
-                        switchScreen('questions');
-                    }
-                } else {
-                    // Première fois - demander la ville
-                    const lieu = prompt(t.city_prompt) || 'inconnu';
-                    state.location = lieu;
-                    localStorage.setItem('visionPhotoCity', lieu);
-                    switchScreen('questions');
-                }
+                // Pas de géoloc dispo - demander la ville
+                const lang = state.language;
+                const t = I18N_LABELS[lang] || I18N_LABELS.en;
+                const lieu = prompt(t.city_prompt) || 'inconnu';
+                state.location = lieu;
+                switchScreen('questions');
             }
         }
 
