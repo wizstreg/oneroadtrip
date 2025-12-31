@@ -157,9 +157,15 @@ async function checkQuota(uid, email) {
 async function callGemini(photoBase64, prompt, language, questionKey = 'q1') {
   console.log('📸 Essai Gemini Flash Vision...');
   
-  // Sélectionner le bon SYSTEM_PROMPT selon la question
-  const promptKey = `${language}_${questionKey}`;
-  const systemPrompt = SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS[`${language}_q1`] || SYSTEM_PROMPTS.en_q1;
+  // Chercher le SYSTEM_PROMPT avec la clé correcte (fr_q1, en_q2, etc)
+  const promptKey = `${language}_q${questionKey.replace('q', '')}`;
+  let systemPrompt = SYSTEM_PROMPTS[promptKey];
+  
+  // Fallback sur langue simple si pas trouvé
+  if (!systemPrompt) {
+    systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
+  }
+  
   const fullPrompt = `${systemPrompt}\n\nDemande utilisateur: ${prompt}`;
   
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
@@ -168,19 +174,18 @@ async function callGemini(photoBase64, prompt, language, questionKey = 'q1') {
     body: JSON.stringify({
       contents: [{
         parts: [
-          { text: systemPrompt },
           { text: fullPrompt },
           {
             inline_data: {
               mime_type: 'image/jpeg',
-              data: photoBase64.split(',')[1] // Remove "data:image/jpeg;base64;" prefix
+              data: photoBase64.split(',')[1]
             }
           }
         ]
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 500
+        maxOutputTokens: 600
       }
     })
   });
@@ -226,8 +231,15 @@ async function callOpenRouter(photoBase64, prompt, language, questionKey = 'q1')
   
   if (models.length === 0) throw new Error('Aucun modèle vision gratuit');
   
-  const promptKey = `${language}_${questionKey}`;
-  const systemPrompt = SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS[`${language}_q1`] || SYSTEM_PROMPTS.en_q1;
+  // Chercher le SYSTEM_PROMPT avec la clé correcte (fr_q1, en_q2, etc)
+  const promptKey = `${language}_q${questionKey.replace('q', '')}`;
+  let systemPrompt = SYSTEM_PROMPTS[promptKey];
+  
+  // Fallback sur langue simple si pas trouvé
+  if (!systemPrompt) {
+    systemPrompt = SYSTEM_PROMPTS[language] || SYSTEM_PROMPTS.en;
+  }
+  
   const fullPrompt = `${systemPrompt}\n\nDemande utilisateur: ${prompt}`;
   
   for (const model of models) {
