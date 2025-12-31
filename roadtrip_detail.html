@@ -11,7 +11,7 @@
   gtag('js', new Date());
   gtag('config', 'G-JK3QGQGDDL');
 </script>
-<!-- Mobile redirect (skip in iframes/artifacts) -->
+<!-- Mobile redirect (only for narrow screens < 900px) -->
 <script>
 (function(){
   // ANTI-LOOP: utiliser localStorage (persiste entre rechargements) au lieu de sessionStorage
@@ -27,9 +27,10 @@
     return;
   }
   
-  // Detect mobile via user-agent
+  // Detect mobile via user-agent ET écran étroit (< 900px)
   var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  if (!isMobile) return;
+  var isNarrowScreen = window.innerWidth < 900;
+  if (!isMobile || !isNarrowScreen) return;
   
   // Mark that we're about to redirect
   localStorage.setItem(REDIRECT_MARKER, '1');

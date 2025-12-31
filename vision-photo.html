@@ -62,6 +62,26 @@
             z-index: 100;
         }
 
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
         .header-content {
             display: flex;
             align-items: center;
@@ -488,6 +508,9 @@
     <div class="app-container">
         <!-- Header -->
         <header>
+            <button class="btn-back" id="btnBackHome" title="Retour à l'accueil" onclick="window.location.href='index.html'">
+                ←
+            </button>
             <div class="header-content">
                 <span class="header-logo">📸</span>
                 <span class="header-title">Vision Photo</span>
@@ -562,11 +585,8 @@
                 </div>
 
                 <div class="btn-group">
-                    <button class="btn-primary" id="btnNewPhoto">
+                    <button class="btn-primary" id="btnNewPhoto" style="width: 100%;">
                         <span id="newPhotoBtnText">📸 Nouvelle photo</span>
-                    </button>
-                    <button class="btn-secondary" id="btnRetakeAnalyze">
-                        <span id="modifyQuestionBtnText">✏️ Reprendre la photo</span>
                     </button>
                 </div>
             </div>
@@ -846,10 +866,11 @@
             photo: null,
             photoBase64: null,
             isRequesting: false,
+            isCapturing: false,
             quotaData: null,
             authToken: null,
             language: detectLanguage(),
-            location: localStorage.getItem('visionPhotoLocation') || null,
+            location: localStorage.getItem('visionPhotoLocation') || localStorage.getItem('visionPhotoCity') || null,
             geolocationApproved: localStorage.getItem('visionPhotoGeoApproved') === 'true'
         };
         
@@ -866,7 +887,6 @@
         const btnPlayAudio = document.getElementById('btnPlayAudio');
         const btnStopAudio = document.getElementById('btnStopAudio');
         const btnNewPhoto = document.getElementById('btnNewPhoto');
-        const btnRetakeAnalyze = document.getElementById('btnRetakeAnalyze');
         const quotaDisplay = document.getElementById('quotaDisplay');
 
         // ===== INIT =====
@@ -918,27 +938,55 @@
             document.getElementById('btnQ2').addEventListener('click', () => askQuestion('q2'));
             document.getElementById('btnQ3').addEventListener('click', () => askQuestion('q3'));
             
-            document.getElementById('btnBackQuestions').addEventListener('click', () => switchScreen('camera'));
+            document.getElementById('btnBackQuestions').addEventListener('click', resetForNewPhoto);
             
             btnPlayAudio.addEventListener('click', playAudio);
             btnStopAudio.addEventListener('click', stopAudio);
-            btnNewPhoto.addEventListener('click', () => switchScreen('camera'));
-            btnRetakeAnalyze.addEventListener('click', () => switchScreen('camera'));
+            btnNewPhoto.addEventListener('click', resetForNewPhoto);
 
             // Charger les quotas depuis localStorage
             loadQuotaFromStorage();
         }
+        
+        // ===== RESET POUR NOUVELLE PHOTO =====
+        function resetForNewPhoto() {
+            console.log('🔄 Reset pour nouvelle photo');
+            
+            // Reset le state photo
+            state.photoBase64 = null;
+            state.isCapturing = false;
+            
+            // Vider le preview
+            const previewImg = document.getElementById('previewImg');
+            if (previewImg) previewImg.src = '';
+            
+            // Retourner à l'écran caméra
+            switchScreen('camera');
+            
+            // S'assurer que la caméra est active
+            if (!cameraStream || !cameraStream.active) {
+                initCamera();
+            }
+        }
 
         // ===== CAMERA =====
+        let cameraStream = null; // Garder référence au stream
+        
         async function initCamera() {
+            // Si le stream existe déjà et est actif, ne rien faire
+            if (cameraStream && cameraStream.active) {
+                console.log('✅ Caméra déjà active');
+                video.srcObject = cameraStream;
+                return;
+            }
+            
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
+                cameraStream = await navigator.mediaDevices.getUserMedia({
                     video: { 
-                        facingMode: 'environment',
-                        persistent: true  // Garder la permission
+                        facingMode: 'environment'
                     }
                 });
-                video.srcObject = stream;
+                video.srcObject = cameraStream;
                 console.log('✅ Caméra initialisée');
             } catch (e) {
                 console.error('❌ Caméra échouée:', e.message);
@@ -948,15 +996,24 @@
         }
 
         function capturePhoto() {
+            // Éviter double capture
+            if (state.isCapturing) {
+                console.log('⚠️ Capture déjà en cours');
+                return;
+            }
+            state.isCapturing = true;
+            
             console.log('📷 Tentative capture:', video.videoWidth, 'x', video.videoHeight);
             
             if (!video.srcObject) {
                 showAlert('Caméra non initialisée', 'error');
+                state.isCapturing = false;
                 return;
             }
             
             if (video.videoWidth === 0 || video.videoHeight === 0) {
                 showAlert('Attends que la vidéo se charge...', 'warning');
+                state.isCapturing = false;
                 return;
             }
             
@@ -974,6 +1031,7 @@
             if (state.photoBase64 === 'data:,') {
                 console.error('❌ Canvas vide!');
                 showAlert('Erreur: capture vide. Réessaie.', 'error');
+                state.isCapturing = false;
                 return;
             }
             
@@ -983,6 +1041,9 @@
             
             // Récupérer le lieu via géoloc ou prompt
             getLocationAndGoToQuestions();
+            
+            // Reset flag après un délai (pour permettre nouvelle photo plus tard)
+            setTimeout(() => { state.isCapturing = false; }, 1000);
         }
 
         async function getLocationAndGoToQuestions() {
@@ -993,6 +1054,15 @@
             // Si déjà approuvée par géoloc, utiliser directement
             if (state.geolocationApproved && state.location) {
                 console.log('✅ Géoloc approuvée précédemment:', state.location);
+                switchScreen('questions');
+                return;
+            }
+            
+            // Si ville déjà sauvegardée, utiliser directement
+            const savedCity = localStorage.getItem('visionPhotoCity');
+            if (savedCity) {
+                console.log('✅ Ville sauvegardée:', savedCity);
+                state.location = savedCity;
                 switchScreen('questions');
                 return;
             }
@@ -1243,7 +1313,6 @@
             setText('playAudioText', t.play_audio);
             setText('stopAudioText', t.stop_audio);
             setText('newPhotoBtnText', t.new_photo);
-            setText('modifyQuestionBtnText', t.modify_question);
             setText('usingLabel', t.using);
         }
         function updateQuestionsLabels() {

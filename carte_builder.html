@@ -904,6 +904,7 @@ body:not(.preview-open) .itinerary-flow {
       <!-- 4 photos ici -->
     </div>
     <div class="preview-duration" id="previewDuration">⏱️ Durée estimée: 0 min</div>
+    <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
     <div class="preview-section">
       <h4 id="visitsLabel">🏛️ Visites possibles</h4>
       <ul class="preview-list" id="previewVisits"></ul>
@@ -912,7 +913,6 @@ body:not(.preview-open) .itinerary-flow {
       <h4 id="activitiesLabel">🎯 Activités</h4>
       <ul class="preview-list" id="previewActivities"></ul>
     </div>
-    <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
   </div>
   
   <!-- Barre fixe bouton (mobile uniquement) -->
@@ -946,20 +946,6 @@ body:not(.preview-open) .itinerary-flow {
     <div class="config-field">
       <label id="labelNbDays">Nombre de jours souhaités :</label>
       <input type="number" id="nbDays" class="config-input" value="7" min="1" max="30">
-    </div>
-    
-    <div class="config-field">
-      <label id="labelBudget">Budget hôtel (€/jour/personne) :</label>
-      <div class="budget-options" id="budgetOptions">
-        <button type="button" class="budget-btn" data-value="0-50">0–50</button>
-        <button type="button" class="budget-btn" data-value="50-100">50–100</button>
-        <button type="button" class="budget-btn" data-value="100-150">100–150</button>
-        <button type="button" class="budget-btn" data-value="150-200">150–200</button>
-        <button type="button" class="budget-btn" data-value="200-250">200–250</button>
-        <button type="button" class="budget-btn" data-value="250-300">250–300</button>
-        <button type="button" class="budget-btn" data-value="300-500">300–500</button>
-        <button type="button" class="budget-btn" data-value="500+">500+</button>
-      </div>
     </div>
     
     <div class="config-actions">
@@ -1372,7 +1358,6 @@ function applyTranslations() {
   document.getElementById('configTitle').textContent = TXT.configTitle;
   document.getElementById('labelDepartDate').textContent = TXT.labelDepartDate;
   document.getElementById('labelNbDays').textContent = TXT.labelNbDays;
-  document.getElementById('labelBudget').textContent = TXT.labelBudget;
   document.getElementById('configCancel').textContent = TXT.cancel;
   document.getElementById('configConfirm').textContent = TXT.confirm;
 }
@@ -2151,35 +2136,17 @@ function onDragEnd(e) {
 // ===============================
 // VALIDATION ET CONFIGURATION
 // ===============================
-let selectedBudgets = [];
+let selectedBudgets = ['100-150']; // Valeur par défaut
 
 // Initialiser la modal
 function initConfigModal() {
   const modal = document.getElementById('configModal');
   const cancelBtn = document.getElementById('configCancel');
   const confirmBtn = document.getElementById('configConfirm');
-  const budgetBtns = document.querySelectorAll('.budget-btn');
   
   // Date par défaut = aujourd'hui
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('departDate').value = today;
-  
-  // Gestion des boutons budget - MULTICHOIX
-  budgetBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const value = btn.dataset.value;
-      
-      if (btn.classList.contains('selected')) {
-        // Désélectionner
-        btn.classList.remove('selected');
-        selectedBudgets = selectedBudgets.filter(b => b !== value);
-      } else {
-        // Sélectionner
-        btn.classList.add('selected');
-        selectedBudgets.push(value);
-      }
-    });
-  });
   
   // Annuler
   cancelBtn.addEventListener('click', () => {
@@ -2206,7 +2173,6 @@ function showConfigModal() {
   document.getElementById('configTitle').textContent = TXT.configTitle;
   document.getElementById('labelDepartDate').textContent = TXT.labelDepartDate;
   document.getElementById('labelNbDays').textContent = TXT.labelNbDays;
-  document.getElementById('labelBudget').textContent = TXT.labelBudget;
   document.getElementById('configCancel').textContent = TXT.cancel;
   document.getElementById('configConfirm').textContent = TXT.confirm;
   
