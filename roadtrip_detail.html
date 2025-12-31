@@ -27,26 +27,35 @@
     return;
   }
   
-  // Detect mobile via user-agent ET écran étroit (< 900px)
-  var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  var isNarrowScreen = window.innerWidth < 900;
-  if (!isMobile || !isNarrowScreen) return;
-  
-  // Mark that we're about to redirect
-  localStorage.setItem(REDIRECT_MARKER, '1');
-  
-  // Redirect immédiatement AVANT le DOM (évite les boucles de DOMContentLoaded)
-  var newUrl = location.href.replace(/roadtrip_detail(_simple)?(\.html)?/, 'roadtrip_mobile.html');
-  if (newUrl === location.href) newUrl = location.href.replace(/\/([^\/]*)$/, '/roadtrip_mobile.html$1');
-  
-  // Ajouter mobile=0 SEULEMENT si ce n'est pas déjà le cas, pour éviter les boucles
-  if (!/mobile=0/.test(newUrl)) {
-    var sep = newUrl.includes('?') ? '&' : '?';
-    newUrl += sep + 'mobile=0';
+  // Fonction de redirection vers mobile
+  function redirectToMobile() {
+    localStorage.setItem(REDIRECT_MARKER, '1');
+    var newUrl = location.href.replace(/roadtrip_detail(_simple)?(\.html)?/, 'roadtrip_mobile.html');
+    if (newUrl === location.href) newUrl = location.href.replace(/\/([^\/]*)$/, '/roadtrip_mobile.html$1');
+    if (!/mobile=0/.test(newUrl)) {
+      var sep = newUrl.includes('?') ? '&' : '?';
+      newUrl += sep + 'mobile=0';
+    }
+    console.log('[ORT] Redirecting to mobile:', newUrl);
+    location.replace(newUrl);
   }
   
-  console.log('[ORT] Redirecting to mobile:', newUrl);
-  location.replace(newUrl);
+  // Detect mobile via user-agent
+  var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  if (!isMobile) return;
+  
+  // Rediriger si écran étroit au chargement
+  if (window.innerWidth < 900) {
+    redirectToMobile();
+    return;
+  }
+  
+  // Écouter les changements d'orientation/resize
+  window.addEventListener('resize', function() {
+    if (window.innerWidth < 900) {
+      redirectToMobile();
+    }
+  });
 })();
 </script>
 <title>OneRoadTrip - Détails du roadtrip</title>
@@ -610,7 +619,7 @@ body.view-itin-only #rows {
   max-width: 100%;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 3px 8px;
 }
 

@@ -1596,6 +1596,30 @@ window.ORT_I18N.tipSave = {
   pt: 'Salvar',
   ar: 'حفظ'
 };
+window.ORT_I18N.switchToExpert = {
+  fr: 'Basculer en mode expert ?',
+  en: 'Switch to expert mode?',
+  es: '¿Cambiar al modo experto?',
+  it: 'Passare alla modalità esperto?',
+  pt: 'Mudar para o modo especialista?',
+  ar: 'التبديل إلى الوضع الخبير؟'
+};
+window.ORT_I18N.switchToExpertConfirm = {
+  fr: 'Basculer en mode expert ?',
+  en: 'Switch to expert mode?',
+  es: '¿Cambiar al modo experto?',
+  it: 'Passare alla modalità esperto?',
+  pt: 'Mudar para o modo especialista?',
+  ar: 'التبديل إلى الوضع الخبير؟'
+};
+window.ORT_I18N.switchToExpertWarning = {
+  fr: 'Vous allez basculer en mode expert. Il est préférable de tester ce mode sur un écran plus large.',
+  en: 'You are about to switch to expert mode. It is recommended to use this mode on a larger screen.',
+  es: 'Vas a cambiar al modo experto. Se recomienda usar este modo en una pantalla más grande.',
+  it: 'Stai per passare alla modalità esperto. Si consiglia di utilizzare questa modalità su uno schermo più grande.',
+  pt: 'Você vai mudar para o modo especialista. É recomendável usar este modo em uma tela maior.',
+  ar: 'أنت على وشك التبديل إلى الوضع الخبير. يُفضل استخدام هذا الوضع على شاشة أكبر.'
+};
 window.ORT_I18N.tipFlag = {
   fr: 'Signaler une erreur',
   en: 'Report an error',

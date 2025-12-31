@@ -820,6 +820,7 @@ html, body {
   <button class="header-back" id="btnHome" aria-label="Accueil" onclick="location.href='index.html'">🏠</button>
   <button class="header-back" id="btnBack" aria-label="Retour">←</button>
   <div class="header-title" id="headerTitle">Roadtrip</div>
+  <button class="header-expert" id="btnExpertMode" aria-label="Mode expert" title="Basculer en mode expert" style="background:#113f7a;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">🎯 Expert</button>
   <button class="header-menu" id="btnMenu" aria-label="Menu">☰</button>
 </header>
 
@@ -2621,8 +2622,39 @@ $('btnScanAnalyze').onclick = () => SCANNER.analyze();
 $('btnScanNew').onclick = () => SCANNER.newScan();
 $('btnScanSave').onclick = () => SCANNER.save();
 
+// Bouton Mode Expert - bascule vers roadtrip_detail.html avec alerte
+$('btnExpertMode').onclick = function() {
+  const LANG = (localStorage.getItem('lang') || 'fr').slice(0,2);
+  const messages = {
+    fr: 'Vous allez basculer en mode expert.\nIl est préférable de tester ce mode sur un écran plus large.',
+    en: 'You are about to switch to expert mode.\nIt is recommended to use this mode on a larger screen.',
+    es: 'Vas a cambiar al modo experto.\nSe recomienda usar este modo en una pantalla más grande.',
+    it: 'Stai per passare alla modalità esperto.\nSi consiglia di utilizzare questa modalità su uno schermo più grande.',
+    pt: 'Você vai mudar para o modo especialista.\nRecomenda-se usar este modo em uma tela maior.',
+    ar: 'أنت على وشك التبديل إلى وضع الخبير.\nيُفضل استخدام هذا الوضع على شاشة أكبر.'
+  };
+  const msg = messages[LANG] || messages.fr;
+  
+  if (confirm(msg)) {
+    const newUrl = location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
+    window.location.href = newUrl;
+  }
+};
+
 // Expose
 window.openStepSheet = openStepSheet;
+</script>
+
+<!-- Bouton flottant mode expert -->
+<button id="btnExpertMode" style="position:fixed;bottom:100px;right:16px;width:50px;height:50px;border-radius:50%;background:#22c55e;color:#fff;border:none;font-size:28px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:200;display:flex;align-items:center;justify-content:center;" title="Mode expert">+</button>
+<script>
+document.getElementById('btnExpertMode')?.addEventListener('click', function() {
+  const msg = window.t ? window.t('switchToExpertWarning') : 'Vous allez basculer en mode expert. Il est préférable de tester ce mode sur un écran plus large.';
+  if (confirm(msg)) {
+    const newUrl = window.location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
+    window.location.href = newUrl;
+  }
+});
 </script>
 </body>
 </html>

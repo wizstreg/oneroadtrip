@@ -708,7 +708,7 @@ body.view-itin-only #rows{
   max-width: 100%;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 3px 8px;
 }
 /* Lignes ultra-compactes en plein écran */
@@ -2115,6 +2115,20 @@ if(!icoWrap){
   const tipSave = window.t ? window.t('tipSave') : 'Enregistrer';
   bSave.type='button'; bSave.className='pill-ico'; bSave.title=tipSave; bSave.setAttribute('aria-label',tipSave); bSave.textContent='💾';
   
+  // Bouton + vert pour mode expert
+  const bExpert = document.createElement('button');
+  const tipExpert = window.t ? window.t('switchToExpert') : 'Basculer en mode expert ?';
+  bExpert.type='button'; bExpert.id='btnExpertMode'; bExpert.title=tipExpert; bExpert.setAttribute('aria-label',tipExpert);
+  bExpert.style.cssText='background:#22c55e;color:#fff;width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;font-size:18px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.15);margin-right:4px;';
+  bExpert.textContent='+';
+  bExpert.addEventListener('click', function() {
+    const msg = window.t ? window.t('switchToExpertConfirm') : 'Basculer en mode expert ?';
+    if (confirm(msg)) {
+      const newUrl = window.location.href.replace(/roadtrip_detail_simple\.html/, 'roadtrip_detail.html');
+      window.location.href = newUrl;
+    }
+  });
+  
   const bFlag = document.createElement('button');
   const tipFlag = window.t ? window.t('tipFlag') : 'Signaler une erreur';
   bFlag.type='button'; bFlag.className='pill-ico danger'; bFlag.title=tipFlag; bFlag.setAttribute('aria-label',tipFlag); bFlag.textContent='❗'; bFlag.style.display='none';
@@ -2318,6 +2332,7 @@ if(!icoWrap){
   bRate.addEventListener('click', (e)=>{ e.stopPropagation(); openRatePopover(bRate); });
 
   icoWrap.appendChild(bSave);
+  icoWrap.appendChild(bExpert);
 
   icoWrap.appendChild(avgBadge);
   // bRate déplacé dans le menu Outils
@@ -2603,7 +2618,7 @@ console.log('[TOOLBAR] ✅ Row ajouté au toolbar');
     <section class="card">
      <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:12px">
   <div class="small" data-i18n="dragToReorder">Glissez pour réordonner</div>
-  <div style="display:flex;gap:6px;">
+  <div style="display:flex;gap:6px;align-items:center;">
     <button id="btnListFull" class="iconbtn" type="button" title="Plein écran liste" data-i18n-title="fullscreenList">⤢</button>
     <button id="btnListExit" class="iconbtn" type="button" title="Quitter plein écran" data-i18n-title="exitFullscreen" style="display:none">⤡ <span data-i18n="reduce">Réduire</span></button>
   </div>
@@ -2611,16 +2626,6 @@ console.log('[TOOLBAR] ✅ Row ajouté au toolbar');
 
 
       <div id="rows"></div>
-      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn" id="btnSave" data-i18n="save">💾 Sauvegarder</button>
-        <button class="btn ghost" id="btnExport" data-i18n="export">📥 Exporter</button>
-        <button class="btn ghost" id="btnReorganizeHotels" title="Changer la stratégie de regroupement des hôtels (5 modes)" data-i18n-title="hotelStrategy" style="display:none">
-          🏨 <span data-i18n="reorganizeHotels">Réorganiser hôtels</span>
-        </button>
-        <button class="btn ghost" id="btnResetGroups" data-i18n-title="resetGroupsHelp">
-          ✖ <span data-i18n="resetGroups">Annuler groupes/hôtels</span>
-        </button>
-      </div>
     </section>
 
     <aside class="sidebar">
