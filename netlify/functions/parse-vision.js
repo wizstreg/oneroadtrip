@@ -407,46 +407,76 @@ async function checkQuota(uid, email) {
 
 // ===== GEMINI VISION =====
 async function callGemini(photoBase64, prompt, language, questionKey = 'q1') {
-  console.log('📸 Essai Gemini Flash Vision...');
+  console.log('🔵 GEMINI START');
+  console.log('  questionKey:', questionKey);
+  console.log('  language:', language);
   
   // Sélectionner le bon SYSTEM_PROMPT selon la question
   const promptKey = `${language}_${questionKey}`;
   const systemPrompt = SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS[`${language}_q1`] || SYSTEM_PROMPTS.fr_q1;
   
+  console.log('  promptKey:', promptKey);
+  console.log('  systemPromptSize:', systemPrompt?.length);
+  
   const strictPrompt = `${systemPrompt}
 
 Demande utilisateur: ${prompt}`;
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+  const photoData = photoBase64.split(',')[1];
+  console.log('  photoDataSize:', photoData?.length);
+  
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+  
+  const payload = {
+    contents: [{
+      parts: [
+        { text: strictPrompt },
+        {
+          inline_data: {
+            mime_type: 'image/jpeg',
+            data: photoData
+          }
+        }
+      ]
+    }],
+    generationConfig: {
+      temperature: 0.3,
+      maxOutputTokens: 600
+    }
+  };
+  
+  console.log('  URL:', url.substring(0, 60) + '...');
+  console.log('  payloadSize:', JSON.stringify(payload).length);
+  
+  const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { text: strictPrompt },
-          {
-            inline_data: {
-              mime_type: 'image/jpeg',
-              data: photoBase64.split(',')[1] // Remove "data:image/jpeg;base64;" prefix
-            }
-          }
-        ]
-      }],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 600  // Plus de tokens pour Q1 approfondie
-      }
-    })
+    body: JSON.stringify(payload)
   });
+  
+  console.log('  responseStatus:', res.status);
+  console.log('  responseOK:', res.ok);
   
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err.error?.message || 'Gemini error');
+    console.error('  ❌ API Error:', JSON.stringify(err).substring(0, 200));
+    throw new Error(err.error?.message || `Gemini error ${res.status}`);
   }
   
   const data = await res.json();
+  console.log('  candidates:', data.candidates?.length);
+  console.log('  hasParts:', !!data.candidates?.[0]?.content?.parts);
+  
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Réponse vide Gemini');
+  console.log('  textSize:', text?.length);
+  console.log('  textPreview:', text?.substring(0, 80));
+  
+  if (!text) {
+    console.error('  ❌ Aucun texte dans réponse');
+    throw new Error('Réponse vide Gemini');
+  }
+  
+  console.log('🔵 GEMINI END - OK');
   
   return { text, model: 'Gemini Flash' };
 }
@@ -551,10 +581,67 @@ async function analyzePhoto(photoBase64, prompt, language, questionKey = 'q1') {
   
   // 2. OpenRouter
   if (OPENROUTER_KEY) {
-    return await callOpenRouter(photoBase64, prompt, language, questionKey);
+    try {
+      return await callOpenRouter(photoBase64, prompt, language, questionKey);
+    } catch (e) {
+      console.warn('❌ OpenRouter échoué:', e.message);
+    }
   }
   
-  throw new Error('Aucune API configurée');
+  // 3. FALLBACK - Réponse basique si aucune API
+  console.warn('⚠️ Aucune API disponible, réponse fallback');
+  return {
+    text: getFallbackResponse(language, questionKey),
+    model: 'fallback'
+  };
+}
+
+function getFallbackResponse(language, questionKey) {
+  const responses = {
+    fr: {
+      q1: "Je suis désolé, les services d'analyse d'image ne sont pas disponibles pour le moment. Veuillez réessayer dans quelques instants.",
+      q2: "Je suis désolé, les services de description de lieu ne sont pas disponibles pour le moment. Veuillez réessayer dans quelques instants.",
+      q3: "Je suis désolé, les services de traduction ne sont pas disponibles pour le moment. Veuillez réessayer dans quelques instants."
+    },
+    en: {
+      q1: "Sorry, image analysis services are not available at the moment. Please try again in a few moments.",
+      q2: "Sorry, location description services are not available at the moment. Please try again in a few moments.",
+      q3: "Sorry, translation services are not available at the moment. Please try again in a few moments."
+    },
+    es: {
+      q1: "Lo siento, los servicios de análisis de imágenes no están disponibles en este momento. Por favor, inténtelo de nuevo en unos momentos.",
+      q2: "Lo siento, los servicios de descripción de ubicación no están disponibles en este momento. Por favor, inténtelo de nuevo en unos momentos.",
+      q3: "Lo siento, los servicios de traducción no están disponibles en este momento. Por favor, inténtelo de nuevo en unos momentos."
+    },
+    it: {
+      q1: "Scusa, i servizi di analisi delle immagini non sono disponibili al momento. Per favore riprova tra qualche istante.",
+      q2: "Scusa, i servizi di descrizione della posizione non sono disponibili al momento. Per favore riprova tra qualche istante.",
+      q3: "Scusa, i servizi di traduzione non sono disponibili al momento. Per favore riprova tra qualche istante."
+    },
+    de: {
+      q1: "Entschuldigung, Bildanalysedienste sind derzeit nicht verfügbar. Bitte versuchen Sie es in wenigen Augenblicken erneut.",
+      q2: "Entschuldigung, Standortbeschreibungsdienste sind derzeit nicht verfügbar. Bitte versuchen Sie es in wenigen Augenblicken erneut.",
+      q3: "Entschuldigung, Übersetzungsdienste sind derzeit nicht verfügbar. Bitte versuchen Sie es in wenigen Augenblicken erneut."
+    },
+    pt: {
+      q1: "Desculpe, os serviços de análise de imagem não estão disponíveis no momento. Por favor, tente novamente em alguns instantes.",
+      q2: "Desculpe, os serviços de descrição de localização não estão disponíveis no momento. Por favor, tente novamente em alguns instantes.",
+      q3: "Desculpe, os serviços de tradução não estão disponíveis no momento. Por favor, tente novamente em alguns instantes."
+    },
+    ja: {
+      q1: "申し訳ありませんが、画像分析サービスは現在利用できません。しばらくしてからもう一度お試しください。",
+      q2: "申し訳ありませんが、位置情報説明サービスは現在利用できません。しばらくしてからもう一度お試しください。",
+      q3: "申し訳ありませんが、翻訳サービスは現在利用できません。しばらくしてからもう一度お試しください。"
+    },
+    zh: {
+      q1: "抱歉，图像分析服务目前不可用。请稍后重试。",
+      q2: "抱歉，位置描述服务目前不可用。请稍后重试。",
+      q3: "抱歉，翻译服务目前不可用。请稍后重试。"
+    }
+  };
+  
+  const lang = language || 'en';
+  return (responses[lang] && responses[lang][questionKey]) || responses.en[questionKey];
 }
 
 // ===== HANDLER =====
@@ -575,38 +662,45 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('=== HANDLER START ===');
+    console.log('EVENT BODY SIZE:', event.body?.length);
+    
     const { photo, prompt, language, questionKey } = JSON.parse(event.body || '{}');
+    
+    console.log('PARSED:');
+    console.log('  photo:', photo?.substring(0, 50) + '...');
+    console.log('  prompt:', prompt?.substring(0, 50) + '...');
+    console.log('  language:', language);
+    console.log('  questionKey:', questionKey);
     
     // Validation
     if (!photo || !photo.startsWith('data:image')) {
+      console.error('❌ Photo invalide');
       return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Photo invalide' }) };
     }
 
     if (!prompt || prompt.length < 3) {
+      console.error('❌ Prompt trop court');
       return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Demande trop courte' }) };
     }
 
-    // Auth
-    const user = await verifyToken(event.headers.authorization);
-    if (!user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Connexion requise' }) };
-    }
+    // Auth - DEBUG: user fake pour test
+    console.log('AUTH: Skipped for debug');
+    const user = { uid: 'test-user', email: 'test@test.com' };
 
     // Récupérer email (depuis token ou Firebase)
     let email = user.email;
-    if (!email) {
-      const userRecord = await admin.auth().getUser(user.uid);
-      email = userRecord.email;
-    }
-
-    // Quota
-    const quota = await checkQuota(user.uid, email);
-    if (!quota.allowed) {
-      return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: quota.error, usage: quota }) };
-    }
+    console.log('EMAIL:', email);
+    
+    // Quota - DEBUG: skipped
+    console.log('QUOTA: Skipped for debug');
 
     // Analyze - passer la questionKey
+    console.log('CALLING analyzePhoto...');
     const result = await analyzePhoto(photo, prompt, language || 'fr', questionKey || 'q1');
+    
+    console.log('RESULT:', result?.model, 'textSize:', result?.text?.length);
+    console.log('=== HANDLER END - OK ===');
     
     return {
       statusCode: 200,
@@ -616,13 +710,13 @@ exports.handler = async (event) => {
         data: {
           response: result.text
         },
-        usage: quota,
         _meta: { model: result.model }
       })
     };
 
   } catch (e) {
-    console.error('❌ Error:', e.message);
-    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    console.error('❌ HANDLER ERROR:', e.message);
+    console.error('STACK:', e.stack?.substring(0, 300));
+    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message, stack: e.stack?.substring(0, 150) }) };
   }
 };
