@@ -324,11 +324,6 @@ Responda em português.`,
 仅用翻译回答,没有解释。
 用中文回答。`
 };
-3. 不要编造不存在的细节、物体或地点
-4. 要有描述性但要诚实
-5. 仅用自然文本回答，没有JSON、markdown或列表
-6. 最多300字`
-};
 
 // ===== AUTH =====
 async function verifyToken(authHeader) {
