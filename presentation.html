@@ -2166,7 +2166,7 @@ let placesRatingIndex = {};
 let allItineraries = [];
 let photosData = {};
 let placesPhotosIndex = null;   // NEW: index photos par lieu (photos_lieux.json)
-let placesNamesIndex = {};      // Index noms multilingues (xx_names.json)
+
 let mapFull = null;
 let markersLayerFull = null;    // Layer clusterisé pour les marqueurs principaux
 let overlaysLayer = null;       // Layer NON clusterisé pour polylines et cityMarkers
@@ -2423,11 +2423,7 @@ async function loadAllItineraries() {
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      // Charger ratings ET noms multilingues en parallèle
-      await Promise.all([
-        loadPlacesRatings(countryCode),
-        loadCityNamesForCountry(countryCode)
-      ]);
+      await loadPlacesRatings(countryCode);
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2704,77 +2700,15 @@ function computeItinCenter(itin) {
 }
 /* === FIN AJOUT === */
 
-// Retourne le nom de ville traduit selon la langue
-function getCityDisplayName(place, lang) {
-  if (!place) return 'Ville inconnue';
-  
-  // Si c'est un string (place_id)
-  if (typeof place === 'string') {
-    const indexed = placesNamesIndex[place];
-    if (indexed && indexed.names) {
-      return indexed.names[lang] || indexed.names._default || indexed.names.en || indexed.names.fr || place.split('::').pop().replace(/-/g, ' ');
-    }
-    return place.split('::').pop().replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  }
-  
-  // Objet place - essayer l'index global d'abord
-  if (place.place_id && placesNamesIndex[place.place_id]) {
-    const indexed = placesNamesIndex[place.place_id];
-    if (indexed.names) {
-      return indexed.names[lang] || indexed.names._default || indexed.names.en || indexed.names.fr || place.name;
-    }
-  }
-  
-  // Fallback sur name_i18n existant dans l'itinéraire
-  if (place.name_i18n) {
-    return place.name_i18n[lang] || place.name_i18n.en || place.name_i18n.fr || place.name;
-  }
-  
-  // Fallback final
-  return place.city || place.name || (place.place_id ? place.place_id.split('::').pop().replace(/-/g, ' ') : 'Ville');
-}
-
-// Charge les noms multilingues pour un pays
-async function loadCityNamesForCountry(countryCode) {
-  const cc = countryCode.toLowerCase();
-  const CC = countryCode.toUpperCase();
-  const paths = [
-    `data/Roadtripsprefabriques/countries/${CC}/${cc}_names.json`,
-    `./data/Roadtripsprefabriques/countries/${CC}/${cc}_names.json`,
-    `data/Roadtripsprefabriques/countries/${cc}/${cc}_names.json`
-  ];
-  for (const path of paths) {
-    try {
-      const response = await fetch(path);
-      if (response.ok) {
-        const data = await response.json();
-        let count = 0;
-        for (const [placeId, placeData] of Object.entries(data)) {
-          if (placeData && placeData.names) {
-            placesNamesIndex[placeId] = placeData;
-            count++;
-          }
-        }
-        console.log(`✅ ${CC} noms i18n: ${count} lieux`);
-        return true;
-      }
-    } catch (err) { /* continue */ }
-  }
-  return false;
-}
-
 function extractCities(itin) {
   if (!itin.days_plan) return [];
   const cities = [];
-  const lang = localStorage.getItem('lang') || 'fr';
   itin.days_plan.forEach(day => {
-    if (day.night && day.night.place_id) {
-      const cityName = getCityDisplayName(day.night, lang);
-      const capitalized = cityName.charAt(0).toUpperCase() + cityName.slice(1);
-      if (!cities.includes(capitalized)) cities.push(capitalized);
+    if (day?.night?.city && !cities.includes(day.night.city)) {
+      cities.push(day.night.city);
     }
   });
-    return cities;
+  return cities;
 }
 
 // NEW: retourne un tableau de clés lieux "CC::slug" à partir de l’itin
@@ -2915,7 +2849,9 @@ function getMinRatingForZoom(zoom) {
 function updateMarkersVisibility() {
   if (!mapFull || !itinLayers) return;
   const zoom = mapFull.getZoom();
-  const minRating = getMinRatingForZoom(zoom);
+  // Mobile : désactiver le filtrage par rating (afficher tous les itinéraires)
+  const isMobile = window.innerWidth <= 1024;
+  const minRating = isMobile ? 0 : getMinRatingForZoom(zoom);
   const bounds = mapFull.getBounds(); // Récupérer les limites visibles de la carte
   let visibleCount = 0;
   
@@ -2961,6 +2897,18 @@ function updateMarkersVisibility() {
 
 function displayMarkers(itineraries) {
   if (!markersLayerFull) return;
+  
+  // DEBUG Desktop : afficher stats ratings
+  if (window.innerWidth > 1024) {
+    const ratingStats = { total: itineraries.length, withRating: 0, noRating: 0, byStars: {1:0,2:0,3:0,4:0,5:0} };
+    itineraries.forEach(it => {
+      if (it.avgRating && it.avgRating !== 5) { ratingStats.withRating++; } else { ratingStats.noRating++; }
+      const stars = Math.round(it.avgRating || 5);
+      ratingStats.byStars[stars] = (ratingStats.byStars[stars] || 0) + 1;
+    });
+    console.log('📊 RATINGS DEBUG:', ratingStats);
+  }
+  
   markersLayerFull.clearLayers();
   if (overlaysLayer) overlaysLayer.clearLayers();;
   itinLayers.clear(); // NEW
@@ -3229,11 +3177,8 @@ function showMobileSelectionModal(itin) {
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 0) {
     const cities = [];
     itin.days_plan.forEach(day => {
-      if (day?.night) {
-        const cityName = getCityDisplayName(day.night, lang);
-        if (cityName && !cities.includes(cityName)) {
-          cities.push(cityName);
-        }
+      if (day?.night?.city && !cities.includes(day.night.city)) {
+        cities.push(day.night.city);
       }
     });
     
@@ -3331,9 +3276,8 @@ function showPreview(itin) {
     firstPhoto = itin.photos[0];
   }
 
-  // Bloc villes + photo unique (utiliser extractCities pour les noms traduits)
-  const citiesList = extractCities(itin).length > 0 ? extractCities(itin) : (itin.cities || []);
-  let citiesHtml = `<strong>${t.cities}</strong><br>${citiesList.join(' → ')}`;
+  // Bloc villes + photo unique
+  let citiesHtml = `<strong>${t.cities}</strong><br>${(itin.cities||[]).join(' → ')}`;
   if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${')) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(firstPhoto)}&w=400&h=200&fit=cover&output=webp`;
     citiesHtml += `<div style="margin-top:10px;"><img src="${proxyUrl}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy"></div>`;
@@ -3346,13 +3290,8 @@ function showPreview(itin) {
   const pathFlow = document.getElementById('previewPathFlow');
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 1) {
     const simplifiedCities = [];
-    itin.days_plan.forEach(day => {
-      if (day?.night) {
-        const cityName = getCityDisplayName(day.night, lang);
-        if (cityName && !simplifiedCities.includes(cityName)) {
-          simplifiedCities.push(cityName);
-        }
-      }
+    itin.days_plan.forEach(day => { 
+      if (day?.night?.city && !simplifiedCities.includes(day.night.city)) simplifiedCities.push(day.night.city); 
     });
     if (simplifiedCities.length >= 2) {
       pathFlow.innerHTML = '';
