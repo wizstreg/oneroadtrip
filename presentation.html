@@ -738,10 +738,15 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
           <input type="text" id="inputStartCity" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid #3b82f6;border-radius:6px;font-size:14px;box-sizing:border-box;">
           <div id="startCitySuggestions" class="city-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;max-height:150px;overflow-y:auto;z-index:1000;"></div>
           <small id="warnStartCity" style="display:none;color:#fbbf24;font-size:11px;margin-top:2px;"></small>
+          <!-- Case à cocher Circuit - sur la même ligne -->
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <input type="checkbox" id="checkLoopMode" style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+            <label for="checkLoopMode" id="labelLoopMode" style="color:#94a3b8;font-size:11px;cursor:pointer;">🔄 Circuit (retour au départ)</label>
+          </div>
         </div>
         
         <!-- Ville d'arrivée -->
-        <div class="rb-field" style="position:relative;">
+        <div class="rb-field" id="endCityContainer" style="position:relative;">
           <label id="labelEndCity" style="display:block;color:#fff;font-size:12px;margin-bottom:4px;">Ville d'arrivée</label>
           <input type="text" id="inputEndCity" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid #3b82f6;border-radius:6px;font-size:14px;box-sizing:border-box;">
           <div id="endCitySuggestions" class="city-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;max-height:150px;overflow-y:auto;z-index:1000;"></div>
@@ -1136,6 +1141,7 @@ right_note: "*Important : Assurez-vous que le contenu copié est libre de droits
     routeBuilderTitle:"🚗 Laissez-nous construire votre itinéraire",
     labelStartCity:"Ville de départ",
     labelEndCity:"Ville d'arrivée",
+    labelLoopMode:"🔄 Circuit (retour au départ)",
     labelMaxKm:"Km/étape",
     labelDuration:"Durée",
     generateBtn:"🚀 Générer mon itinéraire",
@@ -1308,6 +1314,7 @@ right_note: "*Important: Make sure the copied content is copyright-free",
     routeBuilderTitle:"🚗 Let us build your itinerary",
     labelStartCity:"Departure city",
     labelEndCity:"Arrival city",
+    labelLoopMode:"🔄 Round trip (back to start)",
     labelMaxKm:"Km/stop",
     labelDuration:"Duration",
     generateBtn:"🚀 Generate my itinerary",
@@ -1480,6 +1487,7 @@ right_note: "*Importante: Assicurati che il contenuto copiato sia libero da copy
     routeBuilderTitle:"🚗 Lasciaci costruire il tuo itinerario",
     labelStartCity:"Città di partenza",
     labelEndCity:"Città di arrivo",
+    labelLoopMode:"🔄 Circuito (ritorno alla partenza)",
     labelMaxKm:"Km/tappa",
     labelDuration:"Durata",
     generateBtn:"🚀 Genera il mio itinerario",
@@ -1651,6 +1659,7 @@ right_note: "*Importante: Asegúrate de que el contenido copiado esté libre de 
     routeBuilderTitle:"🚗 Déjanos construir tu itinerario",
     labelStartCity:"Ciudad de salida",
     labelEndCity:"Ciudad de llegada",
+    labelLoopMode:"🔄 Circuito (vuelta al inicio)",
     labelMaxKm:"Km/etapa",
     labelDuration:"Duración",
     generateBtn:"🚀 Generar mi itinerario",
@@ -1823,6 +1832,7 @@ right_note: "*Importante: Garante que o conteúdo copiado está livre de direito
     routeBuilderTitle:"🚗 Deixe-nos construir seu itinerário",
     labelStartCity:"Cidade de partida",
     labelEndCity:"Cidade de chegada",
+    labelLoopMode:"🔄 Circuito (volta ao início)",
     labelMaxKm:"Km/etapa",
     labelDuration:"Duração",
     generateBtn:"🚀 Gerar meu itinerário",
@@ -1996,6 +2006,7 @@ right_note: "*مهم: تأكد من أن المحتوى المنسوخ خالٍ 
     routeBuilderTitle:"🚗 دعنا نبني خط سيرك",
     labelStartCity:"مدينة الانطلاق",
     labelEndCity:"مدينة الوصول",
+    labelLoopMode:"🔄 جولة (العودة إلى البداية)",
     labelMaxKm:"كم/محطة",
     labelDuration:"المدة",
     generateBtn:"🚀 إنشاء خط سيري",
@@ -4397,22 +4408,27 @@ function initRouteBuilderSubmit() {
     
     const inputStart = document.getElementById('inputStartCity');
     const inputEnd = document.getElementById('inputEndCity');
+    const checkLoop = document.getElementById('checkLoopMode');
+    const isLoopMode = checkLoop?.checked || false;
+    
     const startText = inputStart?.value?.trim();
     const endText = inputEnd?.value?.trim();
     
-    // Vérifier qu'on a au moins du texte
+    // Vérifier qu'on a au moins du texte pour le départ
     if (!startText) {
       inputStart?.focus();
       return;
     }
-    if (!endText) {
+    
+    // En mode normal (pas circuit), vérifier la ville d'arrivée
+    if (!isLoopMode && !endText) {
       inputEnd?.focus();
       return;
     }
     
     // Si ville non validée, faire une recherche rapide pour récupérer les coords
     let finalStart = startCity;
-    let finalEnd = endCity;
+    let finalEnd = isLoopMode ? null : endCity;
     
     if (!finalStart || !finalStart.lat) {
       const results = await searchCities(startText, lang);
@@ -4423,7 +4439,7 @@ function initRouteBuilderSubmit() {
       }
     }
     
-    if (!finalEnd || !finalEnd.lat) {
+    if (!isLoopMode && (!finalEnd || !finalEnd.lat)) {
       const results = await searchCities(endText, lang);
       if (results.length > 0) {
         finalEnd = results[0];
@@ -4443,15 +4459,20 @@ function initRouteBuilderSubmit() {
       startLat: finalStart.lat || '',
       startLon: finalStart.lon || '',
       startCC: finalStart.countryCode || '',
-      endName: finalEnd.name,
-      endLat: finalEnd.lat || '',
-      endLon: finalEnd.lon || '',
-      endCC: finalEnd.countryCode || '',
+      endName: isLoopMode ? finalStart.name : (finalEnd?.name || ''),
+      endLat: isLoopMode ? finalStart.lat : (finalEnd?.lat || ''),
+      endLon: isLoopMode ? finalStart.lon : (finalEnd?.lon || ''),
+      endCC: isLoopMode ? finalStart.countryCode : (finalEnd?.countryCode || ''),
       maxKm: maxKm,
       detour: detour,
       days: duration,
       lang: lang
     });
+    
+    // Ajouter le paramètre loop si mode circuit
+    if (isLoopMode) {
+      params.set('loop', '1');
+    }
     
     // Changer le texte du bouton
     btn.innerHTML = `<span>${L.generatingBtn || '⏳ Calcul en cours...'}</span>`;
@@ -4529,6 +4550,7 @@ function updateRouteBuilderTranslations() {
   setTextById('routeBuilderTitle', L.routeBuilderTitle);
   setTextById('labelStartCity', L.labelStartCity);
   setTextById('labelEndCity', L.labelEndCity);
+  setTextById('labelLoopMode', L.labelLoopMode);
   setTextById('labelMaxKm', L.labelMaxKm);
   setTextById('labelDetour', L.labelDetour);
   setTextById('labelDuration', L.labelDuration);
@@ -4550,11 +4572,28 @@ function updateRouteBuilderTranslations() {
   }
 }
 
+// Gérer le mode circuit (masquer/afficher ville d'arrivée)
+function initLoopModeToggle() {
+  const checkbox = document.getElementById('checkLoopMode');
+  const endContainer = document.getElementById('endCityContainer');
+  
+  if (!checkbox || !endContainer) return;
+  
+  checkbox.addEventListener('change', () => {
+    if (checkbox.checked) {
+      endContainer.style.display = 'none';
+    } else {
+      endContainer.style.display = 'block';
+    }
+  });
+}
+
 // Init au chargement
 document.addEventListener('DOMContentLoaded', () => {
   initRouteBuilderAutocomplete();
   initRouteBuilderSubmit();
   initGridCards();
+  initLoopModeToggle();
   updateRouteBuilderTranslations();
 });
 
