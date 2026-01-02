@@ -25,11 +25,22 @@
     // Enrichir les données avec les photos du cache
     const enrichedState = enrichStateWithPhotos(state);
     
+    // === AJOUTER LE TRIPID DU DASHBOARD SI DISPONIBLE ===
+    const params = new URLSearchParams(location.search);
+    const dashboardTripId = params.get('tripId') || params.get('id') || state.tripId;
+    if (dashboardTripId && dashboardTripId.startsWith('trip_')) {
+      enrichedState._dashboardTripId = dashboardTripId;
+      console.log('[CARNET] TripId Dashboard inclus:', dashboardTripId);
+    }
+    
     // Stocker dans sessionStorage pour l'éditeur
     sessionStorage.setItem('ort_editor_trip', JSON.stringify(enrichedState));
     
-    // Ouvrir l'éditeur dans un nouvel onglet
-    const editorUrl = '/roadtrip-editor.html?lang=' + lang;
+    // Ouvrir l'éditeur avec le tripId si en mode Dashboard
+    let editorUrl = '/roadtrip-editor.html?lang=' + lang;
+    if (dashboardTripId && dashboardTripId.startsWith('trip_')) {
+      editorUrl += '&tripId=' + encodeURIComponent(dashboardTripId);
+    }
     window.open(editorUrl, '_blank');
     
     console.log('[CARNET] ✅ Éditeur ouvert');
@@ -202,12 +213,12 @@
     export: openEditor,
     exportPDF: openEditor,
     openEditor: openEditor,
-    VERSION: '6.0 (Editor)'
+    VERSION: '6.1 (Editor + Dashboard TripId)'
   };
   
   // Alias pour compatibilité
   window.ORT_CARNET = window.ORT_PDF;
   
-  console.log('[CARNET] ✅ Module Carnet v6 chargé');
+  console.log('[CARNET] ✅ Module Carnet v6.1 chargé');
   
 })(window);

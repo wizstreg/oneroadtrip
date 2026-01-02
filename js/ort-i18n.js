@@ -2065,4 +2065,53 @@ window.ORT_I18N.booking = {
   ar: 'حجز'
 };
 
+// ═══════════════════════════════════════════════════════════════
+// MENU PERSONNALISER (RT-DETAIL HEADER)
+// ═══════════════════════════════════════════════════════════════
+
+window.ORT_I18N.customize = {
+  fr: '✨ Personnaliser',
+  en: '✨ Customize',
+  es: '✨ Personalizar',
+  it: '✨ Personalizza',
+  pt: '✨ Personalizar',
+  ar: '✨ تخصيص'
+};
+
+window.ORT_I18N.customizeTooltip = {
+  fr: 'Photos, réservations et documents',
+  en: 'Photos, bookings and documents',
+  es: 'Fotos, reservas y documentos',
+  it: 'Foto, prenotazioni e documenti',
+  pt: 'Fotos, reservas e documentos',
+  ar: 'الصور والحجوزات والوثائق'
+};
+
+window.ORT_I18N.menuMyPhotos = {
+  fr: '📷 Intégrer mes photos',
+  en: '📷 Add my photos',
+  es: '📷 Añadir mis fotos',
+  it: '📷 Aggiungi le mie foto',
+  pt: '📷 Adicionar minhas fotos',
+  ar: '📷 إضافة صوري'
+};
+
+window.ORT_I18N.menuImportBooking = {
+  fr: '➕ Importer une réservation',
+  en: '➕ Import a booking',
+  es: '➕ Importar una reserva',
+  it: '➕ Importa una prenotazione',
+  pt: '➕ Importar uma reserva',
+  ar: '➕ استيراد حجز'
+};
+
+window.ORT_I18N.menuViewBookings = {
+  fr: '📋 Voir mes réservations',
+  en: '📋 View my bookings',
+  es: '📋 Ver mis reservas',
+  it: '📋 Vedi le mie prenotazioni',
+  pt: '📋 Ver minhas reservas',
+  ar: '📋 عرض حجوزاتي'
+};
+
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');

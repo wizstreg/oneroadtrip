@@ -1024,9 +1024,26 @@
         </div>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="/js/ort-config.js"></script>
-<script src="/js/ort-tripid.js"></script>
+    <script src="/js/ort-tripid.js"></script>
     <script src="/js/ort-state-manager.js"></script>
+    <script src="/js/ort-trip-data.js"></script>
+    <script>
+    // Init Firebase for PDF editor
+    (function(){
+      const host = location.hostname;
+      const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
+      const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+      const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+      if (safe && safe.apiKey && !firebase.apps.length) {
+        firebase.initializeApp(safe);
+        console.log('[CARNET] Firebase initialisé');
+      }
+    })();
+    </script>
     <script>
     (function() {
         'use strict';
@@ -1377,19 +1394,29 @@
             } catch(e) {}
         }
         
-        function getPhotosForPlaceLocal(placeId) {
-            if (!placeId) return [];
+        function getPhotosForPlaceLocal(placeId, stepIndex = -1) {
             const photos = [];
             
-            // Depuis photosCache global
-            if (photosCache[placeId]?.photos) {
-                photos.push(...photosCache[placeId].photos);
+            // 1. Priorité aux photos utilisateur si disponibles
+            if (stepIndex >= 0 && window.ORT_TRIP_DATA) {
+                const userPhotos = ORT_TRIP_DATA.getStepPhotos(stepIndex) || [];
+                if (userPhotos.length > 0) {
+                    photos.push(...userPhotos);
+                    console.log(`[CARNET] Photos utilisateur étape ${stepIndex + 1}:`, userPhotos.length);
+                }
             }
             
-            // Depuis countryPhotosCache
+            // 2. Depuis photosCache global
+            if (photosCache[placeId]?.photos) {
+                photosCache[placeId].photos.forEach(p => {
+                    if (p && !photos.includes(p)) photos.push(p);
+                });
+            }
+            
+            // 3. Depuis countryPhotosCache
             if (countryPhotosCache[placeId]?.photos) {
                 countryPhotosCache[placeId].photos.forEach(p => {
-                    if (!photos.includes(p)) photos.push(p);
+                    if (p && !photos.includes(p)) photos.push(p);
                 });
             }
             
@@ -1445,9 +1472,11 @@
             const stored = sessionStorage.getItem('ort_editor_trip');
             if (stored) {
                 tripData = JSON.parse(stored);
-                tripId = tripData.id || generateId();
+                // Priorité: tripId URL > _dashboardTripId > tripData.id
+                const urlTripId = urlParams.get('tripId') || urlParams.get('id');
+                tripId = urlTripId || tripData._dashboardTripId || tripData.id || generateId();
                 tripData.id = tripId;
-                console.log('[CARNET] Données depuis sessionStorage');
+                console.log('[CARNET] Données depuis sessionStorage, tripId:', tripId);
                 
                 // Debug: afficher les nuits de chaque étape
                 const nightsDebug = tripData.steps.map((s, i) => `${i}: ${s.name} = ${s.nights} nuit(s)`);
@@ -1480,6 +1509,9 @@
             // Charger cache photos
             await loadPhotosCache();
             
+            // === CHARGER LES PHOTOS UTILISATEUR DEPUIS ORT_TRIP_DATA ===
+            await loadUserPhotos();
+            
             // Générer le carnet
             renderBook();
             
@@ -1499,6 +1531,54 @@
                 const r = await fetch('./data/photos-json/photos_lieux.json', { cache: 'no-store' });
                 if (r.ok) photosCache = await r.json() || {};
             } catch(e) {}
+        }
+        
+        // Charger les photos utilisateur depuis Firestore via ORT_TRIP_DATA
+        async function loadUserPhotos() {
+            if (!window.ORT_TRIP_DATA || !tripId) return;
+            
+            try {
+                // Attendre que Firebase soit prêt
+                const user = await new Promise(resolve => {
+                    if (window.firebase?.auth) {
+                        firebase.auth().onAuthStateChanged(u => resolve(u));
+                    } else {
+                        resolve(null);
+                    }
+                });
+                
+                if (!user) {
+                    console.log('[CARNET] Pas connecté, pas de photos utilisateur');
+                    return;
+                }
+                
+                await ORT_TRIP_DATA.loadTrip(tripId);
+                
+                // Injecter les userPhotos dans chaque step - ÉCRASER les photos du sessionStorage
+                if (tripData?.steps) {
+                    let photosInjected = 0;
+                    tripData.steps.forEach((step, i) => {
+                        const userPhotos = ORT_TRIP_DATA.getStepPhotos(i) || [];
+                        if (userPhotos.length > 0) {
+                            // Les photos Firestore ÉCRASENT celles du sessionStorage
+                            const catalogPhotos = (photosCache[step.place_id]?.photos || []);
+                            const combined = [...userPhotos];
+                            catalogPhotos.forEach(p => {
+                                if (p && !combined.includes(p)) combined.push(p);
+                            });
+                            step.photos = combined;
+                            step.images = combined;
+                            step.photo = combined[0];
+                            photosInjected += userPhotos.length;
+                        }
+                    });
+                    if (photosInjected > 0) {
+                        console.log(`[CARNET] ${photosInjected} photos utilisateur injectées`);
+                    }
+                }
+            } catch (e) {
+                console.warn('[CARNET] Erreur chargement photos utilisateur:', e);
+            }
         }
         
         function getPhotos(step) {
@@ -1765,9 +1845,18 @@
             const handleClose = () => {
                 const cc = tripData.cc || tripData.country || '';
                 const itin = tripData.itin || tripData._originalItinId || '';
+                const tid = tripId || tripData._dashboardTripId || tripData.id || '';
                 
-                if (cc && itin) {
+                // Mode Dashboard (avec tripId)
+                if (tid && tid.startsWith('trip_')) {
+                    const url = `roadtrip_detail.html?tripId=${encodeURIComponent(tid)}&lang=${LANG}`;
+                    console.log('[CARNET] Retour mode Dashboard:', url);
+                    window.location.href = url;
+                }
+                // Mode catalogue (avec cc/itin)
+                else if (cc && itin) {
                     const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${LANG}`;
+                    console.log('[CARNET] Retour mode catalogue:', url);
                     window.location.href = url;
                 } else {
                     window.close();
@@ -1846,7 +1935,8 @@
         
         // ===== COPIER LE LIEN (avec modal) =====
         function copyShareLink() {
-            // Construire le lien partageable
+            // Construire le lien partageable - TOUJOURS avec cc/itin (itinéraire catalogue)
+            // Le tripId est personnel et non partageable
             const cc = tripData.cc || tripData.country || '';
             const itin = tripData.itin || tripData._originalItinId || '';
             const lang = LANG;
@@ -1857,6 +1947,7 @@
             }
             
             const shareUrl = `${location.origin}/roadtrip-editor.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
+            console.log('[CARNET] Lien partagé (catalogue):', shareUrl);
             
             // Créer la modal
             const overlay = document.createElement('div');
