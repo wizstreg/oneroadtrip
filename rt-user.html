@@ -781,8 +781,13 @@ function applyI18N() {
     const goBack = () => {
       // Vérifie s'il y a des changements non sauvegardés
       const hasPending = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.hasPendingChanges() : hasChanges;
-      if (hasPending && !confirm('Modifications non sauvegardées. Quitter ?')) return;
-      location.href = `roadtrip_detail.html?id=${tripId}&cc=${cc}&itin=${itin}`;
+      if (hasPending && !confirm(t('unsavedChanges') + '. ' + t('cancel') + ' ?')) return;
+      // URL propre : tripId seulement si cc/itin sont null
+      if (cc && cc !== 'null' && itin && itin !== 'null') {
+        location.href = `roadtrip_detail.html?cc=${cc}&itin=${itin}&lang=${lang}`;
+      } else {
+        location.href = `roadtrip_detail.html?tripId=${tripId}&lang=${lang}`;
+      }
     };
     $('btnBackToTrip').addEventListener('click', goBack);
     $('btnCancel').addEventListener('click', goBack);

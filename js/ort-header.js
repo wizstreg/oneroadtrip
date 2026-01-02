@@ -152,7 +152,7 @@
   }
 
   /** Initialise les handlers d'authentification */
-  function initAuthHandlers() {
+  async function initAuthHandlers() {
     const btnOpen = document.getElementById('openAuth');
     const pop = document.getElementById('authPop');
     const btnGoogle = document.getElementById('btnGoogle');
@@ -217,18 +217,26 @@
       });
     }
 
-    // Observer les changements d'état auth
-    (async () => {
-      try {
-        const fb = await ensureFirebase();
-        fb.auth().onAuthStateChanged((user) => {
-          currentUser = user;
-          updateAuthButton(user);
-        });
-      } catch (e) {
-        console.warn('[ORT-HEADER] Firebase init error:', e);
+    // Observer les changements d'état auth - ATTENDRE Firebase d'abord
+    try {
+      const fb = await ensureFirebase();
+      
+      // Vérifier immédiatement l'utilisateur actuel
+      const currentUserNow = fb.auth().currentUser;
+      if (currentUserNow) {
+        console.log('[ORT-HEADER] Utilisateur déjà connecté:', currentUserNow.email);
+        updateAuthButton(currentUserNow);
       }
-    })();
+      
+      // Puis écouter les changements
+      fb.auth().onAuthStateChanged((user) => {
+        currentUser = user;
+        console.log('[ORT-HEADER] Auth state changed:', user ? user.email : 'non connecté');
+        updateAuthButton(user);
+      });
+    } catch (e) {
+      console.warn('[ORT-HEADER] Firebase init error:', e);
+    }
   }
 
   // ============================================
@@ -627,7 +635,7 @@
   // ============================================
   // INITIALISATION
   // ============================================
-  function init() {
+  async function init() {
     // Attendre que le DOM soit prêt
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
@@ -641,9 +649,11 @@
     // Générer le HTML du header si vide
     generateHeaderHTML();
 
-    // Initialiser
+    // Initialiser le sélecteur de langue
     initLangSelector();
-    initAuthHandlers();
+    
+    // Initialiser Firebase ET les handlers auth
+    await initAuthHandlers();
 
     console.log('[ORT-HEADER] Initialisé - Langue:', lang);
   }
