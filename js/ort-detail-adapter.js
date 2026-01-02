@@ -382,6 +382,28 @@
       } else {
         console.log('  ℹ️ Pas de groupes à sauvegarder');
       }
+      
+      // 📸 PHOTOS UTILISATEUR
+      if (window.state.userPhotos && Object.keys(window.state.userPhotos).length > 0) {
+        data.userPhotos = JSON.parse(JSON.stringify(window.state.userPhotos));
+        console.log('  ✅ OK Photos utilisateur:', Object.keys(data.userPhotos).length, 'étapes');
+      }
+      
+      // 📅 RÉSERVATIONS (bookings)
+      if (typeof globalBookingManager !== 'undefined' && globalBookingManager.bookings) {
+        data.bookings = JSON.parse(JSON.stringify(globalBookingManager.bookings));
+        console.log('  ✅ OK Bookings:', Object.keys(data.bookings).length);
+      } else if (window.state.bookings && Object.keys(window.state.bookings).length > 0) {
+        data.bookings = JSON.parse(JSON.stringify(window.state.bookings));
+        console.log('  ✅ OK Bookings (state):', Object.keys(data.bookings).length);
+      }
+      
+      // ✈️ RÉSERVATIONS VOYAGE (vols, voiture, assurance)
+      if (window.state.travelBookings && Object.keys(window.state.travelBookings).length > 0) {
+        data.travelBookings = JSON.parse(JSON.stringify(window.state.travelBookings));
+        console.log('  ✅ OK Travel Bookings:', Object.keys(data.travelBookings).length);
+      }
+      
     } else {
       console.warn('[DETAIL] window.state non disponible!');
     }

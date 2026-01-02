@@ -684,6 +684,7 @@
 
 <!-- Charge la config centralisée AVANT l’init Firebase -->
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-tripid.js"></script>
 
 <script>
 // === Firebase config (préprod/prod) — via ORT_CONFIG ===
@@ -3005,10 +3006,21 @@ cleaned = cleaned
         window.location.href = `./roadtrip_detail_simple.html?from=import`;
       } else {
         // Redirection EXPERT (comportement actuel)
+        // Générer un tripId cohérent
+        const tripId = `custom::${key}`;
+        
+        // Stocker dans ORT_TRIPID et localStorage
+        if (window.ORT_TRIPID) {
+          window.ORT_TRIPID.store(tripId);
+        } else {
+          localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
+        }
+        
         // Construire l'URL avec tous les paramètres
         const params = new URLSearchParams({
           from: 'temp',
           rtKey: key,
+          tripId: tripId,
           startDate: startDate,
           nbDays: nbDays,
           budget: budget

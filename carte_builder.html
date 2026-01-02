@@ -2343,10 +2343,21 @@ function submitItinerary() {
     console.log('   - Places:', selectedPlaces.length);
     console.log('   - Config:', config);
 
+    // Générer un tripId cohérent
+    const tripId = `custom::${rtKey}`;
+    
+    // Stocker dans ORT_TRIPID et localStorage
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.store(tripId);
+    } else {
+      localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
+    }
+
     // Construire l'URL avec tous les paramètres
     const params = new URLSearchParams({
       from: 'temp',
       rtKey: rtKey,
+      tripId: tripId,
       lang: currentLang,
       mode: 'expert',
       departDate: config.departDate,
@@ -2385,6 +2396,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <!-- Scripts ORT modulaires -->
 <script src="js/ort-config.js"></script>
+<script src="js/ort-tripid.js"></script>
 <script src="js/ort-i18n-auth.js"></script>
 <script src="js/ort-header.js"></script>
 <script src="js/ort-footer.js"></script>

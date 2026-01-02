@@ -122,7 +122,7 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
 
 <header>
   <a href="index.html" class="brandlink">
-    <img src="/assets/logo-oneroadtrip.png" alt="Logo">
+    <img src="../assets/symbol.webp""" alt="Logo">
     <span class="brand">OneRoadTrip</span>
   </a>
   <span class="sp"></span>
@@ -236,6 +236,7 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-tripid.js"></script>
 <script>
 // Init Firebase depuis ORT_CONFIG
 (function(){
@@ -315,6 +316,17 @@ function applyI18N() {
   let tripId = params.get('id');
   let cc = params.get('cc');
   let itin = params.get('itin');
+  
+  // Fallback sur ORT_TRIPID si pas de tripId dans URL
+  if (!tripId && window.ORT_TRIPID) {
+    tripId = window.ORT_TRIPID.get();
+    console.log('[RT-USER] TripId récupéré depuis ORT_TRIPID:', tripId);
+  }
+  
+  // Stocker dans ORT_TRIPID pour cohérence
+  if (tripId && window.ORT_TRIPID) {
+    window.ORT_TRIPID.store(tripId);
+  }
   
   console.log('[RT-USER] Params:', { tripId, cc, itin });
   

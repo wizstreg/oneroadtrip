@@ -5,11 +5,22 @@
 
 const admin = require('firebase-admin');
 
-// Init Firebase Admin
+// Init Firebase Admin avec Service Account
 if (!admin.apps.length) {
-  admin.initializeApp({
-    projectId: process.env.ORT_FB_PROJECTID
-  });
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: process.env.ORT_FB_PROJECTID
+    });
+    console.log('✅ Firebase Admin initialisé avec service account');
+  } catch (e) {
+    console.error('❌ Firebase Admin init failed:', e.message);
+    // Fallback sans credentials (ne marchera pas pour auth/firestore)
+    admin.initializeApp({
+      projectId: process.env.ORT_FB_PROJECTID
+    });
+  }
 }
 const db = admin.firestore();
 

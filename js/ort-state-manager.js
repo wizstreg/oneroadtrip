@@ -36,9 +36,12 @@
   const SUPPORTED_LANGS = ['fr', 'en', 'it', 'es', 'pt', 'ar'];
 
   // ===== LIMITES FIRESTORE =====
-  const MAX_SAVED_TRIPS = 2;      // Max voyages sauvegardés
+  const MAX_SAVED_TRIPS = 2;      // Max voyages sauvegardés (users normaux)
   const MAX_BOOKINGS_TOTAL = 20;  // Max réservations par voyage
   const MAX_DOCUMENTS = 10;       // Max documents d'identité
+  
+  // ===== ADMIN (accès illimité) =====
+  const ADMIN_EMAILS = [atob('bWFyY3NvcmNpQGZyZWUuZnI=')]; // Encodé base64
 
   // ===== ÉTAT GLOBAL =====
   let firebaseApp = null;
@@ -705,35 +708,39 @@ if (hasDeepNesting) {
       return saveTripToLocalStorage(tripData);
     }
 
-    // Vérifier la limite de voyages sauvegardés (sauf si c'est une mise à jour)
-    try {
-      const existingDoc = await firestoreDb
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('trips')
-        .doc(tripData.id)
-        .get();
-      
-      if (!existingDoc.exists) {
-        // Nouveau voyage : vérifier la limite
-        const snapshot = await firestoreDb
+    // Vérifier la limite de voyages sauvegardés (sauf si c'est une mise à jour ou admin)
+    const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
+    
+    if (!isAdmin) {
+      try {
+        const existingDoc = await firestoreDb
           .collection('users')
           .doc(currentUser.uid)
           .collection('trips')
+          .doc(tripData.id)
           .get();
         
-        if (snapshot.size >= MAX_SAVED_TRIPS) {
-          console.error(`❌ [STATE] Limite atteinte: ${MAX_SAVED_TRIPS} voyages max`);
-          // Émet un événement pour notifier l'UI
-          window.dispatchEvent(new CustomEvent('ort:limit-reached', {
-            detail: { type: 'trips', limit: MAX_SAVED_TRIPS, current: snapshot.size }
-          }));
-          return false;
+        if (!existingDoc.exists) {
+          // Nouveau voyage : vérifier la limite
+          const snapshot = await firestoreDb
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('trips')
+            .get();
+          
+          if (snapshot.size >= MAX_SAVED_TRIPS) {
+            console.error(`❌ [STATE] Limite atteinte: ${MAX_SAVED_TRIPS} voyages max`);
+            // Émet un événement pour notifier l'UI
+            window.dispatchEvent(new CustomEvent('ort:limit-reached', {
+              detail: { type: 'trips', limit: MAX_SAVED_TRIPS, current: snapshot.size }
+            }));
+            return false;
+          }
         }
+      } catch (limitError) {
+        console.warn('⚠️ [STATE] Erreur vérification limite:', limitError);
+        // Continue quand même (mieux vaut sauvegarder que perdre des données)
       }
-    } catch (limitError) {
-      console.warn('⚠️ [STATE] Erreur vérification limite:', limitError);
-      // Continue quand même (mieux vaut sauvegarder que perdre des données)
     }
 
 try {

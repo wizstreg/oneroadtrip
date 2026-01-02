@@ -1962,6 +1962,7 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-i18n.js"></script>
 <script>
 // === Fallback i18n si ort-i18n.js non chargé ===
@@ -2670,14 +2671,11 @@ Object.assign(userPhotosBtn.style, {
   border: '1px solid #113f7a'
 });
 userPhotosBtn.addEventListener('click', () => {
+  // Utilise ORT_TRIPID pour garantir un tripId cohérent
+  const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
   const params = new URLSearchParams(location.search);
-  const cc = params.get('cc');
-  const itin = params.get('itin');
-  let tripId = params.get('tripId') || params.get('id');
-  if (!tripId && cc && itin) {
-    tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
-  }
-  tripId = tripId || window.state?.tripId || 'default';
+  const cc = params.get('cc') || '';
+  const itin = params.get('itin') || '';
   
   // Stocker le trip enrichi pour rt-user
   if (window.state && window.state.steps) {
@@ -2693,7 +2691,12 @@ userPhotosBtn.addEventListener('click', () => {
   }
   
   console.log('[USER-PHOTOS] tripId:', tripId);
-  window.location.href = `rt-user.html?id=${encodeURIComponent(tripId)}&cc=${cc || ''}&itin=${itin || ''}`;
+  // Navigation avec ORT_TRIPID pour préserver tous les paramètres
+  if (window.ORT_TRIPID) {
+    window.ORT_TRIPID.navigateTo('rt-user.html', { id: tripId, cc: cc, itin: itin });
+  } else {
+    window.location.href = `rt-user.html?id=${encodeURIComponent(tripId)}&cc=${cc}&itin=${itin}`;
+  }
 });
 row.appendChild(userPhotosBtn);
 
@@ -8899,7 +8902,13 @@ return;
   
 state.country=CC;
    state.cc = CC; // ← AJOUT : pour collectCurrentData()
-   state.tripId = ensureRid(); // ← AJOUT pour ORT_DETAIL_ADAPTER
+   
+   // INIT ORT_TRIPID - Source de vérité unique pour le tripId
+   if (window.ORT_TRIPID) {
+     state.tripId = window.ORT_TRIPID.init({ source: 'detail' });
+   } else {
+     state.tripId = ensureRid(); // Fallback
+   }
    
    // Stocker la référence à l'itinéraire de base
    // Créer même si ITIN_ID est temporaire - on a besoin du country pour sauvegarder

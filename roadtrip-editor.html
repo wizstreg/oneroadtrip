@@ -1025,6 +1025,7 @@
     </div>
 
     <script src="/js/ort-config.js"></script>
+<script src="/js/ort-tripid.js"></script>
     <script src="/js/ort-state-manager.js"></script>
     <script>
     (function() {
@@ -1926,10 +1927,14 @@
             const lang = LANG;
             
             if (cc && itin) {
-                // Ouvrir roadtrip_detail avec le même roadtrip
-                // L'utilisateur pourra le personnaliser (nouvel ID sera créé)
-                const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
-                window.open(url, '_blank');
+                // Utilise ORT_TRIPID pour préserver le tripId
+                if (window.ORT_TRIPID && tripId) {
+                    window.ORT_TRIPID.store(tripId);
+                    window.ORT_TRIPID.navigateTo('roadtrip_detail.html', { cc, itin });
+                } else {
+                    const url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
+                    window.open(url, '_blank');
+                }
             } else {
                 alert(t('cannotModify'));
             }

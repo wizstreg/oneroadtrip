@@ -1085,6 +1085,7 @@ html, body {
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
 <script>
@@ -1325,6 +1326,12 @@ async function init() {
   state.cc = cc;
   state.lang = lang;
   localStorage.setItem('ort_lang', lang);
+  
+  // INIT ORT_TRIPID - Source de vérité unique pour le tripId
+  if (window.ORT_TRIPID) {
+    state._tripId = window.ORT_TRIPID.init({ source: 'mobile' });
+    console.log('[MOBILE] TripId initialisé:', state._tripId);
+  }
   
   setupTabs();
   setupEvents();
@@ -2292,8 +2299,12 @@ async function saveTrip() {
     const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
     
     if (user && window.ORT_STATE) {
-      // Sauvegarde via ORT_STATE (Firestore users/{uid}/trips/{tripId})
-      const tripId = state._tripId || state._originalItinId || `mobile_${Date.now()}`;
+      // Utilise ORT_TRIPID pour garantir un tripId cohérent
+      let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : null;
+      if (!tripId) {
+        tripId = state._tripId || state._originalItinId || `mobile::${Date.now()}`;
+        if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+      }
       
       const tripData = {
         id: tripId,
@@ -2322,6 +2333,7 @@ async function saveTrip() {
       
       // Mettre à jour le tripId dans state pour les sauvegardes suivantes
       state._tripId = tripId;
+      if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
       
       hasUnsavedChanges = false;
       showToast('✅ Sauvegardé dans votre Dashboard !');
@@ -2636,8 +2648,13 @@ $('btnExpertMode').onclick = function() {
   const msg = messages[LANG] || messages.fr;
   
   if (confirm(msg)) {
-    const newUrl = location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
-    window.location.href = newUrl;
+    // Utilise ORT_TRIPID pour préserver le tripId
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.navigateTo('roadtrip_detail.html');
+    } else {
+      const newUrl = location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
+      window.location.href = newUrl;
+    }
   }
 };
 
@@ -2651,8 +2668,13 @@ window.openStepSheet = openStepSheet;
 document.getElementById('btnExpertMode')?.addEventListener('click', function() {
   const msg = window.t ? window.t('switchToExpertWarning') : 'Vous allez basculer en mode expert. Il est préférable de tester ce mode sur un écran plus large.';
   if (confirm(msg)) {
-    const newUrl = window.location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
-    window.location.href = newUrl;
+    // Utilise ORT_TRIPID pour préserver le tripId
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.navigateTo('roadtrip_detail.html');
+    } else {
+      const newUrl = window.location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
+      window.location.href = newUrl;
+    }
   }
 });
 </script>
