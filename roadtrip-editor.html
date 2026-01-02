@@ -1570,10 +1570,19 @@
                             step.images = combined;
                             step.photo = combined[0];
                             photosInjected += userPhotos.length;
+                            // DEBUG: Log détaillé par étape
+                            console.log(`[CARNET] Étape ${i} (${step.name}): ${userPhotos.length} photos user injectées`, userPhotos);
                         }
                     });
                     if (photosInjected > 0) {
-                        console.log(`[CARNET] ${photosInjected} photos utilisateur injectées`);
+                        console.log(`[CARNET] ${photosInjected} photos utilisateur injectées au total`);
+                        // DEBUG: Résumé des photos par étape après injection
+                        console.log('[CARNET] État des photos par étape:', tripData.steps.map((s, i) => ({
+                            idx: i,
+                            name: s.name,
+                            photo: s.photo?.substring(0, 50) + '...',
+                            photosCount: s.photos?.length || 0
+                        })));
                     }
                 }
             } catch (e) {
@@ -1704,14 +1713,21 @@
             
             // Pages étapes - UNE PAGE PAR ÉTAPE avec photo différente
             steps.forEach((step, idx) => {
-                // Utiliser une photo différente pour chaque étape
-                // Prendre la photo à l'index correspondant dans le pool global
-                const photo = allPhotos[idx % allPhotos.length];
-                
-                // Photos spécifiques à cette étape pour le carrousel
+                // D'abord les photos spécifiques à cette étape (incluant photos utilisateur Firestore)
                 let stepPhotos = getPhotos(step);
-                if (stepPhotos.length === 0) {
-                    stepPhotos = [photo]; // Au moins la photo attribuée
+                
+                // DEBUG: Voir les photos de chaque étape
+                console.log(`[CARNET] Étape ${idx} (${step.name}): ${stepPhotos.length} photos`, stepPhotos.slice(0, 3));
+                
+                // Photo principale = première photo de l'étape, sinon fallback du pool global
+                let photo;
+                if (stepPhotos.length > 0) {
+                    photo = stepPhotos[0]; // Photo utilisateur ou catalogue EN PREMIER
+                } else {
+                    // Fallback: photo du pool global (réparti par index)
+                    photo = allPhotos[idx % allPhotos.length];
+                    stepPhotos = [photo];
+                    console.log(`[CARNET] Étape ${idx}: pas de photo spécifique, fallback utilisé`);
                 }
                 
                 const visits = step.visits || step.pois || [];
