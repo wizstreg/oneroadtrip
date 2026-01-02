@@ -8893,6 +8893,17 @@ await ensurePlacesIndex().catch(()=>{});
     }
   }
   
+  // Skip si mode DASHBOARD (tripId présent mais cc/itin absents ou null)
+  const _tripIdParam = new URLSearchParams(location.search).get('tripId') || new URLSearchParams(location.search).get('id');
+  const _ccParam = new URLSearchParams(location.search).get('cc');
+  const _itinParam = new URLSearchParams(location.search).get('itin');
+  const _isDashboardMode = _tripIdParam && (!_ccParam || _ccParam === 'null' || !_itinParam || _itinParam === 'null');
+  
+  if (_isDashboardMode) {
+    console.log('[INIT] ⏭️ Skip loadItin - Mode DASHBOARD actif');
+    return;
+  }
+  
   if(!CC||!ITIN_ID){
 state.title='Aucun roadtrip sélectionné';
 setTitleTranslated(state.title);
