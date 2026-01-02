@@ -122,7 +122,7 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
 
 <header>
   <a href="index.html" class="brandlink">
-    <img src="../assets/symbol.webp""" alt="Logo">
+    <img src="/assets/logo-oneroadtrip.png" alt="Logo">
     <span class="brand">OneRoadTrip</span>
   </a>
   <span class="sp"></span>
@@ -236,7 +236,6 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
-<script src="/js/ort-tripid.js"></script>
 <script>
 // Init Firebase depuis ORT_CONFIG
 (function(){
@@ -317,17 +316,6 @@ function applyI18N() {
   let cc = params.get('cc');
   let itin = params.get('itin');
   
-  // Fallback sur ORT_TRIPID si pas de tripId dans URL
-  if (!tripId && window.ORT_TRIPID) {
-    tripId = window.ORT_TRIPID.get();
-    console.log('[RT-USER] TripId récupéré depuis ORT_TRIPID:', tripId);
-  }
-  
-  // Stocker dans ORT_TRIPID pour cohérence
-  if (tripId && window.ORT_TRIPID) {
-    window.ORT_TRIPID.store(tripId);
-  }
-  
   console.log('[RT-USER] Params:', { tripId, cc, itin });
   
   let trip = null;
@@ -363,8 +351,27 @@ function applyI18N() {
     
     // Wait for Firebase
     console.log('[RT-USER] Attente Firebase...');
-    await waitForAuth();
+    const user = await waitForAuth();
     console.log('[RT-USER] Firebase OK');
+    
+    // ══════════════════════════════════════════════════════════════
+    // VÉRIFICATION 1 : Utilisateur connecté ?
+    // ══════════════════════════════════════════════════════════════
+    if (!user) {
+      console.warn('[RT-USER] ❌ Utilisateur non connecté');
+      showBlockingMessage('login');
+      return;
+    }
+    
+    // ══════════════════════════════════════════════════════════════
+    // VÉRIFICATION 2 : Voyage sauvegardé dans Firestore ?
+    // ══════════════════════════════════════════════════════════════
+    const tripSaved = await checkTripSavedInFirestore(user.uid, tripId);
+    if (!tripSaved) {
+      console.warn('[RT-USER] ❌ Voyage non sauvegardé dans Firestore');
+      showBlockingMessage('tripNotSaved');
+      return;
+    }
     
     // Load trip
     console.log('[RT-USER] Chargement trip...');
@@ -406,6 +413,93 @@ function applyI18N() {
       };
       check();
     });
+  }
+  
+  /**
+   * Vérifie si le voyage est sauvegardé dans Firestore
+   */
+  async function checkTripSavedInFirestore(uid, tripId) {
+    if (!uid || !tripId) return false;
+    
+    try {
+      const db = firebase.firestore();
+      const tripDoc = await db.collection('users').doc(uid).collection('trips').doc(tripId).get();
+      const exists = tripDoc.exists;
+      console.log('[RT-USER] Trip dans Firestore?', exists);
+      return exists;
+    } catch (e) {
+      console.error('[RT-USER] Erreur vérification Firestore:', e);
+      return false;
+    }
+  }
+  
+  /**
+   * Affiche un message bloquant si conditions non remplies
+   */
+  function showBlockingMessage(type) {
+    loadingOverlay.style.display = 'none';
+    
+    const lang = localStorage.getItem('lang')?.slice(0, 2) || 'fr';
+    const i18n = window.ORT_I18N || {};
+    
+    const getText = (key) => i18n[key]?.[lang] || i18n[key]?.fr || key;
+    
+    let title, message, btnText, btnAction;
+    
+    if (type === 'login') {
+      title = getText('loginRequired');
+      message = getText('loginRequiredMsg');
+      btnText = getText('goToLogin');
+      btnAction = () => {
+        // Retour à RT Detail qui a le bouton de connexion
+        window.history.back();
+      };
+    } else if (type === 'tripNotSaved') {
+      title = getText('tripSaveRequired');
+      message = getText('tripSaveRequiredMsg');
+      btnText = getText('goBack');
+      btnAction = () => {
+        window.history.back();
+      };
+    }
+    
+    // Créer le message bloquant
+    const container = document.createElement('div');
+    container.id = 'blockingMessage';
+    container.style.cssText = `
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+      text-align: center;
+    `;
+    
+    container.innerHTML = `
+      <div style="background: white; border-radius: 16px; padding: 32px; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="font-size: 48px; margin-bottom: 16px;">🔒</div>
+        <h2 style="color: #1e3a5f; margin: 0 0 12px 0; font-size: 1.4rem;">${title}</h2>
+        <p style="color: #64748b; margin: 0 0 24px 0; line-height: 1.5;">${message}</p>
+        <button id="blockingBtn" style="
+          background: #3b82f6;
+          color: white;
+          border: none;
+          padding: 12px 32px;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: background 0.2s;
+        ">${btnText}</button>
+      </div>
+    `;
+    
+    document.body.appendChild(container);
+    document.getElementById('blockingBtn').addEventListener('click', btnAction);
   }
   
   async function loadTrip() {

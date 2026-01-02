@@ -1776,4 +1776,64 @@ window.ORT_I18N.suggestOtherPlaces = {
   ar: 'اقترح أماكن أخرى'
 };
 
+// ═══════════════════════════════════════════════════════════════
+// RESTRICTIONS CONNEXION / VOYAGE SAUVEGARDÉ
+// ═══════════════════════════════════════════════════════════════
+window.ORT_I18N.loginRequired = {
+  fr: 'Connexion requise',
+  en: 'Login required',
+  es: 'Inicio de sesión requerido',
+  it: 'Accesso richiesto',
+  pt: 'Login necessário',
+  ar: 'تسجيل الدخول مطلوب'
+};
+window.ORT_I18N.loginRequiredMsg = {
+  fr: 'Vous devez être connecté pour ajouter des photos et réservations.',
+  en: 'You must be logged in to add photos and bookings.',
+  es: 'Debes iniciar sesión para añadir fotos y reservas.',
+  it: 'Devi accedere per aggiungere foto e prenotazioni.',
+  pt: 'Você precisa estar conectado para adicionar fotos e reservas.',
+  ar: 'يجب تسجيل الدخول لإضافة الصور والحجوزات.'
+};
+window.ORT_I18N.tripSaveRequired = {
+  fr: 'Voyage non sauvegardé',
+  en: 'Trip not saved',
+  es: 'Viaje no guardado',
+  it: 'Viaggio non salvato',
+  pt: 'Viagem não salva',
+  ar: 'الرحلة غير محفوظة'
+};
+window.ORT_I18N.tripSaveRequiredMsg = {
+  fr: 'Vous devez d\'abord enregistrer ce voyage dans votre Dashboard pour pouvoir ajouter des photos et réservations.',
+  en: 'You must first save this trip to your Dashboard before adding photos and bookings.',
+  es: 'Primero debes guardar este viaje en tu Panel para poder añadir fotos y reservas.',
+  it: 'Devi prima salvare questo viaggio nella tua Dashboard per aggiungere foto e prenotazioni.',
+  pt: 'Você precisa primeiro salvar esta viagem no seu Painel para adicionar fotos e reservas.',
+  ar: 'يجب أولاً حفظ هذه الرحلة في لوحة التحكم لإضافة الصور والحجوزات.'
+};
+window.ORT_I18N.goToLogin = {
+  fr: 'Se connecter',
+  en: 'Log in',
+  es: 'Iniciar sesión',
+  it: 'Accedi',
+  pt: 'Entrar',
+  ar: 'تسجيل الدخول'
+};
+window.ORT_I18N.goToDashboard = {
+  fr: 'Aller au Dashboard',
+  en: 'Go to Dashboard',
+  es: 'Ir al Panel',
+  it: 'Vai alla Dashboard',
+  pt: 'Ir para o Painel',
+  ar: 'الذهاب إلى لوحة التحكم'
+};
+window.ORT_I18N.goBack = {
+  fr: 'Retour',
+  en: 'Back',
+  es: 'Volver',
+  it: 'Indietro',
+  pt: 'Voltar',
+  ar: 'رجوع'
+};
+
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');
