@@ -4943,22 +4943,29 @@ function renderTripBookings() {
     return;
   }
   
-  // Vérifier qu'il y a des réservations
-  if (typeof globalBookingManager === 'undefined' || !globalBookingManager) {
-    container.innerHTML = '';
-    return;
-  }
-  
-  // Récupérer les réservations non liées à une étape
+  // Collecter toutes les réservations voyage
   const tripBookings = [];
   
-  Object.entries(globalBookingManager.bookings).forEach(([stepIdx, bookings]) => {
-    bookings.forEach(booking => {
-      if (booking.category && ['flight', 'car', 'train', 'restaurant', 'other'].includes(booking.category)) {
+  // 1. Depuis globalBookingManager (résas par étape avec catégorie voyage)
+  if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+    Object.entries(globalBookingManager.bookings).forEach(([stepIdx, bookings]) => {
+      bookings.forEach(booking => {
+        if (booking.category && ['flight', 'car', 'train', 'restaurant', 'other'].includes(booking.category)) {
+          tripBookings.push(booking);
+        }
+      });
+    });
+  }
+  
+  // 2. Depuis window.state.travelBookings (nouvelles résas via ORT_TRIP_DATA)
+  if (window.state?.travelBookings && Array.isArray(window.state.travelBookings)) {
+    window.state.travelBookings.forEach(booking => {
+      // Éviter les doublons (par ID)
+      if (!tripBookings.find(b => b.id === booking.id)) {
         tripBookings.push(booking);
       }
     });
-  });
+  }
   
   if (tripBookings.length === 0) {
     container.innerHTML = '';
@@ -4968,7 +4975,7 @@ function renderTripBookings() {
   // Grouper par catégorie
   const grouped = {};
   tripBookings.forEach(booking => {
-    const cat = booking.category || 'other';
+    const cat = booking.category || booking.type || 'other';
     if (!grouped[cat]) grouped[cat] = [];
     grouped[cat].push(booking);
   });
@@ -4985,6 +4992,7 @@ function renderTripBookings() {
         car: 'bookingCategoryVehicles',
         train: 'bookingCategoryTrains',
         restaurant: 'bookingCategoryRestaurants',
+        hotel: 'bookingCategoryHotels',
         other: 'bookingCategoryOther'
       };
       const i18nKey = categoryMap[category];
@@ -10971,11 +10979,15 @@ if (fromTemp && rtKey) {
 }
 
 // === MODE DASHBOARD : tripId dans l'URL SANS cc/itin → Charger depuis Firestore ===
-const tripIdFromUrl = urlParams.get('tripId');
+const tripIdFromUrl = urlParams.get('tripId') || urlParams.get('id');
 const ccParam = urlParams.get('cc');
 const itinParam = urlParams.get('itin');
 
-if (tripIdFromUrl && !ccParam && !itinParam) {
+// Détecter si cc/itin sont vraiment définis (pas null/undefined/"null")
+const hasValidCc = ccParam && ccParam !== 'null' && ccParam !== 'undefined';
+const hasValidItin = itinParam && itinParam !== 'null' && itinParam !== 'undefined';
+
+if (tripIdFromUrl && (!hasValidCc || !hasValidItin)) {
   console.log('[INIT] 📌 Mode DASHBOARD détecté - tripId:', tripIdFromUrl);
   
   // Attendre que ORT_STATE et renderRows soient prêts
@@ -11018,7 +11030,7 @@ if (tripIdFromUrl && !ccParam && !itinParam) {
             window.state.initialNights = savedTrip.initialNights || savedTrip.nights;
           }
           
-          // Restaurer les réservations
+          // Restaurer les réservations (ancien format: savedTrip.bookings)
           if (savedTrip.bookings && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
             window.state.bookings = savedTrip.bookings;
             Object.entries(savedTrip.bookings).forEach(([stepIdx, bookings]) => {
@@ -11028,7 +11040,25 @@ if (tripIdFromUrl && !ccParam && !itinParam) {
                 });
               }
             });
-            console.log('[INIT] ✅ Réservations restaurées');
+            console.log('[INIT] ✅ Réservations restaurées (ancien format)');
+          }
+          
+          // Restaurer les réservations (nouveau format: steps[].bookings)
+          if (savedTrip.steps && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+            savedTrip.steps.forEach((step, stepIdx) => {
+              if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+                step.bookings.forEach(booking => {
+                  globalBookingManager.addBooking(stepIdx, booking);
+                });
+                console.log('[INIT] ✅ Réservations étape', stepIdx, ':', step.bookings.length);
+              }
+            });
+          }
+          
+          // Restaurer les réservations voyage (travelBookings: vol, voiture, etc.)
+          if (savedTrip.travelBookings && Array.isArray(savedTrip.travelBookings) && savedTrip.travelBookings.length > 0) {
+            window.state.travelBookings = savedTrip.travelBookings;
+            console.log('[INIT] ✅ Réservations voyage restaurées:', savedTrip.travelBookings.length);
           }
           
           // Restaurer les groupes d'étapes
@@ -11219,24 +11249,36 @@ if (!cc || !itin) {
       console.log('[INIT] window.state prêt');
       
       // Générer ou récupérer tripId de manière STABLE
-      let tripId = urlParams.get('tripId');
+      // PRIORITÉ: tripId > id > ORT_TRIPID > génération depuis cc+itin
+      let tripId = urlParams.get('tripId') || urlParams.get('id');
+      
+      // Fallback sur ORT_TRIPID si pas dans URL
+      if (!tripId && window.ORT_TRIPID) {
+        tripId = window.ORT_TRIPID.get();
+        if (tripId) console.log('[INIT] ✅ TripId depuis ORT_TRIPID:', tripId);
+      }
       
       if (!tripId) {
         // Pour les RT standards (cc+itin), créer un tripId stable
         const cc = urlParams.get('cc');
         const itin = urlParams.get('itin');
         
-        if (cc && itin) {
+        if (cc && itin && cc !== 'null' && itin !== 'null') {
           // TripId stable basé sur l'itinéraire (même ID à chaque visite)
           tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
           console.log('[INIT] ✅ TripId stable généré depuis cc+itin:', tripId);
         } else {
           // Sinon, générer un ID unique (RT temporaire/personnalisé)
           tripId = window.ORT_STATE.generateTripId();
-          console.log('[INIT] ⚠️ TripId temporaire généré (pas de cc/itin):', tripId);
+          console.log('[INIT] ⚠️ TripId temporaire généré (pas de cc/itin valides):', tripId);
         }
       } else {
         console.log('[INIT] ✅ TripId depuis URL:', tripId);
+      }
+      
+      // Stocker dans ORT_TRIPID pour cohérence
+      if (window.ORT_TRIPID && tripId) {
+        window.ORT_TRIPID.store(tripId);
       }
       
      // Chercher modifications sauvegardées (accepte trip_, user:: ET temp_)
@@ -11259,6 +11301,7 @@ if (!cc || !itin) {
             }
             
             // === RESTAURER LES RÉSERVATIONS ===
+            // Ancien format: savedTrip.bookings
             if (savedTrip.bookings && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
               window.state.bookings = savedTrip.bookings;
               
@@ -11271,7 +11314,25 @@ if (!cc || !itin) {
                 }
               });
               
-              console.log('[INIT] ✅ Réservations restaurées:', Object.keys(savedTrip.bookings).length, 'étapes');
+              console.log('[INIT] ✅ Réservations restaurées (ancien format):', Object.keys(savedTrip.bookings).length, 'étapes');
+            }
+            
+            // Nouveau format: steps[].bookings (ORT_TRIP_DATA)
+            if (savedTrip.steps && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+              savedTrip.steps.forEach((step, stepIdx) => {
+                if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+                  step.bookings.forEach(booking => {
+                    globalBookingManager.addBooking(stepIdx, booking);
+                  });
+                  console.log('[INIT] ✅ Réservations étape', stepIdx, ':', step.bookings.length);
+                }
+              });
+            }
+            
+            // Réservations voyage (travelBookings: vol, voiture, etc.)
+            if (savedTrip.travelBookings && Array.isArray(savedTrip.travelBookings) && savedTrip.travelBookings.length > 0) {
+              window.state.travelBookings = savedTrip.travelBookings;
+              console.log('[INIT] ✅ Réservations voyage restaurées:', savedTrip.travelBookings.length);
             }
             
             // 🔗 RESTAURER LES GROUPES D'ÉTAPES (V7)
