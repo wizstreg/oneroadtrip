@@ -3169,8 +3169,8 @@ hdr.appendChild(row);
 
     const sel=document.getElementById('langSel'); if(sel){ sel.value=lang; sel.addEventListener('change',e=>{ const code=e.target.value; localStorage.setItem('lang',code); const u=new URL(location.href); u.searchParams.set('lang',code); location.replace(u.toString()); }); }
     const home=document.getElementById('homeLink'); if(home){ home.addEventListener('click',e=>{ e.preventDefault(); const u=new URL('presentation.html', location.href); u.searchParams.set('lang', lang); location.href=u.toString(); }); }
-    /* Libellés du bouton selon langue */
-    if(openAuth) openAuth.textContent = L().login;
+    /* Libellés du bouton selon langue - seulement si pas encore connecté */
+    if(openAuth && !window.firebase?.auth?.()?.currentUser) openAuth.textContent = L().login;
   })();
 })();
 </script>
