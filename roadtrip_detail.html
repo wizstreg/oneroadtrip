@@ -3516,13 +3516,157 @@ function getCategoryIconForCell(category) {
     lodging: '🏨',
     hotel: '🏨',
     flight: '✈️',
+    car_rental: '🚗',
     car: '🚗',
     train: '🚆',
     restaurant: '🍽️',
     activity: '🎯',
+    visit: '🏛️',
+    show: '🎭',
+    insurance: '🛡️',
     other: '📄'
   };
   return icons[category] || '📄';
+}
+
+// === MODALE RÉSERVATIONS ÉTAPE ===
+function openBookingsModal(stepIdx, stepName) {
+  // Récupérer les réservations
+  let bookings = [];
+  if (window.ORT_TRIP_DATA) {
+    bookings = ORT_TRIP_DATA.getStepBookings(stepIdx) || [];
+  } else if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+    bookings = globalBookingManager.getBookings(stepIdx) || [];
+  }
+  
+  const lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+  const I18N = {
+    title: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' },
+    noBookings: { fr: 'Aucune réservation pour cette étape', en: 'No bookings for this step', es: 'Sin reservas para esta etapa', it: 'Nessuna prenotazione per questa tappa', pt: 'Sem reservas para esta etapa', ar: 'لا حجوزات لهذه المرحلة' },
+    close: { fr: 'Fermer', en: 'Close', es: 'Cerrar', it: 'Chiudi', pt: 'Fechar', ar: 'إغلاق' },
+    outbound: { fr: 'ALLER', en: 'OUTBOUND', es: 'IDA', it: 'ANDATA', pt: 'IDA', ar: 'ذهاب' },
+    return: { fr: 'RETOUR', en: 'RETURN', es: 'VUELTA', it: 'RITORNO', pt: 'VOLTA', ar: 'عودة' },
+    pickup: { fr: 'PRISE EN CHARGE', en: 'PICKUP', es: 'RECOGIDA', it: 'RITIRO', pt: 'RETIRADA', ar: 'استلام' },
+    dropoff: { fr: 'RESTITUTION', en: 'DROPOFF', es: 'DEVOLUCIÓN', it: 'RICONSEGNA', pt: 'DEVOLUÇÃO', ar: 'تسليم' },
+    duration: { fr: 'Durée', en: 'Duration', es: 'Duración', it: 'Durata', pt: 'Duração', ar: 'المدة' },
+    mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' },
+    fuel: { fr: 'Carburant', en: 'Fuel', es: 'Combustible', it: 'Carburante', pt: 'Combustível', ar: 'الوقود' }
+  };
+  const t = (key) => I18N[key]?.[lang] || I18N[key]?.fr || key;
+  
+  // Formater la durée
+  const formatDuration = (minutes) => {
+    if (!minutes) return '';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+  };
+  
+  // Générer le HTML des réservations
+  let bookingsHTML = '';
+  if (bookings.length === 0) {
+    bookingsHTML = `<div style="text-align:center;padding:40px;color:#666">${t('noBookings')}</div>`;
+  } else {
+    bookings.forEach(b => {
+      const icon = getCategoryIconForCell(b.category);
+      let detailsHTML = '';
+      
+      // Détails spécifiques aux vols
+      if (b.category === 'flight' && b.flights && b.flights.length > 0) {
+        detailsHTML = '<div style="margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px">';
+        b.flights.forEach(flight => {
+          const typeLabel = flight.type === 'outbound' ? `✈️ ${t('outbound')}` : `✈️ ${t('return')}`;
+          const route = `${flight.departure_city || '?'} (${flight.departure_airport || '?'}) → ${flight.arrival_city || '?'} (${flight.arrival_airport || '?'})`;
+          
+          detailsHTML += `
+            <div style="margin-bottom:12px;padding:10px;background:#f0f9ff;border-radius:8px">
+              <div style="font-weight:700;color:#1e40af;margin-bottom:6px">${typeLabel}</div>
+              <div style="font-size:0.9rem;margin-bottom:4px">🛫 ${route}</div>
+              ${flight.airline || flight.flight_number ? `<div style="font-size:0.85rem;color:#666">🔢 ${[flight.airline, flight.flight_number].filter(Boolean).join(' • ')}</div>` : ''}
+              ${flight.departure_date || flight.departure_time ? `<div style="font-size:0.85rem;color:#666">🛫 Départ: ${[flight.departure_date, flight.departure_time ? 'à ' + flight.departure_time : ''].filter(Boolean).join(' ')}</div>` : ''}
+              ${flight.arrival_date || flight.arrival_time ? `<div style="font-size:0.85rem;color:#666">🛬 Arrivée: ${[flight.arrival_date, flight.arrival_time ? 'à ' + flight.arrival_time : ''].filter(Boolean).join(' ')}${flight.arrival_date && flight.departure_date && flight.arrival_date !== flight.departure_date ? ' (+1j)' : ''}</div>` : ''}
+              ${flight.duration_minutes ? `<div style="font-size:0.85rem;color:#666">⏱️ ${t('duration')}: ${formatDuration(flight.duration_minutes)}</div>` : ''}
+            </div>
+          `;
+        });
+        detailsHTML += '</div>';
+      }
+      
+      // Détails spécifiques aux locations de voiture
+      if (b.category === 'car_rental' && b.car_rental) {
+        const car = b.car_rental;
+        detailsHTML = `
+          <div style="margin-top:10px;border-top:1px solid #e5e7eb;padding-top:10px">
+            ${car.vehicle_model || car.vehicle_type ? `<div style="font-size:0.9rem;margin-bottom:8px">🚗 ${car.vehicle_model || car.vehicle_type}</div>` : ''}
+            
+            <div style="margin-bottom:8px;padding:8px;background:#f0fdf4;border-radius:6px">
+              <div style="font-weight:600;color:#16a34a;margin-bottom:4px">📍 ${t('pickup')}</div>
+              ${car.pickup_location ? `<div style="font-size:0.85rem">${car.pickup_location}</div>` : ''}
+              ${car.pickup_date || car.pickup_time ? `<div style="font-size:0.85rem;color:#666">📅 ${[car.pickup_date, car.pickup_time ? 'à ' + car.pickup_time : ''].filter(Boolean).join(' ')}</div>` : ''}
+            </div>
+            
+            <div style="margin-bottom:8px;padding:8px;background:#fef2f2;border-radius:6px">
+              <div style="font-weight:600;color:#dc2626;margin-bottom:4px">📍 ${t('dropoff')}</div>
+              ${car.dropoff_location ? `<div style="font-size:0.85rem">${car.dropoff_location}</div>` : ''}
+              ${car.dropoff_date || car.dropoff_time ? `<div style="font-size:0.85rem;color:#666">📅 ${[car.dropoff_date, car.dropoff_time ? 'à ' + car.dropoff_time : ''].filter(Boolean).join(' ')}</div>` : ''}
+            </div>
+            
+            ${car.included_km ? `<div style="font-size:0.85rem;color:#666">🛣️ ${t('mileage')}: ${car.included_km}</div>` : ''}
+            ${car.fuel_policy ? `<div style="font-size:0.85rem;color:#666">⛽ ${t('fuel')}: ${car.fuel_policy}</div>` : ''}
+          </div>
+        `;
+      }
+      
+      bookingsHTML += `
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05)">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="font-size:1.8rem">${icon}</div>
+            <div style="flex:1">
+              <div style="font-weight:700;font-size:1rem;color:#1f2937">${b.name || 'Sans nom'}</div>
+              ${b.provider ? `<div style="font-size:0.85rem;color:#6b7280">🏢 ${b.provider}</div>` : ''}
+              ${b.date_start || b.date_end ? `<div style="font-size:0.85rem;color:#6b7280">📅 ${[b.date_start, b.date_end && b.date_end !== b.date_start ? '→ ' + b.date_end : ''].filter(Boolean).join(' ')}</div>` : ''}
+              ${b.reference ? `<div style="font-size:0.85rem;color:#6b7280">🔖 Réf: ${b.reference}</div>` : ''}
+              ${b.price ? `<div style="font-size:0.9rem;font-weight:600;color:#16a34a;margin-top:4px">💰 ${typeof b.price === 'object' ? b.price.amount : b.price} €</div>` : ''}
+              ${b.address ? `<div style="font-size:0.85rem;color:#6b7280">📍 ${b.address}</div>` : ''}
+              ${b.notes ? `<div style="font-size:0.85rem;color:#6b7280;font-style:italic;margin-top:4px">📝 ${b.notes}</div>` : ''}
+            </div>
+          </div>
+          ${detailsHTML}
+        </div>
+      `;
+    });
+  }
+  
+  // Créer la modale
+  const modalId = 'stepBookingsModal';
+  let modal = document.getElementById(modalId);
+  if (modal) modal.remove();
+  
+  modal = document.createElement('div');
+  modal.id = modalId;
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  
+  modal.innerHTML = `
+    <div style="background:#f8fafc;border-radius:16px;max-width:500px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">
+      <div style="background:#113f7a;color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">
+        <h2 style="margin:0;font-size:1.1rem">📋 ${t('title')} - ${stepName}</h2>
+        <button onclick="document.getElementById('${modalId}').remove()" style="background:none;border:none;color:#fff;font-size:1.5rem;cursor:pointer;padding:0">×</button>
+      </div>
+      <div style="padding:16px;overflow-y:auto;flex:1">
+        ${bookingsHTML}
+      </div>
+      <div style="padding:12px 16px;border-top:1px solid #e5e7eb;text-align:right">
+        <button onclick="document.getElementById('${modalId}').remove()" style="padding:10px 24px;background:#113f7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">${t('close')}</button>
+      </div>
+    </div>
+  `;
+  
+  // Fermer au clic sur le backdrop
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+  
+  document.body.appendChild(modal);
 }
 
 
@@ -5431,37 +5575,40 @@ dateCell.style.textAlign='left';
   
   let hasBookings = false;
   
-  // Récupérer les réservations de cette étape
-  if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
-    const stepBookings = globalBookingManager.getBookings(idx) || [];
-    hasBookings = stepBookings.length > 0;
+  // Récupérer les réservations de cette étape depuis ORT_TRIP_DATA
+  let stepBookings = [];
+  if (window.ORT_TRIP_DATA) {
+    stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+  } else if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+    // Fallback sur ancien système
+    stepBookings = globalBookingManager.getBookings(idx) || [];
+  }
+  
+  hasBookings = stepBookings.length > 0;
+  
+  if (stepBookings.length > 0) {
+    const categoryGroups = {};
     
-    if (stepBookings.length > 0) {
-      const categoryGroups = {};
-      
-      // Grouper par catégorie
-      stepBookings.forEach(booking => {
-        const cat = booking.category || 'other';
-        if (!categoryGroups[cat]) {
-          categoryGroups[cat] = [];
-        }
-        categoryGroups[cat].push(booking);
-      });
-      
-      // Afficher un résumé
-      let html = '<div style="font-size:0.8rem;line-height:1.4;font-weight:600">';
-      Object.entries(categoryGroups).forEach(([cat, bookings]) => {
-        const icon = getCategoryIconForCell(cat);
-        html += `<div style="margin:2px 0;color:#555">${icon} ${bookings.length}</div>`;
-      });
-      html += '</div>';
-      
-      bookingsCell.innerHTML = html;
-      bookingsCell.style.backgroundColor = '#f0f9ff';
-      bookingsCell.style.border = '1px solid #93c5fd';
-    } else {
-      bookingsCell.innerHTML = '<div style="color:#999;font-size:0.85rem">—</div>';
-    }
+    // Grouper par catégorie
+    stepBookings.forEach(booking => {
+      const cat = booking.category || 'other';
+      if (!categoryGroups[cat]) {
+        categoryGroups[cat] = [];
+      }
+      categoryGroups[cat].push(booking);
+    });
+    
+    // Afficher un résumé
+    let html = '<div style="font-size:0.8rem;line-height:1.4;font-weight:600">';
+    Object.entries(categoryGroups).forEach(([cat, bookings]) => {
+      const icon = getCategoryIconForCell(cat);
+      html += `<div style="margin:2px 0;color:#555">${icon} ${bookings.length}</div>`;
+    });
+    html += '</div>';
+    
+    bookingsCell.innerHTML = html;
+    bookingsCell.style.backgroundColor = '#f0f9ff';
+    bookingsCell.style.border = '1px solid #93c5fd';
   } else {
     bookingsCell.innerHTML = '<div style="color:#999;font-size:0.85rem">—</div>';
   }
@@ -5472,6 +5619,10 @@ dateCell.style.textAlign='left';
     e.stopPropagation();
     if (typeof openBookingsModal === 'function') {
       openBookingsModal(idx, step.name || step.place_id);
+    } else if (typeof openStepBookingsModal === 'function') {
+      openStepBookingsModal(idx, step.name || step.place_id);
+    } else {
+      console.warn('[BOOKINGS] Aucune fonction modale disponible');
     }
   });
   
