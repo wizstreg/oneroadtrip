@@ -38,7 +38,8 @@ const PROMPT = `Tu extrais les infos de réservations voyage en JSON.
 RÈGLES:
 1. JSON valide uniquement, sans markdown, sans backticks, sans texte avant/après
 2. null si info absente
-3. Dates: YYYY-MM-DD, Heures: HH:MM
+3. Dates: YYYY-MM-DD, Heures: HH:MM (heure locale)
+4. Durées: en minutes (ex: 2h30 = 150)
 
 CATÉGORIES (une seule):
 - flight: Avion/vol
@@ -52,9 +53,9 @@ CATÉGORIES (une seule):
 JSON À RETOURNER:
 {
   "category": "flight|car_rental|insurance|hotel|activity|visit|show",
-  "name": "Nom",
-  "provider": "Fournisseur",
-  "confirmation_number": "Ref",
+  "name": "Nom court (ex: Vol Paris-Tokyo, Location Hertz Nice)",
+  "provider": "Compagnie/Fournisseur",
+  "confirmation_number": "Ref/PNR",
   "date_start": "YYYY-MM-DD",
   "date_end": "YYYY-MM-DD",
   "time_start": "HH:MM",
@@ -64,8 +65,48 @@ JSON À RETOURNER:
   "country": "Pays",
   "price": { "amount": 123.45, "currency": "EUR" },
   "guests": 2,
-  "notes": "Infos importantes"
+  "notes": "Infos importantes",
+  
+  "flights": [
+    {
+      "type": "outbound|return",
+      "flight_number": "AF123",
+      "airline": "Air France",
+      "departure_city": "Paris",
+      "departure_airport": "CDG",
+      "departure_date": "YYYY-MM-DD",
+      "departure_time": "HH:MM",
+      "arrival_city": "Tokyo",
+      "arrival_airport": "NRT",
+      "arrival_date": "YYYY-MM-DD",
+      "arrival_time": "HH:MM",
+      "duration_minutes": 720
+    }
+  ],
+  
+  "car_rental": {
+    "vehicle_type": "Citadine|Berline|SUV|Monospace|Utilitaire",
+    "vehicle_model": "Peugeot 208 ou similaire",
+    "pickup_location": "Aéroport Nice Côte d'Azur",
+    "pickup_address": "Terminal 1",
+    "pickup_date": "YYYY-MM-DD",
+    "pickup_time": "HH:MM",
+    "dropoff_location": "Aéroport Nice Côte d'Azur",
+    "dropoff_address": "Terminal 1", 
+    "dropoff_date": "YYYY-MM-DD",
+    "dropoff_time": "HH:MM",
+    "included_km": "Illimité|500km/jour",
+    "fuel_policy": "Plein/Plein|Prépayé"
+  }
 }
+
+NOTES:
+- "flights" uniquement pour category=flight, sinon null
+- "car_rental" uniquement pour category=car_rental, sinon null
+- Si vol aller simple, un seul élément dans flights avec type="outbound"
+- Si aller-retour, deux éléments (outbound + return)
+- Si escales, ajouter chaque segment séparément
+- duration_minutes: calculer à partir des heures si non indiqué (attention fuseaux horaires)
 
 CONTENU:
 `;
@@ -213,6 +254,14 @@ function cleanJSON(text) {
   return c.trim();
 }
 
+// Formater les minutes en heures
+function formatDuration(minutes) {
+  if (!minutes) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+}
+
 function makePreview(data) {
   const icon = CATEGORIES[data.category] || '🎯';
   let subtitle = data.date_start || '';
@@ -220,16 +269,102 @@ function makePreview(data) {
   if (data.city) subtitle += (subtitle ? ' • ' : '') + data.city;
 
   const fields = [];
-  if (data.date_start) fields.push({ icon: '📅', value: data.date_start + (data.date_end && data.date_end !== data.date_start ? ' → ' + data.date_end : '') });
-  if (data.time_start) fields.push({ icon: '🕐', value: data.time_start + (data.time_end ? ' - ' + data.time_end : '') });
-  if (data.address || data.city) fields.push({ icon: '📍', value: [data.address, data.city, data.country].filter(Boolean).join(', ') });
-  if (data.confirmation_number) fields.push({ icon: '🔖', value: 'Réf: ' + data.confirmation_number });
-  if (data.price?.amount) fields.push({ icon: '💰', value: data.price.amount + ' ' + (data.price.currency || 'EUR') });
-  if (data.provider) fields.push({ icon: '🏢', value: data.provider });
-  if (data.guests) fields.push({ icon: '👥', value: data.guests + ' personne(s)' });
-  if (data.notes) fields.push({ icon: '📝', value: data.notes });
+  
+  // ═══ VOLS ═══
+  if (data.category === 'flight' && data.flights && data.flights.length > 0) {
+    data.flights.forEach((flight, idx) => {
+      const typeLabel = flight.type === 'outbound' ? '✈️ ALLER' : (flight.type === 'return' ? '✈️ RETOUR' : '✈️ VOL');
+      const route = `${flight.departure_city || '?'} (${flight.departure_airport || '?'}) → ${flight.arrival_city || '?'} (${flight.arrival_airport || '?'})`;
+      
+      fields.push({ icon: '', value: `━━ ${typeLabel} ━━`, isHeader: true });
+      fields.push({ icon: '🛫', value: route });
+      
+      // Compagnie + numéro de vol
+      let flightInfo = '';
+      if (flight.airline) flightInfo += flight.airline;
+      if (flight.flight_number) flightInfo += (flightInfo ? ' • ' : '') + flight.flight_number;
+      if (flightInfo) fields.push({ icon: '🔢', value: flightInfo });
+      
+      // Départ
+      if (flight.departure_date || flight.departure_time) {
+        let depStr = flight.departure_date || '';
+        if (flight.departure_time) depStr += (depStr ? ' à ' : '') + flight.departure_time;
+        fields.push({ icon: '🛫', value: `Départ: ${depStr}` });
+      }
+      
+      // Arrivée
+      if (flight.arrival_date || flight.arrival_time) {
+        let arrStr = flight.arrival_date || '';
+        if (flight.arrival_time) arrStr += (arrStr ? ' à ' : '') + flight.arrival_time;
+        if (flight.arrival_date && flight.departure_date && flight.arrival_date !== flight.departure_date) {
+          arrStr += ' (+1j)';
+        }
+        fields.push({ icon: '🛬', value: `Arrivée: ${arrStr}` });
+      }
+      
+      // Durée du vol
+      if (flight.duration_minutes) {
+        fields.push({ icon: '⏱️', value: `Durée: ${formatDuration(flight.duration_minutes)}` });
+      }
+    });
+    
+    // Infos générales
+    if (data.confirmation_number) fields.push({ icon: '🔖', value: 'PNR: ' + data.confirmation_number });
+    if (data.price?.amount) fields.push({ icon: '💰', value: data.price.amount + ' ' + (data.price.currency || 'EUR') });
+    if (data.provider) fields.push({ icon: '🏢', value: data.provider });
+    if (data.guests) fields.push({ icon: '👥', value: data.guests + ' passager(s)' });
+    if (data.notes) fields.push({ icon: '📝', value: data.notes });
+  
+  // ═══ LOCATION VOITURE ═══
+  } else if (data.category === 'car_rental' && data.car_rental) {
+    const car = data.car_rental;
+    
+    // Véhicule
+    if (car.vehicle_model || car.vehicle_type) {
+      fields.push({ icon: '🚗', value: car.vehicle_model || car.vehicle_type });
+    }
+    
+    // Prise en charge
+    fields.push({ icon: '', value: '━━ 📍 PRISE EN CHARGE ━━', isHeader: true });
+    if (car.pickup_location) fields.push({ icon: '📍', value: car.pickup_location });
+    if (car.pickup_date || car.pickup_time) {
+      let pickupStr = car.pickup_date || '';
+      if (car.pickup_time) pickupStr += (pickupStr ? ' à ' : '') + car.pickup_time;
+      fields.push({ icon: '📅', value: pickupStr });
+    }
+    
+    // Restitution
+    fields.push({ icon: '', value: '━━ 📍 RESTITUTION ━━', isHeader: true });
+    if (car.dropoff_location) fields.push({ icon: '📍', value: car.dropoff_location });
+    if (car.dropoff_date || car.dropoff_time) {
+      let dropoffStr = car.dropoff_date || '';
+      if (car.dropoff_time) dropoffStr += (dropoffStr ? ' à ' : '') + car.dropoff_time;
+      fields.push({ icon: '📅', value: dropoffStr });
+    }
+    
+    // Détails
+    if (car.included_km) fields.push({ icon: '🛣️', value: `Kilométrage: ${car.included_km}` });
+    if (car.fuel_policy) fields.push({ icon: '⛽', value: `Carburant: ${car.fuel_policy}` });
+    
+    // Infos générales
+    if (data.confirmation_number) fields.push({ icon: '🔖', value: 'Réf: ' + data.confirmation_number });
+    if (data.price?.amount) fields.push({ icon: '💰', value: data.price.amount + ' ' + (data.price.currency || 'EUR') });
+    if (data.provider) fields.push({ icon: '🏢', value: data.provider });
+    if (data.notes) fields.push({ icon: '📝', value: data.notes });
+    
+  } else {
+    // ═══ AUTRES (hôtel, activité, etc.) ═══
+    if (data.date_start) fields.push({ icon: '📅', value: data.date_start + (data.date_end && data.date_end !== data.date_start ? ' → ' + data.date_end : '') });
+    if (data.time_start) fields.push({ icon: '🕐', value: data.time_start + (data.time_end ? ' - ' + data.time_end : '') });
+    if (data.address || data.city) fields.push({ icon: '📍', value: [data.address, data.city, data.country].filter(Boolean).join(', ') });
+    if (data.confirmation_number) fields.push({ icon: '🔖', value: 'Réf: ' + data.confirmation_number });
+    if (data.price?.amount) fields.push({ icon: '💰', value: data.price.amount + ' ' + (data.price.currency || 'EUR') });
+    if (data.provider) fields.push({ icon: '🏢', value: data.provider });
+    if (data.guests) fields.push({ icon: '👥', value: data.guests + ' personne(s)' });
+    if (data.notes) fields.push({ icon: '📝', value: data.notes });
+  }
 
-  return { icon, title: data.name || 'Sans nom', subtitle, fields, category: data.category };
+  return { icon, title: data.name || 'Sans nom', subtitle, fields, category: data.category, flights: data.flights, car_rental: data.car_rental };
 }
 
 // ===== HANDLER =====

@@ -857,10 +857,12 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   // MODAL PARSING (réutilise editModal)
   // ══════════════════════════════════════════════════════════════
   let editMode = 'edit'; // 'edit' ou 'parse'
+  let parsedData = null; // Données parsées par l'IA (pour les flights, etc.)
   
   function openParseModal(data, preview = null) {
     // Passer en mode parsing
     editMode = 'parse';
+    parsedData = data; // Stocker les données complètes (avec flights si vol)
     editingBooking = null;
     editingType = null;
     editingStepIdx = -1;
@@ -895,7 +897,12 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
           </div>
         </div>
         <div class="parse-preview-fields">
-          ${preview.fields.map(f => `<div class="parse-preview-field"><span class="icon">${f.icon}</span><span class="value">${escHtml(f.value)}</span></div>`).join('')}
+          ${preview.fields.map(f => {
+            if (f.isHeader) {
+              return `<div class="parse-preview-field" style="margin-top:8px;font-weight:700;color:#1e40af;border-top:1px solid #bbf7d0;padding-top:8px">${escHtml(f.value)}</div>`;
+            }
+            return `<div class="parse-preview-field"><span class="icon">${f.icon}</span><span class="value">${escHtml(f.value)}</span></div>`;
+          }).join('')}
         </div>
       `;
     } else {
@@ -951,6 +958,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     $('editPreviewBox').style.display = 'none';
     
     editMode = 'edit';
+    parsedData = null;
   }
   
   // Modifier closeEditModal pour gérer les deux modes
@@ -1003,6 +1011,18 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         updatedAt: Date.now(),
         bookingType: editNewType
       };
+      
+      // Ajouter les infos de vol si c'est un vol
+      if (editNewCategory === 'flight' && parsedData?.flights) {
+        booking.flights = parsedData.flights;
+        booking.provider = parsedData.provider || null;
+      }
+      
+      // Ajouter les infos de location si c'est une voiture
+      if (editNewCategory === 'car_rental' && parsedData?.car_rental) {
+        booking.car_rental = parsedData.car_rental;
+        booking.provider = parsedData.provider || null;
+      }
       
       // Multi-step
       if (editNewType === 'step' && editSelectedSteps.length > 0) {
@@ -1411,12 +1431,25 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       
       const token = await user.getIdToken();
       
-      // URL API : en local, utiliser le site Netlify preprod
+      // En local, pas d'accès à l'API (CORS) → utiliser le parsing local
       const host = location.hostname;
       const isLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
-      const apiBase = isLocal ? 'https://test-oneroadtrip.netlify.app' : '';
       
-      const response = await fetch(apiBase + '/.netlify/functions/parse-booking', {
+      if (isLocal) {
+        console.log('[PARSE-BOOKING] Mode local → parsing regex');
+        $('analyzing').classList.remove('show');
+        $('btnAnalyze').disabled = false;
+        showToast('Mode local : analyse simplifiée (sans IA)', 'error');
+        const extracted = extractFromText(text);
+        if (extracted.name || extracted.date_start || extracted.reference) {
+          showFormWithData(extracted);
+        } else {
+          showManualForm();
+        }
+        return;
+      }
+      
+      const response = await fetch('/.netlify/functions/parse-booking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1425,18 +1458,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         body: JSON.stringify({ content: text })
       });
       
-      // Debug: voir la réponse brute
-      const responseText = await response.text();
-      console.log('[PARSE-BOOKING] Response status:', response.status);
-      console.log('[PARSE-BOOKING] Response text:', responseText.substring(0, 500));
-      
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (e) {
-        console.error('[PARSE-BOOKING] JSON parse error:', e);
-        throw new Error('Réponse invalide du serveur');
-      }
+      const result = await response.json();
       
       $('analyzing').classList.remove('show');
       $('btnAnalyze').disabled = false;
@@ -1483,7 +1505,10 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         provider: result.data.provider,
         time_start: result.data.time_start,
         time_end: result.data.time_end,
-        guests: result.data.guests
+        guests: result.data.guests,
+        // Infos spécifiques
+        flights: result.data.flights || null,
+        car_rental: result.data.car_rental || null
       };
       
       showFormWithData(data, result.preview);
