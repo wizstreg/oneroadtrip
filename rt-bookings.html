@@ -167,7 +167,9 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     tripNotSavedMsg: { fr: 'Sauvegardez d\'abord le voyage.', en: 'Save the trip first.', es: 'Guarde el viaje primero.', it: 'Salva prima il viaggio.', pt: 'Salve a viagem primeiro.', ar: 'احفظ الرحلة أولاً.' },
     goBack: { fr: 'Retour', en: 'Back', es: 'Volver', it: 'Indietro', pt: 'Voltar', ar: 'رجوع' },
     addBooking: { fr: 'Ajouter une réservation', en: 'Add a booking', es: 'Añadir una reserva', it: 'Aggiungi una prenotazione', pt: 'Adicionar uma reserva', ar: 'إضافة حجز' },
-    details: { fr: 'Détails', en: 'Details', es: 'Detalles', it: 'Dettagli', pt: 'Detalhes', ar: 'تفاصيل' }
+    details: { fr: 'Détails', en: 'Details', es: 'Detalles', it: 'Dettagli', pt: 'Detalhes', ar: 'تفاصيل' },
+    nights: { fr: 'nuits', en: 'nights', es: 'noches', it: 'notti', pt: 'noites', ar: 'ليال' },
+    steps: { fr: 'Étapes', en: 'Steps', es: 'Etapas', it: 'Tappe', pt: 'Etapas', ar: 'مراحل' }
   };
   
   let lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang')?.slice(0,2) || 'fr';
@@ -269,15 +271,55 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
       totalBudget += parseFloat(p) || 0; 
     });
     
+    // Collecter TOUTES les résas et dédupliquer par ID
+    const allBookings = new Map(); // id -> { booking, steps: [stepIndex, ...], firstStepIndex }
+    const seenIds = new Set();
+    
     if (trip?.steps) {
       trip.steps.forEach((step, stepIndex) => {
         const stepBookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(stepIndex) : [];
-        stepBookings.forEach(b => { 
-          const p = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
-          totalBudget += parseFloat(p) || 0; 
+        stepBookings.forEach(b => {
+          const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+          
+          if (!allBookings.has(bookingId)) {
+            allBookings.set(bookingId, {
+              booking: b,
+              steps: [stepIndex],
+              firstStepIndex: stepIndex
+            });
+          } else {
+            // Ajouter cette étape à la liste
+            const existing = allBookings.get(bookingId);
+            if (!existing.steps.includes(stepIndex)) {
+              existing.steps.push(stepIndex);
+            }
+          }
         });
+      });
+    }
+    
+    // Grouper les résas par première étape pour l'affichage
+    const bookingsByFirstStep = new Map();
+    allBookings.forEach((data, bookingId) => {
+      const firstStep = data.firstStepIndex;
+      if (!bookingsByFirstStep.has(firstStep)) {
+        bookingsByFirstStep.set(firstStep, []);
+      }
+      bookingsByFirstStep.get(firstStep).push(data);
+    });
+    
+    // Calculer le budget total (prix global, pas dupliqué)
+    allBookings.forEach((data) => {
+      const p = data.booking.price ? (typeof data.booking.price === 'object' ? data.booking.price.amount : data.booking.price) : 0;
+      totalBudget += parseFloat(p) || 0;
+    });
+    
+    // Afficher par première étape
+    if (trip?.steps) {
+      trip.steps.forEach((step, stepIndex) => {
+        const stepData = bookingsByFirstStep.get(stepIndex) || [];
         
-        if (stepBookings.length > 0) {
+        if (stepData.length > 0) {
           const section = document.createElement('div');
           section.className = 'step-section';
           section.innerHTML = `
@@ -286,7 +328,7 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
               <span class="section-toggle" id="toggleStep${stepIndex}">▼</span>
             </div>
             <div class="section-content" id="stepContent${stepIndex}">
-              ${stepBookings.map((b, i) => renderBookingItem(b, 'step', i, stepIndex)).join('')}
+              ${stepData.map((data, i) => renderBookingItemWithSteps(data.booking, data.steps, i, stepIndex)).join('')}
             </div>
           `;
           stepsContainer.appendChild(section);
@@ -304,6 +346,32 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     }
   }
   
+  function renderBookingItemWithSteps(booking, steps, index, stepIndex) {
+    const icon = ICONS[booking.category] || ICONS.other;
+    const ref = booking.reference || booking.confirmation_number;
+    
+    // Afficher les nuits si plusieurs étapes
+    const nightsInfo = steps.length > 1 ? `${steps.length} ${t('nights') || 'nuits'}` : '';
+    const stepsInfo = steps.length > 1 ? `📍 ${t('steps') || 'Étapes'} ${steps.map(s => s + 1).join(', ')}` : '';
+    
+    const details = [booking.date_start, nightsInfo, ref, booking.provider, booking.address].filter(Boolean).join(' • ');
+    const priceVal = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : null;
+    const priceCur = booking.price && typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+    const price = priceVal ? `${parseFloat(priceVal).toFixed(2)} ${priceCur}` : '';
+    const dataAttr = `data-type="step" data-step="${stepIndex}" data-index="${index}"`;
+    
+    return `<div class="booking-item" ${dataAttr}>
+      <div class="booking-icon">${icon}</div>
+      <div class="booking-info">
+        <div class="booking-name">${booking.name || 'Réservation'}</div>
+        ${details ? `<div class="booking-details">${details}</div>` : ''}
+        ${stepsInfo ? `<div class="booking-details" style="color:#3b82f6">${stepsInfo}</div>` : ''}
+      </div>
+      ${price ? `<div class="booking-price">${price}</div>` : ''}
+    </div>`;
+  }
+  
+  // Pour les travel bookings (vols, assurance, etc.)
   function renderBookingItem(booking, type, index, stepIndex = null) {
     const icon = ICONS[booking.category] || ICONS.other;
     const ref = booking.reference || booking.confirmation_number;

@@ -158,6 +158,59 @@
       enriched.heroImage = enriched.steps[0].photo;
     }
     
+    // === COLLECTER LES RÉSERVATIONS ===
+    try {
+      if (window.ORT_TRIP_DATA) {
+        // Résas voyage (vols, assurance, etc.)
+        const travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
+        enriched.travelBookings = travelBookings;
+        console.log(`[CARNET] ${travelBookings.length} réservations voyage`);
+        
+        // Résas par étape (hôtels, activités) - dédupliquées
+        const allStepBookings = new Map();
+        enriched.steps.forEach((step, idx) => {
+          const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+          step.bookings = stepBookings;
+          
+          // Collecter pour dédupliquer (hôtels multi-nuits)
+          stepBookings.forEach(b => {
+            const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+            if (!allStepBookings.has(bookingId)) {
+              allStepBookings.set(bookingId, {
+                booking: b,
+                steps: [idx],
+                firstStepIndex: idx
+              });
+            } else {
+              const existing = allStepBookings.get(bookingId);
+              if (!existing.steps.includes(idx)) {
+                existing.steps.push(idx);
+              }
+            }
+          });
+        });
+        
+        // Stocker les bookings dédupliqués avec leur info multi-step
+        enriched.stepBookingsMap = Object.fromEntries(allStepBookings);
+        console.log(`[CARNET] ${allStepBookings.size} réservations étapes (dédupliquées)`);
+        
+        // Calculer budget total
+        let totalBudget = 0;
+        travelBookings.forEach(b => {
+          const p = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+          totalBudget += parseFloat(p) || 0;
+        });
+        allStepBookings.forEach((data) => {
+          const p = data.booking.price ? (typeof data.booking.price === 'object' ? data.booking.price.amount : data.booking.price) : 0;
+          totalBudget += parseFloat(p) || 0;
+        });
+        enriched.totalBudget = totalBudget;
+        console.log(`[CARNET] Budget total: ${totalBudget}€`);
+      }
+    } catch (e) {
+      console.warn('[CARNET] Erreur collecte bookings:', e);
+    }
+    
     // Ajouter la date de départ formatée
     if (baseDate) {
       enriched.startDate = startDateStr;

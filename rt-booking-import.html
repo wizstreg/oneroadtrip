@@ -944,6 +944,21 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     $('editFieldAddress').value = booking.address || '';
     $('editFieldNotes').value = booking.notes || '';
     
+    // Afficher l'éditeur spécifique si vol ou location voiture
+    const previewBox = $('editPreviewBox');
+    if (editNewCategory === 'flight' && booking.flights && booking.flights.length > 0) {
+      previewBox.style.display = 'block';
+      previewBox.innerHTML = generateFlightsEditor(booking.flights, booking.provider);
+      parsedData = booking; // Pour avoir accès aux données
+    } else if (editNewCategory === 'car_rental' && booking.car_rental) {
+      previewBox.style.display = 'block';
+      previewBox.innerHTML = generateCarRentalEditor(booking.car_rental);
+      parsedData = booking;
+    } else {
+      previewBox.style.display = 'none';
+      parsedData = null;
+    }
+    
     // Mettre à jour le prix par étape
     updatePricePerStep();
     
@@ -1447,7 +1462,11 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         if (editNewType === 'travel') {
           success = ORT_TRIP_DATA.addTravelBooking(booking);
         } else {
-          success = ORT_TRIP_DATA.addStepBooking(editSelectedSteps[0], booking);
+          // Ajouter à TOUTES les étapes sélectionnées (même ID, même stepIndexes)
+          // Ainsi la résa apparaît dans chaque étape mais avec le prix divisé
+          for (const stepIdx of editSelectedSteps) {
+            success = ORT_TRIP_DATA.addStepBooking(stepIdx, booking);
+          }
         }
         
         if (success) {
@@ -1480,25 +1499,54 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         bookingType: editNewType
       };
       
+      // Collecter les vols depuis l'éditeur si présent
+      if (editNewCategory === 'flight') {
+        const editorFlights = collectFlightsFromEditor();
+        if (editorFlights.length > 0) {
+          updatedBooking.flights = editorFlights;
+          updatedBooking.provider = document.getElementById('flightProvider')?.value || editingBooking?.provider || null;
+        } else if (editingBooking?.flights) {
+          updatedBooking.flights = editingBooking.flights;
+          updatedBooking.provider = editingBooking.provider;
+        }
+      }
+      
+      // Collecter la location voiture depuis l'éditeur si présent
+      if (editNewCategory === 'car_rental') {
+        const editorCarRental = collectCarRentalFromEditor();
+        if (editorCarRental.pickup_location || editorCarRental.dropoff_location) {
+          updatedBooking.car_rental = editorCarRental;
+        } else if (editingBooking?.car_rental) {
+          updatedBooking.car_rental = editingBooking.car_rental;
+        }
+        updatedBooking.provider = editingBooking?.provider || null;
+      }
+      
       // Multi-step
       if (editNewType === 'step' && editSelectedSteps.length > 0) {
         updatedBooking.stepIndexes = [...editSelectedSteps];
       }
       
       try {
-        // Supprimer l'ancienne
+        // Supprimer l'ancienne de toutes les étapes où elle était
         if (editingType === 'travel') {
           ORT_TRIP_DATA.removeTravelBooking(editingBookingId);
         } else {
-          ORT_TRIP_DATA.removeStepBooking(editingStepIdx, editingBookingId);
+          // Supprimer des anciennes étapes
+          const oldStepIndexes = editingBooking?.stepIndexes || [editingStepIdx];
+          for (const stepIdx of oldStepIndexes) {
+            ORT_TRIP_DATA.removeStepBooking(stepIdx, editingBookingId);
+          }
         }
         
-        // Ajouter la nouvelle
+        // Ajouter la nouvelle à toutes les étapes sélectionnées
         let success = false;
         if (editNewType === 'travel') {
           success = ORT_TRIP_DATA.addTravelBooking(updatedBooking);
         } else {
-          success = ORT_TRIP_DATA.addStepBooking(editSelectedSteps[0], updatedBooking);
+          for (const stepIdx of editSelectedSteps) {
+            success = ORT_TRIP_DATA.addStepBooking(stepIdx, updatedBooking);
+          }
         }
         
         if (success) {
