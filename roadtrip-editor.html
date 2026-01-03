@@ -1251,12 +1251,16 @@
         // Optimisation d'image via proxy wsrv.nl
         window.optimizeImg = function(url, w = 1200) {
             if (!url) return '';
+            // Images base64 - retourner tel quel (ne pas proxifier)
+            if (url.startsWith('data:image')) return url;
             // Déjà optimisé
             if (url.includes('wsrv.nl')) return url;
             // Wikimedia/Wikipedia - ne pas proxifier
             if (url.includes('wikimedia.org') || url.includes('wikipedia.org')) return url;
             // Unsplash - déjà optimisé avec paramètres
             if (url.includes('unsplash.com') && url.includes('?')) return url;
+            // Google Photos / googleusercontent - ne pas proxifier
+            if (url.includes('googleusercontent.com') || url.includes('lh3.google')) return url;
             // URL locale - ne pas proxifier (wsrv.nl ne peut pas y accéder)
             if (url.startsWith('/') || url.startsWith('./') || url.includes('127.0.0.1') || url.includes('localhost')) {
                 return url; // Retourner tel quel
@@ -1552,15 +1556,40 @@
                     return;
                 }
                 
-                await ORT_TRIP_DATA.loadTrip(tripId);
+                // === CHARGEMENT DIRECT DEPUIS FIRESTORE (sans passer par ORT_STATE) ===
+                console.log('[CARNET] Chargement photos utilisateur depuis Firestore...');
+                const db = firebase.firestore();
+                const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
+                
+                // Charger les userPhotos depuis la sous-collection
+                const photosSnapshot = await tripRef.collection('userPhotos').get();
+                
+                if (photosSnapshot.empty) {
+                    console.log('[CARNET] Aucune photo utilisateur trouvée dans Firestore');
+                    return;
+                }
+                
+                // Créer un map stepIndex -> photos
+                const userPhotosMap = {};
+                photosSnapshot.forEach(doc => {
+                    const photoData = doc.data();
+                    if (typeof photoData.stepIndex === 'number') {
+                        userPhotosMap[photoData.stepIndex] = photoData.photos || [];
+                    }
+                });
+                
+                console.log('[CARNET] Photos utilisateur chargées:', Object.keys(userPhotosMap).length, 'étapes');
                 
                 // Injecter les userPhotos dans chaque step - ÉCRASER les photos du sessionStorage
                 if (tripData?.steps) {
                     let photosInjected = 0;
                     tripData.steps.forEach((step, i) => {
-                        const userPhotos = ORT_TRIP_DATA.getStepPhotos(i) || [];
+                        const userPhotos = userPhotosMap[i] || [];
                         if (userPhotos.length > 0) {
-                            // Les photos Firestore ÉCRASENT celles du sessionStorage
+                            // IMPORTANT: Injecter dans userPhotos pour priorité dans getPhotos()
+                            step.userPhotos = userPhotos;
+                            
+                            // Aussi mettre à jour photo/photos/images pour cohérence
                             const catalogPhotos = (photosCache[step.place_id]?.photos || []);
                             const combined = [...userPhotos];
                             catalogPhotos.forEach(p => {
@@ -1570,19 +1599,18 @@
                             step.images = combined;
                             step.photo = combined[0];
                             photosInjected += userPhotos.length;
-                            // DEBUG: Log détaillé par étape
-                            console.log(`[CARNET] Étape ${i} (${step.name}): ${userPhotos.length} photos user injectées`, userPhotos);
+                            console.log(`[CARNET] ✅ Étape ${i} (${step.name}): ${userPhotos.length} photos user injectées`, userPhotos);
                         }
                     });
+                    
                     if (photosInjected > 0) {
-                        console.log(`[CARNET] ${photosInjected} photos utilisateur injectées au total`);
-                        // DEBUG: Résumé des photos par étape après injection
-                        console.log('[CARNET] État des photos par étape:', tripData.steps.map((s, i) => ({
-                            idx: i,
-                            name: s.name,
-                            photo: s.photo?.substring(0, 50) + '...',
-                            photosCount: s.photos?.length || 0
-                        })));
+                        console.log(`[CARNET] ✅ ${photosInjected} photos utilisateur injectées au total`);
+                        
+                        // IMPORTANT: Re-render le carnet avec les nouvelles photos
+                        console.log('[CARNET] Re-render avec photos utilisateur...');
+                        renderBook();
+                    } else {
+                        console.log('[CARNET] Aucune photo à injecter');
                     }
                 }
             } catch (e) {
@@ -1591,18 +1619,49 @@
         }
         
         function getPhotos(step) {
+            const seen = new Set();
             const photos = [];
-            if (step.photo) photos.push(step.photo);
-            if (step.photos?.length) photos.push(...step.photos);
-            if (step.images?.length) photos.push(...step.images);
-            if (step.place_id && photosCache[step.place_id]?.photos) {
-                photosCache[step.place_id].photos.forEach(p => {
-                    if (!photos.includes(p)) photos.push(p);
-                });
+            
+            // Helper pour ajouter sans doublon
+            const addPhoto = (url) => {
+                if (url && typeof url === 'string' && !seen.has(url) && 
+                    !url.includes('default-roadtrip')) {
+                    // Accepter: http(s), data:image (base64), wikimedia, unsplash, googleusercontent
+                    const isValid = url.startsWith('http') || 
+                                    url.startsWith('data:image') || 
+                                    url.includes('wikimedia') || 
+                                    url.includes('unsplash') ||
+                                    url.includes('googleusercontent');
+                    if (isValid) {
+                        seen.add(url);
+                        photos.push(url);
+                    }
+                }
+            };
+            
+            // 1. Photos utilisateur (userPhotos) - PRIORITÉ MAX
+            if (step.userPhotos?.length) {
+                step.userPhotos.forEach(p => addPhoto(p));
             }
-            // Filtrer les URLs valides (exclure les chemins locaux type /img/default)
-            const validPhotos = photos.filter(p => p && typeof p === 'string' && !p.includes('default-roadtrip') && (p.startsWith('http') || p.includes('wikimedia') || p.includes('unsplash')));
-            return validPhotos;
+            
+            // 2. Photo principale de l'étape (peut être une photo user injectée)
+            addPhoto(step.photo);
+            
+            // 3. Photos de l'étape (step.photos / step.images - peuvent contenir photos user)
+            if (step.photos?.length) {
+                step.photos.forEach(p => addPhoto(p));
+            }
+            if (step.images?.length) {
+                step.images.forEach(p => addPhoto(p));
+            }
+            
+            // 4. Photos du catalogue (limité à 5 max pour ne pas surcharger)
+            if (step.place_id && photosCache[step.place_id]?.photos) {
+                const catalogPhotos = photosCache[step.place_id].photos.slice(0, 5);
+                catalogPhotos.forEach(p => addPhoto(p));
+            }
+            
+            return photos;
         }
         
         // ===== RENDER =====
@@ -1712,17 +1771,29 @@
             }
             
             // Pages étapes - UNE PAGE PAR ÉTAPE avec photo différente
+            // Tracker combien de fois on a vu chaque lieu pour varier les photos
+            const placeOccurrences = {};
+            
             steps.forEach((step, idx) => {
                 // D'abord les photos spécifiques à cette étape (incluant photos utilisateur Firestore)
                 let stepPhotos = getPhotos(step);
                 
-                // DEBUG: Voir les photos de chaque étape
-                console.log(`[CARNET] Étape ${idx} (${step.name}): ${stepPhotos.length} photos`, stepPhotos.slice(0, 3));
+                // Compter les occurrences de ce lieu pour varier les photos
+                const placeKey = step.place_id || step.name || idx;
+                placeOccurrences[placeKey] = (placeOccurrences[placeKey] || 0);
+                const occurrence = placeOccurrences[placeKey];
+                placeOccurrences[placeKey]++;
                 
-                // Photo principale = première photo de l'étape, sinon fallback du pool global
+                // DEBUG: Voir les photos de chaque étape
+                console.log(`[CARNET] Étape ${idx} (${step.name}): ${stepPhotos.length} photos, occurrence ${occurrence}`, stepPhotos.slice(0, 3));
+                
+                // Photo principale = varier selon l'occurrence du lieu
                 let photo;
+                let photoIndex = 0;
                 if (stepPhotos.length > 0) {
-                    photo = stepPhotos[0]; // Photo utilisateur ou catalogue EN PREMIER
+                    // Si même lieu apparaît plusieurs fois, prendre une photo différente
+                    photoIndex = occurrence % stepPhotos.length;
+                    photo = stepPhotos[photoIndex];
                 } else {
                     // Fallback: photo du pool global (réparti par index)
                     photo = allPhotos[idx % allPhotos.length];
