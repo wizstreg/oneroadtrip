@@ -181,6 +181,17 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
 .edit-modal-body{padding:12px}
 .edit-modal-footer{padding:10px 12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;border-radius:0 0 12px 12px}
 
+/* Modal parsing - preview */
+.parse-preview{background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:12px;margin-bottom:12px}
+.parse-preview-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #bbf7d0}
+.parse-preview-icon{font-size:2rem}
+.parse-preview-title{font-weight:700;font-size:1.05rem}
+.parse-preview-subtitle{color:#15803d;font-size:0.8rem}
+.parse-preview-fields{display:flex;flex-direction:column;gap:4px}
+.parse-preview-field{display:flex;align-items:center;gap:8px;font-size:0.85rem}
+.parse-preview-field .icon{width:20px;text-align:center}
+.parse-preview-field .value{color:#166534}
+
 /* Type mini buttons */
 .type-mini{padding:6px 14px;border:2px solid #e5e7eb;border-radius:16px;background:#fff;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all .2s}
 .type-mini:hover{border-color:var(--bg);background:#eff6ff}
@@ -375,14 +386,19 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   </div>
 </div>
 
-<!-- Modal d'édition -->
+<!-- Modal d'édition / parsing (réutilisée) -->
 <div class="edit-modal" id="editModal">
   <div class="edit-modal-content">
-    <div class="edit-modal-header">
-      <h2>✏️ <span data-i18n="editBooking">Modifier la réservation</span></h2>
+    <div class="edit-modal-header" id="editModalHeader">
+      <h2 id="editModalTitle">✏️ <span data-i18n="editBooking">Modifier la réservation</span></h2>
       <button class="edit-modal-close" onclick="closeEditModal()">×</button>
     </div>
     <div class="edit-modal-body">
+      <!-- Preview (affiché seulement en mode parsing) -->
+      <div class="parse-preview" id="editPreviewBox" style="display:none">
+        <!-- Rempli dynamiquement -->
+      </div>
+      
       <!-- Type (compact) -->
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button type="button" class="type-mini" data-type="step" id="editTypeStep" data-i18n-title="typeStepHint" title="Hôtel, activité, visite">📍 <span data-i18n="typeStep">Étape</span></button>
@@ -434,7 +450,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     </div>
     <div class="edit-modal-footer">
       <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
-      <button class="btn btn-success" onclick="saveEditedBooking()">✅ Enregistrer</button>
+      <button class="btn btn-success" id="editModalSaveBtn" onclick="saveEditedBooking()">✅ Enregistrer</button>
     </div>
   </div>
 </div>
@@ -554,7 +570,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     loginRequired: { fr: 'Connexion requise', en: 'Login required', es: 'Inicio de sesión requerido', it: 'Accesso richiesto', pt: 'Login necessário', ar: 'تسجيل الدخول مطلوب' },
     quotaExceeded: { fr: 'Quota atteint ({n}/mois). Réessayez le mois prochain.', en: 'Quota exceeded ({n}/month). Try again next month.', es: 'Cuota alcanzada ({n}/mes). Intente el próximo mes.', it: 'Quota raggiunta ({n}/mese). Riprova il mese prossimo.', pt: 'Cota atingida ({n}/mês). Tente novamente no próximo mês.', ar: 'تم تجاوز الحصة ({n}/شهر). حاول الشهر المقبل.' },
     analysisSuccess: { fr: 'Analyse réussie ! ({n} analyses restantes ce mois)', en: 'Analysis successful! ({n} analyses left this month)', es: '¡Análisis exitoso! ({n} análisis restantes este mes)', it: 'Analisi riuscita! ({n} analisi rimanenti questo mese)', pt: 'Análise bem-sucedida! ({n} análises restantes este mês)', ar: 'تم التحليل بنجاح! ({n} تحليلات متبقية هذا الشهر)' },
-    analysisErrorFallback: { fr: 'Erreur IA, analyse locale utilisée', en: 'AI error, using local analysis', es: 'Error IA, usando análisis local', it: 'Errore IA, usando analisi locale', pt: 'Erro IA, usando análise local', ar: 'خطأ في الذكاء الاصطناعي، استخدام التحليل المحلي' }
+    analysisErrorFallback: { fr: 'Erreur IA, analyse locale utilisée', en: 'AI error, using local analysis', es: 'Error IA, usando análisis local', it: 'Errore IA, usando analisi locale', pt: 'Erro IA, usando análise local', ar: 'خطأ في الذكاء الاصطناعي، استخدام التحليل المحلي' },
+    aiUnavailable: { fr: 'L\'IA n\'est pas disponible. Nous utilisons des IA gratuites pour vous permettre d\'utiliser ce site gratuitement. Merci de rentrer manuellement la réservation ou de revenir plus tard.', en: 'AI is not available. We use free AI services to keep this site free. Please enter the booking manually or try again later.', es: 'La IA no está disponible. Usamos servicios de IA gratuitos para mantener este sitio gratuito. Por favor, ingrese la reserva manualmente o intente más tarde.', it: 'L\'IA non è disponibile. Utilizziamo servizi IA gratuiti per mantenere questo sito gratuito. Inserisci la prenotazione manualmente o riprova più tardi.', pt: 'A IA não está disponível. Usamos serviços de IA gratuitos para manter este site gratuito. Por favor, insira a reserva manualmente ou tente novamente mais tarde.', ar: 'الذكاء الاصطناعي غير متاح. نستخدم خدمات ذكاء اصطناعي مجانية للحفاظ على هذا الموقع مجانياً. يرجى إدخال الحجز يدوياً أو المحاولة لاحقاً.' }
   };
   
   let lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang')?.slice(0,2) || navigator.language?.slice(0,2) || 'fr';
@@ -836,6 +853,125 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     editingBookingId = null;
   };
   
+  // ══════════════════════════════════════════════════════════════
+  // MODAL PARSING (réutilise editModal)
+  // ══════════════════════════════════════════════════════════════
+  let editMode = 'edit'; // 'edit' ou 'parse'
+  
+  function openParseModal(data, preview = null) {
+    // Passer en mode parsing
+    editMode = 'parse';
+    editingBooking = null;
+    editingType = null;
+    editingStepIdx = -1;
+    editingBookingId = null;
+    
+    // Reprendre le type et l'étape sélectionnés dans le formulaire principal
+    editNewType = bookingType;
+    editNewCategory = data.category || 'hotel';
+    editSelectedSteps = [];
+    
+    const mainStepIdx = parseInt($('stepSelector').value);
+    if (editNewType === 'step' && !isNaN(mainStepIdx) && mainStepIdx >= 0) {
+      editSelectedSteps = [mainStepIdx];
+    }
+    
+    // Changer le header (vert + titre)
+    const header = $('editModalHeader');
+    header.style.background = '#16a34a';
+    $('editModalTitle').innerHTML = '✅ ' + t('extractedInfo');
+    
+    // Afficher et remplir la preview
+    const previewBox = $('editPreviewBox');
+    previewBox.style.display = 'block';
+    
+    if (preview && preview.fields) {
+      previewBox.innerHTML = `
+        <div class="parse-preview-header">
+          <span class="parse-preview-icon">${preview.icon || '📋'}</span>
+          <div>
+            <div class="parse-preview-title">${escHtml(preview.title)}</div>
+            ${preview.subtitle ? `<div class="parse-preview-subtitle">${escHtml(preview.subtitle)}</div>` : ''}
+          </div>
+        </div>
+        <div class="parse-preview-fields">
+          ${preview.fields.map(f => `<div class="parse-preview-field"><span class="icon">${f.icon}</span><span class="value">${escHtml(f.value)}</span></div>`).join('')}
+        </div>
+      `;
+    } else {
+      // Fallback simple
+      const labels = { name: t('bookingName'), date_start: t('dateStart'), date_end: t('dateEnd'), price: t('price'), reference: t('reference') };
+      let html = '<div class="parse-preview-fields">';
+      for (const [key, val] of Object.entries(data)) {
+        if (val && labels[key]) {
+          html += `<div class="parse-preview-field"><span class="icon">•</span><span class="value">${labels[key]}: ${val}</span></div>`;
+        }
+      }
+      html += '</div>';
+      previewBox.innerHTML = html;
+    }
+    
+    // Type selector
+    $('editTypeStep').classList.toggle('active', editNewType === 'step');
+    $('editTypeTravel').classList.toggle('active', editNewType === 'travel');
+    $('editStepSelectorWrap').style.display = editNewType === 'step' ? 'block' : 'none';
+    
+    // Remplir le select d'étapes
+    populateEditStepSelector();
+    renderSelectedSteps();
+    
+    // Catégorie
+    document.querySelectorAll('#editCategorySelector .cat-mini').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === editNewCategory);
+    });
+    
+    // Champs
+    $('editFieldName').value = data.name || '';
+    $('editFieldDateStart').value = data.date_start || '';
+    $('editFieldDateEnd').value = data.date_end || '';
+    $('editFieldPrice').value = data.price || '';
+    $('editFieldRef').value = data.reference || '';
+    $('editFieldAddress').value = data.address || '';
+    $('editFieldNotes').value = data.notes || '';
+    
+    // Ouvrir
+    $('editModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    updatePricePerStep();
+  }
+  
+  function resetEditModalToEditMode() {
+    // Remettre le header bleu
+    const header = $('editModalHeader');
+    header.style.background = '';
+    $('editModalTitle').innerHTML = '✏️ ' + t('editBooking');
+    
+    // Cacher la preview
+    $('editPreviewBox').style.display = 'none';
+    
+    editMode = 'edit';
+  }
+  
+  // Modifier closeEditModal pour gérer les deux modes
+  const originalCloseEditModal = window.closeEditModal;
+  window.closeEditModal = function() {
+    $('editModal').classList.remove('show');
+    document.body.style.overflow = '';
+    
+    // Si c'était un parsing, vider le textarea
+    if (editMode === 'parse') {
+      $('emailText').value = '';
+    }
+    
+    // Reset
+    resetEditModalToEditMode();
+    editingBooking = null;
+    editingType = null;
+    editingStepIdx = -1;
+    editingBookingId = null;
+  };
+  
   window.saveEditedBooking = async function() {
     const name = $('editFieldName').value.trim();
     if (!name) {
@@ -851,53 +987,100 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     
     const totalPrice = $('editFieldPrice').value ? parseFloat($('editFieldPrice').value) : null;
     
-    const updatedBooking = {
-      id: editingBooking.id || editingBookingId,
-      category: editNewCategory,
-      name: name,
-      date_start: $('editFieldDateStart').value || null,
-      date_end: $('editFieldDateEnd').value || null,
-      reference: $('editFieldRef').value.trim() || null,
-      price: totalPrice,
-      address: $('editFieldAddress').value.trim() || null,
-      notes: $('editFieldNotes').value.trim() || null,
-      addedAt: editingBooking.addedAt || Date.now(),
-      updatedAt: Date.now(),
-      bookingType: editNewType
-    };
-    
-    // Multi-step
-    if (editNewType === 'step' && editSelectedSteps.length > 0) {
-      updatedBooking.stepIndexes = [...editSelectedSteps];
-    }
-    
-    try {
-      // Supprimer l'ancienne
-      if (editingType === 'travel') {
-        ORT_TRIP_DATA.removeTravelBooking(editingBookingId);
-      } else {
-        ORT_TRIP_DATA.removeStepBooking(editingStepIdx, editingBookingId);
+    if (editMode === 'parse') {
+      // Mode PARSING : créer une nouvelle réservation
+      const booking = {
+        id: `booking_${Date.now()}`,
+        category: editNewCategory,
+        name: name,
+        date_start: $('editFieldDateStart').value || null,
+        date_end: $('editFieldDateEnd').value || null,
+        reference: $('editFieldRef').value.trim() || null,
+        price: totalPrice,
+        address: $('editFieldAddress').value.trim() || null,
+        notes: $('editFieldNotes').value.trim() || null,
+        addedAt: Date.now(),
+        updatedAt: Date.now(),
+        bookingType: editNewType
+      };
+      
+      // Multi-step
+      if (editNewType === 'step' && editSelectedSteps.length > 0) {
+        booking.stepIndexes = [...editSelectedSteps];
       }
       
-      // Ajouter la nouvelle
       let success = false;
-      if (editNewType === 'travel') {
-        success = ORT_TRIP_DATA.addTravelBooking(updatedBooking);
-      } else {
-        success = ORT_TRIP_DATA.addStepBooking(editSelectedSteps[0], updatedBooking);
+      
+      if (window.ORT_TRIP_DATA) {
+        if (editNewType === 'travel') {
+          success = ORT_TRIP_DATA.addTravelBooking(booking);
+        } else {
+          success = ORT_TRIP_DATA.addStepBooking(editSelectedSteps[0], booking);
+        }
+        
+        if (success) {
+          await ORT_TRIP_DATA.forceSave();
+        }
       }
       
       if (success) {
-        await ORT_TRIP_DATA.forceSave();
+        showToast(t('saved'));
         renderExistingBookings();
         closeEditModal();
-        showToast(t('bookingUpdated'));
       } else {
         showToast(t('errorSaving'), 'error');
       }
-    } catch (e) {
-      console.error('[EDIT SAVE]', e);
-      showToast(t('errorSaving'), 'error');
+      
+    } else {
+      // Mode EDIT : modifier une réservation existante
+      const updatedBooking = {
+        id: editingBooking?.id || editingBookingId,
+        category: editNewCategory,
+        name: name,
+        date_start: $('editFieldDateStart').value || null,
+        date_end: $('editFieldDateEnd').value || null,
+        reference: $('editFieldRef').value.trim() || null,
+        price: totalPrice,
+        address: $('editFieldAddress').value.trim() || null,
+        notes: $('editFieldNotes').value.trim() || null,
+        addedAt: editingBooking?.addedAt || Date.now(),
+        updatedAt: Date.now(),
+        bookingType: editNewType
+      };
+      
+      // Multi-step
+      if (editNewType === 'step' && editSelectedSteps.length > 0) {
+        updatedBooking.stepIndexes = [...editSelectedSteps];
+      }
+      
+      try {
+        // Supprimer l'ancienne
+        if (editingType === 'travel') {
+          ORT_TRIP_DATA.removeTravelBooking(editingBookingId);
+        } else {
+          ORT_TRIP_DATA.removeStepBooking(editingStepIdx, editingBookingId);
+        }
+        
+        // Ajouter la nouvelle
+        let success = false;
+        if (editNewType === 'travel') {
+          success = ORT_TRIP_DATA.addTravelBooking(updatedBooking);
+        } else {
+          success = ORT_TRIP_DATA.addStepBooking(editSelectedSteps[0], updatedBooking);
+        }
+        
+        if (success) {
+          await ORT_TRIP_DATA.forceSave();
+          renderExistingBookings();
+          closeEditModal();
+          showToast(t('bookingUpdated'));
+        } else {
+          showToast(t('errorSaving'), 'error');
+        }
+      } catch (e) {
+        console.error('[EDIT SAVE]', e);
+        showToast(t('errorSaving'), 'error');
+      }
     }
   };
   
@@ -1227,7 +1410,13 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       }
       
       const token = await user.getIdToken();
-      const response = await fetch('/.netlify/functions/parse-booking', {
+      
+      // URL API : en local, utiliser le site Netlify preprod
+      const host = location.hostname;
+      const isLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
+      const apiBase = isLocal ? 'https://test-oneroadtrip.netlify.app' : '';
+      
+      const response = await fetch(apiBase + '/.netlify/functions/parse-booking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1236,7 +1425,18 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         body: JSON.stringify({ content: text })
       });
       
-      const result = await response.json();
+      // Debug: voir la réponse brute
+      const responseText = await response.text();
+      console.log('[PARSE-BOOKING] Response status:', response.status);
+      console.log('[PARSE-BOOKING] Response text:', responseText.substring(0, 500));
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error('[PARSE-BOOKING] JSON parse error:', e);
+        throw new Error('Réponse invalide du serveur');
+      }
       
       $('analyzing').classList.remove('show');
       $('btnAnalyze').disabled = false;
@@ -1245,6 +1445,9 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         // Afficher le quota si dépassé
         if (response.status === 429) {
           showToast(t('quotaExceeded').replace('{n}', result.usage?.limit || 20), 'error');
+        } else if (response.status >= 500) {
+          // Erreur serveur / IA indisponible
+          showToast(t('aiUnavailable'), 'error');
         } else {
           showToast(result.error || t('analysisError'), 'error');
         }
@@ -1291,7 +1494,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       $('btnAnalyze').disabled = false;
       
       // Fallback sur parsing regex local
-      showToast(t('analysisErrorFallback'), 'error');
+      showToast(t('aiUnavailable'), 'error');
       const extracted = extractFromText(text);
       if (extracted.name || extracted.date_start || extracted.reference) {
         showFormWithData(extracted);
@@ -1338,56 +1541,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   }
   
   function showFormWithData(data, preview = null) {
-    $('cardForm').style.display = 'block';
-    $('resultPreview').classList.add('show');
-    
-    // Fill result preview
-    const fields = $('resultFields');
-    fields.innerHTML = '';
-    
-    // Si on a une preview de l'IA, l'utiliser
-    if (preview && preview.fields) {
-      // Header avec icône et titre
-      fields.innerHTML = `
-        <div class="preview-header" style="display:flex;align-items:center;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #e5e7eb">
-          <span style="font-size:2rem">${preview.icon || '📋'}</span>
-          <div>
-            <div style="font-weight:700;font-size:1.1rem">${escHtml(preview.title)}</div>
-            ${preview.subtitle ? `<div style="color:#64748b;font-size:0.85rem">${escHtml(preview.subtitle)}</div>` : ''}
-          </div>
-        </div>
-      `;
-      
-      // Champs détaillés
-      for (const field of preview.fields) {
-        fields.innerHTML += `<div class="result-field"><span class="label">${field.icon}</span><span class="value">${escHtml(field.value)}</span></div>`;
-      }
-    } else {
-      // Fallback: affichage simple
-      const labels = { name: t('bookingName'), date_start: t('dateStart'), date_end: t('dateEnd'), price: t('price'), reference: t('reference') };
-      for (const [key, val] of Object.entries(data)) {
-        if (val && labels[key]) {
-          fields.innerHTML += `<div class="result-field"><span class="label">${labels[key]}</span><span class="value">${val}</span></div>`;
-        }
-      }
-    }
-    
-    // Fill form
-    if (data.name) $('fieldName').value = data.name;
-    if (data.date_start) $('fieldDateStart').value = data.date_start;
-    if (data.date_end) $('fieldDateEnd').value = data.date_end;
-    if (data.price) $('fieldPrice').value = data.price;
-    if (data.reference) $('fieldRef').value = data.reference;
-    if (data.address) $('fieldAddress').value = data.address;
-    if (data.notes) $('fieldNotes').value = data.notes;
-    
-    // Select category
-    if (data.category) {
-      selectedCategory = data.category;
-      document.querySelectorAll('.cat-btn').forEach(b => {
-        b.classList.toggle('active', b.dataset.cat === data.category);
-      });
-    }
+    // Ouvrir la modale de parsing au lieu du formulaire en bas
+    openParseModal(data, preview);
   }
   
   function showManualForm() {

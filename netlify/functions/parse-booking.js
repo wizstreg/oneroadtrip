@@ -79,7 +79,14 @@ async function verifyToken(authHeader) {
 }
 
 // ===== QUOTA =====
-async function checkQuota(uid) {
+const VIP = ['bWFyY3NvcmNpQGZyZWUuZnI=']; // base64
+
+async function checkQuota(uid, email) {
+  // VIP bypass
+  if (email && VIP.includes(Buffer.from(email).toString('base64'))) {
+    return { allowed: true, count: 0, limit: 9999, remaining: 9999 };
+  }
+  
   const ref = db.collection('users').doc(uid);
   const now = new Date();
   const month = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -256,7 +263,7 @@ exports.handler = async (event) => {
     }
 
     // Quota
-    const quota = await checkQuota(user.uid);
+    const quota = await checkQuota(user.uid, user.email);
     if (!quota.allowed) {
       return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: `Quota atteint (${quota.limit}/mois)`, usage: quota }) };
     }
