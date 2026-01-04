@@ -2114,4 +2114,23 @@ window.ORT_I18N.menuViewBookings = {
   ar: '📋 عرض حجوزاتي'
 };
 
+// === AJOUT D'ÉTAPE ===
+window.ORT_I18N.stepAddedAtEnd = {
+  fr: '✅ Étape ajoutée à la fin',
+  en: '✅ Step added at the end',
+  es: '✅ Paso añadido al final',
+  it: '✅ Tappa aggiunta alla fine',
+  pt: '✅ Etapa adicionada ao final',
+  ar: '✅ تم إضافة المرحلة في النهاية'
+};
+
+window.ORT_I18N.dragToReorder = {
+  fr: 'Faites-la glisser pour la déplacer dans la liste',
+  en: 'Drag it to move it in the list',
+  es: 'Arrástralo para moverlo en la lista',
+  it: 'Trascinalo per spostarlo nell\'elenco',
+  pt: 'Arraste-o para movê-lo na lista',
+  ar: 'اسحبها لنقلها في القائمة'
+};
+
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');

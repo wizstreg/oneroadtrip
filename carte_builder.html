@@ -1487,6 +1487,10 @@ function initMap() {
   // Mise à jour visibilité au zoom
   map.on('zoomend', updateMarkersVisibility);
   map.on('moveend', updateStats);
+  
+  // Charger les marqueurs progressivement lors du mouvement et zoom
+  map.on('zoomend', loadMarkersInViewport);
+  map.on('moveend', loadMarkersInViewport);
 }
 
 // ===============================
@@ -1678,85 +1682,152 @@ function createStarIcon(color, size, isSelected = false) {
   });
 }
 
+// Système de chargement intelligent des marqueurs
+let loadedMarkersIds = new Set();
+let lastViewBounds = null;
+let markerLoadingInProgress = false;
+
+function createMarkerElement(place) {
+  const rating = place.rating || 0;
+  const starInfo = ratingToStars(rating);
+  const isTopRated = rating >= ratingThreshold;
+
+  let marker;
+  
+  if (starInfo.isStar) {
+    marker = L.marker([place.lat, place.lon], {
+      icon: createStarIcon(starInfo.color, 20)
+    });
+  } else {
+    marker = L.circleMarker([place.lat, place.lon], {
+      radius: starInfo.radius,
+      fillColor: starInfo.color,
+      color: '#fff',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.8
+    });
+  }
+
+  marker.placeData = place;
+  marker.isTopRated = isTopRated;
+  marker.starInfo = starInfo;
+
+  // Événements
+  marker.on('mouseover', () => {
+    if (!starInfo.isStar && marker.setStyle) {
+      marker.setStyle({ weight: 2, radius: (marker.options.radius || starInfo.radius) + 2 });
+    }
+    showPlacePreview(place);
+    if (previewCloseTimer) {
+      clearTimeout(previewCloseTimer);
+      previewCloseTimer = null;
+    }
+  });
+  
+  marker.on('mouseout', () => {
+    const isSelected = selectedPlaces.some(p => p.place_id === place.place_id);
+    if (!starInfo.isStar && marker.setStyle) {
+      marker.setStyle({
+        weight: isSelected ? 2 : 1.5,
+        radius: marker.starInfo.radius,
+        color: isSelected ? '#e11d48' : '#fff',
+        fillColor: isSelected ? '#e11d48' : marker.starInfo.color
+      });
+    }
+    if (!isPreviewPinned) {
+      previewCloseTimer = setTimeout(() => {
+        if (!isMouseOverPreview && !isPreviewPinned) {
+          closePlacePreview();
+        }
+      }, 300);
+    }
+  });
+  
+  marker.on('click', () => {
+    togglePlaceSelection(place);
+    isPreviewPinned = true;
+    showPlacePreview(place);
+  });
+
+  return marker;
+}
+
+function isPlaceInBounds(place, bounds) {
+  if (!bounds) return true;
+  return bounds.contains([place.lat, place.lon]);
+}
+
 function createMarkers() {
   markersLayer.clearLayers();
   allMarkers = [];
-
+  loadedMarkersIds.clear();
+  
+  // Étape 1 : Charger toutes les "super places" (top 20%)
+  console.log('📍 Chargement étape 1: Super places (top 20%)');
+  let superPlacesCount = 0;
   allPlaces.forEach(place => {
     if (!place.lat || !place.lon) return;
-
+    
     const rating = place.rating || 0;
-    const starInfo = ratingToStars(rating);
     const isTopRated = rating >= ratingThreshold;
-
-    let marker;
     
-    if (starInfo.isStar) {
-      // Étoile dorée pour les incontournables
-      marker = L.marker([place.lat, place.lon], {
-        icon: createStarIcon(starInfo.color, 20)
-      });
-    } else {
-      // Cercle pour les autres
-      marker = L.circleMarker([place.lat, place.lon], {
-        radius: starInfo.radius,
-        fillColor: starInfo.color,
-        color: '#fff',
-        weight: 1.5,
-        opacity: 1,
-        fillOpacity: 0.8
-      });
+    if (isTopRated) {
+      const marker = createMarkerElement(place);
+      markersLayer.addLayer(marker);
+      allMarkers.push(marker);
+      loadedMarkersIds.add(place.place_id);
+      superPlacesCount++;
     }
-
-    marker.placeData = place;
-    marker.isTopRated = isTopRated;
-    marker.starInfo = starInfo;
-
-    // Événements
-    marker.on('mouseover', () => {
-      if (!starInfo.isStar && marker.setStyle) {
-        marker.setStyle({ weight: 2, radius: (marker.options.radius || starInfo.radius) + 2 });
-      }
-      showPlacePreview(place);
-      if (previewCloseTimer) {
-        clearTimeout(previewCloseTimer);
-        previewCloseTimer = null;
-      }
-    });
-    
-    marker.on('mouseout', () => {
-      const isSelected = selectedPlaces.some(p => p.place_id === place.place_id);
-      if (!starInfo.isStar && marker.setStyle) {
-        marker.setStyle({
-          weight: isSelected ? 2 : 1.5,
-          radius: marker.starInfo.radius,
-          color: isSelected ? '#e11d48' : '#fff',
-          fillColor: isSelected ? '#e11d48' : marker.starInfo.color
-        });
-      }
-      if (!isPreviewPinned) {
-        previewCloseTimer = setTimeout(() => {
-          if (!isMouseOverPreview && !isPreviewPinned) {
-            closePlacePreview();
-          }
-        }, 300);
-      }
-    });
-    
-    marker.on('click', () => {
-      togglePlaceSelection(place);
-      isPreviewPinned = true;
-      showPlacePreview(place);
-    });
-
-    allMarkers.push(marker);
   });
+  console.log(`✅ ${superPlacesCount} super places chargées`);
+  
+  // Étape 2 : Charger les autres places de la zone visible
+  loadMarkersInViewport();
+}
 
-  // Ajouter TOUS les markers en une seule fois (beaucoup plus rapide)
-  if (allMarkers.length > 0) {
-    markersLayer.addLayers(allMarkers);
-    console.log(`✅ ${allMarkers.length} markers ajoutés à la carte`);
+function loadMarkersInViewport() {
+  if (markerLoadingInProgress) return;
+  markerLoadingInProgress = true;
+  
+  const bounds = map.getBounds();
+  if (!bounds) {
+    markerLoadingInProgress = false;
+    return;
   }
+  
+  const zoom = map.getZoom();
+  let otherPlacesCount = 0;
+  
+  // Créer une version légèrement étendue des bounds pour les bordures
+  const padding = (bounds.getNorthWest().lng - bounds.getSouthEast().lng) * 0.2;
+  const extendedBounds = L.latLngBounds(
+    [bounds.getSouth() - padding, bounds.getWest() - padding],
+    [bounds.getNorth() + padding, bounds.getEast() + padding]
+  );
+  
+  allPlaces.forEach(place => {
+    if (!place.lat || !place.lon) return;
+    if (loadedMarkersIds.has(place.place_id)) return; // Déjà chargé
+    
+    const rating = place.rating || 0;
+    const isTopRated = rating >= ratingThreshold;
+    
+    // Charger les places non-top si elles sont dans les bounds étendus
+    if (!isTopRated && isPlaceInBounds(place, extendedBounds)) {
+      const marker = createMarkerElement(place);
+      markersLayer.addLayer(marker);
+      allMarkers.push(marker);
+      loadedMarkersIds.add(place.place_id);
+      otherPlacesCount++;
+    }
+  });
+  
+  if (otherPlacesCount > 0) {
+    console.log(`✅ ${otherPlacesCount} autres places chargées dans la vue`);
+  }
+  
+  markerLoadingInProgress = false;
 }
 
 function ratingToStars(rating) {
@@ -2153,16 +2224,7 @@ function updateItineraryList() {
     removeBtn.onclick = () => removePlaceFromItinerary(place.place_id);
     step.appendChild(removeBtn);
 
-    // Traduire le nom si nécessaire (données en français)
-    if (currentLang !== 'fr') {
-      translateSingleLine(place.name, currentLang).then(translatedName => {
-        if (translatedName && translatedName !== place.name) {
-          const shortTranslated = translatedName.length > 20 ? translatedName.substring(0, 20) + '...' : translatedName;
-          nameSpan.textContent = shortTranslated;
-          nameSpan.title = translatedName;
-        }
-      });
-    }
+    // Les données sont déjà traduites dans les fichiers JSON séparés par langue
 
     flow.appendChild(step);
 

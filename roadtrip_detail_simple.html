@@ -2050,18 +2050,35 @@ if(!d){
         allowInput: false,
         disableMobile: true,
         onChange: function(selectedDates, dateStr) {
-          // Stocker en format ISO pour compatibilité
-          const isoDate = selectedDates[0] ? selectedDates[0].toISOString().split('T')[0] : '';
+          // Formatter la date SANS décalage timezone
+          // selectedDates[0] est déjà une Date locale, ne pas utiliser toISOString()
+          let isoDate = '';
+          if (selectedDates[0]) {
+            const d = selectedDates[0];
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            isoDate = `${year}-${month}-${day}`;
+          }
           localStorage.setItem('ort.rtStartDate', isoDate);
           if (window.state) {
             state.startDateStr = isoDate;
             renderRows();
+          }
+          // Mettre à jour l'affichage du datepicker pour réfléter le format de locale
+          if (dateStr && fp) {
+            fp.setDate(selectedDates[0], true);  // true = ne pas déclencher onChange à nouveau
           }
         }
       });
       
       // Stocker la référence pour accès global
       window.ortDatePicker = fp;
+      
+      // Assurer que la date initiale s'affiche correctement
+      if (savedDate) {
+        fp.setDate(savedDate, true);
+      }
     }
   }, 100);
 }
@@ -4114,6 +4131,14 @@ const STAY22_CONFIG = {
   MARKERIMAGE: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png'
 };
 
+// Format une date locale en YYYY-MM-DD (sans conversion timezone)
+function formatDateLocal(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Calculer dates check-in/checkout pour une étape (index)
 function getStay22Dates(stepIndex) {
   const startStr = (state.startDateStr || '').trim();
@@ -4133,8 +4158,8 @@ function getStay22Dates(stepIndex) {
   checkout.setDate(checkout.getDate() + nights);
   
   return {
-    checkin: checkin.toISOString().split('T')[0],
-    checkout: checkout.toISOString().split('T')[0]
+    checkin: formatDateLocal(checkin),
+    checkout: formatDateLocal(checkout)
   };
 }
 
@@ -6317,6 +6342,59 @@ function unhighlightMarker(idx){
   if(rows[idx])rows[idx].classList.remove('highlight');
 }
 
+// === MODALE AJOUT D'ÉTAPE ===
+function showStepAddedModal(placeName) {
+  const lang = (document.documentElement.lang || 'fr').slice(0, 2);
+  const i18n = window.ORT_I18N || {};
+  
+  const getI18n = (key) => {
+    if (!i18n[key]) return key;
+    return i18n[key][lang] || i18n[key]['fr'] || key;
+  };
+  
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); 
+    display: flex; align-items: center; justify-content: center; 
+    z-index: 10000;
+  `;
+  
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    background: white; border-radius: 10px; padding: 24px; 
+    max-width: 400px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    font-family: system-ui, sans-serif;
+  `;
+  
+  modal.innerHTML = `
+    <div style="margin-bottom: 16px;">
+      ${getI18n('stepAddedAtEnd')}
+    </div>
+    <div style="font-weight: 600; font-size: 1.1em; margin-bottom: 8px;">
+      ${placeName}
+    </div>
+    <div style="color: #666; font-size: 0.95em; margin-bottom: 20px;">
+      ${getI18n('dragToReorder')}
+    </div>
+    <button onclick="this.closest('[data-modal-overlay]').remove()" 
+      style="background: #113f7a; color: white; border: none; padding: 10px 20px; 
+      border-radius: 6px; cursor: pointer; font-weight: 600;">
+      OK
+    </button>
+  `;
+  
+  overlay.setAttribute('data-modal-overlay', 'true');
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  
+  document.body.appendChild(overlay);
+  
+  // Auto-fermer après 5 secondes
+  setTimeout(() => overlay.remove(), 5000);
+}
+
 function drawMap(){
   if(!map){
     if(typeof L==='undefined'){console.error('Leaflet non chargé');return}
@@ -6380,7 +6458,9 @@ map=L.map('map', {
           }
           
           renderRows();
-          toast(`✅ ${place.name}`);
+          
+          // Afficher modale i18n
+          showStepAddedModal(place.name);
           mapClickMode=false;
         }
       });
@@ -7248,21 +7328,12 @@ async function calculateMapboxRoute(waypoints, mode) {
   if (autoRecenter) {
     const popupVisible = document.getElementById('mapPopup')?.classList.contains('show');
     
-    // Si popup visible : réserver de l'espace à droite, sinon padding symétrique
+    // Padding adaptatif mais moins agressif
     const fitOptions = popupVisible 
-      ? { paddingTopLeft: [60, 40], paddingBottomRight: [440, 40] }
-      : { paddingTopLeft: [60, 40], paddingBottomRight: [60, 40] };
+      ? { paddingTopLeft: [60, 40], paddingBottomRight: [440, 40], maxZoom: 14 }
+      : { paddingTopLeft: [60, 40], paddingBottomRight: [60, 40], maxZoom: 14 };
     
     map.fitBounds(L.latLngBounds(latlngs), fitOptions);
-    
-    // Force le recalcul de la taille du conteneur APRÈS fitBounds
-    setTimeout(() => {
-      if (map && map.invalidateSize) {
-        map.invalidateSize();
-        // Re-fit après recalcul avec les mêmes options
-        map.fitBounds(L.latLngBounds(latlngs), fitOptions);
-      }
-    }, 150);
     
     // Désactiver le recentrage automatique après le premier rendu
     autoRecenter = false;
@@ -8664,7 +8735,7 @@ function openTicketmasterModal(step, idx) {
     startDate = getStay22CheckinDate(idx) || '';
   }
   if (!startDate) {
-    startDate = new Date().toISOString().split('T')[0];
+    startDate = formatDateLocal(new Date());
   }
   
   if (stepNameEl) {

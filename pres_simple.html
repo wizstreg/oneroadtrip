@@ -180,116 +180,55 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
 .sidebar-overlay{display:none}
 .sidebar-header{display:none}
 .mobile-preview{display:none !important} /* Cachée sur desktop */
+#itinPreview{display:none !important} /* Cacher preview desktop sur mobile */
 
 @media (max-width:900px){
-  /* Empêcher scroll horizontal et débordement */
-  html,body{overflow-x:hidden !important;width:100vw;max-width:100%;position:relative;height:auto;min-height:0}
-  
-  /* Supprimer padding main */
+  /* Mode mobile ultra-simplifié */
+  html,body{overflow-x:hidden !important;width:100vw;max-width:100%}
   main{padding:0;margin:0;max-width:none;width:100%}
-  
-  /* Utiliser --vh au lieu de 100vh pour éviter bug iOS */
-  .map-section{border-radius:0;border:none;height:calc(var(--vh, 1vh) * 100) !important;display:flex;flex-direction:column}
-  
-  /* Cacher le header sur mobile */
+  .map-section{border-radius:0;border:none;height:calc(var(--vh, 1vh) * 100) !important}
   .map-header{display:none}
-  
-  /* Header en static (pas sticky) */
   header{position:static !important}
+  .map-main{height:100%;display:flex}
+  .map-body{flex:1;position:relative}
+  #mapContainer{position:absolute;inset:0;width:100%;height:100%}
   
-  /* Carte en plein écran avec --vh */
-  .map-main{flex:1;display:flex;position:relative;height:100%;min-height:0}
-  .map-body{flex:1;width:100%;position:relative;height:100%}
-  #mapContainer{position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%}
+  /* CACHER TOUS LES FILTRES */
+  .map-sidebar{display:none !important}
+  .sidebar-overlay{display:none !important}
+  .btn-toggle-filters{display:none !important}
+  .map-legend{display:none !important}
   
-  /* Bouton flottant filtres */
-  .btn-toggle-filters{display:flex;align-items:center;gap:8px;position:fixed;bottom:20px;right:20px;z-index:999;background:var(--acc);color:#fff;border:none;border-radius:24px;padding:12px 20px;font-weight:700;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,0.3);cursor:pointer}
-  .btn-toggle-filters:active{transform:scale(0.95)}
-  
-  /* Sidebar en drawer - FORCÉE CACHÉE par défaut avec !important */
-  .map-sidebar{
-    position:fixed !important;
-    right:0;
-    top:0;
-    height:calc(var(--vh, 1vh) * 100);
-    width:85%;
-    max-width:400px;
-    background:var(--card);
-    transform:translateX(100%) !important;
-    transition:transform 0.3s ease;
-    z-index:1002;
-    overflow-y:auto;
-    padding:0;
-    border-left:1px solid var(--bd);
-    box-shadow:-4px 0 12px rgba(0,0,0,0.2);
-    display:none; /* Cachée par défaut jusqu'à ce que le JS la prépare */
-  }
-  .map-sidebar.ready{
-    display:block; /* Le JS ajoutera cette classe après init */
-  }
-  .map-sidebar.open{
-    transform:translateX(0) !important;
-  }
-  
-  /* Header sidebar mobile */
-  .sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--acc);color:#fff;position:sticky;top:0;z-index:10;border-bottom:1px solid rgba(255,255,255,0.2)}
-  .sidebar-header h3{margin:0;font-size:18px;font-weight:700}
-  .btn-close-sidebar{background:none;border:none;color:#fff;font-size:28px;cursor:pointer;padding:0;line-height:1;width:32px;height:32px;display:flex;align-items:center;justify-content:center}
-  .btn-close-sidebar:active{transform:scale(0.9)}
-  
-  /* Padding contenu sidebar */
-  .map-sidebar .filter-group{padding:0 16px;margin-top:12px}
-  .map-sidebar #filtersContainer{padding:0 16px 16px}
-  .map-sidebar .btn-reset{margin:0 16px 16px}
-  
-  /* Overlay semi-transparent avec failsafe */
-  .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1001;opacity:0;pointer-events:none;transition:opacity 0.3s ease}
-  .sidebar-overlay.show{opacity:1;pointer-events:auto}
-  .sidebar-overlay:not(.show){display:none !important}
-  
-  /* Légende ultra-compacte sur mobile */
-  .map-legend{bottom:70px;left:8px;font-size:9px;padding:4px 6px;max-width:140px;background:rgba(255,255,255,0.92)}
-  .map-legend .legend-item{margin-bottom:2px;font-size:9px;gap:4px}
-  .map-legend .legend-title{font-size:10px;margin-bottom:3px;font-weight:600}
-  .map-legend .legend-count{font-size:10px;margin-top:3px;padding-top:3px;font-weight:600}
-  .map-legend svg{width:10px;height:10px}
-  .map-legend .legend-dot{width:7px;height:7px;border-width:1px}
-  
-  /* Cacher preview desktop sur mobile (simple display:none suffit) */
-  #itinPreview{display:none !important}
-  
-  /* Mini preview mobile en bas */
+  /* Mini preview mobile SIMPLIFIÉ */
   .mobile-preview{
-    display:block !important; /* Override le display:none desktop */
+    display:none !important;
     position:fixed;
-    bottom:80px;
-    left:8px;
-    right:8px;
+    bottom:0;
+    left:0;
+    right:0;
     background:#fff;
-    border-radius:12px;
-    padding:12px 16px;
-    box-shadow:0 4px 20px rgba(0,0,0,0.3);
-    z-index:999;
-    border:2px solid var(--acc);
-    opacity:0;
-    pointer-events:none;
-    transform:translateY(20px);
-    transition:all 0.3s ease;
+    border-radius:12px 12px 0 0;
+    padding:16px;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+    z-index:9999;
+    border-top:2px solid var(--acc);
+    max-height:45vh;
+    overflow-y:auto;
   }
   .mobile-preview.show{
-    opacity:1;
-    pointer-events:auto;
-    transform:translateY(0);
+    display:block !important;
   }
   .mobile-preview h4{
-    margin:0 0 8px 0;
+    margin:0 0 12px 0;
     color:var(--acc);
-    font-size:16px;
+    font-size:18px;
+    font-weight:700;
   }
   .mobile-preview-info{
-    font-size:13px;
+    font-size:14px;
     color:var(--ink);
-    margin-bottom:10px;
+    margin-bottom:12px;
+    line-height:1.5;
   }
   .mobile-preview-actions{
     display:flex;
@@ -297,11 +236,11 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
   }
   .mobile-preview-btn{
     flex:1;
-    padding:10px;
+    padding:12px;
     border:none;
     border-radius:8px;
     font-weight:700;
-    font-size:14px;
+    font-size:15px;
     cursor:pointer;
   }
   .mobile-preview-btn.cancel{
@@ -313,6 +252,7 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
     color:#fff;
   }
 }
+
 </style>
 </head>
 <body>
@@ -1845,52 +1785,50 @@ function updateFilterCount(count) {
 // ÉTAPE 3: Neutraliser TOUT overlay/preview fantôme
 function hardCloseOverlays() {
   const preview = document.getElementById('itinPreview');
+  const mobilePreview = document.getElementById('mobilePreview');
   const overlay = document.getElementById('sidebarOverlay');
   const sidebar = document.getElementById('mapSidebar');
   
-  // Sur mobile uniquement
-  if (isMobile() && preview) {
-    preview.style.display = 'none';
+  // Sur mobile, fermer la mobile preview
+  if (isMobile() && mobilePreview) {
+    mobilePreview.classList.remove('show');
   }
+  
+  if (preview) preview.style.display = 'none';
+  if (overlay) overlay.style.display = 'none';
+  if (sidebar) sidebar.style.display = 'none';
+  
   previewPinned = false;
-  
-  if (overlay) {
-    overlay.classList.remove('show');
-    overlay.style.display = 'none';
-  }
-  
-  if (sidebar) {
-    sidebar.classList.remove('open');
-  }
-  
   document.body.style.overflow = '';
 }
 
 function setupMobileFilters() {
+  // Sur mobile, on ne montre rien du tout - les filtres sont complètement cachés
+  if (isMobile()) {
+    // Juste fermer les overlays si présents
+    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar = document.getElementById('mapSidebar');
+    if (overlay) overlay.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+    return;
+  }
+  
   const btnToggle = document.getElementById('btnToggleFilters');
   const btnClose = document.getElementById('btnCloseSidebar');
   const sidebar = document.getElementById('mapSidebar');
   const overlay = document.getElementById('sidebarOverlay');
   
-  console.log('setupMobileFilters:', { btnToggle, btnClose, sidebar, overlay });
+  if (!btnToggle || !sidebar || !overlay) return;
   
-  if (!btnToggle || !sidebar || !overlay) {
-    console.warn('Missing mobile filter elements');
-    return;
-  }
-  
-  // CRITIQUE: Marquer la sidebar comme ready pour la rendre visible (mais cachée)
   sidebar.classList.add('ready');
   
   const openSidebar = () => {
-    if (DEBUG) console.log('Opening sidebar');
     sidebar.classList.add('open');
     overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
   };
   
   const closeSidebar = () => {
-    if (DEBUG) console.log('Closing sidebar');
     sidebar.classList.remove('open');
     overlay.classList.remove('show');
     document.body.style.overflow = '';
@@ -1900,9 +1838,6 @@ function setupMobileFilters() {
   btnClose?.addEventListener('click', closeSidebar);
   overlay.addEventListener('click', closeSidebar);
   
-  console.log('Mobile filters initialized');
-  
-  // Fermer aussi quand on sélectionne un pays
   document.getElementById('countryJump')?.addEventListener('change', () => {
     if (window.innerWidth <= 900) closeSidebar();
   });

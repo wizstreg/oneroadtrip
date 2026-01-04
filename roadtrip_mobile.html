@@ -1219,10 +1219,11 @@ html, body {
 
 <!-- Header -->
 <header class="header">
-  <button class="header-back" id="btnHome" aria-label="Accueil" onclick="location.href='index.html'">🏠</button>
+  <button class="header-back" id="btnHome" aria-label="Dashboard" onclick="location.href='dashboard_user.html'">🏠</button>
   <button class="header-back" id="btnBack" aria-label="Retour">←</button>
   <div class="header-title" id="headerTitle">Roadtrip</div>
   <button class="header-expert" id="btnExpertMode" aria-label="Mode expert" title="Basculer en mode expert" style="background:#113f7a;color:#fff;border:none;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">🎯 Expert</button>
+  <button class="header-user" id="btnUser" aria-label="Profil utilisateur" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;margin-left:auto;">👤</button>
   <button class="header-menu" id="btnMenu" aria-label="Menu">☰</button>
 </header>
 
@@ -1513,7 +1514,26 @@ html, body {
   </div>
 </div>
 
-<!-- Language Bottom Sheet -->
+<!-- User Profile Bottom Sheet -->
+<div class="bottom-sheet" id="userSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Profil</div>
+  </div>
+  <div class="sheet-body">
+    <div id="userInfoSection" style="padding:16px;text-align:center;border-bottom:1px solid #eee;">
+      <div id="userEmail" style="font-weight:600;margin-bottom:8px;">Non connecté</div>
+      <div id="userStatus" style="font-size:12px;color:#666;"></div>
+    </div>
+    <div id="userAuthSection" style="padding:16px;">
+      <button id="btnUserLogin" class="btn btn-primary" style="width:100%;margin-bottom:8px;display:none;">🔐 Se connecter</button>
+      <button id="btnUserLogout" class="btn btn-danger" style="width:100%;margin-bottom:8px;display:none;">🔓 Déconnexion</button>
+      <button id="btnUserEmail" class="btn" style="width:100%;margin-bottom:8px;display:none;">✉️ Changer email</button>
+      <button id="btnUserPassword" class="btn" style="width:100%;margin-bottom:8px;display:none;">🔑 Changer mot de passe</button>
+      <button id="btnUserDelete" class="btn btn-danger" style="width:100%;display:none;opacity:0.5;">🗑️ Supprimer compte</button>
+    </div>
+  </div>
+</div>
 <div class="bottom-sheet" id="langSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
@@ -3107,6 +3127,12 @@ function setupEvents() {
   };
   
   $('btnMenu').onclick = () => openSheet($('menuSheet'));
+  
+  // === USER PROFILE BUTTON ===
+  $('btnUser').onclick = () => {
+    updateUserUI();
+    openSheet($('userSheet'));
+  };
   $('sheetOverlay').onclick = closeAllSheets;
   
   $('btnNightsMinus').onclick = () => adjustNights(-1);
@@ -3132,6 +3158,98 @@ function setupEvents() {
   });
   $('menuDesktop').onclick = showDesktopMessage;
 }
+
+// === USER PROFILE MANAGEMENT ===
+function updateUserUI() {
+  try {
+    const user = window.firebase?.auth?.()?.currentUser;
+    const emailEl = $('userEmail');
+    const statusEl = $('userStatus');
+    const loginBtn = $('btnUserLogin');
+    const logoutBtn = $('btnUserLogout');
+    const emailBtn = $('btnUserEmail');
+    const passBtn = $('btnUserPassword');
+    const deleteBtn = $('btnUserDelete');
+    
+    if (user) {
+      emailEl.textContent = user.email || 'Utilisateur';
+      statusEl.textContent = `Connecté depuis ${new Date(user.metadata.creationTime).toLocaleDateString('fr-FR')}`;
+      
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'block';
+      emailBtn.style.display = 'block';
+      passBtn.style.display = 'block';
+      deleteBtn.style.display = 'block';
+    } else {
+      emailEl.textContent = 'Non connecté';
+      statusEl.textContent = 'Connexion requise';
+      
+      loginBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+      emailBtn.style.display = 'none';
+      passBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('[USER] Error updating UI:', e);
+  }
+}
+
+// Gestion des boutons utilisateur
+(function() {
+  const $ = id => document.getElementById(id);
+  
+  $('btnUserLogin').onclick = () => {
+    closeSheet($('userSheet'));
+    if (window.openAuth) window.openAuth();
+    else alert('Redirection vers la connexion...');
+  };
+  
+  $('btnUserLogout').onclick = () => {
+    if (confirm('Confirmer la déconnexion?')) {
+      window.firebase?.auth?.().signOut().then(() => {
+        closeSheet($('userSheet'));
+        updateUserUI();
+        showToast('👋 Déconnecté');
+      });
+    }
+  };
+  
+  $('btnUserEmail').onclick = () => {
+    const newEmail = prompt('Nouvel email:');
+    if (newEmail && newEmail.trim()) {
+      const user = window.firebase?.auth?.()?.currentUser;
+      if (user) {
+        user.verifyBeforeUpdateEmail(newEmail.trim()).then(() => {
+          showToast('✅ Vérification envoyée à ' + newEmail);
+        }).catch(e => showToast('❌ ' + e.message));
+      }
+    }
+  };
+  
+  $('btnUserPassword').onclick = () => {
+    const user = window.firebase?.auth?.()?.currentUser;
+    if (user && user.email) {
+      window.firebase?.auth?.().sendPasswordResetEmail(user.email).then(() => {
+        showToast('✅ Email de réinitialisation envoyé');
+      }).catch(e => showToast('❌ ' + e.message));
+    }
+  };
+  
+  $('btnUserDelete').onclick = () => {
+    if (confirm('⚠️ Cette action est irréversible. Supprimer le compte?')) {
+      if (confirm('Êtes-vous vraiment sûr?')) {
+        const user = window.firebase?.auth?.()?.currentUser;
+        if (user) {
+          user.delete().then(() => {
+            showToast('❌ Compte supprimé');
+            setTimeout(() => location.href = 'dashboard_user.html', 1000);
+          }).catch(e => showToast('Erreur: ' + e.message));
+        }
+      }
+    }
+  };
+})();
 
 // === RENDERING ===
 
@@ -3408,6 +3526,11 @@ function openSheet(sheet) {
   sheet.classList.add('show');
 }
 
+function closeSheet(sheet) {
+  $('sheetOverlay').classList.remove('show');
+  sheet.classList.remove('show');
+}
+
 function closeAllSheets() {
   $('sheetOverlay').classList.remove('show');
   $('stepSheet').classList.remove('show');
@@ -3415,6 +3538,7 @@ function closeAllSheets() {
   $('servicesSheet').classList.remove('show');
   $('langSheet').classList.remove('show');
   $('scannerSheet').classList.remove('show');
+  $('userSheet').classList.remove('show');
   currentStepIndex = null;
 }
 
