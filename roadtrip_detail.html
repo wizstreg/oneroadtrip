@@ -65,6 +65,25 @@
 *{box-sizing:border-box}
 html,body{height:100%;overflow-x:hidden}
 body{margin:0;background:linear-gradient(rgba(17,63,122,0.85),rgba(17,63,122,0.85)),url("/assets/image_index.webp") center/cover fixed;background-color:#113f7a;color:#e7f6fb;font-family:system-ui,sans-serif}
+
+/* Mode lecture seule (partage) */
+body.shared-view-only .delete-btn,
+body.shared-view-only .edit-btn,
+body.shared-view-only #btnSave,
+body.shared-view-only #btnAddStep,
+body.shared-view-only #btnAddMapStep,
+body.shared-view-only #btnEditMapRoute,
+body.shared-view-only .add-step-btn,
+body.shared-view-only [contenteditable="true"] {
+  display: none !important;
+  pointer-events: none !important;
+}
+body.shared-view-only [contenteditable="true"] {
+  display: block !important;
+  pointer-events: none !important;
+  user-select: text !important;
+}
+
 .wrap{max-width:1400px;margin:0 auto;padding:16px}
 .card{background:var(--card);color:var(--ink);border-radius:14px;border:1px solid rgba(0,0,0,.08);padding:14px}
 .small{font-size:.9rem;color:#1a3a7f}
@@ -2093,6 +2112,9 @@ if (typeof t !== 'function') {
     <button class="tools-item" id="btnToolsRate" type="button">
       ⭐ <span data-i18n="rateTrip">Noter ce road trip</span>
     </button>
+    <button class="tools-item" id="btnShareTrip" type="button">
+      🔗 <span data-i18n="shareTrip">Partager ce voyage</span>
+    </button>
     
     <!-- SUPPRIMÉ: km/mi, modes transport, gestion nuits/groupes, hébergements -->
     <!-- Gardés en commentaire pour réactivation future si besoin
@@ -3550,7 +3572,9 @@ function openBookingsModal(stepIdx, stepName) {
     dropoff: { fr: 'RESTITUTION', en: 'DROPOFF', es: 'DEVOLUCIÓN', it: 'RICONSEGNA', pt: 'DEVOLUÇÃO', ar: 'تسليم' },
     duration: { fr: 'Durée', en: 'Duration', es: 'Duración', it: 'Durata', pt: 'Duração', ar: 'المدة' },
     mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' },
-    fuel: { fr: 'Carburant', en: 'Fuel', es: 'Combustible', it: 'Carburante', pt: 'Combustível', ar: 'الوقود' }
+    fuel: { fr: 'Carburant', en: 'Fuel', es: 'Combustible', it: 'Carburante', pt: 'Combustível', ar: 'الوقود' },
+    addToCalendar: { fr: '📅 Calendrier', en: '📅 Calendar', es: '📅 Calendario', it: '📅 Calendario', pt: '📅 Calendário', ar: '📅 التقويم' },
+    addAllToCalendar: { fr: '📅 Tout ajouter au calendrier', en: '📅 Add all to calendar', es: '📅 Añadir todo al calendario', it: '📅 Aggiungi tutto al calendario', pt: '📅 Adicionar tudo ao calendário', ar: '📅 إضافة الكل للتقويم' }
   };
   const t = (key) => I18N[key]?.[lang] || I18N[key]?.fr || key;
   
@@ -3562,12 +3586,15 @@ function openBookingsModal(stepIdx, stepName) {
     return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
   };
   
+  // Stocker les bookings pour l'export calendrier
+  window._currentModalBookings = bookings;
+  
   // Générer le HTML des réservations
   let bookingsHTML = '';
   if (bookings.length === 0) {
     bookingsHTML = `<div style="text-align:center;padding:40px;color:#666">${t('noBookings')}</div>`;
   } else {
-    bookings.forEach(b => {
+    bookings.forEach((b, bIdx) => {
       const icon = getCategoryIconForCell(b.category);
       let detailsHTML = '';
       
@@ -3630,6 +3657,7 @@ function openBookingsModal(stepIdx, stepName) {
               ${b.address ? `<div style="font-size:0.85rem;color:#6b7280">📍 ${b.address}</div>` : ''}
               ${b.notes ? `<div style="font-size:0.85rem;color:#6b7280;font-style:italic;margin-top:4px">📝 ${b.notes}</div>` : ''}
             </div>
+            <button onclick="addBookingToCalendar(${bIdx})" style="padding:6px 10px;background:#f0f9ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:6px;cursor:pointer;font-size:0.8rem;white-space:nowrap" title="${t('addToCalendar')}">${t('addToCalendar')}</button>
           </div>
           ${detailsHTML}
         </div>
@@ -3655,7 +3683,8 @@ function openBookingsModal(stepIdx, stepName) {
       <div style="padding:16px;overflow-y:auto;flex:1">
         ${bookingsHTML}
       </div>
-      <div style="padding:12px 16px;border-top:1px solid #e5e7eb;text-align:right">
+      <div style="padding:12px 16px;border-top:1px solid #e5e7eb;display:flex;gap:10px;justify-content:space-between">
+        ${bookings.length > 0 ? `<button onclick="addAllBookingsToCalendar()" style="padding:10px 16px;background:#f0f9ff;color:#1e40af;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.9rem">${t('addAllToCalendar')}</button>` : '<div></div>'}
         <button onclick="document.getElementById('${modalId}').remove()" style="padding:10px 24px;background:#113f7a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600">${t('close')}</button>
       </div>
     </div>
@@ -3667,6 +3696,55 @@ function openBookingsModal(stepIdx, stepName) {
   });
   
   document.body.appendChild(modal);
+}
+
+// Fonction pour ajouter une réservation au calendrier
+function addBookingToCalendar(bookingIdx) {
+  const booking = window._currentModalBookings?.[bookingIdx];
+  if (!booking) {
+    console.warn('[CALENDAR] Réservation non trouvée');
+    return;
+  }
+  
+  if (window.ORT_CALENDAR) {
+    ORT_CALENDAR.showCalendarMenu(booking, 1, event?.target);
+  } else {
+    // Fallback: générer un fichier ICS simple
+    console.warn('[CALENDAR] Module ORT_CALENDAR non chargé, fallback...');
+    const title = booking.name || 'Réservation';
+    const start = booking.date_start || '';
+    const end = booking.date_end || start;
+    
+    if (!start) {
+      alert('Pas de date pour cette réservation');
+      return;
+    }
+    
+    // Lien Google Calendar
+    const googleUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start.replace(/-/g, '')}/${end.replace(/-/g, '')}&details=${encodeURIComponent(booking.reference ? 'Réf: ' + booking.reference : '')}`;
+    window.open(googleUrl, '_blank');
+  }
+}
+
+// Fonction pour ajouter toutes les réservations au calendrier
+function addAllBookingsToCalendar() {
+  const bookings = window._currentModalBookings || [];
+  if (bookings.length === 0) return;
+  
+  if (window.ORT_CALENDAR) {
+    // Créer un map simulé pour l'export
+    const stepBookingsMap = {};
+    bookings.forEach((b, i) => {
+      stepBookingsMap[`booking_${i}`] = { booking: b, steps: [0], firstStepIndex: 0 };
+    });
+    
+    const result = ORT_CALENDAR.exportAllBookings([], stepBookingsMap, window.state?.title || 'Voyage');
+    if (result && result.ics) {
+      ORT_CALENDAR.downloadICS(result.ics, 'reservations.ics');
+    }
+  } else {
+    alert('Module calendrier non disponible');
+  }
 }
 
 
@@ -3839,6 +3917,66 @@ localStorage.setItem('ort.view', mapOnly ? 'map' : 'normal');
 })();
 
 function initApp(){
+// === VÉRIFICATION MODE PARTAGÉ ===
+(async function checkShareMode(){
+  const shareToken = new URLSearchParams(location.search).get('share');
+  if (!shareToken) return;
+  
+  console.log('[SHARE] Mode partagé détecté, token:', shareToken);
+  
+  // Afficher indicateur de chargement
+  const loadingBanner = document.createElement('div');
+  loadingBanner.id = 'shareLoadingBanner';
+  loadingBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#3b82f6;color:#fff;padding:10px;text-align:center;z-index:10001;font-weight:600';
+  loadingBanner.textContent = '⏳ Chargement du voyage partagé...';
+  document.body.appendChild(loadingBanner);
+  
+  try {
+    // Attendre Firebase
+    await new Promise(resolve => {
+      if (window.firebase?.firestore) resolve();
+      else setTimeout(resolve, 1000);
+    });
+    
+    if (typeof ORT_SHARE !== 'undefined') {
+      const sharedData = await ORT_SHARE.checkSharedAccess();
+      if (sharedData) {
+        console.log('[SHARE] ✅ Trip chargé, mode:', sharedData.mode);
+        
+        // Stocker les données pour le chargement
+        window._sharedTripData = sharedData;
+        
+        // Afficher le mode
+        loadingBanner.innerHTML = sharedData.mode === 'viewer' 
+          ? '👁️ Mode lecture seule' 
+          : '✏️ Mode modification';
+        loadingBanner.style.background = sharedData.mode === 'viewer' ? '#f59e0b' : '#16a34a';
+        
+        // Masquer après 3s
+        setTimeout(() => loadingBanner.remove(), 3000);
+        
+        // Désactiver édition si viewer
+        if (sharedData.mode === 'viewer') {
+          document.body.classList.add('shared-view-only');
+          // Masquer boutons d'édition
+          setTimeout(() => {
+            document.querySelectorAll('#btnSave, #btnAddStep, #btnAddMapStep, .delete-btn, .edit-btn').forEach(el => {
+              el.style.display = 'none';
+            });
+          }, 100);
+        }
+      } else {
+        loadingBanner.innerHTML = '❌ Lien invalide ou expiré';
+        loadingBanner.style.background = '#dc2626';
+        setTimeout(() => loadingBanner.remove(), 5000);
+      }
+    }
+  } catch(e) {
+    console.error('[SHARE] Erreur:', e);
+    loadingBanner.remove();
+  }
+})();
+
 window.closeMapPopup=()=>{
   window.popupLocked = false; // déverrouille si on clique sur ✕
   document.getElementById('mapPopup').classList.remove('show');
@@ -9460,6 +9598,23 @@ renderRows();
     });
   }
   
+  // Bouton Partager le voyage
+  const shareBtn = document.getElementById('btnShareTrip');
+  if(shareBtn){
+    shareBtn.addEventListener('click', ()=>{
+      toolsPop.classList.remove('show');
+      if(typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal){
+        // Récupérer le tripId depuis l'URL ou le state
+        const params = new URLSearchParams(location.search);
+        const tripId = params.get('tripId') || params.get('id') || window.state?.tripId;
+        const tripTitle = window.state?.title || document.getElementById('rtTitle')?.textContent || 'Voyage';
+        ORT_SHARE.showModal(tripId, tripTitle);
+      } else {
+        toast('❌ Module de partage non disponible');
+      }
+    });
+  }
+  
   // Bouton Carte hébergements Stay22 (désactivé)
   const stay22Btn = document.getElementById('btnStay22Map');
   if(stay22Btn){
@@ -13385,6 +13540,8 @@ console.log('[BUDGET] ✅ Budget system ready');
 <script src="ort-ratings.js"></script>
 <script src="ort-map-resize-fix.js"></script>
 <script src="/js/ort-pdf-export-v6.js"></script>
+<script src="/js/ort-calendar-export.js"></script>
+<script src="/js/ort-share.js"></script>
 <script src="/js/ort-footer.js"></script>
 </body>
 </html>

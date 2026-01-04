@@ -186,43 +186,76 @@ html, body {
   border-bottom: 1px solid #e2e8f0;
 }
 
-.booking-item {
-  background: white;
-  border-radius: 8px;
-  padding: 10px;
-  margin-bottom: 8px;
-  border: 1px solid #e2e8f0;
+.booking-section {
+  margin-bottom: 16px;
+}
+.booking-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #113f7a;
+  padding: 12px 16px 8px;
+  border-bottom: 2px solid #113f7a;
+  margin: 0 0 8px 0;
 }
 
-.booking-type {
-  font-size: 12px;
-  color: #64748b;
-  text-transform: uppercase;
-  font-weight: 600;
-  margin-bottom: 4px;
+.booking-item {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 0 12px 8px 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.booking-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.booking-info {
+  flex: 1;
+  min-width: 0;
 }
 
 .booking-name {
   font-size: 14px;
   font-weight: 600;
   color: #1f2937;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .booking-detail {
   font-size: 12px;
   color: #6b7280;
-  font-family: 'Courier New', monospace;
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 .booking-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+.booking-budget {
+  background: linear-gradient(135deg, #113f7a 0%, #1e5090 100%);
+  color: white;
+  border-radius: 12px;
+  margin: 16px 12px;
+  padding: 16px;
+  text-align: center;
+}
+.budget-label {
   font-size: 13px;
-  font-weight: 600;
-  color: #047857;
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid #f0fdf4;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+.budget-amount {
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
 /* Step cards */
@@ -1084,10 +1117,27 @@ html, body {
 <div class="toast" id="toast"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
 <script src="/js/ort-tripid.js"></script>
+<script src="/js/ort-trip-data.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
+<script>
+// Initialisation Firebase
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  if (safe && safe.apiKey && !firebase.apps.length) {
+    firebase.initializeApp(safe);
+    console.log('[MOBILE] ✅ Firebase initialisé');
+  }
+})();
+</script>
 <script>
 // === GLOBAL REDIRECT PROTECTION ===
 // Intercept location.replace/assign to ensure desktop redirects include mobile=0
@@ -1318,10 +1368,12 @@ async function init() {
   const cc = params.get('cc')?.toUpperCase() || '';
   const itinId = params.get('itin') || '';
   const rtKey = params.get('rtKey') || '';
+  const tripId = params.get('tripId') || params.get('id') || '';
   const lang = params.get('lang') || localStorage.getItem('ort_lang') || 'fr';
   const fromTemp = params.get('from') === 'temp';
   const builderMode = params.get('mode') === 'builder' || params.get('from') === 'builder';
   const fromBuilderResult = params.get('fromBuilder') === '1';
+  const dashboardMode = tripId && tripId.startsWith('trip_');
   
   state.cc = cc;
   state.lang = lang;
@@ -1343,6 +1395,9 @@ async function init() {
     } else if (builderMode) {
       // Mode builder: rediriger vers RT Detail pour calcul
       await initRouteBuilder(params);
+    } else if (dashboardMode) {
+      // Mode Dashboard: charger depuis Firestore users/{uid}/trips/{tripId}
+      await loadFromDashboard(tripId);
     } else if (fromTemp && rtKey) {
       // Mode temp: charger depuis localStorage
       await loadFromTemp(rtKey);
@@ -1473,6 +1528,113 @@ async function loadFromTemp(rtKey) {
   });
   
   console.log(`[MOBILE] Loaded ${state.steps.length} steps from temp`);
+}
+
+// === LOAD FROM DASHBOARD (Firestore users/{uid}/trips/{tripId}) ===
+async function loadFromDashboard(tripId) {
+  console.log('[MOBILE] loadFromDashboard:', tripId);
+  
+  // Attendre Firebase Auth
+  if (typeof firebase === 'undefined' || !firebase.auth) {
+    throw new Error('Firebase non disponible');
+  }
+  
+  const user = await new Promise((resolve) => {
+    const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+      unsubscribe();
+      resolve(u);
+    });
+    // Timeout de sécurité
+    setTimeout(() => resolve(null), 5000);
+  });
+  
+  if (!user) {
+    console.warn('[MOBILE] Utilisateur non connecté, tentative localStorage...');
+    // Fallback: essayer localStorage (pour les trips non sauvegardés)
+    const localKey = `ort_trip_${tripId}`;
+    const localData = localStorage.getItem(localKey);
+    if (localData) {
+      const tripData = JSON.parse(localData);
+      applyTripDataToState(tripData);
+      console.log('[MOBILE] ✅ Chargé depuis localStorage');
+      return;
+    }
+    throw new Error('Connectez-vous pour voir ce voyage');
+  }
+  
+  // Charger depuis Firestore
+  const db = firebase.firestore();
+  const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
+  const tripDoc = await tripRef.get();
+  
+  if (!tripDoc.exists) {
+    // Fallback: essayer dans localStorage
+    const localKey = `ort_trip_${tripId}`;
+    const localData = localStorage.getItem(localKey);
+    if (localData) {
+      const tripData = JSON.parse(localData);
+      applyTripDataToState(tripData);
+      console.log('[MOBILE] ✅ Chargé depuis localStorage (non trouvé Firestore)');
+      return;
+    }
+    throw new Error('Voyage non trouvé');
+  }
+  
+  const tripData = tripDoc.data();
+  applyTripDataToState(tripData);
+  
+  // Charger aussi les bookings via ORT_TRIP_DATA si disponible
+  if (window.ORT_TRIP_DATA) {
+    try {
+      await ORT_TRIP_DATA.loadTrip(tripId);
+      console.log('[MOBILE] ✅ ORT_TRIP_DATA chargé');
+    } catch (e) {
+      console.warn('[MOBILE] Erreur chargement ORT_TRIP_DATA:', e);
+    }
+  }
+  
+  console.log('[MOBILE] ✅ Chargé depuis Firestore Dashboard:', state.steps.length, 'étapes');
+}
+
+// Applique les données du trip au state
+function applyTripDataToState(tripData) {
+  state.title = tripData.title || tripData.name || 'Roadtrip';
+  state.cc = tripData.country || tripData.cc || 'XX';
+  state._tripId = tripData.id || tripData.tripId;
+  state._originalItinId = tripData.itinId || tripData._originalItinId;
+  state.startDateStr = tripData.startDateStr || tripData.startDate || '';
+  
+  // Convertir les steps
+  const rawSteps = tripData.steps || [];
+  state.steps = rawSteps.map((s, idx) => {
+    // Photos
+    let photos = [];
+    if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (s.photo) photos = [s.photo];
+    else if (s.image) photos = [s.image];
+    
+    return {
+      _idx: idx,
+      name: s.name || s.place_name || `Étape ${idx + 1}`,
+      lat: s.lat || s.latitude,
+      lng: s.lng || s.lon || s.longitude,
+      nights: Number(s.nights) || 0,
+      description: s.description || s.desc || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || s._distanceKmToNext || 0,
+      drive_min: s.drive_min || s.to_next_leg?.drive_min || s._driveMinToNext || 0,
+      placeId: s.placeId || s.place_id || null,
+      visits: s.visits || s.pois || [],
+      activities: s.activities || [],
+      // Bookings seront chargés via ORT_TRIP_DATA
+    };
+  });
+  
+  // Budget si présent
+  if (tripData.totalBudget) {
+    state.totalBudget = tripData.totalBudget;
+  }
 }
 
 // === ROUTE BUILDER ===
@@ -1936,60 +2098,141 @@ function renderBookings() {
   const container = $('bookingsContainer');
   if (!container) return;
   
+  let html = '';
+  let totalBudget = 0;
+  
+  // === RÉSERVATIONS VOYAGE (vols, voiture, assurance) ===
+  let travelBookings = [];
+  if (window.ORT_TRIP_DATA) {
+    travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
+  }
+  
+  if (travelBookings.length > 0) {
+    html += `<div class="booking-section">
+      <h3 class="booking-section-title">🌍 Réservations voyage</h3>`;
+    
+    travelBookings.forEach(b => {
+      const icon = getCategoryIcon(b.category);
+      const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+      totalBudget += parseFloat(price) || 0;
+      
+      html += `
+        <div class="booking-item" onclick="showBookingDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+          <div class="booking-icon">${icon}</div>
+          <div class="booking-info">
+            <div class="booking-name">${b.name || 'Réservation'}</div>
+            ${b.date_start ? `<div class="booking-detail">📅 ${b.date_start}</div>` : ''}
+            ${b.provider ? `<div class="booking-detail">🏢 ${b.provider}</div>` : ''}
+          </div>
+          ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+  }
+  
+  // === RÉSERVATIONS PAR ÉTAPE (hôtels, activités) ===
+  const stepBookingsMap = new Map(); // Pour dédupliquer
+  
+  if (window.ORT_TRIP_DATA) {
+    state.steps.forEach((step, stepIdx) => {
+      const stepBookings = ORT_TRIP_DATA.getStepBookings(stepIdx) || [];
+      stepBookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+        if (!stepBookingsMap.has(bookingId)) {
+          stepBookingsMap.set(bookingId, {
+            booking: b,
+            steps: [stepIdx],
+            firstStepIndex: stepIdx
+          });
+        } else {
+          const existing = stepBookingsMap.get(bookingId);
+          if (!existing.steps.includes(stepIdx)) {
+            existing.steps.push(stepIdx);
+          }
+        }
+      });
+    });
+  } else if (state.bookings) {
+    // Fallback: ancien format state.bookings
+    Object.entries(state.bookings).forEach(([stepIdx, bookings]) => {
+      bookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+        if (!stepBookingsMap.has(bookingId)) {
+          stepBookingsMap.set(bookingId, {
+            booking: b,
+            steps: [parseInt(stepIdx)],
+            firstStepIndex: parseInt(stepIdx)
+          });
+        }
+      });
+    });
+  }
+  
+  if (stepBookingsMap.size > 0) {
+    // Grouper par première étape
+    const byStep = new Map();
+    stepBookingsMap.forEach((data, id) => {
+      const firstStep = data.firstStepIndex;
+      if (!byStep.has(firstStep)) byStep.set(firstStep, []);
+      byStep.get(firstStep).push(data);
+    });
+    
+    byStep.forEach((bookingsData, stepIdx) => {
+      const step = state.steps[stepIdx];
+      if (!step) return;
+      
+      html += `<div class="booking-section">
+        <h3 class="booking-section-title">📍 ${step.name}</h3>`;
+      
+      bookingsData.forEach(data => {
+        const b = data.booking;
+        const icon = getCategoryIcon(b.category);
+        const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+        totalBudget += parseFloat(price) || 0;
+        const nights = data.steps.length;
+        
+        html += `
+          <div class="booking-item">
+            <div class="booking-icon">${icon}</div>
+            <div class="booking-info">
+              <div class="booking-name">${b.name || 'Réservation'}</div>
+              ${nights > 1 ? `<div class="booking-detail">🌙 ${nights} nuits</div>` : ''}
+              ${b.address ? `<div class="booking-detail">📍 ${b.address}</div>` : ''}
+              ${b.reference ? `<div class="booking-detail">🔖 ${b.reference}</div>` : ''}
+            </div>
+            ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+    });
+  }
+  
   // Vérifier s'il y a des réservations
-  if (!state.bookings || Object.keys(state.bookings).length === 0) {
-    container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>';
+  if (!html) {
+    container.innerHTML = `
+      <div style="padding: 40px 20px; text-align: center; color: #999;">
+        <div style="font-size: 3rem; margin-bottom: 16px;">📋</div>
+        <div>Aucune réservation</div>
+        <div style="font-size: 0.85rem; margin-top: 8px;">Ajoutez des réservations depuis RT Detail</div>
+      </div>`;
     return;
   }
   
-  let html = '';
-  let currentDay = 1;
-  
-  // Parcourir chaque étape et ses réservations
-  state.steps.forEach((step, stepIdx) => {
-    const bookings = state.bookings[stepIdx] || [];
-    const nights = step.nights || 1;
-    
-    // Afficher chaque jour de cette étape
-    for (let d = 0; d < nights; d++) {
-      const dayNum = currentDay + d;
-      const dayBookings = bookings.filter(b => {
-        // Vérifier si la réservation concerne ce jour
-        if (b.checkin) {
-          const bookingDay = calculateDayNumber(b.checkin, state._tripStartDate);
-          return bookingDay === dayNum;
-        }
-        return false;
-      });
-      
-      if (dayBookings.length > 0) {
-        html += `<div class="booking-day">
-          <h3 class="booking-day-header">📅 Jour ${dayNum} — ${step.name}</h3>`;
-        
-        dayBookings.forEach(booking => {
-          const categoryIcon = getCategoryIcon(booking.category);
-          html += `
-            <div class="booking-item">
-              <div class="booking-type">${categoryIcon} ${booking.category || 'Autre'}</div>
-              <div class="booking-name">${booking.name || 'N/A'}</div>
-              ${booking.confirmationNumber ? `<div class="booking-detail">N°: ${booking.confirmationNumber}</div>` : ''}
-              ${booking.price ? `<div class="booking-price">€ ${booking.price}</div>` : ''}
-            </div>
-          `;
-        });
-        
-        html += '</div>';
-      }
-    }
-    
-    currentDay += nights;
-  });
-  
-  if (!html) {
-    container.innerHTML = '<p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>';
-  } else {
-    container.innerHTML = html;
+  // Budget total
+  if (totalBudget > 0) {
+    html += `
+      <div class="booking-budget">
+        <div class="budget-label">💰 Budget total</div>
+        <div class="budget-amount">${totalBudget.toFixed(2)} €</div>
+      </div>
+    `;
   }
+  
+  container.innerHTML = html;
 }
 
 function getCategoryIcon(category) {
