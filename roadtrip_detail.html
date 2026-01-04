@@ -13506,11 +13506,23 @@ async function loadBudgetData() {
   const travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
   const allBookings = [...travelBookings];
   
-  // Collect step bookings
+  // Collect step bookings (deduplicated with price divided by step count)
+  const seenBookingIds = new Set();
   if (window.state?.steps) {
     window.state.steps.forEach((step, i) => {
       const stepBookings = ORT_TRIP_DATA.getStepBookings(i) || [];
-      stepBookings.forEach(b => allBookings.push({ ...b, stepName: step.name || `Étape ${i+1}` }));
+      stepBookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start}`;
+        if (!seenBookingIds.has(bookingId)) {
+          seenBookingIds.add(bookingId);
+          // Diviser le prix par le nombre d'étapes (stepIndexes ou 1)
+          const stepCount = b.stepIndexes?.length || 1;
+          const dividedPrice = typeof b.price === 'object' ? 
+            { ...b.price, amount: b.price.amount / stepCount } : 
+            (b.price ? b.price / stepCount : 0);
+          allBookings.push({ ...b, price: dividedPrice, stepName: step.name || `Étape ${i+1}` });
+        }
+      });
     });
   }
   
