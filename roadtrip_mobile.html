@@ -496,6 +496,43 @@ html, body {
   padding: 0 16px 12px;
   border-bottom: 1px solid var(--ort-border);
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sheet-header-center {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.step-nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--ort-border);
+  background: #fff;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ort-blue);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step-nav-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+  border-color: var(--ort-blue);
+}
+
+.step-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .sheet-title {
@@ -1125,8 +1162,12 @@ html, body {
 <div class="bottom-sheet" id="stepSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
-    <div class="sheet-title" id="sheetStepName">-</div>
-    <div class="sheet-subtitle" id="sheetStepMeta">-</div>
+    <button class="step-nav-btn" id="btnPrevStep" onclick="navigateStep(-1)">‹</button>
+    <div class="sheet-header-center">
+      <div class="sheet-title" id="sheetStepName">-</div>
+      <div class="sheet-subtitle" id="sheetStepMeta">-</div>
+    </div>
+    <button class="step-nav-btn" id="btnNextStep" onclick="navigateStep(1)">›</button>
   </div>
   <div class="sheet-body">
     <img class="sheet-photo" id="sheetStepPhoto" src="" alt="">
@@ -1144,7 +1185,7 @@ html, body {
       </a>
     </div>
     
-    <!-- Description courte -->
+    <!-- Description courte (sans les visites) -->
     <div class="sheet-desc" id="sheetStepDesc"></div>
     
     <!-- Boutons vers modales Visites et Activités -->
@@ -3089,8 +3130,23 @@ function openStepSheet(idx) {
   
   $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
   $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
-  $('sheetStepDesc').textContent = step.description || 'Découvrez cette étape de votre voyage.';
+  
+  // Description courte (sans les visites détaillées)
+  // Si la description est longue, on prend juste les 150 premiers caractères
+  let shortDesc = step.description || '';
+  if (shortDesc.length > 150) {
+    shortDesc = shortDesc.substring(0, 150).trim() + '...';
+  }
+  if (!shortDesc) {
+    shortDesc = `Découvrez ${step.name || 'cette étape'} lors de votre voyage.`;
+  }
+  $('sheetStepDesc').textContent = shortDesc;
+  
   $('nightsValue').textContent = step.nights || 0;
+  
+  // Boutons de navigation
+  $('btnPrevStep').disabled = idx === 0;
+  $('btnNextStep').disabled = idx === state.steps.length - 1;
   
   // Stocker les visites et activités
   currentStepVisits = Array.isArray(step.visits) ? step.visits : [];
@@ -3170,6 +3226,14 @@ function openStepSheet(idx) {
   }
   
   openSheet($('stepSheet'));
+}
+
+// Navigation entre étapes
+function navigateStep(delta) {
+  const newIdx = currentStepIndex + delta;
+  if (newIdx >= 0 && newIdx < state.steps.length) {
+    openStepSheet(newIdx);
+  }
 }
 
 // === MODALES VISITES / ACTIVITÉS ===
@@ -3639,6 +3703,7 @@ $('btnExpertMode').onclick = function() {
 
 // Expose
 window.openStepSheet = openStepSheet;
+window.navigateStep = navigateStep;
 window.openVisitsModal = openVisitsModal;
 window.closeVisitsModal = closeVisitsModal;
 window.openActivitiesModal = openActivitiesModal;
