@@ -353,87 +353,139 @@ function getMinDistanceToRoute(lat, lon, routeData) {
   return minDist;
 }
 
+// Chercher une place ORT correspondant à une ville (par proximité géographique)
+function findPlaceByCoords(lat, lon, places, maxDist = 5) {
+  let bestPlace = null;
+  let bestDist = maxDist;
+  
+  for (const pid in places) {
+    const p = places[pid];
+    const dist = _haversine(lat, lon, p.lat, p.lon || p.lng);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestPlace = { ...p, pid, _distance: dist };
+    }
+  }
+  
+  return bestPlace;
+}
+
 // Sélection intelligente des étapes le long de la route
 async function selectStepsAlongRoute(config, routeData, places) {
+  console.log('[ROUTE-BUILDER] ========== SÉLECTION ÉTAPES ==========');
+  
   const { start, end, maxKm, detour, days } = config;
   const totalDist = routeData.distance;
   const placesCount = Object.keys(places).length;
   
+  console.log(`[ROUTE-BUILDER] Config: maxKm=${maxKm}, detour=${detour}, days=${days}`);
+  console.log(`[ROUTE-BUILDER] Route: ${totalDist}km, Places: ${placesCount}`);
+  
   if (placesCount === 0) {
+    console.error('[ROUTE-BUILDER] ❌ AUCUNE PLACE DISPONIBLE!');
     return [{ ...start, nights: 1, isStart: true }, { ...end, nights: 0, isEnd: true }];
   }
   
-  // Détour minimum 20km
   const searchRadius = Math.max(detour, 20);
   
-  // Calculer le nombre d'étapes visées
+  // Nombre d'étapes max
   const minStepsNeeded = Math.ceil(totalDist / maxKm);
-  const maxStepsPossible = days * 2 - 2;
+  const maxStepsPossible = Math.max(2, days - 1);
   const targetSteps = Math.min(minStepsNeeded, maxStepsPossible);
   
-  // Calculer l'espacement régulier
-  const spacing = totalDist / (targetSteps + 1);
+  console.log(`[ROUTE-BUILDER] 🎯 Étapes visées: ${targetSteps} (min=${minStepsNeeded}, max=${maxStepsPossible})`);
+  console.log(`[ROUTE-BUILDER] 🔍 Rayon de recherche: ${searchRadius}km`);
   
   const steps = [{ ...start, nights: 1, isStart: true }];
   const usedPlaces = new Set();
-  let lastProgressOnRoute = 0;
   
-  // Pour chaque étape à trouver
-  for (let i = 1; i <= targetSteps; i++) {
-    const targetDist = spacing * i;
+  // 0. CHERCHER LES PLACES ORT POUR DÉPART ET ARRIVÉE
+  const startPlace = findPlaceByCoords(start.lat, start.lon, places, 10);
+  if (startPlace) {
+    console.log(`[ROUTE-BUILDER] 📍 Départ trouvé dans ORT: "${startPlace.name}"`);
+    steps[0] = {
+      ...startPlace,
+      nights: 1,
+      isStart: true,
+      _suggestedDays: 1
+    };
+    usedPlaces.add(startPlace.pid);
+  }
+  
+  let endForSteps = { ...end, nights: 0, isEnd: true };
+  const endPlace = findPlaceByCoords(end.lat, end.lon, places, 10);
+  if (endPlace) {
+    console.log(`[ROUTE-BUILDER] 📍 Arrivée trouvée dans ORT: "${endPlace.name}"`);
+    endForSteps = {
+      ...endPlace,
+      nights: 0,
+      isEnd: true,
+      _suggestedDays: 1
+    };
+    usedPlaces.add(endPlace.pid);
+  }
+  
+  // Boucle pour ajouter les étapes
+  for (let stepIdx = 1; stepIdx <= targetSteps; stepIdx++) {
+    console.log(`[ROUTE-BUILDER] --- Étape ${stepIdx}/${targetSteps} ---`);
     
-    // Trouver le point sur la route à cette distance
-    const routePoint = getPointAtDistance(routeData, targetDist);
-    if (!routePoint) continue;
+    const lastStep = steps[steps.length - 1];
     
-    // Chercher les places dans le rayon de détour
-    const candidates = [];
+    // 1. Calculer le point cible à maxKm depuis la dernière étape
+    const lastProgress = getProgressOnRoute(lastStep.lat, lastStep.lon || lastStep.lng, routeData);
+    const targetProgress = Math.min(lastProgress + maxKm, totalDist);
+    const targetPoint = getPointAtDistance(routeData, targetProgress);
+    
+    if (!targetPoint) {
+      console.log(`[ROUTE-BUILDER] ❌ Pas de point à ${targetProgress}km`);
+      break;
+    }
+    
+    console.log(`[ROUTE-BUILDER] Point cible: ${targetProgress.toFixed(0)}km (rayon ${searchRadius}km)`);
+    
+    // 2. Chercher les places autour du point cible
+    let bestPlace = null;
+    let bestScore = -Infinity;
     
     for (const pid in places) {
       if (usedPlaces.has(pid)) continue;
       
       const p = places[pid];
+      const distToTarget = _haversine(targetPoint.lat, targetPoint.lon, p.lat, p.lon);
       
-      // Distance au point cible sur la route
-      const distToPoint = _haversine(routePoint.lat, routePoint.lon, p.lat, p.lon);
-      if (distToPoint > searchRadius) continue;
+      // Doit être dans le rayon de détour
+      if (distToTarget > searchRadius) continue;
       
-      // Vérifier qu'on ne revient pas en arrière sur la route (STRICT - max 5km en arrière)
-      const placeProgress = getProgressOnRoute(p.lat, p.lon || p.lng, routeData);
-      if (placeProgress < lastProgressOnRoute - 5) continue;
-      
-      candidates.push({
-        ...p,
-        pid,
-        distToPoint,
-        progressOnRoute: placeProgress,
-        score: calculatePlaceScore(p, distToPoint, searchRadius)
-      });
+      const score = calculatePlaceScore(p, distToTarget, searchRadius);
+      if (score > bestScore) {
+        bestScore = score;
+        bestPlace = { ...p, pid, distToTarget };
+      }
     }
     
-    if (candidates.length > 0) {
-      // Prendre la meilleure place (par score)
-      candidates.sort((a, b) => b.score - a.score);
-      const best = candidates[0];
-      
+    if (bestPlace) {
       steps.push({
-        name: best.name,
-        lat: best.lat,
-        lon: best.lon || best.lng,
-        lng: best.lon || best.lng,
-        place_id: best.pid,
-        rating: best.rating,
-        visits: best.visits,
-        activities: best.activities,
-        cc: best.cc,
-        nights: best.suggested_days || 1,
-        _suggestedDays: best.suggested_days || 1
+        name: bestPlace.name,
+        lat: bestPlace.lat,
+        lon: bestPlace.lon || bestPlace.lng,
+        lng: bestPlace.lon || bestPlace.lng,
+        place_id: bestPlace.pid,
+        rating: bestPlace.rating,
+        visits: bestPlace.visits,
+        activities: bestPlace.activities,
+        cc: bestPlace.cc,
+        nights: 1,
+        _suggestedDays: 1
       });
-      usedPlaces.add(best.pid);
-      lastProgressOnRoute = best.progressOnRoute;
+      usedPlaces.add(bestPlace.pid);
+      
+      const distFromLast = _haversine(lastStep.lat, lastStep.lon || lastStep.lng, bestPlace.lat, bestPlace.lon || bestPlace.lng);
+      console.log(`[ROUTE-BUILDER] ✅ "${bestPlace.name}" (${distFromLast.toFixed(0)}km, score=${bestScore.toFixed(1)})`);
     } else {
-      // Fallback: chercher une ville via Nominatim
-      const fallbackCity = await findCityFromNominatim(routePoint.lat, routePoint.lon);
+      // Fallback: Nominatim si aucune place ORT trouvée
+      console.log(`[ROUTE-BUILDER] ⚠️ Aucune place ORT → fallback Nominatim`);
+      
+      const fallbackCity = await findCityFromNominatim(targetPoint.lat, targetPoint.lon);
       
       if (fallbackCity) {
         steps.push({
@@ -450,13 +502,20 @@ async function selectStepsAlongRoute(config, routeData, places) {
           _suggestedDays: 1,
           _fromNominatim: true
         });
-        lastProgressOnRoute = targetDist;
+        
+        const distFromLast = _haversine(lastStep.lat, lastStep.lon || lastStep.lng, fallbackCity.lat, fallbackCity.lon);
+        console.log(`[ROUTE-BUILDER] ✅ Nominatim: "${fallbackCity.name}" (${distFromLast.toFixed(0)}km)`);
+      } else {
+        console.log(`[ROUTE-BUILDER] ❌ Nominatim n'a rien trouvé - arrêt`);
+        break;
       }
     }
   }
   
   // Ajouter l'arrivée
-  steps.push({ ...end, nights: 0, isEnd: true });
+  steps.push(endForSteps);
+  
+  console.log(`[ROUTE-BUILDER] ✅ ${steps.length} étapes finales`);
   
   return steps;
 }
@@ -624,31 +683,44 @@ async function enrichStepsWithORTData(steps, config) {
 
 // Générer l'itinéraire final et l'injecter dans l'interface
 function generateBuilderItinerary(steps, config, lang) {
+  console.log('[ROUTE-BUILDER] 🎯 generateBuilderItinerary appelée');
+  console.log(`[ROUTE-BUILDER] ${steps.length} étapes reçues: ${steps.map(s => s.name).join(' → ')}`);
+  console.log(`[ROUTE-BUILDER] Jours demandés: ${config.days}`);
+  
   hideBuilderLoader();
   
   // === CALCUL INTELLIGENT DES NUITS ===
-  // On a X jours et Y étapes → distribuer les nuits intelligemment
-  const totalDays = config.days;
-  const numSteps = steps.length;
+  // 7 jours = 7 nuits max
+  // Paris (isStart) + X intermédiaires + Lyon (isEnd) 
+  // Les nuits se mettent SUR les étapes (sauf la dernière qui est l'arrivée)
   
-  // Les nuits se distribuent ENTRE les étapes (pas à la dernière qui est l'arrivée)
-  const stepsWithNights = steps.filter((s, i) => !s.isEnd); // Exclure l'arrivée
+  const startStep = steps[0];
+  const endStep = steps[steps.length - 1];
+  const intermediateSteps = steps.slice(1, -1); // Tout sauf départ et arrivée
+  
+  console.log(`[ROUTE-BUILDER] Structure: Start + ${intermediateSteps.length} intermédiaires + End`);
   
   // Réinitialiser les nuits
-  for (const step of stepsWithNights) {
-    step.nights = 1; // Par défaut 1 nuit partout
+  for (const step of steps) {
+    step.nights = 1; // 1 nuit par défaut
   }
+  endStep.nights = 0; // Pas de nuit à l'arrivée
   
-  // Distribuer les jours restants équitablement
-  const remainingDays = totalDays - stepsWithNights.length;
-  if (remainingDays > 0) {
-    const extraNightsPerStep = Math.floor(remainingDays / stepsWithNights.length);
-    const remainder = remainingDays % stepsWithNights.length;
-    
-    for (let i = 0; i < stepsWithNights.length; i++) {
-      stepsWithNights[i].nights = 1 + extraNightsPerStep + (i < remainder ? 1 : 0);
+  // Distribuer les jours entre toutes les étapes (sauf l'arrivée)
+  const stepsWithNights = steps.filter(s => !s.isEnd);
+  const totalNightsToDistribute = Math.max(config.days - stepsWithNights.length, 0);
+  
+  console.log(`[ROUTE-BUILDER] Étapes avec nuits: ${stepsWithNights.length}, Nuits extra: ${totalNightsToDistribute}`);
+  
+  if (totalNightsToDistribute > 0) {
+    // Ajouter les nuits extra au premier et dernier point intermédiaire
+    intermediateSteps[0].nights += Math.ceil(totalNightsToDistribute / 2);
+    if (intermediateSteps.length > 1) {
+      intermediateSteps[intermediateSteps.length - 1].nights += Math.floor(totalNightsToDistribute / 2);
     }
   }
+  
+  console.log(`[ROUTE-BUILDER] Distribution nuits: ${steps.map(s => `${s.name}(${s.nights})`).join(' + ')}`);
   
   // Construire la structure days_plan compatible avec roadtrip_detail
   const daysPlan = [];
@@ -693,10 +765,14 @@ function generateBuilderItinerary(steps, config, lang) {
     _builderConfig: config
   };
   
+  console.log(`[ROUTE-BUILDER] ✅ Itinéraire créé: "${itinerary.title}" (${daysPlan.length} jours)`);
+  
   // Injecter dans l'interface de roadtrip_detail
   if (typeof window.loadItineraryFromBuilder === 'function') {
+    console.log('[ROUTE-BUILDER] Appel window.loadItineraryFromBuilder');
     window.loadItineraryFromBuilder(itinerary);
   } else if (typeof window.state !== 'undefined') {
+    console.log('[ROUTE-BUILDER] Injection directe dans window.state');
     // Fallback: injecter directement dans state
     window.state = window.state || {};
     window.state.itinerary = itinerary;
@@ -706,14 +782,19 @@ function generateBuilderItinerary(steps, config, lang) {
     
     // Déclencher le rendu si possible
     if (typeof renderSteps === 'function') {
+      console.log('[ROUTE-BUILDER] Appel renderSteps()');
       renderSteps();
     }
     if (typeof recalcAllLegs === 'function') {
+      console.log('[ROUTE-BUILDER] Appel recalcAllLegs()');
       recalcAllLegs();
     }
     if (typeof renderRows === 'function') {
+      console.log('[ROUTE-BUILDER] Appel renderRows()');
       renderRows();
     }
+  } else {
+    console.error('[ROUTE-BUILDER] ❌ Impossible d\'injecter l\'itinéraire: pas de loadItineraryFromBuilder ni state');
   }
   
   // === GESTION RETOUR VERS RT MOBILE ===

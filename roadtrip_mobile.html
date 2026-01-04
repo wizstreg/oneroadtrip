@@ -1764,6 +1764,7 @@ let currentStepIndex = null;
 let hasUnsavedChanges = false;
 let totalRouteKm = 0;
 let CITY_NAMES_INDEX = {};
+let PLACES_INDEX = null;
 
 /**
  * Retourne le nom de ville dans la langue demandée avec fallbacks
@@ -1790,6 +1791,108 @@ function getCityDisplayName(place, lang) {
   
   // 3. Nom original
   return place.name || '';
+}
+
+// === FUNCTIONS POUR CHARGER PLACES ===
+async function loadJSON(path){
+  try{
+    const r=await fetch(path,{cache:'no-store'});
+    if(!r.ok) return null;
+    const ct = r.headers.get('content-type')||'';
+    if(!ct.includes('application/json')) {
+      console.warn('[loadJSON] Not JSON:', path, 'content-type:', ct);
+      return null;
+    }
+    return await r.json();
+  }catch(e){console.error('[loadJSON] Error:',path,e);return null}
+}
+
+async function loadWithLangFallback(baseUrl, lang) {
+  const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i);
+  
+  for (const tryLang of langOrder) {
+    const url = baseUrl.replace('.json', `-${tryLang}.json`);
+    const result = await loadJSON(url);
+    if (result) {
+      console.log(`[LOAD] ✅ Chargé: ${url}`);
+      return { data: result, lang: tryLang };
+    }
+  }
+  
+  const result = await loadJSON(baseUrl);
+  if (result) {
+    console.log(`[LOAD] ⚠️ Fallback ancien format: ${baseUrl}`);
+    return { data: result, lang: 'fr' };
+  }
+  
+  return null;
+}
+
+async function ensurePlacesIndex(additionalCountries = []){
+  const mainCC = (state.cc || state.country || '').toUpperCase();
+  const lang = localStorage.getItem('lang') || 'fr';
+  
+  const countriesToLoad = new Set();
+  if (mainCC) countriesToLoad.add(mainCC);
+  
+  if (state.steps && state.steps.length > 0) {
+    state.steps.forEach(step => {
+      if (step.cc) countriesToLoad.add(step.cc.toUpperCase());
+    });
+  }
+  
+  additionalCountries.forEach(cc => {
+    if (cc) countriesToLoad.add(cc.toUpperCase());
+  });
+  
+  PLACES_INDEX = {};
+  
+  for (const cc of countriesToLoad) {
+    if (!cc) continue;
+    const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.places.master.json`;
+    const result = await loadWithLangFallback(basePath, lang);
+    
+    if (result && result.data) {
+      const obj = result.data;
+      const arr = Array.isArray(obj) ? obj : (obj.places || []);
+      let count = 0;
+      arr.forEach(pl => {
+        const pid = pl.place_id || pl.id;
+        if (!pid) return;
+        if (PLACES_INDEX[pid]) return;
+        const visits = Array.isArray(pl.visits) ? pl.visits.map(v => (typeof v === 'string' ? {text:v} : v)) : [];
+        const activities = Array.isArray(pl.activities) ? pl.activities.map(a => (typeof a === 'string' ? {text:a} : a)) : [];
+        PLACES_INDEX[pid] = {
+          lat: Number(pl.lat) || null,
+          lon: Number(pl.lon) || Number(pl.lng) || null,
+          name: pl.name || pl.title || '',
+          rating: Number(pl.rating) || 0,
+          suggested_days: Number(pl.suggested_days) || 1,
+          visits,
+          activities,
+          cc: cc
+        };
+        count++;
+      });
+      if (count > 0) console.log(`[PLACES] ✅ ${cc}: ${count} lieux chargés`);
+    }
+  }
+  
+  console.log(`[PLACES] Total: ${Object.keys(PLACES_INDEX).length} lieux dans l'index`);
+  
+  if (state.steps && state.steps.length > 0) {
+    state.steps.forEach(step => {
+      if (step.place_id && PLACES_INDEX[step.place_id]) {
+        const masterData = PLACES_INDEX[step.place_id];
+        if (!step.visits || step.visits.length === 0) {
+          step.visits = masterData.visits || [];
+        }
+        if (!step.activities || step.activities.length === 0) {
+          step.activities = masterData.activities || [];
+        }
+      }
+    });
+  }
 }
 
 // === DOM REFS ===
@@ -2055,6 +2158,11 @@ async function loadFromTemp(rtKey) {
   });
   
   console.log(`[MOBILE] Loaded ${state.steps.length} steps from temp`);
+  
+  // Charger les visites et activités des places depuis le master
+  if (state.cc) {
+    await ensurePlacesIndex([state.cc]);
+  }
 }
 
 // === LOAD FROM DASHBOARD (Firestore users/{uid}/trips/{tripId}) ===
@@ -2075,7 +2183,7 @@ async function loadFromDashboard(tripId) {
       debugLog('localStorage parsed: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' étapes');
       if (tripData && tripData.steps && tripData.steps.length > 0) {
         debugLog('✅ Chargé depuis localStorage!');
-        applyTripDataToState(tripData);
+        await applyTripDataToState(tripData);
         
         // IMPORTANT: Charger aussi ORT_TRIP_DATA pour les bookings (stockés séparément)
         if (window.ORT_TRIP_DATA) {
@@ -2181,7 +2289,7 @@ async function loadFromDashboard(tripId) {
       const trip = await window.ORT_STATE.getTrip(tripId);
       if (trip && trip.steps && trip.steps.length > 0) {
         debugLog('✅ ORT_STATE: ' + trip.title + ' / ' + trip.steps.length + ' steps');
-        applyTripDataToState(trip);
+        await applyTripDataToState(trip);
         
         // Charger aussi ORT_TRIP_DATA pour les bookings
         if (window.ORT_TRIP_DATA) {
@@ -2226,7 +2334,7 @@ async function loadFromDashboard(tripId) {
     }
     
     debugLog('Steps après désérialisation: ' + (tripData.steps?.length || 0));
-    applyTripDataToState(tripData);
+    await applyTripDataToState(tripData);
     
     // Charger ORT_TRIP_DATA pour les bookings
     if (window.ORT_TRIP_DATA) {
@@ -2258,7 +2366,7 @@ async function loadFromDashboard(tripId) {
 }
 
 // Applique les données du trip au state
-function applyTripDataToState(tripData) {
+async function applyTripDataToState(tripData) {
   debugLog('applyTripDataToState: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' steps');
   
   state.title = tripData.title || tripData.name || 'Roadtrip';
@@ -2294,6 +2402,11 @@ function applyTripDataToState(tripData) {
   });
   
   debugLog('✅ state.steps = ' + state.steps.length);
+  
+  // Charger les visites et activités des places depuis le master si vides
+  if (state.cc) {
+    await ensurePlacesIndex([state.cc]);
+  }
   
   // Budget si présent
   if (tripData.totalBudget) {
@@ -3326,6 +3439,19 @@ function openStepSheet(idx) {
   // Stocker les visites et activités
   currentStepVisits = Array.isArray(step.visits) ? step.visits : [];
   currentStepActivities = Array.isArray(step.activities) ? step.activities : [];
+  
+  // Si vides, chercher dans PLACES_INDEX (comme RT detail)
+  if (step.place_id && PLACES_INDEX && PLACES_INDEX[step.place_id]) {
+    const masterData = PLACES_INDEX[step.place_id];
+    if (currentStepVisits.length === 0 && masterData.visits) {
+      currentStepVisits = masterData.visits;
+      step.visits = currentStepVisits;  // Mettre à jour le step aussi
+    }
+    if (currentStepActivities.length === 0 && masterData.activities) {
+      currentStepActivities = masterData.activities;
+      step.activities = currentStepActivities;  // Mettre à jour le step aussi
+    }
+  }
   
   // Mettre à jour les compteurs
   const visitsCount = currentStepVisits.length;
