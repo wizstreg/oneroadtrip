@@ -584,6 +584,9 @@
     init,
     saveCurrent,
     collectCurrentData,
+    get tripId() {
+      return currentTripId;
+    },
     hasPendingChanges: () => {
       return currentTripId ? window.ORT_STATE.hasPendingChanges(currentTripId) : false;
     }

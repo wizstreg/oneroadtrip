@@ -2165,7 +2165,28 @@ if(!icoWrap){
 
   // actions
   // actions
-  bSave.addEventListener('click', ()=>{ document.getElementById('btnSave')?.click(); bSave.classList.add('saved'); });
+  bSave.addEventListener('click', async ()=>{ 
+    console.log('[SAVE] Bouton cliqué');
+    
+    // Sauvegarde via ORT_DETAIL_ADAPTER
+    if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.saveCurrent === 'function') {
+      console.log('[SAVE] Appel saveCurrent()');
+      try {
+        await window.ORT_DETAIL_ADAPTER.saveCurrent(true);
+        console.log('[SAVE] ✅ Sauvegarde réussie');
+        const msg = window.t ? window.t('saved') : '✅ Enregistré';
+        if(typeof window.toast === 'function') window.toast(msg);
+        bSave.classList.add('saved');
+      } catch(e) {
+        console.error('[SAVE] ❌ Erreur:', e.message || e);
+        const msg = '❌ Erreur: ' + (e.message || 'Impossible de sauvegarder');
+        if(typeof window.toast === 'function') window.toast(msg);
+      }
+    } else {
+      console.error('[SAVE] ORT_DETAIL_ADAPTER.saveCurrent non disponible');
+      if(typeof window.toast === 'function') window.toast('❌ Système non initialisé');
+    }
+  });
 
   // ❗ Alerter → boîte de dialogue + envoi silencieux
   function openNoteDialog(){
@@ -2804,21 +2825,40 @@ function getTripId() {
   const cc = params.get('cc');
   const itin = params.get('itin');
   
-  // Pour les RT standards (cc+itin), créer un tripId STABLE
+  // Priorité 1: tripId explicite dans URL (retour sur voyage existant)
+  const urlTripId = params.get('tripId');
+  if (urlTripId) {
+    console.log('[getTripId] ✅ TripId depuis URL:', urlTripId);
+    localStorage.setItem('ORT_CURRENT_TRIP_ID', urlTripId);
+    return urlTripId;
+  }
+  
+  // Priorité 2: Pour RT catalogue (cc+itin), chercher/créer un tripId UNIQUE par utilisateur
   if (cc && itin) {
-    const tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
-    console.log('[getTripId] ✅ TripId stable:', tripId);
+    const mappingKey = `ORT_TRIP_MAPPING_${cc}_${itin}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    let tripId = localStorage.getItem(mappingKey);
+    
+    if (!tripId) {
+      // Nouveau voyage : générer ID unique
+      tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(mappingKey, tripId);
+      console.log('[getTripId] 🆕 Nouveau tripId unique généré:', tripId);
+    } else {
+      console.log('[getTripId] ✅ TripId existant retrouvé:', tripId);
+    }
+    
+    localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
     return tripId;
   }
   
-  // Pour RT temporaires, vérifier si on a déjà un tripId en cours
+  // Priorité 3: RT temporaires, vérifier si on a déjà un tripId en cours
   const tempId = localStorage.getItem('ORT_CURRENT_TRIP_ID');
   if (tempId) {
     console.log('[getTripId] ✅ TripId temporaire existant:', tempId);
     return tempId;
   }
   
-  // Sinon, générer un nouveau tripId temporaire
+  // Priorité 4: Sinon, générer un nouveau tripId temporaire
   const newId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   localStorage.setItem('ORT_CURRENT_TRIP_ID', newId);
   console.log('[getTripId] ⚠️ Nouveau tripId temporaire:', newId);
@@ -2844,15 +2884,12 @@ const itin = currentParams.get('itin');
 
 let tripId;
 
-if (cc && itin) {
-  tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
-  console.log('   ✅ TripId stable généré:', tripId);
-} else if (currentParams.get('tripId')) {
+if (currentParams.get('tripId')) {
   tripId = currentParams.get('tripId');
   console.log('   ✅ TripId depuis URL:', tripId);
 } else {
   tripId = getTripId();
-  console.log('   ⚠️ TripId depuis getTripId():', tripId);
+  console.log('   ✅ TripId depuis getTripId():', tripId);
 }
   
   console.log('   tripId:', tripId);
@@ -7400,9 +7437,11 @@ function getAvailableModes() {
 
 // Construire le menu des modes
 
-$('#btnSave').onclick = async ()=>{
-  const u = currentUser();
-  if(!u){ toast(t('loginToSave')); return; }
+const btnSaveEl = document.getElementById('btnSave');
+if (btnSaveEl) {
+  btnSaveEl.onclick = async ()=>{
+    const u = currentUser();
+    if(!u){ toast(t('loginToSave')); return; }
 
   // == reconstitue le résumé comme dans scheduleAutosave() ==
   const rid = ensureRid();
@@ -7462,91 +7501,101 @@ try{
   // Réinitialiser le flag de modifications non sauvegardées
   if (typeof clearUnsavedChanges === 'function') clearUnsavedChanges();
 };
+}
 
-$('#btnExport').onclick=()=>{
-  downloadJSON(`roadtrip_${state.country}_${Date.now()}.json`,{title:state.title,country:state.country,steps:state.steps});
-  toast(t('exported'));
-};
+const btnExportEl = document.getElementById('btnExport');
+if (btnExportEl) {
+  btnExportEl.onclick = () => {
+    downloadJSON(`roadtrip_${state.country}_${Date.now()}.json`,{title:state.title,country:state.country,steps:state.steps});
+    toast(t('exported'));
+  };
+}
 
 // Bouton réorganiser hôtels (cycle entre 5 stratégies)
-$('#btnReorganizeHotels').onclick=()=>{
-  if(!state.maxHotels || state.maxHotels >= state.steps.length){
-    toast('⚠️ Regroupement non applicable (maxHotels non défini)');
-    return;
-  }
-  
-  const currentStrategy = state._currentGroupStrategy || 1;
-  const nextStrategy = (currentStrategy % 5) + 1;
-  
-  const strategyNames = {
-    1: 'Équilibré',
-    2: 'Par région',
-    3: 'Meilleures notes',
-    4: 'Moins de trajets',
-    5: 'Grandes villes'
+const btnReorgEl = document.getElementById('btnReorganizeHotels');
+if (btnReorgEl) {
+  btnReorgEl.onclick = () => {
+    if(!state.maxHotels || state.maxHotels >= state.steps.length){
+      toast('⚠️ Regroupement non applicable (maxHotels non défini)');
+      return;
+    }
+    
+    const currentStrategy = state._currentGroupStrategy || 1;
+    const nextStrategy = (currentStrategy % 5) + 1;
+    
+    const strategyNames = {
+      1: 'Équilibré',
+      2: 'Par région',
+      3: 'Meilleures notes',
+      4: 'Moins de trajets',
+      5: 'Grandes villes'
+    };
+    
+    // autoGroupHotels supprimé
+    renderRows();
+    toast(`🏨 Stratégie: ${strategyNames[nextStrategy]} (${nextStrategy}/5)`);
   };
-  
-  // autoGroupHotels supprimé
-  renderRows();
-  toast(`🏨 Stratégie: ${strategyNames[nextStrategy]} (${nextStrategy}/5)`);
-};
+}
 
 // Bouton Annuler les groupes - réinitialiser pour décision manuelle
-$('#btnResetGroups').onclick=()=>{
-  const lang = document.documentElement.lang || 'fr';
-  const confirmMsg = {
-    fr: 'Annuler tous les groupements automatiques et hôtels ?\n\nChaque étape aura 0 nuit et vous pourrez configurer manuellement.',
-    en: 'Cancel all automatic groupings and hotels?\n\nEach step will have 0 nights and you can configure manually.',
-    it: 'Annullare tutti i raggruppamenti automatici e gli hotel?\n\nOgni tappa avrà 0 notti e potrai configurare manualmente.',
-    es: '¿Cancelar todas las agrupaciones automáticas y hoteles?\n\nCada etapa tendrá 0 noches y podrás configurar manualmente.',
-    pt: 'Cancelar todos os agrupamentos automáticos e hotéis?\n\nCada etapa terá 0 noites e você poderá configurar manualmente.',
-    ar: 'إلغاء جميع التجميعات التلقائية والفنادق؟\n\nكل محطة ستحصل على 0 ليلة ويمكنك التهيئة يدوياً.'
-  };
-  
-  if(!confirm(confirmMsg[lang] || confirmMsg.fr)) return;
-  
-  // Réinitialiser toutes les étapes
-  state.steps.forEach((step, idx) => {
-    // Supprimer les propriétés de groupement
-    delete step.groupName;
-    delete step.groupColor;
-    delete step._isHub;
-    delete step._isSatellite;
-    delete step._hubGroup;
-    delete step._satellites;
-    delete step._mergedInto;
+const btnResetEl = document.getElementById('btnResetGroups');
+if (btnResetEl) {
+  btnResetEl.onclick = () => {
+    const lang = document.documentElement.lang || 'fr';
+    const confirmMsg = {
+      fr: 'Annuler tous les groupements automatiques et hôtels ?\n\nChaque étape aura 0 nuit et vous pourrez configurer manuellement.',
+      en: 'Cancel all automatic groupings and hotels?\n\nEach step will have 0 nights and you can configure manually.',
+      it: 'Annullare tutti i raggruppamenti automatici e gli hotel?\n\nOgni tappa avrà 0 notti e potrai configurare manualmente.',
+      es: '¿Cancelar todas las agrupaciones automáticas y hoteles?\n\nCada etapa tendrá 0 noches y podrás configurar manualmente.',
+      pt: 'Cancelar todos os agrupamentos automáticos e hotéis?\n\nCada etapa terá 0 noites e você poderá configurar manualmente.',
+      ar: 'إلغاء جميع التجميعات التلقائية والفنادق؟\n\nكل محطة ستحصل على 0 ليلة ويمكنك التهيئة يدوياً.'
+    };
     
-    // Réinitialiser les nuits à 0 pour forcer décision manuelle
-    step.nights = 0;
+    if(!confirm(confirmMsg[lang] || confirmMsg.fr)) return;
     
-    // Supprimer l'hôtel sélectionné
-    delete step.hotel;
-    delete step.hotelName;
-    delete step.hotelPrice;
-    delete step.hotelRating;
-    delete step.hotelUrl;
-    delete step.hotelPhoto;
-  });
-  
-  // Supprimer le flag de stratégie
-  delete state._currentGroupStrategy;
-  
-  // Activer le mode manuel (ne pas recalculer auto après suppression)
-  state._manualMode = true;
-  
-  // Re-render
-  renderRows();
-  
-  const successMsg = {
-    fr: '✅ Groupes et hôtels réinitialisés. Ajoutez des nuits manuellement.',
-    en: '✅ Groups and hotels reset. Add nights manually.',
-    it: '✅ Gruppi e hotel reimpostati. Aggiungi notti manualmente.',
-    es: '✅ Grupos y hoteles reiniciados. Añade noches manualmente.',
-    pt: '✅ Grupos e hotéis redefinidos. Adicione noites manualmente.',
-    ar: '✅ تم إعادة تعيين المجموعات والفنادق. أضف الليالي يدوياً.'
+    // Réinitialiser toutes les étapes
+    state.steps.forEach((step, idx) => {
+      // Supprimer les propriétés de groupement
+      delete step.groupName;
+      delete step.groupColor;
+      delete step._isHub;
+      delete step._isSatellite;
+      delete step._hubGroup;
+      delete step._satellites;
+      delete step._mergedInto;
+      
+      // Réinitialiser les nuits à 0 pour forcer décision manuelle
+      step.nights = 0;
+      
+      // Supprimer l'hôtel sélectionné
+      delete step.hotel;
+      delete step.hotelName;
+      delete step.hotelPrice;
+      delete step.hotelRating;
+      delete step.hotelUrl;
+      delete step.hotelPhoto;
+    });
+    
+    // Supprimer le flag de stratégie
+    delete state._currentGroupStrategy;
+    
+    // Activer le mode manuel (ne pas recalculer auto après suppression)
+    state._manualMode = true;
+    
+    // Re-render
+    renderRows();
+    
+    const successMsg = {
+      fr: '✅ Groupes et hôtels réinitialisés. Ajoutez des nuits manuellement.',
+      en: '✅ Groups and hotels reset. Add nights manually.',
+      it: '✅ Gruppi e hotel reimpostati. Aggiungi notti manualmente.',
+      es: '✅ Grupos y hoteles reiniciados. Añade noches manualmente.',
+      pt: '✅ Grupos e hotéis redefinidos. Adicione noites manualmente.',
+      ar: '✅ تم إعادة تعيين المجموعات والفنادق. أضف الليالي يدوياً.'
+    };
+    toast(successMsg[lang] || successMsg.fr);
   };
-  toast(successMsg[lang] || successMsg.fr);
-};
+}
 
 function downloadJSON(filename,obj){
   const blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
@@ -7562,8 +7611,54 @@ function downloadJSON(filename,obj){
 
 function toast(msg){
   const t=document.createElement('div');
-  t.textContent=msg;
-  t.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:9999;background:#113f7a;color:#fff;border:1px solid #ffffff55;border-radius:10px;padding:10px 14px;box-shadow:0 4px 14px rgba(0,0,0,.2)';
+  
+  // Déterminer l'icône et la couleur selon le message
+  let icon = '✅';
+  let bgColor = '#1b5e20';
+  let borderColor = '#4caf50';
+  
+  if (msg.includes('❌') || msg.includes('Erreur') || msg.includes('Error')) {
+    icon = '❌';
+    bgColor = '#c62828';
+    borderColor = '#f44336';
+  } else if (msg.includes('⚠️') || msg.includes('Attention')) {
+    icon = '⚠️';
+    bgColor = '#f57f17';
+    borderColor = '#ff9800';
+  } else if (msg.includes('ℹ️') || msg.includes('Info')) {
+    icon = 'ℹ️';
+    bgColor = '#1565c0';
+    borderColor = '#2196f3';
+  }
+  
+  // Contenu HTML avec fond dégradé ORT
+  t.innerHTML = `
+    <div style="
+      position:fixed;
+      left:50%;
+      transform:translateX(-50%);
+      bottom:20px;
+      z-index:9999;
+      background:linear-gradient(135deg, ${bgColor} 0%, rgba(17,63,122,0.9) 100%);
+      color:#fff;
+      border:2px solid ${borderColor};
+      border-radius:12px;
+      padding:14px 20px;
+      box-shadow:0 8px 24px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.2);
+      min-width:200px;
+      max-width:400px;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:600;
+      letter-spacing:0.5px;
+      backdrop-filter:blur(10px);
+    ">
+      <span style="font-size:20px;min-width:24px;">${icon}</span>
+      <span>${msg.replace(/[❌✅⚠️ℹ️]/g, '').trim()}</span>
+    </div>
+  `;
+  
   document.body.appendChild(t);
   setTimeout(()=>t.remove(),3000);
 }
@@ -7746,7 +7841,8 @@ if(itinsObj){
 await initFromItin(toUse);
 
 // Afficher le titre (déjà multilingue)
-$('#rtTitle').textContent = state.title || '';
+const rtTitleEl = document.getElementById('rtTitle');
+if (rtTitleEl) rtTitleEl.textContent = state.title || '';
 
 renderRows();
 // Charger l’index (pays ou import) avant d’afficher “Autres lieux”
@@ -7774,7 +7870,11 @@ return;
   
 state.country=CC;
    state.cc = CC; // ← AJOUT : pour collectCurrentData()
-   state.tripId = ensureRid(); // ← AJOUT : pour ORT_DETAIL_ADAPTER
+   
+   // ✅ CORRECTION: Utiliser getTripId() au lieu d'ensureRid() pour cohérence avec toute la chaîne
+   state.tripId = getTripId();
+   state.id = state.tripId;  // Alias pour compatibilité
+   console.log('[INIT] ✅ TripId généré et assigné:', state.tripId);
    
    // ← AJOUT : Stocker la référence à l'itinéraire de base
    if (CC && ITIN_ID) {
@@ -7785,7 +7885,7 @@ state.country=CC;
      console.log('[INIT] Référence itinéraire de base stockée:', state._itinRef);
    }
    
-   // Initialiser l'adaptateur State Manager avec le tripId
+   // Initialiser l'adaptateur State Manager avec le tripId (APRÈS assignation)
    if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.init === 'function') {
      window.ORT_DETAIL_ADAPTER.init(state.tripId, state);
      console.log('[INIT] ✅ ORT_DETAIL_ADAPTER initialisé avec tripId:', state.tripId);
@@ -7795,12 +7895,8 @@ state.country=CC;
 
 // Fusionne les éditions utilisateur (visites/activités) si dispo
 if (window.ORT_STEP_COMMON && typeof window.ORT_STEP_COMMON.loadStepData === 'function') {
-  const tripId = (function(){
-    const u = new URLSearchParams(location.search);
-    const itin = u.get('itin') || '';
- const uid  = localStorage.getItem('ORT_USER_ID') || 'user';
-    return `${uid}::${itin}`.replace(/\s/g,'_');
-  })();
+  // ✅ CORRECTION: Utiliser le tripId déjà généré au lieu de recréer une logique dupliquée
+  const tripId = state.tripId;  // Utilise le tripId DEJA ASSIGNÉ à l'étape précédente
   if (Array.isArray(state.steps)) {
     for (let i = 0; i < state.steps.length; i++) {
       const d = await window.ORT_STEP_COMMON.loadStepData(tripId, `day_${i+1}`);
@@ -8895,22 +8991,24 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
       clearInterval(waitForState);
       console.log('[INIT] window.state prêt');
       
-      let tripId = urlParams.get('tripId');
+      // ✅ CORRECTION: Le tripId est DÉJÀ assigné à state par getTripId()
+      // Pas besoin de logique redondante ici
+      const tripId = window.state.tripId;
       
       if (!tripId) {
+        console.error('[INIT] ❌ ERREUR CRITIQUE: tripId non défini!');
+        console.log('[INIT] Tentative de récupération manuelle...');
+        
+        const urlParams = new URLSearchParams(location.search);
         const cc = urlParams.get('cc');
         const itin = urlParams.get('itin');
         
-        if (cc && itin) {
-          tripId = `user::${cc}::${itin}`.replace(/[^a-zA-Z0-9:_-]/g, '_');
-          console.log('[INIT] ✅ TripId stable généré:', tripId);
-        } else if (window.ORT_STATE && typeof window.ORT_STATE.generateTripId === 'function') {
-          tripId = window.ORT_STATE.generateTripId();
-          console.log('[INIT] ⚠️ TripId temporaire généré:', tripId);
-        } else {
-          tripId = `trip_${Date.now()}`;
-        }
+        // Fallback: utiliser getTripId()
+        window.state.tripId = getTripId();
+        console.log('[INIT] ⚠️ TripId récupéré en fallback:', window.state.tripId);
       }
+      
+      console.log('[INIT] ✅ TripId confirmé:', tripId || window.state.tripId);
       
       // Chercher modifications sauvegardées
       if (tripId && window.ORT_STATE && typeof window.ORT_STATE.getTrip === 'function') {

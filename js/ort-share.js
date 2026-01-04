@@ -243,6 +243,37 @@
   }
   
   /**
+   * Récupère les infos de partage existantes pour un trip
+   */
+  async function getShareInfo(tripId) {
+    const user = firebase.auth().currentUser;
+    if (!user) return null;
+    
+    const db = firebase.firestore();
+    
+    try {
+      const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
+      const tripDoc = await tripRef.get();
+      
+      if (!tripDoc.exists) return null;
+      
+      const publicShare = tripDoc.data()?.publicShare;
+      if (!publicShare || !publicShare.token) return null;
+      
+      return {
+        token: publicShare.token,
+        mode: publicShare.mode || 'viewer',
+        url: buildShareUrl(publicShare.token),
+        createdAt: publicShare.createdAt,
+        expiresAt: publicShare.expiresAt
+      };
+    } catch (e) {
+      console.warn('[SHARE] Erreur getShareInfo:', e);
+      return null;
+    }
+  }
+  
+  /**
    * Vérifie et charge un trip partagé par token
    */
   async function loadSharedTrip(token) {
@@ -571,6 +602,7 @@
     // Helpers
     createShareLink,
     revokeShareLink,
+    getShareInfo,
     buildShareUrl,
     
     // Traductions

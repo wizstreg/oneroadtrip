@@ -563,13 +563,6 @@ html, body {
   background: #e2e8f0;
 }
 
-.sheet-desc {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #475569;
-  margin-bottom: 16px;
-}
-
 .sheet-section {
   margin-bottom: 24px;
   padding-bottom: 16px;
@@ -815,6 +808,139 @@ html, body {
 
 .floating-back-btn:active {
   transform: translateX(-50%) scale(0.96);
+}
+
+/* Share Modal Styles */
+.share-options {
+  padding: 8px 0;
+}
+
+.share-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.share-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 2px solid var(--ort-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.share-mode-option:has(input:checked) {
+  border-color: var(--ort-blue);
+  background: #f0f7ff;
+}
+
+.share-mode-option input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ort-blue);
+}
+
+.share-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.share-mode-icon {
+  font-size: 24px;
+}
+
+.share-mode-info strong {
+  display: block;
+  color: var(--ort-blue);
+  margin-bottom: 2px;
+}
+
+.share-mode-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.share-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.share-generate-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.share-generate-btn:active {
+  opacity: 0.9;
+}
+
+.share-result {
+  margin-bottom: 16px;
+}
+
+.share-url-input {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--ort-border);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+}
+
+.share-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.share-action-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--ort-blue);
+  background: #fff;
+  color: var(--ort-blue);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-action-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.share-revoke-btn {
+  width: 100%;
+  padding: 14px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* Sheet actions */
@@ -1185,9 +1311,6 @@ html, body {
       </a>
     </div>
     
-    <!-- Description courte (sans les visites) -->
-    <div class="sheet-desc" id="sheetStepDesc"></div>
-    
     <!-- Boutons vers modales Visites et Activités -->
     <div class="sheet-section">
       <div class="content-buttons">
@@ -1251,6 +1374,68 @@ html, body {
     <!-- Contenu rempli dynamiquement -->
   </div>
   <button class="floating-back-btn" onclick="closeActivitiesModal()">
+    ← Retour
+  </button>
+</div>
+
+<!-- Modale Partage -->
+<div class="content-modal" id="shareModal">
+  <div class="content-modal-header">
+    <h2>🔗 Partager ce voyage</h2>
+    <span class="content-modal-step" id="shareModalTitle"></span>
+  </div>
+  <div class="content-modal-body">
+    <div class="share-options">
+      <!-- Mode de partage -->
+      <div class="share-mode-section">
+        <label class="share-mode-option">
+          <input type="radio" name="shareMode" value="viewer" checked>
+          <div class="share-mode-info">
+            <span class="share-mode-icon">👁️</span>
+            <div>
+              <strong>Lecture seule</strong>
+              <p>Peut voir le roadtrip mais pas le modifier</p>
+            </div>
+          </div>
+        </label>
+        <label class="share-mode-option">
+          <input type="radio" name="shareMode" value="editor">
+          <div class="share-mode-info">
+            <span class="share-mode-icon">✏️</span>
+            <div>
+              <strong>Modification</strong>
+              <p>Peut modifier les dates, étapes, réservations</p>
+            </div>
+          </div>
+        </label>
+      </div>
+      
+      <!-- Avertissement -->
+      <div class="share-warning">
+        ⚠️ Toute personne avec ce lien pourra accéder au voyage
+      </div>
+      
+      <!-- Bouton générer -->
+      <button class="share-generate-btn" id="btnGenerateShare" onclick="generateShareLink()">
+        🔗 Générer le lien
+      </button>
+      
+      <!-- Résultat (caché par défaut) -->
+      <div class="share-result" id="shareResult" style="display:none">
+        <input type="text" class="share-url-input" id="shareUrlInput" readonly>
+        <div class="share-actions">
+          <button class="share-action-btn" onclick="copyShareLink()">📋 Copier</button>
+          <button class="share-action-btn" onclick="nativeShare()">📤 Partager</button>
+        </div>
+      </div>
+      
+      <!-- Révoquer (caché par défaut) -->
+      <button class="share-revoke-btn" id="btnRevokeShare" style="display:none" onclick="revokeShare()">
+        🗑️ Révoquer le lien
+      </button>
+    </div>
+  </div>
+  <button class="floating-back-btn" onclick="closeShareModal()">
     ← Retour
   </button>
 </div>
@@ -1425,6 +1610,7 @@ window.debugLog = function(msg) {
 <script src="/js/ort-config.js"></script>
 <script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-trip-data.js"></script>
+<script src="/js/ort-share.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
 <script>
@@ -3131,17 +3317,6 @@ function openStepSheet(idx) {
   $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
   $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
   
-  // Description courte (sans les visites détaillées)
-  // Si la description est longue, on prend juste les 150 premiers caractères
-  let shortDesc = step.description || '';
-  if (shortDesc.length > 150) {
-    shortDesc = shortDesc.substring(0, 150).trim() + '...';
-  }
-  if (!shortDesc) {
-    shortDesc = `Découvrez ${step.name || 'cette étape'} lors de votre voyage.`;
-  }
-  $('sheetStepDesc').textContent = shortDesc;
-  
   $('nightsValue').textContent = step.nights || 0;
   
   // Boutons de navigation
@@ -3427,11 +3602,123 @@ async function saveTrip() {
 
 function shareTrip() {
   closeAllSheets();
-  if (navigator.share) {
-    navigator.share({ title: state.title, text: `Découvre mon roadtrip : ${state.title}`, url: location.href });
-  } else {
-    navigator.clipboard.writeText(location.href);
+  
+  // Vérifier si connecté
+  const user = firebase.auth().currentUser;
+  if (!user) {
+    showToast('❌ Connectez-vous pour partager');
+    return;
+  }
+  
+  // Vérifier si trip sauvegardé
+  if (!state._tripId) {
+    showToast('❌ Sauvegardez d\'abord le voyage');
+    return;
+  }
+  
+  // Ouvrir la modale
+  $('shareModalTitle').textContent = state.title || 'Mon roadtrip';
+  $('shareResult').style.display = 'none';
+  $('btnRevokeShare').style.display = 'none';
+  $('btnGenerateShare').style.display = '';
+  
+  // Charger le lien existant si présent
+  loadExistingShare();
+  
+  $('shareModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeShareModal() {
+  $('shareModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadExistingShare() {
+  if (!window.ORT_SHARE) return;
+  
+  try {
+    const existing = await ORT_SHARE.getShareInfo(state._tripId);
+    if (existing && existing.url) {
+      $('shareUrlInput').value = existing.url;
+      $('shareResult').style.display = '';
+      $('btnRevokeShare').style.display = '';
+      $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
+      
+      // Cocher le bon mode
+      const modeRadio = document.querySelector(`input[name="shareMode"][value="${existing.mode || 'viewer'}"]`);
+      if (modeRadio) modeRadio.checked = true;
+    }
+  } catch (e) {
+    console.warn('[SHARE] Erreur chargement:', e);
+  }
+}
+
+async function generateShareLink() {
+  if (!window.ORT_SHARE) {
+    showToast('❌ Module de partage non disponible');
+    return;
+  }
+  
+  const mode = document.querySelector('input[name="shareMode"]:checked')?.value || 'viewer';
+  
+  $('btnGenerateShare').textContent = '⏳ Génération...';
+  $('btnGenerateShare').disabled = true;
+  
+  try {
+    const result = await ORT_SHARE.createShareLink(state._tripId, mode);
+    
+    if (result && result.url) {
+      $('shareUrlInput').value = result.url;
+      $('shareResult').style.display = '';
+      $('btnRevokeShare').style.display = '';
+      $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
+      showToast('✅ Lien créé !');
+    } else {
+      showToast('❌ Erreur lors de la création');
+    }
+  } catch (e) {
+    console.error('[SHARE] Erreur:', e);
+    showToast('❌ ' + (e.message || 'Erreur'));
+  } finally {
+    $('btnGenerateShare').disabled = false;
+  }
+}
+
+function copyShareLink() {
+  const url = $('shareUrlInput').value;
+  if (url) {
+    navigator.clipboard.writeText(url);
     showToast('📋 Lien copié !');
+  }
+}
+
+function nativeShare() {
+  const url = $('shareUrlInput').value;
+  if (url && navigator.share) {
+    navigator.share({
+      title: state.title || 'Mon roadtrip',
+      text: `Découvre mon roadtrip : ${state.title}`,
+      url: url
+    });
+  } else {
+    copyShareLink();
+  }
+}
+
+async function revokeShare() {
+  if (!window.ORT_SHARE) return;
+  
+  if (!confirm('Révoquer le lien de partage ?')) return;
+  
+  try {
+    await ORT_SHARE.revokeShareLink(state._tripId);
+    $('shareResult').style.display = 'none';
+    $('btnRevokeShare').style.display = 'none';
+    $('btnGenerateShare').textContent = '🔗 Générer le lien';
+    showToast('✅ Lien révoqué');
+  } catch (e) {
+    showToast('❌ Erreur: ' + e.message);
   }
 }
 
@@ -3708,6 +3995,11 @@ window.openVisitsModal = openVisitsModal;
 window.closeVisitsModal = closeVisitsModal;
 window.openActivitiesModal = openActivitiesModal;
 window.closeActivitiesModal = closeActivitiesModal;
+window.closeShareModal = closeShareModal;
+window.generateShareLink = generateShareLink;
+window.copyShareLink = copyShareLink;
+window.nativeShare = nativeShare;
+window.revokeShare = revokeShare;
 
 // Rafraîchir les bookings quand on revient sur cette page
 // (après avoir été sur rt-booking-import par exemple)
