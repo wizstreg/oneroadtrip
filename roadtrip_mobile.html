@@ -597,49 +597,187 @@ html, body {
   color: #64748b;
 }
 
-/* Booking buttons */
-.sheet-booking-btns {
+/* Affiliate buttons - compact row at top */
+.affiliate-buttons {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-top: 12px;
+  gap: 8px;
+  margin: 12px 0 16px;
 }
 
-.booking-btn {
+.affiliate-btn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 14px;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.affiliate-btn:active {
+  transform: scale(0.96);
+}
+
+.affiliate-gyg {
+  background: linear-gradient(135deg, #ff5533 0%, #ff7744 100%);
+  color: #fff;
+}
+
+.affiliate-tiqets {
+  background: linear-gradient(135deg, #00a0e3 0%, #0077b6 100%);
+  color: #fff;
+}
+
+.affiliate-hotel {
+  background: var(--ort-green);
+  color: var(--ort-blue);
+}
+
+/* Content buttons (Visites / Activités) */
+.content-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.content-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 2px solid var(--ort-border);
   border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s;
-}
-
-.booking-btn:active {
-  transform: scale(0.98);
-}
-
-.booking-btn-gyg {
-  background: linear-gradient(135deg, #ff5533 0%, #ff7744 100%);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(255,85,51,0.3);
-}
-
-.booking-btn-tiqets {
-  background: linear-gradient(135deg, #00a0e3 0%, #0077b6 100%);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0,119,182,0.3);
-}
-
-.booking-btn-hotel {
-  background: var(--ort-green);
   color: var(--ort-blue);
-  box-shadow: 0 4px 12px rgba(195,214,182,0.5);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.content-btn:active {
+  background: var(--ort-light);
+  border-color: var(--ort-blue);
+}
+
+.content-btn span:first-of-type {
+  flex: 1;
+  text-align: left;
+}
+
+.content-count {
+  background: var(--ort-blue);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content-count:empty,
+.content-count[data-count="0"] {
+  display: none;
+}
+
+/* Content Modal (Visites / Activités) */
+.content-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content-modal.open {
+  display: flex;
+}
+
+.content-modal-header {
+  padding: 20px 16px;
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.content-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.content-modal-step {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 4px;
+  display: block;
+}
+
+.content-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+/* Content items inside modal */
+.content-item {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid var(--ort-blue);
+}
+
+.content-item-title {
+  font-weight: 700;
+  color: var(--ort-blue);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.content-item-text {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.content-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+/* Floating back button */
+.floating-back-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 32px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(26, 54, 93, 0.4);
+  z-index: 2001;
+  transition: transform 0.2s;
+}
+
+.floating-back-btn:active {
+  transform: translateX(-50%) scale(0.96);
 }
 
 /* Sheet actions */
@@ -992,24 +1130,38 @@ html, body {
   </div>
   <div class="sheet-body">
     <img class="sheet-photo" id="sheetStepPhoto" src="" alt="">
+    
+    <!-- Liens affiliés EN HAUT -->
+    <div class="affiliate-buttons">
+      <a class="affiliate-btn affiliate-gyg" id="btnGyg" href="#" target="_blank" rel="noopener">
+        🎫 Tours
+      </a>
+      <a class="affiliate-btn affiliate-tiqets" id="btnTiqets" href="#" target="_blank" rel="noopener">
+        🎟️ Billets
+      </a>
+      <a class="affiliate-btn affiliate-hotel" id="btnHotel" href="#" target="_blank" rel="noopener">
+        🏨 Hôtel
+      </a>
+    </div>
+    
+    <!-- Description courte -->
     <div class="sheet-desc" id="sheetStepDesc"></div>
     
-    <!-- Booking buttons pour l'étape -->
+    <!-- Boutons vers modales Visites et Activités -->
     <div class="sheet-section">
-      <div class="sheet-section-title">Visites & Hébergement</div>
-      <div class="sheet-booking-btns">
-        <a class="booking-btn booking-btn-gyg" id="btnGyg" href="#" target="_blank" rel="noopener">
-          🎫 Activités & Tours
-        </a>
-        <a class="booking-btn booking-btn-tiqets" id="btnTiqets" href="#" target="_blank" rel="noopener">
-          🎟️ Billets & Musées
-        </a>
-        <a class="booking-btn booking-btn-hotel" id="btnHotel" href="#" target="_blank" rel="noopener">
-          🏨 Trouver un hôtel
-        </a>
+      <div class="content-buttons">
+        <button class="content-btn" id="btnOpenVisits" onclick="openVisitsModal()">
+          📍 <span>Voir les visites</span>
+          <span class="content-count" id="visitsCount">0</span>
+        </button>
+        <button class="content-btn" id="btnOpenActivities" onclick="openActivitiesModal()">
+          🎯 <span>Voir les activités</span>
+          <span class="content-count" id="activitiesCount">0</span>
+        </button>
       </div>
     </div>
     
+    <!-- Contrôle des nuits -->
     <div class="sheet-section">
       <div class="sheet-section-title">Nombre de nuits</div>
       <div class="nights-control">
@@ -1032,6 +1184,34 @@ html, body {
     <button class="sheet-btn sheet-btn-danger" id="btnDeleteStep">🗑️</button>
     <button class="sheet-btn sheet-btn-primary" id="btnCloseSheet">Fermer</button>
   </div>
+</div>
+
+<!-- Modale Visites -->
+<div class="content-modal" id="visitsModal">
+  <div class="content-modal-header">
+    <h2>📍 Visites prévues</h2>
+    <span class="content-modal-step" id="visitsModalStep"></span>
+  </div>
+  <div class="content-modal-body" id="visitsModalBody">
+    <!-- Contenu rempli dynamiquement -->
+  </div>
+  <button class="floating-back-btn" onclick="closeVisitsModal()">
+    ← Retour
+  </button>
+</div>
+
+<!-- Modale Activités -->
+<div class="content-modal" id="activitiesModal">
+  <div class="content-modal-header">
+    <h2>🎯 Activités</h2>
+    <span class="content-modal-step" id="activitiesModalStep"></span>
+  </div>
+  <div class="content-modal-body" id="activitiesModalBody">
+    <!-- Contenu rempli dynamiquement -->
+  </div>
+  <button class="floating-back-btn" onclick="closeActivitiesModal()">
+    ← Retour
+  </button>
 </div>
 
 <!-- Services Bottom Sheet -->
@@ -2898,6 +3078,10 @@ function closeAllSheets() {
   currentStepIndex = null;
 }
 
+// Variables pour stocker les visites/activités de l'étape courante
+let currentStepVisits = [];
+let currentStepActivities = [];
+
 function openStepSheet(idx) {
   currentStepIndex = idx;
   const step = state.steps[idx];
@@ -2905,8 +3089,24 @@ function openStepSheet(idx) {
   
   $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
   $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
-  $('sheetStepDesc').textContent = step.description || 'Aucune description disponible.';
+  $('sheetStepDesc').textContent = step.description || 'Découvrez cette étape de votre voyage.';
   $('nightsValue').textContent = step.nights || 0;
+  
+  // Stocker les visites et activités
+  currentStepVisits = Array.isArray(step.visits) ? step.visits : [];
+  currentStepActivities = Array.isArray(step.activities) ? step.activities : [];
+  
+  // Mettre à jour les compteurs
+  const visitsCount = currentStepVisits.length;
+  const activitiesCount = currentStepActivities.length;
+  $('visitsCount').textContent = visitsCount || '';
+  $('visitsCount').dataset.count = visitsCount;
+  $('activitiesCount').textContent = activitiesCount || '';
+  $('activitiesCount').dataset.count = activitiesCount;
+  
+  // Masquer les boutons si pas de contenu
+  $('btnOpenVisits').style.display = visitsCount > 0 ? '' : 'none';
+  $('btnOpenActivities').style.display = activitiesCount > 0 ? '' : 'none';
   
   // Charger la photo avec fallback et timeout
   const photoEl = $('sheetStepPhoto');
@@ -2970,6 +3170,70 @@ function openStepSheet(idx) {
   }
   
   openSheet($('stepSheet'));
+}
+
+// === MODALES VISITES / ACTIVITÉS ===
+
+function openVisitsModal() {
+  const step = state.steps[currentStepIndex];
+  const stepName = getCityDisplayName(step, state.lang) || step.name;
+  
+  $('visitsModalStep').textContent = `${stepName} - Étape ${currentStepIndex + 1}`;
+  
+  const body = $('visitsModalBody');
+  if (currentStepVisits.length === 0) {
+    body.innerHTML = '<div class="content-empty">Aucune visite prévue pour cette étape</div>';
+  } else {
+    body.innerHTML = currentStepVisits.map((v, i) => {
+      const text = typeof v === 'string' ? v : (v.text || v.description || v.name || '');
+      const title = typeof v === 'object' && v.title ? v.title : `Visite ${i + 1}`;
+      return `
+        <div class="content-item">
+          ${typeof v === 'object' && v.title ? `<div class="content-item-title">${title}</div>` : ''}
+          <div class="content-item-text">${text}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  $('visitsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVisitsModal() {
+  $('visitsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openActivitiesModal() {
+  const step = state.steps[currentStepIndex];
+  const stepName = getCityDisplayName(step, state.lang) || step.name;
+  
+  $('activitiesModalStep').textContent = `${stepName} - Étape ${currentStepIndex + 1}`;
+  
+  const body = $('activitiesModalBody');
+  if (currentStepActivities.length === 0) {
+    body.innerHTML = '<div class="content-empty">Aucune activité prévue pour cette étape</div>';
+  } else {
+    body.innerHTML = currentStepActivities.map((a, i) => {
+      const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
+      const title = typeof a === 'object' && a.title ? a.title : `Activité ${i + 1}`;
+      return `
+        <div class="content-item">
+          ${typeof a === 'object' && a.title ? `<div class="content-item-title">${title}</div>` : ''}
+          <div class="content-item-text">${text}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  $('activitiesModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeActivitiesModal() {
+  $('activitiesModal').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 // === ACTIONS ===
@@ -3375,6 +3639,10 @@ $('btnExpertMode').onclick = function() {
 
 // Expose
 window.openStepSheet = openStepSheet;
+window.openVisitsModal = openVisitsModal;
+window.closeVisitsModal = closeVisitsModal;
+window.openActivitiesModal = openActivitiesModal;
+window.closeActivitiesModal = closeActivitiesModal;
 
 // Rafraîchir les bookings quand on revient sur cette page
 // (après avoir été sur rt-booking-import par exemple)
