@@ -76,6 +76,11 @@
         if (!bookingsSnapshot.empty) {
           tripData.travelBookings = [];
           
+          // D'abord, nettoyer les bookings existants dans steps
+          tripData.steps.forEach(step => {
+            if (step.bookings) step.bookings = [];
+          });
+          
           bookingsSnapshot.forEach(doc => {
             const booking = doc.data();
             booking.id = doc.id;
@@ -83,14 +88,23 @@
             if (booking.bookingType === 'travel') {
               // Résa voyage
               tripData.travelBookings.push(booking);
-            } else if (booking.bookingType === 'step' && typeof booking.stepIndex === 'number') {
-              // Résa étape
-              if (tripData.steps[booking.stepIndex]) {
-                if (!tripData.steps[booking.stepIndex].bookings) {
-                  tripData.steps[booking.stepIndex].bookings = [];
+            } else if (booking.bookingType === 'step') {
+              // Résa étape - utiliser stepIndexes si disponible, sinon stepIndex
+              const stepIndexes = booking.stepIndexes && Array.isArray(booking.stepIndexes) && booking.stepIndexes.length > 0
+                ? booking.stepIndexes
+                : (typeof booking.stepIndex === 'number' ? [booking.stepIndex] : []);
+              
+              stepIndexes.forEach(idx => {
+                if (tripData.steps[idx]) {
+                  if (!tripData.steps[idx].bookings) {
+                    tripData.steps[idx].bookings = [];
+                  }
+                  // Éviter les doublons (même booking ID)
+                  if (!tripData.steps[idx].bookings.find(b => b.id === booking.id)) {
+                    tripData.steps[idx].bookings.push(booking);
+                  }
                 }
-                tripData.steps[booking.stepIndex].bookings.push(booking);
-              }
+              });
             }
           });
           
@@ -328,21 +342,33 @@
    * @param {number|string} bookingIdOrIndex - Index ou ID de la réservation
    */
   async function removeStepBooking(stepIndex, bookingIdOrIndex) {
-    if (!tripData?.steps?.[stepIndex]?.bookings) return false;
+    if (!tripData?.steps) return false;
 
-    const bookings = tripData.steps[stepIndex].bookings;
     let bookingId = null;
+    let removed = false;
 
+    // Trouver l'ID du booking
     if (typeof bookingIdOrIndex === 'string') {
-      // Par ID
       bookingId = bookingIdOrIndex;
-      const idx = bookings.findIndex(b => b.id === bookingIdOrIndex);
-      if (idx !== -1) bookings.splice(idx, 1);
-    } else {
-      // Par index
-      bookingId = bookings[bookingIdOrIndex]?.id;
-      bookings.splice(bookingIdOrIndex, 1);
+    } else if (tripData.steps[stepIndex]?.bookings?.[bookingIdOrIndex]) {
+      bookingId = tripData.steps[stepIndex].bookings[bookingIdOrIndex]?.id;
     }
+
+    // Supprimer de TOUTES les étapes où ce booking apparaît
+    tripData.steps.forEach((step, idx) => {
+      if (step.bookings) {
+        const beforeLen = step.bookings.length;
+        if (bookingId) {
+          step.bookings = step.bookings.filter(b => b.id !== bookingId);
+        } else if (idx === stepIndex && typeof bookingIdOrIndex === 'number') {
+          step.bookings.splice(bookingIdOrIndex, 1);
+        }
+        if (step.bookings.length < beforeLen) {
+          console.log('🗑️ [TRIP-DATA] Booking retiré de l\'étape', idx);
+          removed = true;
+        }
+      }
+    });
 
     // Supprimer aussi dans Firestore
     if (bookingId) {
@@ -354,14 +380,17 @@
             .collection('trips').doc(currentTripId)
             .collection('bookings').doc(bookingId).delete();
           console.log('🗑️ [TRIP-DATA] Réservation supprimée de Firestore:', bookingId);
+          removed = true;
         } catch (e) {
           console.warn('⚠️ [TRIP-DATA] Erreur suppression Firestore:', e);
         }
       }
     }
 
-    console.log('🗑️ [TRIP-DATA] Réservation supprimée étape', stepIndex);
-    return true;
+    if (removed) {
+      console.log('🗑️ [TRIP-DATA] Réservation supprimée:', bookingId || bookingIdOrIndex);
+    }
+    return removed;
   }
 
   /**
