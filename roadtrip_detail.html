@@ -30,6 +30,32 @@
   // Fonction de redirection vers mobile
   function redirectToMobile() {
     localStorage.setItem(REDIRECT_MARKER, '1');
+    
+    // === SAUVEGARDER LE STATE POUR MOBILE ===
+    // Quand on redirige vers mobile, sauvegarder le state actuel dans localStorage
+    // pour que RT Mobile puisse le récupérer même sans connexion Firestore
+    try {
+      if (window.state && window.state.steps && window.state.steps.length > 0) {
+        var tripId = window.state.tripId || window.ORT_TRIPID?.get() || localStorage.getItem('ORT_CURRENT_TRIP_ID');
+        if (tripId) {
+          var stateToSave = {
+            id: tripId,
+            tripId: tripId,
+            title: window.state.title || 'Roadtrip',
+            country: window.state.country || window.state.cc || 'XX',
+            steps: window.state.steps,
+            startDateStr: window.state.startDateStr || '',
+            totalBudget: window.state.totalBudget || 0
+          };
+          localStorage.setItem('ort_trip_' + tripId, JSON.stringify(stateToSave));
+          localStorage.setItem('ORT_MOBILE_HANDOFF', tripId);
+          console.log('[ORT] ✅ State sauvegardé pour mobile:', tripId, stateToSave.steps.length, 'étapes');
+        }
+      }
+    } catch (e) {
+      console.warn('[ORT] Erreur sauvegarde state pour mobile:', e);
+    }
+    
     var newUrl = location.href.replace(/roadtrip_detail(_simple)?(\.html)?/, 'roadtrip_mobile.html');
     if (newUrl === location.href) newUrl = location.href.replace(/\/([^\/]*)$/, '/roadtrip_mobile.html$1');
     if (!/mobile=0/.test(newUrl)) {
@@ -39,6 +65,43 @@
     console.log('[ORT] Redirecting to mobile:', newUrl);
     location.replace(newUrl);
   }
+  
+  // === SAUVEGARDE AUTOMATIQUE DU STATE POUR MOBILE ===
+  // Sauvegarder le state périodiquement pour permettre la synchronisation avec mobile
+  function saveStateForMobile() {
+    try {
+      if (window.state && window.state.steps && window.state.steps.length > 0) {
+        var tripId = window.state.tripId || (window.ORT_TRIPID && window.ORT_TRIPID.get()) || localStorage.getItem('ORT_CURRENT_TRIP_ID');
+        if (tripId) {
+          var stateToSave = {
+            id: tripId,
+            tripId: tripId,
+            title: window.state.title || 'Roadtrip',
+            country: window.state.country || window.state.cc || 'XX',
+            steps: window.state.steps,
+            startDateStr: window.state.startDateStr || '',
+            totalBudget: window.state.totalBudget || 0,
+            _savedAt: Date.now()
+          };
+          localStorage.setItem('ort_trip_' + tripId, JSON.stringify(stateToSave));
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+  
+  // Sauvegarder toutes les 10 secondes si le state existe
+  setInterval(saveStateForMobile, 10000);
+  
+  // Aussi sauvegarder quand la fenêtre perd le focus (changement d'onglet, etc.)
+  window.addEventListener('blur', saveStateForMobile);
+  window.addEventListener('visibilitychange', function() {
+    if (document.hidden) saveStateForMobile();
+  });
+  
+  // Première sauvegarde après 3 secondes (laisser le temps au state de se charger)
+  setTimeout(saveStateForMobile, 3000);
+  // Et une autre après 10 secondes pour être sûr
+  setTimeout(saveStateForMobile, 10000);
   
   // Detect mobile via user-agent
   var isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -59,7 +122,7 @@
 })();
 </script>
 <title>OneRoadTrip - Détails du roadtrip</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{--bg:#113f7a;--card:#fff;--ink:#113f7a;--bd:#c3d6b6;--mut:#6b7a99;--danger:#c62828;--ok:#1b5e20}
 *{box-sizing:border-box}
@@ -3264,7 +3327,7 @@ hdr.appendChild(row);
 })();
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="js/ort-step-common.js"></script>
 <!-- STATE MANAGER -->
 <script src="js/ort-state-manager.js"></script>
@@ -3586,6 +3649,33 @@ function openBookingsModal(stepIdx, stepName) {
     return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
   };
   
+  // Formater une date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString(lang || 'fr', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  };
+  
+  // Générer la ligne de date avec nuits si applicable
+  const getDateLine = (b) => {
+    let parts = [];
+    if (b.date_start) parts.push(formatDate(b.date_start));
+    if (b.date_end && b.date_end !== b.date_start) parts.push('→ ' + formatDate(b.date_end));
+    
+    let line = parts.length > 0 ? `📅 ${parts.join(' ')}` : '';
+    
+    // Ajouter les nuits pour les hôtels
+    if (b.nights && b.nights > 0) {
+      line += line ? ` (${b.nights} nuit${b.nights > 1 ? 's' : ''})` : `🌙 ${b.nights} nuit${b.nights > 1 ? 's' : ''}`;
+    }
+    return line;
+  };
+  
   // Stocker les bookings pour l'export calendrier
   window._currentModalBookings = bookings;
   
@@ -3651,7 +3741,7 @@ function openBookingsModal(stepIdx, stepName) {
             <div style="flex:1">
               <div style="font-weight:700;font-size:1rem;color:#1f2937">${b.name || 'Sans nom'}</div>
               ${b.provider ? `<div style="font-size:0.85rem;color:#6b7280">🏢 ${b.provider}</div>` : ''}
-              ${b.date_start || b.date_end ? `<div style="font-size:0.85rem;color:#6b7280">📅 ${[b.date_start, b.date_end && b.date_end !== b.date_start ? '→ ' + b.date_end : ''].filter(Boolean).join(' ')}</div>` : ''}
+              ${getDateLine(b) ? `<div style="font-size:0.85rem;color:#6b7280">${getDateLine(b)}</div>` : ''}
               ${b.reference ? `<div style="font-size:0.85rem;color:#6b7280">🔖 Réf: ${b.reference}</div>` : ''}
               ${b.price ? `<div style="font-size:0.9rem;font-weight:600;color:#16a34a;margin-top:4px">💰 ${typeof b.price === 'object' ? b.price.amount : b.price} €</div>` : ''}
               ${b.address ? `<div style="font-size:0.85rem;color:#6b7280">📍 ${b.address}</div>` : ''}

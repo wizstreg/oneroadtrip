@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>OneRoadTrip</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>
@@ -1116,7 +1116,14 @@ html, body {
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Debug logger (console only)
+window.debugLog = function(msg) {
+  console.log('[MOBILE-DEBUG] ' + msg);
+};
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -1125,19 +1132,6 @@ html, body {
 <script src="/js/ort-trip-data.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
-<script>
-// Initialisation Firebase
-(function(){
-  const host = location.hostname;
-  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
-  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
-  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
-  if (safe && safe.apiKey && !firebase.apps.length) {
-    firebase.initializeApp(safe);
-    console.log('[MOBILE] ✅ Firebase initialisé');
-  }
-})();
-</script>
 <script>
 // === GLOBAL REDIRECT PROTECTION ===
 // Intercept location.replace/assign to ensure desktop redirects include mobile=0
@@ -1333,6 +1327,31 @@ setTimeout(() => {
 async function init() {
   console.log('[MOBILE] Init');
   
+  // === INITIALISER FIREBASE ===
+  try {
+    // Attendre que les scripts Firebase soient chargés
+    let waitCount = 0;
+    while (typeof firebase === 'undefined') {
+      await new Promise(r => setTimeout(r, 50));
+      waitCount++;
+      if (waitCount > 100) break; // 5s max
+    }
+    
+    if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
+      const host = location.hostname;
+      const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
+      const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+      const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+      
+      if (safe && safe.apiKey) {
+        firebase.initializeApp(safe);
+        console.log('[MOBILE] ✅ Firebase initialisé');
+      }
+    }
+  } catch (e) {
+    console.warn('[MOBILE] ⚠️ Erreur init Firebase:', e);
+  }
+  
   // === INITIALISER ORT_STATE POUR SAUVEGARDE ===
   if (window.ORT_STATE) {
     try {
@@ -1375,6 +1394,25 @@ async function init() {
   const fromBuilderResult = params.get('fromBuilder') === '1';
   const dashboardMode = tripId && tripId.startsWith('trip_');
   
+  // === VÉRIFIER HANDOFF DEPUIS RT DETAIL ===
+  // Si on vient d'une rotation depuis RT Detail, récupérer le tripId du handoff
+  const handoffTripId = localStorage.getItem('ORT_MOBILE_HANDOFF');
+  const effectiveTripId = tripId || handoffTripId;
+  const effectiveDashboardMode = effectiveTripId && (effectiveTripId.startsWith('trip_') || effectiveTripId.startsWith('user::'));
+  
+  debugLog('======= INIT MOBILE =======');
+  debugLog('URL tripId: ' + tripId);
+  debugLog('handoffTripId: ' + handoffTripId);
+  debugLog('effectiveTripId: ' + effectiveTripId);
+  debugLog('effectiveDashboardMode: ' + effectiveDashboardMode);
+  debugLog('cc: ' + cc + ' / itinId: ' + itinId);
+  debugLog('fromTemp: ' + fromTemp + ' / builderMode: ' + builderMode);
+  
+  if (handoffTripId) {
+    console.log('[MOBILE] 🔄 Handoff détecté depuis RT Detail:', handoffTripId);
+    localStorage.removeItem('ORT_MOBILE_HANDOFF'); // Nettoyer après utilisation
+  }
+  
   state.cc = cc;
   state.lang = lang;
   localStorage.setItem('ort_lang', lang);
@@ -1389,26 +1427,27 @@ async function init() {
   setupEvents();
   
   try {
+    debugLog('Mode sélectionné...');
     if (fromBuilderResult) {
-      // Retour de RT Detail avec résultat calculé
+      debugLog('→ loadBuilderResult');
       await loadBuilderResult();
     } else if (builderMode) {
-      // Mode builder: rediriger vers RT Detail pour calcul
+      debugLog('→ initRouteBuilder');
       await initRouteBuilder(params);
-    } else if (dashboardMode) {
-      // Mode Dashboard: charger depuis Firestore users/{uid}/trips/{tripId}
-      await loadFromDashboard(tripId);
+    } else if (effectiveDashboardMode) {
+      debugLog('→ loadFromDashboard(' + effectiveTripId + ')');
+      await loadFromDashboard(effectiveTripId);
     } else if (fromTemp && rtKey) {
-      // Mode temp: charger depuis localStorage
+      debugLog('→ loadFromTemp');
       await loadFromTemp(rtKey);
     } else if (rtKey) {
-      // Mode Firebase
+      debugLog('→ loadFromFirebase');
       await loadFromFirebase(rtKey);
     } else if (cc && itinId) {
-      // Mode itinéraire existant
+      debugLog('→ loadItinerary');
       await loadItinerary(cc, itinId, lang);
     } else {
-      // Aucun itinéraire → message d'erreur
+      debugLog('❌ Aucun mode correspondant!');
       throw new Error('Aucun itinéraire spécifié');
     }
     
@@ -1448,13 +1487,20 @@ async function init() {
       }
     }
     
+    debugLog('Chargement terminé! state.steps=' + state.steps.length);
+    debugLog('Appel renderList...');
     renderList();
+    debugLog('Appel renderBookings...');
     renderBookings();
+    debugLog('Appel updateSummary...');
     updateSummary();
+    debugLog('Appel initMap...');
     initMap();
     $('headerTitle').textContent = state.title || 'Roadtrip';
+    debugLog('✅ RENDU TERMINÉ - ' + state.title);
     
   } catch (err) {
+    debugLog('❌ ERREUR: ' + err.message);
     console.error('[MOBILE] Error:', err);
     if (err.message !== 'Redirection en cours...') {
       showToast('❌ ' + (err.message || 'Erreur'));
@@ -1532,72 +1578,189 @@ async function loadFromTemp(rtKey) {
 
 // === LOAD FROM DASHBOARD (Firestore users/{uid}/trips/{tripId}) ===
 async function loadFromDashboard(tripId) {
-  console.log('[MOBILE] loadFromDashboard:', tripId);
+  debugLog('======= loadFromDashboard =======');
+  debugLog('tripId: ' + tripId);
+  debugLog('URL: ' + location.href);
   
-  // Attendre Firebase Auth
-  if (typeof firebase === 'undefined' || !firebase.auth) {
-    throw new Error('Firebase non disponible');
+  // === ESSAYER D'ABORD LOCALSTORAGE (rapide, fonctionne offline) ===
+  const localKey = `ort_trip_${tripId}`;
+  const localData = localStorage.getItem(localKey);
+  debugLog('localStorage key: ' + localKey);
+  debugLog('localStorage existe: ' + (!!localData));
+  
+  if (localData) {
+    try {
+      const tripData = JSON.parse(localData);
+      debugLog('localStorage parsed: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' étapes');
+      if (tripData && tripData.steps && tripData.steps.length > 0) {
+        debugLog('✅ Chargé depuis localStorage!');
+        applyTripDataToState(tripData);
+        return; // Succès ! Pas besoin de Firestore
+      } else {
+        debugLog('⚠️ localStorage steps vide/invalide');
+      }
+    } catch (e) {
+      debugLog('❌ Erreur parsing localStorage: ' + e.message);
+    }
   }
   
-  const user = await new Promise((resolve) => {
-    const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
-      unsubscribe();
-      resolve(u);
+  // === SINON ESSAYER FIRESTORE ===
+  debugLog('📥 Tentative Firestore...');
+  debugLog('firebase défini: ' + (typeof firebase !== 'undefined'));
+  debugLog('ORT_CONFIG défini: ' + (!!window.ORT_CONFIG));
+  
+  // Attendre que Firebase soit chargé et initialisé
+  let waitCount = 0;
+  while (typeof firebase === 'undefined' || !firebase.apps) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+    if (waitCount > 50) {
+      debugLog('❌ Firebase jamais chargé après 5s');
+      throw new Error('Firebase non disponible');
+    }
+  }
+  debugLog('Firebase apps.length: ' + firebase.apps.length);
+  
+  // Initialiser Firebase si pas encore fait
+  if (!firebase.apps.length) {
+    const host = location.hostname;
+    const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
+    debugLog('Host: ' + host + ' isPreprod: ' + isPreprod);
+    
+    const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+    const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+    debugLog('Config apiKey: ' + (!!safe?.apiKey));
+    
+    if (safe && safe.apiKey) {
+      firebase.initializeApp(safe);
+      debugLog('✅ Firebase initialisé');
+    } else {
+      debugLog('❌ Pas de config Firebase!');
+      throw new Error('Config Firebase manquante');
+    }
+  }
+  
+  // Attendre firebase.auth
+  debugLog('firebase.auth dispo: ' + (!!firebase.auth));
+  waitCount = 0;
+  while (!firebase.auth) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+    if (waitCount > 30) {
+      debugLog('❌ firebase.auth jamais dispo');
+      throw new Error('Firebase Auth non disponible');
+    }
+  }
+  
+  // === ATTENDRE L'UTILISATEUR ===
+  // L'auth est probablement déjà faite dans l'init, vérifier d'abord currentUser
+  let user = firebase.auth().currentUser;
+  if (!user) {
+    debugLog('⏳ Pas de currentUser, attente auth...');
+    user = await new Promise((resolve) => {
+      const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+        debugLog('Auth reçu: ' + (u?.email || 'non connecté'));
+        unsubscribe();
+        resolve(u);
+      });
+      setTimeout(() => {
+        debugLog('⚠️ Timeout auth 3s');
+        unsubscribe();
+        resolve(null);
+      }, 3000); // Réduit à 3s
     });
-    // Timeout de sécurité
-    setTimeout(() => resolve(null), 5000);
-  });
+  } else {
+    debugLog('✅ currentUser déjà présent: ' + user.email);
+  }
   
   if (!user) {
-    console.warn('[MOBILE] Utilisateur non connecté, tentative localStorage...');
-    // Fallback: essayer localStorage (pour les trips non sauvegardés)
-    const localKey = `ort_trip_${tripId}`;
-    const localData = localStorage.getItem(localKey);
-    if (localData) {
-      const tripData = JSON.parse(localData);
-      applyTripDataToState(tripData);
-      console.log('[MOBILE] ✅ Chargé depuis localStorage');
-      return;
-    }
+    debugLog('❌ Non connecté!');
     throw new Error('Connectez-vous pour voir ce voyage');
   }
   
-  // Charger depuis Firestore
-  const db = firebase.firestore();
-  const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
-  const tripDoc = await tripRef.get();
+  // === CHARGER DEPUIS FIRESTORE ===
+  debugLog('📥 Firestore: users/' + user.uid + '/trips/' + tripId);
   
-  if (!tripDoc.exists) {
-    // Fallback: essayer dans localStorage
-    const localKey = `ort_trip_${tripId}`;
-    const localData = localStorage.getItem(localKey);
-    if (localData) {
-      const tripData = JSON.parse(localData);
-      applyTripDataToState(tripData);
-      console.log('[MOBILE] ✅ Chargé depuis localStorage (non trouvé Firestore)');
-      return;
+  try {
+    // MÉTHODE 1: Utiliser ORT_STATE qui désérialise correctement
+    if (window.ORT_STATE) {
+      debugLog('Tentative via ORT_STATE...');
+      const trip = await window.ORT_STATE.getTrip(tripId);
+      if (trip && trip.steps && trip.steps.length > 0) {
+        debugLog('✅ ORT_STATE: ' + trip.title + ' / ' + trip.steps.length + ' steps');
+        applyTripDataToState(trip);
+        
+        // Charger aussi ORT_TRIP_DATA pour les bookings
+        if (window.ORT_TRIP_DATA) {
+          try {
+            await window.ORT_TRIP_DATA.loadTrip(tripId);
+            debugLog('✅ ORT_TRIP_DATA chargé');
+          } catch (e) {
+            debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+          }
+        }
+        
+        // Cache localStorage
+        localStorage.setItem(localKey, JSON.stringify(trip));
+        debugLog('💾 Mis en cache localStorage');
+        return;
+      }
     }
-    throw new Error('Voyage non trouvé');
+    
+    // MÉTHODE 2: Fallback direct Firestore avec désérialisation manuelle
+    debugLog('Fallback: lecture Firestore directe...');
+    const db = firebase.firestore();
+    const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
+    const tripDoc = await tripRef.get();
+    debugLog('Doc exists: ' + tripDoc.exists);
+    
+    if (!tripDoc.exists) {
+      debugLog('❌ Doc non trouvé dans Firestore');
+      throw new Error('Voyage non trouvé');
+    }
+    
+    const tripData = tripDoc.data();
+    debugLog('📄 Firestore brut: ' + tripData?.title);
+    
+    // Désérialiser les steps si c'est une string JSON
+    if (tripData.steps && typeof tripData.steps === 'string') {
+      try {
+        tripData.steps = JSON.parse(tripData.steps);
+        debugLog('🔓 Steps désérialisés: ' + tripData.steps.length);
+      } catch (e) {
+        debugLog('❌ Erreur désérialisation steps');
+      }
+    }
+    
+    debugLog('Steps après désérialisation: ' + (tripData.steps?.length || 0));
+    applyTripDataToState(tripData);
+    
+    // Charger ORT_TRIP_DATA pour les bookings
+    if (window.ORT_TRIP_DATA) {
+      try {
+        await window.ORT_TRIP_DATA.loadTrip(tripId);
+        debugLog('✅ ORT_TRIP_DATA chargé');
+      } catch (e) {
+        debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+      }
+    }
+    
+    // Cache localStorage
+    localStorage.setItem(localKey, JSON.stringify(tripData));
+    debugLog('💾 Mis en cache localStorage');
+    
+  } catch (e) {
+    debugLog('❌ Erreur: ' + e.message);
+    throw e;
   }
   
-  const tripData = tripDoc.data();
-  applyTripDataToState(tripData);
-  
-  // Charger aussi les bookings via ORT_TRIP_DATA si disponible
-  if (window.ORT_TRIP_DATA) {
-    try {
-      await ORT_TRIP_DATA.loadTrip(tripId);
-      console.log('[MOBILE] ✅ ORT_TRIP_DATA chargé');
-    } catch (e) {
-      console.warn('[MOBILE] Erreur chargement ORT_TRIP_DATA:', e);
-    }
-  }
-  
-  console.log('[MOBILE] ✅ Chargé depuis Firestore Dashboard:', state.steps.length, 'étapes');
+  debugLog('======= FIN loadFromDashboard =======');
 }
 
 // Applique les données du trip au state
 function applyTripDataToState(tripData) {
+  debugLog('applyTripDataToState: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' steps');
+  
   state.title = tripData.title || tripData.name || 'Roadtrip';
   state.cc = tripData.country || tripData.cc || 'XX';
   state._tripId = tripData.id || tripData.tripId;
@@ -1627,9 +1790,10 @@ function applyTripDataToState(tripData) {
       placeId: s.placeId || s.place_id || null,
       visits: s.visits || s.pois || [],
       activities: s.activities || [],
-      // Bookings seront chargés via ORT_TRIP_DATA
     };
   });
+  
+  debugLog('✅ state.steps = ' + state.steps.length);
   
   // Budget si présent
   if (tripData.totalBudget) {
@@ -2101,6 +2265,43 @@ function renderBookings() {
   let html = '';
   let totalBudget = 0;
   
+  // Helper pour formater les dates
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString(state.lang || 'fr', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
+  // Helper pour afficher la ligne de date
+  function getDateLine(b, nights) {
+    let dateParts = [];
+    if (b.date_start) {
+      dateParts.push(formatDate(b.date_start));
+    }
+    if (b.date_end && b.date_end !== b.date_start) {
+      dateParts.push(formatDate(b.date_end));
+    }
+    
+    let line = '';
+    if (dateParts.length === 1) {
+      line = `📅 ${dateParts[0]}`;
+    } else if (dateParts.length === 2) {
+      line = `📅 ${dateParts[0]} → ${dateParts[1]}`;
+    }
+    
+    // Ajouter les nuits si applicable (hôtels)
+    if (nights && nights > 0) {
+      line += line ? ` (${nights} nuit${nights > 1 ? 's' : ''})` : `🌙 ${nights} nuit${nights > 1 ? 's' : ''}`;
+    }
+    
+    return line;
+  }
+  
   // === RÉSERVATIONS VOYAGE (vols, voiture, assurance) ===
   let travelBookings = [];
   if (window.ORT_TRIP_DATA) {
@@ -2115,13 +2316,14 @@ function renderBookings() {
       const icon = getCategoryIcon(b.category);
       const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
       totalBudget += parseFloat(price) || 0;
+      const dateLine = getDateLine(b, b.nights);
       
       html += `
         <div class="booking-item" onclick="showBookingDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
           <div class="booking-icon">${icon}</div>
           <div class="booking-info">
             <div class="booking-name">${b.name || 'Réservation'}</div>
-            ${b.date_start ? `<div class="booking-detail">📅 ${b.date_start}</div>` : ''}
+            ${dateLine ? `<div class="booking-detail">${dateLine}</div>` : ''}
             ${b.provider ? `<div class="booking-detail">🏢 ${b.provider}</div>` : ''}
           </div>
           ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
@@ -2191,14 +2393,17 @@ function renderBookings() {
         const icon = getCategoryIcon(b.category);
         const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
         totalBudget += parseFloat(price) || 0;
-        const nights = data.steps.length;
+        
+        // Calculer le nombre de nuits (pour hôtels)
+        const nights = b.category === 'hotel' ? (b.nights || data.steps.length) : b.nights;
+        const dateLine = getDateLine(b, nights);
         
         html += `
           <div class="booking-item">
             <div class="booking-icon">${icon}</div>
             <div class="booking-info">
               <div class="booking-name">${b.name || 'Réservation'}</div>
-              ${nights > 1 ? `<div class="booking-detail">🌙 ${nights} nuits</div>` : ''}
+              ${dateLine ? `<div class="booking-detail">${dateLine}</div>` : ''}
               ${b.address ? `<div class="booking-detail">📍 ${b.address}</div>` : ''}
               ${b.reference ? `<div class="booking-detail">🔖 ${b.reference}</div>` : ''}
             </div>
