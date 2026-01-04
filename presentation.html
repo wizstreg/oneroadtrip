@@ -137,6 +137,12 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 .budget-modal-overlay{display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;padding-top:5vh;overflow-y:auto}
 .budget-modal-overlay.show{display:flex}
 .budget-modal{background:#e8f4fc;border-radius:14px;max-width:600px;width:90%;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3);animation:modalSlideIn .3s ease;border:2px solid #113f7a;margin-bottom:5vh;max-height:90vh;overflow-y:auto}
+@media (max-width: 768px) {
+  .budget-modal{width:95% !important;padding:20px !important;border-radius:16px !important;max-height:85vh !important;margin-bottom:0 !important}
+  .budget-modal h3{font-size:20px !important}
+  .budget-modal-actions{flex-direction:column-reverse !important;gap:10px !important}
+  .budget-modal-btn{width:100% !important;padding:16px !important;font-size:16px !important;min-height:50px !important}
+}
 @keyframes modalSlideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
 .budget-modal h3{margin:0 0 16px;color:#113f7a;font-size:22px;font-weight:800}
 .budget-modal p{margin:0 0 20px;color:#113f7a;font-size:15px}
@@ -261,37 +267,91 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     .itin-preview .preview-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;padding:0;width:24px;height:24px;line-height:1}
     .itin-preview .preview-close:hover{color:var(--acc)}
 
-/* Responsive mobile pour preview */
+/* Responsive mobile pour preview - REFACTORISATION COMPLÈTE */
 @media (max-width: 768px) {
-  /* Aperçu en BAS de l'écran, au-dessus de la barre */
+  /* Aperçu = BOTTOM SHEET full-width */
   .itin-preview{
     position:fixed !important;
     top:auto !important;
     left:0 !important;
     right:0 !important;
-    bottom:70px !important; /* Aligné avec la hauteur de la barre (70px) */
+    bottom:0 !important;
     width:100% !important;
     max-width:100% !important;
     height:auto !important;
-    max-height:55vh !important;
-    z-index:1004 !important; /* SOUS la légende (1005) */
+    max-height:70vh !important;
+    z-index:1004 !important;
     overflow-y:auto !important;
-    -webkit-overflow-scrolling:touch !important; /* Scroll fluide iOS */
+    -webkit-overflow-scrolling:touch !important;
     background:#fff !important;
     border-radius:16px 16px 0 0 !important;
-    padding:20px !important;
+    padding:0 !important;
     box-shadow:0 -4px 20px rgba(0,0,0,0.3) !important;
     border:none !important;
     border-top:3px solid var(--acc) !important;
-    pointer-events:auto !important; /* Cliquable */
+    pointer-events:auto !important;
+    display:flex !important;
+    flex-direction:column !important;
   }
   
-  /* Masquer le bouton dans l'aperçu sur mobile */
+  /* Header du preview - TOUJOURS visible + sticky */
+  .itin-preview h3 {
+    margin:0 !important;
+    padding:16px 16px 0 16px !important;
+    color:var(--acc) !important;
+    font-size:18px !important;
+    font-weight:700 !important;
+    position:sticky !important;
+    top:0 !important;
+    background:#fff !important;
+    z-index:10 !important;
+  }
+  
+  /* Contenu scrollable */
+  .itin-preview #previewInfo,
+  .itin-preview #previewCities,
+  .itin-preview .preview-path-simplified {
+    padding-left:16px !important;
+    padding-right:16px !important;
+    padding-bottom:16px !important;
+  }
+  
+  /* Dernier élément du preview a du padding pour ne pas être caché */
+  .itin-preview .preview-path-simplified:last-child {
+    padding-bottom:100px !important;
+  }
+  
+  /* Bouton fermeture - TOP RIGHT, toujours accessible */
+  .itin-preview .preview-close {
+    position:absolute !important;
+    top:12px !important;
+    right:12px !important;
+    background:rgba(0,0,0,0.05) !important;
+    border-radius:50% !important;
+    width:40px !important;
+    height:40px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    z-index:20 !important;
+    padding:0 !important;
+    border:none !important;
+    font-size:24px !important;
+    cursor:pointer !important;
+    color:var(--mut) !important;
+  }
+  
+  .itin-preview .preview-close:active {
+    background:rgba(0,0,0,0.1) !important;
+    transform:scale(0.95) !important;
+  }
+  
+  /* Masquer le bouton select en preview */
   .itin-preview .btn-select {
     display:none !important;
   }
   
-  /* Barre d'action mobile TOUJOURS visible en bas */
+  /* Barre d'action mobile - 2 BOUTONS GROS */
   .mobile-action-bar {
     display:flex !important;
     position:fixed !important;
@@ -299,56 +359,74 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     left:0 !important;
     right:0 !important;
     background:#fff !important;
-    padding:10px 16px 12px 16px !important;
-    box-shadow:0 -2px 10px rgba(0,0,0,0.2) !important;
-    z-index:1003 !important; /* SOUS la légende (1005) et l'aperçu (1004) */
-    border-top:2px solid var(--acc) !important;
-    height:70px !important; /* Hauteur fixe */
+    padding:16px 12px 20px 12px !important; /* Plus de padding */
+    box-shadow:0 -4px 16px rgba(0,0,0,0.25) !important; /* Ombre plus marquée */
+    z-index:1003 !important;
+    border-top:3px solid var(--acc) !important;
+    gap:10px !important;
     pointer-events:auto !important;
+    justify-content:center !important;
   }
   
-  .select-itin-btn-mobile {
-    display:block !important;
-    width:100% !important;
-    padding:16px !important;
+  /* Bouton Annuler + Valider = 50/50, GROS et accessibles */
+  .mobile-action-bar button {
+    flex:1 !important;
+    max-width:calc(50% - 5px) !important;
+    padding:18px 12px !important; /* Padding généreux */
+    border:none !important;
+    border-radius:10px !important;
+    font-size:17px !important;
+    font-weight:700 !important;
+    cursor:pointer !important;
+    transition:all 0.2s ease !important;
+    pointer-events:auto !important;
+    text-transform:uppercase !important;
+    letter-spacing:0.5px !important;
+    min-height:56px !important; /* Minimum touch target size */
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+  
+  #mobileCancelBtn {
+    background:#f3f4f6 !important;
+    color:#374151 !important;
+    border:2px solid #d1d5db !important;
+  }
+  
+  #mobileCancelBtn:active {
+    background:#e5e7eb !important;
+    border-color:#9ca3af !important;
+    transform:scale(0.96) !important;
+  }
+  
+  #selectItinBtnMobile {
     background:var(--acc) !important;
     color:#fff !important;
-    border:none;
-    border-radius:8px;
-    font-size:18px;
-    font-weight:700;
-    cursor:pointer;
-    pointer-events:auto !important;
+    box-shadow:0 4px 12px rgba(17,63,122,0.3) !important;
   }
   
-  .select-itin-btn-mobile:active {
-    background:#0d2f5a;
-    transform:scale(0.98);
+  #selectItinBtnMobile:active {
+    background:#0d2f5a !important;
+    transform:scale(0.96) !important;
+    box-shadow:0 2px 8px rgba(17,63,122,0.4) !important;
   }
   
-  /* Légende carte - Ajuster position pour ne pas être cachée */
+  /* Légende carte - repositionnée */
   .map-legend {
-    bottom:80px !important; /* Au-dessus de la barre (70px + marge) */
-    z-index:1005 !important; /* AU-DESSUS de tout */
+    bottom:90px !important;
+    z-index:1005 !important;
     pointer-events:auto !important;
   }
   
-  /* S'assurer que la carte reste interactive */
+  /* Carte reste interactive */
   #mapContainerFull {
     pointer-events:auto !important;
   }
   
-  /* Bouton fermeture aperçu - toujours visible */
-  .preview-close {
-    position:sticky !important;
-    top:0 !important;
-    z-index:10 !important;
-    pointer-events:auto !important;
-  }
-  
-  /* Sidebar filtres AU-DESSUS de l'aperçu quand affichée */
+  /* Sidebar filtres au-dessus */
   .map-fullscreen-sidebar {
-    z-index:1007 !important; /* Au-dessus de tout */
+    z-index:1007 !important;
   }
 }
 
