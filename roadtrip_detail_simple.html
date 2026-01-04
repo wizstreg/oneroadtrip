@@ -1753,6 +1753,9 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
   add('passage', {fr:'(passage)',en:'(transit)',it:'(transito)',es:'(paso)',pt:'(passagem)',ar:'(عبور)'});
   add('searchHotelAt', {fr:'Chercher un hébergement à',en:'Search accommodation in',it:'Cerca alloggio a',es:'Buscar alojamiento en',pt:'Procurar alojamento em',ar:'البحث عن سكن في'});
   add('viewDetails', {fr:'Voir détails',en:'View details',it:'Vedi dettagli',es:'Ver detalles',pt:'Ver detalhes',ar:'عرض التفاصيل'});
+  add('saveNotConnected', {fr:'Votre voyage ne peut être sauvegardé dans le dashboard si vous n\'êtes pas connecté.',en:'Your trip cannot be saved to the dashboard if you are not logged in.',it:'Il tuo viaggio non può essere salvato nel dashboard se non sei connesso.',es:'Tu viaje no se puede guardar en el dashboard si no estás conectado.',pt:'Sua viagem não pode ser salva no painel se você não estiver conectado.',ar:'لا يمكن حفظ رحلتك في لوحة التحكم إذا لم تكن متصلاً.'});
+  add('signIn', {fr:'Se connecter',en:'Sign In',it:'Accedi',es:'Iniciar sesión',pt:'Entrar',ar:'تسجيل الدخول'});
+  add('close', {fr:'Fermer',en:'Close',it:'Chiudi',es:'Cerrar',pt:'Fechar',ar:'إغلاق'});
 })();
 </script>
 <script>
@@ -1886,6 +1889,29 @@ document.head.appendChild(style);
   });
   
   console.log('[LANG] ✅ Sélecteur initialisé');
+})();
+</script>
+
+<!-- AUTH MODAL HANDLER -->
+<script>
+(function() {
+  const openAuthBtn = document.getElementById('openAuth');
+  const authPop = document.getElementById('authPop');
+  
+  if (openAuthBtn && authPop) {
+    openAuthBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isVisible = authPop.style.display === 'block';
+      authPop.style.display = isVisible ? 'none' : 'block';
+    });
+    
+    // Fermer en cliquant dehors
+    document.addEventListener('click', (e) => {
+      if (!openAuthBtn.contains(e.target) && !authPop.contains(e.target)) {
+        authPop.style.display = 'none';
+      }
+    });
+  }
 })();
 </script>
 
@@ -2184,6 +2210,14 @@ if(!icoWrap){
   // actions
   bSave.addEventListener('click', async ()=>{ 
     console.log('[SAVE] Bouton cliqué');
+    
+    // ⚠️ VÉRIFIER L'AUTHENTIFICATION EN PREMIER
+    const u = currentUser();
+    if (!u) {
+      console.log('[SAVE] ❌ Utilisateur non connecté');
+      showNotConnectedToast();
+      return;
+    }
     
     // Sauvegarde via ORT_DETAIL_ADAPTER
     if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.saveCurrent === 'function') {
@@ -2812,13 +2846,26 @@ console.log('[TOOLBAR] ✅ Row ajouté au toolbar');
  // === App script ===
  const ROUTE_API = null; // Non utilisé, calculateDistance appelle OSRM directement
 
+// === NOT CONNECTED TOAST (DÉFINI EN PREMIER) ===
+function showNotConnectedToast() {
+  const lang = (localStorage.getItem('lang') || 'fr').slice(0, 2).toLowerCase();
+  const i18n = window.ORT_I18N || {};
+  const msg = i18n.saveNotConnected?.[lang] || 'Votre voyage ne peut être sauvegardé dans le dashboard si vous n\'êtes pas connecté.';
+  
+  if (typeof window.toast === 'function') {
+    window.toast(msg, 5000);
+  } else {
+    alert(msg);
+  }
+}
+
 // === ORT Saves SDK (dashboard_user.html compatible) ===
 const ORTSaves = {
   key(uid){ return `ort.saves::${uid}`; },
   load(uid){ try{ return JSON.parse(localStorage.getItem(this.key(uid))||'[]'); }catch(_){ return []; } },
   save(uid, arr){ try{ localStorage.setItem(this.key(uid), JSON.stringify(arr)); }catch(_){} },
   upsert(user, rt){
-    if(!user){ toast(t('loginToSave')); return false; }
+    if(!user){ showNotConnectedToast(); return false; }
     if(window.ORT_STATE && typeof window.ORT_STATE.saveTrip === 'function') {
       const tripData = Object.assign({ createdAt: Date.now(), updatedAt: Date.now() }, rt);
       window.ORT_STATE.saveTrip(tripData);
@@ -7543,7 +7590,7 @@ const btnSaveEl = document.getElementById('btnSave');
 if (btnSaveEl) {
   btnSaveEl.onclick = async ()=>{
     const u = currentUser();
-    if(!u){ toast(t('loginToSave')); return; }
+    if(!u){ showNotConnectedToast(); return; }
 
   // == reconstitue le résumé comme dans scheduleAutosave() ==
   const rid = ensureRid();
@@ -9638,8 +9685,7 @@ if (mapPopup) {
       popupCloseTimer = null;
     }
   });
-  
-  // Relancer le timer si la souris quitte la modale
+  \n  // Relancer le timer si la souris quitte la modale
   mapPopup.addEventListener('mouseleave', () => {
     if (document.body.classList.contains('view-map-only') && !window.popupLocked) {
       popupCloseTimer = setTimeout(() => {
@@ -9648,7 +9694,10 @@ if (mapPopup) {
       }, 100);
     }
   });
-}
+}\n\n// Fermer au Escape
+document.addEventListener('keydown', function(e) { 
+  if (e.key === 'Escape') {} 
+});
 </script>
 
 </body>
