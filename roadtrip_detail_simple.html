@@ -1738,9 +1738,9 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 </style>
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
-<script src="/js/ort-config.js"></script>
-<script src="/js/ort-tripid.js"></script>
-<script src="/js/ort-i18n.js"></script>
+<script defer src="/js/ort-config.js"></script>
+<script defer src="/js/ort-tripid.js"></script>
+<script defer src="/js/ort-i18n.js"></script>
 <script>
 // === I18N fallback pour clés manquantes ===
 (function(){
@@ -1820,12 +1820,12 @@ document.head.appendChild(style);
 .flatpickr-day:hover{background:#e7f6fb;border-color:#c3d6b6}
 .flatpickr-day.today{border-color:#113f7a}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/it.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
 </head>
 <body>
 
@@ -2802,12 +2802,12 @@ console.log('[TOOLBAR] ✅ Row ajouté au toolbar');
 })();
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-<script src="js/ort-step-common.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script defer src="js/ort-step-common.js"></script>
 <!-- STATE MANAGER -->
-<script src="js/ort-state-manager.js"></script>
-<script src="js/ort-detail-adapter.js"></script>
+<script defer src="js/ort-state-manager.js"></script>
+<script defer src="js/ort-detail-adapter.js"></script>
 <script>
  // === App script ===
  const ROUTE_API = null; // Non utilisé, calculateDistance appelle OSRM directement
@@ -7272,12 +7272,30 @@ async function calculateMapboxRoute(waypoints, mode) {
 
   const latlngs = pts.map(p => [p.lat, p.lon]);
   
+  // SANITIZE: Nettoyer les coordonnées invalides + éviter récursion Leaflet
+  function sanitizeCoords(coords) {
+    return coords.filter(c => {
+      const lat = parseFloat(c[0]), lon = parseFloat(c[1]);
+      return isFinite(lat) && isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    }).reduce((unique, c) => {
+      if (unique.length === 0 || unique[unique.length - 1][0] !== c[0] || unique[unique.length - 1][1] !== c[1]) {
+        unique.push(c);
+      }
+      return unique;
+    }, []);
+  }
+  
+  const sanitized = sanitizeCoords(latlngs);
+  if (sanitized.length < latlngs.length) {
+    console.warn('[MAP] 🧹 Points nettoyés:', latlngs.length, '=>', sanitized.length);
+  }
+  
   // ===== CALCUL DE ROUTE SELON LE MODE =====
   const transportMode = getTransportMode();
   console.log('[MAP] 🗺️ Mode de transport actif:', transportMode);
   
   // Afficher ligne temporaire pendant calcul
-  const tempLayer = L.polyline(latlngs, { 
+  const tempLayer = L.polyline(sanitized, { 
     color: '#113f7a', 
     weight: 2, 
     opacity: 0.3, 
@@ -7289,10 +7307,23 @@ async function calculateMapboxRoute(waypoints, mode) {
     // Supprimer ligne temporaire
     try { map.removeLayer(tempLayer); } catch(_) {}
     
+    // SANITIZE coordinates pour éviter la récursion Leaflet
+    const cleanCoords = (coords) => coords.filter(c => {
+      const lat = parseFloat(c[0]), lon = parseFloat(c[1]);
+      return isFinite(lat) && isFinite(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
+    }).reduce((unique, c) => {
+      if (unique.length === 0 || unique[unique.length - 1][0] !== c[0] || unique[unique.length - 1][1] !== c[1]) {
+        unique.push(c);
+      }
+      return unique;
+    }, []);
+    
+    const finalCoords = cleanCoords(result.coordinates || []);
+    
     if (result.type === 'fallback') {
       // Fallback : ligne droite
       console.log('[MAP] ⚠️ Fallback: ligne droite');
-      layer = L.polyline(result.coordinates, { 
+      layer = L.polyline(finalCoords, { 
         color: result.color || '#113f7a', 
         weight: 3, 
         opacity: 0.8,
@@ -7301,7 +7332,7 @@ async function calculateMapboxRoute(waypoints, mode) {
     } else {
       // Route calculée
       console.log('[MAP] ✅ Route affichée:', result.type);
-      layer = L.polyline(result.coordinates, { 
+      layer = L.polyline(finalCoords, { 
         color: result.color || '#113f7a', 
         weight: result.weight || 3, 
         opacity: 0.8,
@@ -7318,7 +7349,7 @@ async function calculateMapboxRoute(waypoints, mode) {
   }).catch(error => {
     console.error('[MAP] ❌ Erreur calcul route:', error);
     try { map.removeLayer(tempLayer); } catch(_) {}
-    layer = L.polyline(latlngs, { color: '#113f7a', weight: 3, opacity: 0.8 }).addTo(map);
+    layer = L.polyline(sanitized, { color: '#113f7a', weight: 3, opacity: 0.8 }).addTo(map);
   });
   
   // ===== FIN CALCUL DE ROUTE =====
@@ -8267,8 +8298,8 @@ console.log('[GROUPS V7] Attente de state...');
 </script>
 <div id="stepTooltip" class="step-tooltip"></div>
 
-<script src="ort-ratings.js"></script>
-<script src="/js/ort-pdf-export-v6.js"></script>
+<script defer src="ort-ratings.js"></script>
+<script defer src="/js/ort-pdf-export-v6.js"></script>
 
 <!-- === GETYOURGUIDE WIDGET === -->
 <style>
@@ -8815,9 +8846,9 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 </script>
 
 <!-- ORT Header/Footer/Auth modules -->
-<script src="/js/ort-i18n-auth.js"></script>
-<script src="/js/ort-header.js"></script>
-<script src="/js/ort-footer.js"></script>
+<script defer src="/js/ort-i18n-auth.js"></script>
+<script defer src="/js/ort-header.js"></script>
+<script defer src="/js/ort-footer.js"></script>
 
 <!-- Fallback auth si ort-header.js pas encore déployé -->
 <script>
