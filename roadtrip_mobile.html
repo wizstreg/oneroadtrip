@@ -336,6 +336,65 @@ html, body {
   width: fit-content;
 }
 
+.step-card-booking {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #dcfce7;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.step-bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-booking-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid var(--ort-border);
+}
+
+.step-booking-icon {
+  font-size: 20px;
+  width: 32px;
+  text-align: center;
+}
+
+.step-booking-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-booking-name {
+  font-weight: 600;
+  color: var(--ort-blue);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-booking-dates {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.step-booking-price {
+  font-weight: 600;
+  color: #16a34a;
+  font-size: 14px;
+}
+
 .step-card-chevron {
   width: 40px;
   display: flex;
@@ -475,7 +534,14 @@ html, body {
 }
 
 .sheet-section {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sheet-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
 }
 
 .sheet-section-title {
@@ -483,7 +549,8 @@ html, body {
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
 }
 
 /* Nights control */
@@ -534,7 +601,8 @@ html, body {
 .sheet-booking-btns {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+  margin-top: 12px;
 }
 
 .booking-btn {
@@ -952,6 +1020,12 @@ html, body {
         </div>
         <button class="nights-btn" id="btnNightsPlus">+</button>
       </div>
+    </div>
+    
+    <!-- Section réservations de l'étape -->
+    <div class="sheet-section" id="stepBookingsSection" style="display:none">
+      <div class="sheet-section-title">Mes réservations</div>
+      <div class="step-bookings-list" id="stepBookingsList"></div>
     </div>
   </div>
   <div class="sheet-actions">
@@ -1752,6 +1826,13 @@ async function loadFromDashboard(tripId) {
       try {
         await window.ORT_TRIP_DATA.loadTrip(tripId);
         debugLog('✅ ORT_TRIP_DATA chargé');
+        // Debug: vérifier les bookings par étape
+        state.steps.forEach((s, i) => {
+          const bookings = ORT_TRIP_DATA.getStepBookings(i) || [];
+          if (bookings.length > 0) {
+            console.log(`[BOOKING-DEBUG] Étape ${i+1} (${s.name}): ${bookings.length} résa(s)`, bookings.map(b => b.name));
+          }
+        });
       } catch (e) {
         debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
       }
@@ -2578,6 +2659,13 @@ function getStepPhoto(step, stepIdx = -1) {
     }
   }
   
+  // Si toutes les photos sont utilisées, utiliser un index rotatif
+  if (allPhotos.length > 0 && stepIdx >= 0) {
+    // Utiliser l'index de l'étape pour choisir une photo différente
+    const photoIndex = stepIdx % allPhotos.length;
+    return allPhotos[photoIndex];
+  }
+  
   // Si toutes les photos sont utilisées, prendre la première disponible
   if (allPhotos.length > 0) {
     return allPhotos[0];
@@ -2654,13 +2742,26 @@ function renderList() {
     const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
     const stepDisplayName = getCityDisplayName(step, lang) || step.name;
     
+    // Vérifier si l'étape a des réservations
+    let bookingIndicator = '';
+    if (window.ORT_TRIP_DATA) {
+      const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+      if (stepBookings.length > 0) {
+        const hasHotel = stepBookings.some(b => b.category === 'hotel');
+        const hasActivity = stepBookings.some(b => ['activity', 'visit', 'show'].includes(b.category));
+        if (hasHotel || hasActivity) {
+          bookingIndicator = `<span class="step-card-booking">${hasHotel ? '🏨' : '🎫'}</span>`;
+        }
+      }
+    }
+    
     card.innerHTML = `
       <div class="step-card-num">${idx + 1}</div>
       <img class="step-card-photo" data-step-idx="${idx}" src="${PLACEHOLDER_IMG}" alt="" loading="lazy">
       <div class="step-card-info">
         <div class="step-card-name">${stepDisplayName}</div>
         <div class="step-card-meta">${distText}</div>
-        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
+        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}${bookingIndicator}</div>` : (bookingIndicator ? `<div class="step-card-nights">${bookingIndicator}</div>` : '')}
       </div>
       <div class="step-card-chevron">›</div>
     `;
@@ -2668,9 +2769,17 @@ function renderList() {
     
     // Charger l'image avec fallback et timeout
     const imgEl = card.querySelector('.step-card-photo');
+    // Filtrer les photos déjà utilisées par d'autres étapes
     const allPhotos = getAllStepPhotos(step);
-    if (allPhotos.length > 0) {
-      loadImageWithFallback(imgEl, allPhotos, 3000);
+    const availablePhotos = allPhotos.filter(p => !usedPhotos.has(p));
+    // Utiliser les photos disponibles, ou toutes si aucune disponible
+    const photosToUse = availablePhotos.length > 0 ? availablePhotos : allPhotos;
+    if (photosToUse.length > 0) {
+      // Marquer la première comme utilisée
+      usedPhotos.add(photosToUse[0]);
+      loadImageWithFallback(imgEl, photosToUse, 3000);
+    } else {
+      console.warn(`[PHOTO] Aucune photo pour étape ${idx + 1}: ${step.name}`);
     }
   });
 }
@@ -2819,6 +2928,46 @@ function openStepSheet(idx) {
   // Stay22 - toujours visible, utilise 1 nuit minimum pour le lien
   $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
   $('btnHotel').style.display = ''; // Toujours visible
+  
+  // Afficher les réservations de cette étape
+  const bookingsSection = $('stepBookingsSection');
+  const bookingsList = $('stepBookingsList');
+  
+  if (window.ORT_TRIP_DATA) {
+    const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+    if (stepBookings.length > 0) {
+      bookingsSection.style.display = '';
+      bookingsList.innerHTML = stepBookings.map(b => {
+        const icon = getCategoryIcon(b.category);
+        const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : null;
+        let dateStr = '';
+        if (b.date_start) {
+          const ds = new Date(b.date_start).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          if (b.date_end && b.date_end !== b.date_start) {
+            const de = new Date(b.date_end).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const nights = Math.ceil((new Date(b.date_end) - new Date(b.date_start)) / 86400000);
+            dateStr = `${ds} → ${de}${nights > 0 ? ` (${nights} nuit${nights > 1 ? 's' : ''})` : ''}`;
+          } else {
+            dateStr = ds;
+          }
+        }
+        return `
+          <div class="step-booking-item">
+            <div class="step-booking-icon">${icon}</div>
+            <div class="step-booking-info">
+              <div class="step-booking-name">${b.name || 'Réservation'}</div>
+              ${dateStr ? `<div class="step-booking-dates">📅 ${dateStr}</div>` : ''}
+            </div>
+            ${price ? `<div class="step-booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    } else {
+      bookingsSection.style.display = 'none';
+    }
+  } else {
+    bookingsSection.style.display = 'none';
+  }
   
   openSheet($('stepSheet'));
 }
