@@ -275,9 +275,20 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     const allBookings = new Map(); // id -> { booking, steps: [stepIndex, ...], firstStepIndex }
     const seenIds = new Set();
     
+    console.log('[RT-BOOKINGS] === DEBUG RENDER ===');
+    console.log('[RT-BOOKINGS] trip.steps:', trip?.steps?.length);
+    
     if (trip?.steps) {
       trip.steps.forEach((step, stepIndex) => {
         const stepBookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(stepIndex) : [];
+        
+        if (stepBookings.length > 0) {
+          console.log(`[RT-BOOKINGS] Étape ${stepIndex} (${step.name}): ${stepBookings.length} bookings`);
+          stepBookings.forEach(b => {
+            console.log(`  - ${b.id}: ${b.name} (stepIndexes: ${JSON.stringify(b.stepIndexes)})`);
+          });
+        }
+        
         stepBookings.forEach(b => {
           const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
           
@@ -297,6 +308,11 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
         });
       });
     }
+    
+    console.log('[RT-BOOKINGS] allBookings (dédoublonnés):', allBookings.size);
+    allBookings.forEach((data, id) => {
+      console.log(`  - ${id}: ${data.booking.name}, firstStep=${data.firstStepIndex}, steps=${JSON.stringify(data.steps)}`);
+    });
     
     // Grouper les résas par première étape pour l'affichage
     const bookingsByFirstStep = new Map();
@@ -358,7 +374,7 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     const priceVal = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : null;
     const priceCur = booking.price && typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
     const price = priceVal ? `${parseFloat(priceVal).toFixed(2)} ${priceCur}` : '';
-    const dataAttr = `data-type="step" data-step="${stepIndex}" data-index="${index}"`;
+    const dataAttr = `data-type="step" data-step="${stepIndex}" data-index="${index}" data-id="${booking.id || ''}"`;
     
     return `<div class="booking-item" ${dataAttr}>
       <div class="booking-icon">${icon}</div>
@@ -379,7 +395,9 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     const priceVal = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : null;
     const priceCur = booking.price && typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
     const price = priceVal ? `${parseFloat(priceVal).toFixed(2)} ${priceCur}` : '';
-    const dataAttr = type === 'travel' ? `data-type="travel" data-index="${index}"` : `data-type="step" data-step="${stepIndex}" data-index="${index}"`;
+    const dataAttr = type === 'travel' 
+      ? `data-type="travel" data-index="${index}" data-id="${booking.id || ''}"` 
+      : `data-type="step" data-step="${stepIndex}" data-index="${index}" data-id="${booking.id || ''}"`;
     
     return `<div class="booking-item" ${dataAttr}>
       <div class="booking-icon">${icon}</div>
@@ -405,15 +423,17 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
         const type = item.dataset.type;
         const index = parseInt(item.dataset.index);
         const stepIndex = item.dataset.step !== undefined ? parseInt(item.dataset.step) : null;
+        const dataId = item.dataset.id || null; // Récupérer l'ID du DOM
         
         let booking;
         if (type === 'travel') {
           booking = ORT_TRIP_DATA.getTravelBookings()[index];
-          currentBooking = { type: 'travel', index, booking };
+          currentBooking = { type: 'travel', index, booking, id: dataId || booking?.id };
         } else {
           booking = ORT_TRIP_DATA.getStepBookings(stepIndex)[index];
-          currentBooking = { type: 'step', stepIndex, index, booking };
+          currentBooking = { type: 'step', stepIndex, index, booking, id: dataId || booking?.id };
         }
+        console.log('[RT-BOOKINGS] Booking sélectionné:', currentBooking);
         showDetailModal(booking);
       }
     });
@@ -421,6 +441,21 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     $('btnCloseModal').addEventListener('click', closeModal);
     $('detailModal').addEventListener('click', e => { if (e.target === $('detailModal')) closeModal(); });
     $('btnDeleteBooking').addEventListener('click', deleteCurrentBooking);
+    
+    // Refresh automatique quand on revient sur la page
+    let lastVisibilityTime = Date.now();
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible') {
+        const timeSinceHidden = Date.now() - lastVisibilityTime;
+        if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
+          console.log('[RT-BOOKINGS] Retour sur la page, refresh...');
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderBookings();
+        }
+      } else {
+        lastVisibilityTime = Date.now();
+      }
+    });
   }
   
   function showDetailModal(booking) {
@@ -454,14 +489,76 @@ h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
     if (!currentBooking) return;
     if (!confirm(t('confirmDelete'))) return;
     
+    const bookingId = currentBooking.id || currentBooking.booking?.id;
+    console.log('[RT-BOOKINGS] Suppression - currentBooking:', currentBooking);
+    console.log('[RT-BOOKINGS] Suppression - bookingId:', bookingId);
+    console.log('[RT-BOOKINGS] Suppression - trip?.steps:', trip?.steps?.length);
+    
+    let removed = false;
+    
     if (currentBooking.type === 'travel') {
-      await ORT_TRIP_DATA.removeTravelBooking(currentBooking.index);
+      // Supprimer par ID ou par index
+      if (bookingId) {
+        removed = ORT_TRIP_DATA.removeTravelBooking(bookingId);
+        console.log('[RT-BOOKINGS] removeTravelBooking par ID:', removed);
+      }
+      if (!removed) {
+        removed = ORT_TRIP_DATA.removeTravelBooking(currentBooking.index);
+        console.log('[RT-BOOKINGS] removeTravelBooking par index:', removed);
+      }
     } else {
-      await ORT_TRIP_DATA.removeStepBooking(currentBooking.stepIndex, currentBooking.index);
+      // D'abord essayer de supprimer de TOUTES les étapes par ID
+      if (bookingId && trip?.steps) {
+        const stepIndexesToRemove = [];
+        trip.steps.forEach((step, idx) => {
+          const bookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+          if (bookings.some(b => b.id === bookingId)) {
+            stepIndexesToRemove.push(idx);
+          }
+        });
+        
+        console.log(`[RT-BOOKINGS] Suppression du booking ${bookingId} de ${stepIndexesToRemove.length} étapes:`, stepIndexesToRemove);
+        stepIndexesToRemove.forEach(idx => {
+          const result = ORT_TRIP_DATA.removeStepBooking(idx, bookingId);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${idx}, ID=${bookingId}):`, result);
+          if (result) removed = true;
+        });
+      }
+      
+      // Si pas de suppression par ID, essayer par index direct sur l'étape
+      if (!removed && currentBooking.stepIndex !== null) {
+        console.log(`[RT-BOOKINGS] Tentative suppression par index: step=${currentBooking.stepIndex}, index=${currentBooking.index}`);
+        
+        // Essayer avec l'ID d'abord
+        if (bookingId) {
+          removed = ORT_TRIP_DATA.removeStepBooking(currentBooking.stepIndex, bookingId);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${currentBooking.stepIndex}, ID):`, removed);
+        }
+        
+        // Puis avec l'index
+        if (!removed) {
+          removed = ORT_TRIP_DATA.removeStepBooking(currentBooking.stepIndex, currentBooking.index);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${currentBooking.stepIndex}, index):`, removed);
+        }
+      }
     }
     
-    await ORT_TRIP_DATA.forceSave();
-    showToast(t('deleted'));
+    if (!removed) {
+      console.warn('[RT-BOOKINGS] ⚠️ Aucun booking supprimé!');
+      showToast(t('deleteError') || 'Erreur lors de la suppression', 'error');
+      return;
+    }
+    
+    console.log('[RT-BOOKINGS] Appel forceSave...');
+    try {
+      await ORT_TRIP_DATA.forceSave();
+      console.log('[RT-BOOKINGS] ✅ forceSave OK');
+      showToast(t('deleted'));
+    } catch (e) {
+      console.error('[RT-BOOKINGS] ❌ forceSave ERREUR:', e);
+      showToast(t('deleteError') || 'Erreur de sauvegarde', 'error');
+    }
+    
     closeModal();
     renderBookings();
   }

@@ -13623,6 +13623,29 @@ document.addEventListener('keydown', function(e) { if (e.key === 'Escape') close
 // setTimeout(loadBudgetData, 2000); // DÉSACTIVÉ - appelé depuis initDashboardMode
 window.addEventListener('ort:trip-data-saved', loadBudgetData);
 
+// Refresh automatique des bookings quand on revient sur la page
+let lastDetailVisibilityTime = Date.now();
+document.addEventListener('visibilitychange', async function() {
+  if (document.visibilityState === 'visible') {
+    const timeSinceHidden = Date.now() - lastDetailVisibilityTime;
+    if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
+      console.log('[RT-DETAIL] Retour sur la page, refresh des bookings...');
+      try {
+        const tripId = window.ORT_TRIPID ? ORT_TRIPID.get() : null;
+        if (tripId) {
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          await loadBudgetData();
+          console.log('[RT-DETAIL] ✅ Bookings rafraîchis');
+        }
+      } catch (e) {
+        console.warn('[RT-DETAIL] Erreur refresh:', e);
+      }
+    }
+  } else {
+    lastDetailVisibilityTime = Date.now();
+  }
+});
+
 console.log('[BUDGET] ✅ Budget system ready');
 </script>
 

@@ -1595,7 +1595,19 @@ async function loadFromDashboard(tripId) {
       if (tripData && tripData.steps && tripData.steps.length > 0) {
         debugLog('✅ Chargé depuis localStorage!');
         applyTripDataToState(tripData);
-        return; // Succès ! Pas besoin de Firestore
+        
+        // IMPORTANT: Charger aussi ORT_TRIP_DATA pour les bookings (stockés séparément)
+        if (window.ORT_TRIP_DATA) {
+          try {
+            debugLog('📥 Chargement ORT_TRIP_DATA pour les bookings...');
+            await window.ORT_TRIP_DATA.loadTrip(tripId);
+            debugLog('✅ ORT_TRIP_DATA chargé (bookings disponibles)');
+          } catch (e) {
+            debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+          }
+        }
+        
+        return; // Succès !
       } else {
         debugLog('⚠️ localStorage steps vide/invalide');
       }
@@ -2521,19 +2533,106 @@ function setupEvents() {
 }
 
 // === RENDERING ===
-function getStepPhoto(step) {
-  // 1. Photo directe dans les données
-  if (step.photos?.length) return step.photos[0];
-  // 2. Cache via placeId
+
+// Tracking des photos utilisées pour éviter les doublons
+const usedPhotos = new Set();
+
+// Récupérer toutes les photos disponibles pour une étape (ordre de priorité)
+function getAllStepPhotos(step) {
+  const photos = [];
+  
+  // 1. PRIORITÉ: Photos sauvegardées dans Firestore (step.photos ou step.images)
+  if (step.photos?.length) {
+    photos.push(...step.photos.filter(p => p && typeof p === 'string'));
+  }
+  if (step.images?.length) {
+    step.images.forEach(img => {
+      const url = typeof img === 'string' ? img : img?.url;
+      if (url && !photos.includes(url)) photos.push(url);
+    });
+  }
+  if (step.image && !photos.includes(step.image)) photos.push(step.image);
+  
+  // 2. Photos du cache via placeId
   if (step.placeId) {
     const cached = getPhotosForPlace(step.placeId);
-    if (cached.length) return cached[0];
+    cached.forEach(p => { if (!photos.includes(p)) photos.push(p); });
   }
+  
   // 3. Chercher par nom avec la fonction smart
   const found = findPhotosForPlace(step.name, state.cc);
-  if (found.length) return found[0];
-  // 4. Placeholder
+  found.forEach(p => { if (!photos.includes(p)) photos.push(p); });
+  
+  return photos;
+}
+
+// Choisir la meilleure photo pour une étape (évite les doublons)
+function getStepPhoto(step, stepIdx = -1) {
+  const allPhotos = getAllStepPhotos(step);
+  
+  // Trouver une photo pas encore utilisée
+  for (const photo of allPhotos) {
+    if (!usedPhotos.has(photo)) {
+      if (stepIdx >= 0) usedPhotos.add(photo); // Marquer comme utilisée
+      return photo;
+    }
+  }
+  
+  // Si toutes les photos sont utilisées, prendre la première disponible
+  if (allPhotos.length > 0) {
+    return allPhotos[0];
+  }
+  
   return PLACEHOLDER_IMG;
+}
+
+// Reset les photos utilisées (appelé au chargement d'un nouveau trip)
+function resetUsedPhotos() {
+  usedPhotos.clear();
+}
+
+// Charger une image avec timeout et fallback
+function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
+  if (!urls || urls.length === 0) {
+    imgElement.src = PLACEHOLDER_IMG;
+    return;
+  }
+  
+  let currentIndex = 0;
+  let timeoutId = null;
+  
+  function tryNext() {
+    if (currentIndex >= urls.length) {
+      imgElement.src = PLACEHOLDER_IMG;
+      return;
+    }
+    
+    const url = urls[currentIndex];
+    currentIndex++;
+    
+    // Clear previous timeout
+    if (timeoutId) clearTimeout(timeoutId);
+    
+    // Set timeout pour passer à la suivante si trop lent
+    timeoutId = setTimeout(() => {
+      console.log(`[PHOTO] Timeout pour ${url.substring(0, 50)}..., essai suivant`);
+      tryNext();
+    }, timeoutMs);
+    
+    imgElement.onload = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+    
+    imgElement.onerror = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      console.log(`[PHOTO] Erreur pour ${url.substring(0, 50)}..., essai suivant`);
+      tryNext();
+    };
+    
+    imgElement.src = url;
+  }
+  
+  tryNext();
 }
 
 function renderList() {
@@ -2541,19 +2640,23 @@ function renderList() {
   list.innerHTML = '';
   const lang = state.lang || 'fr';
   
+  // Reset les photos utilisées pour ce rendu
+  resetUsedPhotos();
+  
   state.steps.forEach((step, idx) => {
     const card = document.createElement('div');
     card.className = 'step-card';
     card.onclick = () => openStepSheet(idx);
     
-    const photoUrl = getStepPhoto(step);
+    // Utiliser getStepPhoto avec l'index pour éviter les doublons
+    const photoUrl = getStepPhoto(step, idx);
     const nightsText = step.nights > 0 ? `${step.nights} nuit${step.nights > 1 ? 's' : ''}` : '';
     const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
     const stepDisplayName = getCityDisplayName(step, lang) || step.name;
     
     card.innerHTML = `
       <div class="step-card-num">${idx + 1}</div>
-      <img class="step-card-photo" src="${photoUrl}" alt="" loading="lazy" onerror="this.src='${PLACEHOLDER_IMG}'">
+      <img class="step-card-photo" data-step-idx="${idx}" src="${PLACEHOLDER_IMG}" alt="" loading="lazy">
       <div class="step-card-info">
         <div class="step-card-name">${stepDisplayName}</div>
         <div class="step-card-meta">${distText}</div>
@@ -2562,6 +2665,13 @@ function renderList() {
       <div class="step-card-chevron">›</div>
     `;
     list.appendChild(card);
+    
+    // Charger l'image avec fallback et timeout
+    const imgEl = card.querySelector('.step-card-photo');
+    const allPhotos = getAllStepPhotos(step);
+    if (allPhotos.length > 0) {
+      loadImageWithFallback(imgEl, allPhotos, 3000);
+    }
   });
 }
 
@@ -2686,10 +2796,17 @@ function openStepSheet(idx) {
   
   $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
   $('sheetStepMeta').textContent = `Étape ${idx + 1} sur ${state.steps.length}`;
-  $('sheetStepPhoto').src = getStepPhoto(step);
-  $('sheetStepPhoto').onerror = function() { this.src = PLACEHOLDER_IMG; };
   $('sheetStepDesc').textContent = step.description || 'Aucune description disponible.';
   $('nightsValue').textContent = step.nights || 0;
+  
+  // Charger la photo avec fallback et timeout
+  const photoEl = $('sheetStepPhoto');
+  const allPhotos = getAllStepPhotos(step);
+  if (allPhotos.length > 0) {
+    loadImageWithFallback(photoEl, allPhotos, 3000);
+  } else {
+    photoEl.src = PLACEHOLDER_IMG;
+  }
   
   // Liens affiliés pour cette étape
   const cityName = step.name || '';
@@ -2699,8 +2816,9 @@ function openStepSheet(idx) {
   
   $('btnGyg').href = AFFILIATE.gyg(cityName);
   $('btnTiqets').href = AFFILIATE.tiqets(cityName, state.lang);
-  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, nights, checkIn, campaign);
-  $('btnHotel').style.display = step.nights > 0 ? '' : 'none';
+  // Stay22 - toujours visible, utilise 1 nuit minimum pour le lien
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
+  $('btnHotel').style.display = ''; // Toujours visible
   
   openSheet($('stepSheet'));
 }
@@ -2713,11 +2831,11 @@ function adjustNights(delta) {
   $('nightsValue').textContent = step.nights;
   hasUnsavedChanges = true;
   
-  // MAJ lien hôtel
+  // MAJ lien hôtel - toujours visible, utilise 1 nuit minimum
   const checkIn = new Date().toISOString().split('T')[0];
   const campaign = `ort_mobile_step${currentStepIndex + 1}`;
-  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, step.nights || 1, checkIn, campaign);
-  $('btnHotel').style.display = step.nights > 0 ? '' : 'none';
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
+  $('btnHotel').style.display = ''; // Toujours visible
   
   renderList();
   renderBookings();
@@ -3108,23 +3226,100 @@ $('btnExpertMode').onclick = function() {
 
 // Expose
 window.openStepSheet = openStepSheet;
-</script>
 
-<!-- Bouton flottant mode expert -->
-<button id="btnExpertMode" style="position:fixed;bottom:100px;right:16px;width:50px;height:50px;border-radius:50%;background:#22c55e;color:#fff;border:none;font-size:28px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.3);z-index:200;display:flex;align-items:center;justify-content:center;" title="Mode expert">+</button>
-<script>
-document.getElementById('btnExpertMode')?.addEventListener('click', function() {
-  const msg = window.t ? window.t('switchToExpertWarning') : 'Vous allez basculer en mode expert. Il est préférable de tester ce mode sur un écran plus large.';
-  if (confirm(msg)) {
-    // Utilise ORT_TRIPID pour préserver le tripId
-    if (window.ORT_TRIPID) {
-      window.ORT_TRIPID.navigateTo('roadtrip_detail.html');
-    } else {
-      const newUrl = window.location.href.replace(/roadtrip_mobile\.html/, 'roadtrip_detail.html');
-      window.location.href = newUrl;
+// Rafraîchir les bookings quand on revient sur cette page
+// (après avoir été sur rt-booking-import par exemple)
+let lastVisibilityTime = Date.now();
+
+document.addEventListener('visibilitychange', async function() {
+  if (document.visibilityState === 'visible') {
+    const timeSinceHidden = Date.now() - lastVisibilityTime;
+    // Si on revient après plus de 2 secondes, rafraîchir les bookings
+    if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
+      console.log('[MOBILE] Retour sur la page, refresh des bookings...');
+      try {
+        // Recharger les données depuis Firestore
+        const tripId = window.ORT_TRIPID?.get();
+        if (tripId) {
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderBookings();
+          console.log('[MOBILE] ✅ Bookings rafraîchis');
+        }
+      } catch (e) {
+        console.warn('[MOBILE] Erreur refresh bookings:', e);
+      }
+    }
+  } else {
+    lastVisibilityTime = Date.now();
+  }
+});
+
+// Aussi sur pageshow (pour les navigations back/forward)
+window.addEventListener('pageshow', async function(event) {
+  if (event.persisted && window.ORT_TRIP_DATA) {
+    console.log('[MOBILE] Page restaurée depuis cache, refresh...');
+    const tripId = window.ORT_TRIPID?.get();
+    if (tripId) {
+      try {
+        await ORT_TRIP_DATA.loadTrip(tripId);
+        renderBookings();
+      } catch (e) {
+        console.warn('[MOBILE] Erreur refresh pageshow:', e);
+      }
     }
   }
 });
+</script>
+
+<!-- Bouton flottant pour ajouter une réservation (visible sur l'onglet Réservations) -->
+<button id="btnAddBookingFab" style="position:fixed;bottom:100px;right:16px;width:56px;height:56px;border-radius:50%;background:#3b82f6;color:#fff;border:none;font-size:32px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,0.4);z-index:200;display:none;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;" title="Ajouter une réservation">+</button>
+<script>
+(function() {
+  const fab = document.getElementById('btnAddBookingFab');
+  if (!fab) return;
+  
+  // Fonction pour naviguer vers l'import de réservations
+  function goToBookingImport(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[FAB] Clic détecté, navigation...');
+    
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.navigateTo('rt-booking-import.html');
+    } else {
+      const tripId = new URLSearchParams(location.search).get('tripId') || '';
+      window.location.href = 'rt-booking-import.html?tripId=' + encodeURIComponent(tripId);
+    }
+  }
+  
+  // Écouter click ET touchend pour mobile
+  fab.addEventListener('click', goToBookingImport);
+  fab.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    goToBookingImport(e);
+  }, { passive: false });
+  
+  // Afficher/masquer le FAB selon l'onglet actif
+  function updateFabVisibility() {
+    const bookingsPanel = document.getElementById('bookingsPanel');
+    if (fab && bookingsPanel) {
+      const isActive = bookingsPanel.classList.contains('active');
+      fab.style.display = isActive ? 'flex' : 'none';
+      console.log('[FAB] Visibilité mise à jour:', isActive ? 'visible' : 'masqué');
+    }
+  }
+  
+  // Observer les changements d'onglet
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      setTimeout(updateFabVisibility, 100);
+    });
+  });
+  
+  // Vérifier au chargement et après un court délai
+  setTimeout(updateFabVisibility, 500);
+  document.addEventListener('DOMContentLoaded', () => setTimeout(updateFabVisibility, 100));
+})();
 </script>
 </body>
 </html>

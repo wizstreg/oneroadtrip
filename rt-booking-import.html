@@ -2074,10 +2074,35 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       if (type === 'travel') {
         success = ORT_TRIP_DATA.removeTravelBooking(bookingId);
       } else {
-        success = ORT_TRIP_DATA.removeStepBooking(stepIdx, bookingId);
+        // Supprimer le booking de TOUTES les étapes où il apparaît
+        // D'abord trouver toutes les étapes qui ont ce booking
+        const stepIndexesToRemove = [];
+        if (trip?.steps) {
+          trip.steps.forEach((step, idx) => {
+            const bookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+            const hasBooking = bookings.some(b => b.id === bookingId);
+            if (hasBooking) {
+              stepIndexesToRemove.push(idx);
+            }
+          });
+        }
+        
+        // Supprimer de toutes les étapes trouvées
+        if (stepIndexesToRemove.length > 0) {
+          console.log(`[DELETE] Suppression du booking ${bookingId} de ${stepIndexesToRemove.length} étapes:`, stepIndexesToRemove);
+          stepIndexesToRemove.forEach(idx => {
+            ORT_TRIP_DATA.removeStepBooking(idx, bookingId);
+          });
+          success = true;
+        } else {
+          // Fallback: essayer juste l'étape spécifiée
+          success = ORT_TRIP_DATA.removeStepBooking(stepIdx, bookingId);
+        }
       }
+      
       if (success) {
         await ORT_TRIP_DATA.forceSave();
+        // Rafraîchir l'affichage
         renderExistingBookings();
         showToast(t('bookingDeleted'));
       }
@@ -2613,6 +2638,25 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     toast.className = 'toast show' + (type === 'error' ? ' error' : '');
     setTimeout(() => toast.classList.remove('show'), 3000);
   }
+  
+  // Refresh automatique quand on revient sur la page
+  let lastVisibilityTime = Date.now();
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      const timeSinceHidden = Date.now() - lastVisibilityTime;
+      if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA && tripId) {
+        console.log('[RT-BOOKING-IMPORT] Retour sur la page, refresh...');
+        try {
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderExistingBookings();
+        } catch (e) {
+          console.warn('[RT-BOOKING-IMPORT] Erreur refresh:', e);
+        }
+      }
+    } else {
+      lastVisibilityTime = Date.now();
+    }
+  });
   
   // Start
   init();
