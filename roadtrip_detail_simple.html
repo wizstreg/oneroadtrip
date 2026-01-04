@@ -7871,8 +7871,12 @@ return;
 state.country=CC;
    state.cc = CC; // ← AJOUT : pour collectCurrentData()
    
-   // ✅ CORRECTION: Utiliser getTripId() au lieu d'ensureRid() pour cohérence avec toute la chaîne
-   state.tripId = getTripId();
+   // ✅ Utiliser ORT_TRIPID pour source de vérité unique
+   if (window.ORT_TRIPID) {
+     state.tripId = window.ORT_TRIPID.init({ source: 'simple' });
+   } else {
+     state.tripId = getTripId(); // Fallback si ORT_TRIPID pas chargé
+   }
    state.id = state.tripId;  // Alias pour compatibilité
    console.log('[INIT] ✅ TripId généré et assigné:', state.tripId);
    
@@ -9003,9 +9007,13 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
         const cc = urlParams.get('cc');
         const itin = urlParams.get('itin');
         
-        // Fallback: utiliser getTripId()
-        window.state.tripId = getTripId();
-        console.log('[INIT] ⚠️ TripId récupéré en fallback:', window.state.tripId);
+        // Fallback: utiliser ORT_TRIPID
+        if (window.ORT_TRIPID) {
+          window.state.tripId = window.ORT_TRIPID.init({ source: 'simple' });
+        } else {
+          window.state.tripId = getTripId();
+        }
+        console.log('[INIT] ⚠️ TripId récupéré:', window.state.tripId);
       }
       
       console.log('[INIT] ✅ TripId confirmé:', tripId || window.state.tripId);

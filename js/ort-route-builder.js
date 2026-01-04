@@ -398,9 +398,9 @@ async function selectStepsAlongRoute(config, routeData, places) {
       const distToPoint = _haversine(routePoint.lat, routePoint.lon, p.lat, p.lon);
       if (distToPoint > searchRadius) continue;
       
-      // Vérifier qu'on ne revient pas en arrière sur la route
+      // Vérifier qu'on ne revient pas en arrière sur la route (STRICT - max 5km en arrière)
       const placeProgress = getProgressOnRoute(p.lat, p.lon || p.lng, routeData);
-      if (placeProgress < lastProgressOnRoute - 30) continue;
+      if (placeProgress < lastProgressOnRoute - 5) continue;
       
       candidates.push({
         ...p,
@@ -626,13 +626,37 @@ async function enrichStepsWithORTData(steps, config) {
 function generateBuilderItinerary(steps, config, lang) {
   hideBuilderLoader();
   
+  // === CALCUL INTELLIGENT DES NUITS ===
+  // On a X jours et Y étapes → distribuer les nuits intelligemment
+  const totalDays = config.days;
+  const numSteps = steps.length;
+  
+  // Les nuits se distribuent ENTRE les étapes (pas à la dernière qui est l'arrivée)
+  const stepsWithNights = steps.filter((s, i) => !s.isEnd); // Exclure l'arrivée
+  
+  // Réinitialiser les nuits
+  for (const step of stepsWithNights) {
+    step.nights = 1; // Par défaut 1 nuit partout
+  }
+  
+  // Distribuer les jours restants équitablement
+  const remainingDays = totalDays - stepsWithNights.length;
+  if (remainingDays > 0) {
+    const extraNightsPerStep = Math.floor(remainingDays / stepsWithNights.length);
+    const remainder = remainingDays % stepsWithNights.length;
+    
+    for (let i = 0; i < stepsWithNights.length; i++) {
+      stepsWithNights[i].nights = 1 + extraNightsPerStep + (i < remainder ? 1 : 0);
+    }
+  }
+  
   // Construire la structure days_plan compatible avec roadtrip_detail
   const daysPlan = [];
   let currentDay = 1;
   
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
-    const nights = step.nights || 1;
+    const nights = step.nights || (step.isEnd ? 0 : 1);
     
     for (let n = 0; n < Math.max(1, nights); n++) {
       const isLastNightAtStep = (n === nights - 1);

@@ -1900,8 +1900,8 @@ async function init() {
   
   // INIT ORT_TRIPID - Source de vérité unique pour le tripId
   if (window.ORT_TRIPID) {
-    state._tripId = window.ORT_TRIPID.init({ source: 'mobile' });
-    console.log('[MOBILE] TripId initialisé:', state._tripId);
+    state.tripId = window.ORT_TRIPID.init({ source: 'mobile' });
+    console.log('[MOBILE] TripId initialisé:', state.tripId);
   }
   
   setupTabs();
@@ -2263,7 +2263,7 @@ function applyTripDataToState(tripData) {
   
   state.title = tripData.title || tripData.name || 'Roadtrip';
   state.cc = tripData.country || tripData.cc || 'XX';
-  state._tripId = tripData.id || tripData.tripId;
+  state.tripId = tripData.id || tripData.tripId;
   state._originalItinId = tripData.itinId || tripData._originalItinId;
   state.startDateStr = tripData.startDateStr || tripData.startDate || '';
   
@@ -3520,7 +3520,7 @@ async function saveTrip() {
       // Utilise ORT_TRIPID pour garantir un tripId cohérent
       let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : null;
       if (!tripId) {
-        tripId = state._tripId || state._originalItinId || `mobile::${Date.now()}`;
+        tripId = state.tripId || state._originalItinId || `mobile::${Date.now()}`;
         if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
       }
       
@@ -3550,7 +3550,7 @@ async function saveTrip() {
       await window.ORT_STATE.saveTrip(tripData);
       
       // Mettre à jour le tripId dans state pour les sauvegardes suivantes
-      state._tripId = tripId;
+      state.tripId = tripId;
       if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
       
       hasUnsavedChanges = false;
@@ -3611,7 +3611,7 @@ function shareTrip() {
   }
   
   // Vérifier si trip sauvegardé
-  if (!state._tripId) {
+  if (!state.tripId) {
     showToast('❌ Sauvegardez d\'abord le voyage');
     return;
   }
@@ -3638,7 +3638,7 @@ async function loadExistingShare() {
   if (!window.ORT_SHARE) return;
   
   try {
-    const existing = await ORT_SHARE.getShareInfo(state._tripId);
+    const existing = await ORT_SHARE.getShareInfo(state.tripId);
     if (existing && existing.url) {
       $('shareUrlInput').value = existing.url;
       $('shareResult').style.display = '';
@@ -3666,7 +3666,7 @@ async function generateShareLink() {
   $('btnGenerateShare').disabled = true;
   
   try {
-    const result = await ORT_SHARE.createShareLink(state._tripId, mode);
+    const result = await ORT_SHARE.createShareLink(state.tripId, mode);
     
     if (result && result.url) {
       $('shareUrlInput').value = result.url;
@@ -3712,7 +3712,7 @@ async function revokeShare() {
   if (!confirm('Révoquer le lien de partage ?')) return;
   
   try {
-    await ORT_SHARE.revokeShareLink(state._tripId);
+    await ORT_SHARE.revokeShareLink(state.tripId);
     $('shareResult').style.display = 'none';
     $('btnRevokeShare').style.display = 'none';
     $('btnGenerateShare').textContent = '🔗 Générer le lien';
