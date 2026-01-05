@@ -1,24 +1,20 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) - Charger après le page load -->
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>
-  // Initialiser gtag() function
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
   
-  // Charger GTM après le page load (ne bloque pas le rendering)
-  window.addEventListener('load', () => {
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL';
-    document.head.appendChild(script);
-    
-    gtag('js', new Date());
-    const userLang = localStorage.getItem('lang') || 'fr';
-    gtag('config', 'G-JK3QGQGDDL', {
-      'user_properties': { 'language': userLang }
-    });
+  // Récupérer la langue de l'utilisateur
+  const userLang = localStorage.getItem('lang') || 'fr';
+  
+  gtag('config', 'G-JK3QGQGDDL', {
+    'user_properties': {
+      'language': userLang
+    }
   });
 </script>
 
@@ -2451,12 +2447,16 @@ async function loadAllItineraries() {
     const otherCountries = userCountry ? countryList.filter(c => getCC(c) !== userCountry) : countryList;
     
     // Fonction pour charger un pays
-    async function loadCountry(countryObj) {
+    async function loadCountry(countryObj, loadRatings = true) {
       const countryCode = getCC(countryObj);
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      await loadPlacesRatings(countryCode);
+      // Charger les ratings SEULEMENT pour le pays utilisateur (ÉTAPE 1)
+      // Les autres pays (ÉTAPE 2) chargent juste les itinéraires, pas les places
+      if (loadRatings) {
+        await loadPlacesRatings(countryCode);
+      }
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2526,10 +2526,11 @@ async function loadAllItineraries() {
       }
     }
     
-    // ÉTAPE 2: Charger les autres pays en arrière-plan (sans bloquer le rendering)
+    // ÉTAPE 2: Charger les autres pays en arrière-plan (sans les places ratings - économise ~1.2 MiB!)
     console.log(`📦 Chargement des ${otherCountries.length} autres pays en arrière-plan...`);
     // NE PAS await - on laisse charger en background sans bloquer
-    Promise.all(otherCountries.map(loadCountry)).then(otherResults => {
+    // loadRatings=false: on charge juste les itinéraires, pas les places.master.json
+    Promise.all(otherCountries.map(c => loadCountry(c, false))).then(otherResults => {
       const otherItins = otherResults.flat().filter(itin => itin.__id);
       
       // Fusionner et réafficher
@@ -4676,31 +4677,8 @@ window.addEventListener('langChange', updateRouteBuilderTranslations);
 </script>
 
 
-<script>
-// Charger les scripts non-critiques après le page load
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', loadInternalScripts);
-} else {
-  loadInternalScripts();
-}
-
-function loadInternalScripts() {
-  // Charger les scripts en lazy (après le rendu)
-  setTimeout(() => {
-    const scripts = [
-      '/js/ort-i18n-auth.js',
-      '/js/ort-header.js',
-      'js/ort-footer.js'
-    ];
-    
-    scripts.forEach(src => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.defer = true;
-      document.body.appendChild(script);
-    });
-  }, 100);
-}
-</script>
+<script src="/js/ort-i18n-auth.js" defer></script>
+<script src="/js/ort-header.js" defer></script>
+<script src="js/ort-footer.js" defer></script>
 </body>
 </html>
