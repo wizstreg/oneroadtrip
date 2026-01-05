@@ -1,25 +1,27 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<!-- Google tag (gtag.js) - DEFER pour ne pas bloquer LCP -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  
-  // Récupérer la langue de l'utilisateur
-  const userLang = localStorage.getItem('lang') || 'fr';
-  
-  gtag('config', 'G-JK3QGQGDDL', {
-    'user_properties': {
-      'language': userLang
-    }
-  });
+  // GTM chargé en différé après le rendering
+  setTimeout(() => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL';
+    document.head.appendChild(script);
+    gtag('js', new Date());
+    const userLang = localStorage.getItem('lang') || 'fr';
+    gtag('config', 'G-JK3QGQGDDL', {
+      'user_properties': { 'language': userLang }
+    });
+  }, 3000); // Charge 3s après le rendering
 </script>
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=5.0">
+  <meta http-equiv="Cache-Control" content="public, max-age=3600">
   <title>OneRoadTrip - Plan Your Dream Road Trip | 667+ Itineraries Worldwide</title>
   
   <!-- SEO Meta Tags -->
@@ -62,7 +64,17 @@
   <link rel="preconnect" href="https://oneroadtrip-prod.firebaseapp.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="b.basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="c.basemaps.cartocdn.com" crossorigin>
   <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  <!-- Preload critical Leaflet assets -->
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style">
+  <!-- Prefetch large JSON files for faster map opening -->
+  <link rel="prefetch" href="data/Roadtripsprefabriques/countries/themes.i18n.json">
+  <link rel="prefetch" href="data/photos-json/photos_rt.json">
+  <link rel="prefetch" href="data/photos-json/photos_lieux.json">
   <!-- Favicon inline pour éviter /favicon.ico 404 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
@@ -1072,8 +1084,8 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 
 
 <!-- Firebase compat est chargé dynamiquement par ensureFirebase() (v10.12.2) -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
 /* ===== I18N TRANSLATIONS ===== */
 const T = {
@@ -3203,9 +3215,10 @@ function showMobileSelectionModal(itin) {
     photoList.push(itin.photos[0]);
   }
   
-  if (photoList.length > 0) {
+  // Afficher photos seulement sur desktop (>768px)
+  if (photoList.length > 0 && window.innerWidth > 768) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(photoList[0])}&w=400&h=180&fit=cover&output=webp`;
-    document.getElementById('mobileModalPhotos').innerHTML = `<img src="${proxyUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;" alt="Photo">`;
+    document.getElementById('mobileModalPhotos').innerHTML = `<img src="${proxyUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy">`;
   } else {
     document.getElementById('mobileModalPhotos').innerHTML = '';
   }
@@ -3335,9 +3348,9 @@ function showPreview(itin) {
     firstPhoto = itin.photos[0];
   }
 
-  // Bloc villes + photo unique
+  // Bloc villes + photo unique (desktop seulement)
   let citiesHtml = `<strong>${t.cities}</strong><br>${(itin.cities||[]).join(' → ')}`;
-  if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${')) {
+  if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${') && window.innerWidth > 768) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(firstPhoto)}&w=400&h=200&fit=cover&output=webp`;
     citiesHtml += `<div style="margin-top:10px;"><img src="${proxyUrl}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy"></div>`;
   }
@@ -4650,8 +4663,8 @@ window.addEventListener('langChange', updateRouteBuilderTranslations);
 </script>
 
 
-<script src="/js/ort-i18n-auth.js"></script>
-<script src="/js/ort-header.js"></script>
-<script src="js/ort-footer.js"></script>
+<script src="/js/ort-i18n-auth.js" defer></script>
+<script src="/js/ort-header.js" defer></script>
+<script src="js/ort-footer.js" defer></script>
 </body>
 </html>
