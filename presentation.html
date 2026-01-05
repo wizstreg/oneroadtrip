@@ -2892,12 +2892,12 @@ function updateDebugPanel() {
   lastFrameTime = now;
   if (fpsEl) fpsEl.textContent = fps;
   
-  // Markers count
+  // Markers count - vérifier que markersLayer existe
   let markerCount = 0;
-  if (markersLayer && markersLayer._layers) {
+  if (typeof markersLayer !== 'undefined' && markersLayer && markersLayer._layers) {
     markerCount = Object.keys(markersLayer._layers).length;
   }
-  if (markersEl) markersEl.textContent = markerCount;
+  if (markersEl) markersEl.textContent = markerCount > 0 ? markerCount : '--';
   
   // Zoom
   if (zoomEl) zoomEl.textContent = mapFull.getZoom();
@@ -3588,39 +3588,43 @@ function showPreview(itin) {
 // NEW: applique le style "sélectionné = rouge" sur la carte
 function updateSelectionStyles(){
   const selIds = new Set(selectedItineraries.map(i => i.itin_id));
-  itinLayers.forEach(({ polyline, cityMarkers = [], mainMarker, starInfo }, id) => {
-    const isSel = selIds.has(id);
-    // Couleur par défaut si starInfo absent
-    const defaultColor = starInfo ? starInfo.color : '#94a3b8';
-    const defaultRadius = starInfo ? starInfo.radius : 8;
+  
+  // Boucle uniquement sur les itinéraires sélectionnés pour minimiser les mises à jour
+  selectedItineraries.forEach(selItin => {
+    const id = selItin.itin_id;
+    const layer = itinLayers.get(id);
+    if (!layer) return;
     
+    const { polyline, cityMarkers = [], mainMarker, starInfo } = layer;
+    
+    // Styles pour sélectionné
     if (polyline) {
       polyline.setStyle({
-        color:  isSel ? '#e11d48' : '#00bfff',
-        weight: isSel ? 4 : 3,
-        opacity:isSel ? 0.95 : 0
+        color: '#e11d48',
+        weight: 4,
+        opacity: 0.95
       });
     }
+    
     (cityMarkers || []).forEach(cm => {
       if (!cm) return;
       cm.setStyle({
-        color:'#fff',
-        fillColor: isSel ? '#e11d48' : '#ffd166',
-        weight:1,
-        opacity:    isSel ? 1    : 0,
-        fillOpacity:isSel ? 0.95 : 0
+        color: '#fff',
+        fillColor: '#e11d48',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.95
       });
     });
-    // Gérer les marqueurs : étoile ou cercle
+    
     if (mainMarker) {
+      const defaultColor = starInfo ? starInfo.color : '#94a3b8';
       if (starInfo && starInfo.isStar) {
-        // Pour les étoiles, changer l'icône
-        mainMarker.setIcon(createStarIcon(isSel ? '#e11d48' : defaultColor, isSel ? 28 : 24, isSel));
+        mainMarker.setIcon(createStarIcon('#e11d48', 28, true));
       } else if (mainMarker.setStyle) {
-        // Pour les cercles, utiliser setStyle
         mainMarker.setStyle({ 
-          fillColor: isSel ? '#e11d48' : defaultColor,
-          radius: isSel ? defaultRadius + 4 : defaultRadius  // Grossit si sélectionné
+          fillColor: '#e11d48',
+          radius: (starInfo?.radius || 8) + 4
         });
       }
     }
