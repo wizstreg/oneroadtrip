@@ -3564,21 +3564,30 @@ function selectItinerary(itin) {
   updateSelectionPanel();
   updateSelectionStyles();
   
-  // CRITICAL: Fermer la modale mobile après sélection
+  // Fermer la modale mobile IMMÉDIATEMENT
   const mobileModal = document.getElementById('mobileSelectionModal');
-  if (mobileModal && mobileModal.classList.contains('show')) {
+  if (mobileModal) {
     mobileModal.classList.remove('show');
-    const actionBar = document.getElementById('mobileActionBar');
-    if (actionBar) actionBar.style.display = 'flex';
   }
   
-  // Ne pas cacher la preview - garder visible pour confirmer le choix
-  previewPinned = true;
-  const p = document.getElementById('itinPreview');
-  if (p) {
-    p.style.display = 'block';
-    p.style.visibility = 'visible';
-    p.style.opacity = '1';
+  // Sur MOBILE: ne pas afficher la preview (elle bloque tout)
+  // Sur DESKTOP: afficher la preview pour confirmer
+  if (window.innerWidth <= 1024) {
+    // Mobile: juste montrer la barre d'action en bas
+    const actionBar = document.getElementById('mobileActionBar');
+    if (actionBar) actionBar.style.display = 'flex';
+    previewPinned = false;
+    const p = document.getElementById('itinPreview');
+    if (p) p.style.display = 'none';
+  } else {
+    // Desktop: afficher la preview pour confirmer le choix
+    previewPinned = true;
+    const p = document.getElementById('itinPreview');
+    if (p) {
+      p.style.display = 'block';
+      p.style.visibility = 'visible';
+      p.style.opacity = '1';
+    }
   }
 }
 
