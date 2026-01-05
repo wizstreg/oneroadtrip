@@ -1081,19 +1081,6 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 
 </main>
 
-<!-- DEBUG PANEL -->
-<div id="debugPanel" style="position:fixed;bottom:20px;right:20px;background:rgba(0,0,0,0.9);color:#0f0;padding:12px;border-radius:8px;font-family:monospace;font-size:11px;z-index:99999;max-width:280px;border:2px solid #0f0;line-height:1.5;">
-  <strong style="display:block;margin-bottom:8px;">⚙️ DEBUG</strong>
-  <div>Leaflet: <span id="debugLeaflet">--</span></div>
-  <div>MapFull: <span id="debugMapFull">--</span></div>
-  <div>FPS: <span id="debugFPS">--</span></div>
-  <div>Markers: <span id="debugMarkers">--</span></div>
-  <div>Zoom: <span id="debugZoom">--</span></div>
-  <div>Coords: <span id="debugCoords">--</span></div>
-  <div>Event: <span id="debugEvent">--</span></div>
-  <div>Memory: <span id="debugMemory">--</span></div>
-</div>
-
 <footer id="footer-legal"></footer>
 
 
@@ -2184,13 +2171,13 @@ async function ensureFirebase(){
 
 /* === SYSTÈME DE COULEURS PAR RATING === */
 function ratingToStars(rating) {
-  // Nouveaux seuils: 8.8/7.6/6.1/3.1 + TOUTES les étoiles agrandies
-  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 18, isStar: true };  // Étoile bleue ★★★★★
-  if (rating >= 7.6) return { stars: 4, color: '#0D47A1', textColor: '#fff', radius: 16, isStar: true }; // Étoile bleu foncé ★★★★
-  if (rating >= 6.1) return { stars: 3, color: '#43A047', textColor: '#fff', radius: 14, isStar: false }; // Vert ★★★
-  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: 12, isStar: false }; // Gris-bleu ★★
-  if (rating >= 0.1) return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: 10, isStar: false }; // Gris clair ★
-  return { stars: 0, color: '#CFD8DC', textColor: '#fff', radius: 10, isStar: false }; // Gris très clair (taille min)
+  // Nouveaux seuils avec 4 catégories conformes à la légende
+  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 18, isStar: true };  // Incontournable ★★★★★
+  if (rating >= 7.6) return { stars: 4, color: '#1565C0', textColor: '#fff', radius: 16, isStar: true }; // Incontournable ★★★★
+  if (rating >= 6.1) return { stars: 3, color: '#43A047', textColor: '#fff', radius: 14, isStar: false }; // Recommandé ★★★
+  if (rating >= 3.1) return { stars: 2, color: '#7CB342', textColor: '#fff', radius: 12, isStar: false }; // À découvrir ★★
+  if (rating >= 0.1) return { stars: 1, color: '#78909C', textColor: '#fff', radius: 10, isStar: false }; // Standard ★
+  return { stars: 0, color: '#78909C', textColor: '#fff', radius: 10, isStar: false }; // Standard (pas de rating)
 }
 
 // Fonction pour créer une icône étoile
@@ -2231,6 +2218,13 @@ let previewLatLng = null;           // [lat,lng] du point d’ancrage courant
 // --- NEW: fermer le preview et tout désurligner ---
 window.closeItinPreview = function () {
   previewPinned = false;
+  
+  // Fermer les modales mobiles si ouvertes
+  const mobileModal = document.getElementById('mobileSelectionModal');
+  if (mobileModal) {
+    mobileModal.classList.remove('show');
+  }
+  
   const preview = document.getElementById('itinPreview');
   
   if (preview) {
@@ -2266,7 +2260,7 @@ window.closeItinPreview = function () {
     mobileBar.style.display = 'none';
   }
   
-  updateSelectionStyles();
+  updateSelectionStyles(); // NEW : réapplique le rouge sur les sélectionnés (throttled via appel direct)
 };
 
 // Fonction pour réinitialiser l'état de la preview proprement
@@ -2860,73 +2854,6 @@ async function detectUserCountryAndCenter() {
   }
 }
 
-// ===== MONITORING / DEBUG =====
-let lastFrameTime = performance.now();
-let fps = 0;
-let lastEvent = '--';
-let lastEventTime = 0;
-
-function updateDebugPanel() {
-  const leafletEl = document.getElementById('debugLeaflet');
-  const mapfullEl = document.getElementById('debugMapFull');
-  const fpsEl = document.getElementById('debugFPS');
-  const markersEl = document.getElementById('debugMarkers');
-  const zoomEl = document.getElementById('debugZoom');
-  const coordsEl = document.getElementById('debugCoords');
-  const memoryEl = document.getElementById('debugMemory');
-  const eventEl = document.getElementById('debugEvent');
-  
-  // Status Leaflet
-  if (leafletEl) leafletEl.textContent = typeof L !== 'undefined' ? '✓' : '✗';
-  if (mapfullEl) mapfullEl.textContent = mapFull ? '✓' : '✗';
-  
-  if (!mapFull) {
-    requestAnimationFrame(updateDebugPanel);
-    return;
-  }
-  
-  // FPS
-  const now = performance.now();
-  const deltaTime = now - lastFrameTime;
-  fps = deltaTime > 0 ? Math.round(1000 / deltaTime) : 60;
-  lastFrameTime = now;
-  if (fpsEl) fpsEl.textContent = fps;
-  
-  // Markers count - vérifier que markersLayer existe
-  let markerCount = 0;
-  if (typeof markersLayer !== 'undefined' && markersLayer && markersLayer._layers) {
-    markerCount = Object.keys(markersLayer._layers).length;
-  }
-  if (markersEl) markersEl.textContent = markerCount > 0 ? markerCount : '--';
-  
-  // Zoom
-  if (zoomEl) zoomEl.textContent = mapFull.getZoom();
-  
-  // Coordinates
-  const center = mapFull.getCenter();
-  if (coordsEl) coordsEl.textContent = `${center.lat.toFixed(2)}, ${center.lng.toFixed(2)}`;
-  
-  // Memory
-  if (performance.memory && memoryEl) {
-    const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(1);
-    memoryEl.textContent = `${mb}MB`;
-  }
-  
-  // Event
-  const nowMs = Date.now();
-  if (nowMs - lastEventTime > 1500) {
-    lastEvent = '--';
-  }
-  if (eventEl) eventEl.textContent = lastEvent;
-  
-  requestAnimationFrame(updateDebugPanel);
-}
-
-// Démarrer le monitoring dès le chargement
-window.addEventListener('load', () => {
-  setTimeout(() => updateDebugPanel(), 100);
-});
-
 function initMapFull() {
   console.log('[MAP] initMapFull() START');
   console.log('[MAP] L defined:', typeof L !== 'undefined');
@@ -2989,25 +2916,20 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
   // --- NEW: gestion du zoom pour affichage progressif des markers
   mapFull.on('zoomend', () => {
     console.log('[MAP] ZOOMEND:', mapFull.getZoom());
-    lastEvent = 'ZOOMED';
-    lastEventTime = Date.now();
     throttledUpdateMarkersVisibility();
   });
   
   // Track map movement
   mapFull.on('movestart', () => {
-    lastEvent = 'MOVING';
-    lastEventTime = Date.now();
+    // Move start event
   });
   
   mapFull.on('moveend', () => {
-    lastEvent = 'MOVED';
-    lastEventTime = Date.now();
+    // Move end event
   });
   
   mapFull.on('zoomstart', () => {
-    lastEvent = 'ZOOMING';
-    lastEventTime = Date.now();
+    // Zoom start event
   });
 }
 
@@ -3421,17 +3343,44 @@ function showMobileSelectionModal(itin) {
     selectItinerary(itin);
     modal.classList.remove('show');
     if (actionBar) actionBar.style.display = 'flex';
+    
+    // Fermer la preview après un court délai (laisse le temps de voir la confirmation)
+    setTimeout(() => {
+      const preview = document.getElementById('itinPreview');
+      if (preview && window.innerWidth <= 1024) {
+        preview.style.transition = 'all 0.3s ease-in';
+        preview.style.opacity = '0';
+        preview.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+          preview.style.display = 'none';
+          preview.style.transition = '';
+          preview.style.transform = '';
+        }, 300);
+      }
+    }, 600);
   };
   
   document.getElementById('mobileModalCancel').onclick = () => {
     modal.classList.remove('show');
     if (actionBar) actionBar.style.display = 'flex';
+    
+    // Fermer la preview aussi quand on annule en mode responsive
+    const preview = document.getElementById('itinPreview');
+    if (preview && window.innerWidth <= 1024) {
+      preview.style.display = 'none';
+    }
   };
   
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
       if (actionBar) actionBar.style.display = 'flex';
+      
+      // Fermer la preview aussi quand on clique dehors en mode responsive
+      const preview = document.getElementById('itinPreview');
+      if (preview && window.innerWidth <= 1024) {
+        preview.style.display = 'none';
+      }
     }
   };
 }
@@ -3711,6 +3660,14 @@ function selectItinerary(itin) {
   updateSelectionPanel();
   updateSelectionStyles();
   
+  // CRITICAL: Fermer la modale mobile après sélection
+  const mobileModal = document.getElementById('mobileSelectionModal');
+  if (mobileModal && mobileModal.classList.contains('show')) {
+    mobileModal.classList.remove('show');
+    const actionBar = document.getElementById('mobileActionBar');
+    if (actionBar) actionBar.style.display = 'flex';
+  }
+  
   // Ne pas cacher la preview - garder visible pour confirmer le choix
   previewPinned = true;
   const p = document.getElementById('itinPreview');
@@ -3726,6 +3683,12 @@ window.removeFromSelection = function(itinId) {
   selectedItineraries = selectedItineraries.filter(i => i.itin_id !== itinId);
   updateSelectionPanel();
   updateSelectionStyles();
+  
+  // Fermer la modale mobile si elle est ouverte
+  const mobileModal = document.getElementById('mobileSelectionModal');
+  if (mobileModal) {
+    mobileModal.classList.remove('show');
+  }
   
   // Réinitialiser l'état de la preview pour permettre de nouveaux survols
   previewPinned = false;
