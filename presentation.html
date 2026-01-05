@@ -2474,7 +2474,8 @@ async function loadAllItineraries() {
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      await loadPlacesRatings(countryCode);
+      // Charger les ratings EN PARALLÈLE sans attendre
+      loadPlacesRatings(countryCode);
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2541,9 +2542,21 @@ async function loadAllItineraries() {
       }
     }
     
-    // ÉTAPE 2: Charger les autres pays en arrière-plan
-    const otherResults = await Promise.all(otherCountries.map(loadCountry));
-    const otherItins = otherResults.flat().filter(itin => itin.__id);
+    // ÉTAPE 2: Charger les autres pays PAR BATCH (5 à la fois max)
+    const batchSize = 5;
+    const otherItins = [];
+    
+    for (let i = 0; i < otherCountries.length; i += batchSize) {
+      const batch = otherCountries.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(loadCountry));
+      const batchItins = batchResults.flat().filter(itin => itin.__id);
+      otherItins.push(...batchItins);
+      
+      // Pause 100ms entre les batches pour laisser respirer le navigateur
+      if (i + batchSize < otherCountries.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
     
     // Fusionner et réafficher
     allItineraries = [...allItineraries, ...otherItins];
