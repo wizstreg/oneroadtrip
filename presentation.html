@@ -190,9 +190,9 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 .legend-star{flex-shrink:0}
 .legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,0.3)}
 .legend-dot.incontournable{background:#1565C0}
-.legend-dot.recommande{background:#43A047}
-.legend-dot.decouvrir{background:#7CB342}
-.legend-dot.standard{background:#78909C}
+.legend-dot.recommande{background:#10B981}
+.legend-dot.decouvrir{background:#F59E0B}
+.legend-dot.standard{background:#EF4444}
 .legend-dot.selected{background:#e11d48}
 .map-legend-label{color:#333;font-size:11px}
 
@@ -916,16 +916,23 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
         
         <!-- Modale de sélection mobile uniquement -->
         <div id="mobileSelectionModal" class="mobile-selection-modal">
-          <div class="mobile-selection-content" style="background:#fff;border-radius:12px;max-width:95vw;width:400px;max-height:85vh;overflow:hidden;">
-            <div class="mobile-selection-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#113f7a;border-radius:12px 12px 0 0;">
-              <button id="mobileModalSelect" style="background:#10b981;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;">Sélectionner</button>
-              <h3 id="mobileModalTitle" style="flex:1;text-align:center;color:#fff;margin:0 10px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></h3>
-              <button id="mobileModalCancel" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+          <div class="mobile-selection-content" style="background:#fff;border-radius:12px;max-width:95vw;width:100%;max-width:500px;max-height:90vh;display:flex;flex-direction:column;">
+            <!-- HEADER -->
+            <div style="padding:16px;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+              <h3 id="mobileModalTitle" style="margin:0;font-size:18px;color:#113f7a;font-weight:700;word-break:break-word;"></h3>
             </div>
-            <div class="mobile-selection-body" style="padding:16px;max-height:calc(85vh - 60px);overflow-y:auto;">
-              <div id="mobileModalInfo" style="margin-bottom:12px;"></div>
-              <div id="mobileModalPhotos" style="margin:12px 0;"></div>
-              <div id="mobileModalSteps" style="margin-top:16px;font-size:14px;border-top:1px solid #e5e7eb;padding-top:12px;"></div>
+            
+            <!-- BODY -->
+            <div style="padding:16px;overflow-y:auto;flex:1;min-height:80px;">
+              <div id="mobileModalInfo" style="margin-bottom:12px;font-size:14px;color:#666;"></div>
+              <div id="mobileModalPhotos"></div>
+              <div id="mobileModalSteps"></div>
+            </div>
+            
+            <!-- FOOTER - 2 BOUTONS GRANDS ET CLIQUABLES -->
+            <div style="display:flex;gap:12px;padding:16px;border-top:1px solid #e5e7eb;flex-shrink:0;background:#f9fafb;">
+              <button id="mobileModalCancel" style="flex:1;padding:12px 16px;background:#e5e7eb;color:#113f7a;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Annuler</button>
+              <button id="mobileModalSelect" style="flex:1;padding:12px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Ajouter</button>
             </div>
           </div>
         </div>
@@ -2171,13 +2178,13 @@ async function ensureFirebase(){
 
 /* === SYSTÈME DE COULEURS PAR RATING === */
 function ratingToStars(rating) {
-  // Nouveaux seuils avec 4 catégories conformes à la légende
-  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 18, isStar: true };  // Incontournable ★★★★★
-  if (rating >= 7.6) return { stars: 4, color: '#1565C0', textColor: '#fff', radius: 16, isStar: true }; // Incontournable ★★★★
-  if (rating >= 6.1) return { stars: 3, color: '#43A047', textColor: '#fff', radius: 14, isStar: false }; // Recommandé ★★★
-  if (rating >= 3.1) return { stars: 2, color: '#7CB342', textColor: '#fff', radius: 12, isStar: false }; // À découvrir ★★
-  if (rating >= 0.1) return { stars: 1, color: '#78909C', textColor: '#fff', radius: 10, isStar: false }; // Standard ★
-  return { stars: 0, color: '#78909C', textColor: '#fff', radius: 10, isStar: false }; // Standard (pas de rating)
+  // Tailles réduites - les cercles doivent être PETITS sur desktop
+  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 18, isStar: true };  // Incontournable ★★★★★ (étoile)
+  if (rating >= 7.6) return { stars: 4, color: '#1565C0', textColor: '#fff', radius: 16, isStar: true }; // Incontournable ★★★★ (étoile)
+  if (rating >= 6.1) return { stars: 3, color: '#10B981', textColor: '#fff', radius: 8, isStar: false }; // Recommandé (Vert vif) - RÉDUIT
+  if (rating >= 3.1) return { stars: 2, color: '#F59E0B', textColor: '#fff', radius: 7, isStar: false }; // À découvrir (Orange) - RÉDUIT
+  if (rating >= 0.1) return { stars: 1, color: '#EF4444', textColor: '#fff', radius: 6, isStar: false }; // Standard (Rouge) - RÉDUIT
+  return { stars: 0, color: '#9CA3AF', textColor: '#fff', radius: 6, isStar: false }; // Aucun rating (Gris) - RÉDUIT
 }
 
 // Fonction pour créer une icône étoile
@@ -2424,6 +2431,8 @@ async function loadPlacesPhotosIndex() {
 
 async function loadAllItineraries() {
   try {
+    console.log('[LOAD] loadAllItineraries START');
+    
     // Charger l'index des pays
     const indexPaths = [
       'data/Roadtripsprefabriques/countries/countries.index.json',
@@ -2433,21 +2442,25 @@ async function loadAllItineraries() {
     let countryList = [];
     for (const path of indexPaths) {
       try {
+        console.log('[LOAD] Trying index:', path);
         const idxRes = await fetch(path);
         if (idxRes.ok) {
           const idxJson = await idxRes.json();
           countryList = Array.isArray(idxJson) ? idxJson : (idxJson.countries || []);
+          console.log('[LOAD] Index loaded:', countryList.length, 'countries');
           break;
         }
       } catch (err) {
+        console.log('[LOAD] Index failed:', path, err.message);
       }
     }
     
     if (countryList.length === 0) {
+      console.log('[LOAD] Using fallback COUNTRY_CODES_TO_TRY');
       countryList = COUNTRY_CODES_TO_TRY.map(cc => ({ cc: cc }));
     }
     
-    // Détecter le pays de l'utilisateur
+    // Détecter le pays de l'utilisateur (pour logs/future use)
     let userCountry = null;
     try {
       const ipRes = await fetch('https://ipapi.co/json/');
@@ -2457,10 +2470,8 @@ async function loadAllItineraries() {
       }
     } catch (e) { /* ignore */ }
     
-    // Séparer pays user et autres pays
+    // Utilitaire pour extraire le code pays
     const getCC = c => String(c.cc || c.code || c.id || c).toUpperCase();
-    const userCountryList = userCountry ? countryList.filter(c => getCC(c) === userCountry) : [];
-    const otherCountries = userCountry ? countryList.filter(c => getCC(c) !== userCountry) : countryList;
     
     // Fonction pour charger un pays
     async function loadCountry(countryObj) {
@@ -2505,7 +2516,7 @@ async function loadAllItineraries() {
           if (response.ok) {
             const data = await response.json();
             const countryName = COUNTRY_NAMES[countryCode]?.[lang] || countryCode;
-            return (data.itineraries || []).map(itin => ({
+            const itins = (data.itineraries || []).map(itin => ({
               ...itin,
               __id: itin.itin_id || itin.id || itin.slug || '',
               country: countryCode,
@@ -2519,45 +2530,52 @@ async function loadAllItineraries() {
               photos: getItinPhotos({ ...itin, country: countryCode, countryName }),
               avgRating: computeAvgRating(itin) || 5
             }));
+            console.log('[LOAD] Loaded', countryCode, ':', itins.length, 'itins from', path);
+            return itins;
           }
         } catch (err) { /* continue */ }
       }
+      console.log('[LOAD] Failed to load', countryCode);
       return [];
     }
     
-    // ÉTAPE 1: Charger le pays de l'utilisateur EN PREMIER
-    if (userCountryList.length > 0) {
-      const userResults = await Promise.all(userCountryList.map(loadCountry));
-      const userItins = userResults.flat().filter(itin => itin.__id);
-      if (userItins.length > 0) {
-        allItineraries = userItins;
+    // Charger TOUS les pays en parallèle par batches
+    const batchSize = 5;
+    allItineraries = [];
+    
+    console.log('[LOAD] countryList.length:', countryList.length);
+    
+    if (countryList.length === 0) {
+      console.log('[LOAD] ERROR: countryList is empty!');
+      return;
+    }
+    
+    for (let i = 0; i < countryList.length; i += batchSize) {
+      const batch = countryList.slice(i, i + batchSize);
+      console.log('[LOAD] Batch', Math.floor(i/batchSize) + 1, ':', batch.map(c => getCC(c)).join(', '));
+      
+      const batchResults = await Promise.all(batch.map(loadCountry));
+      const batchItins = batchResults.flat().filter(itin => itin.__id);
+      allItineraries.push(...batchItins);
+      
+      console.log('[LOAD] Batch loaded:', batchItins.length, 'itins. Total:', allItineraries.length);
+      
+      // Afficher progressivement
+      if (batchItins.length > 0) {
         populateFilters();
         displayMarkers(allItineraries);
       }
-    }
-    
-    // ÉTAPE 2: Charger les autres pays PAR BATCH (5 à la fois max)
-    const batchSize = 5;
-    const otherItins = [];
-    
-    for (let i = 0; i < otherCountries.length; i += batchSize) {
-      const batch = otherCountries.slice(i, i + batchSize);
-      const batchResults = await Promise.all(batch.map(loadCountry));
-      const batchItins = batchResults.flat().filter(itin => itin.__id);
-      otherItins.push(...batchItins);
       
-      // Pause 100ms entre les batches pour laisser respirer le navigateur
-      if (i + batchSize < otherCountries.length) {
+      // Pause 100ms entre batches
+      if (i + batchSize < countryList.length) {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
     }
     
-    // Fusionner et réafficher
-    allItineraries = [...allItineraries, ...otherItins];
-    populateFilters();
-    displayMarkers(allItineraries);
+    console.log('[LOAD] DONE. Total itins:', allItineraries.length);
     
   } catch (error) {
+    console.error('[LOAD] ERROR in loadAllItineraries:', error);
   }
 }
 
@@ -3112,18 +3130,23 @@ polyline.on('click', () => {
         icon: createStarIcon(starInfo.color, window.innerWidth <= 1024 ? 64 : 52)
       });
     } else {
-      // Cercle pour les autres
-      // Sur mobile/tablette : doubler le radius pour être cliquable
-      const isMobile = window.innerWidth <= 1024;
-      const radius = isMobile ? starInfo.radius * 2 : starInfo.radius;
+      // Cercle pour les autres - couleurs distinctives sans texte
+      const radius = starInfo.radius;  // Taille normale, pas doublée!
       
-      marker = L.circleMarker([itin.lat, itin.lng], {
-        radius: radius,
-        fillColor: starInfo.color,
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8
+      // Créer un cercle SVG simple avec couleur nette et bordure blanche épaisse
+      const divHTML = `
+        <svg width="${radius*2}" height="${radius*2}" viewBox="0 0 ${radius*2} ${radius*2}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+          <circle cx="${radius}" cy="${radius}" r="${radius-1.5}" fill="${starInfo.color}" stroke="#fff" stroke-width="2.5"/>
+        </svg>
+      `;
+      
+      marker = L.marker([itin.lat, itin.lng], {
+        icon: L.divIcon({
+          html: divHTML,
+          className: 'circle-marker-' + starInfo.stars,
+          iconSize: [radius*2, radius*2],
+          iconAnchor: [radius, radius]
+        })
       });
     }
     marker.starInfo = starInfo;
@@ -3159,7 +3182,9 @@ marker.on('mouseout', () => {
   }, 250);
 });
 
-marker.on('click', () => {
+marker.on('click', (e) => {
+  e.originalEvent?.stopPropagation?.();
+  
   if (polyline) polyline.setStyle({ opacity: 0.7 });
   cityMarkers.forEach(cm => cm.setStyle({ opacity: 1, fillOpacity: 0.9 }));
   previewPinned = true;
@@ -3234,155 +3259,34 @@ function showMobileConfirmModal(itin) {
 }
 
 function showMobileSelectionModal(itin) {
+  if (window.innerWidth > 1024) return; // Pas sur mobile
+  
   const modal = document.getElementById('mobileSelectionModal');
-  const actionBar = document.getElementById('mobileActionBar');
-  const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
-  const L = T[lang] || T.fr;
+  if (!modal) return;
   
-  // Titre
-  document.getElementById('mobileModalTitle').textContent = itin.title;
+  // Stocker l'itin actuel
+  window.setCurrentItinForModal?.(itin);
   
-  // Rating et étoiles
-  const avgRating = itin.avgRating || 5;
-  const starInfo = ratingToStars(avgRating);
-  const starsDisplay = '★'.repeat(starInfo.stars) + '☆'.repeat(5 - starInfo.stars);
+  // JUSTE le titre + infos basiques
+  const titleEl = document.getElementById('mobileModalTitle');
+  const infoEl = document.getElementById('mobileModalInfo');
   
-  // Infos synthétiques
-  const T_DAYS = { fr: 'jours', en: 'days', es: 'días', it: 'giorni', pt: 'dias', ar: 'أيام' };
-  const T_STOPS = { fr: 'étapes', en: 'stops', es: 'etapas', it: 'tappe', pt: 'etapas', ar: 'محطات' };
-  document.getElementById('mobileModalInfo').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span><strong>${itin.days}</strong> ${T_DAYS[lang] || 'jours'} • <strong>${itin.stops || 0}</strong> ${T_STOPS[lang] || 'étapes'} • <strong>${itin.totalDistance || 0}</strong> km</span>
-      <span style="color:${starInfo.color};font-size:18px;">${starsDisplay}</span>
+  if (titleEl) titleEl.textContent = itin.title;
+  if (infoEl) infoEl.innerHTML = `
+    <div style="font-size:14px;color:#666;margin-top:8px;">
+      <strong>${itin.days}</strong> jours • <strong>${itin.stops || 0}</strong> étapes • <strong>${itin.totalDistance}</strong> km<br/>
+      <small>${itin.countryName || ''}</small>
     </div>
   `;
   
-  // Photo unique
-  const photoList = [];
-  const seen = new Set();
-  try {
-    if (placesPhotosIndex && typeof placesPhotosIndex === 'object') {
-      const placeKeys = getPlaceKeysFromItin(itin) || [];
-      for (const k of placeKeys) {
-        const arr = placesPhotosIndex[k]?.photos;
-        if (Array.isArray(arr) && arr[0] && !seen.has(arr[0])) {
-          seen.add(arr[0]);
-          photoList.push(arr[0]);
-          break;
-        }
-      }
-    }
-  } catch (err) { }
+  // Vider les autres sections
+  const photosEl = document.getElementById('mobileModalPhotos');
+  const stepsEl = document.getElementById('mobileModalSteps');
+  if (photosEl) photosEl.innerHTML = '';
+  if (stepsEl) stepsEl.innerHTML = '';
   
-  if (photoList.length < 1 && Array.isArray(itin.photos) && itin.photos[0]) {
-    photoList.push(itin.photos[0]);
-  }
-  
-  // Afficher photos seulement sur desktop (>768px)
-  if (photoList.length > 0 && window.innerWidth > 768) {
-    const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(photoList[0])}&w=400&h=180&fit=cover&output=webp`;
-    document.getElementById('mobileModalPhotos').innerHTML = `<img src="${proxyUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy">`;
-  } else {
-    document.getElementById('mobileModalPhotos').innerHTML = '';
-  }
-  
-  // Étapes du parcours
-  let stepsHtml = '';
-  const T_ROUTE = { fr: 'Parcours', en: 'Route', es: 'Ruta', it: 'Percorso', pt: 'Rota', ar: 'المسار' };
-  
-  if (Array.isArray(itin.days_plan) && itin.days_plan.length > 0) {
-    const cities = [];
-    itin.days_plan.forEach(day => {
-      let cityName = day?.night?.city; // Chercher d'abord city (au cas où)
-      
-      // Si pas de city, parser le place_id: "AE::abu-dhabi-centre" → "Abu Dhabi"
-      if (!cityName && day?.night?.place_id) {
-        const parts = day.night.place_id.split('::');
-        if (parts[1]) {
-          let slug = parts[1];
-          slug = slug.replace(/-(centre|airport|aéroport|nord|sud|est|ouest|ville|city|downtown|port|gare)$/i, '');
-          cityName = slug
-            .split('-')
-            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-            .join(' ');
-        }
-      }
-      
-      if (cityName && !cities.includes(cityName)) {
-        cities.push(cityName);
-      }
-    });
-    
-    if (cities.length > 0) {
-      stepsHtml = `<strong>${T_ROUTE[lang] || 'Parcours'}</strong><br>`;
-      stepsHtml += `<div style="margin-top:8px;line-height:1.8;">`;
-      stepsHtml += cities.map((city, i) => {
-        const isLast = i === cities.length - 1;
-        return `<span style="display:inline-block;padding:4px 10px;background:#f3f4f6;border-radius:12px;margin:2px 4px 2px 0;font-size:13px;">${city}</span>${isLast ? '' : '→'}`;
-      }).join(' ');
-      stepsHtml += `</div>`;
-    }
-  } else if (Array.isArray(itin.cities) && itin.cities.length > 0) {
-    stepsHtml = `<strong>${T_ROUTE[lang] || 'Parcours'}</strong><br>`;
-    stepsHtml += `<div style="margin-top:8px;line-height:1.8;">`;
-    stepsHtml += itin.cities.map((city, i) => {
-      const isLast = i === itin.cities.length - 1;
-      return `<span style="display:inline-block;padding:4px 10px;background:#f3f4f6;border-radius:12px;margin:2px 4px 2px 0;font-size:13px;">${city}</span>${isLast ? '' : '→'}`;
-    }).join(' ');
-    stepsHtml += `</div>`;
-  }
-  
-  document.getElementById('mobileModalSteps').innerHTML = stepsHtml;
-  
-  // Afficher la modale et masquer la barre d'action
+  // Afficher la modale
   modal.classList.add('show');
-  if (actionBar) actionBar.style.display = 'none';
-  
-  // Handlers
-  document.getElementById('mobileModalSelect').onclick = () => {
-    selectItinerary(itin);
-    modal.classList.remove('show');
-    if (actionBar) actionBar.style.display = 'flex';
-    
-    // Fermer la preview après un court délai (laisse le temps de voir la confirmation)
-    setTimeout(() => {
-      const preview = document.getElementById('itinPreview');
-      if (preview && window.innerWidth <= 1024) {
-        preview.style.transition = 'all 0.3s ease-in';
-        preview.style.opacity = '0';
-        preview.style.transform = 'translateY(100%)';
-        setTimeout(() => {
-          preview.style.display = 'none';
-          preview.style.transition = '';
-          preview.style.transform = '';
-        }, 300);
-      }
-    }, 600);
-  };
-  
-  document.getElementById('mobileModalCancel').onclick = () => {
-    modal.classList.remove('show');
-    if (actionBar) actionBar.style.display = 'flex';
-    
-    // Fermer la preview aussi quand on annule en mode responsive
-    const preview = document.getElementById('itinPreview');
-    if (preview && window.innerWidth <= 1024) {
-      preview.style.display = 'none';
-    }
-  };
-  
-  modal.onclick = (e) => {
-    if (e.target === modal) {
-      modal.classList.remove('show');
-      if (actionBar) actionBar.style.display = 'flex';
-      
-      // Fermer la preview aussi quand on clique dehors en mode responsive
-      const preview = document.getElementById('itinPreview');
-      if (preview && window.innerWidth <= 1024) {
-        preview.style.display = 'none';
-      }
-    }
-  };
 }
 
 
@@ -4758,6 +4662,43 @@ document.addEventListener('DOMContentLoaded', () => {
   initGridCards();
   initLoopModeToggle();
   updateRouteBuilderTranslations();
+  
+  // NEW: initialiser les handlers de modale mobile UNE SEULE FOIS
+  const modal = document.getElementById('mobileSelectionModal');
+  const selectBtn = document.getElementById('mobileModalSelect');
+  const cancelBtn = document.getElementById('mobileModalCancel');
+  
+  let currentItin = null;
+  
+  if (selectBtn) {
+    selectBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!currentItin) return;
+      selectItinerary(currentItin);
+      modal.classList.remove('show');
+      currentItin = null;
+    });
+  }
+  
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      modal.classList.remove('show');
+      currentItin = null;
+    });
+  }
+  
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('show');
+        currentItin = null;
+      }
+    });
+  }
+  
+  // Exposer pour la modale
+  window.setCurrentItinForModal = (itin) => { currentItin = itin; };
 });
 
 // Re-traduire quand la langue change
