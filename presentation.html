@@ -1,20 +1,26 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<!-- Google tag (gtag.js) - Deferred to avoid cookie conflicts with ort-footer -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  
-  // Récupérer la langue de l'utilisateur
-  const userLang = localStorage.getItem('lang') || 'fr';
-  
-  gtag('config', 'G-JK3QGQGDDL', {
-    'user_properties': {
-      'language': userLang
-    }
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL';
+      document.head.appendChild(script);
+      
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){window.dataLayer.push(arguments);};
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-JK3QGQGDDL', {
+        'allow_ad_personalization_signals': false,
+        'allow_google_signals': false,
+        'user_properties': {
+          'language': localStorage.getItem('lang') || 'fr'
+        }
+      });
+    }, 2000);
   });
 </script>
 
@@ -62,12 +68,20 @@
   <link rel="preconnect" href="https://oneroadtrip-prod.firebaseapp.com" crossorigin>
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="b.basemaps.cartocdn.com" crossorigin>
+  <link rel="preconnect" href="c.basemaps.cartocdn.com" crossorigin>
   <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+  <!-- Preload critical Leaflet assets -->
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" as="script">
+  <link rel="preload" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" as="style">
   <!-- Favicon inline pour éviter /favicon.ico 404 -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <style>
     :root{ --bg:#f6f9fb; --ink:#113f7a; --acc:#113f7a; --card:#ffffff; --bd:#c3d6b6; --mut:#64748b; --warn:#eab308; }
     *{box-sizing:border-box}
@@ -143,10 +157,6 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 .budget-modal label{color:#113f7a}
 .budget-modal .filter-input,.budget-modal .filter-select{border:1px solid #113f7a;background:#fff;color:#113f7a}
 .budget-modal .filter-input:focus,.budget-modal .filter-select:focus{outline:2px solid #113f7a;outline-offset:2px}
-.budget-chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
-.budget-chip{padding:10px 16px;border:2px solid #113f7a;border-radius:999px;background:#fff;color:#113f7a;cursor:pointer;font-weight:600;font-size:14px;transition:all .2s}
-.budget-chip:hover{border-color:#113f7a;background:#d0e8f7}
-.budget-chip.selected{background:#113f7a;color:#fff;border-color:#113f7a}
 .budget-modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
 .budget-modal-btn{padding:12px 24px;border-radius:8px;border:0;cursor:pointer;font-weight:700;font-size:15px;transition:all .2s}
 .budget-modal-btn.primary{background:#113f7a;color:#fff}
@@ -219,7 +229,7 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     .map-fullscreen{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:20px}
     .map-fullscreen.active{display:flex}
     .map-fullscreen-content{background:#fff;border-radius:14px;width:100%;max-width:1600px;height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-    .map-fullscreen-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:2px solid var(--acc);background:var(--card)}
+    .map-fullscreen-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:2px solid var(--acc);background:var(--card);position:sticky;top:0;z-index:998;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
     .map-fullscreen-header h2{margin:0;color:var(--acc);font-size:20px}
     
     /* Compteur itinéraires visibles */
@@ -297,7 +307,7 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
   
   /* Barre d'action mobile TOUJOURS visible en bas */
   .mobile-action-bar {
-    display:flex !important;
+    display:none !important;
     position:fixed !important;
     bottom:0 !important;
     left:0 !important;
@@ -305,9 +315,9 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     background:#fff !important;
     padding:10px 16px 12px 16px !important;
     box-shadow:0 -2px 10px rgba(0,0,0,0.2) !important;
-    z-index:1003 !important; /* SOUS la légende (1005) et l'aperçu (1004) */
+    z-index:1003 !important;
     border-top:2px solid var(--acc) !important;
-    height:70px !important; /* Hauteur fixe */
+    height:70px !important;
     pointer-events:auto !important;
   }
   
@@ -437,9 +447,20 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
   background:#0d2f5a;
 }
 
-/* Modale de sélection mobile - DÉSACTIVÉE */
+/* Modale de sélection mobile */
 .mobile-selection-modal{
   display:none !important;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:10000;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.mobile-selection-modal.show{
+  display:flex !important;
 }
 
 /* NEW: grille photo du preview */
@@ -742,10 +763,15 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
           <input type="text" id="inputStartCity" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid #3b82f6;border-radius:6px;font-size:14px;box-sizing:border-box;">
           <div id="startCitySuggestions" class="city-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;max-height:150px;overflow-y:auto;z-index:1000;"></div>
           <small id="warnStartCity" style="display:none;color:#fbbf24;font-size:11px;margin-top:2px;"></small>
+          <!-- Case à cocher Circuit - sur la même ligne -->
+          <div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+            <input type="checkbox" id="checkLoopMode" style="width:14px;height:14px;cursor:pointer;accent-color:#3b82f6;">
+            <label for="checkLoopMode" id="labelLoopMode" style="color:#94a3b8;font-size:11px;cursor:pointer;">🔄 Circuit (retour au départ)</label>
+          </div>
         </div>
         
         <!-- Ville d'arrivée -->
-        <div class="rb-field" style="position:relative;">
+        <div class="rb-field" id="endCityContainer" style="position:relative;">
           <label id="labelEndCity" style="display:block;color:#fff;font-size:12px;margin-bottom:4px;">Ville d'arrivée</label>
           <input type="text" id="inputEndCity" autocomplete="off" style="width:100%;padding:8px 10px;border:1px solid #3b82f6;border-radius:6px;font-size:14px;box-sizing:border-box;">
           <div id="endCitySuggestions" class="city-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;max-height:150px;overflow-y:auto;z-index:1000;"></div>
@@ -801,7 +827,7 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
         <button id="closeMapFull" class="map-fullscreen-close">✕ <span id="closeBtnText">Fermer</span></button>
       </div>
       <!-- Bandeau de sélection en haut -->
-      <div id="selectionBanner" style="display:none;position:relative;z-index:1000;background:linear-gradient(135deg,#113f7a,#1e5a9e);padding:12px 20px;border-bottom:2px solid rgba(255,255,255,0.2);">
+      <div id="selectionBanner" style="display:none;position:sticky;top:0;z-index:999;background:linear-gradient(135deg,#113f7a,#1e5a9e);padding:12px 20px;border-bottom:2px solid rgba(255,255,255,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div id="selectionBannerItems" style="display:flex;flex-wrap:wrap;gap:8px;flex:1;"></div>
           <button id="btnContinueSelection" onclick="validateAndContinue()" style="background:#10b981;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;">Continuer →</button>
@@ -1055,13 +1081,23 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 
 </main>
 
+<!-- DEBUG PANEL -->
+<div id="debugPanel" style="position:fixed;bottom:20px;right:20px;background:rgba(0,0,0,0.9);color:#0f0;padding:12px;border-radius:8px;font-family:monospace;font-size:11px;z-index:99999;max-width:280px;border:2px solid #0f0;line-height:1.5;">
+  <strong style="display:block;margin-bottom:8px;">⚙️ DEBUG</strong>
+  <div>Leaflet: <span id="debugLeaflet">--</span></div>
+  <div>MapFull: <span id="debugMapFull">--</span></div>
+  <div>FPS: <span id="debugFPS">--</span></div>
+  <div>Markers: <span id="debugMarkers">--</span></div>
+  <div>Zoom: <span id="debugZoom">--</span></div>
+  <div>Coords: <span id="debugCoords">--</span></div>
+  <div>Event: <span id="debugEvent">--</span></div>
+  <div>Memory: <span id="debugMemory">--</span></div>
+</div>
 
 <footer id="footer-legal"></footer>
 
 
 <!-- Firebase compat est chargé dynamiquement par ensureFirebase() (v10.12.2) -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
 /* ===== I18N TRANSLATIONS ===== */
 const T = {
@@ -1140,6 +1176,7 @@ right_note: "*Important : Assurez-vous que le contenu copié est libre de droits
     routeBuilderTitle:"🚗 Laissez-nous construire votre itinéraire",
     labelStartCity:"Ville de départ",
     labelEndCity:"Ville d'arrivée",
+    labelLoopMode:"🔄 Circuit (retour au départ)",
     labelMaxKm:"Km/étape",
     labelDuration:"Durée",
     generateBtn:"🚀 Générer mon itinéraire",
@@ -1312,6 +1349,7 @@ right_note: "*Important: Make sure the copied content is copyright-free",
     routeBuilderTitle:"🚗 Let us build your itinerary",
     labelStartCity:"Departure city",
     labelEndCity:"Arrival city",
+    labelLoopMode:"🔄 Round trip (back to start)",
     labelMaxKm:"Km/stop",
     labelDuration:"Duration",
     generateBtn:"🚀 Generate my itinerary",
@@ -1484,6 +1522,7 @@ right_note: "*Importante: Assicurati che il contenuto copiato sia libero da copy
     routeBuilderTitle:"🚗 Lasciaci costruire il tuo itinerario",
     labelStartCity:"Città di partenza",
     labelEndCity:"Città di arrivo",
+    labelLoopMode:"🔄 Circuito (ritorno alla partenza)",
     labelMaxKm:"Km/tappa",
     labelDuration:"Durata",
     generateBtn:"🚀 Genera il mio itinerario",
@@ -1655,6 +1694,7 @@ right_note: "*Importante: Asegúrate de que el contenido copiado esté libre de 
     routeBuilderTitle:"🚗 Déjanos construir tu itinerario",
     labelStartCity:"Ciudad de salida",
     labelEndCity:"Ciudad de llegada",
+    labelLoopMode:"🔄 Circuito (vuelta al inicio)",
     labelMaxKm:"Km/etapa",
     labelDuration:"Duración",
     generateBtn:"🚀 Generar mi itinerario",
@@ -1827,6 +1867,7 @@ right_note: "*Importante: Garante que o conteúdo copiado está livre de direito
     routeBuilderTitle:"🚗 Deixe-nos construir seu itinerário",
     labelStartCity:"Cidade de partida",
     labelEndCity:"Cidade de chegada",
+    labelLoopMode:"🔄 Circuito (volta ao início)",
     labelMaxKm:"Km/etapa",
     labelDuration:"Duração",
     generateBtn:"🚀 Gerar meu itinerário",
@@ -2000,6 +2041,7 @@ right_note: "*مهم: تأكد من أن المحتوى المنسوخ خالٍ 
     routeBuilderTitle:"🚗 دعنا نبني خط سيرك",
     labelStartCity:"مدينة الانطلاق",
     labelEndCity:"مدينة الوصول",
+    labelLoopMode:"🔄 جولة (العودة إلى البداية)",
     labelMaxKm:"كم/محطة",
     labelDuration:"المدة",
     generateBtn:"🚀 إنشاء خط سيري",
@@ -2170,6 +2212,7 @@ let placesRatingIndex = {};
 let allItineraries = [];
 let photosData = {};
 let placesPhotosIndex = null;   // NEW: index photos par lieu (photos_lieux.json)
+
 let mapFull = null;
 let markersLayerFull = null;    // Layer clusterisé pour les marqueurs principaux
 let overlaysLayer = null;       // Layer NON clusterisé pour polylines et cityMarkers
@@ -2223,7 +2266,7 @@ window.closeItinPreview = function () {
     mobileBar.style.display = 'none';
   }
   
-  updateSelectionStyles(); // NEW : réapplique le rouge sur les sélectionnés
+  updateSelectionStyles(); // NEW : réapplique le rouge sur les sélectionnés (throttled via appel direct)
 };
 
 // Fonction pour réinitialiser l'état de la preview proprement
@@ -2298,13 +2341,26 @@ document.getElementById('mapExplorerPreview')?.addEventListener('click', () => {
   })();
 
 if (!mapFull) {
-  setTimeout(async () => {
-    await loadThemes(); // ← CHARGER LES THÈMES EN PREMIER
+  setTimeout(() => {
+    console.log('[INIT] START - mapFull undefined');
+    
+    loadThemes(); 
+    console.log('[INIT] loadThemes() called');
+    
     initMapFull();
+    console.log('[INIT] initMapFull() called');
+    
     loadPhotosData();
-    loadPlacesPhotosIndex(); // ← charge photos_lieux.json
+    console.log('[INIT] loadPhotosData() called');
+    
+    loadPlacesPhotosIndex();
+    console.log('[INIT] loadPlacesPhotosIndex() called');
+    
     loadAllItineraries();
-  }, 100);
+    console.log('[INIT] loadAllItineraries() called');
+    
+    console.log('[INIT] ALL DONE - mapFull is:', mapFull);
+  }, 1000); // Augmenté de 100 à 1000ms pour laisser le temps à Leaflet de charger
 } else {
 
     setTimeout(() => mapFull.invalidateSize(), 100);
@@ -2353,10 +2409,8 @@ async function loadPhotosData() {
     }
     if (response.ok) {
       photosData = await response.json();
-      console.log('✅ Photos chargées');
     }
   } catch (error) {
-    console.warn('Photos non disponibles:', error);
   }
 }
 
@@ -2369,10 +2423,8 @@ async function loadPlacesPhotosIndex() {
     }
     if (response.ok) {
       placesPhotosIndex = await response.json();
-      console.log('✅ Photos lieux chargées');
     }
   } catch (e) {
-    console.warn('Photos lieux non disponibles:', e);
   }
 }
 
@@ -2391,16 +2443,13 @@ async function loadAllItineraries() {
         if (idxRes.ok) {
           const idxJson = await idxRes.json();
           countryList = Array.isArray(idxJson) ? idxJson : (idxJson.countries || []);
-          console.log(`✅ Index chargé: ${countryList.length} pays trouvés`);
           break;
         }
       } catch (err) {
-        console.warn(`Tentative ${path} échouée`);
       }
     }
     
     if (countryList.length === 0) {
-      console.warn('⚠️ Pas d\'index trouvé, utilisation de la liste par défaut');
       countryList = COUNTRY_CODES_TO_TRY.map(cc => ({ cc: cc }));
     }
     
@@ -2411,7 +2460,6 @@ async function loadAllItineraries() {
       if (ipRes.ok) {
         const ipData = await ipRes.json();
         userCountry = ipData.country_code;
-        console.log(`🌍 Pays détecté: ${userCountry}`);
       }
     } catch (e) { /* ignore */ }
     
@@ -2426,7 +2474,8 @@ async function loadAllItineraries() {
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      await loadPlacesRatings(countryCode);
+      // Charger les ratings EN PARALLÈLE sans attendre
+      loadPlacesRatings(countryCode);
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2461,7 +2510,6 @@ async function loadAllItineraries() {
           const response = await fetch(path, { cache: 'no-store' });
           if (response.ok) {
             const data = await response.json();
-            console.log(`✅ Chargé: ${countryCode} (${data.itineraries?.length || 0} itinéraires)`);
             const countryName = COUNTRY_NAMES[countryCode]?.[lang] || countryCode;
             return (data.itineraries || []).map(itin => ({
               ...itin,
@@ -2485,30 +2533,37 @@ async function loadAllItineraries() {
     
     // ÉTAPE 1: Charger le pays de l'utilisateur EN PREMIER
     if (userCountryList.length > 0) {
-      console.log(`🚀 Chargement prioritaire: ${userCountry}`);
       const userResults = await Promise.all(userCountryList.map(loadCountry));
       const userItins = userResults.flat().filter(itin => itin.__id);
       if (userItins.length > 0) {
         allItineraries = userItins;
         populateFilters();
         displayMarkers(allItineraries);
-        console.log(`✅ ${userItins.length} itinéraires ${userCountry} affichés en premier`);
       }
     }
     
-    // ÉTAPE 2: Charger les autres pays en arrière-plan
-    console.log(`📦 Chargement des ${otherCountries.length} autres pays...`);
-    const otherResults = await Promise.all(otherCountries.map(loadCountry));
-    const otherItins = otherResults.flat().filter(itin => itin.__id);
+    // ÉTAPE 2: Charger les autres pays PAR BATCH (5 à la fois max)
+    const batchSize = 5;
+    const otherItins = [];
+    
+    for (let i = 0; i < otherCountries.length; i += batchSize) {
+      const batch = otherCountries.slice(i, i + batchSize);
+      const batchResults = await Promise.all(batch.map(loadCountry));
+      const batchItins = batchResults.flat().filter(itin => itin.__id);
+      otherItins.push(...batchItins);
+      
+      // Pause 100ms entre les batches pour laisser respirer le navigateur
+      if (i + batchSize < otherCountries.length) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    }
     
     // Fusionner et réafficher
     allItineraries = [...allItineraries, ...otherItins];
     populateFilters();
     displayMarkers(allItineraries);
     
-    console.log(`✅ ${allItineraries.length} itinéraires chargés au total`);
   } catch (error) {
-    console.error('Erreur chargement:', error);
   }
 }
 
@@ -2611,11 +2666,7 @@ function computeAvgRating(itin) {
   
   const result = count > 0 ? Math.round(sum / count * 10) / 10 : 5;
   
-  if (debugLog.length > 0) {
-    console.log(`📊 ${itin.title}: ${count} places trouvées, moyenne = ${result}`, debugLog);
-  } else {
-    console.warn(`⚠️ ${itin.title}: AUCUNE place trouvée dans placesRatingIndex (vide: ${Object.keys(placesRatingIndex).length === 0})`);
-  }
+  // Logs supprimés
   
   return result;
 }
@@ -2673,7 +2724,6 @@ async function loadPlacesRatings(countryCode) {
             }
           });
           const afterCount = Object.keys(placesRatingIndex).length;
-          console.log(`📍 ${CC} places chargées: ${data.places.length} places, ${afterCount - beforeCount} avec ratings`);
         }
         return true;
       }
@@ -2681,7 +2731,6 @@ async function loadPlacesRatings(countryCode) {
       // Continuer avec le prochain chemin
     }
   }
-  console.warn(`⚠️ ${CC} places.master.json non trouvé`);
   return false;
 }
 
@@ -2707,13 +2756,28 @@ function extractCities(itin) {
   if (!itin.days_plan) return [];
   const cities = [];
   itin.days_plan.forEach(day => {
-    if (day.night && day.night.place_id) {
-      const cityName = (day.night.name_i18n && day.night.name_i18n[lang]) || (day.night.name_i18n && day.night.name_i18n['en']) || day.night.place_id.split('::').pop().replace(/-/g, ' ');
-      const capitalized = cityName.charAt(0).toUpperCase() + cityName.slice(1);
-      if (!cities.includes(capitalized)) cities.push(capitalized);
+    let cityName = day?.night?.city; // Chercher d'abord city (au cas où)
+    
+    // Si pas de city, parser le place_id: "AE::abu-dhabi-centre" → "Abu Dhabi"
+    if (!cityName && day?.night?.place_id) {
+      const parts = day.night.place_id.split('::');
+      if (parts[1]) {
+        let slug = parts[1];
+        // Retirer les suffixes comme -centre, -airport, -nord, -sud, -est, -ouest, -ville, -city, etc
+        slug = slug.replace(/-(centre|airport|aéroport|nord|sud|est|ouest|ville|city|downtown|airport|port|gare)$/i, '');
+        // Capitaliser proprement: "abu-dhabi" → "Abu Dhabi"
+        cityName = slug
+          .split('-')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+      }
+    }
+    
+    if (cityName && !cities.includes(cityName)) {
+      cities.push(cityName);
     }
   });
-    return cities;
+  return cities;
 }
 
 // NEW: retourne un tableau de clés lieux "CC::slug" à partir de l’itin
@@ -2789,17 +2853,100 @@ async function detectUserCountryAndCenter() {
       if (countryCode && COUNTRY_CENTERS[countryCode]) {
         const [lat, lng, zoom] = COUNTRY_CENTERS[countryCode];
         mapFull.setView([lat, lng], zoom);
-        console.log(`🌍 Carte centrée sur ${countryCode}`);
         return;
       }
     }
   } catch (e) {
-    console.warn('Géolocalisation IP échouée, utilisation de la vue par défaut');
   }
 }
 
+// ===== MONITORING / DEBUG =====
+let lastFrameTime = performance.now();
+let fps = 0;
+let lastEvent = '--';
+let lastEventTime = 0;
+
+function updateDebugPanel() {
+  const leafletEl = document.getElementById('debugLeaflet');
+  const mapfullEl = document.getElementById('debugMapFull');
+  const fpsEl = document.getElementById('debugFPS');
+  const markersEl = document.getElementById('debugMarkers');
+  const zoomEl = document.getElementById('debugZoom');
+  const coordsEl = document.getElementById('debugCoords');
+  const memoryEl = document.getElementById('debugMemory');
+  const eventEl = document.getElementById('debugEvent');
+  
+  // Status Leaflet
+  if (leafletEl) leafletEl.textContent = typeof L !== 'undefined' ? '✓' : '✗';
+  if (mapfullEl) mapfullEl.textContent = mapFull ? '✓' : '✗';
+  
+  if (!mapFull) {
+    requestAnimationFrame(updateDebugPanel);
+    return;
+  }
+  
+  // FPS
+  const now = performance.now();
+  const deltaTime = now - lastFrameTime;
+  fps = deltaTime > 0 ? Math.round(1000 / deltaTime) : 60;
+  lastFrameTime = now;
+  if (fpsEl) fpsEl.textContent = fps;
+  
+  // Markers count - vérifier que markersLayer existe
+  let markerCount = 0;
+  if (typeof markersLayer !== 'undefined' && markersLayer && markersLayer._layers) {
+    markerCount = Object.keys(markersLayer._layers).length;
+  }
+  if (markersEl) markersEl.textContent = markerCount > 0 ? markerCount : '--';
+  
+  // Zoom
+  if (zoomEl) zoomEl.textContent = mapFull.getZoom();
+  
+  // Coordinates
+  const center = mapFull.getCenter();
+  if (coordsEl) coordsEl.textContent = `${center.lat.toFixed(2)}, ${center.lng.toFixed(2)}`;
+  
+  // Memory
+  if (performance.memory && memoryEl) {
+    const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(1);
+    memoryEl.textContent = `${mb}MB`;
+  }
+  
+  // Event
+  const nowMs = Date.now();
+  if (nowMs - lastEventTime > 1500) {
+    lastEvent = '--';
+  }
+  if (eventEl) eventEl.textContent = lastEvent;
+  
+  requestAnimationFrame(updateDebugPanel);
+}
+
+// Démarrer le monitoring dès le chargement
+window.addEventListener('load', () => {
+  setTimeout(() => updateDebugPanel(), 100);
+});
+
 function initMapFull() {
-  mapFull = L.map('mapContainerFull').setView([46.0, 8.0], 4);
+  console.log('[MAP] initMapFull() START');
+  console.log('[MAP] L defined:', typeof L !== 'undefined');
+  console.log('[MAP] L.map available:', typeof L?.map);
+  
+  if (typeof L === 'undefined') {
+    console.error('[MAP] ERROR: Leaflet (L) not loaded yet!');
+    console.log('[MAP] Retrying in 500ms...');
+    setTimeout(initMapFull, 500);
+    return;
+  }
+  
+  try {
+    mapFull = L.map('mapContainerFull').setView([46.0, 8.0], 4);
+    console.log('[MAP] Map created successfully');
+  } catch (e) {
+    console.error('[MAP] ERROR creating L.map:', e.message);
+    return;
+  }
+  
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '© CARTO © OpenStreetMap',
     maxZoom: 20
@@ -2840,7 +2987,52 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
   });
 
   // --- NEW: gestion du zoom pour affichage progressif des markers
-  mapFull.on('zoomend', updateMarkersVisibility);
+  mapFull.on('zoomend', () => {
+    console.log('[MAP] ZOOMEND:', mapFull.getZoom());
+    lastEvent = 'ZOOMED';
+    lastEventTime = Date.now();
+    throttledUpdateMarkersVisibility();
+  });
+  
+  // Track map movement
+  mapFull.on('movestart', () => {
+    lastEvent = 'MOVING';
+    lastEventTime = Date.now();
+  });
+  
+  mapFull.on('moveend', () => {
+    lastEvent = 'MOVED';
+    lastEventTime = Date.now();
+  });
+  
+  mapFull.on('zoomstart', () => {
+    lastEvent = 'ZOOMING';
+    lastEventTime = Date.now();
+  });
+}
+
+// ===== THROTTLE updateMarkersVisibility pour éviter les gels =====
+let lastVisibilityUpdate = 0;
+let visibilityUpdateTimeout = null;
+
+function throttledUpdateMarkersVisibility() {
+  const now = Date.now();
+  const timeSinceLastUpdate = now - lastVisibilityUpdate;
+  
+  // Si moins de 300ms depuis la dernière mise à jour, attendre
+  if (timeSinceLastUpdate < 300) {
+    clearTimeout(visibilityUpdateTimeout);
+    visibilityUpdateTimeout = setTimeout(() => {
+      console.log('[THROTTLE] Executing deferred updateMarkersVisibility');
+      lastVisibilityUpdate = Date.now();
+      updateMarkersVisibility();
+    }, 300 - timeSinceLastUpdate);
+    return;
+  }
+  
+  console.log('[THROTTLE] Executing updateMarkersVisibility immediately');
+  lastVisibilityUpdate = now;
+  updateMarkersVisibility();
 }
 
 // Seuils de zoom pour l'affichage progressif des ITINÉRAIRES
@@ -2854,7 +3046,9 @@ function getMinRatingForZoom(zoom) {
 function updateMarkersVisibility() {
   if (!mapFull || !itinLayers) return;
   const zoom = mapFull.getZoom();
-  const minRating = getMinRatingForZoom(zoom);
+  // Mobile : désactiver le filtrage par rating (afficher tous les itinéraires)
+  const isMobile = window.innerWidth <= 1024;
+  const minRating = isMobile ? 0 : getMinRatingForZoom(zoom);
   const bounds = mapFull.getBounds(); // Récupérer les limites visibles de la carte
   let visibleCount = 0;
   
@@ -2894,12 +3088,22 @@ function updateMarkersVisibility() {
   });
   
   // Mettre à jour le compteur affiché
-  console.log(`🔢 Visibles au zoom ${zoom} dans bounds: ${visibleCount} itinéraires`);
   updateFilterCount(visibleCount);
 }
 
 function displayMarkers(itineraries) {
   if (!markersLayerFull) return;
+  
+  // DEBUG Desktop : afficher stats ratings
+  if (window.innerWidth > 1024) {
+    const ratingStats = { total: itineraries.length, withRating: 0, noRating: 0, byStars: {1:0,2:0,3:0,4:0,5:0} };
+    itineraries.forEach(it => {
+      if (it.avgRating && it.avgRating !== 5) { ratingStats.withRating++; } else { ratingStats.noRating++; }
+      const stars = Math.round(it.avgRating || 5);
+      ratingStats.byStars[stars] = (ratingStats.byStars[stars] || 0) + 1;
+    });
+  }
+  
   markersLayerFull.clearLayers();
   if (overlaysLayer) overlaysLayer.clearLayers();;
   itinLayers.clear(); // NEW
@@ -2920,9 +3124,6 @@ function displayMarkers(itineraries) {
       
       // Debug: afficher les coordonnées du premier itin pour vérifier
       if (routeCoords.length >= 2 && Math.random() < 0.01) {
-        console.log('🗺️ Itinéraire:', itin.title);
-        console.log('📍 Coordonnées tracé:', routeCoords);
-        console.log('📍 Premier point:', routeCoords[0], 'Dernier:', routeCoords[routeCoords.length-1]);
       }
       
       // Créer le tracé (mais invisible au départ, sera rendu interactif après)
@@ -3058,7 +3259,7 @@ marker.on('click', () => {
   });
   
   updateFilterCount(itineraries.length);
-  updateSelectionStyles(); // NEW: réappliquer le rouge après redraw
+  throttledUpdateSelectionStyles(); // NEW: réappliquer le rouge après redraw (throttled)
   
   // Appliquer la visibilité selon le zoom actuel
   updateMarkersVisibility();
@@ -3112,6 +3313,7 @@ function showMobileConfirmModal(itin) {
 
 function showMobileSelectionModal(itin) {
   const modal = document.getElementById('mobileSelectionModal');
+  const actionBar = document.getElementById('mobileActionBar');
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const L = T[lang] || T.fr;
   
@@ -3154,9 +3356,10 @@ function showMobileSelectionModal(itin) {
     photoList.push(itin.photos[0]);
   }
   
-  if (photoList.length > 0) {
+  // Afficher photos seulement sur desktop (>768px)
+  if (photoList.length > 0 && window.innerWidth > 768) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(photoList[0])}&w=400&h=180&fit=cover&output=webp`;
-    document.getElementById('mobileModalPhotos').innerHTML = `<img src="${proxyUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;" alt="Photo">`;
+    document.getElementById('mobileModalPhotos').innerHTML = `<img src="${proxyUrl}" style="width:100%;height:150px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy">`;
   } else {
     document.getElementById('mobileModalPhotos').innerHTML = '';
   }
@@ -3168,8 +3371,23 @@ function showMobileSelectionModal(itin) {
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 0) {
     const cities = [];
     itin.days_plan.forEach(day => {
-      if (day?.night?.city && !cities.includes(day.night.city)) {
-        cities.push(day.night.city);
+      let cityName = day?.night?.city; // Chercher d'abord city (au cas où)
+      
+      // Si pas de city, parser le place_id: "AE::abu-dhabi-centre" → "Abu Dhabi"
+      if (!cityName && day?.night?.place_id) {
+        const parts = day.night.place_id.split('::');
+        if (parts[1]) {
+          let slug = parts[1];
+          slug = slug.replace(/-(centre|airport|aéroport|nord|sud|est|ouest|ville|city|downtown|port|gare)$/i, '');
+          cityName = slug
+            .split('-')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ');
+        }
+      }
+      
+      if (cityName && !cities.includes(cityName)) {
+        cities.push(cityName);
       }
     });
     
@@ -3194,22 +3412,26 @@ function showMobileSelectionModal(itin) {
   
   document.getElementById('mobileModalSteps').innerHTML = stepsHtml;
   
-  // Afficher la modale
+  // Afficher la modale et masquer la barre d'action
   modal.classList.add('show');
+  if (actionBar) actionBar.style.display = 'none';
   
   // Handlers
   document.getElementById('mobileModalSelect').onclick = () => {
     selectItinerary(itin);
     modal.classList.remove('show');
+    if (actionBar) actionBar.style.display = 'flex';
   };
   
   document.getElementById('mobileModalCancel').onclick = () => {
     modal.classList.remove('show');
+    if (actionBar) actionBar.style.display = 'flex';
   };
   
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
+      if (actionBar) actionBar.style.display = 'flex';
     }
   };
 }
@@ -3252,7 +3474,7 @@ function showPreview(itin) {
 
   // Photo : 1 seule pour chargement rapide
   let firstPhoto = null;
-  try {
+  {
     if (placesPhotosIndex && typeof placesPhotosIndex === 'object') {
       const placeKeys = getPlaceKeysFromItin(itin) || [];
       for (const k of placeKeys) {
@@ -3260,16 +3482,16 @@ function showPreview(itin) {
         if (Array.isArray(arr) && arr[0]) { firstPhoto = arr[0]; break; }
       }
     }
-  } catch (err) { console.warn('⚠️ Erreur photo:', err); }
+  }
 
   // Fallback
   if (!firstPhoto && Array.isArray(itin.photos) && itin.photos[0]) {
     firstPhoto = itin.photos[0];
   }
 
-  // Bloc villes + photo unique
+  // Bloc villes + photo unique (desktop seulement)
   let citiesHtml = `<strong>${t.cities}</strong><br>${(itin.cities||[]).join(' → ')}`;
-  if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${')) {
+  if (firstPhoto && typeof firstPhoto === 'string' && !firstPhoto.includes('${') && window.innerWidth > 768) {
     const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(firstPhoto)}&w=400&h=200&fit=cover&output=webp`;
     citiesHtml += `<div style="margin-top:10px;"><img src="${proxyUrl}" style="width:100%;height:120px;object-fit:cover;border-radius:8px;" alt="Photo" loading="lazy"></div>`;
   }
@@ -3281,7 +3503,9 @@ function showPreview(itin) {
   const pathFlow = document.getElementById('previewPathFlow');
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 1) {
     const simplifiedCities = [];
-    itin.days_plan.forEach(day => { if (day?.night?.city) simplifiedCities.push(day.night.city); });
+    itin.days_plan.forEach(day => { 
+      if (day?.night?.city && !simplifiedCities.includes(day.night.city)) simplifiedCities.push(day.night.city); 
+    });
     if (simplifiedCities.length >= 2) {
       pathFlow.innerHTML = '';
       simplifiedCities.forEach((city, idx) => {
@@ -3362,6 +3586,15 @@ function showPreview(itin) {
 /* === FIN MAJ === */
 
 // NEW: applique le style "sélectionné = rouge" sur la carte
+// Throttle pour updateSelectionStyles
+let lastStyleUpdate = 0;
+function throttledUpdateSelectionStyles() {
+  const now = Date.now();
+  if (now - lastStyleUpdate < 500) return; // Ignorer si moins de 500ms
+  lastStyleUpdate = now;
+  updateSelectionStyles();
+}
+
 function updateSelectionStyles(){
   const selIds = new Set(selectedItineraries.map(i => i.itin_id));
   itinLayers.forEach(({ polyline, cityMarkers = [], mainMarker, starInfo }, id) => {
@@ -3534,7 +3767,6 @@ function showBudgetModal(callback, itinDays, itinTitle) {
   document.getElementById('budgetModalTitle').textContent = L.modal_title || 'Configurez votre voyage';
   document.getElementById('labelDepartureDate').textContent = L.modal_departure_date || 'Date de départ :';
   document.getElementById('labelNumDays').textContent = L.modal_num_days || 'Nombre de jours souhaités :';
-  document.getElementById('labelBudget').textContent = L.modal_budget_label || 'Budget hôtel (€/jour/personne) :';
   document.getElementById('budgetConfirm').textContent = L.budget_confirm || 'Valider';
   document.getElementById('budgetCancel').textContent = L.budget_cancel || 'Annuler';
   
@@ -3546,31 +3778,6 @@ function showBudgetModal(callback, itinDays, itinTitle) {
   const numDaysInput = document.getElementById('inputNumDays');
   numDaysInput.value = itinDays || 7;
   
-  // Générer les checkboxes budget (multichoix)
-  const budgetCheckboxes = document.getElementById('budgetCheckboxes');
-  const budgetRanges = ['0-50', '50-100', '100-150', '150-200', '200-250', '250-300', '300-500', '500+'];
-  const budgetLabels = {
-    '0-50': L.budget_0_50 || '0-50',
-    '50-100': L.budget_50_100 || '50-100',
-    '100-150': L.budget_100_150 || '100-150',
-    '150-200': L.budget_150_200 || '150-200',
-    '200-250': L.budget_200_250 || '200-250',
-    '250-300': L.budget_250_300 || '250-300',
-    '300-500': L.budget_300_500 || '300-500',
-    '500+': L.budget_500plus || '500+'
-  };
-  
-  budgetCheckboxes.innerHTML = '';
-  budgetRanges.forEach((range, idx) => {
-    const label = document.createElement('label');
-    label.style.cssText = 'display:flex;align-items:center;gap:4px;cursor:pointer;background:#fff;padding:6px 10px;border-radius:6px;border:1px solid #113f7a;';
-    label.innerHTML = `
-      <input type="checkbox" name="budgetCheckbox" value="${range}" ${idx === 1 ? 'checked' : ''}>
-      <span style="color:#113f7a;">${budgetLabels[range]}</span>
-    `;
-    budgetCheckboxes.appendChild(label);
-  });
-  
   // Afficher modal
   modal.classList.add('show');
   
@@ -3581,16 +3788,11 @@ function showBudgetModal(callback, itinDays, itinTitle) {
     document.getElementById('budgetCancel').removeEventListener('click', cancelHandler);
     modal.removeEventListener('click', overlayHandler);
     
-    // Récupérer toutes les valeurs
+    // Récupérer les valeurs
     const departureDate = document.getElementById('inputDepartureDate').value;
     const numDays = document.getElementById('inputNumDays').value;
     
-    // Récupérer tous les budgets cochés
-    const checkedBudgets = Array.from(document.querySelectorAll('input[name="budgetCheckbox"]:checked'))
-      .map(cb => cb.value);
-    const budget = checkedBudgets.length > 0 ? checkedBudgets.join(',') : '50-100';
-    
-    callback({ departureDate, numDays, budget });
+    callback({ departureDate, numDays, budget: '' });
   };
   
   // Bouton Annuler
@@ -3702,16 +3904,13 @@ for (const path of paths) {
     const res = await fetch(path);
     if (res.ok) {
       response = res;
-      console.log(`✅ themes.i18n.json trouvé: ${path}`);
       break;
     }
   } catch (err) {
-    console.warn(`Tentative ${path} échouée`);
   }
 }
 
 if (!response) {
-  console.warn('⚠️ themes.i18n.json non trouvé, utilisation du fallback hardcodé');
   return buildFallbackThemes();
 }
     
@@ -3728,13 +3927,11 @@ if (!response) {
       THEMES_LABELS[theme.key] = theme.label_fr;
     }
     
-    console.log('✅ Thèmes chargés depuis themes.i18n.json:', Object.keys(THEMES_REG).length, 'thèmes');
     
     // Générer les options du select
     populateThemeSelect();
     
   } catch (error) {
-    console.error('❌ Erreur chargement themes.i18n.json:', error);
     buildFallbackThemes();
   }
 }
@@ -3808,7 +4005,6 @@ function buildFallbackThemes() {
     "detente":"Détente","tested-ort":"Testé & approuvé ORT"
   };
   
-  console.log('⚠️ Utilisation du fallback hardcodé pour les thèmes');
 }
 
 /* Normalise des tokens "thème" depuis plusieurs champs d’un itin */
@@ -3891,7 +4087,6 @@ function applyFilters() {
     const key = themeFilter.toLowerCase();
     const beforeFilter = filtered.length;
     filtered = filtered.filter(i => matchesTheme(i, key));
-    console.log(`🔍 Filtre thème "${key}": ${beforeFilter} itins → ${filtered.length} itins matchent`);
   }
 
   if (searchText) {
@@ -3902,7 +4097,6 @@ function applyFilters() {
     );
   }
   
-  console.log(`📊 Total filtré: ${filtered.length} itinéraires`);
   displayMarkers(filtered);
   
   // Appliquer aussi la visibilité selon le zoom actuel
@@ -4132,70 +4326,6 @@ if (cookieManageBtn) {
   });
 }
 
- /* === Bannière Cookies (auto-injection si absente, modèle quest_simple.html) ============== */
-(function(){
-  var KEY = 'cookieConsent.v1';
-
-  function readConsent(){
-    try { return JSON.parse(localStorage.getItem(KEY) || ''); }
-    catch(e){ return null; }
-  }
-  function saveConsent(c){
-    try { localStorage.setItem(KEY, JSON.stringify(c)); } catch(_) {}
-    var b = document.getElementById('cookieBanner');
-    if (b) b.style.display = 'none';
-  }
-
-  // Injecter la bannière si absente
-  if (!document.getElementById('cookieBanner')) {
-    var wrap = document.createElement('div');
-    wrap.id = 'cookieBanner';
-    wrap.setAttribute('role', 'dialog');
-    wrap.setAttribute('aria-live', 'polite');
-    wrap.setAttribute('aria-label', 'Bannière cookies');
-    wrap.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:99999;display:none';
-    wrap.innerHTML = '' +
-      '<div class="panel" style="max-width:520px;background:#fff;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;color:#113f7a">' +
-        '<div>Nous utilisons des cookies <em>nécessaires</em> (connexion). Les cookies <em>facultatifs</em> sont <strong>désactivés par défaut</strong>.</div>' +
-        '<div id="cookiePrefs" style="display:none;margin-top:6px;text-align:left">' +
-          '<label style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" id="consent-analytics"> Mesure d’audience</label>' +
-          '<label style="display:flex;align-items:center;gap:8px;margin:4px 0"><input type="checkbox" id="consent-marketing"> Marketing</label>' +
-        '</div>' +
-        '<div class="row" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px">' +
-          '<button id="btnPrefs"  class="btn" type="button" style="background:#fff;color:#113f7a;border:1px solid #113f7a">Paramétrer</button>' +
-          '<button id="btnReject" class="btn" type="button" style="background:#fff;color:#113f7a;border:1px solid #113f7a">Tout refuser</button>' +
-          '<button id="btnAccept" class="btn" type="button" style="background:#113f7a;color:#fff;border:1px solid #113f7a">Tout accepter</button>' +
-        '</div>' +
-      '</div>';
-    document.body.appendChild(wrap);
-  }
-
-  var banner = document.getElementById('cookieBanner');
-  var prefs  = document.getElementById('cookiePrefs');
-  var btnPrefs  = document.getElementById('btnPrefs');
-  var btnAccept = document.getElementById('btnAccept');
-  var btnReject = document.getElementById('btnReject');
-
-  if (!readConsent()) {
-    banner.style.display = 'block';
-  }
-
-  if (btnPrefs) {
-    btnPrefs.addEventListener('click', function(){
-      prefs.style.display = (prefs.style.display ? '' : 'block');
-    });
-  }
-if (btnReject) {
-    btnReject.addEventListener('click', function(){
-      saveConsent({necessary:true, analytics:false, marketing:false, ts:Date.now()});
-    });
-  }
-  if (btnAccept) {
-    btnAccept.addEventListener('click', function(){
-      saveConsent({necessary:true, analytics:true, marketing:true, ts:Date.now()});
-    });
-  }
-})(); // ferme l'IIFE interne (cookies)
 })(); // ferme l’IIFE externe "Auto-lang"
 </script>
 
@@ -4317,11 +4447,6 @@ if (btnReject) {
       <input type="number" id="inputNumDays" class="filter-input" style="width:100%;" min="1" max="60" value="7">
     </div>
     
-    <div style="margin-bottom:16px;">
-      <label id="labelBudget" style="display:block;font-weight:600;margin-bottom:6px;">Budget hôtel (€/jour/personne) :</label>
-      <div id="budgetCheckboxes" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-    </div>
-    
     <div class="budget-modal-actions">
       <button class="budget-modal-btn secondary" id="budgetCancel">Annuler</button>
       <button class="budget-modal-btn primary" id="budgetConfirm">Valider</button>
@@ -4344,7 +4469,6 @@ const SEARCH_API = (() => {
   }
   return '/.netlify/functions';  // ← NETLIFY FUNCTIONS
 })();
-console.log('[ROUTE-BUILDER] API:', SEARCH_API);
 
 // État du formulaire
 let startCity = null; // {name, lat, lon, countryCode}
@@ -4363,15 +4487,12 @@ function debounce(fn, ms) {
 async function searchCities(query, lang = 'fr') {
   if (!query || query.length < 2) return [];
   const url = `${SEARCH_API}/citysearch?q=${encodeURIComponent(query)}&lang=${lang}&limit=8`;
-  console.log('[ROUTE-BUILDER] Recherche:', url);
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    console.log('[ROUTE-BUILDER] Résultats:', data.items?.length || 0);
     return data.items || [];
   } catch (e) {
-    console.warn('[ROUTE-BUILDER] Erreur recherche:', e);
     return [];
   }
 }
@@ -4486,22 +4607,27 @@ function initRouteBuilderSubmit() {
     
     const inputStart = document.getElementById('inputStartCity');
     const inputEnd = document.getElementById('inputEndCity');
+    const checkLoop = document.getElementById('checkLoopMode');
+    const isLoopMode = checkLoop?.checked || false;
+    
     const startText = inputStart?.value?.trim();
     const endText = inputEnd?.value?.trim();
     
-    // Vérifier qu'on a au moins du texte
+    // Vérifier qu'on a au moins du texte pour le départ
     if (!startText) {
       inputStart?.focus();
       return;
     }
-    if (!endText) {
+    
+    // En mode normal (pas circuit), vérifier la ville d'arrivée
+    if (!isLoopMode && !endText) {
       inputEnd?.focus();
       return;
     }
     
     // Si ville non validée, faire une recherche rapide pour récupérer les coords
     let finalStart = startCity;
-    let finalEnd = endCity;
+    let finalEnd = isLoopMode ? null : endCity;
     
     if (!finalStart || !finalStart.lat) {
       const results = await searchCities(startText, lang);
@@ -4512,7 +4638,7 @@ function initRouteBuilderSubmit() {
       }
     }
     
-    if (!finalEnd || !finalEnd.lat) {
+    if (!isLoopMode && (!finalEnd || !finalEnd.lat)) {
       const results = await searchCities(endText, lang);
       if (results.length > 0) {
         finalEnd = results[0];
@@ -4532,15 +4658,20 @@ function initRouteBuilderSubmit() {
       startLat: finalStart.lat || '',
       startLon: finalStart.lon || '',
       startCC: finalStart.countryCode || '',
-      endName: finalEnd.name,
-      endLat: finalEnd.lat || '',
-      endLon: finalEnd.lon || '',
-      endCC: finalEnd.countryCode || '',
+      endName: isLoopMode ? finalStart.name : (finalEnd?.name || ''),
+      endLat: isLoopMode ? finalStart.lat : (finalEnd?.lat || ''),
+      endLon: isLoopMode ? finalStart.lon : (finalEnd?.lon || ''),
+      endCC: isLoopMode ? finalStart.countryCode : (finalEnd?.countryCode || ''),
       maxKm: maxKm,
       detour: detour,
       days: duration,
       lang: lang
     });
+    
+    // Ajouter le paramètre loop si mode circuit
+    if (isLoopMode) {
+      params.set('loop', '1');
+    }
     
     // Changer le texte du bouton
     btn.innerHTML = `<span>${L.generatingBtn || '⏳ Calcul en cours...'}</span>`;
@@ -4569,30 +4700,29 @@ function initGridCards() {
   
   // Carré 4: Créateurs
   // Carré 4: Itinéraires créateurs → ouvre la carte avec filtre creators
-  document.getElementById('creatorsSection')?.addEventListener('click', async (e) => {
-    // Ne pas déclencher si on clique sur le lien "Devenir créateur"
+  document.getElementById('creatorsSection')?.addEventListener('click', (e) => {
     if (e.target.id === 'becomeCreator') return;
     
-    console.log('🎨 Bouton créateurs cliqué');
     document.getElementById('mapFullscreen').classList.add('active');
     
     if (!THEMES_DATA || Object.keys(THEMES_REG || {}).length === 0) {
-      await loadThemes();
+      loadThemes(); // Charger en arrière-plan
     }
     
     if (!mapFull) {
-      setTimeout(async () => {
+      setTimeout(() => {
         initMapFull();
         loadPhotosData();
         loadPlacesPhotosIndex();
-        await loadAllItineraries();
-        setTimeout(() => {
+        
+        // Charger les itinéraires en arrière-plan sans attendre
+        loadAllItineraries().then(() => {
           const themeFilter = document.getElementById('filterThemeFull');
           if (themeFilter) {
             themeFilter.value = 'creators';
             applyFilters();
           }
-        }, 500);
+        });
       }, 100);
     } else {
       const themeFilter = document.getElementById('filterThemeFull');
@@ -4618,6 +4748,7 @@ function updateRouteBuilderTranslations() {
   setTextById('routeBuilderTitle', L.routeBuilderTitle);
   setTextById('labelStartCity', L.labelStartCity);
   setTextById('labelEndCity', L.labelEndCity);
+  setTextById('labelLoopMode', L.labelLoopMode);
   setTextById('labelMaxKm', L.labelMaxKm);
   setTextById('labelDetour', L.labelDetour);
   setTextById('labelDuration', L.labelDuration);
@@ -4639,11 +4770,28 @@ function updateRouteBuilderTranslations() {
   }
 }
 
+// Gérer le mode circuit (masquer/afficher ville d'arrivée)
+function initLoopModeToggle() {
+  const checkbox = document.getElementById('checkLoopMode');
+  const endContainer = document.getElementById('endCityContainer');
+  
+  if (!checkbox || !endContainer) return;
+  
+  checkbox.addEventListener('change', () => {
+    if (checkbox.checked) {
+      endContainer.style.display = 'none';
+    } else {
+      endContainer.style.display = 'block';
+    }
+  });
+}
+
 // Init au chargement
 document.addEventListener('DOMContentLoaded', () => {
   initRouteBuilderAutocomplete();
   initRouteBuilderSubmit();
   initGridCards();
+  initLoopModeToggle();
   updateRouteBuilderTranslations();
 });
 
@@ -4652,8 +4800,8 @@ window.addEventListener('langChange', updateRouteBuilderTranslations);
 </script>
 
 
-<script src="/js/ort-i18n-auth.js"></script>
-<script src="/js/ort-header.js"></script>
-<script src="js/ort-footer.js"></script>
+<script src="/js/ort-i18n-auth.js" defer></script>
+<script src="/js/ort-header.js" defer></script>
+<script src="js/ort-footer.js" defer></script>
 </body>
 </html>
