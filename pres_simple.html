@@ -1,16 +1,33 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<!-- Google Analytics (lazy load après le chargement) -->
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-JK3QGQGDDL');
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL';
+      document.head.appendChild(script);
+      
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){window.dataLayer.push(arguments);};
+      window.gtag('js', new Date());
+      window.gtag('config', 'G-JK3QGQGDDL', {
+        'allow_ad_personalization_signals': false,
+        'allow_google_signals': false
+      });
+    }, 2000);
+  });
 </script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes, maximum-scale=5.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<!-- Sécurité: Content Security Policy -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.googletagmanager.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' https: data:; font-src 'self' https://unpkg.com; connect-src 'self' https: https://ipapi.co;">
+<meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <title>Itinéraires de Road Trip Clés en Main | OneRoadTrip</title>
 <meta name="description" content="Découvrez 639 itinéraires de road trip clés en main dans 82 pays. Plans détaillés jour par jour, cartes interactives et conseils pratiques pour votre voyage.">
 <meta name="keywords" content="road trip, itinéraire voyage, road trip france, voyage organisé, itinéraire détaillé">
@@ -71,6 +88,24 @@
 </script>
 
 <style>
+/* Accessibilité: zones tactiles minimum 48x48px (recommandation Google) */
+button, a[role="button"], input[type="button"], input[type="submit"], input[type="reset"], 
+.btn, .btn-validate, [role="link"] {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px 16px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Amélioration des images: lazy loading et taille optimale */
+img {
+  loading: lazy;
+  max-width: 100%;
+  height: auto;
+}
+
 :root{ --bg:#f6f9fb; --ink:#113f7a; --acc:#113f7a; --card:#ffffff; --bd:#c3d6b6; --mut:#64748b; }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background-color:#113f7a;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}

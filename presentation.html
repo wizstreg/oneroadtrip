@@ -2231,13 +2231,6 @@ let previewLatLng = null;           // [lat,lng] du point d’ancrage courant
 // --- NEW: fermer le preview et tout désurligner ---
 window.closeItinPreview = function () {
   previewPinned = false;
-  
-  // Fermer les modales mobiles si ouvertes
-  const mobileModal = document.getElementById('mobileSelectionModal');
-  if (mobileModal) {
-    mobileModal.classList.remove('show');
-  }
-  
   const preview = document.getElementById('itinPreview');
   
   if (preview) {
@@ -2273,7 +2266,7 @@ window.closeItinPreview = function () {
     mobileBar.style.display = 'none';
   }
   
-  updateSelectionStyles(); // NEW : réapplique le rouge sur les sélectionnés (throttled via appel direct)
+  updateSelectionStyles();
 };
 
 // Fonction pour réinitialiser l'état de la preview proprement
@@ -3718,14 +3711,6 @@ function selectItinerary(itin) {
   updateSelectionPanel();
   updateSelectionStyles();
   
-  // CRITICAL: Fermer la modale mobile après sélection
-  const mobileModal = document.getElementById('mobileSelectionModal');
-  if (mobileModal && mobileModal.classList.contains('show')) {
-    mobileModal.classList.remove('show');
-    const actionBar = document.getElementById('mobileActionBar');
-    if (actionBar) actionBar.style.display = 'flex';
-  }
-  
   // Ne pas cacher la preview - garder visible pour confirmer le choix
   previewPinned = true;
   const p = document.getElementById('itinPreview');
@@ -3741,12 +3726,6 @@ window.removeFromSelection = function(itinId) {
   selectedItineraries = selectedItineraries.filter(i => i.itin_id !== itinId);
   updateSelectionPanel();
   updateSelectionStyles();
-  
-  // Fermer la modale mobile si elle est ouverte
-  const mobileModal = document.getElementById('mobileSelectionModal');
-  if (mobileModal) {
-    mobileModal.classList.remove('show');
-  }
   
   // Réinitialiser l'état de la preview pour permettre de nouveaux survols
   previewPinned = false;

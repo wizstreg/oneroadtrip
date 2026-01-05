@@ -1242,10 +1242,89 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       btnHow.type = "button";
       btnHow.textContent = t.cta_how;
       btnHow.setAttribute("aria-label", t.cta_how);
-      // N'ajouter showHowModal QUE sur desktop
-      if(window.innerWidth > 640){
-        btnHow.addEventListener("click", showHowModal);
-      }
+      
+      // Event listener qui détecte mobile/desktop au moment du clic
+      btnHow.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if(window.innerWidth > 640){
+          // DESKTOP : modale ancienne
+          showHowModal();
+        } else {
+          // MOBILE : modale 4 onglets
+          let modal = document.getElementById('mobileHowModal');
+          if(!modal){
+            // Créer la modale
+            modal = document.createElement('div');
+            modal.id = 'mobileHowModal';
+            modal.className = 'mode-info-modal';
+            modal.innerHTML = `
+              <div class="mode-info-content">
+                <button class="mode-info-close" aria-label="Fermer">×</button>
+                <div class="mode-info-tabs">
+                  <button class="mode-info-tab active" data-tab="simple">Simple</button>
+                  <button class="mode-info-tab" data-tab="expert">Expert</button>
+                  <button class="mode-info-tab" data-tab="itins">Itinéraires</button>
+                  <button class="mode-info-tab" data-tab="vision">Vision</button>
+                </div>
+                <div class="mode-info-body"></div>
+              </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const lang = localStorage.getItem('lang') || 'fr';
+            
+            // Fonction showTab pour la modale mobile
+            function showTab(mode){
+              if(!window.ORT_I18N_MODES) return;
+              const body = modal.querySelector('.mode-info-body');
+              const tabs = modal.querySelectorAll('.mode-info-tab');
+              tabs.forEach(t => t.classList.remove('active'));
+              modal.querySelector(`.mode-info-tab[data-tab="${mode}"]`).classList.add('active');
+              
+              let html = '';
+              if(mode === 'vision'){
+                html = `<h2>${window.ORT_I18N_MODES.visionTitle[lang]}</h2><p>${window.ORT_I18N_MODES.visionDesc[lang]}</p>`;
+              } else if(mode === 'expert'){
+                html = `<h2>${window.ORT_I18N_MODES.expertTitle[lang]}</h2><p>${window.ORT_I18N_MODES.expertDesc[lang]}</p><p>${window.ORT_I18N_MODES.expertFourWays[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.expertWaysList[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.expertCreatedTitle[lang]}</p><p>${window.ORT_I18N_MODES.expertViews[lang]}</p><p>${window.ORT_I18N_MODES.expertListTitle[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.expertListItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.expertMapTitle[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.expertMapItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.expertLocationNote[lang]}</p><p>${window.ORT_I18N_MODES.expertBookingTitle[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.expertBookingItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.expertBeforeTitle[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.expertBeforeItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul>`;
+              } else if(mode === 'itins'){
+                html = `<h2>${window.ORT_I18N_MODES.itinsTitle[lang]}</h2><p>${window.ORT_I18N_MODES.itinsDesc[lang]}</p><p>${window.ORT_I18N_MODES.itinsFeatures[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.itinsFeaturesList[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.itinsExplore[lang]}</p>`;
+              } else {
+                html = `<h2>${window.ORT_I18N_MODES.simpleTitle[lang]}</h2><p>${window.ORT_I18N_MODES.simpleDesc[lang]}</p><p><strong>${window.ORT_I18N_MODES.simpleAccessTitle[lang]}</strong></p><p>${window.ORT_I18N_MODES.simpleListView[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.simpleListItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul><p>${window.ORT_I18N_MODES.simpleMapView[lang]}</p><p>${window.ORT_I18N_MODES.simpleTools[lang]}</p><ul class="mode-info-list">`;
+                window.ORT_I18N_MODES.simpleToolsItems[lang].forEach(item => html += `<li>${item}</li>`);
+                html += `</ul>`;
+              }
+              body.innerHTML = html;
+            }
+            
+            // Ajouter event listeners
+            modal.querySelector('.mode-info-close').addEventListener('click', ()=> modal.classList.remove('active'));
+            modal.addEventListener('click', (e)=> {if(e.target === modal) modal.classList.remove('active')});
+            modal.querySelectorAll('.mode-info-tab').forEach(tab => {
+              tab.addEventListener('click', () => showTab(tab.dataset.tab));
+            });
+            
+            showTab('simple');
+          }
+          
+          modal.classList.add('active');
+        }
+      });
       
       // Bouton Vos voyages (desktop)
       const btnTrips = document.createElement("button");
@@ -1544,162 +1623,6 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
     }
   })();
   
-  // ===== MODALE "COMMENT ÇA MARCHE" (MOBILE - 4 ONGLETS) =====
-  (function(){
-    const isMobile = window.innerWidth <= 640;
-    
-    if(isMobile){
-      // Intercepter le bouton "Comment ça marche"
-      setTimeout(()=>{
-        const btnHow = document.querySelector('.cta-btn.how');
-        if(!btnHow) return;
-        
-        btnHow.addEventListener('click', (e)=>{
-          e.preventDefault();
-          e.stopPropagation();
-          
-          // Créer la modale si elle n'existe pas
-          let modal = document.getElementById('mobileHowModal');
-          if(!modal){
-            modal = document.createElement('div');
-            modal.id = 'mobileHowModal';
-            modal.className = 'mode-info-modal';
-            modal.innerHTML = `
-              <div class="mode-info-content">
-                <button class="mode-info-close" aria-label="Fermer">×</button>
-                <div class="mode-info-tabs">
-                  <button class="mode-info-tab active" data-tab="simple">Simple</button>
-                  <button class="mode-info-tab" data-tab="itins">Itinéraires</button>
-                  <button class="mode-info-tab" data-tab="expert">Expert</button>
-                  <button class="mode-info-tab" data-tab="vision">Vision</button>
-                </div>
-                <div class="mode-info-body"></div>
-              </div>
-            `;
-            document.body.appendChild(modal);
-            
-            // Obtenir la langue
-            function getLang(){
-              const p = new URLSearchParams(location.search).get('lang');
-              const stored = localStorage.getItem('lang');
-              return p || stored || 'fr';
-            }
-            
-            const lang = getLang();
-            localStorage.setItem('lang', lang);
-            
-            // Fonction pour afficher le contenu
-            function showTab(mode){
-              if(!window.ORT_I18N_MODES) return;
-              
-              const body = modal.querySelector('.mode-info-body');
-              const tabs = modal.querySelectorAll('.mode-info-tab');
-              tabs.forEach(t => t.classList.remove('active'));
-              modal.querySelector(`.mode-info-tab[data-tab="${mode}"]`).classList.add('active');
-              
-              let html = '';
-              
-              if(mode === 'vision'){
-                html = `<h2>${window.ORT_I18N_MODES.visionTitle[lang]}</h2>`;
-                html += `<p>${window.ORT_I18N_MODES.visionDesc[lang]}</p>`;
-              } else if(mode === 'expert'){
-                html = `<h2>${window.ORT_I18N_MODES.expertTitle[lang]}</h2>`;
-                html += `<p>${window.ORT_I18N_MODES.expertDesc[lang]}</p>`;
-                html += `<p>${window.ORT_I18N_MODES.expertFourWays[lang]}</p>`;
-                html += `<ul class="mode-info-list">`;
-                const waysList = window.ORT_I18N_MODES.expertWaysList[lang];
-                waysList.forEach(item => {
-                  html += `<li>${item}</li>`;
-                });
-                html += `</ul>`;
-                html += `<p>${window.ORT_I18N_MODES.expertCreatedTitle[lang]}</p>`;
-                html += `<p>${window.ORT_I18N_MODES.expertViews[lang]}</p>`;
-                html += `<p>${window.ORT_I18N_MODES.expertListTitle[lang]}</p>`;
-                html += `<ul class="mode-info-list">`;
-                const listItems = window.ORT_I18N_MODES.expertListItems[lang];
-                listItems.forEach(item => {
-                  html += `<li>${item}</li>`;
-                });
-                html += `</ul>`;
-                html += `<p>${window.ORT_I18N_MODES.expertMapTitle[lang]}</p>`;
-                html += `<ul class="mode-info-list">`;
-                const mapItems = window.ORT_I18N_MODES.expertMapItems[lang];
-                mapItems.forEach(item => {
-                  html += `<li>${item}</li>`;
-                });
-                html += `</ul>`;
-                html += `<p>${window.ORT_I18N_MODES.expertLocationNote[lang]}</p>`;
-                html += `<p>${window.ORT_I18N_MODES.expertBookingTitle[lang]}</p>`;
-                html += `<ul class="mode-info-list">`;
-                const bookingItems = window.ORT_I18N_MODES.expertBookingItems[lang];
-                bookingItems.forEach(item => {
-                  html += `<li>${item}</li>`;
-                });
-                html += `</ul>`;
-                html += `<p>${window.ORT_I18N_MODES.expertBeforeTitle[lang]}</p>`;
-                html += `<ul class="mode-info-list">`;
-                const beforeItems = window.ORT_I18N_MODES.expertBeforeItems[lang];
-                beforeItems.forEach(item => {
-                  html += `<li>${item}</li>`;
-                });
-                html += `</ul>`;
-              } else {
-                html = `<h2>${window.ORT_I18N_MODES[mode + 'Title'][lang]}</h2>`;
-                html += `<p>${window.ORT_I18N_MODES[mode + 'Desc'][lang]}</p>`;
-                
-                if(mode === 'itins'){
-                  html += `<p>${window.ORT_I18N_MODES.itinsFeatures[lang]}</p>`;
-                  html += `<ul class="mode-info-list">`;
-                  const featuresList = window.ORT_I18N_MODES.itinsFeaturesList[lang];
-                  featuresList.forEach(item => {
-                    html += `<li>${item}</li>`;
-                  });
-                  html += `</ul>`;
-                  html += `<p>${window.ORT_I18N_MODES.itinsExplore[lang]}</p>`;
-                } else {
-                  html += `<p><strong>${window.ORT_I18N_MODES[mode + 'AccessTitle'][lang]}</strong></p>`;
-                  html += `<p>${window.ORT_I18N_MODES[mode + 'ListView'][lang]}</p>`;
-                  html += `<ul class="mode-info-list">`;
-                  const items = window.ORT_I18N_MODES[mode + 'ListItems'][lang];
-                  items.forEach(item => {
-                    html += `<li>${item}</li>`;
-                  });
-                  html += `</ul>`;
-                  html += `<p>${window.ORT_I18N_MODES[mode + 'MapView'][lang]}</p>`;
-                  html += `<p>${window.ORT_I18N_MODES[mode + 'Tools'][lang]}</p>`;
-                  html += `<ul class="mode-info-list">`;
-                  const toolItems = window.ORT_I18N_MODES[mode + 'ToolsItems'][lang];
-                  toolItems.forEach(item => {
-                    html += `<li>${item}</li>`;
-                  });
-                  html += `</ul>`;
-                }
-              }
-              
-              body.innerHTML = html;
-            }
-            
-            // Événements
-            modal.querySelector('.mode-info-close').addEventListener('click', ()=>{
-              modal.classList.remove('active');
-            });
-            
-            modal.addEventListener('click', (e)=>{
-              if(e.target === modal) modal.classList.remove('active');
-            });
-            
-            modal.querySelectorAll('.mode-info-tab').forEach(tab => {
-              tab.addEventListener('click', ()=> showTab(tab.dataset.tab));
-            });
-            
-            showTab('simple');
-          }
-          
-          modal.classList.add('active');
-        });
-      }, 100);
-    }
-  })();
   </script>
 </body>
 </html>
