@@ -1,20 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<!-- Google tag (gtag.js) - Charger après le page load -->
 <script>
+  // Initialiser gtag() function
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
   
-  // Récupérer la langue de l'utilisateur
-  const userLang = localStorage.getItem('lang') || 'fr';
-  
-  gtag('config', 'G-JK3QGQGDDL', {
-    'user_properties': {
-      'language': userLang
-    }
+  // Charger GTM après le page load (ne bloque pas le rendering)
+  window.addEventListener('load', () => {
+    const script = document.createElement('script');
+    script.async = true;
+    script.src = 'https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL';
+    document.head.appendChild(script);
+    
+    gtag('js', new Date());
+    const userLang = localStorage.getItem('lang') || 'fr';
+    gtag('config', 'G-JK3QGQGDDL', {
+      'user_properties': { 'language': userLang }
+    });
   });
 </script>
 
@@ -2129,7 +2133,7 @@ filter_theme_tested_ort:"مُختبَر ومُعتمد من ORT",
 
 </script>
 <!-- Charge la config centralisée AVANT l’init Firebase -->
-<script src="./js/ort-config.js"></script>
+<script src="./js/ort-config.js" defer></script>
 <script>
 /* Aligne presentation.html sur quest_simple.html */
 (function(){
@@ -4672,8 +4676,31 @@ window.addEventListener('langChange', updateRouteBuilderTranslations);
 </script>
 
 
-<script src="/js/ort-i18n-auth.js" defer></script>
-<script src="/js/ort-header.js" defer></script>
-<script src="js/ort-footer.js" defer></script>
+<script>
+// Charger les scripts non-critiques après le page load
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadInternalScripts);
+} else {
+  loadInternalScripts();
+}
+
+function loadInternalScripts() {
+  // Charger les scripts en lazy (après le rendu)
+  setTimeout(() => {
+    const scripts = [
+      '/js/ort-i18n-auth.js',
+      '/js/ort-header.js',
+      'js/ort-footer.js'
+    ];
+    
+    scripts.forEach(src => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.defer = true;
+      document.body.appendChild(script);
+    });
+  }, 100);
+}
+</script>
 </body>
 </html>
