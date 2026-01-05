@@ -700,6 +700,7 @@ let previewPinned = false;
 let placesDataByCountry = {}; // Cache des places avec ratings
 let topRatedThreshold = 0; // Seuil de rating pour les 20% meilleurs
 let placesPhotosIndex = null; // Index photos par lieu
+let placesPhotosLoadingPromise = null; // Promise pour éviter les appels en double
 let countriesIndex = null; // Index des pays avec noms i18n
 
 const COUNTRY_CODES = ['FR','IT','ES','PT','CH','GR','HR','DE','AT','BE','NL','GB','US','CA','MX','AR','BR','AU','NZ','JP','TH','MA','AE','EG','IL','JO','LB','OM','QA','SA','TR','IS','NO','SE','FI','DK','PL','CZ','SK','HU','RO','BG','RS','BA','ME','AL','MK','SI','LT','LV','EE','UA','RU','GE','AM','AZ','KZ','UZ','TM','KG','TJ','IN','CN','KR','TW','HK','MO','MY','SG','ID','PH','VN','LA','KH','MM','BD','PK','LK','NP','BT','MV','AF','IR','IQ','SY','YE','KW','BH','ZA','KE','TZ','UG','RW','ET','MA','TN','DZ','LY','SD','EG','GH','NG','CM','SN','ML','CI','BF','NE','TD','CF','CG','CD','AO','ZM','ZW','BW','NA','MZ','MW','MG','MU','SC','RE','YT','KM'];
@@ -933,10 +934,6 @@ async function loadItineraries() {
     }
   });
 
-  // Load places data for ratings and photos (léger, chargé d'abord)
-  await loadPlacesData(countryList);
-  await loadPlacesPhotosIndex();
-
   // CHARGEMENT PROGRESSIF INTELLIGENT
   const loadedCountries = new Set();
   let isLoadingBackground = false;
@@ -1085,6 +1082,10 @@ async function loadItineraries() {
 
   // ÉTAPE 1 : Charger pays visibles (Europe au démarrage)
   const visibleCountries = getVisibleCountries();
+  
+  // Charger les places SEULEMENT pour les pays visibles
+  await loadPlacesData(visibleCountries);
+  
   const newItins = await loadCountryBatch(visibleCountries, 'pays visibles');
   allItineraries = newItins.filter(i => i.__id);
   
@@ -1121,6 +1122,10 @@ async function loadItineraries() {
     const batchSize = 10;
     for (let i = 0; i < remainingCountries.length; i += batchSize) {
       const batch = remainingCountries.slice(i, i + batchSize);
+      
+      // Charger les places pour ce batch AVANT de calculer les ratings
+      await loadPlacesData(batch);
+      
       const batchItins = await loadCountryBatch(batch, `batch ${Math.floor(i/batchSize) + 1}`);
       
       allItineraries.push(...batchItins.filter(it => it.__id));
@@ -1145,6 +1150,9 @@ async function loadItineraries() {
   map.on('moveend zoomend', async () => {
     const newVisible = getVisibleCountries();
     if (newVisible.length > 0 && !isLoadingBackground) {
+      // Charger les places pour les nouveaux pays visibles
+      await loadPlacesData(newVisible);
+      
       const freshItins = await loadCountryBatch(newVisible, 'nouveaux visibles');
       allItineraries.push(...freshItins.filter(i => i.__id));
       displayMarkers(allItineraries);
@@ -1262,19 +1270,26 @@ async function loadPlacesData(countryList) {
 }
 
 async function loadPlacesPhotosIndex() {
-  const paths = [
-    'data/photos-json/photos_lieux.json',
-    './data/photos-json/photos_lieux.json'
-  ];
-  for (const path of paths) {
-    try {
-      const res = await fetch(path);
-      if (res.ok) {
-        placesPhotosIndex = await res.json();
-        return;
-      }
-    } catch (e) {}
-  }
+  if (placesPhotosIndex) return; // Déjà chargé
+  if (placesPhotosLoadingPromise) return placesPhotosLoadingPromise; // Déjà en cours
+  
+  placesPhotosLoadingPromise = (async () => {
+    const paths = [
+      'data/photos-json/photos_lieux.json',
+      './data/photos-json/photos_lieux.json'
+    ];
+    for (const path of paths) {
+      try {
+        const res = await fetch(path);
+        if (res.ok) {
+          placesPhotosIndex = await res.json();
+          return;
+        }
+      } catch (e) {}
+    }
+  })();
+  
+  return placesPhotosLoadingPromise;
 }
 
 function calculateAvgRating(itin, cc) {
@@ -1552,6 +1567,10 @@ function isMobile() {
 }
 
 function showPreview(itin) {
+  // Charger les photos si pas déjà chargées
+  if (!placesPhotosIndex && !placesPhotosLoadingPromise) {
+    loadPlacesPhotosIndex().catch(e => console.warn('Erreur chargement photos:', e));
+  }
   // Cacher tous les circuits précédents
   itinLayers.forEach(({ polyline, cityMarkers }, id) => {
     if (id !== itin.itin_id) { // Sauf celui qu'on va afficher
@@ -1638,6 +1657,13 @@ window.closePreview = function() {
   previewPinned = false;
   const preview = document.getElementById('itinPreview');
   preview.style.display = 'none';
+  
+  // Fermer aussi la modale mobile si elle est ouverte
+  const mobilePreview = document.getElementById('mobilePreview');
+  if (mobilePreview) {
+    mobilePreview.classList.remove('show');
+  }
+  
   polylinesLayer.eachLayer(l => {
     if (l instanceof L.Polyline && !(l instanceof L.CircleMarker)) {
       l.setStyle({ opacity: 0 });

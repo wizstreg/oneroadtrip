@@ -16,7 +16,7 @@
 
     /* HERO : image réelle + overlay sombre ; contenu légèrement remonté */
     .hero{
-      position:relative; width:100%; min-height:78vh;
+      position:relative; width:100%; min-height:65vh;
       display:flex; align-items:flex-start; justify-content:center;
       text-align:left; color:#fff; background:var(--heroBase); overflow:hidden;
     }
@@ -245,14 +245,16 @@
     .how-dev li{ margin:6px 0; }
     
     /* Bouton Comment ça marche - VISIBLE SEULEMENT EN MOBILE */
-    .cta-btn.how{display:none}
-    @media(max-width:640px){.cta-btn.how{display:block}}
     .cta-btn.how{
+      display:none;
       background:linear-gradient(135deg, rgba(120,80,200,0.85) 0%, rgba(180,100,220,0.85) 100%);
     }
     .cta-btn.how:hover{
       background:linear-gradient(135deg, rgba(100,60,180,0.95) 0%, rgba(160,80,200,0.95) 100%);
       transform:translateY(-2px);
+    }
+    @media(max-width:640px){
+      .cta-btn.how{display:block !important}
     }
     .cta-btn.trips{
       background:linear-gradient(135deg, rgba(255,170,50,0.85) 0%, rgba(255,200,100,0.85) 100%);
@@ -1240,7 +1242,10 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       btnHow.type = "button";
       btnHow.textContent = t.cta_how;
       btnHow.setAttribute("aria-label", t.cta_how);
-      btnHow.addEventListener("click", showHowModal);
+      // N'ajouter showHowModal QUE sur desktop
+      if(window.innerWidth > 640){
+        btnHow.addEventListener("click", showHowModal);
+      }
       
       // Bouton Vos voyages (desktop)
       const btnTrips = document.createElement("button");
