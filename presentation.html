@@ -1084,6 +1084,8 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 <!-- DEBUG PANEL -->
 <div id="debugPanel" style="position:fixed;bottom:20px;right:20px;background:rgba(0,0,0,0.9);color:#0f0;padding:12px;border-radius:8px;font-family:monospace;font-size:11px;z-index:99999;max-width:280px;border:2px solid #0f0;line-height:1.5;">
   <strong style="display:block;margin-bottom:8px;">⚙️ DEBUG</strong>
+  <div>Leaflet: <span id="debugLeaflet">--</span></div>
+  <div>MapFull: <span id="debugMapFull">--</span></div>
   <div>FPS: <span id="debugFPS">--</span></div>
   <div>Markers: <span id="debugMarkers">--</span></div>
   <div>Zoom: <span id="debugZoom">--</span></div>
@@ -1096,8 +1098,6 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
 
 
 <!-- Firebase compat est chargé dynamiquement par ensureFirebase() (v10.12.2) -->
-<script async src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script async src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
 /* ===== I18N TRANSLATIONS ===== */
 const T = {
@@ -2342,12 +2342,25 @@ document.getElementById('mapExplorerPreview')?.addEventListener('click', () => {
 
 if (!mapFull) {
   setTimeout(() => {
-    loadThemes(); // Charger en arrière-plan
+    console.log('[INIT] START - mapFull undefined');
+    
+    loadThemes(); 
+    console.log('[INIT] loadThemes() called');
+    
     initMapFull();
+    console.log('[INIT] initMapFull() called');
+    
     loadPhotosData();
+    console.log('[INIT] loadPhotosData() called');
+    
     loadPlacesPhotosIndex();
+    console.log('[INIT] loadPlacesPhotosIndex() called');
+    
     loadAllItineraries();
-  }, 100);
+    console.log('[INIT] loadAllItineraries() called');
+    
+    console.log('[INIT] ALL DONE - mapFull is:', mapFull);
+  }, 1000); // Augmenté de 100 à 1000ms pour laisser le temps à Leaflet de charger
 } else {
 
     setTimeout(() => mapFull.invalidateSize(), 100);
@@ -2841,12 +2854,18 @@ let lastEvent = '--';
 let lastEventTime = 0;
 
 function updateDebugPanel() {
+  const leafletEl = document.getElementById('debugLeaflet');
+  const mapfullEl = document.getElementById('debugMapFull');
   const fpsEl = document.getElementById('debugFPS');
   const markersEl = document.getElementById('debugMarkers');
   const zoomEl = document.getElementById('debugZoom');
   const coordsEl = document.getElementById('debugCoords');
   const memoryEl = document.getElementById('debugMemory');
   const eventEl = document.getElementById('debugEvent');
+  
+  // Status Leaflet
+  if (leafletEl) leafletEl.textContent = typeof L !== 'undefined' ? '✓' : '✗';
+  if (mapfullEl) mapfullEl.textContent = mapFull ? '✓' : '✗';
   
   if (!mapFull) {
     requestAnimationFrame(updateDebugPanel);
@@ -2896,7 +2915,25 @@ window.addEventListener('load', () => {
 });
 
 function initMapFull() {
-  mapFull = L.map('mapContainerFull').setView([46.0, 8.0], 4);
+  console.log('[MAP] initMapFull() START');
+  console.log('[MAP] L defined:', typeof L !== 'undefined');
+  console.log('[MAP] L.map available:', typeof L?.map);
+  
+  if (typeof L === 'undefined') {
+    console.error('[MAP] ERROR: Leaflet (L) not loaded yet!');
+    console.log('[MAP] Retrying in 500ms...');
+    setTimeout(initMapFull, 500);
+    return;
+  }
+  
+  try {
+    mapFull = L.map('mapContainerFull').setView([46.0, 8.0], 4);
+    console.log('[MAP] Map created successfully');
+  } catch (e) {
+    console.error('[MAP] ERROR creating L.map:', e.message);
+    return;
+  }
+  
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     attribution: '© CARTO © OpenStreetMap',
     maxZoom: 20
@@ -2941,7 +2978,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
     console.log('[MAP] ZOOMEND:', mapFull.getZoom());
     lastEvent = 'ZOOMED';
     lastEventTime = Date.now();
-    updateMarkersVisibility();
+    throttledUpdateMarkersVisibility();
   });
   
   // Track map movement
@@ -2959,6 +2996,30 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r
     lastEvent = 'ZOOMING';
     lastEventTime = Date.now();
   });
+}
+
+// ===== THROTTLE updateMarkersVisibility pour éviter les gels =====
+let lastVisibilityUpdate = 0;
+let visibilityUpdateTimeout = null;
+
+function throttledUpdateMarkersVisibility() {
+  const now = Date.now();
+  const timeSinceLastUpdate = now - lastVisibilityUpdate;
+  
+  // Si moins de 300ms depuis la dernière mise à jour, attendre
+  if (timeSinceLastUpdate < 300) {
+    clearTimeout(visibilityUpdateTimeout);
+    visibilityUpdateTimeout = setTimeout(() => {
+      console.log('[THROTTLE] Executing deferred updateMarkersVisibility');
+      lastVisibilityUpdate = Date.now();
+      updateMarkersVisibility();
+    }, 300 - timeSinceLastUpdate);
+    return;
+  }
+  
+  console.log('[THROTTLE] Executing updateMarkersVisibility immediately');
+  lastVisibilityUpdate = now;
+  updateMarkersVisibility();
 }
 
 // Seuils de zoom pour l'affichage progressif des ITINÉRAIRES
