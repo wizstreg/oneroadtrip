@@ -2326,8 +2326,9 @@ if (!mapFull) {
   setTimeout(async () => {
     await loadThemes(); // ← CHARGER LES THÈMES EN PREMIER
     initMapFull();
-    loadPhotosData();
-    loadPlacesPhotosIndex(); // ← charge photos_lieux.json
+    // NE PAS charger les photos au départ - on les charge au clic sur la carte
+    // loadPhotosData();
+    // loadPlacesPhotosIndex();
     loadAllItineraries();
   }, 100);
 } else {
@@ -3170,6 +3171,12 @@ function showMobileSelectionModal(itin) {
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const L = T[lang] || T.fr;
   
+  // Charger les photos si pas déjà chargées
+  if (!placesPhotosLoaded && !placesPhotosLoadingPromise) {
+    loadPlacesPhotosIndex();
+    loadPhotosData();
+  }
+  
   // Titre
   document.getElementById('mobileModalTitle').textContent = itin.title;
   
@@ -3295,6 +3302,12 @@ function showPreview(itin) {
   // Force le scroll de la sidebar en haut pour éviter le bug d'ancrage
   const sidebar = document.querySelector('.map-fullscreen-sidebar');
   if (sidebar) sidebar.scrollTop = 0;
+  
+  // Charger les photos si pas déjà chargées
+  if (!placesPhotosLoaded && !placesPhotosLoadingPromise) {
+    loadPlacesPhotosIndex();
+    loadPhotosData();
+  }
   
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const T_MAP = {
