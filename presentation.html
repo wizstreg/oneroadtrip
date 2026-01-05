@@ -2522,17 +2522,19 @@ async function loadAllItineraries() {
       }
     }
     
-    // ÉTAPE 2: Charger les autres pays en arrière-plan
-    console.log(`📦 Chargement des ${otherCountries.length} autres pays...`);
-    const otherResults = await Promise.all(otherCountries.map(loadCountry));
-    const otherItins = otherResults.flat().filter(itin => itin.__id);
-    
-    // Fusionner et réafficher
-    allItineraries = [...allItineraries, ...otherItins];
-    populateFilters();
-    displayMarkers(allItineraries);
-    
-    console.log(`✅ ${allItineraries.length} itinéraires chargés au total`);
+    // ÉTAPE 2: Charger les autres pays en arrière-plan (sans bloquer le rendering)
+    console.log(`📦 Chargement des ${otherCountries.length} autres pays en arrière-plan...`);
+    // NE PAS await - on laisse charger en background sans bloquer
+    Promise.all(otherCountries.map(loadCountry)).then(otherResults => {
+      const otherItins = otherResults.flat().filter(itin => itin.__id);
+      
+      // Fusionner et réafficher
+      allItineraries = [...allItineraries, ...otherItins];
+      populateFilters();
+      displayMarkers(allItineraries);
+      
+      console.log(`✅ ${allItineraries.length} itinéraires chargés au total`);
+    }).catch(err => console.error('Erreur chargement autres pays:', err));
   } catch (error) {
     console.error('Erreur chargement:', error);
   }
