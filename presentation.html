@@ -215,7 +215,7 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     .map-fullscreen{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;padding:20px}
     .map-fullscreen.active{display:flex}
     .map-fullscreen-content{background:#fff;border-radius:14px;width:100%;max-width:1600px;height:90vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-    .map-fullscreen-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:2px solid var(--acc);background:var(--card)}
+    .map-fullscreen-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 20px;border-bottom:2px solid var(--acc);background:var(--card);position:sticky;top:0;z-index:998;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
     .map-fullscreen-header h2{margin:0;color:var(--acc);font-size:20px}
     
     /* Compteur itinéraires visibles */
@@ -260,99 +260,95 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
     .itin-preview h3{margin:0 0 12px;color:var(--acc);font-size:18px;padding-right:30px}
     .itin-preview .preview-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--mut);font-size:20px;cursor:pointer;padding:0;width:24px;height:24px;line-height:1}
     .itin-preview .preview-close:hover{color:var(--acc)}
-    
-    /* Boutons modale desktop - invisibles par défaut */
-    .itin-preview .itin-modal-actions {
-      display: none;
-    }
 
-/* Responsive mobile: Modale centrée simple */
+/* Responsive mobile pour preview */
 @media (max-width: 768px) {
-  .itin-preview {
-    position: fixed !important;
-    inset: 0 !important;
-    width: 95% !important;
-    height: auto !important;
-    max-height: 90vh !important;
-    margin: auto !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    left: 50% !important;
-    right: auto !important;
-    bottom: auto !important;
-    z-index: 10000 !important;
-    background: rgba(0,0,0,0.5) !important;
-    border-radius: 16px !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: visible !important;
+  /* Aperçu en BAS de l'écran, au-dessus de la barre */
+  .itin-preview{
+    position:fixed !important;
+    top:auto !important;
+    left:0 !important;
+    right:0 !important;
+    bottom:70px !important; /* Aligné avec la hauteur de la barre (70px) */
+    width:100% !important;
+    max-width:100% !important;
+    height:auto !important;
+    max-height:55vh !important;
+    z-index:1004 !important; /* SOUS la légende (1005) */
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important; /* Scroll fluide iOS */
+    background:#fff !important;
+    border-radius:16px 16px 0 0 !important;
+    padding:20px !important;
+    box-shadow:0 -4px 20px rgba(0,0,0,0.3) !important;
+    border:none !important;
+    border-top:3px solid var(--acc) !important;
+    pointer-events:auto !important; /* Cliquable */
   }
   
-  /* Contenu de la modale */
-  .itin-preview h3 {
-    margin: 0 !important;
-    padding: 20px 20px 12px !important;
-    color: var(--acc) !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
+  /* Masquer le bouton dans l'aperçu sur mobile */
+  .itin-preview .btn-select {
+    display:none !important;
   }
   
-  .itin-preview #previewInfo,
-  .itin-preview #previewCities,
-  .itin-preview .preview-path-simplified {
-    padding-left: 20px !important;
-    padding-right: 20px !important;
+  /* Barre d'action mobile TOUJOURS visible en bas */
+  .mobile-action-bar {
+    display:none !important;
+    position:fixed !important;
+    bottom:0 !important;
+    left:0 !important;
+    right:0 !important;
+    background:#fff !important;
+    padding:10px 16px 12px 16px !important;
+    box-shadow:0 -2px 10px rgba(0,0,0,0.2) !important;
+    z-index:1003 !important;
+    border-top:2px solid var(--acc) !important;
+    height:70px !important;
+    pointer-events:auto !important;
   }
   
-  /* Boutons EN BAS de la modale */
-  .itin-preview .itin-modal-actions {
-    display: flex !important;
-    gap: 12px !important;
-    padding: 20px !important;
-    margin-top: auto !important;
-    border-top: 1px solid #e5e7eb !important;
+  .select-itin-btn-mobile {
+    display:block !important;
+    width:100% !important;
+    padding:16px !important;
+    background:var(--acc) !important;
+    color:#fff !important;
+    border:none;
+    border-radius:8px;
+    font-size:18px;
+    font-weight:700;
+    cursor:pointer;
+    pointer-events:auto !important;
   }
   
-  .itin-preview .itin-modal-actions button {
-    flex: 1 !important;
-    padding: 14px !important;
-    border: none !important;
-    border-radius: 8px !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
-    transition: all 0.2s !important;
-    min-height: 48px !important;
+  .select-itin-btn-mobile:active {
+    background:#0d2f5a;
+    transform:scale(0.98);
   }
   
-  .itin-preview .itin-modal-actions .cancel {
-    background: #f3f4f6 !important;
-    color: #374151 !important;
-    border: 2px solid #d1d5db !important;
+  /* Légende carte - Ajuster position pour ne pas être cachée */
+  .map-legend {
+    bottom:80px !important; /* Au-dessus de la barre (70px + marge) */
+    z-index:1005 !important; /* AU-DESSUS de tout */
+    pointer-events:auto !important;
   }
   
-  .itin-preview .itin-modal-actions .cancel:active {
-    background: #e5e7eb !important;
-    transform: scale(0.96) !important;
+  /* S'assurer que la carte reste interactive */
+  #mapContainerFull {
+    pointer-events:auto !important;
   }
   
-  .itin-preview .itin-modal-actions .validate {
-    background: var(--acc) !important;
-    color: #fff !important;
+  /* Bouton fermeture aperçu - toujours visible */
+  .preview-close {
+    position:sticky !important;
+    top:0 !important;
+    z-index:10 !important;
+    pointer-events:auto !important;
   }
   
-  .itin-preview .itin-modal-actions .validate:active {
-    background: #0d2f5a !important;
-    transform: scale(0.96) !important;
-  }
-  
-  /* Masquer les boutons parasites */
-  .itin-preview .btn-select,
-  .itin-preview .preview-close {
-    display: none !important;
+  /* Sidebar filtres AU-DESSUS de l'aperçu quand affichée */
+  .map-fullscreen-sidebar {
+    z-index:1007 !important; /* Au-dessus de tout */
   }
 }
 
@@ -437,9 +433,20 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
   background:#0d2f5a;
 }
 
-/* Modale de sélection mobile - DÉSACTIVÉE */
+/* Modale de sélection mobile */
 .mobile-selection-modal{
   display:none !important;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:10000;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.mobile-selection-modal.show{
+  display:flex !important;
 }
 
 /* NEW: grille photo du preview */
@@ -806,7 +813,7 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
         <button id="closeMapFull" class="map-fullscreen-close">✕ <span id="closeBtnText">Fermer</span></button>
       </div>
       <!-- Bandeau de sélection en haut -->
-      <div id="selectionBanner" style="display:none;position:relative;z-index:1000;background:linear-gradient(135deg,#113f7a,#1e5a9e);padding:12px 20px;border-bottom:2px solid rgba(255,255,255,0.2);">
+      <div id="selectionBanner" style="display:none;position:sticky;top:0;z-index:999;background:linear-gradient(135deg,#113f7a,#1e5a9e);padding:12px 20px;border-bottom:2px solid rgba(255,255,255,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
           <div id="selectionBannerItems" style="display:flex;flex-wrap:wrap;gap:8px;flex:1;"></div>
           <button id="btnContinueSelection" onclick="validateAndContinue()" style="background:#10b981;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;">Continuer →</button>
@@ -850,20 +857,65 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
           
           <!-- Aperçu au survol -->
 <div id="itinPreview" class="itin-preview" style="display:none">
+  <button onclick="closeItinPreview()" style="position:absolute;top:10px;right:10px;background:#e5e7eb;color:#333;border:none;padding:8px 12px;border-radius:6px;font-size:14px;cursor:pointer;z-index:10;">✕</button>
   <h3 id="previewTitle"></h3>
-  <div id="previewInfo"></div>
-  <div id="previewCities"></div>
-  <div id="previewPathSimplified" class="preview-path-simplified" style="display:none">
-    <div class="path-title">Parcours :</div>
-    <div class="path-flow" id="previewPathFlow"></div>
-  </div>
-  <div class="itin-modal-actions">
-    <button id="previewCancelBtn" class="cancel" onclick="closeItinPreview()">Annuler</button>
-    <button id="previewValidateBtn" class="validate">Valider</button>
-  </div>
-</div>
+
+  <!-- NEW: conteneur des 4 photos liées aux lieux de l’itin -->
+  <div class="preview-photos" id="previewPhotos"></div>
+  <!-- … autres infos … -->
+
+            <div id="previewInfo"></div>
+            <div id="previewPathSimplified" class="preview-path-simplified" style="display:none">
+              <div class="path-title">Parcours simplifié :</div>
+              <div class="path-flow" id="previewPathFlow"></div>
+            </div>
+            <div id="previewCities"></div>
+            <button id="previewSelectBtn" style="width:100%;margin-top:12px;background:#10b981;color:#fff;border:none;padding:12px 16px;border-radius:8px;font-weight:600;font-size:14px;cursor:pointer;">+ Ajouter à ma sélection</button>
+          </div>
+        </div>
         
         <!-- Barre fixe bouton sélection (mobile uniquement) -->
+        <div id="mobileActionBar" class="mobile-action-bar">
+          <button id="mobileCancelBtn" class="mobile-btn-cancel">
+            <span id="mobileCancelBtnText">Annuler</span>
+          </button>
+          <button id="selectItinBtnMobile" class="select-itin-btn-mobile">
+            <span id="selectItinBtnMobileText">Valider</span>
+          </button>
+        </div>
+        
+        <!-- Modale confirmation simple mobile -->
+        <div id="mobileConfirmModal" class="mobile-confirm-modal">
+          <div class="mobile-confirm-content">
+            <h3 id="mobileConfirmTitle"></h3>
+            <div id="mobileConfirmInfo"></div>
+            <div class="mobile-confirm-actions">
+              <button id="mobileConfirmCancel" class="mobile-btn-cancel">
+                <span id="mobileConfirmCancelText">Annuler</span>
+              </button>
+              <button id="mobileConfirmValidate" class="mobile-btn-validate">
+                <span id="mobileConfirmValidateText">Valider</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modale de sélection mobile uniquement -->
+        <div id="mobileSelectionModal" class="mobile-selection-modal">
+          <div class="mobile-selection-content" style="background:#fff;border-radius:12px;max-width:95vw;width:400px;max-height:85vh;overflow:hidden;">
+            <div class="mobile-selection-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#113f7a;border-radius:12px 12px 0 0;">
+              <button id="mobileModalSelect" style="background:#10b981;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;">Sélectionner</button>
+              <h3 id="mobileModalTitle" style="flex:1;text-align:center;color:#fff;margin:0 10px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></h3>
+              <button id="mobileModalCancel" style="background:rgba(255,255,255,0.2);border:none;color:#fff;font-size:20px;cursor:pointer;padding:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;">✕</button>
+            </div>
+            <div class="mobile-selection-body" style="padding:16px;max-height:calc(85vh - 60px);overflow-y:auto;">
+              <div id="mobileModalInfo" style="margin-bottom:12px;"></div>
+              <div id="mobileModalPhotos" style="margin:12px 0;"></div>
+              <div id="mobileModalSteps" style="margin-top:16px;font-size:14px;border-top:1px solid #e5e7eb;padding-top:12px;"></div>
+            </div>
+          </div>
+        </div>
+        
         <div class="map-fullscreen-sidebar">
           <div class="map-controls-vertical">
             <h3 id="filterTitle"></h3>
@@ -2158,16 +2210,20 @@ window.closeItinPreview = function () {
   const preview = document.getElementById('itinPreview');
   
   if (preview) {
-    // Animation de fermeture
-    preview.style.transition = 'all 0.3s ease-in';
-    preview.style.opacity = '0';
-    preview.style.transform = 'translateY(-50%) scale(0.9)';
-    
-    setTimeout(() => {
+    // Animation de fermeture sur mobile
+    if (window.innerWidth <= 1024) {
+      preview.style.transition = 'all 0.3s ease-in';
+      preview.style.opacity = '0';
+      preview.style.transform = 'translateY(100%)';
+      
+      setTimeout(() => {
+        preview.style.display = 'none';
+        preview.style.transition = '';
+        preview.style.transform = '';
+      }, 300);
+    } else {
       preview.style.display = 'none';
-      preview.style.transition = '';
-      preview.style.transform = '';
-    }, 300);
+    }
   }
   
   // Les polylines et cityMarkers sont dans overlaysLayer
@@ -2180,7 +2236,13 @@ window.closeItinPreview = function () {
     });
   }
   
-  updateSelectionStyles();
+  // Masquer la barre mobile
+  const mobileBar = document.getElementById('mobileActionBar');
+  if (mobileBar && window.innerWidth <= 1024) {
+    mobileBar.style.display = 'none';
+  }
+  
+  updateSelectionStyles(); // NEW : réapplique le rouge sur les sélectionnés
 };
 
 // Fonction pour réinitialiser l'état de la preview proprement
@@ -2664,8 +2726,25 @@ function extractCities(itin) {
   if (!itin.days_plan) return [];
   const cities = [];
   itin.days_plan.forEach(day => {
-    if (day?.night?.city && !cities.includes(day.night.city)) {
-      cities.push(day.night.city);
+    let cityName = day?.night?.city; // Chercher d'abord city (au cas où)
+    
+    // Si pas de city, parser le place_id: "AE::abu-dhabi-centre" → "Abu Dhabi"
+    if (!cityName && day?.night?.place_id) {
+      const parts = day.night.place_id.split('::');
+      if (parts[1]) {
+        let slug = parts[1];
+        // Retirer les suffixes comme -centre, -airport, -nord, -sud, -est, -ouest, -ville, -city, etc
+        slug = slug.replace(/-(centre|airport|aéroport|nord|sud|est|ouest|ville|city|downtown|airport|port|gare)$/i, '');
+        // Capitaliser proprement: "abu-dhabi" → "Abu Dhabi"
+        cityName = slug
+          .split('-')
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+      }
+    }
+    
+    if (cityName && !cities.includes(cityName)) {
+      cities.push(cityName);
     }
   });
   return cities;
@@ -3081,6 +3160,7 @@ function showMobileConfirmModal(itin) {
 
 function showMobileSelectionModal(itin) {
   const modal = document.getElementById('mobileSelectionModal');
+  const actionBar = document.getElementById('mobileActionBar');
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const L = T[lang] || T.fr;
   
@@ -3137,8 +3217,23 @@ function showMobileSelectionModal(itin) {
   if (Array.isArray(itin.days_plan) && itin.days_plan.length > 0) {
     const cities = [];
     itin.days_plan.forEach(day => {
-      if (day?.night?.city && !cities.includes(day.night.city)) {
-        cities.push(day.night.city);
+      let cityName = day?.night?.city; // Chercher d'abord city (au cas où)
+      
+      // Si pas de city, parser le place_id: "AE::abu-dhabi-centre" → "Abu Dhabi"
+      if (!cityName && day?.night?.place_id) {
+        const parts = day.night.place_id.split('::');
+        if (parts[1]) {
+          let slug = parts[1];
+          slug = slug.replace(/-(centre|airport|aéroport|nord|sud|est|ouest|ville|city|downtown|port|gare)$/i, '');
+          cityName = slug
+            .split('-')
+            .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(' ');
+        }
+      }
+      
+      if (cityName && !cities.includes(cityName)) {
+        cities.push(cityName);
       }
     });
     
@@ -3163,22 +3258,26 @@ function showMobileSelectionModal(itin) {
   
   document.getElementById('mobileModalSteps').innerHTML = stepsHtml;
   
-  // Afficher la modale
+  // Afficher la modale et masquer la barre d'action
   modal.classList.add('show');
+  if (actionBar) actionBar.style.display = 'none';
   
   // Handlers
   document.getElementById('mobileModalSelect').onclick = () => {
     selectItinerary(itin);
     modal.classList.remove('show');
+    if (actionBar) actionBar.style.display = 'flex';
   };
   
   document.getElementById('mobileModalCancel').onclick = () => {
     modal.classList.remove('show');
+    if (actionBar) actionBar.style.display = 'flex';
   };
   
   modal.onclick = (e) => {
     if (e.target === modal) {
       modal.classList.remove('show');
+      if (actionBar) actionBar.style.display = 'flex';
     }
   };
 }
@@ -3275,26 +3374,55 @@ function showPreview(itin) {
     pathSimplified.style.display = 'none';
   }
 
-  // Boutons de la modale
-  const validateBtn = document.getElementById('previewValidateBtn');
-  if (validateBtn) {
-    validateBtn.onclick = () => {
-      selectItinerary(itin);
-      closeItinPreview();
-    };
+  // Bouton "Sélectionner"
+  document.getElementById('previewSelectBtn').onclick = () => { selectItinerary(itin); closeItinPreview(); };
+
+  // Barre mobile : afficher et attacher les handlers
+  const mobileBar = document.getElementById('mobileActionBar');
+  const mobileBtnText = document.getElementById('selectItinBtnMobileText');
+  const mobileCancelBtnText = document.getElementById('mobileCancelBtnText');
+  
+  if (mobileBar && window.innerWidth <= 1024) {
+    // Mettre à jour les textes (i18n)
+    const lang = localStorage.getItem('lang') || 'fr';
+    const L = T[lang] || T.fr;
+    if (mobileBtnText) mobileBtnText.textContent = L.selectBtnText || 'Valider';
+    if (mobileCancelBtnText) mobileCancelBtnText.textContent = L.cancelBtnText || 'Annuler';
+    
+    // Afficher la barre
+    mobileBar.style.display = 'flex';
+    
+    // Handler du bouton Valider
+    const mobileBtn = document.getElementById('selectItinBtnMobile');
+    if (mobileBtn) {
+      mobileBtn.onclick = () => {
+        selectItinerary(itin);
+        mobileBar.style.display = 'none';
+        closeItinPreview();
+      };
+    }
+    
+    // Handler du bouton Annuler
+    const mobileCancelBtn = document.getElementById('mobileCancelBtn');
+    if (mobileCancelBtn) {
+      mobileCancelBtn.onclick = () => {
+        mobileBar.style.display = 'none';
+        closeItinPreview();
+      };
+    }
   }
 
-  // Afficher la modale
-  preview.style.display = 'flex';
+  // Afficher dans la sidebar (géré par .in-sidebar)
+  preview.style.display = 'block';
   
-  // Animation smooth (optionnel)
-  if (window.innerWidth <= 768) {
+  // Animation d'apparition sur mobile
+  if (window.innerWidth <= 1024) {
     preview.style.opacity = '0';
-    preview.style.transform = 'translateY(-50%) scale(0.95)';
+    preview.style.transform = 'translateY(100%)';
     setTimeout(() => {
       preview.style.transition = 'all 0.3s ease-out';
       preview.style.opacity = '1';
-      preview.style.transform = 'translateY(-50%) scale(1)';
+      preview.style.transform = 'translateY(0)';
     }, 10);
   }
 }
@@ -4509,17 +4637,6 @@ function initLoopModeToggle() {
 }
 
 // Init au chargement
-// Handler pour fermer la modale au clic sur le background sombre
-document.addEventListener('click', (e) => {
-  const preview = document.getElementById('itinPreview');
-  if (preview && preview.style.display === 'flex' && window.innerWidth <= 768) {
-    // Vérifier que le clic est en dehors du contenu de la modale
-    if (e.target === preview) {
-      closeItinPreview();
-    }
-  }
-});
-
 document.addEventListener('DOMContentLoaded', () => {
   initRouteBuilderAutocomplete();
   initRouteBuilderSubmit();
