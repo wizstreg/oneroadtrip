@@ -2129,7 +2129,7 @@ filter_theme_tested_ort:"مُختبَر ومُعتمد من ORT",
 
 </script>
 <!-- Charge la config centralisée AVANT l’init Firebase -->
-<script src="./js/ort-config.js" defer></script>
+<script src="./js/ort-config.js"></script>
 <script>
 /* Aligne presentation.html sur quest_simple.html */
 (function(){
@@ -2326,9 +2326,8 @@ if (!mapFull) {
   setTimeout(async () => {
     await loadThemes(); // ← CHARGER LES THÈMES EN PREMIER
     initMapFull();
-    // NE PAS charger les photos au départ - on les charge au clic sur la carte
-    // loadPhotosData();
-    // loadPlacesPhotosIndex();
+    loadPhotosData();
+    loadPlacesPhotosIndex(); // ← charge photos_lieux.json
     loadAllItineraries();
   }, 100);
 } else {
@@ -2447,16 +2446,12 @@ async function loadAllItineraries() {
     const otherCountries = userCountry ? countryList.filter(c => getCC(c) !== userCountry) : countryList;
     
     // Fonction pour charger un pays
-    async function loadCountry(countryObj, loadRatings = true) {
+    async function loadCountry(countryObj) {
       const countryCode = getCC(countryObj);
       const countryLower = countryCode.toLowerCase();
       const lang = localStorage.getItem('lang') || 'fr';
       
-      // Charger les ratings SEULEMENT pour le pays utilisateur (ÉTAPE 1)
-      // Les autres pays (ÉTAPE 2) chargent juste les itinéraires, pas les places
-      if (loadRatings) {
-        await loadPlacesRatings(countryCode);
-      }
+      await loadPlacesRatings(countryCode);
       
       // Fallback langue: langue courante → en → fr (sauf si déjà dans la liste)
       const langFallback = lang !== 'en' && lang !== 'fr' ? [lang, 'en', 'fr'] : 
@@ -2526,20 +2521,17 @@ async function loadAllItineraries() {
       }
     }
     
-    // ÉTAPE 2: Charger les autres pays en arrière-plan (sans les places ratings - économise ~1.2 MiB!)
-    console.log(`📦 Chargement des ${otherCountries.length} autres pays en arrière-plan...`);
-    // NE PAS await - on laisse charger en background sans bloquer
-    // loadRatings=false: on charge juste les itinéraires, pas les places.master.json
-    Promise.all(otherCountries.map(c => loadCountry(c, false))).then(otherResults => {
-      const otherItins = otherResults.flat().filter(itin => itin.__id);
-      
-      // Fusionner et réafficher
-      allItineraries = [...allItineraries, ...otherItins];
-      populateFilters();
-      displayMarkers(allItineraries);
-      
-      console.log(`✅ ${allItineraries.length} itinéraires chargés au total`);
-    }).catch(err => console.error('Erreur chargement autres pays:', err));
+    // ÉTAPE 2: Charger les autres pays en arrière-plan
+    console.log(`📦 Chargement des ${otherCountries.length} autres pays...`);
+    const otherResults = await Promise.all(otherCountries.map(loadCountry));
+    const otherItins = otherResults.flat().filter(itin => itin.__id);
+    
+    // Fusionner et réafficher
+    allItineraries = [...allItineraries, ...otherItins];
+    populateFilters();
+    displayMarkers(allItineraries);
+    
+    console.log(`✅ ${allItineraries.length} itinéraires chargés au total`);
   } catch (error) {
     console.error('Erreur chargement:', error);
   }
@@ -3178,12 +3170,6 @@ function showMobileSelectionModal(itin) {
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const L = T[lang] || T.fr;
   
-  // Charger les photos si pas déjà chargées
-  if (!placesPhotosLoaded && !placesPhotosLoadingPromise) {
-    loadPlacesPhotosIndex();
-    loadPhotosData();
-  }
-  
   // Titre
   document.getElementById('mobileModalTitle').textContent = itin.title;
   
@@ -3309,12 +3295,6 @@ function showPreview(itin) {
   // Force le scroll de la sidebar en haut pour éviter le bug d'ancrage
   const sidebar = document.querySelector('.map-fullscreen-sidebar');
   if (sidebar) sidebar.scrollTop = 0;
-  
-  // Charger les photos si pas déjà chargées
-  if (!placesPhotosLoaded && !placesPhotosLoadingPromise) {
-    loadPlacesPhotosIndex();
-    loadPhotosData();
-  }
   
   const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
   const T_MAP = {
