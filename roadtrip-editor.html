@@ -1776,6 +1776,20 @@
             // Mettre à jour la toolbar avec les traductions
             updateToolbarLabels();
             
+            // 0) VÉRIFIER SI C'EST UN LIEN PARTAGÉ
+            console.log('[CARNET] 🔍 Vérification lien partagé...');
+            const sharedAccess = await ORT_SHARE.checkSharedAccess();
+            if (sharedAccess && sharedAccess.data) {
+                console.log('[CARNET] ✅ Lien partagé détecté!');
+                tripData = sharedAccess.data;
+                tripId = tripData.id;
+                // Appliquer mode lecture seule
+                document.body.classList.add('shared-view-only');
+                console.log('[CARNET] Mode lecture seule activé');
+            }
+            // Sinon continuer avec sessionStorage/URL
+            else {
+            
             // 1) Essayer sessionStorage (depuis roadtrip_detail.html)
             const stored = sessionStorage.getItem('ort_editor_trip');
             if (stored) {
@@ -1801,6 +1815,8 @@
                     console.log('[CARNET] Données depuis URL params');
                 }
             }
+            
+            } // Fin du else du lien partagé
             
             // 3) Toujours pas de données ?
             if (!tripData || !tripData.steps || tripData.steps.length === 0) {
