@@ -3246,14 +3246,14 @@ function setupEvents() {
     const u = currentUser();
     if(!u){ showLoginModalForSave(); return; }
     
-    const tripId = window.state?.tripId;
+    const tripId = state?.tripId;
     if (!tripId || tripId.startsWith('temp_') || tripId.startsWith('catalog::')) {
       showSaveBeforeShareModal();
       return;
     }
     
     if (typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal) {
-      const tripTitle = window.state?.title || 'Voyage';
+      const tripTitle = state?.title || 'Voyage';
       ORT_SHARE.showModal(tripId, tripTitle);
     } else {
       showToast('❌ Module de partage non disponible');
@@ -4048,10 +4048,10 @@ async function generateShareLink() {
   $('btnGenerateShare').disabled = true;
   
   try {
-    const result = await ORT_SHARE.createShareLink(state.tripId, mode);
+    const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
     
-    if (result && result.url) {
-      $('shareUrlInput').value = result.url;
+    if (result && result.shareUrl) {
+      $('shareUrlInput').value = result.shareUrl;
       $('shareResult').style.display = '';
       $('btnRevokeShare').style.display = '';
       $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
