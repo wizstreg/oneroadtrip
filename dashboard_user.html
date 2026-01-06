@@ -78,9 +78,21 @@
 
   .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   @media(min-width:640px){.actions{gap:8px}}
-  .actions .btn{background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0;padding:6px 10px;font-size:0.85rem}
+  .actions .btn{display:inline-flex;background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0;padding:6px 10px;font-size:0.85rem}
   @media(min-width:640px){.actions .btn{padding:8px 12px;font-size:0.95rem}}
   .actions .btn:hover{background:#eaf1fb}
+
+  /* Topbar boutons: cacher sur mobile sauf Nouveau voyage */
+  .topbar .btn{display:inline-flex}
+  @media(max-width:480px){
+    .topbar .btn{display:none}
+    .topbar .btn.primary{display:inline-flex}
+  }
+
+  /* Cacher certains éléments sur mobile */
+  @media(max-width:480px){
+    .hide-mobile{display:none !important}
+  }
 
   .empty{padding:16px;border:1px dashed #ffffff70;border-radius:12px;text-align:center;font-size:clamp(0.9rem, 2.5vw, 1rem)}
   @media(min-width:640px){.empty{padding:20px}}
@@ -361,17 +373,13 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   ensureFirebase().then(fb => fb.auth().onAuthStateChanged(async u => { 
     console.log('🔐 [AUTH] État changé:', u ? u.email : 'déconnecté');
     
-    Dashboard.setUser(u);
-    
-    // Update State Manager avec le user
+    // Update State Manager avec le user AVANT setUser (qui appelle render)
     if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
       await window.ORT_STATE.updateUser(u);
-      // Rafraîchir l'affichage du dashboard après connexion
-      if (u && typeof Dashboard !== 'undefined' && typeof Dashboard.render === 'function') {
-        console.log('🔄 [DASHBOARD] Rafraîchissement après connexion...');
-        await Dashboard.render();
-      }
     }
+    
+    // setUser appelle render() via loadRtCoversOnce().finally(render)
+    Dashboard.setUser(u);
     
     // Afficher Export modules uniquement pour admin
     const btnExportModules = document.getElementById('btnExportModules');
@@ -663,28 +671,33 @@ if (photos.length > 0) {
 
 
 // ==== Titre ====
-const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'; c.appendChild(h);
+const h = document.createElement('h3'); h.textContent = rt.title || L.untitled || 'Sans titre'; c.appendChild(h);
+
+// ==== ID du voyage (pour debug/référence) ====
+const idLine = document.createElement('div');
+idLine.style.cssText = 'font-size:0.75rem;color:#6c7b87;margin-bottom:4px;word-break:break-all;';
+idLine.textContent = 'ID: ' + (rt.id || '–');
+c.appendChild(idLine);
+
     const meta = document.createElement('div'); meta.className='meta';
     meta.appendChild(chip(rt.country||rt.cc||'–'));
     meta.appendChild(chip(L.metas(rt.nights||rt.nb_nights||0, rt.kms||0)));
-   if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+" étapes"));
-    if(rt.pace)  meta.appendChild(chip('Rythme '+rt.pace));
+   if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+' '+(L.labels?.steps || 'étapes')));
+    if(rt.pace)  meta.appendChild(chip((L.labels?.pace || 'Rythme')+' '+rt.pace));
     c.appendChild(meta);
 
     if(rt.tags && rt.tags.length){ const chips=document.createElement('div'); chips.className='chips'; rt.tags.forEach(t=>chips.appendChild(chip('#'+t))); c.appendChild(chips); }
 
     const actions = document.createElement('div'); actions.className='actions'; c.appendChild(actions);
 
-    // ↗ Ouvrir / Modifier (redirige vers votre_roadtrip / roadtrip_detail selon votre flux)
- const openBtn = btn(L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
-const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
-const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); actions.appendChild(photosBtn);
-// const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn); // TODO: réactiver
-const delBtn  = btn(L.btn.del, ()=> delRT(rt), true); actions.appendChild(delBtn);
-// const linkBtn = btn(L.btn.link, ()=> shareLink(rt)); actions.appendChild(linkBtn); // TODO: réactiver
-// const mailBtn = btn(L.btn.mail, ()=> shareEmail(rt)); actions.appendChild(mailBtn); // TODO: réactiver
-const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> generateAndShowImage(rt)); actions.appendChild(shareBtn);
-;
+    // Boutons principaux (toujours visibles)
+    const openBtn = btn(L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
+    const delBtn  = btn(L.btn.del, ()=> delRT(rt), true); actions.appendChild(delBtn);
+    
+    // Boutons secondaires (cachés sur mobile)
+    const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); renameBtn.classList.add('hide-mobile'); actions.appendChild(renameBtn);
+    const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); photosBtn.classList.add('hide-mobile'); actions.appendChild(photosBtn);
+    const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> generateAndShowImage(rt)); shareBtn.classList.add('hide-mobile'); actions.appendChild(shareBtn);
 
 
     return c;
