@@ -64,12 +64,14 @@ function showLoginModalForSave() {
   `;
 
   overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
 
-  document.getElementById('closeBtn').addEventListener('click', () => overlay.remove());
-  document.getElementById('loginBtn').addEventListener('click', () => {
+  modal.querySelector('#closeBtn').addEventListener('click', () => overlay.remove());
+  modal.querySelector('#loginBtn').addEventListener('click', () => {
     // Rediriger vers page de connexion ou ouvrir modal auth
     if (typeof showAuthModal === 'function') {
       showAuthModal();
@@ -80,8 +82,6 @@ function showLoginModalForSave() {
     }
     overlay.remove();
   });
-
-  document.body.appendChild(overlay);
 }
 
 // === MODALE DE PARTAGE (RT doit être sauvegardé) ===
@@ -145,12 +145,14 @@ function showSaveBeforeShareModal() {
   `;
 
   overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+  
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
   });
 
-  document.getElementById('closeBtn').addEventListener('click', () => overlay.remove());
-  document.getElementById('saveBtn').addEventListener('click', () => {
+  modal.querySelector('#closeBtn').addEventListener('click', () => overlay.remove());
+  modal.querySelector('#saveBtn').addEventListener('click', () => {
     // Déclencher la sauvegarde
     const saveBtn = document.getElementById('btnSave');
     if (saveBtn) {
@@ -158,8 +160,6 @@ function showSaveBeforeShareModal() {
     }
     overlay.remove();
   });
-
-  document.body.appendChild(overlay);
 }
 
 console.log('[ORT-MODALS] ✅ Modales chargées');

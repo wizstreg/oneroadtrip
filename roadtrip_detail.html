@@ -9389,11 +9389,31 @@ state.country=CC;
    state.cc = CC; // ← AJOUT : pour collectCurrentData()
    
    // INIT ORT_TRIPID - Source de vérité unique pour le tripId
-   if (window.ORT_TRIPID) {
-     state.tripId = window.ORT_TRIPID.init({ source: 'detail' });
-   } else {
-     state.tripId = ensureRid(); // Fallback
+   // D'abord chercher un tripId existant
+   let existingTripId = null;
+   
+   // Chercher dans l'URL
+   const urlParams = new URLSearchParams(location.search);
+   existingTripId = urlParams.get('tripId') || urlParams.get('id');
+   
+   // Chercher dans le localStorage
+   if (!existingTripId) {
+     existingTripId = localStorage.getItem('ORT_CURRENT_TRIP_ID');
    }
+   
+   // Chercher dans le state (mode import)
+   if (!existingTripId && window.state?.tripId) {
+     existingTripId = window.state.tripId;
+   }
+   
+   // Initialiser avec le tripId existant ou créer un nouveau
+   if (window.ORT_TRIPID) {
+     state.tripId = window.ORT_TRIPID.init({ source: 'detail', existingId: existingTripId });
+   } else {
+     state.tripId = existingTripId || ensureRid();
+   }
+   
+   console.log('[INIT] TripId utilisé:', state.tripId, '(existant:', !!existingTripId, ')');
    
    // Stocker la référence à l'itinéraire de base
    // Créer même si ITIN_ID est temporaire - on a besoin du country pour sauvegarder
@@ -9695,18 +9715,16 @@ renderRows();
       const u = currentUser();
       if(!u){ showLoginModalForSave(); return; }
       
-      const tripId = window.state?.tripId;
-      if (!tripId || tripId.startsWith('temp_') || tripId.startsWith('catalog::')) {
+      const currentTripId = window.state?.tripId;
+      if (!currentTripId || currentTripId.startsWith('temp_') || currentTripId.startsWith('catalog::')) {
         showSaveBeforeShareModal();
         return;
       }
       
       toolsPop.classList.remove('show');
       if(typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal){
-        const params = new URLSearchParams(location.search);
-        const tripId = params.get('tripId') || params.get('id') || window.state?.tripId;
         const tripTitle = window.state?.title || document.getElementById('rtTitle')?.textContent || 'Voyage';
-        ORT_SHARE.showModal(tripId, tripTitle);
+        ORT_SHARE.showModal(currentTripId, tripTitle);
       } else {
         toast('❌ Module de partage non disponible');
       }
