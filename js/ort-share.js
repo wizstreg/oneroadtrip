@@ -126,6 +126,8 @@ window.ORT_SHARE = {
    * Affiche la modale de partage
    */
   showModal: async function(tripId, tripTitle) {
+    console.log('[SHARE] 🔄 Début création modale...');
+    
     const modal = document.createElement('div');
     modal.id = 'shareModal';
     modal.style.cssText = `
@@ -170,6 +172,7 @@ window.ORT_SHARE = {
       close: 'Close'
     };
 
+    // Afficher modale avec "création en cours"
     box.innerHTML = `
       <h2 style="margin: 0 0 8px; color: #113f7a; font-size: 1.3em;">${labels.title}</h2>
       <p style="margin: 0 0 16px; color: #666; font-size: 0.95em;">${labels.description}</p>
@@ -183,15 +186,34 @@ window.ORT_SHARE = {
       </div>
     `;
 
+    modal.appendChild(box);
     document.body.appendChild(modal);
+    
+    console.log('[SHARE] 📱 Modale affichée avec loading');
+    
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.remove();
+      if (e.target === modal) {
+        console.log('[SHARE] Fermeture par click');
+        modal.remove();
+      }
     });
+    
+    // Fermer avec Escape
+    const escapeHandler = (e) => {
+      if (e.key === 'Escape') {
+        console.log('[SHARE] Fermeture par Escape');
+        modal.remove();
+        document.removeEventListener('keydown', escapeHandler);
+      }
+    };
+    document.addEventListener('keydown', escapeHandler);
 
-    // Récupérer les données du trip
+    // MAINTENANT créer le lien
     try {
+      console.log('[SHARE] ⏳ Création du lien...');
       const tripData = window.state || {};
       const result = await this.createShareLink(tripData, tripTitle);
+      console.log('[SHARE] Résultat:', result ? '✅' : '❌');
 
       if (result) {
         const contentDiv = box.querySelector('#shareContent');
