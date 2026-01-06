@@ -3243,6 +3243,15 @@ function setupEvents() {
   
   // === SHARE BUTTON ===
   $('btnShare').onclick = () => {
+    const u = currentUser();
+    if(!u){ showLoginModalForSave(); return; }
+    
+    const tripId = window.state?.tripId;
+    if (!tripId || tripId.startsWith('temp_') || tripId.startsWith('catalog::')) {
+      showSaveBeforeShareModal();
+      return;
+    }
+    
     if (typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal) {
       const tripData = window.state || {};
       const tripTitle = window.state?.title || 'Voyage';
@@ -4121,6 +4130,15 @@ function showDesktopMessage() {
   }
 }
 
+// === USER HELPER ===
+function currentUser() { 
+  try { 
+    return (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null; 
+  } catch(_) { 
+    return null; 
+  } 
+}
+
 // === TOAST ===
 function showToast(message, duration = 2500) {
   const toast = $('toast');
@@ -4469,7 +4487,7 @@ window.addEventListener('pageshow', async function(event) {
   document.addEventListener('DOMContentLoaded', () => setTimeout(updateFabVisibility, 100));
 })();
 <script src="./js/ort-share.js"></script>
-
+<script src="./js/ort-modals.js"></script>
 <!-- === VÉRIFICATION MODE PARTAGÉ === -->
 <script>
 (async function checkShareMode(){

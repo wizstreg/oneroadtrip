@@ -2043,6 +2043,15 @@ row.style.gap = '10px';
     shareBtn.title = 'Partager ce voyage';
     shareBtn.style.whiteSpace = 'nowrap';
     shareBtn.addEventListener('click', function(){
+      const u = currentUser();
+      if(!u){ showLoginModalForSave(); return; }
+      
+      const tripId = window.state?.tripId;
+      if (!tripId || tripId.startsWith('temp_') || tripId.startsWith('catalog::')) {
+        showSaveBeforeShareModal();
+        return;
+      }
+      
       if (typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal) {
         const tripData = window.state || {};
         const tripTitle = window.state?.title || 'Voyage';
@@ -7623,7 +7632,7 @@ const btnSaveEl = document.getElementById('btnSave');
 if (btnSaveEl) {
   btnSaveEl.onclick = async ()=>{
     const u = currentUser();
-    if(!u){ showNotConnectedToast(); return; }
+    if(!u){ showLoginModalForSave(); return; }
 
   // == reconstitue le résumé comme dans scheduleAutosave() ==
   const rid = ensureRid();
@@ -9733,6 +9742,7 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 <script src="./js/ort-share.js"></script>
+<script src="./js/ort-modals.js"></script>
 
 <!-- === VÉRIFICATION MODE PARTAGÉ === -->
 <script>

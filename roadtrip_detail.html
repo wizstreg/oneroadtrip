@@ -8507,7 +8507,7 @@ if (currentConfig && modeLabelEl) {
 
 $('#btnSave').onclick = async ()=>{
   const u = currentUser();
-  if(!u){ toast('🔐 Connectez-vous pour sauvegarder'); return; }
+  if(!u){ showLoginModalForSave(); return; }
 
   // === AJOUTER LES RÉSERVATIONS À WINDOW.STATE AVANT SAUVEGARDE ===
   if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
@@ -9692,9 +9692,17 @@ renderRows();
   const shareBtn = document.getElementById('btnShareTrip');
   if(shareBtn){
     shareBtn.addEventListener('click', ()=>{
+      const u = currentUser();
+      if(!u){ showLoginModalForSave(); return; }
+      
+      const tripId = window.state?.tripId;
+      if (!tripId || tripId.startsWith('temp_') || tripId.startsWith('catalog::')) {
+        showSaveBeforeShareModal();
+        return;
+      }
+      
       toolsPop.classList.remove('show');
       if(typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal){
-        // Récupérer le tripId depuis l'URL ou le state
         const params = new URLSearchParams(location.search);
         const tripId = params.get('tripId') || params.get('id') || window.state?.tripId;
         const tripTitle = window.state?.title || document.getElementById('rtTitle')?.textContent || 'Voyage';
@@ -13663,6 +13671,7 @@ console.log('[BUDGET] ✅ Budget system ready');
 <script src="/js/ort-pdf-export-v6.js"></script>
 <script src="/js/ort-calendar-export.js"></script>
 <script src="./js/ort-share.js"></script>
+<script src="./js/ort-modals.js"></script>
 <script src="/js/ort-footer.js"></script>
 </body>
 </html>
