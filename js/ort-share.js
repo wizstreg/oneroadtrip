@@ -26,7 +26,7 @@ window.ORT_SHARE = {
       const user = window.firebase.auth?.().currentUser;
       const shareId = this.generateShareId();
 
-      // Préparer les données sans l'ID user
+      // Préparer les données sans l'ID user (visible publiquement)
       const shareData = {
         id: shareId,
         title: tripTitle || tripData.title || 'Voyage',
@@ -34,6 +34,7 @@ window.ORT_SHARE = {
         steps: tripData.steps || [],
         createdAt: new Date().toISOString(),
         createdBy: user?.email || 'anonymous',
+        createdByUserId: user?.uid || null, // Pour les rules Firestore
         mode: 'viewer', // lecture seule
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 jours
       };
@@ -193,42 +194,56 @@ window.ORT_SHARE = {
       const result = await this.createShareLink(tripData, tripTitle);
 
       if (result) {
-        const contentDiv = document.getElementById('shareContent');
-        contentDiv.innerHTML = `
-          <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
-            <input type="text" value="${result.shareUrl}" readonly 
-              style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; 
-              font-size: 0.9em; font-family: monospace; background: white;">
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button id="shareCopyBtn" style="flex: 1; background: #113f7a; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-              ${labels.copy}
-            </button>
-            <button id="shareQrBtn" style="background: #f0f0f0; color: #333; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">
-              QR
-            </button>
-          </div>
-          <p style="margin-top: 12px; font-size: 0.85em; color: #999; text-align: center;">
-            📤 ${labels.success}
-          </p>
-        `;
+        const contentDiv = box.querySelector('#shareContent');
+        if (contentDiv) {
+          contentDiv.innerHTML = `
+            <div style="background: #f5f5f5; padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+              <input type="text" value="${result.shareUrl}" readonly 
+                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; 
+                font-size: 0.9em; font-family: monospace; background: white;">
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="shareCopyBtn" style="flex: 1; background: #113f7a; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                ${labels.copy}
+              </button>
+              <button id="shareQrBtn" style="background: #f0f0f0; color: #333; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                QR
+              </button>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.85em; color: #999; text-align: center;">
+              📤 ${labels.success}
+            </p>
+          `;
 
-        document.getElementById('shareCloseBtn').addEventListener('click', () => modal.remove());
-        
-        document.getElementById('shareCopyBtn').addEventListener('click', () => {
-          navigator.clipboard.writeText(result.shareUrl).then(() => {
-            const btn = document.getElementById('shareCopyBtn');
-            const old = btn.textContent;
-            btn.textContent = labels.copied;
-            setTimeout(() => { btn.textContent = old; }, 1500);
-          });
-        });
+          const closeBtn = box.querySelector('#shareCloseBtn');
+          if (closeBtn) {
+            closeBtn.addEventListener('click', () => modal.remove());
+          }
+          
+          const copyBtn = box.querySelector('#shareCopyBtn');
+          if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+              navigator.clipboard.writeText(result.shareUrl).then(() => {
+                const btn = box.querySelector('#shareCopyBtn');
+                const old = btn.textContent;
+                btn.textContent = labels.copied;
+                setTimeout(() => { btn.textContent = old; }, 1500);
+              });
+            });
+          }
+        }
       } else {
-        document.getElementById('shareContent').innerHTML = '<p style="color: #d32f2f; text-align: center;">❌ Erreur lors de la création du lien</p>';
+        const contentDiv = box.querySelector('#shareContent');
+        if (contentDiv) {
+          contentDiv.innerHTML = '<p style="color: #d32f2f; text-align: center;">❌ Erreur lors de la création du lien</p>';
+        }
       }
     } catch (error) {
       console.error('[SHARE] ❌ Erreur:', error);
-      document.getElementById('shareContent').innerHTML = '<p style="color: #d32f2f; text-align: center;">❌ Une erreur est survenue</p>';
+      const contentDiv = box.querySelector('#shareContent');
+      if (contentDiv) {
+        contentDiv.innerHTML = '<p style="color: #d32f2f; text-align: center;">❌ Une erreur est survenue</p>';
+      }
     }
   }
 };
