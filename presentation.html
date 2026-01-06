@@ -457,10 +457,12 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
   align-items:center;
   justify-content:center;
   padding:20px;
+  pointer-events: none;  /* ← Pas cliquable quand fermée */
 }
 
 .mobile-selection-modal.show{
   display:flex !important;
+  pointer-events: auto;  /* ← Cliquable quand ouverte */
 }
 
 /* NEW: grille photo du preview */
@@ -2516,20 +2518,49 @@ async function loadAllItineraries() {
           if (response.ok) {
             const data = await response.json();
             const countryName = COUNTRY_NAMES[countryCode]?.[lang] || countryCode;
-            const itins = (data.itineraries || []).map(itin => ({
-              ...itin,
-              __id: itin.itin_id || itin.id || itin.slug || '',
-              country: countryCode,
-              countryName: countryName,
-              days: itin.estimated_days_base || itin.days_plan?.length || 0,
-              stops: countUniqueStops(itin),
-              totalDistance: calculateTotalDistance(itin),
-              lat: (computeItinCenter(itin).lat) || 0,
-              lng: (computeItinCenter(itin).lng) || 0,
-              cities: extractCities(itin),
-              photos: getItinPhotos({ ...itin, country: countryCode, countryName }),
-              avgRating: computeAvgRating(itin) || 5
-            }));
+            const itins = (data.itineraries || []).map(itin => {
+              // Garder l'ID ORIGINAL du JSON (utiliser JUSTE id ou slug, jamais itin_id qui peut être cassé!)
+              const originalId = itin.id || itin.slug || '';
+              
+              // TOUJOURS créer un itin_id au bon format CC::slug pour la sélection/affichage
+              let slug = itin.slug || itin.title?.toLowerCase() || '';
+              
+              // Normaliser les accents: convertir é→e, à→a, etc
+              slug = slug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              
+              // Remplacer les espaces par des tirets
+              slug = slug.replace(/\s+/g, '-');
+              
+              // Garder que a-z, 0-9, et tirets
+              slug = slug.replace(/[^a-z0-9-]/g, '');
+              
+              // Unifier les tirets multiples et retirer aux extrémités
+              slug = slug.replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+              
+              // Fallback: utiliser l'ID original si slug est vide après nettoyage
+              if (!slug) {
+                slug = String(originalId);
+              }
+              
+              const cleanItinId = `${countryCode}::${slug}`;
+              
+              return {
+                ...itin,
+                itin_id: cleanItinId,  // Format propre pour la sélection (CC::slug)
+                __id: cleanItinId,     // Aussi pour compatibilité interne
+                _originalItinId: originalId,  // Garder l'ID original du JSON!
+                country: countryCode,
+                countryName: countryName,
+                days: itin.estimated_days_base || itin.days_plan?.length || 0,
+                stops: countUniqueStops(itin),
+                totalDistance: calculateTotalDistance(itin),
+                lat: (computeItinCenter(itin).lat) || 0,
+                lng: (computeItinCenter(itin).lng) || 0,
+                cities: extractCities(itin),
+                photos: getItinPhotos({ ...itin, country: countryCode, countryName }),
+                avgRating: computeAvgRating(itin) || 5
+              };
+            });
             console.log('[LOAD] Loaded', countryCode, ':', itins.length, 'itins from', path);
             return itins;
           }
@@ -2555,7 +2586,7 @@ async function loadAllItineraries() {
       console.log('[LOAD] Batch', Math.floor(i/batchSize) + 1, ':', batch.map(c => getCC(c)).join(', '));
       
       const batchResults = await Promise.all(batch.map(loadCountry));
-      const batchItins = batchResults.flat().filter(itin => itin.__id);
+      const batchItins = batchResults.flat().filter(itin => itin.itin_id);
       allItineraries.push(...batchItins);
       
       console.log('[LOAD] Batch loaded:', batchItins.length, 'itins. Total:', allItineraries.length);
@@ -3267,7 +3298,7 @@ function showMobileSelectionModal(itin) {
   // Stocker l'itin actuel
   window.setCurrentItinForModal?.(itin);
   
-  // JUSTE le titre + infos basiques
+  // Titre + infos basiques
   const titleEl = document.getElementById('mobileModalTitle');
   const infoEl = document.getElementById('mobileModalInfo');
   
@@ -3279,10 +3310,34 @@ function showMobileSelectionModal(itin) {
     </div>
   `;
   
-  // Vider les autres sections
+  // Ajouter les villes visitées
+  let citiesHtml = '';
+  if (itin.cities && itin.cities.length > 0) {
+    citiesHtml = `
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;">
+        <strong style="font-size:13px;color:#113f7a;">Villes visitées :</strong>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          ${itin.cities.map(city => `
+            <span style="padding:4px 10px;background:#f3f4f6;border-radius:12px;font-size:12px;color:#333;">
+              ${city}
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  
+  // Afficher infos + villes dans la modale
+  if (infoEl) {
+    infoEl.innerHTML += citiesHtml;
+  }
+  
+  // Vider les photos
   const photosEl = document.getElementById('mobileModalPhotos');
-  const stepsEl = document.getElementById('mobileModalSteps');
   if (photosEl) photosEl.innerHTML = '';
+  
+  // Vider les étapes (on affiche les villes à la place)
+  const stepsEl = document.getElementById('mobileModalSteps');
   if (stepsEl) stepsEl.innerHTML = '';
   
   // Afficher la modale
@@ -3509,16 +3564,18 @@ function validateAndContinue() {
     const budget = config.budget || '50-100';
     
     if (selectedItineraries.length === 1) {
-      // 1 seul itinéraire
-      const id = selectedItineraries[0].itin_id;
-      const cc = (id.split('::')[0] || '').toUpperCase();
-      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(id)}&lang=${lang}&mode=${mode}&budget=${budget}`;
+      // 1 seul itinéraire - utiliser l'ID ORIGINAL du JSON
+      const id = selectedItineraries[0]._originalItinId || selectedItineraries[0].itin_id;
+      const cc = selectedItineraries[0].country || 'FR';
+      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(id)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
     } else {
       // 2-3 itinéraires -> fusion COMPOSED
-      const ids = selectedItineraries.map(i => i.itin_id);
-      const cc = (ids[0].split('::')[0] || '').toUpperCase();
-      const composed = `COMPOSED::${ids.join('+')}`;
-      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(composed)}&lang=${lang}&mode=${mode}&budget=${budget}`;
+      // Utiliser les IDs ORIGINAUX du JSON (les vrais IDs!)
+      const originalIds = selectedItineraries.map(itin => itin._originalItinId || itin.itin_id);
+      const composed = `COMPOSED::${originalIds.join('+')}`;
+      const cc = selectedItineraries[0].country || 'MULTI';
+      console.log('[VALIDATE] Composed ID:', composed);
+      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(composed)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
     }
   }, totalDays, firstTitle);
 }
@@ -3691,56 +3748,9 @@ function showBudgetModal(callback, itinDays, itinTitle) {
   modal.addEventListener('click', overlayHandler);
 }
 
-document.getElementById('btnValidateSelection')?.addEventListener('click', () => {
-  if (selectedItineraries.length === 0) return;
-  const lang = (localStorage.getItem('lang') || 'fr').toLowerCase();
-  const mode = localStorage.getItem('tripMode') || 'expert';
-
-  // 1 seul RT → détail direct
-  if (selectedItineraries.length === 1) {
-    const itin = selectedItineraries[0];
-    const id = itin.itin_id;
-    const cc = (id.split('::')[0] || '').toUpperCase();
-    const itinDays = itin.days || 7;
-    const itinTitle = itin.title || '';
-    
-    // Afficher popup configuration
-    showBudgetModal((config) => {
-      const params = new URLSearchParams({
-        cc: cc,
-        itin: id,
-        lang: lang,
-        mode: mode,
-        departure: config.departureDate,
-        days: config.numDays,
-        budget: config.budget
-      });
-      window.location.href = `roadtrip_detail.html?${params.toString()}`;
-    }, itinDays, itinTitle);
-    return;
-  }
-
-  // 2–3 RT → fusion COMPOSED
-  const ids = selectedItineraries.map(i => i.itin_id);
-  const titles = selectedItineraries.map(i => i.title).join(' + ');
-  const cc  = (ids[0].split('::')[0] || '').toUpperCase();
-  const composed = `COMPOSED::${ids.join('+')}`;
-  const totalDays = selectedItineraries.reduce((sum, i) => sum + (i.days || 0), 0) || 7;
-  
-  // Afficher popup configuration
-  showBudgetModal((config) => {
-    const params = new URLSearchParams({
-      cc: cc,
-      itin: composed,
-      lang: lang,
-      mode: mode,
-      departure: config.departureDate,
-      days: config.numDays,
-      budget: config.budget
-    });
-    window.location.href = `roadtrip_detail.html?${params.toString()}`;
-  }, totalDays, titles);
-});
+// SUPPRIMÉ: Listener btnValidateSelection était du code mort
+// (le bouton n'existe pas en HTML, seul btnContinueSelection existe)
+// Utiliser validateAndContinue() à la place
 
 
 function updateFilterCount(count) {

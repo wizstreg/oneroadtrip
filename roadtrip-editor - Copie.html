@@ -2517,88 +2517,80 @@
         
         // ===== COPIER LE LIEN (avec modal) =====
         function copyShareLink() {
-            // Utiliser ORT_SHARE pour créer un lien vraiment partageable
-            if (typeof ORT_SHARE === 'undefined') {
-                alert('Module de partage non disponible');
+            // Construire le lien partageable - TOUJOURS avec cc/itin (itinéraire catalogue)
+            // Le tripId est personnel et non partageable
+            const cc = tripData.cc || tripData.country || '';
+            const itin = tripData.itin || tripData._originalItinId || '';
+            const lang = LANG;
+            
+            if (!cc || !itin) {
+                alert(t('cannotShare'));
                 return;
             }
-
-            // Créer le partage avec les données actuelles
-            ORT_SHARE.createShareLink(tripData, tripData.title || 'Voyage').then(result => {
-                if (!result) {
-                    alert('Erreur lors de la création du lien');
-                    return;
-                }
-
-                const shareUrl = result.shareUrl;
-
-                // Créer la modal de partage
-                const overlay = document.createElement('div');
-                overlay.className = 'share-modal-overlay';
-                overlay.innerHTML = `
-                    <div class="share-modal">
-                        <div class="share-modal-header">
-                            <h3>🔗 ${t('shareLink')}</h3>
+            
+            const shareUrl = `${location.origin}/roadtrip-editor.html?cc=${cc}&itin=${encodeURIComponent(itin)}&lang=${lang}`;
+            console.log('[CARNET] Lien partagé (catalogue):', shareUrl);
+            
+            // Créer la modal
+            const overlay = document.createElement('div');
+            overlay.className = 'share-modal-overlay';
+            overlay.innerHTML = `
+                <div class="share-modal">
+                    <div class="share-modal-header">
+                        <h3>🔗 ${t('shareLink')}</h3>
+                    </div>
+                    <div class="share-modal-body">
+                        <div class="share-link-box">
+                            <input type="text" class="share-link-input" id="shareLinkInput" value="${shareUrl}" readonly>
+                            <button class="share-copy-btn" id="shareCopyBtn">${t('copyToClipboard')}</button>
                         </div>
-                        <div class="share-modal-body">
-                            <p style="margin-bottom: 12px; color: #666; font-size: 0.9em;">
-                                ✅ Lien créé - Partagez-le avec vos amis!
-                            </p>
-                            <div class="share-link-box">
-                                <input type="text" class="share-link-input" id="shareLinkInput" value="${shareUrl}" readonly>
-                                <button class="share-copy-btn" id="shareCopyBtn">${t('copyToClipboard')}</button>
-                            </div>
-                            <div class="share-warning">
-                                👁️ Mode lecture seule - Les personnes qui ouvrent ce lien pourront modifier leur propre copie.
-                            </div>
-                        </div>
-                        <div class="share-modal-footer">
-                            <button class="share-close-btn" id="shareCloseBtn">${t('close')}</button>
+                        <div class="share-warning">
+                            ${t('shareWarning')}
                         </div>
                     </div>
-                `;
-                
-                document.body.appendChild(overlay);
-                
-                // Sélectionner le texte
-                const input = document.getElementById('shareLinkInput');
-                input.select();
-                
-                // Bouton copier
-                document.getElementById('shareCopyBtn').onclick = () => {
-                    const btn = document.getElementById('shareCopyBtn');
-                    navigator.clipboard.writeText(shareUrl).then(() => {
-                        btn.textContent = `✅ ${t('copied')}`;
-                        btn.classList.add('copied');
-                        input.select();
-                    }).catch(() => {
-                        // Fallback
-                        input.select();
-                        document.execCommand('copy');
-                        btn.textContent = `✅ ${t('copied')}`;
-                        btn.classList.add('copied');
-                    });
-                };
-                
-                // Fermer la modal
-                const closeModal = () => overlay.remove();
-                document.getElementById('shareCloseBtn').onclick = closeModal;
-                overlay.onclick = (e) => {
-                    if (e.target === overlay) closeModal();
-                };
-                
-                // Fermer avec Escape
-                const escHandler = (e) => {
-                    if (e.key === 'Escape') {
-                        closeModal();
-                        document.removeEventListener('keydown', escHandler);
-                    }
-                };
-                document.addEventListener('keydown', escHandler);
-            }).catch(error => {
-                console.error('[SHARE] Erreur:', error);
-                alert('Erreur lors de la création du lien');
-            });
+                    <div class="share-modal-footer">
+                        <button class="share-close-btn" id="shareCloseBtn">${t('close')}</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // Sélectionner le texte
+            const input = document.getElementById('shareLinkInput');
+            input.select();
+            
+            // Bouton copier
+            document.getElementById('shareCopyBtn').onclick = () => {
+                const btn = document.getElementById('shareCopyBtn');
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    btn.textContent = `✅ ${t('copied')}`;
+                    btn.classList.add('copied');
+                    input.select();
+                }).catch(() => {
+                    // Fallback pour anciens navigateurs
+                    input.select();
+                    document.execCommand('copy');
+                    btn.textContent = `✅ ${t('copied')}`;
+                    btn.classList.add('copied');
+                });
+            };
+            
+            // Fermer la modal
+            const closeModal = () => overlay.remove();
+            document.getElementById('shareCloseBtn').onclick = closeModal;
+            overlay.onclick = (e) => {
+                if (e.target === overlay) closeModal();
+            };
+            
+            // Fermer avec Escape
+            const escHandler = (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    document.removeEventListener('keydown', escHandler);
+                }
+            };
+            document.addEventListener('keydown', escHandler);
         }
         
         // ===== MODIFIER (ouvrir roadtrip_detail) =====
@@ -2693,7 +2685,5 @@
         }
     })();
     </script>
-
-<script src="./js/ort-share.js"></script>
 </body>
 </html>

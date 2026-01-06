@@ -1829,20 +1829,6 @@ document.head.appendChild(style);
 <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ar.js"></script>
-
-<!-- Mode partage - masquer édition -->
-<style>
-  body.shared-view-only #btnSave,
-  body.shared-view-only #btnAddStep,
-  body.shared-view-only #btnReorgH,
-  body.shared-view-only #btnAddMapRoute,
-  body.shared-view-only .delete-btn,
-  body.shared-view-only .delete-icon,
-  body.shared-view-only button.trash,
-  body.shared-view-only [contenteditable="true"] {
-    display: none !important;
-  }
-</style>
 </head>
 <body>
 
@@ -2033,25 +2019,6 @@ row.style.gap = '10px';
       }
     });
     row.appendChild(pdfBtn);
-
-    // Bouton "Partager" 
-    var shareBtn = document.createElement('button');
-    shareBtn.id = 'btnShareTrip';
-    shareBtn.className = 'hdr-btn';
-    shareBtn.type = 'button';
-    shareBtn.textContent = '🔗 Partager';
-    shareBtn.title = 'Partager ce voyage';
-    shareBtn.style.whiteSpace = 'nowrap';
-    shareBtn.addEventListener('click', function(){
-      if (typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal) {
-        const tripData = window.state || {};
-        const tripTitle = window.state?.title || 'Voyage';
-        ORT_SHARE.showModal(tripData, tripTitle);
-      } else {
-        alert('Module de partage non disponible');
-      }
-    });
-    row.appendChild(shareBtn);
 
     // === DATE PICKER avec Flatpickr (i18n) ===
     var d = document.getElementById('rtStartDate');
@@ -9731,53 +9698,6 @@ if (mapPopup) {
 document.addEventListener('keydown', function(e) { 
   if (e.key === 'Escape') {} 
 });
-</script>
-<script src="./js/ort-share.js"></script>
-
-<!-- === VÉRIFICATION MODE PARTAGÉ === -->
-<script>
-(async function checkShareMode(){
-  const shareToken = new URLSearchParams(location.search).get('share');
-  if (!shareToken) return;
-  
-  console.log('[SHARE] Mode partagé détecté');
-  
-  try {
-    if (typeof ORT_SHARE !== 'undefined') {
-      const sharedData = await ORT_SHARE.checkSharedAccess();
-      if (sharedData) {
-        console.log('[SHARE] ✅ Voyage chargé en lecture seule');
-        
-        // Stocker les données pour le chargement
-        window._sharedTripData = sharedData;
-        
-        // Mode lecture seule
-        document.body.classList.add('shared-view-only');
-        
-        // Charger les données partagées
-        if (sharedData.data) {
-          state.title = sharedData.data.title;
-          state.cc = sharedData.data.country;
-          state.steps = sharedData.data.steps || [];
-          renderRows();
-        }
-        
-        // Afficher banner
-        const banner = document.createElement('div');
-        banner.style.cssText = `
-          position: fixed; top: 0; left: 0; right: 0;
-          background: #f59e0b; color: white; padding: 10px; 
-          text-align: center; z-index: 9999; font-weight: 600;
-        `;
-        banner.textContent = '👁️ Mode lecture seule - Vous pouvez modifier votre copie';
-        document.body.insertBefore(banner, document.body.firstChild);
-        setTimeout(() => banner.remove(), 5000);
-      }
-    }
-  } catch (error) {
-    console.error('[SHARE] ❌ Erreur:', error);
-  }
-})();
 </script>
 
 </body>
