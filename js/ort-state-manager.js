@@ -749,11 +749,22 @@
   /**
    * Sauvegarde dans Firestore
    */
+  // Track des sauvegardes en cours pour éviter les doublons
+  const savingInProgress = {};
+  
   async function saveTripToFirestore(tripData) {
     if (!firestoreDb || !currentUser) {
       console.warn('⚠️ [STATE] Firestore non disponible, sauvegarde en local');
       return saveTripToLocalStorage(tripData);
     }
+    
+    // Éviter les sauvegardes en double
+    const tripId = tripData.id;
+    if (savingInProgress[tripId]) {
+      console.log(`⏳ [STATE] Sauvegarde déjà en cours pour ${tripId}, ignoré`);
+      return true;
+    }
+    savingInProgress[tripId] = true;
 
     // Vérifier la limite de voyages sauvegardés (sauf si c'est une mise à jour ou admin)
     const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
@@ -781,6 +792,7 @@
             window.dispatchEvent(new CustomEvent('ort:limit-reached', {
               detail: { type: 'trips', limit: MAX_SAVED_TRIPS, current: snapshot.size }
             }));
+            delete savingInProgress[tripId];
             return false;
           }
         }
@@ -790,7 +802,7 @@
       }
     }
 
-try {
+    try {
       // Nettoie les nested arrays avant sauvegarde
       let cleanedData = cleanNestedArrays(tripData);
       
@@ -816,17 +828,19 @@ try {
         .collection('users')
         .doc(currentUser.uid)
         .collection('trips')
-        .doc(tripData.id)
+        .doc(tripId)
         .set(cleanedData, { merge: true });
 
       console.log('✅ [STATE] Voyage sauvegardé dans Firestore');
       
-      // Nettoie les modifications en attente
-      delete pendingChanges[tripData.id];
+      // Nettoie les modifications en attente et le flag
+      delete pendingChanges[tripId];
+      delete savingInProgress[tripId];
       
       return true;
     } catch (error) {
       console.error('❌ [STATE] Erreur sauvegarde Firestore:', error);
+      delete savingInProgress[tripId];
       
       // Fallback sur localStorage
       console.log('🔄 [STATE] Fallback sur localStorage...');
