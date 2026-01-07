@@ -4735,29 +4735,50 @@ async function loadExistingShare() {
   // Plus besoin - on génère le lien à la volée
 }
 
-function generateShareLink() {
+async function generateShareLink() {
   // Les vérifications user/sauvegarde sont déjà faites dans openShareModal
   
   $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerating')}</span>`;
   $('btnGenerateShare').disabled = true;
   
   try {
-    // Construire le lien de partage simple basé sur tripId
     const tripId = state.tripId || (window.ORT_TRIPID ? window.ORT_TRIPID.get() : null);
     
     if (!tripId) {
       showToast('❌ Voyage non sauvegardé');
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+      $('btnGenerateShare').disabled = false;
       return;
     }
     
-    // Construire l'URL de base
-    const baseUrl = location.origin + location.pathname.replace('roadtrip_mobile.html', 'roadtrip_detail.html');
-    const shareUrl = `${baseUrl}?tripId=${encodeURIComponent(tripId)}`;
-    
-    $('shareUrlInput').value = shareUrl;
-    $('shareResult').style.display = '';
-    $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
-    showToast(i18n('linkCreated'));
+    // Utiliser ORT_SHARE si disponible
+    if (window.ORT_SHARE && typeof ORT_SHARE.createShareLink === 'function') {
+      const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
+      
+      if (result && result.shareUrl) {
+        // Pointer vers roadtrip_detail.html
+        let shareUrl = result.shareUrl
+          .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
+          .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
+        
+        $('shareUrlInput').value = shareUrl;
+        $('shareResult').style.display = '';
+        $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
+        showToast(i18n('linkCreated'));
+      } else {
+        throw new Error('Échec création lien');
+      }
+    } else {
+      // Fallback: lien simple (ne fonctionnera que si le destinataire est connecté au même compte)
+      console.warn('[SHARE] ORT_SHARE non disponible, fallback lien simple');
+      const baseUrl = location.origin + location.pathname.replace('roadtrip_mobile.html', 'roadtrip_detail.html');
+      const shareUrl = `${baseUrl}?tripId=${encodeURIComponent(tripId)}`;
+      
+      $('shareUrlInput').value = shareUrl;
+      $('shareResult').style.display = '';
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
+      showToast(i18n('linkCreated'));
+    }
     
   } catch (e) {
     console.error('[SHARE] Erreur:', e);
@@ -5135,7 +5156,6 @@ window.addEventListener('pageshow', async function(event) {
   document.addEventListener('DOMContentLoaded', () => setTimeout(updateFabVisibility, 100));
 })();
 </script>
-<script src="./js/ort-share.js"></script>
 <script src="./js/ort-modals.js"></script>
 
 </body>
