@@ -1798,6 +1798,9 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
   add('saveNotConnected', {fr:'Votre voyage ne peut être sauvegardé dans le dashboard si vous n\'êtes pas connecté.',en:'Your trip cannot be saved to the dashboard if you are not logged in.',it:'Il tuo viaggio non può essere salvato nel dashboard se non sei connesso.',es:'Tu viaje no se puede guardar en el dashboard si no estás conectado.',pt:'Sua viagem não pode ser salva no painel se você não estiver conectado.',ar:'لا يمكن حفظ رحلتك في لوحة التحكم إذا لم تكن متصلاً.'});
   add('signIn', {fr:'Se connecter',en:'Sign In',it:'Accedi',es:'Iniciar sesión',pt:'Entrar',ar:'تسجيل الدخول'});
   add('close', {fr:'Fermer',en:'Close',it:'Chiudi',es:'Cerrar',pt:'Fechar',ar:'إغلاق'});
+  add('share', {fr:'Partager',en:'Share',it:'Condividi',es:'Compartir',pt:'Partilhar',ar:'مشاركة'});
+  add('shareTrip', {fr:'Partager ce voyage',en:'Share this trip',it:'Condividi questo viaggio',es:'Compartir este viaje',pt:'Partilhar esta viagem',ar:'مشاركة هذه الرحلة'});
+  add('shareNotAvailable', {fr:'Module de partage non disponible',en:'Share module not available',it:'Modulo di condivisione non disponibile',es:'Módulo de compartir no disponible',pt:'Módulo de partilha não disponível',ar:'وحدة المشاركة غير متاحة'});
 })();
 </script>
 <script>
@@ -2081,8 +2084,8 @@ row.style.gap = '10px';
     shareBtn.id = 'btnShareTrip';
     shareBtn.className = 'hdr-btn';
     shareBtn.type = 'button';
-    shareBtn.textContent = '🔗 Partager';
-    shareBtn.title = 'Partager ce voyage';
+    shareBtn.textContent = '🔗 ' + t('share');
+    shareBtn.title = t('shareTrip');
     shareBtn.style.whiteSpace = 'nowrap';
     shareBtn.addEventListener('click', function(){
       const u = currentUser();
@@ -2098,7 +2101,7 @@ row.style.gap = '10px';
         const tripTitle = window.state?.title || 'Voyage';
         ORT_SHARE.showModal(tripId, tripTitle);
       } else {
-        alert('Module de partage non disponible');
+        alert(t('shareNotAvailable'));
       }
     });
     row.appendChild(shareBtn);
@@ -9044,6 +9047,70 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
           if (btnEmail) btnEmail.style.display = '';
         }
       });
+      
+      // === HANDLER GOOGLE ===
+      if (btnGoogle) {
+        btnGoogle.addEventListener('click', async () => {
+          try {
+            const provider = new fb.auth.GoogleAuthProvider();
+            provider.addScope('email');
+            provider.addScope('profile');
+            await fb.auth().signInWithPopup(provider);
+            const authPop = document.getElementById('authPop');
+            if (authPop) authPop.style.display = 'none';
+          } catch (e) {
+            console.error('[AUTH] Google sign-in error:', e);
+          }
+        });
+      }
+      
+      // === HANDLER EMAIL ===
+      if (btnEmail) {
+        btnEmail.addEventListener('click', () => {
+          // Ouvrir modale email si elle existe, sinon rediriger
+          const emailModal = document.getElementById('emailModal');
+          if (emailModal) {
+            emailModal.style.display = 'flex';
+            const emailInput = document.getElementById('emailInput');
+            if (emailInput) emailInput.focus();
+          } else {
+            // Fallback: prompt simple
+            const email = prompt('Votre email:');
+            const pwd = prompt('Mot de passe:');
+            if (email && pwd) {
+              fb.auth().signInWithEmailAndPassword(email, pwd)
+                .then(() => {
+                  const authPop = document.getElementById('authPop');
+                  if (authPop) authPop.style.display = 'none';
+                })
+                .catch(e => {
+                  if (e.code === 'auth/user-not-found') {
+                    if (confirm('Compte inexistant. Créer un compte ?')) {
+                      fb.auth().createUserWithEmailAndPassword(email, pwd)
+                        .then(() => alert('Compte créé !'))
+                        .catch(err => alert('Erreur: ' + err.message));
+                    }
+                  } else {
+                    alert('Erreur: ' + e.message);
+                  }
+                });
+            }
+          }
+        });
+      }
+      
+      // === HANDLER LOGOUT ===
+      if (btnLogout) {
+        btnLogout.addEventListener('click', async () => {
+          try {
+            await fb.auth().signOut();
+            const authPop = document.getElementById('authPop');
+            if (authPop) authPop.style.display = 'none';
+          } catch (e) {
+            console.error('[AUTH] Logout error:', e);
+          }
+        });
+      }
       
       console.log('[AUTH-FALLBACK] ✅ Auth listener actif');
     }).catch(function(e) {
