@@ -2375,6 +2375,7 @@ async function init() {
   await loadPhotosCache();
   
   const params = new URLSearchParams(location.search);
+  const shareToken = params.get('share'); // 🔴 Mode partage
   const cc = params.get('cc')?.toUpperCase() || '';
   const itinId = params.get('itin') || '';
   const rtKey = params.get('rtKey') || '';
@@ -2428,7 +2429,12 @@ async function init() {
   
   try {
     debugLog('Mode sélectionné...');
-    if (fromBuilderResult) {
+    
+    // 🔴 MODE PARTAGÉ - Priorité absolue
+    if (shareToken) {
+      debugLog('→ loadFromShare(' + shareToken + ')');
+      await loadFromShare(shareToken, lang);
+    } else if (fromBuilderResult) {
       debugLog('→ loadBuilderResult');
       await loadBuilderResult();
     } else if (builderMode) {
@@ -2523,6 +2529,76 @@ async function init() {
   }
   
   setTimeout(() => $('loadingOverlay')?.classList.add('hide'), 300);
+}
+
+// === LOAD FROM SHARE (voyage partagé) ===
+async function loadFromShare(shareToken, lang) {
+  console.log('[MOBILE] 🔗 loadFromShare:', shareToken);
+  
+  // Attendre que ORT_SHARE soit disponible
+  let waitCount = 0;
+  while (typeof ORT_SHARE === 'undefined' && waitCount < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+  }
+  
+  if (typeof ORT_SHARE === 'undefined') {
+    throw new Error('Module de partage non disponible');
+  }
+  
+  try {
+    const sharedData = await ORT_SHARE.checkSharedAccess();
+    
+    if (!sharedData || !sharedData.data) {
+      throw new Error('Voyage partagé non trouvé ou expiré');
+    }
+    
+    console.log('[MOBILE] ✅ Voyage partagé chargé:', sharedData);
+    
+    // Stocker pour référence
+    window._sharedTripData = sharedData;
+    
+    // Mode lecture seule
+    document.body.classList.add('shared-view-only');
+    
+    // Charger les données dans state
+    const tripData = sharedData.data;
+    state.title = tripData.title || 'Voyage partagé';
+    state.cc = tripData.country || tripData.cc || '';
+    state.steps = tripData.steps || [];
+    state.lang = lang;
+    state._isShared = true; // Marquer comme partagé
+    state._shareToken = shareToken;
+    
+    // Mettre à jour le titre
+    $('headerTitle').textContent = state.title;
+    
+    // Afficher banner de lecture seule
+    const banner = document.createElement('div');
+    banner.id = 'shareBanner';
+    banner.style.cssText = `
+      position: fixed; top: 56px; left: 0; right: 0;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+      color: white; padding: 10px 16px; 
+      text-align: center; z-index: 99; font-weight: 600;
+      font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    `;
+    const ownerName = sharedData.ownerName || 'Un voyageur';
+    banner.innerHTML = `👁️ Voyage partagé par <strong>${ownerName}</strong> • Mode lecture seule`;
+    document.body.appendChild(banner);
+    
+    // Ajuster le contenu principal
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.style.top = 'calc(var(--header-height) + 44px)';
+    }
+    
+    console.log('[MOBILE] ✅ State chargé:', state.steps.length, 'étapes');
+    
+  } catch (error) {
+    console.error('[MOBILE] ❌ Erreur chargement partage:', error);
+    throw new Error('Impossible de charger le voyage partagé: ' + error.message);
+  }
 }
 
 // === LOAD FROM TEMP (localStorage) ===
@@ -4436,7 +4512,12 @@ async function loadExistingShare() {
   try {
     const existing = await ORT_SHARE.getShareInfo(state.tripId);
     if (existing && existing.url) {
-      $('shareUrlInput').value = existing.url;
+      // 🔴 Toujours afficher le lien vers roadtrip_detail.html
+      let shareUrl = existing.url
+        .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
+        .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
+      
+      $('shareUrlInput').value = shareUrl;
       $('shareResult').style.display = '';
       $('btnRevokeShare').style.display = '';
       $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
@@ -4465,7 +4546,12 @@ async function generateShareLink() {
     const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
     
     if (result && result.shareUrl) {
-      $('shareUrlInput').value = result.shareUrl;
+      // 🔴 Toujours pointer vers roadtrip_detail.html (qui redirige vers mobile si besoin)
+      let shareUrl = result.shareUrl
+        .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
+        .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
+      
+      $('shareUrlInput').value = shareUrl;
       $('shareResult').style.display = '';
       $('btnRevokeShare').style.display = '';
       $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
@@ -4902,48 +4988,6 @@ window.addEventListener('pageshow', async function(event) {
 </script>
 <script src="./js/ort-share.js"></script>
 <script src="./js/ort-modals.js"></script>
-<!-- === VÉRIFICATION MODE PARTAGÉ === -->
-<script>
-(async function checkShareMode(){
-  const shareToken = new URLSearchParams(location.search).get('share');
-  if (!shareToken) return;
-  
-  console.log('[SHARE] Mode partagé détecté');
-  
-  try {
-    if (typeof ORT_SHARE !== 'undefined') {
-      const sharedData = await ORT_SHARE.checkSharedAccess();
-      if (sharedData) {
-        console.log('[SHARE] ✅ Voyage chargé en lecture seule');
-        
-        window._sharedTripData = sharedData;
-        document.body.classList.add('shared-view-only');
-        
-        if (sharedData.data) {
-          state.title = sharedData.data.title;
-          state.cc = sharedData.data.country;
-          state.steps = sharedData.data.steps || [];
-          renderList();
-          updateSummary();
-          initMap();
-        }
-        
-        const banner = document.createElement('div');
-        banner.style.cssText = `
-          position: fixed; top: 0; left: 0; right: 0;
-          background: #f59e0b; color: white; padding: 10px; 
-          text-align: center; z-index: 9999; font-weight: 600;
-        `;
-        banner.textContent = '👁️ Mode lecture seule';
-        document.body.insertBefore(banner, document.body.firstChild);
-        setTimeout(() => banner.remove(), 5000);
-      }
-    }
-  } catch (error) {
-    console.error('[SHARE] ❌ Erreur:', error);
-  }
-})();
-</script>
 
 </body>
 </html>
