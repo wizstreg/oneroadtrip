@@ -2093,6 +2093,15 @@ async function init() {
     localStorage.removeItem('ORT_MOBILE_HANDOFF'); // Nettoyer après utilisation
   }
   
+  // 🔴 DETECT NEW TRIP: tripId avec source (pas encore dans Firestore)
+  // Si on a un tripId trip_xxx MAIS aussi des paramètres source (cc+itin, from+rtKey, etc.)
+  // → C'est un NOUVEAU voyage, pas un voyage existant dans Firestore
+  const hasSourceParams = (cc && itinId) || (fromTemp && rtKey) || builderMode;
+  const isNewTrip = effectiveTripId && effectiveTripId.startsWith('trip_') && hasSourceParams;
+  if (isNewTrip) {
+    debugLog('🆕 Nouveau voyage détecté (tripId + source params)');
+  }
+  
   state.cc = cc;
   state.lang = lang;
   localStorage.setItem('ort_lang', lang);
@@ -2114,7 +2123,8 @@ async function init() {
     } else if (builderMode) {
       debugLog('→ initRouteBuilder');
       await initRouteBuilder(params);
-    } else if (effectiveDashboardMode) {
+    } else if (effectiveDashboardMode && !isNewTrip) {
+      // 🔴 ONLY load from dashboard if NOT a new trip with source params
       debugLog('→ loadFromDashboard(' + effectiveTripId + ')');
       await loadFromDashboard(effectiveTripId);
     } else if (fromTemp && rtKey) {
