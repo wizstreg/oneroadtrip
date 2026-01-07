@@ -4537,16 +4537,81 @@ async function generateShareLink() {
     return;
   }
   
+  // 🔴 1) Vérifier que l'utilisateur est connecté
+  const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+  if (!user) {
+    showToast('🔐 Connexion requise pour partager');
+    // Ouvrir le menu auth si disponible
+    const authPop = document.getElementById('authPop');
+    if (authPop) authPop.style.display = 'block';
+    return;
+  }
+  
+  // 🔴 2) Vérifier que le voyage a des étapes
+  if (!state.steps || state.steps.length === 0) {
+    showToast('❌ Aucune étape à partager');
+    return;
+  }
+  
   const mode = document.querySelector('input[name="shareMode"]:checked')?.value || 'viewer';
   
-  $('btnGenerateShare').textContent = '⏳ Génération...';
+  $('btnGenerateShare').textContent = '⏳ Sauvegarde...';
   $('btnGenerateShare').disabled = true;
   
   try {
+    // 🔴 3) S'assurer que le voyage est sauvegardé dans Firestore AVANT de partager
+    let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : state.tripId;
+    
+    // Générer un tripId si nécessaire
+    if (!tripId || tripId.startsWith('catalog::') || tripId.startsWith('custom::')) {
+      tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('[SHARE] 🆕 Nouveau tripId généré:', tripId);
+    }
+    
+    // Préparer les données du voyage
+    const tripData = {
+      id: tripId,
+      title: state.title || 'Roadtrip',
+      country: state.cc || 'XX',
+      steps: state.steps.map(s => ({
+        name: s.name,
+        lat: s.lat,
+        lon: s.lng || s.lon,
+        lng: s.lng || s.lon,
+        nights: s.nights || 0,
+        place_id: s.place_id || s.placeId,
+        photos: s.photos || s.images || [],
+        description: s.description || '',
+        visits: s.visits || [],
+        activities: s.activities || []
+      })),
+      nights: state.steps.reduce((sum, s) => sum + (s.nights || 0), 0),
+      kms: totalRouteKm || 0,
+      saved: true,
+      updatedAt: Date.now(),
+      createdAt: state._createdAt || Date.now(),
+      source: 'mobile-share'
+    };
+    
+    // Sauvegarder via ORT_STATE
+    if (window.ORT_STATE) {
+      await window.ORT_STATE.saveTrip(tripData);
+      console.log('[SHARE] ✅ Voyage sauvegardé:', tripId);
+    } else {
+      throw new Error('Module de sauvegarde non disponible');
+    }
+    
+    // Mettre à jour le state local
+    state.tripId = tripId;
+    if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+    
+    // 🔴 4) Maintenant générer le lien de partage
+    $('btnGenerateShare').textContent = '⏳ Génération du lien...';
+    
     const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
     
     if (result && result.shareUrl) {
-      // 🔴 Toujours pointer vers roadtrip_detail.html (qui redirige vers mobile si besoin)
+      // Toujours pointer vers roadtrip_detail.html (qui redirige vers mobile si besoin)
       let shareUrl = result.shareUrl
         .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
         .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
@@ -4557,11 +4622,12 @@ async function generateShareLink() {
       $('btnGenerateShare').textContent = '🔄 Régénérer le lien';
       showToast('✅ Lien créé !');
     } else {
-      showToast('❌ Erreur lors de la création');
+      showToast('❌ Erreur lors de la création du lien');
     }
   } catch (e) {
     console.error('[SHARE] Erreur:', e);
     showToast('❌ ' + (e.message || 'Erreur'));
+    $('btnGenerateShare').textContent = '🔗 Générer le lien';
   } finally {
     $('btnGenerateShare').disabled = false;
   }
