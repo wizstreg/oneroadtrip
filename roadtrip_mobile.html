@@ -1325,11 +1325,11 @@ html, body {
     <div class="summary-card" id="summaryCard">
       <div class="summary-stat">
         <div class="value" id="statSteps">-</div>
-        <div class="label">Étapes</div>
+        <div class="label" data-i18n="steps">Étapes</div>
       </div>
       <div class="summary-stat">
         <div class="value" id="statNights">-</div>
-        <div class="label">Nuits</div>
+        <div class="label" data-i18n="nights">Nuits</div>
       </div>
       <div class="summary-stat">
         <div class="value" id="statKm">-</div>
@@ -1344,19 +1344,19 @@ html, body {
 <nav class="tab-bar">
   <button class="tab-btn active" id="tabList" data-panel="listPanel">
     <span class="tab-icon">📋</span>
-    <span>Itinéraire</span>
+    <span data-i18n="itinerary">Itinéraire</span>
   </button>
   <button class="tab-btn" id="tabMap" data-panel="mapPanel">
     <span class="tab-icon">🗺️</span>
-    <span>Carte</span>
+    <span data-i18n="map">Carte</span>
   </button>
   <button class="tab-btn" id="tabBookings" data-panel="bookingsPanel">
     <span class="tab-icon">🏨</span>
-    <span>Réservations</span>
+    <span data-i18n="bookings">Réservations</span>
   </button>
   <button class="tab-btn" id="tabServices">
     <span class="tab-icon">🛎️</span>
-    <span>Services</span>
+    <span data-i18n="services">Services</span>
   </button>
 </nav>
 
@@ -1465,53 +1465,28 @@ html, body {
   </div>
   <div class="content-modal-body">
     <div class="share-options">
-      <!-- Mode de partage -->
-      <div class="share-mode-section">
-        <label class="share-mode-option">
-          <input type="radio" name="shareMode" value="viewer" checked>
-          <div class="share-mode-info">
-            <span class="share-mode-icon">👁️</span>
-            <div>
-              <strong data-i18n="shareReadOnly">Lecture seule</strong>
-              <p data-i18n="shareReadOnlyDesc">Peut voir le roadtrip mais pas le modifier</p>
-            </div>
-          </div>
-        </label>
-        <label class="share-mode-option">
-          <input type="radio" name="shareMode" value="editor">
-          <div class="share-mode-info">
-            <span class="share-mode-icon">✏️</span>
-            <div>
-              <strong data-i18n="shareEdit">Modification</strong>
-              <p data-i18n="shareEditDesc">Peut modifier les dates, étapes, réservations</p>
-            </div>
-          </div>
-        </label>
-      </div>
-      
       <!-- Avertissement -->
-      <div class="share-warning" data-i18n="shareWarning">
-        ⚠️ Toute personne avec ce lien pourra accéder au voyage
+      <div class="share-warning" data-i18n="shareWarning" style="margin-bottom:20px;">
+        ⚠️ Toute personne avec ce lien pourra voir votre voyage
       </div>
       
       <!-- Bouton générer -->
-      <button class="share-generate-btn" id="btnGenerateShare" onclick="generateShareLink()">
+      <button class="share-generate-btn" id="btnGenerateShare" onclick="generateShareLink()" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;">
         <span data-i18n="shareGenerate">🔗 Générer le lien</span>
       </button>
       
       <!-- Résultat (caché par défaut) -->
-      <div class="share-result" id="shareResult" style="display:none">
-        <input type="text" class="share-url-input" id="shareUrlInput" readonly>
-        <div class="share-actions">
-          <button class="share-action-btn" onclick="copyShareLink()"><span data-i18n="shareCopy">📋 Copier</span></button>
-          <button class="share-action-btn" onclick="nativeShare()"><span data-i18n="shareNative">📤 Partager</span></button>
+      <div class="share-result" id="shareResult" style="display:none;margin-top:16px;">
+        <input type="text" class="share-url-input" id="shareUrlInput" readonly style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;">
+        <div class="share-actions" style="display:flex;gap:10px;">
+          <button class="share-action-btn" onclick="copyShareLink()" style="flex:1;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+            <span data-i18n="shareCopy">📋 Copier</span>
+          </button>
+          <button class="share-action-btn" onclick="nativeShare()" style="flex:1;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+            <span data-i18n="shareNative">📤 Partager</span>
+          </button>
         </div>
       </div>
-      
-      <!-- Révoquer (caché par défaut) -->
-      <button class="share-revoke-btn" id="btnRevokeShare" style="display:none" onclick="revokeShare()">
-        <span data-i18n="shareRevoke">🗑️ Révoquer le lien</span>
-      </button>
     </div>
   </div>
   <button class="floating-back-btn" onclick="closeShareModal()">
@@ -2181,185 +2156,196 @@ let PLACES_INDEX = null;
 // === I18N GLOBAL ===
 const I18N_MOBILE = {
   fr: {
+    // Navigation
+    steps: 'Étapes',
+    nights: 'Nuits',
+    itinerary: 'Itinéraire',
+    map: 'Carte',
+    bookings: 'Réservations',
+    services: 'Services',
+    noBookings: 'Aucune réservation',
+    // Partage
     shareTitle: '🔗 Partager ce voyage',
-    shareReadOnly: 'Lecture seule',
-    shareReadOnlyDesc: 'Peut voir le roadtrip mais pas le modifier',
-    shareEdit: 'Modification',
-    shareEditDesc: 'Peut modifier les dates, étapes, réservations',
-    shareWarning: '⚠️ Toute personne avec ce lien pourra accéder au voyage',
+    shareWarning: '⚠️ Toute personne avec ce lien pourra voir votre voyage',
     shareGenerate: '🔗 Générer le lien',
     shareRegenerate: '🔄 Régénérer le lien',
-    shareSaving: '⏳ Sauvegarde...',
-    shareGenerating: '⏳ Génération du lien...',
+    shareGenerating: '⏳ Génération...',
     shareCopy: '📋 Copier',
     shareNative: '📤 Partager',
-    shareRevoke: '🗑️ Révoquer le lien',
     back: '← Retour',
+    // Auth
     loginRequired: '🔐 Connexion requise',
-    loginRequiredDesc: 'Connectez-vous pour partager ce voyage avec vos proches.',
+    loginRequiredDesc: 'Connectez-vous pour sauvegarder et partager ce voyage.',
     loginBtn: 'Se connecter',
     saveRequired: '💾 Sauvegarde requise',
     saveRequiredDesc: 'Sauvegardez votre voyage avant de le partager.',
     saveBtn: 'Sauvegarder',
     cancelBtn: 'Annuler',
-    noSteps: '❌ Aucune étape à partager',
+    // Messages
     linkCreated: '✅ Lien créé !',
     linkCopied: '📋 Lien copié !',
-    linkRevoked: '✅ Lien révoqué',
-    saved: '✅ Sauvegardé !'
+    saved: '✅ Sauvegardé !',
+    mapCentered: '🎯 Carte centrée'
   },
   en: {
+    steps: 'Steps',
+    nights: 'Nights',
+    itinerary: 'Itinerary',
+    map: 'Map',
+    bookings: 'Bookings',
+    services: 'Services',
+    noBookings: 'No bookings',
     shareTitle: '🔗 Share this trip',
-    shareReadOnly: 'Read only',
-    shareReadOnlyDesc: 'Can view the roadtrip but not modify it',
-    shareEdit: 'Edit',
-    shareEditDesc: 'Can modify dates, steps, bookings',
-    shareWarning: '⚠️ Anyone with this link can access the trip',
+    shareWarning: '⚠️ Anyone with this link can view your trip',
     shareGenerate: '🔗 Generate link',
     shareRegenerate: '🔄 Regenerate link',
-    shareSaving: '⏳ Saving...',
-    shareGenerating: '⏳ Generating link...',
+    shareGenerating: '⏳ Generating...',
     shareCopy: '📋 Copy',
     shareNative: '📤 Share',
-    shareRevoke: '🗑️ Revoke link',
     back: '← Back',
     loginRequired: '🔐 Login required',
-    loginRequiredDesc: 'Sign in to share this trip with your loved ones.',
+    loginRequiredDesc: 'Sign in to save and share this trip.',
     loginBtn: 'Sign in',
     saveRequired: '💾 Save required',
     saveRequiredDesc: 'Save your trip before sharing it.',
     saveBtn: 'Save',
     cancelBtn: 'Cancel',
-    noSteps: '❌ No steps to share',
     linkCreated: '✅ Link created!',
     linkCopied: '📋 Link copied!',
-    linkRevoked: '✅ Link revoked',
-    saved: '✅ Saved!'
+    saved: '✅ Saved!',
+    mapCentered: '🎯 Map centered'
   },
   es: {
+    steps: 'Etapas',
+    nights: 'Noches',
+    itinerary: 'Itinerario',
+    map: 'Mapa',
+    bookings: 'Reservas',
+    services: 'Servicios',
+    noBookings: 'Sin reservas',
     shareTitle: '🔗 Compartir este viaje',
-    shareReadOnly: 'Solo lectura',
-    shareReadOnlyDesc: 'Puede ver el viaje pero no modificarlo',
-    shareEdit: 'Edición',
-    shareEditDesc: 'Puede modificar fechas, etapas, reservas',
-    shareWarning: '⚠️ Cualquier persona con este enlace podrá acceder al viaje',
+    shareWarning: '⚠️ Cualquiera con este enlace podrá ver tu viaje',
     shareGenerate: '🔗 Generar enlace',
     shareRegenerate: '🔄 Regenerar enlace',
-    shareSaving: '⏳ Guardando...',
-    shareGenerating: '⏳ Generando enlace...',
+    shareGenerating: '⏳ Generando...',
     shareCopy: '📋 Copiar',
     shareNative: '📤 Compartir',
-    shareRevoke: '🗑️ Revocar enlace',
     back: '← Volver',
     loginRequired: '🔐 Inicio de sesión requerido',
-    loginRequiredDesc: 'Inicia sesión para compartir este viaje con tus seres queridos.',
+    loginRequiredDesc: 'Inicia sesión para guardar y compartir este viaje.',
     loginBtn: 'Iniciar sesión',
     saveRequired: '💾 Guardado requerido',
     saveRequiredDesc: 'Guarda tu viaje antes de compartirlo.',
     saveBtn: 'Guardar',
     cancelBtn: 'Cancelar',
-    noSteps: '❌ Sin etapas para compartir',
     linkCreated: '✅ ¡Enlace creado!',
     linkCopied: '📋 ¡Enlace copiado!',
-    linkRevoked: '✅ Enlace revocado',
-    saved: '✅ ¡Guardado!'
+    saved: '✅ ¡Guardado!',
+    mapCentered: '🎯 Mapa centrado'
   },
   it: {
+    steps: 'Tappe',
+    nights: 'Notti',
+    itinerary: 'Itinerario',
+    map: 'Mappa',
+    bookings: 'Prenotazioni',
+    services: 'Servizi',
+    noBookings: 'Nessuna prenotazione',
     shareTitle: '🔗 Condividi questo viaggio',
-    shareReadOnly: 'Solo lettura',
-    shareReadOnlyDesc: 'Può vedere il viaggio ma non modificarlo',
-    shareEdit: 'Modifica',
-    shareEditDesc: 'Può modificare date, tappe, prenotazioni',
-    shareWarning: '⚠️ Chiunque abbia questo link potrà accedere al viaggio',
+    shareWarning: '⚠️ Chiunque con questo link potrà vedere il tuo viaggio',
     shareGenerate: '🔗 Genera link',
     shareRegenerate: '🔄 Rigenera link',
-    shareSaving: '⏳ Salvataggio...',
-    shareGenerating: '⏳ Generazione link...',
+    shareGenerating: '⏳ Generazione...',
     shareCopy: '📋 Copia',
     shareNative: '📤 Condividi',
-    shareRevoke: '🗑️ Revoca link',
     back: '← Indietro',
     loginRequired: '🔐 Accesso richiesto',
-    loginRequiredDesc: 'Accedi per condividere questo viaggio con i tuoi cari.',
+    loginRequiredDesc: 'Accedi per salvare e condividere questo viaggio.',
     loginBtn: 'Accedi',
     saveRequired: '💾 Salvataggio richiesto',
     saveRequiredDesc: 'Salva il tuo viaggio prima di condividerlo.',
     saveBtn: 'Salva',
     cancelBtn: 'Annulla',
-    noSteps: '❌ Nessuna tappa da condividere',
     linkCreated: '✅ Link creato!',
     linkCopied: '📋 Link copiato!',
-    linkRevoked: '✅ Link revocato',
-    saved: '✅ Salvato!'
+    saved: '✅ Salvato!',
+    mapCentered: '🎯 Mappa centrata'
   },
   pt: {
+    steps: 'Etapas',
+    nights: 'Noites',
+    itinerary: 'Itinerário',
+    map: 'Mapa',
+    bookings: 'Reservas',
+    services: 'Serviços',
+    noBookings: 'Sem reservas',
     shareTitle: '🔗 Partilhar esta viagem',
-    shareReadOnly: 'Apenas leitura',
-    shareReadOnlyDesc: 'Pode ver a viagem mas não modificá-la',
-    shareEdit: 'Edição',
-    shareEditDesc: 'Pode modificar datas, etapas, reservas',
-    shareWarning: '⚠️ Qualquer pessoa com este link poderá aceder à viagem',
+    shareWarning: '⚠️ Qualquer pessoa com este link poderá ver a sua viagem',
     shareGenerate: '🔗 Gerar link',
     shareRegenerate: '🔄 Regenerar link',
-    shareSaving: '⏳ A guardar...',
-    shareGenerating: '⏳ A gerar link...',
+    shareGenerating: '⏳ A gerar...',
     shareCopy: '📋 Copiar',
     shareNative: '📤 Partilhar',
-    shareRevoke: '🗑️ Revogar link',
     back: '← Voltar',
     loginRequired: '🔐 Login necessário',
-    loginRequiredDesc: 'Entre para partilhar esta viagem com os seus entes queridos.',
+    loginRequiredDesc: 'Entre para guardar e partilhar esta viagem.',
     loginBtn: 'Entrar',
     saveRequired: '💾 Guardar necessário',
     saveRequiredDesc: 'Guarde a sua viagem antes de a partilhar.',
     saveBtn: 'Guardar',
     cancelBtn: 'Cancelar',
-    noSteps: '❌ Sem etapas para partilhar',
     linkCreated: '✅ Link criado!',
     linkCopied: '📋 Link copiado!',
-    linkRevoked: '✅ Link revogado',
-    saved: '✅ Guardado!'
+    saved: '✅ Guardado!',
+    mapCentered: '🎯 Mapa centrado'
   },
   ar: {
+    steps: 'المراحل',
+    nights: 'الليالي',
+    itinerary: 'خط السير',
+    map: 'الخريطة',
+    bookings: 'الحجوزات',
+    services: 'الخدمات',
+    noBookings: 'لا توجد حجوزات',
     shareTitle: '🔗 مشاركة هذه الرحلة',
-    shareReadOnly: 'للقراءة فقط',
-    shareReadOnlyDesc: 'يمكنه رؤية الرحلة لكن لا يمكنه تعديلها',
-    shareEdit: 'تعديل',
-    shareEditDesc: 'يمكنه تعديل التواريخ والمراحل والحجوزات',
-    shareWarning: '⚠️ أي شخص لديه هذا الرابط يمكنه الوصول إلى الرحلة',
+    shareWarning: '⚠️ أي شخص لديه هذا الرابط يمكنه رؤية رحلتك',
     shareGenerate: '🔗 إنشاء رابط',
     shareRegenerate: '🔄 إعادة إنشاء الرابط',
-    shareSaving: '⏳ جارٍ الحفظ...',
-    shareGenerating: '⏳ جارٍ إنشاء الرابط...',
+    shareGenerating: '⏳ جارٍ الإنشاء...',
     shareCopy: '📋 نسخ',
     shareNative: '📤 مشاركة',
-    shareRevoke: '🗑️ إلغاء الرابط',
     back: '← رجوع',
     loginRequired: '🔐 تسجيل الدخول مطلوب',
-    loginRequiredDesc: 'سجّل الدخول لمشاركة هذه الرحلة مع أحبائك.',
+    loginRequiredDesc: 'سجّل الدخول لحفظ ومشاركة هذه الرحلة.',
     loginBtn: 'تسجيل الدخول',
     saveRequired: '💾 الحفظ مطلوب',
     saveRequiredDesc: 'احفظ رحلتك قبل مشاركتها.',
     saveBtn: 'حفظ',
     cancelBtn: 'إلغاء',
-    noSteps: '❌ لا توجد مراحل للمشاركة',
     linkCreated: '✅ تم إنشاء الرابط!',
     linkCopied: '📋 تم نسخ الرابط!',
-    linkRevoked: '✅ تم إلغاء الرابط',
-    saved: '✅ تم الحفظ!'
+    saved: '✅ تم الحفظ!',
+    mapCentered: '🎯 تم توسيط الخريطة'
   }
 };
 
 function i18n(key) {
   const lang = localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
-  return I18N_MOBILE[lang]?.[key] || I18N_MOBILE.fr[key] || key;
+  // 1. Chercher dans I18N_MOBILE local
+  if (I18N_MOBILE[lang]?.[key]) return I18N_MOBILE[lang][key];
+  if (I18N_MOBILE.fr?.[key]) return I18N_MOBILE.fr[key];
+  // 2. Chercher dans ORT_I18N global (ort-i18n.js)
+  if (window.ORT_I18N?.[key]?.[lang]) return window.ORT_I18N[key][lang];
+  if (window.ORT_I18N?.[key]?.fr) return window.ORT_I18N[key].fr;
+  return key;
 }
 
 function applyI18n() {
+  const lang = localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const text = i18n(key);
-    if (text) el.textContent = text;
+    if (text && text !== key) el.textContent = text;
   });
 }
 
@@ -4679,12 +4665,8 @@ function openShareModalDirect() {
   
   // Reset état
   $('shareResult').style.display = 'none';
-  $('btnRevokeShare').style.display = 'none';
   $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
   $('btnGenerateShare').disabled = false;
-  
-  // Charger le lien existant si présent
-  loadExistingShare();
   
   // Ouvrir la modale
   $('shareModal').classList.add('open');
@@ -4750,60 +4732,33 @@ function closeShareModal() {
 }
 
 async function loadExistingShare() {
-  if (!window.ORT_SHARE) return;
-  
-  try {
-    const existing = await ORT_SHARE.getShareInfo(state.tripId);
-    if (existing && existing.url) {
-      // 🔴 Toujours afficher le lien vers roadtrip_detail.html
-      let shareUrl = existing.url
-        .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
-        .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
-      
-      $('shareUrlInput').value = shareUrl;
-      $('shareResult').style.display = '';
-      $('btnRevokeShare').style.display = '';
-      $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
-      
-      // Cocher le bon mode
-      const modeRadio = document.querySelector(`input[name="shareMode"][value="${existing.mode || 'viewer'}"]`);
-      if (modeRadio) modeRadio.checked = true;
-    }
-  } catch (e) {
-    console.warn('[SHARE] Erreur chargement:', e);
-  }
+  // Plus besoin - on génère le lien à la volée
 }
 
-async function generateShareLink() {
-  if (!window.ORT_SHARE) {
-    showToast('❌ Module de partage non disponible');
-    return;
-  }
-  
+function generateShareLink() {
   // Les vérifications user/sauvegarde sont déjà faites dans openShareModal
-  
-  const mode = document.querySelector('input[name="shareMode"]:checked')?.value || 'viewer';
   
   $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerating')}</span>`;
   $('btnGenerateShare').disabled = true;
   
   try {
-    const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
+    // Construire le lien de partage simple basé sur tripId
+    const tripId = state.tripId || (window.ORT_TRIPID ? window.ORT_TRIPID.get() : null);
     
-    if (result && result.shareUrl) {
-      // Toujours pointer vers roadtrip_detail.html (qui redirige vers mobile si besoin)
-      let shareUrl = result.shareUrl
-        .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
-        .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
-      
-      $('shareUrlInput').value = shareUrl;
-      $('shareResult').style.display = '';
-      $('btnRevokeShare').style.display = '';
-      $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
-      showToast(i18n('linkCreated'));
-    } else {
-      showToast('❌ Erreur lors de la création du lien');
+    if (!tripId) {
+      showToast('❌ Voyage non sauvegardé');
+      return;
     }
+    
+    // Construire l'URL de base
+    const baseUrl = location.origin + location.pathname.replace('roadtrip_mobile.html', 'roadtrip_detail.html');
+    const shareUrl = `${baseUrl}?tripId=${encodeURIComponent(tripId)}`;
+    
+    $('shareUrlInput').value = shareUrl;
+    $('shareResult').style.display = '';
+    $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
+    showToast(i18n('linkCreated'));
+    
   } catch (e) {
     console.error('[SHARE] Erreur:', e);
     showToast('❌ ' + (e.message || 'Erreur'));
@@ -4831,22 +4786,6 @@ function nativeShare() {
     });
   } else {
     copyShareLink();
-  }
-}
-
-async function revokeShare() {
-  if (!window.ORT_SHARE) return;
-  
-  if (!confirm('Révoquer le lien de partage ?')) return;
-  
-  try {
-    await ORT_SHARE.revokeShareLink(state.tripId);
-    $('shareResult').style.display = 'none';
-    $('btnRevokeShare').style.display = 'none';
-    $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
-    showToast(i18n('linkRevoked'));
-  } catch (e) {
-    showToast('❌ Erreur: ' + e.message);
   }
 }
 
@@ -5101,7 +5040,6 @@ window.closeShareModal = closeShareModal;
 window.generateShareLink = generateShareLink;
 window.copyShareLink = copyShareLink;
 window.nativeShare = nativeShare;
-window.revokeShare = revokeShare;
 
 // Rafraîchir les bookings quand on revient sur cette page
 // (après avoir été sur rt-booking-import par exemple)
