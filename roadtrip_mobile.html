@@ -563,6 +563,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .sheet-header-center {
@@ -1518,6 +1519,36 @@ html, body {
   </button>
 </div>
 
+<!-- Modale Login Requis pour Partage -->
+<div class="share-alert-modal" id="loginRequiredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:10001;">
+  <div style="width:min(340px,90vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.25);text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+    <h3 data-i18n="loginRequired" style="margin:0 0 12px;color:#113f7a;font-size:1.2rem;">Connexion requise</h3>
+    <p data-i18n="loginRequiredDesc" style="color:#666;margin:0 0 20px;font-size:0.95rem;">Connectez-vous pour partager ce voyage avec vos proches.</p>
+    <button id="btnLoginRequiredLogin" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">
+      <span data-i18n="loginBtn">Se connecter</span>
+    </button>
+    <button id="btnLoginRequiredCancel" style="width:100%;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.95rem;cursor:pointer;">
+      <span data-i18n="cancelBtn">Annuler</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modale Sauvegarde Requise pour Partage -->
+<div class="share-alert-modal" id="saveRequiredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:10001;">
+  <div style="width:min(340px,90vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.25);text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">💾</div>
+    <h3 data-i18n="saveRequired" style="margin:0 0 12px;color:#113f7a;font-size:1.2rem;">Sauvegarde requise</h3>
+    <p data-i18n="saveRequiredDesc" style="color:#666;margin:0 0 20px;font-size:0.95rem;">Sauvegardez votre voyage avant de le partager.</p>
+    <button id="btnSaveRequiredSave" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">
+      <span data-i18n="saveBtn">Sauvegarder</span>
+    </button>
+    <button id="btnSaveRequiredCancel" style="width:100%;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.95rem;cursor:pointer;">
+      <span data-i18n="cancelBtn">Annuler</span>
+    </button>
+  </div>
+</div>
+
 <!-- Services Bottom Sheet -->
 <div class="bottom-sheet" id="servicesSheet">
   <div class="sheet-handle"></div>
@@ -1564,9 +1595,10 @@ html, body {
 <!-- Menu Bottom Sheet -->
 <!-- User Profile Bottom Sheet -->
 <div class="bottom-sheet" id="userSheet">
-  <div class="sheet-handle"></div>
+  <div class="sheet-handle" onclick="closeAllSheets()"></div>
   <div class="sheet-header">
     <div class="sheet-title">Profil</div>
+    <button class="sheet-close-btn" onclick="closeAllSheets()" style="position:absolute;right:16px;top:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;">✕</button>
   </div>
   <div class="sheet-body">
     <div id="userInfoSection" style="padding:16px;text-align:center;border-bottom:1px solid #eee;">
@@ -1583,9 +1615,10 @@ html, body {
   </div>
 </div>
 <div class="bottom-sheet" id="langSheet">
-  <div class="sheet-handle"></div>
+  <div class="sheet-handle" onclick="closeAllSheets()"></div>
   <div class="sheet-header">
     <div class="sheet-title">🌐 Langue / Language</div>
+    <button class="sheet-close-btn" onclick="closeAllSheets()" style="position:absolute;right:16px;top:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;">✕</button>
   </div>
   <div class="sheet-body">
     <div class="service-grid">
@@ -2162,7 +2195,13 @@ const I18N_MOBILE = {
     shareNative: '📤 Partager',
     shareRevoke: '🗑️ Révoquer le lien',
     back: '← Retour',
-    loginRequired: '🔐 Connexion requise pour partager',
+    loginRequired: '🔐 Connexion requise',
+    loginRequiredDesc: 'Connectez-vous pour partager ce voyage avec vos proches.',
+    loginBtn: 'Se connecter',
+    saveRequired: '💾 Sauvegarde requise',
+    saveRequiredDesc: 'Sauvegardez votre voyage avant de le partager.',
+    saveBtn: 'Sauvegarder',
+    cancelBtn: 'Annuler',
     noSteps: '❌ Aucune étape à partager',
     linkCreated: '✅ Lien créé !',
     linkCopied: '📋 Lien copié !',
@@ -2184,7 +2223,13 @@ const I18N_MOBILE = {
     shareNative: '📤 Share',
     shareRevoke: '🗑️ Revoke link',
     back: '← Back',
-    loginRequired: '🔐 Login required to share',
+    loginRequired: '🔐 Login required',
+    loginRequiredDesc: 'Sign in to share this trip with your loved ones.',
+    loginBtn: 'Sign in',
+    saveRequired: '💾 Save required',
+    saveRequiredDesc: 'Save your trip before sharing it.',
+    saveBtn: 'Save',
+    cancelBtn: 'Cancel',
     noSteps: '❌ No steps to share',
     linkCreated: '✅ Link created!',
     linkCopied: '📋 Link copied!',
@@ -2207,6 +2252,12 @@ const I18N_MOBILE = {
     shareRevoke: '🗑️ Revocar enlace',
     back: '← Volver',
     loginRequired: '🔐 Inicio de sesión requerido',
+    loginRequiredDesc: 'Inicia sesión para compartir este viaje con tus seres queridos.',
+    loginBtn: 'Iniciar sesión',
+    saveRequired: '💾 Guardado requerido',
+    saveRequiredDesc: 'Guarda tu viaje antes de compartirlo.',
+    saveBtn: 'Guardar',
+    cancelBtn: 'Cancelar',
     noSteps: '❌ Sin etapas para compartir',
     linkCreated: '✅ ¡Enlace creado!',
     linkCopied: '📋 ¡Enlace copiado!',
@@ -2229,6 +2280,12 @@ const I18N_MOBILE = {
     shareRevoke: '🗑️ Revoca link',
     back: '← Indietro',
     loginRequired: '🔐 Accesso richiesto',
+    loginRequiredDesc: 'Accedi per condividere questo viaggio con i tuoi cari.',
+    loginBtn: 'Accedi',
+    saveRequired: '💾 Salvataggio richiesto',
+    saveRequiredDesc: 'Salva il tuo viaggio prima di condividerlo.',
+    saveBtn: 'Salva',
+    cancelBtn: 'Annulla',
     noSteps: '❌ Nessuna tappa da condividere',
     linkCreated: '✅ Link creato!',
     linkCopied: '📋 Link copiato!',
@@ -2251,6 +2308,12 @@ const I18N_MOBILE = {
     shareRevoke: '🗑️ Revogar link',
     back: '← Voltar',
     loginRequired: '🔐 Login necessário',
+    loginRequiredDesc: 'Entre para partilhar esta viagem com os seus entes queridos.',
+    loginBtn: 'Entrar',
+    saveRequired: '💾 Guardar necessário',
+    saveRequiredDesc: 'Guarde a sua viagem antes de a partilhar.',
+    saveBtn: 'Guardar',
+    cancelBtn: 'Cancelar',
     noSteps: '❌ Sem etapas para partilhar',
     linkCreated: '✅ Link criado!',
     linkCopied: '📋 Link copiado!',
@@ -2273,6 +2336,12 @@ const I18N_MOBILE = {
     shareRevoke: '🗑️ إلغاء الرابط',
     back: '← رجوع',
     loginRequired: '🔐 تسجيل الدخول مطلوب',
+    loginRequiredDesc: 'سجّل الدخول لمشاركة هذه الرحلة مع أحبائك.',
+    loginBtn: 'تسجيل الدخول',
+    saveRequired: '💾 الحفظ مطلوب',
+    saveRequiredDesc: 'احفظ رحلتك قبل مشاركتها.',
+    saveBtn: 'حفظ',
+    cancelBtn: 'إلغاء',
     noSteps: '❌ لا توجد مراحل للمشاركة',
     linkCreated: '✅ تم إنشاء الرابط!',
     linkCopied: '📋 تم نسخ الرابط!',
@@ -4231,7 +4300,6 @@ function closeSheet(sheet) {
 function closeAllSheets() {
   $('sheetOverlay').classList.remove('show');
   $('stepSheet').classList.remove('show');
-  $('menuSheet').classList.remove('show');
   $('servicesSheet').classList.remove('show');
   $('langSheet').classList.remove('show');
   $('scannerSheet').classList.remove('show');
@@ -4463,6 +4531,13 @@ async function saveTrip() {
     // Vérifier si Firebase est disponible et utilisateur connecté
     const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
     
+    // 🔴 Si pas connecté, afficher modale de login
+    if (!user) {
+      $('loginRequiredModal').style.display = 'flex';
+      applyI18n();
+      return;
+    }
+    
     if (user && window.ORT_STATE) {
       // Utilise ORT_TRIPID pour garantir un tripId cohérent
       let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : null;
@@ -4570,17 +4645,32 @@ async function saveTrip() {
 }
 
 function openShareModal() {
-  // 🔴 Vérifier que l'utilisateur est connecté
+  // Appliquer les traductions
+  applyI18n();
+  
+  // 🔴 1) Vérifier que l'utilisateur est connecté
   const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
   if (!user) {
-    showToast(i18n('loginRequired'));
-    // Ouvrir la modale d'authentification
-    if (window.openAuth) {
-      window.openAuth('login');
-    }
+    // Afficher modale "Connexion requise"
+    $('loginRequiredModal').style.display = 'flex';
     return;
   }
   
+  // 🔴 2) Vérifier que le voyage est sauvegardé
+  const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : state.tripId;
+  const isSaved = tripId && !tripId.startsWith('catalog::') && !tripId.startsWith('custom::') && !tripId.startsWith('temp_');
+  
+  if (!isSaved) {
+    // Afficher modale "Sauvegarde requise"
+    $('saveRequiredModal').style.display = 'flex';
+    return;
+  }
+  
+  // 🔴 3) Tout est OK, ouvrir la modale de partage
+  openShareModalDirect();
+}
+
+function openShareModalDirect() {
   // Appliquer les traductions à la modale
   applyI18n();
   
@@ -4600,6 +4690,59 @@ function openShareModal() {
   $('shareModal').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
+
+function closeLoginRequiredModal() {
+  $('loginRequiredModal').style.display = 'none';
+}
+
+function closeSaveRequiredModal() {
+  $('saveRequiredModal').style.display = 'none';
+}
+
+// Handlers pour les modales d'alerte
+document.addEventListener('DOMContentLoaded', () => {
+  // Login Required Modal
+  const btnLoginRequiredLogin = document.getElementById('btnLoginRequiredLogin');
+  const btnLoginRequiredCancel = document.getElementById('btnLoginRequiredCancel');
+  const loginRequiredModal = document.getElementById('loginRequiredModal');
+  
+  if (btnLoginRequiredLogin) {
+    btnLoginRequiredLogin.onclick = () => {
+      closeLoginRequiredModal();
+      if (window.openAuth) window.openAuth('login');
+    };
+  }
+  if (btnLoginRequiredCancel) {
+    btnLoginRequiredCancel.onclick = closeLoginRequiredModal;
+  }
+  if (loginRequiredModal) {
+    loginRequiredModal.onclick = (e) => {
+      if (e.target === loginRequiredModal) closeLoginRequiredModal();
+    };
+  }
+  
+  // Save Required Modal
+  const btnSaveRequiredSave = document.getElementById('btnSaveRequiredSave');
+  const btnSaveRequiredCancel = document.getElementById('btnSaveRequiredCancel');
+  const saveRequiredModal = document.getElementById('saveRequiredModal');
+  
+  if (btnSaveRequiredSave) {
+    btnSaveRequiredSave.onclick = async () => {
+      closeSaveRequiredModal();
+      await saveTrip();
+      // Après sauvegarde, ouvrir la modale de partage
+      setTimeout(() => openShareModal(), 500);
+    };
+  }
+  if (btnSaveRequiredCancel) {
+    btnSaveRequiredCancel.onclick = closeSaveRequiredModal;
+  }
+  if (saveRequiredModal) {
+    saveRequiredModal.onclick = (e) => {
+      if (e.target === saveRequiredModal) closeSaveRequiredModal();
+    };
+  }
+});
 
 function closeShareModal() {
   $('shareModal').classList.remove('open');
@@ -4637,78 +4780,14 @@ async function generateShareLink() {
     return;
   }
   
-  // 🔴 1) Vérifier que l'utilisateur est connecté
-  const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
-  if (!user) {
-    showToast(i18n('loginRequired'));
-    // Ouvrir la modale d'authentification
-    if (window.openAuth) {
-      window.openAuth('login');
-    }
-    return;
-  }
-  
-  // 🔴 2) Vérifier que le voyage a des étapes
-  if (!state.steps || state.steps.length === 0) {
-    showToast(i18n('noSteps'));
-    return;
-  }
+  // Les vérifications user/sauvegarde sont déjà faites dans openShareModal
   
   const mode = document.querySelector('input[name="shareMode"]:checked')?.value || 'viewer';
   
-  $('btnGenerateShare').innerHTML = `<span>${i18n('shareSaving')}</span>`;
+  $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerating')}</span>`;
   $('btnGenerateShare').disabled = true;
   
   try {
-    // 🔴 3) S'assurer que le voyage est sauvegardé dans Firestore AVANT de partager
-    let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : state.tripId;
-    
-    // Générer un tripId si nécessaire
-    if (!tripId || tripId.startsWith('catalog::') || tripId.startsWith('custom::')) {
-      tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      console.log('[SHARE] 🆕 Nouveau tripId généré:', tripId);
-    }
-    
-    // Préparer les données du voyage
-    const tripData = {
-      id: tripId,
-      title: state.title || 'Roadtrip',
-      country: state.cc || 'XX',
-      steps: state.steps.map(s => ({
-        name: s.name,
-        lat: s.lat,
-        lon: s.lng || s.lon,
-        lng: s.lng || s.lon,
-        nights: s.nights || 0,
-        place_id: s.place_id || s.placeId,
-        photos: s.photos || s.images || [],
-        description: s.description || '',
-        visits: s.visits || [],
-        activities: s.activities || []
-      })),
-      nights: state.steps.reduce((sum, s) => sum + (s.nights || 0), 0),
-      kms: totalRouteKm || 0,
-      saved: true,
-      updatedAt: Date.now(),
-      createdAt: state._createdAt || Date.now(),
-      source: 'mobile-share'
-    };
-    
-    // Sauvegarder via ORT_STATE
-    if (window.ORT_STATE) {
-      await window.ORT_STATE.saveTrip(tripData);
-      console.log('[SHARE] ✅ Voyage sauvegardé:', tripId);
-    } else {
-      throw new Error('Module de sauvegarde non disponible');
-    }
-    
-    // Mettre à jour le state local
-    state.tripId = tripId;
-    if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
-    
-    // 🔴 4) Maintenant générer le lien de partage
-    $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerating')}</span>`;
-    
     const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
     
     if (result && result.shareUrl) {
