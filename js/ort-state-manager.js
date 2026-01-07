@@ -751,6 +751,8 @@
    */
   // Track des sauvegardes en cours pour éviter les doublons
   const savingInProgress = {};
+  const lastSaveTime = {};
+  const SAVE_DEBOUNCE_MS = 3000; // 3 secondes entre sauvegardes
   
   async function saveTripToFirestore(tripData) {
     if (!firestoreDb || !currentUser) {
@@ -760,11 +762,22 @@
     
     // Éviter les sauvegardes en double
     const tripId = tripData.id;
+    const now = Date.now();
+    
+    // Debounce temporel : ignorer si sauvegarde récente
+    if (lastSaveTime[tripId] && (now - lastSaveTime[tripId]) < SAVE_DEBOUNCE_MS) {
+      console.log(`⏳ [STATE] Sauvegarde trop récente pour ${tripId} (${now - lastSaveTime[tripId]}ms), ignoré`);
+      return true;
+    }
+    
+    // Debounce par flag : ignorer si en cours
     if (savingInProgress[tripId]) {
       console.log(`⏳ [STATE] Sauvegarde déjà en cours pour ${tripId}, ignoré`);
       return true;
     }
+    
     savingInProgress[tripId] = true;
+    lastSaveTime[tripId] = now;
 
     // Vérifier la limite de voyages sauvegardés (sauf si c'est une mise à jour ou admin)
     const isAdmin = currentUser.email && ADMIN_EMAILS.includes(currentUser.email.toLowerCase());
