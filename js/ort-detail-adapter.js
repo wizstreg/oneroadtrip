@@ -267,6 +267,17 @@
       return false;
     }
 
+    // 🔴 SI C'EST UN CATALOGUE: Générer un NEW tripId pour la sauvegarde
+    let saveTripId = currentTripId;
+    const catalogSource = sessionStorage.getItem('ort_catalog_source');
+    if (catalogSource && currentTripId.startsWith('catalog::')) {
+      console.log('[DETAIL] 📚 Catalogue détecté en sauvegarde, génération NEW tripId');
+      saveTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.removeItem('ort_catalog_source'); // Nettoyer
+      currentTripId = saveTripId; // Mettre à jour pour les futures sauvegardes
+      console.log('[DETAIL] ✅ NEW tripId:', saveTripId);
+    }
+
     // Évite les sauvegardes en parallèle et les modifications pendant la sauvegarde
     if (isSaving) {
       console.log('[DETAIL] Sauvegarde déjà en cours, ignoré');
@@ -274,7 +285,7 @@
     }
     
     isSaving = true;
-    console.log('[DETAIL] Sauvegarde du voyage:', currentTripId);
+    console.log('[DETAIL] Sauvegarde du voyage:', saveTripId);
     showToast('Sauvegarde en cours...', 'info');
 
     try {
@@ -287,9 +298,15 @@
         console.log('[DETAIL] Voyage marque comme sauvegarde');
       }
       
+      console.log('[DETAIL] ✅ Sauvegarde avec tripId:', saveTripId, 'Données:', {
+        title: tripData.title,
+        country: tripData.country,
+        steps: tripData.steps?.length || 0
+      });
+      
       // Sauvegarde via State Manager
       const saved = await window.ORT_STATE.saveTrip({
-        id: currentTripId,
+        id: saveTripId,
         ...tripData
       });
 
@@ -302,7 +319,7 @@
         
         // Dispatch event pour notifier les autres modules
         document.dispatchEvent(new CustomEvent('ort:trip-saved', {
-          detail: { tripId: currentTripId }
+          detail: { tripId: saveTripId }
         }));
         
         isSaving = false;
@@ -584,9 +601,6 @@
     init,
     saveCurrent,
     collectCurrentData,
-    get tripId() {
-      return currentTripId;
-    },
     hasPendingChanges: () => {
       return currentTripId ? window.ORT_STATE.hasPendingChanges(currentTripId) : false;
     }

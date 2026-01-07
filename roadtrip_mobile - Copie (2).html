@@ -20,40 +20,20 @@
 (function(){
   const qs = new URLSearchParams(location.search);
   const tripId = qs.get('tripId') || qs.get('id');
-  const cc = qs.get('cc');
-  const itin = qs.get('itin');
   
-  // Cas 1: tripId explicitement catalog::
   if (tripId && tripId.startsWith('catalog::')) {
-    console.log('[INIT-EARLY] 📚 Catalogue détecté (tripId), génération NEW tripId');
+    console.log('[INIT-EARLY] 📚 Catalogue détecté, génération NEW tripId');
     const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const lang = qs.get('lang') || 'fr';
     
+    // Stocker le catalogue original temporairement pour que State Manager le trouve
     sessionStorage.setItem('ort_catalog_source', tripId);
     console.log('[INIT-EARLY] ✅ Source catalogue sauvegardée:', tripId);
     
-    // Remplacer tripId mais conserver tous les autres paramètres
-    qs.set('tripId', newTripId);
-    const newUrl = `${location.pathname}?${qs.toString()}`;
+    const newUrl = `${location.pathname}?tripId=${encodeURIComponent(newTripId)}&lang=${lang}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
     window.location.href = newUrl;
-    return;
-  }
-  
-  // Cas 2: cc + itin (accès catalogue via paramètres séparés) - inclut COMPOSED::
-  if (cc && itin && !tripId) {
-    console.log('[INIT-EARLY] 📚 Catalogue détecté (cc+itin), génération NEW tripId');
-    const catalogId = `catalog::${cc.toUpperCase()}::${itin}`;
-    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    sessionStorage.setItem('ort_catalog_source', catalogId);
-    console.log('[INIT-EARLY] ✅ Source catalogue sauvegardée:', catalogId);
-    
-    // Ajouter tripId mais conserver tous les autres paramètres (cc, itin, days, depart, mode, etc.)
-    qs.set('tripId', newTripId);
-    const newUrl = `${location.pathname}?${qs.toString()}`;
-    console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
-    return;
+    // Ne pas executer le reste du code
   }
 })();
 </script>

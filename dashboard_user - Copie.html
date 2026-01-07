@@ -78,15 +78,9 @@
 
   .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
   @media(min-width:640px){.actions{gap:8px}}
-  .actions .btn{display:inline-flex;background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0;padding:6px 10px;font-size:0.85rem}
+  .actions .btn{background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0;padding:6px 10px;font-size:0.85rem}
   @media(min-width:640px){.actions .btn{padding:8px 12px;font-size:0.95rem}}
   .actions .btn:hover{background:#eaf1fb}
-
-  /* Topbar: cacher boutons secondaires sur mobile, garder Nouveau voyage */
-  @media(max-width:480px){
-    .topbar .btn:not(.primary){display:none}
-    .topbar .btn.primary{display:inline-flex}
-  }
 
   .empty{padding:16px;border:1px dashed #ffffff70;border-radius:12px;text-align:center;font-size:clamp(0.9rem, 2.5vw, 1rem)}
   @media(min-width:640px){.empty{padding:20px}}
@@ -367,13 +361,17 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   ensureFirebase().then(fb => fb.auth().onAuthStateChanged(async u => { 
     console.log('🔐 [AUTH] État changé:', u ? u.email : 'déconnecté');
     
-    // Update State Manager AVANT setUser (qui appelle render)
+    Dashboard.setUser(u);
+    
+    // Update State Manager avec le user
     if (window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
       await window.ORT_STATE.updateUser(u);
+      // Rafraîchir l'affichage du dashboard après connexion
+      if (u && typeof Dashboard !== 'undefined' && typeof Dashboard.render === 'function') {
+        console.log('🔄 [DASHBOARD] Rafraîchissement après connexion...');
+        await Dashboard.render();
+      }
     }
-    
-    // setUser appelle render() via loadRtCoversOnce().finally(render)
-    Dashboard.setUser(u);
     
     // Afficher Export modules uniquement pour admin
     const btnExportModules = document.getElementById('btnExportModules');
@@ -733,11 +731,11 @@ function openRT(rt){
     if(!confirm(msg)) return;
     
     // Utiliser le State Manager
-    const deleted = await window.ORT_STATE.deleteTrip(rt.id);
+const deleted = await window.ORT_STATE.deleteTrip(rt.id);
     
     if(deleted) {
-      // Forcer le rechargement COMPLET depuis Firestore (vide le cache)
-      await window.ORT_STATE.getAllTrips();
+      // Forcer le rechargement depuis Firestore
+      await window.ORT_STATE.init();
       toast(L.toast.deleted || 'Voyage supprimé');
       render();
     }

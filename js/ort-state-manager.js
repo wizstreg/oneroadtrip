@@ -288,6 +288,22 @@
   async function getTrip(tripId, forceReload = false) {
     console.log(`🔍 [STATE] Récupération voyage: ${tripId}`);
 
+    // 🔴 SI c'est un NEW tripId depuis catalogue: chercher le catalogue original
+    const catalogSource = sessionStorage.getItem('ort_catalog_source');
+    if (catalogSource && tripId.startsWith('trip_')) {
+      console.log('[STATE] 📚 NEW tripId depuis catalogue, cherche source:', catalogSource);
+      // Faire un appel récursif pour charger le catalogue
+      const catalogData = await getTrip(catalogSource, true);
+      if (catalogData) {
+        console.log('[STATE] ✅ Données catalogue chargées pour NEW tripId');
+        // Mettre à jour l'ID et cacher l'origine
+        catalogData.id = tripId;
+        catalogData.tripId = tripId;
+        // Pas nettoyer sessionStorage ici - nettoyer à la sauvegarde
+        return catalogData;
+      }
+    }
+
     // Si en cache et pas de force reload
     if (!forceReload && tripsCache[tripId]) {
       console.log('💨 [STATE] Voyage trouvé en cache');
@@ -595,7 +611,7 @@
       return JSON.stringify(obj);
     }
     
-if (Array.isArray(obj)) {
+    if (Array.isArray(obj)) {
       // Vérifie si le tableau contient directement d'autres tableaux
       const hasNestedArray = obj.some(item => Array.isArray(item));
       if (hasNestedArray) {
@@ -615,16 +631,15 @@ if (Array.isArray(obj)) {
       
       for (const [key, value] of Object.entries(obj)) {
         if (Array.isArray(value)) {
-          // Vérifie récursivement si le tableau contient des nested arrays
-          const hasDeepNesting = value.some(item => {
+          // Pour "steps", toujours vérifier s'il contient visits/activities/photos
+          // qui sont des tableaux dans des objets
+          const hasAnyNestedArray = value.some(item => {
             if (typeof item !== 'object' || item === null) return false;
-            // Vérifie si l'objet contient des tableaux
             return Object.values(item).some(v => Array.isArray(v));
           });
           
-if (hasDeepNesting) {
+          if (hasAnyNestedArray) {
             // SOLUTION RADICALE : Convertir en JSON string
-            // Firestore accepte les strings, on reconvertira à la lecture
             console.log(`🔧 [STATE] Nested array détecté dans "${key}", sérialisation JSON`);
             
             // Nettoyer les undefined avant stringify
@@ -644,7 +659,7 @@ if (hasDeepNesting) {
           }
         } else if (typeof value === 'object' && value !== null) {
           cleaned[key] = cleanNestedArrays(value, depth + 1);
-       } else if (value !== undefined) {
+        } else if (value !== undefined) {
           cleaned[key] = value;
         }
       }

@@ -1,0 +1,97 @@
+Convert the content below into a JSON "itins" (SINGLE object), strictly valid and complete.
+
+⚠️ IF THE TEXT LISTS MULTIPLE SEPARATE ROADTRIPS/ITINERARIES:
+- Extract ALL places mentioned across all itineraries
+- Reorganize them into ONE coherent and logical roadtrip
+- Each place = 1 distinct day in the final JSON
+- Optimize the order to minimize back-and-forth travel
+
+NON-NEGOTIABLE RULES:
+- Include ALL visits and ALL activities (do not omit anything).
+- No invention: real GPS coordinates only, realistic distances/durations.
+- Follow the ORT schema below (all fields required).
+- Reply ONLY with valid JSON (no extra text).
+- Add a "created_at" field in ISO 8601 format (current date) to each itins object
+- Add a "source_url" field with the source page URL in each itins object (if available)
+
+**WRITING STYLE - TRAVEL AGENCY TONE (MANDATORY FOR ALL MODES):**
+- Write like a professional travel agency. Make locations appealing and inviting.
+- Each visit/activity text MUST be 2-3 sentences (40-80 words minimum) that inspire travelers.
+- Use engaging, descriptive language that highlights the beauty and interest of each place.
+- Include historical context, unique features, or sensory details that make it special.
+- Example: {"text": "Marvel at the Palais des Papes, Europe's largest Gothic palace. This UNESCO World Heritage masterpiece transports you back to the 14th century when Avignon was the powerful seat of Christendom. Don't miss the stunning frescoes in the private papal apartments and the breathtaking views from the tower."}
+- Stay 100% factually accurate - never invent details not in the source.
+
+
+
+⚠️ CRITICAL REQUIREMENTS:
+1. itin_id and place_id MUST start with ISO2 country code (FR::, IT::, ES::, PT::, TR::, etc.)
+2. FORBIDDEN to use CC:: or XX:: (invalid)
+3. Each "night" MUST have "coords": [latitude, longitude] (mandatory)
+4. dept_code must correspond to the namespace country
+5. to_next_leg: include transport_mode ("car", "train", "flight"). If distance >= 600km, add in activities: {"text":"Flight to [destination]"}
+6. **LANGUAGE: ALL texts (title, notes, visits, activities) MUST be in ENGLISH**
+7. **suggested_days: MANDATORY for EACH day. Assign based on interest:**
+   - 0.5 = Quick stop (1-2 visits)
+   - 1.0 = Standard day (3-4 visits)
+   - 1.5 = Rich destination (5-6 visits)
+   - 2.0 = Major destination (7+ visits)
+8. **Transport time bonus: Add to suggested_days of DEPARTURE step:**
+   - drive_min ≤180 (≤3h) → +0
+   - drive_min 181-300 (3-5h) → +0.5
+   - drive_min >300 (>5h) → +1.0
+9. **estimated_days_base FORMULA: CEIL(Σ suggested_days_adjusted) + 1**
+   - Where suggested_days_adjusted = suggested_days + transport_bonus
+   - VERIFY: Σ suggested_days ≈ estimated_days_base - 1 (tolerance ±1)
+10. **pacing_rules.factors: ALWAYS {"slow":1.25,"standard":1.0,"fast":0.75}**
+11. **language: MANDATORY field in each itin object - must be one of: fr, en, pt, es, it, ar**
+
+RULES FOR suggested_days (recommended visit time):
+- 0.5 day: Small village, isolated castle, simple natural site
+- 1 day: Medium city, single major site, natural park
+- 1.5 days: Major tourist city, area with multiple attractions
+- 2 days: Regional capital, major destination (Prague, Barcelona...)
+- 3+ days: National capital, exceptional destination (Paris, Rome...)
+The sum of suggested_days should be close to estimated_days_base.
+
+MODE-SPECIFIC CONSTRAINTS:
+- STRICT FOLLOW: keep order and stages exactly as in the source. No reordering, no insertion/deletion.
+
+
+
+
+TARGET SCHEMA EXAMPLE:
+{
+  "itins": [{
+    "itin_id": "FR::provence::lavande",
+    "dept_code": "84",
+    "language": "en",
+    "created_at": "2024-12-08T20:30:00Z",
+    "source_url": "https://example.com/provence-lavande",
+    "dept_name": "Vaucluse",
+    "title": "Lavender villages in Provence",
+    "estimated_days_base": 5,
+    "pacing_rules": {
+      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [{
+      "day": 1,
+      "slice": 1,
+      "region_code": "PACA",
+      "suggested_days": 1.5,
+      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
+      "visits": [
+        {"text": "Palais des Papes"}
+      ],
+      "activities": [
+        {"text": "Pont d'Avignon"}
+      ],
+      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
+    }]
+  }]
+}
+
+SOURCE:
+---
+aaaaaavswxcswxfcdwv

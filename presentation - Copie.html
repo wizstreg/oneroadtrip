@@ -3562,17 +3562,12 @@ function validateAndContinue() {
   // Ouvrir la modale budget avec callback de redirection
   showBudgetModal((config) => {
     const budget = config.budget || '50-100';
-    const depart = config.departureDate || '';
-    const days = config.numDays || '';
     
     if (selectedItineraries.length === 1) {
       // 1 seul itinéraire - utiliser l'ID ORIGINAL du JSON
       const id = selectedItineraries[0]._originalItinId || selectedItineraries[0].itin_id;
       const cc = selectedItineraries[0].country || 'FR';
-      let url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(id)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
-      if (depart) url += `&depart=${depart}`;
-      if (days) url += `&days=${days}`;
-      window.location.href = url;
+      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(id)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
     } else {
       // 2-3 itinéraires -> fusion COMPOSED
       // Utiliser les IDs ORIGINAUX du JSON (les vrais IDs!)
@@ -3580,10 +3575,7 @@ function validateAndContinue() {
       const composed = `COMPOSED::${originalIds.join('+')}`;
       const cc = selectedItineraries[0].country || 'MULTI';
       console.log('[VALIDATE] Composed ID:', composed);
-      let url = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(composed)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
-      if (depart) url += `&depart=${depart}`;
-      if (days) url += `&days=${days}`;
-      window.location.href = url;
+      window.location.href = `roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(composed)}&lang=${lang}&mode=${mode}&budget=${budget}&skipMobileRedirect=1`;
     }
   }, totalDays, firstTitle);
 }
