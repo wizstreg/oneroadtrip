@@ -4751,9 +4751,22 @@ async function generateShareLink() {
       return;
     }
     
+    // Vérifier que state.steps existe
+    if (!state.steps || state.steps.length === 0) {
+      showToast('❌ Aucune étape à partager');
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+      $('btnGenerateShare').disabled = false;
+      return;
+    }
+    
+    console.log('[SHARE] 📤 Partage de', state.steps.length, 'étapes');
+    console.log('[SHARE] Titre:', state.title, 'Pays:', state.cc);
+    
     // Utiliser ORT_SHARE si disponible
     if (window.ORT_SHARE && typeof ORT_SHARE.createShareLink === 'function') {
       const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
+      
+      console.log('[SHARE] Résultat ORT_SHARE:', result ? '✅' : '❌');
       
       if (result && result.shareUrl) {
         // Pointer vers roadtrip_detail.html

@@ -4129,6 +4129,40 @@ function initApp(){
         // Stocker les données pour le chargement
         window._sharedTripData = sharedData;
         
+        // 🔴 APPLIQUER LES DONNÉES AU STATE
+        // Les données sont dans sharedData.data (pas directement dans sharedData)
+        const tripData = sharedData.data || sharedData;
+        
+        if (tripData.steps && tripData.steps.length > 0) {
+          window.state = window.state || {};
+          window.state.steps = tripData.steps;
+          window.state.title = tripData.title || 'Voyage partagé';
+          window.state.cc = tripData.country || 'XX';
+          window.state.country = tripData.country || 'XX';
+          window.state.tripId = tripData.tripId || tripData.id;
+          window.state._sharedMode = sharedData.mode;
+          
+          console.log('[SHARE] ✅ State mis à jour:', window.state.steps.length, 'étapes');
+          
+          // Mettre à jour le titre dans l'UI
+          const titleEl = document.getElementById('tripTitle') || document.querySelector('.trip-title');
+          if (titleEl) titleEl.textContent = window.state.title;
+          
+          // Déclencher le rendu si renderRows existe
+          setTimeout(() => {
+            if (typeof window.renderRows === 'function') {
+              console.log('[SHARE] 🔄 Appel renderRows()');
+              window.renderRows();
+            }
+            // Centrer la carte sur les étapes
+            if (typeof window.fitMapToSteps === 'function') {
+              window.fitMapToSteps();
+            }
+          }, 500);
+        } else {
+          console.warn('[SHARE] ⚠️ Pas d\'étapes dans les données partagées:', tripData);
+        }
+        
         // Afficher le mode
         loadingBanner.innerHTML = sharedData.mode === 'viewer' 
           ? '👁️ Mode lecture seule' 
