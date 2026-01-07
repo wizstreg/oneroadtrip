@@ -780,6 +780,22 @@ function generateBuilderItinerary(steps, config, lang) {
     window.state.title = itinerary.title;
     window.state.cc = config.start.cc || config.end.cc || 'XX';
     
+    // === TRIPID: Récupérer depuis URL ou ORT_TRIPID ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const tripId = urlParams.get('tripId') || (window.ORT_TRIPID && window.ORT_TRIPID.get());
+    if (tripId) {
+      window.state.tripId = tripId;
+      console.log('[ROUTE-BUILDER] ✅ tripId injecté dans state:', tripId);
+      
+      // Initialiser ORT_DETAIL_ADAPTER si disponible
+      if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.init === 'function') {
+        window.ORT_DETAIL_ADAPTER.init(tripId, window.state);
+        console.log('[ROUTE-BUILDER] ✅ ORT_DETAIL_ADAPTER initialisé');
+      }
+    } else {
+      console.warn('[ROUTE-BUILDER] ⚠️ Pas de tripId trouvé');
+    }
+    
     // Déclencher le rendu si possible
     if (typeof renderSteps === 'function') {
       console.log('[ROUTE-BUILDER] Appel renderSteps()');
@@ -1319,6 +1335,20 @@ function generateLoopItinerary(steps, config, lang) {
     window.state.title = title;
     window.state.cc = config.start.cc || 'XX';
     window.state._isLoop = true;
+    
+    // === TRIPID: Récupérer depuis URL ou ORT_TRIPID ===
+    const urlParams = new URLSearchParams(window.location.search);
+    const tripId = urlParams.get('tripId') || (window.ORT_TRIPID && window.ORT_TRIPID.get());
+    if (tripId) {
+      window.state.tripId = tripId;
+      console.log('[ROUTE-BUILDER] ✅ tripId injecté dans state (loop):', tripId);
+      
+      // Initialiser ORT_DETAIL_ADAPTER si disponible
+      if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.init === 'function') {
+        window.ORT_DETAIL_ADAPTER.init(tripId, window.state);
+        console.log('[ROUTE-BUILDER] ✅ ORT_DETAIL_ADAPTER initialisé (loop)');
+      }
+    }
     
     // Mettre à jour le titre
     const titlePill = document.querySelector('.pill.title');
