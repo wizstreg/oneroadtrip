@@ -1709,6 +1709,317 @@ window.debugLog = function(msg) {
 <script src="./js/ort-share.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-i18n.js"></script>
+
+<!-- ========== MODALE AUTH LÉGÈRE POUR MOBILE ========== -->
+<script>
+(function() {
+  'use strict';
+  
+  const MODAL_ID = 'ortMobileAuthModal';
+  let currentMode = 'login'; // 'login' | 'signup' | 'reset'
+  
+  // Traductions
+  const T = {
+    fr: {
+      loginTitle: 'Se connecter',
+      signupTitle: 'Créer un compte',
+      resetTitle: 'Mot de passe oublié',
+      email: 'E-mail',
+      password: 'Mot de passe',
+      confirmPassword: 'Confirmer',
+      login: 'Connexion',
+      signup: 'Créer',
+      sendReset: 'Envoyer',
+      cancel: 'Annuler',
+      noAccount: 'Pas de compte ?',
+      hasAccount: 'Déjà un compte ?',
+      forgotPwd: 'Mot de passe oublié ?',
+      orGoogle: 'ou avec Google',
+      success: '✅ Connecté !',
+      resetSent: '✅ E-mail envoyé !',
+      accountCreated: '✅ Compte créé ! Vérifiez vos e-mails.',
+      errFill: 'Remplissez tous les champs',
+      errEmail: 'E-mail invalide',
+      errPwdShort: 'Mot de passe trop court (min 6)',
+      errPwdMatch: 'Mots de passe différents',
+      errWrongPwd: 'Mot de passe incorrect',
+      errNotFound: 'Compte inexistant',
+      errExists: 'E-mail déjà utilisé',
+      errGeneric: 'Erreur, réessayez'
+    },
+    en: {
+      loginTitle: 'Sign in',
+      signupTitle: 'Create account',
+      resetTitle: 'Forgot password',
+      email: 'E-mail',
+      password: 'Password',
+      confirmPassword: 'Confirm',
+      login: 'Sign in',
+      signup: 'Create',
+      sendReset: 'Send',
+      cancel: 'Cancel',
+      noAccount: 'No account?',
+      hasAccount: 'Have an account?',
+      forgotPwd: 'Forgot password?',
+      orGoogle: 'or with Google',
+      success: '✅ Signed in!',
+      resetSent: '✅ Email sent!',
+      accountCreated: '✅ Account created! Check your emails.',
+      errFill: 'Fill all fields',
+      errEmail: 'Invalid email',
+      errPwdShort: 'Password too short (min 6)',
+      errPwdMatch: 'Passwords don\'t match',
+      errWrongPwd: 'Wrong password',
+      errNotFound: 'Account not found',
+      errExists: 'Email already used',
+      errGeneric: 'Error, try again'
+    }
+  };
+  
+  function t(key) {
+    const lang = localStorage.getItem('ort_lang') || 'fr';
+    return T[lang]?.[key] || T.fr[key] || key;
+  }
+  
+  function createModal() {
+    let modal = document.getElementById(MODAL_ID);
+    if (modal) return modal;
+    
+    modal = document.createElement('div');
+    modal.id = MODAL_ID;
+    modal.style.cssText = `
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.6);
+      align-items:center;justify-content:center;
+      z-index:10000;
+    `;
+    modal.innerHTML = `
+      <div style="
+        width:min(360px,92vw);
+        background:#fff;
+        border-radius:16px;
+        padding:20px;
+        box-shadow:0 10px 40px rgba(0,0,0,.25);
+      ">
+        <h3 id="authModalTitle" style="margin:0 0 16px;color:#113f7a;font-size:1.3rem;text-align:center"></h3>
+        
+        <div id="authModalMsg" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;text-align:center;font-size:0.9rem"></div>
+        
+        <input id="authEmail" type="email" style="
+          width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <input id="authPwd" type="password" style="
+          width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <input id="authPwd2" type="password" style="
+          display:none;width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <button id="authSubmit" style="
+          width:100%;padding:14px;background:#113f7a;color:#fff;
+          border:none;border-radius:10px;font-size:1rem;font-weight:600;
+          cursor:pointer;margin-bottom:10px;
+        "></button>
+        
+        <button id="authGoogle" style="
+          width:100%;padding:12px;background:#fff;color:#333;
+          border:1px solid #ddd;border-radius:10px;font-size:0.95rem;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+        ">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px;height:20px">
+          <span id="authGoogleText"></span>
+        </button>
+        
+        <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:0.9rem">
+          <button id="authToggle" style="background:none;border:none;color:#113f7a;text-decoration:underline;cursor:pointer"></button>
+          <button id="authForgot" style="background:none;border:none;color:#666;cursor:pointer"></button>
+        </div>
+        
+        <button id="authCancel" style="
+          width:100%;padding:10px;background:#f5f5f5;color:#666;
+          border:none;border-radius:10px;font-size:0.95rem;
+          cursor:pointer;margin-top:12px;
+        "></button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Events
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.getElementById('authSubmit').onclick = handleSubmit;
+    document.getElementById('authGoogle').onclick = handleGoogle;
+    document.getElementById('authToggle').onclick = () => {
+      currentMode = currentMode === 'login' ? 'signup' : 'login';
+      updateModalUI();
+    };
+    document.getElementById('authForgot').onclick = () => {
+      currentMode = 'reset';
+      updateModalUI();
+    };
+    document.getElementById('authCancel').onclick = closeModal;
+    
+    // Enter key
+    ['authEmail', 'authPwd', 'authPwd2'].forEach(id => {
+      document.getElementById(id).onkeydown = e => { if (e.key === 'Enter') handleSubmit(); };
+    });
+    
+    return modal;
+  }
+  
+  function updateModalUI() {
+    const title = document.getElementById('authModalTitle');
+    const email = document.getElementById('authEmail');
+    const pwd = document.getElementById('authPwd');
+    const pwd2 = document.getElementById('authPwd2');
+    const submit = document.getElementById('authSubmit');
+    const google = document.getElementById('authGoogle');
+    const googleText = document.getElementById('authGoogleText');
+    const toggle = document.getElementById('authToggle');
+    const forgot = document.getElementById('authForgot');
+    const cancel = document.getElementById('authCancel');
+    const msg = document.getElementById('authModalMsg');
+    
+    msg.style.display = 'none';
+    email.placeholder = t('email');
+    pwd.placeholder = t('password');
+    pwd2.placeholder = t('confirmPassword');
+    cancel.textContent = t('cancel');
+    googleText.textContent = t('orGoogle');
+    
+    if (currentMode === 'login') {
+      title.textContent = t('loginTitle');
+      pwd.style.display = '';
+      pwd2.style.display = 'none';
+      google.style.display = '';
+      submit.textContent = t('login');
+      toggle.textContent = t('noAccount');
+      forgot.textContent = t('forgotPwd');
+      forgot.style.display = '';
+    } else if (currentMode === 'signup') {
+      title.textContent = t('signupTitle');
+      pwd.style.display = '';
+      pwd2.style.display = '';
+      google.style.display = '';
+      submit.textContent = t('signup');
+      toggle.textContent = t('hasAccount');
+      forgot.style.display = 'none';
+    } else if (currentMode === 'reset') {
+      title.textContent = t('resetTitle');
+      pwd.style.display = 'none';
+      pwd2.style.display = 'none';
+      google.style.display = 'none';
+      submit.textContent = t('sendReset');
+      toggle.textContent = t('hasAccount');
+      forgot.style.display = 'none';
+    }
+  }
+  
+  function showMsg(text, isError) {
+    const msg = document.getElementById('authModalMsg');
+    msg.textContent = text;
+    msg.style.display = '';
+    msg.style.background = isError ? '#fee' : '#efe';
+    msg.style.color = isError ? '#c00' : '#060';
+  }
+  
+  async function handleSubmit() {
+    const email = document.getElementById('authEmail').value.trim().toLowerCase();
+    const pwd = document.getElementById('authPwd').value;
+    const pwd2 = document.getElementById('authPwd2').value;
+    const submit = document.getElementById('authSubmit');
+    
+    if (!email || !email.includes('@')) {
+      showMsg(t('errEmail'), true);
+      return;
+    }
+    
+    if (currentMode !== 'reset') {
+      if (!pwd || pwd.length < 6) {
+        showMsg(t('errPwdShort'), true);
+        return;
+      }
+    }
+    
+    if (currentMode === 'signup' && pwd !== pwd2) {
+      showMsg(t('errPwdMatch'), true);
+      return;
+    }
+    
+    const oldText = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = '...';
+    
+    try {
+      const auth = firebase.auth();
+      
+      if (currentMode === 'login') {
+        await auth.signInWithEmailAndPassword(email, pwd);
+        showMsg(t('success'), false);
+        setTimeout(closeModal, 1000);
+        
+      } else if (currentMode === 'signup') {
+        const result = await auth.createUserWithEmailAndPassword(email, pwd);
+        await result.user.sendEmailVerification();
+        showMsg(t('accountCreated'), false);
+        setTimeout(() => { currentMode = 'login'; updateModalUI(); }, 2000);
+        
+      } else if (currentMode === 'reset') {
+        await auth.sendPasswordResetEmail(email);
+        showMsg(t('resetSent'), false);
+        setTimeout(() => { currentMode = 'login'; updateModalUI(); }, 2000);
+      }
+      
+    } catch (e) {
+      let msg = t('errGeneric');
+      if (e.code === 'auth/user-not-found') msg = t('errNotFound');
+      else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = t('errWrongPwd');
+      else if (e.code === 'auth/email-already-in-use') msg = t('errExists');
+      showMsg(msg, true);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = oldText;
+    }
+  }
+  
+  async function handleGoogle() {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await firebase.auth().signInWithPopup(provider);
+      showMsg(t('success'), false);
+      setTimeout(closeModal, 1000);
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        showMsg(t('errGeneric'), true);
+      }
+    }
+  }
+  
+  function closeModal() {
+    const modal = document.getElementById(MODAL_ID);
+    if (modal) modal.style.display = 'none';
+  }
+  
+  // API publique
+  window.openAuth = function(mode = 'login') {
+    currentMode = mode;
+    createModal();
+    updateModalUI();
+    document.getElementById(MODAL_ID).style.display = 'flex';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPwd').value = '';
+    document.getElementById('authPwd2').value = '';
+    document.getElementById('authEmail').focus();
+  };
+  
+  console.log('[ORT-MOBILE-AUTH] ✅ Modale auth initialisée');
+})();
+</script>
+
 <script>
 // === GLOBAL REDIRECT PROTECTION ===
 // Intercept location.replace/assign to ensure desktop redirects include mobile=0
@@ -2178,6 +2489,13 @@ async function init() {
     }
     
     debugLog('Chargement terminé! state.steps=' + state.steps.length);
+    
+    // 🔴 S'assurer que state.tripId est défini (nécessaire pour partage/sauvegarde)
+    if (!state.tripId) {
+      state.tripId = window.ORT_TRIPID?.get() || effectiveTripId;
+      debugLog('tripId récupéré après chargement: ' + state.tripId);
+    }
+    
     debugLog('Appel renderList...');
     renderList();
     debugLog('Appel renderBookings...');
