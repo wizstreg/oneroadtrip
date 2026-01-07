@@ -3947,14 +3947,8 @@ async function saveTrip() {
         tripId = state.tripId || state._originalItinId || `mobile::${Date.now()}`;
       }
       
-      // 🔴 DÉTECTION CATALOGUE: Forcer génération NEW tripId si c'est un catalogue
-      if (tripId && tripId.startsWith('catalog::')) {
-        console.log('[SAVE] 📚 Détection catalogue, génération NEW tripId');
-        tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log('[SAVE] ✅ NEW tripId généré:', tripId);
-      }
-      
-      if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+      // NOTE: La détection des IDs temporaires (catalog::, custom::, etc.)
+      // est maintenant gérée par ORT_STATE.saveTrip() qui retourne le nouveau tripId
       
       const tripData = {
         id: tripId,
@@ -3979,23 +3973,48 @@ async function saveTrip() {
       };
       
       // Sauvegarder via State Manager
-      await window.ORT_STATE.saveTrip(tripData);
+      // Retourne { success: boolean, tripId: string } avec le tripId final
+      const result = await window.ORT_STATE.saveTrip(tripData);
       
-      // Mettre à jour le tripId dans state pour les sauvegardes suivantes
-      state.tripId = tripId;
-      if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+      // Gestion du résultat (compatible ancien format boolean et nouveau format {success, tripId})
+      const success = typeof result === 'object' ? result.success : result;
+      const finalTripId = typeof result === 'object' ? result.tripId : tripId;
       
-      hasUnsavedChanges = false;
-      showToast('✅ Sauvegardé dans votre Dashboard !');
-      console.log('[SAVE] ✅ Trip sauvegardé via ORT_STATE:', tripId);
+      if (success) {
+        // Mettre à jour le tripId dans state pour les sauvegardes suivantes
+        state.tripId = finalTripId;
+        if (window.ORT_TRIPID) window.ORT_TRIPID.store(finalTripId);
+        
+        // 🔴 Si le tripId a changé, mettre à jour l'URL
+        if (finalTripId !== tripId) {
+          console.log(`[SAVE] 🔄 TripId changé: ${tripId} → ${finalTripId}`);
+          const params = new URLSearchParams(location.search);
+          params.set('tripId', finalTripId);
+          params.delete('itin');
+          params.delete('rtKey');
+          params.delete('from');
+          history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+        }
+        
+        hasUnsavedChanges = false;
+        showToast('✅ Sauvegardé dans votre Dashboard !');
+        console.log('[SAVE] ✅ Trip sauvegardé via ORT_STATE:', finalTripId);
+      } else {
+        showToast('❌ Erreur de sauvegarde');
+      }
     } else if (user) {
       // Fallback Firestore direct si ORT_STATE non disponible
       console.warn('[SAVE] ORT_STATE non disponible, fallback Firestore direct');
       let tripId = state._originalItinId || `mobile_${Date.now()}`;
       
-      // 🔴 DÉTECTION CATALOGUE: Forcer génération NEW tripId si c'est un catalogue
-      if (tripId && tripId.startsWith('catalog::')) {
-        console.log('[SAVE] 📚 Détection catalogue (fallback), génération NEW tripId');
+      // 🔴 DÉTECTION CATALOGUE: Forcer génération NEW tripId si c'est un ID temporaire
+      const isTemporaryId = tripId.startsWith('catalog::') || 
+                            tripId.includes('COMPOSED::') || 
+                            tripId.startsWith('custom::') ||
+                            tripId.startsWith('temp_') ||
+                            tripId.startsWith('mobile::');
+      if (isTemporaryId) {
+        console.log('[SAVE] 📚 ID temporaire détecté (fallback), génération NEW tripId');
         tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
       
@@ -4024,16 +4043,22 @@ async function saveTrip() {
         .collection('trips').doc(tripId)
         .set(tripData, { merge: true });
       
-      // Mettre à jour le tripId dans state
+      // Mettre à jour le tripId dans state et l'URL
       state.tripId = tripId;
+      const params = new URLSearchParams(location.search);
+      params.set('tripId', tripId);
+      history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
       
       hasUnsavedChanges = false;
       showToast('✅ Sauvegardé dans votre Dashboard !');
     } else {
       // Fallback localStorage pour non-connectés
       let saveKey = state._originalItinId || Date.now();
-      // 🔴 DÉTECTION CATALOGUE: Ne pas utiliser l'ID catalogue
-      if (saveKey && String(saveKey).startsWith('catalog::')) {
+      // 🔴 DÉTECTION ID TEMPORAIRE: Ne pas utiliser l'ID catalogue/custom
+      const isTemporaryKey = String(saveKey).startsWith('catalog::') || 
+                             String(saveKey).includes('COMPOSED::') || 
+                             String(saveKey).startsWith('custom::');
+      if (isTemporaryKey) {
         saveKey = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       }
       localStorage.setItem(`ort_trip_${saveKey}`, JSON.stringify({ ...state, savedAt: new Date().toISOString() }));

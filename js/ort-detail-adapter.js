@@ -267,25 +267,14 @@
       return false;
     }
 
-    // 🔴 SI C'EST UN CATALOGUE: Générer un NEW tripId pour la sauvegarde
-    let saveTripId = currentTripId;
-    const catalogSource = sessionStorage.getItem('ort_catalog_source');
-    if (catalogSource && currentTripId.startsWith('catalog::')) {
-      console.log('[DETAIL] 📚 Catalogue détecté en sauvegarde, génération NEW tripId');
-      saveTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      sessionStorage.removeItem('ort_catalog_source'); // Nettoyer
-      currentTripId = saveTripId; // Mettre à jour pour les futures sauvegardes
-      console.log('[DETAIL] ✅ NEW tripId:', saveTripId);
-    }
-
-    // Évite les sauvegardes en parallèle et les modifications pendant la sauvegarde
+    // Évite les sauvegardes en parallèle
     if (isSaving) {
       console.log('[DETAIL] Sauvegarde déjà en cours, ignoré');
       return false;
     }
     
     isSaving = true;
-    console.log('[DETAIL] Sauvegarde du voyage:', saveTripId);
+    console.log('[DETAIL] Sauvegarde du voyage:', currentTripId);
     showToast('Sauvegarde en cours...', 'info');
 
     try {
@@ -298,20 +287,51 @@
         console.log('[DETAIL] Voyage marque comme sauvegarde');
       }
       
-      console.log('[DETAIL] ✅ Sauvegarde avec tripId:', saveTripId, 'Données:', {
+      console.log('[DETAIL] ✅ Sauvegarde avec tripId:', currentTripId, 'Données:', {
         title: tripData.title,
         country: tripData.country,
         steps: tripData.steps?.length || 0
       });
       
       // Sauvegarde via State Manager
-      const saved = await window.ORT_STATE.saveTrip({
-        id: saveTripId,
+      // Le State Manager gère la conversion des IDs temporaires (catalog::, custom::, etc.)
+      // et retourne { success: boolean, tripId: string }
+      const result = await window.ORT_STATE.saveTrip({
+        id: currentTripId,
         ...tripData
       });
 
-      if (saved) {
+      // Gestion du résultat (compatible ancien format boolean et nouveau format {success, tripId})
+      const success = typeof result === 'object' ? result.success : result;
+      const finalTripId = typeof result === 'object' ? result.tripId : currentTripId;
+
+      if (success) {
         console.log('✅ [DETAIL] Voyage sauvegardé avec succès');
+        
+        // 🔴 Si le tripId a changé (conversion catalog/custom → trip_xxx)
+        if (finalTripId && finalTripId !== currentTripId) {
+          console.log(`[DETAIL] 🔄 TripId changé: ${currentTripId} → ${finalTripId}`);
+          
+          // Met à jour l'URL sans reload (préserve tous les autres paramètres)
+          const params = new URLSearchParams(location.search);
+          params.set('tripId', finalTripId);
+          // Supprimer les paramètres de source catalogue (plus nécessaires)
+          params.delete('itin');
+          params.delete('rtKey');
+          params.delete('from');
+          history.replaceState({}, '', `${location.pathname}?${params.toString()}`);
+          
+          // Met à jour pour les futures sauvegardes
+          currentTripId = finalTripId;
+          
+          // Met à jour ORT_TRIPID si disponible
+          if (window.ORT_TRIPID) {
+            window.ORT_TRIPID.store(finalTripId);
+          }
+          
+          console.log('[DETAIL] ✅ URL et tripId mis à jour');
+        }
+        
         showSaveConfirmation();
         
         // Met à jour la référence originale
@@ -319,7 +339,7 @@
         
         // Dispatch event pour notifier les autres modules
         document.dispatchEvent(new CustomEvent('ort:trip-saved', {
-          detail: { tripId: saveTripId }
+          detail: { tripId: finalTripId }
         }));
         
         isSaving = false;

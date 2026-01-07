@@ -358,32 +358,64 @@
   /**
    * Sauvegarde un voyage complet
    * @param {Object} tripData - Données du voyage
-   * @returns {boolean} Succès de la sauvegarde
+   * @returns {Object} { success: boolean, tripId: string } - Succès et ID final utilisé
    * 
    * RÈGLE : Firestore = UNIQUEMENT si saved === true
    *         localStorage = brouillons et modifs temporaires
+   * 
+   * RÈGLE CATALOGUE : Les IDs catalog::, COMPOSED::, custom:: ne vont JAMAIS dans Firestore
+   *                   On génère un nouveau trip_xxx à la sauvegarde
    */
   async function saveTrip(tripData) {
     if (!tripData || !tripData.id) {
       console.error('❌ [STATE] Données de voyage invalides');
-      return false;
+      return { success: false, tripId: null };
+    }
+
+    let finalTripId = tripData.id;
+    
+    // 🔴 RÈGLE CATALOGUE : Générer un nouveau tripId si c'est un catalogue/COMPOSED/custom
+    const isTemporaryId = finalTripId.startsWith('catalog::') || 
+                          finalTripId.includes('COMPOSED::') || 
+                          finalTripId.startsWith('custom::') ||
+                          finalTripId.startsWith('temp_') ||
+                          finalTripId.startsWith('mobile::');
+    
+    if (isTemporaryId) {
+      finalTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`📚 [STATE] ID temporaire détecté, nouveau tripId: ${finalTripId}`);
+      
+      // Met à jour l'ID dans les données
+      tripData.id = finalTripId;
+      tripData.tripId = finalTripId;
+      
+      // Nettoie le sessionStorage (plus besoin de la source catalogue)
+      sessionStorage.removeItem('ort_catalog_source');
     }
 
     // Prépare les données
     const preparedData = prepareTripData(tripData);
+    
+    // S'assurer que l'ID final est bien dans preparedData
+    preparedData.id = finalTripId;
+    preparedData.tripId = finalTripId;
 
-    // Mise à jour du cache
-    tripsCache[tripData.id] = preparedData;
+    // Mise à jour du cache avec le nouvel ID
+    tripsCache[finalTripId] = preparedData;
 
     // RÈGLE ABSOLUE : Firestore = saved:true UNIQUEMENT
     // Brouillons et modifs temporaires → localStorage
+    let success = false;
     if (currentUser && preparedData.saved === true) {
-      console.log(`💾 [STATE] Sauvegarde Firestore (saved=true): ${tripData.id}`);
-      return await saveTripToFirestore(preparedData);
+      console.log(`💾 [STATE] Sauvegarde Firestore (saved=true): ${finalTripId}`);
+      success = await saveTripToFirestore(preparedData);
     } else {
-      console.log(`💾 [STATE] Sauvegarde localStorage (brouillon): ${tripData.id}`);
-      return saveTripToLocalStorage(preparedData);
+      console.log(`💾 [STATE] Sauvegarde localStorage (brouillon): ${finalTripId}`);
+      success = saveTripToLocalStorage(preparedData);
     }
+    
+    // Retourne le succès ET le tripId final (pour mise à jour URL)
+    return { success, tripId: finalTripId };
   }
 
   /**
