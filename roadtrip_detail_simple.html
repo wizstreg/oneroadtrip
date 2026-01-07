@@ -1531,7 +1531,7 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 .btn:hover{background:#ffffff2b}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .auth{position:relative}
-.auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px}
+.auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px;z-index:12000}
 .auth-pop .btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
 .auth-pop .btn.out{background:#fff;color:#113f7a}
 
@@ -1951,28 +1951,14 @@ document.head.appendChild(style);
 })();
 </script>
 
-<!-- AUTH MODAL HANDLER -->
+<!-- AUTH MODAL HANDLER - DÉSACTIVÉ car géré par ort-header.js -->
+<!--
 <script>
 (function() {
-  const openAuthBtn = document.getElementById('openAuth');
-  const authPop = document.getElementById('authPop');
-  
-  if (openAuthBtn && authPop) {
-    openAuthBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const isVisible = authPop.style.display === 'block';
-      authPop.style.display = isVisible ? 'none' : 'block';
-    });
-    
-    // Fermer en cliquant dehors
-    document.addEventListener('click', (e) => {
-      if (!openAuthBtn.contains(e.target) && !authPop.contains(e.target)) {
-        authPop.style.display = 'none';
-      }
-    });
-  }
+  // Ce code est maintenant géré par ort-header.js
 })();
 </script>
+-->
 
 <!-- Bandeau outils spécifiques roadtrip_detail -->
 <div id="ortToolbar" class="toolbar-band"></div>
@@ -2176,10 +2162,6 @@ if(!d){
           if (window.state) {
             state.startDateStr = isoDate;
             renderRows();
-          }
-          // Mettre à jour l'affichage du datepicker pour réfléter le format de locale
-          if (dateStr && fp) {
-            fp.setDate(selectedDates[0], true);  // true = ne pas déclencher onChange à nouveau
           }
         }
       });
@@ -8987,8 +8969,13 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 <script>
 (function(){
   // Skip si ORT_HEADER déjà initialisé
-  setTimeout(function() {
+  setTimeout(async function() {
     if (window.ORT_HEADER) return;
+    
+    // ⚠️ IMPORTANT: Attendre que ort-config.js ait chargé la config Firebase
+    if (window.__ort_ready) {
+      await window.__ort_ready;
+    }
     
     // Charger Firebase si pas déjà chargé
     function loadScript(src) {
@@ -9124,6 +9111,12 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 <script>
 (async function initStateManager() {
   console.log('[INIT] Initialisation State Manager...');
+  
+  // ⚠️ IMPORTANT: Attendre que ort-config.js ait chargé la config Firebase
+  if (window.__ort_ready) {
+    await window.__ort_ready;
+    console.log('[INIT] ✅ Config Firebase prête');
+  }
   
   // Charger Firebase si pas déjà chargé
   if (!window.firebase?.apps?.length) {

@@ -50,7 +50,7 @@ window.ORT_SHARE = {
         console.log('[SHARE] ✅ Lien créé (localStorage):', shareId);
       }
 
-      const shareUrl = `${location.origin}${location.pathname}?share=${shareId}`;
+      const shareUrl = `${location.origin}/roadtrip_detail.html?share=${shareId}`;
       return { shareId, shareUrl, shareData };
     } catch (error) {
       console.error('[SHARE] ❌ Erreur création lien:', error);
@@ -73,7 +73,7 @@ window.ORT_SHARE = {
     };
 
     localStorage.setItem(`ort_share_${shareId}`, JSON.stringify(shareData));
-    const shareUrl = `${location.origin}${location.pathname}?share=${shareId}`;
+    const shareUrl = `${location.origin}/roadtrip_detail.html?share=${shareId}`;
     return { shareId, shareUrl, shareData };
   },
 
