@@ -18,14 +18,16 @@
   const tripId = qs.get('tripId') || qs.get('id');
   const cc = qs.get('cc');
   const itin = qs.get('itin');
+  const from = qs.get('from');
   
-  // Cas 1: tripId explicitement catalog::
-  if (tripId && tripId.startsWith('catalog::')) {
-    console.log('[INIT-EARLY] 📚 Catalogue détecté (tripId), génération NEW tripId');
+  // Cas 1: tripId explicitement catalog:: ou custom::
+  if (tripId && (tripId.startsWith('catalog::') || tripId.startsWith('custom::'))) {
+    const sourceType = tripId.startsWith('catalog::') ? 'Catalogue' : 'Custom (Carte/Import)';
+    console.log(`[INIT-EARLY] 📚 ${sourceType} détecté (tripId), génération NEW tripId`);
     const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     sessionStorage.setItem('ort_catalog_source', tripId);
-    console.log('[INIT-EARLY] ✅ Source catalogue sauvegardée:', tripId);
+    console.log('[INIT-EARLY] ✅ Source sauvegardée:', tripId);
     
     // Remplacer tripId mais conserver tous les autres paramètres
     qs.set('tripId', newTripId);
@@ -48,6 +50,26 @@
     console.log('[INIT-EARLY] ✅ Source catalogue sauvegardée:', catalogId);
     
     // Ajouter tripId mais conserver tous les autres paramètres (cc, itin, mode, budget, etc.)
+    qs.set('tripId', newTripId);
+    const newUrl = `${location.pathname}?${qs.toString()}`;
+    console.log('[INIT-EARLY] Redirect vers:', newUrl);
+    window.location.href = newUrl;
+    return;
+  }
+  
+  // Cas 3: from=builder ou from=temp sans tripId valide (Route Builder, Carte Builder, Import IA)
+  if ((from === 'builder' || from === 'temp') && (!tripId || !tripId.startsWith('trip_'))) {
+    const sourceType = from === 'builder' ? 'Route Builder' : 'Carte/Import';
+    console.log(`[INIT-EARLY] 🛠️ ${sourceType} détecté sans tripId, génération NEW tripId`);
+    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Sauvegarder la source si rtKey existe
+    const rtKey = qs.get('rtKey');
+    if (rtKey) {
+      sessionStorage.setItem('ort_catalog_source', `custom::${rtKey}`);
+      console.log('[INIT-EARLY] ✅ Source custom sauvegardée:', `custom::${rtKey}`);
+    }
+    
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
