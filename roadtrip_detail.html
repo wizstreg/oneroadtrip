@@ -2121,6 +2121,9 @@ input[type="number"] {
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-utils.js"></script>
+<script src="/js/ort-data-loader.js"></script>
+<script src="/js/ort-routing.js"></script>
 <script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-i18n.js"></script>
 <script src="/js/ort-trip-data.js"></script>
@@ -3445,7 +3448,7 @@ const ORTSaves = {
     return true;
   }
 };
-function currentUser(){ try{ return (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null; }catch(_){ return null; } }
+// currentUser() → fourni par ort-utils.js
 
 // === Générer un tripId unique ===
 function getTripId() {
@@ -3678,15 +3681,7 @@ function scheduleAutosave(){
   */
 }
 
-// Petite fonction d'échappement HTML (utilisée par renderRow / showStepPreview)
-function safe(v){
-  return String(v ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
+// safe() → fourni par ort-utils.js
 
 // === ICÔNES CATÉGORIES RÉSERVATIONS ===
 function getCategoryIconForCell(category) {
@@ -3954,11 +3949,7 @@ function ensureSid(step){
   return sid;
 }
 
-// ➜ AJOUT : parse JSON tolérant (utilisé plus bas pour les objets TEMP)
-function safeJSONParse(str){
-  try{ return str ? JSON.parse(str) : null; }
-  catch(e){ return null; }
-}
+// safeJSONParse() → fourni par ort-utils.js
 
 // --- Traduction du titre #rtTitle ---
 // NOTE: Les itinéraires sont maintenant pré-traduits, pas besoin d'API de traduction
@@ -4212,7 +4203,10 @@ const REQUESTED_DAYS=parseInt(qs.get('jours')||qs.get('days')||qs.get('nbDays')|
 // Lire la date de départ depuis l'URL (departure=YYYY-MM-DD) ou localStorage
 const URL_DEPARTURE = qs.get('departure') || '';
 
-let PHOTOS_CACHE={};
+// PHOTOS_CACHE est géré par ort-data-loader.js (window.PHOTOS_CACHE)
+if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
+var PHOTOS_CACHE = window.PHOTOS_CACHE;
+
 const state={
   title:'Roadtrip', country:'XX', targetNights:0, steps:[],
   _rawItinsObj:null, _rawPlacesObj:null, distanceUnit:'km',
@@ -4231,12 +4225,7 @@ function getStartDate(){
   const s = (state.startDateStr || '').trim();
   return s ? new Date(s+'T00:00:00') : null;
 }
-function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-function fmtD(d){
-  if(!d) return '—';
-  const lang=(document.documentElement.lang||'fr');
-  return d.toLocaleDateString(lang, { day:'2-digit', month:'short' });
-}
+// addDays() et fmtD() → fournis par ort-utils.js
 function stepDateRange(idx){
   const base = getStartDate();
   if(!base) return null;
@@ -4261,18 +4250,7 @@ function dateTipLabel(){
   return MAP[lang]||MAP.fr;
 }
 
-// === CALCUL DISTANCE HAVERSINE ===
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
-
+// haversineDistance() → fourni par ort-utils.js
 
 // === ROUTE BUILDER: Code externalisé dans /js/ort-route-builder.js ===
 
@@ -4605,11 +4583,15 @@ window.autoCalculateNights = autoCalculateNights;
 async function loadPhotosJSON(){
   try{
     const r=await fetch('./data/photos-json/photos_lieux.json',{cache:'no-store'});
-    if(r.ok) PHOTOS_CACHE=await r.json()||{};
+    if(r.ok) {
+      const data = await r.json() || {};
+      Object.assign(window.PHOTOS_CACHE, data);
+      PHOTOS_CACHE = window.PHOTOS_CACHE;
+    }
   }catch(e){console.error('Photos:',e)}
 }
 
-function getPhotosForPlace(pid){return (PHOTOS_CACHE[pid]||{}).photos||[]}
+// getPhotosForPlace() et findPhotosForPlace() → fournis par ort-data-loader.js
 
 // Récupère les photos pour une étape en priorisant les photos utilisateur
 function getPhotosForStep(stepIndex, pid) {
@@ -4631,51 +4613,7 @@ function getPhotosForStep(stepIndex, pid) {
   return getPhotosForPlace(pid) || [];
 }
 
-// Convertir un nom en slug pour matcher les place_id (format CC::nom-en-slug)
-function toSlug(name) {
-  if (!name) return '';
-  return name
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/['']/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-// Trouver les photos pour un lieu (essaie plusieurs formats de clé)
-function findPhotosForPlace(name, cc) {
-  if (!name || !PHOTOS_CACHE) return [];
-  
-  const slug = toSlug(name);
-  const ccUp = (cc || '').toUpperCase();
-  
-  const keys = [
-    `${ccUp}::${slug}`,
-    `${ccUp}::${name.toLowerCase()}`,
-    slug,
-    name.toLowerCase()
-  ];
-  
-  for (const key of keys) {
-    if (PHOTOS_CACHE[key]?.photos?.length) {
-      return PHOTOS_CACHE[key].photos;
-    }
-  }
-  
-  // Recherche partielle par nom
-  const found = Object.keys(PHOTOS_CACHE).find(k => {
-    const kName = k.split('::').pop() || k;
-    return kName === slug || kName.includes(slug) || slug.includes(kName);
-  });
-  
-  if (found && PHOTOS_CACHE[found]?.photos?.length) {
-    return PHOTOS_CACHE[found].photos;
-  }
-  
-  return [];
-}
+// toSlug() → fourni par ort-utils.js
 
 // Navigation du carrousel de photos
 function carouselNav(carouselId, direction) {
@@ -4842,124 +4780,19 @@ async function renderPopup(place) {
   }
 }
 
+// loadJSON(), loadWithLangFallback(), ensurePlacesIndex(), coordsFromMaster() → fournis par ort-data-loader.js
 
-async function loadJSON(path){
-  try{
-    const r=await fetch(path,{cache:'no-store'});
-    if(!r.ok) return null;
-    const ct = r.headers.get('content-type')||'';
-    if(!ct.includes('application/json')) {
-      console.warn('[loadJSON] Not JSON:', path, 'content-type:', ct);
-      return null;
-    }
-    return await r.json();
-  }catch(e){console.error('[loadJSON] Error:',path,e);return null}
-}
+// isComposedId() et parseComposedIds() → fournis par ort-utils.js
 
-function isComposedId(id){return typeof id==='string'&&id.startsWith('COMPOSED::')}
-function parseComposedIds(id){if(!isComposedId(id))return[];return id.replace('COMPOSED::','').split('+').map(decodeURIComponent).filter(Boolean)}
 // Détection du mode tactile
 const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
 
-let PLACES_INDEX=null;
+// PLACES_INDEX est géré par ort-data-loader.js (window.PLACES_INDEX)
+if (!window.PLACES_INDEX) window.PLACES_INDEX = {};
+// Alias local pour compatibilité
+var PLACES_INDEX = window.PLACES_INDEX;
 // === Expose globals pour les scripts header (date de départ etc.)
 window.state = state;
-
-// === Fonction helper pour charger avec fallback langue ===
-async function loadWithLangFallback(baseUrl, lang) {
-  // Essayer dans l'ordre : langue demandée → EN → FR → ancien format
-  const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i); // unique
-  
-  for (const tryLang of langOrder) {
-    const url = baseUrl.replace('.json', `-${tryLang}.json`);
-    const result = await loadJSON(url);
-    if (result) {
-      console.log(`[LOAD] ✅ Chargé: ${url}`);
-      return { data: result, lang: tryLang };
-    }
-  }
-  
-  // Fallback: ancien format sans suffixe
-  const result = await loadJSON(baseUrl);
-  if (result) {
-    console.log(`[LOAD] ⚠️ Fallback ancien format: ${baseUrl}`);
-    return { data: result, lang: 'fr' };
-  }
-  
-  return null;
-}
-
-async function ensurePlacesIndex(additionalCountries = []){
-  const mainCC = (CC || state.cc || state.country || '').toUpperCase();
-  const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
-  
-  // Collecter tous les pays à charger
-  const countriesToLoad = new Set();
-  if (mainCC) countriesToLoad.add(mainCC);
-  
-  // Ajouter les pays des steps
-  if (state.steps && state.steps.length > 0) {
-    state.steps.forEach(step => {
-      if (step.cc) countriesToLoad.add(step.cc.toUpperCase());
-    });
-  }
-  
-  // Ajouter les pays supplémentaires (ex: depuis Route Builder)
-  additionalCountries.forEach(cc => {
-    if (cc) countriesToLoad.add(cc.toUpperCase());
-  });
-  
-  PLACES_INDEX = {};
-  
-  for (const cc of countriesToLoad) {
-    if (!cc) continue;
-    const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.places.master.json`;
-    const result = await loadWithLangFallback(basePath, lang);
-    
-    if (result && result.data) {
-      const obj = result.data;
-      const arr = Array.isArray(obj) ? obj : (obj.places || []);
-      let count = 0;
-      arr.forEach(pl => {
-        const pid = pl.place_id || pl.id;
-        if (!pid) return;
-        // Ne pas écraser si déjà présent
-        if (PLACES_INDEX[pid]) return;
-        const visits = Array.isArray(pl.visits) ? pl.visits.map(v => (typeof v === 'string' ? {text:v} : v)) : [];
-        const activities = Array.isArray(pl.activities) ? pl.activities.map(a => (typeof a === 'string' ? {text:a} : a)) : [];
-        PLACES_INDEX[pid] = {
-          lat: Number(pl.lat) || null,
-          lon: Number(pl.lon) || Number(pl.lng) || null,
-          name: pl.name || pl.title || '',
-          rating: Number(pl.rating) || 0,
-          suggested_days: Number(pl.suggested_days) || 1,
-          visits,
-          activities,
-          cc: cc
-        };
-        count++;
-      });
-      if (count > 0) console.log(`[PLACES] ✅ ${cc}: ${count} lieux chargés`);
-    }
-  }
-  
-  console.log(`[PLACES] Total: ${Object.keys(PLACES_INDEX).length} lieux dans l'index`);
-  
-  // Injecter les ratings dans les steps existants
-  if (state.steps && state.steps.length > 0) {
-    state.steps.forEach(step => {
-      if (step.place_id && PLACES_INDEX[step.place_id]) {
-        step.rating = PLACES_INDEX[step.place_id].rating || 0;
-      }
-    });
-  }
-}
-function coordsFromMaster(pid){
-  if(!PLACES_INDEX||!pid) return {lat:null,lon:null,name:''};
-  const m=PLACES_INDEX[pid];
-  return m?{lat:m.lat,lon:m.lon,name:m.name}:{lat:null,lon:null,name:''};
-}
-
 
 async function loadItin(){
   const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
@@ -6252,266 +6085,9 @@ function createStepDetailsPanel(step, idx) {
   return panel;
 }
 
-// === ROUTING HELPERS (chunking + OSRM + Mapbox) ===
-
-/**
- * Divise waypoints en chunks pour OSRM/Mapbox (max 20 waypoints par chunk)
- */
-function chunkWaypoints(waypoints) {
-  const CHUNK_SIZE = 20;
-  const OVERLAP = 1;
-  
-  if (waypoints.length <= CHUNK_SIZE) return [waypoints];
-  
-  const chunks = [];
-  for (let i = 0; i < waypoints.length; i += CHUNK_SIZE - OVERLAP) {
-    const end = Math.min(i + CHUNK_SIZE, waypoints.length);
-    chunks.push(waypoints.slice(i, end));
-  }
-  console.log(`[CHUNK] ${waypoints.length} pts → ${chunks.length} chunks`);
-  return chunks;
-}
-
-/**
- * Assemble les résultats de chunks (remove doublons à jonctions)
- */
-function combineChunkResults(chunks) {
-  const combined = {
-    coordinates: [],
-    distance: 0,
-    duration: 0
-  };
-  
-  chunks.forEach((chunk, idx) => {
-    if (idx === 0) {
-      combined.coordinates = [...chunk.coordinates];
-    } else {
-      combined.coordinates = [...combined.coordinates, ...chunk.coordinates.slice(1)];
-    }
-    combined.distance += chunk.distance || 0;
-    combined.duration += chunk.duration || 0;
-  });
-  
-  console.log(`[COMBINE] ${chunks.length} chunks → ${combined.coordinates.length} coords, ${Math.round(combined.distance/1000)}km`);
-  return combined;
-}
-
-/**
- * Appel OSRM pour 1 chunk (20 pts max)
- */
-async function callOSRMChunk(waypoints, profile = 'car', attempt = 1) {
-  const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
-  const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?overview=full&geometries=geojson`;
-  
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s au lieu de 8s
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (res.status === 429 && attempt < 3) {
-      // Rate limited - attendre et réessayer
-      console.warn(`[OSRM-CHUNK] ⏳ Rate limited, retry ${attempt}/3 dans 2s...`);
-      await new Promise(r => setTimeout(r, 2000 * attempt));
-      return callOSRMChunk(waypoints, profile, attempt + 1);
-    }
-    
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    
-    if (data.code === 'Ok' && data.routes?.[0]) {
-      const route = data.routes[0];
-      return {
-        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
-        distance: route.distance,
-        duration: route.duration
-      };
-    }
-    throw new Error(`OSRM code: ${data.code}`);
-  } catch (e) {
-    console.warn(`[OSRM-CHUNK] ❌ ${e.message}`);
-    return null;
-  }
-}
-
-/**
- * Appel Netlify backend pour route (fonctionne en prod, et en local avec netlify dev)
- */
-async function callNetlifyRoute(waypoints, mode = 'driving') {
-  // Ne fonctionne qu'en prod ou avec netlify dev
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
-  // En local sans netlify dev, skip
-  if (isLocal && !window._netlifyDevDetected) {
-    // Tester une fois si netlify dev est actif
-    if (window._netlifyDevTested === undefined) {
-      try {
-        const test = await fetch('/.netlify/functions/route?mode=driving&start=2.35,48.85&end=2.36,48.86', { 
-          signal: AbortSignal.timeout(2000) 
-        });
-        window._netlifyDevDetected = test.ok;
-        window._netlifyDevTested = true;
-        console.log(`[NETLIFY] ${test.ok ? '✅ netlify dev détecté' : '❌ pas de netlify dev'}`);
-      } catch {
-        window._netlifyDevDetected = false;
-        window._netlifyDevTested = true;
-        console.log('[NETLIFY] ❌ pas de netlify dev');
-      }
-    }
-    if (!window._netlifyDevDetected) return null;
-  }
-  
-  // Construire l'URL avec start et end seulement (pas de waypoints intermédiaires supportés)
-  if (waypoints.length !== 2) {
-    console.warn('[NETLIFY-ROUTE] ⚠️ Seulement 2 points supportés');
-    return null;
-  }
-  
-  const start = waypoints[0]; // [lat, lon]
-  const end = waypoints[waypoints.length - 1];
-  const url = `/.netlify/functions/route?mode=${mode}&start=${start[1]},${start[0]}&end=${end[1]},${end[0]}&geometry=true`;
-  
-  try {
-    console.log(`[NETLIFY-ROUTE] ⏳ Appel backend...`);
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    
-    if (data.ok && data.km) {
-      const distance = data.km * 1000;
-      const duration = data.minutes * 60;
-      
-      // Si geometry disponible, l'utiliser
-      if (data.geometry?.coordinates?.length > 0) {
-        console.log(`[NETLIFY-ROUTE] ✅ ${data.km}km (avec geometry)`);
-        return {
-          coordinates: data.geometry.coordinates.map(c => [c[1], c[0]]), // [lon,lat] → [lat,lon]
-          distance,
-          duration
-        };
-      }
-      
-      // Sinon, générer une ligne droite avec la bonne distance
-      console.log(`[NETLIFY-ROUTE] ✅ ${data.km}km (ligne droite interpolée)`);
-      const numPoints = Math.max(20, Math.ceil(data.km / 40));
-      const coords = [];
-      for (let i = 0; i <= numPoints; i++) {
-        const t = i / numPoints;
-        coords.push([
-          start[0] + t * (end[0] - start[0]), // lat
-          start[1] + t * (end[1] - start[1])  // lon
-        ]);
-      }
-      return { coordinates: coords, distance, duration };
-    }
-    throw new Error(data.error || 'No data');
-  } catch (e) {
-    console.warn(`[NETLIFY-ROUTE] ❌ ${e.message}`);
-    return null;
-  }
-}
-
-/**
- * Appel Mapbox pour 1 chunk (25 pts max) - tous modes
- */
-async function callMapboxChunk(waypoints, profile = 'driving') {
-  const token = window.ORT_CONFIG?.MAPBOX_ACCESS_TOKEN;
-  if (!token) return null;
-  
-  const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
-  const url = `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordsStr}?overview=full&geometries=geojson&access_token=${token}`;
-  
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    
-    const data = await res.json();
-    if (data.routes?.[0]) {
-      const route = data.routes[0];
-      return {
-        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
-        distance: route.distance,
-        duration: route.duration
-      };
-    }
-    throw new Error('No routes');
-  } catch (e) {
-    console.warn(`[MAPBOX-CHUNK] ❌ ${e.message}`);
-    return null;
-  }
-}
-
-/**
- * Calcul route avec chunking (OSRM parallèle → Mapbox séquentiel → fallback)
- */
-async function routeWithChunking(waypoints, profile = 'car', mapboxProfile = 'driving') {
-  if (waypoints.length <= 25) {
-    console.log(`[ROUTE] 📍 ${waypoints.length} pts: appel direct`);
-    
-    let result = await callOSRMChunk(waypoints, profile);
-    if (result) {
-      console.log(`[ROUTE] ✅ OSRM OK: ${Math.round(result.distance/1000)}km`);
-      return result;
-    }
-    
-    result = await callMapboxChunk(waypoints, mapboxProfile);
-    if (result) {
-      console.log(`[ROUTE] ✅ Mapbox OK: ${Math.round(result.distance/1000)}km`);
-      return result;
-    }
-    
-    // Fallback Netlify (seulement 2 points)
-    if (waypoints.length === 2) {
-      result = await callNetlifyRoute(waypoints, mapboxProfile);
-      if (result) {
-        console.log(`[ROUTE] ✅ Netlify OK: ${Math.round(result.distance/1000)}km`);
-        return result;
-      }
-    }
-    
-    console.warn(`[ROUTE] ⚠️ Fallback haversine`);
-    return null;
-  }
-  
-  console.log(`[ROUTE] 🔀 ${waypoints.length} pts: découpage + chunking`);
-  const chunks = chunkWaypoints(waypoints);
-  
-  console.log(`[ROUTE] ⏳ OSRM parallèle (${chunks.length} chunks)...`);
-  const osrmResults = [];
-  const MAX_PARALLEL = 3;
-  
-  for (let i = 0; i < chunks.length; i += MAX_PARALLEL) {
-    const batch = chunks.slice(i, i + MAX_PARALLEL);
-    const batchResults = await Promise.all(batch.map((chunk, idx) => callOSRMChunk(chunk, profile)));
-    osrmResults.push(...batchResults);
-  }
-  
-  if (osrmResults.every(r => r)) {
-    const combined = combineChunkResults(osrmResults);
-    console.log(`[ROUTE] ✅ OSRM chunked OK: ${Math.round(combined.distance/1000)}km`);
-    return combined;
-  }
-  
-  console.warn(`[ROUTE] ❌ OSRM chunked failed, essai Mapbox...`);
-  
-  const mapboxResults = [];
-  for (const chunk of chunks) {
-    const result = await callMapboxChunk(chunk, mapboxProfile);
-    if (!result) {
-      console.warn(`[ROUTE] ❌ Mapbox chunk échoué`);
-      return null;
-    }
-    mapboxResults.push(result);
-  }
-  
-  const combined = combineChunkResults(mapboxResults);
-  console.log(`[ROUTE] ✅ Mapbox chunked OK: ${Math.round(combined.distance/1000)}km`);
-  return combined;
-}
+// === ROUTING HELPERS ===
+// chunkWaypoints(), combineChunkResults(), callOSRMChunk(), callNetlifyRoute(), 
+// callMapboxChunk(), routeWithChunking() → fournis par ort-routing.js
 
 // Calcul distance via micro-API ORT (fallback local si erreur)
 async function calculateDistance(fromStep, toStep) {
@@ -8003,123 +7579,7 @@ async function calculateRoute(waypoints, mode = 'driving') {
   return { type: 'fallback', coordinates: waypoints };
 }
 
-/**
- * Calcul route OSRM (voiture, vélo, pieds) avec fallback Mapbox
- */
-async function calculateOSRMRoute(waypoints, mode) {
-  console.log(`[OSRM-ROUTE] ${waypoints.length} pts, mode=${mode}`);
-  
-  const osrmProfile = mode === 'driving' ? 'car' : mode === 'cycling' ? 'bike' : 'foot';
-  const mapboxProfile = mode === 'driving' ? 'driving' : mode === 'cycling' ? 'cycling' : 'walking';
-  
-  const result = await routeWithChunking(waypoints, osrmProfile, mapboxProfile);
-  
-  if (result) {
-    const color = mode === 'cycling' ? '#00bcd4' : mode === 'walking' ? '#4caf50' : '#113f7a';
-    return {
-      type: 'osrm', mode, coordinates: result.coordinates,
-      distance: result.distance, duration: result.duration, color
-    };
-  }
-  
-  console.warn('[OSRM-ROUTE] 🔴 Fallback ligne droite');
-  return { type: 'fallback', coordinates: waypoints };
-}
-
-/**
- * Calcul route Mapbox (train, métro, bus, voiture)
- */
-async function calculateMapboxRoute(waypoints, mode) {
-  try {
-    const accessToken = window.ORT_CONFIG?.MAPBOX_ACCESS_TOKEN;
-    const baseUrl = window.ORT_CONFIG?.MAPBOX_BASE_URL || 'https://api.mapbox.com/directions/v5/mapbox';
-    
-    if (!accessToken) {
-      console.warn('[MAPBOX] ⚠️ Token manquant');
-      toast('⚠️ Mapbox : token requis (voir ort-config.js)', 4000);
-      return { type: 'fallback', coordinates: waypoints, color: '#ff5722', dashArray: '10, 5' };
-    }
-    
-    // Mode Mapbox : driving-traffic / walking / cycling / driving
-    // Pour transit, on utilise un profil spécial ou on combine
-    const mapboxProfile = mode === 'transit' ? 'driving' : mode;
-    
-    console.log('[MAPBOX] 🗺️ Profil:', mapboxProfile);
-    
-    // Mapbox limite à 25 waypoints par requête
-    if (waypoints.length > 25) {
-      console.warn('[MAPBOX] ⚠️ Trop de waypoints (', waypoints.length, '), simplification...');
-      // Garder seulement les points importants (début, fin, et quelques intermédiaires)
-      const step = Math.ceil(waypoints.length / 24);
-      const simplified = waypoints.filter((_, i) => i === 0 || i === waypoints.length - 1 || i % step === 0);
-      waypoints = simplified;
-      console.log('[MAPBOX] ✅ Simplifié à', waypoints.length, 'waypoints');
-    }
-    
-    // Format Mapbox : lon,lat;lon,lat;...
-    const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
-    
-    // URL Mapbox Directions
-    const mapboxUrl = `${baseUrl}/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&access_token=${accessToken}`;
-    
-    console.log('[MAPBOX] 🚀 Requête:', mapboxUrl.substring(0, 120) + '...');
-    
-    const response = await fetch(mapboxUrl);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-      throw new Error('Aucune route trouvée');
-    }
-    
-    const route = data.routes[0];
-    const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lon,lat] → [lat,lon]
-    
-    console.log('[MAPBOX] ✅ Route calculée:', {
-      distance: (route.distance / 1000).toFixed(1) + ' km',
-      duration: (route.duration / 3600).toFixed(1) + ' h',
-      points: coordinates.length
-    });
-    
-    // Couleur selon le mode
-    let color = '#113f7a'; // Bleu par défaut (voiture)
-    let dashArray = null;
-    
-    if (mode === 'transit') {
-      color = '#ff5722'; // Rouge pour train
-      dashArray = '10, 5'; // Pointillés
-    } else if (mode === 'cycling') {
-      color = '#00bcd4'; // Cyan pour vélo
-    } else if (mode === 'walking') {
-      color = '#4caf50'; // Vert pour pieds
-    }
-    
-    return {
-      type: 'mapbox',
-      mode: mode,
-      coordinates: coordinates,
-      distance: route.distance, // mètres
-      duration: route.duration, // secondes
-      color: color,
-      weight: 3,
-      dashArray: dashArray
-    };
-    
-  } catch (error) {
-    console.error('[MAPBOX] ❌ Erreur:', error);
-    toast('❌ Erreur Mapbox : ' + error.message, 3000);
-    return { 
-      type: 'fallback', 
-      coordinates: waypoints, 
-      color: '#ff5722', 
-      dashArray: '10, 5' 
-    };
-  }
-}
+// calculateOSRMRoute() et calculateMapboxRoute() → fournis par ort-routing.js
 // ===== FIN FONCTIONS DE CALCUL =====
 
   // supprimer l'ancienne polyline si présente

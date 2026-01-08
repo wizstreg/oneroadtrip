@@ -1781,6 +1781,9 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-utils.js"></script>
+<script src="/js/ort-data-loader.js"></script>
+<script src="/js/ort-routing.js"></script>
 <script defer src="/js/ort-tripid.js"></script>
 <script defer src="/js/ort-i18n.js"></script>
 <script>
@@ -2949,7 +2952,7 @@ const ORTSaves = {
     return true;
   }
 };
-function currentUser(){ try{ return (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null; }catch(_){ return null; } }
+// currentUser() → fourni par ort-utils.js
 
 // === Générer un tripId unique ===
 function getTripId() {
@@ -3200,19 +3203,7 @@ function scheduleAutosave(){
   // markUnsavedChanges() - SUPPRIMÉ (arrête de spammer l'alerte)
 }
 
-// Petite fonction d'échappement HTML (utilisée par renderRow / showStepPreview)
-function safe(v){
-  return String(v ?? '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
-
-
-
-
+// safe() → fourni par ort-utils.js
 
 // === SIDs uniques & stables ===
 function __collectSids(){
@@ -3235,11 +3226,7 @@ function ensureSid(step){
   return sid;
 }
 
-// ➜ AJOUT : parse JSON tolérant (utilisé plus bas pour les objets TEMP)
-function safeJSONParse(str){
-  try{ return str ? JSON.parse(str) : null; }
-  catch(e){ return null; }
-}
+// safeJSONParse() → fourni par ort-utils.js
 
 // ============================================================================
 // === SYSTÈME AUTO-PLANNING : Calcul intelligent nuits + hôtels ===
@@ -3404,17 +3391,7 @@ function findNearbyPlaces(place_id, maxDistanceKm = 20) {
   return nearby.sort((a, b) => a.distance - b.distance);
 }
 
-// Calcul distance haversine (pour hub/satellite clustering)
-function haversineDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Rayon de la Terre en km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R * c;
-}
+// haversineDistance() → fourni par ort-utils.js
 
 /**
  * Applique le calcul automatique des nuits à toutes les étapes
@@ -4217,7 +4194,10 @@ if (PARAM_LANG) {
   if (PARAM_LANG === 'ar') document.body.setAttribute('dir', 'rtl');
 }
 
-let PHOTOS_CACHE={};
+// PHOTOS_CACHE est géré par ort-data-loader.js (window.PHOTOS_CACHE)
+if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
+var PHOTOS_CACHE = window.PHOTOS_CACHE;
+
 const state={
   title:'Roadtrip', country:'XX', targetNights:0, steps:[],
   _rawItinsObj:null, _rawPlacesObj:null, 
@@ -4381,12 +4361,7 @@ function getStartDate(){
   const s = (state.startDateStr || '').trim();
   return s ? new Date(s+'T00:00:00') : null;
 }
-function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
-function fmtD(d){
-  if(!d) return '—';
-  const lang=(document.documentElement.lang||'fr');
-  return d.toLocaleDateString(lang, { day:'2-digit', month:'short' });
-}
+// addDays() et fmtD() → fournis par ort-utils.js
 function stepDateRange(idx){
   const base = getStartDate();
   if(!base) return null;
@@ -4414,57 +4389,18 @@ function dateTipLabel(){
 async function loadPhotosJSON(){
   try{
     const r=await fetch('./data/photos-json/photos_lieux.json',{cache:'no-store'});
-    if(r.ok) PHOTOS_CACHE=await r.json()||{};
+    if(r.ok) {
+      const data = await r.json() || {};
+      // Fusionner dans window.PHOTOS_CACHE pour que ort-data-loader.js y ait accès
+      Object.assign(window.PHOTOS_CACHE, data);
+      PHOTOS_CACHE = window.PHOTOS_CACHE;
+    }
   }catch(e){console.error('Photos:',e)}
 }
 
-function getPhotosForPlace(pid){return (PHOTOS_CACHE[pid]||{}).photos||[]}
+// getPhotosForPlace() et findPhotosForPlace() → fournis par ort-data-loader.js
 
-// Convertir un nom en slug pour matcher les place_id (format CC::nom-en-slug)
-function toSlug(name) {
-  if (!name) return '';
-  return name
-    .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/['']/g, '-')
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-// Trouver les photos pour un lieu (essaie plusieurs formats de clé)
-function findPhotosForPlace(name, cc) {
-  if (!name || !PHOTOS_CACHE) return [];
-  
-  const slug = toSlug(name);
-  const ccUp = (cc || '').toUpperCase();
-  
-  const keys = [
-    `${ccUp}::${slug}`,
-    `${ccUp}::${name.toLowerCase()}`,
-    slug,
-    name.toLowerCase()
-  ];
-  
-  for (const key of keys) {
-    if (PHOTOS_CACHE[key]?.photos?.length) {
-      return PHOTOS_CACHE[key].photos;
-    }
-  }
-  
-  // Recherche partielle par nom
-  const found = Object.keys(PHOTOS_CACHE).find(k => {
-    const kName = k.split('::').pop() || k;
-    return kName === slug || kName.includes(slug) || slug.includes(kName);
-  });
-  
-  if (found && PHOTOS_CACHE[found]?.photos?.length) {
-    return PHOTOS_CACHE[found].photos;
-  }
-  
-  return [];
-}
+// toSlug() → fourni par ort-utils.js
 
 // --- DEBUG POPUP PHOTOS ---
 async function ensurePhotos(place) {
@@ -4516,102 +4452,12 @@ async function renderPopup(place) {
 }
 
 
-async function loadJSON(path){
-  try{
-    const r=await fetch(path,{cache:'no-store'});
-    if(!r.ok) return null;
-    const ct = r.headers.get('content-type')||'';
-    if(!ct.includes('application/json')) {
-      console.warn('[loadJSON] Not JSON:', path, 'content-type:', ct);
-      return null;
-    }
-    return await r.json();
-  }catch(e){console.error('[loadJSON] Error:',path,e);return null}
-}
+// loadJSON(), loadWithLangFallback(), ensurePlacesIndex(), coordsFromMaster() → fournis par ort-data-loader.js
 
-function isComposedId(id){return typeof id==='string'&&id.startsWith('COMPOSED::')}
-function parseComposedIds(id){if(!isComposedId(id))return[];return id.replace('COMPOSED::','').split('+').map(decodeURIComponent).filter(Boolean)}
-// Détection du mode tactile
-const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
-
-let PLACES_INDEX=null;
-// === Expose globals pour les scripts header (date de départ etc.)
-window.state = state;
-
-// === Fonction helper pour charger avec fallback langue ===
-async function loadWithLangFallback(baseUrl, lang) {
-  // Essayer dans l'ordre : langue demandée → EN → FR → ancien format
-  const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i); // unique
-  
-  for (const tryLang of langOrder) {
-    const url = baseUrl.replace('.json', `-${tryLang}.json`);
-    const result = await loadJSON(url);
-    if (result) {
-      console.log(`[LOAD] ✅ Chargé: ${url}`);
-      return { data: result, lang: tryLang };
-    }
-  }
-  
-  // Fallback: ancien format sans suffixe
-  const result = await loadJSON(baseUrl);
-  if (result) {
-    console.log(`[LOAD] ⚠️ Fallback ancien format: ${baseUrl}`);
-    return { data: result, lang: 'fr' };
-  }
-  
-  return null;
-}
-
-async function ensurePlacesIndex(){
-  const cc = (CC || state.cc || state.country || '').toUpperCase();
-  const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
-  
-  // Nouveau format avec suffixe langue
-  const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.places.master.json`;
-  const result = await loadWithLangFallback(basePath, lang);
-  
-  if(result && result.data){
-    const obj = result.data;
-    const arr = Array.isArray(obj) ? obj : (obj.places||[]);
-    PLACES_INDEX={};
-    arr.forEach(pl=>{
-      const pid=pl.place_id||pl.id;
-      if(!pid) return;
-      const visits = Array.isArray(pl.visits) ? pl.visits.map(v => (typeof v==='string'? {text:v} : v)) : [];
-      const activities = Array.isArray(pl.activities) ? pl.activities.map(a => (typeof a==='string'? {text:a} : a)) : [];
-      PLACES_INDEX[pid] = {
-        lat:Number(pl.lat)||null,
-        lon:Number(pl.lon)||Number(pl.lng)||null,
-        name:pl.name||pl.title||'',
-        visits,
-        activities,
-        rating: pl.rating || 1,
-        suggested_days: pl.suggested_days || 1
-      };
-    });
-    console.log(`[PLACES] ✅ Master chargé (${result.lang}): ${arr.length} lieux avec ratings`);
-    
-    // Injecter les ratings dans les steps existants
-    if (state.steps && state.steps.length > 0) {
-      state.steps.forEach(step => {
-        if (step.place_id && PLACES_INDEX[step.place_id]) {
-          step.rating = PLACES_INDEX[step.place_id].rating || 0;
-        }
-      });
-      console.log(`[PLACES] ✅ Ratings injectés dans ${state.steps.length} étapes`);
-    }
-    
-    return;
-  }
-  
-  PLACES_INDEX={};
-}
-function coordsFromMaster(pid){
-  if(!PLACES_INDEX||!pid) return {lat:null,lon:null,name:''};
-  const m=PLACES_INDEX[pid];
-  return m?{lat:m.lat,lon:m.lon,name:m.name}:{lat:null,lon:null,name:''};
-}
-
+// PLACES_INDEX est géré par ort-data-loader.js (window.PLACES_INDEX)
+if (!window.PLACES_INDEX) window.PLACES_INDEX = {};
+// Alias local pour compatibilité
+var PLACES_INDEX = window.PLACES_INDEX;
 
 async function loadItin(){
   const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
@@ -7210,176 +7056,7 @@ async function calculateRoute(waypoints, mode = 'driving') {
   return { type: 'fallback', coordinates: waypoints };
 }
 
-/**
- * Calcul route OSRM (voiture, vélo, pieds)
- */
-async function calculateOSRMRoute(waypoints, mode) {
-  try {
-    // Profils OSRM : car (driving), bike (cycling), foot (walking)
-    const osrmProfile = mode === 'driving' ? 'car' : mode === 'cycling' ? 'bike' : 'foot';
-    
-    // Format OSRM : lon,lat;lon,lat;...
-    const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
-    
-    // URL OSRM public - avec annotations pour avoir les distances par segment
-    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordsStr}?overview=full&geometries=geojson&steps=false&annotations=distance,duration`;
-    
-    console.log('[OSRM] 🚗 Requête:', osrmUrl.substring(0, 100) + '...');
-    
-    const response = await fetch(osrmUrl).catch(err => {
-      console.warn('[OSRM] ⚠️ Erreur fetch:', err.message);
-      return null;
-    });
-    if (!response) return { type: 'fallback', coordinates: waypoints };
-    const data = await response.json().catch(err => {
-      console.warn('[OSRM] ⚠️ Erreur JSON:', err.message);
-      return null;
-    });
-    if (!data) return { type: 'fallback', coordinates: waypoints };
-    
-    if (data.code === 'Ok' && data.routes && data.routes[0]) {
-      const route = data.routes[0];
-      const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]);
-      
-      // Extraire les distances par leg (segment entre 2 waypoints)
-      const legs = route.legs || [];
-      const legDistances = legs.map(leg => ({
-        distance_km: Math.round(leg.distance / 1000 * 10) / 10,
-        duration_min: Math.round(leg.duration / 60)
-      }));
-      
-      console.log('[OSRM] ✅ Route calculée:', {
-        distance: (route.distance / 1000).toFixed(1) + ' km',
-        duration: (route.duration / 3600).toFixed(1) + ' h',
-        points: coordinates.length,
-        legs: legDistances.length
-      });
-      
-      // Stocker les distances dans state.steps si disponible
-      if (window.state?.steps && legDistances.length > 0) {
-        legDistances.forEach((leg, i) => {
-          if (state.steps[i]) {
-            state.steps[i]._osrmDistanceKm = leg.distance_km;
-            state.steps[i]._osrmDurationMin = leg.duration_min;
-          }
-        });
-        console.log('[OSRM] ✅ Distances injectées dans', legDistances.length, 'étapes');
-      }
-      
-      return {
-        type: 'osrm',
-        mode: mode,
-        coordinates: coordinates,
-        distance: route.distance,
-        duration: route.duration,
-        legs: legDistances,
-        color: mode === 'cycling' ? '#00bcd4' : mode === 'walking' ? '#4caf50' : '#113f7a'
-      };
-    }
-    
-    throw new Error('OSRM: Pas de route trouvée');
-    
-  } catch (error) {
-    console.warn('[OSRM] ⚠️ Erreur:', error.message);
-    return { type: 'fallback', coordinates: waypoints };
-  }
-}
-
-/**
-/**
- * Calcul route Mapbox (train, métro, bus, voiture)
- */
-async function calculateMapboxRoute(waypoints, mode) {
-  try {
-    const accessToken = window.ORT_CONFIG?.MAPBOX_ACCESS_TOKEN;
-    const baseUrl = window.ORT_CONFIG?.MAPBOX_BASE_URL || 'https://api.mapbox.com/directions/v5/mapbox';
-    
-    if (!accessToken) {
-      console.warn('[MAPBOX] ⚠️ Token manquant');
-      toast('⚠️ Mapbox : token requis (voir ort-config.js)', 4000);
-      return { type: 'fallback', coordinates: waypoints, color: '#ff5722', dashArray: '10, 5' };
-    }
-    
-    // Mode Mapbox : driving-traffic / walking / cycling / driving
-    // Pour transit, on utilise un profil spécial ou on combine
-    const mapboxProfile = mode === 'transit' ? 'driving' : mode;
-    
-    console.log('[MAPBOX] 🗺️ Profil:', mapboxProfile);
-    
-    // Mapbox limite à 25 waypoints par requête
-    if (waypoints.length > 25) {
-      console.warn('[MAPBOX] ⚠️ Trop de waypoints (', waypoints.length, '), simplification...');
-      // Garder seulement les points importants (début, fin, et quelques intermédiaires)
-      const step = Math.ceil(waypoints.length / 24);
-      const simplified = waypoints.filter((_, i) => i === 0 || i === waypoints.length - 1 || i % step === 0);
-      waypoints = simplified;
-      console.log('[MAPBOX] ✅ Simplifié à', waypoints.length, 'waypoints');
-    }
-    
-    // Format Mapbox : lon,lat;lon,lat;...
-    const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
-    
-    // URL Mapbox Directions
-    const mapboxUrl = `${baseUrl}/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&access_token=${accessToken}`;
-    
-    console.log('[MAPBOX] 🚀 Requête:', mapboxUrl.substring(0, 120) + '...');
-    
-    const response = await fetch(mapboxUrl);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-    
-    const data = await response.json();
-    
-    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
-      throw new Error('Aucune route trouvée');
-    }
-    
-    const route = data.routes[0];
-    const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lon,lat] → [lat,lon]
-    
-    console.log('[MAPBOX] ✅ Route calculée:', {
-      distance: (route.distance / 1000).toFixed(1) + ' km',
-      duration: (route.duration / 3600).toFixed(1) + ' h',
-      points: coordinates.length
-    });
-    
-    // Couleur selon le mode
-    let color = '#113f7a'; // Bleu par défaut (voiture)
-    let dashArray = null;
-    
-    if (mode === 'transit') {
-      color = '#ff5722'; // Rouge pour train
-      dashArray = '10, 5'; // Pointillés
-    } else if (mode === 'cycling') {
-      color = '#00bcd4'; // Cyan pour vélo
-    } else if (mode === 'walking') {
-      color = '#4caf50'; // Vert pour pieds
-    }
-    
-    return {
-      type: 'mapbox',
-      mode: mode,
-      coordinates: coordinates,
-      distance: route.distance, // mètres
-      duration: route.duration, // secondes
-      color: color,
-      weight: 3,
-      dashArray: dashArray
-    };
-    
-  } catch (error) {
-    console.error('[MAPBOX] ❌ Erreur:', error);
-    toast('❌ Erreur Mapbox : ' + error.message, 3000);
-    return { 
-      type: 'fallback', 
-      coordinates: waypoints, 
-      color: '#ff5722', 
-      dashArray: '10, 5' 
-    };
-  }
-}
+// calculateOSRMRoute() et calculateMapboxRoute() → fournis par ort-routing.js
 // ===== FIN FONCTIONS DE CALCUL =====
 
   // supprimer l'ancienne polyline si présente
