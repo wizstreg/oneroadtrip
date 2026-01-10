@@ -1051,21 +1051,8 @@
             
             updateQuestionsLabels();
             
-            // Si déjà approuvée par géoloc, utiliser directement
-            if (state.geolocationApproved && state.location) {
-                console.log('✅ Géoloc approuvée précédemment:', state.location);
-                switchScreen('questions');
-                return;
-            }
-            
-            // Si ville déjà sauvegardée, utiliser directement
-            const savedCity = localStorage.getItem('visionPhotoCity');
-            if (savedCity) {
-                console.log('✅ Ville sauvegardée:', savedCity);
-                state.location = savedCity;
-                switchScreen('questions');
-                return;
-            }
+            // Sauvegarder l'ancien lieu pour le pré-remplir si besoin
+            const previousLocation = state.location || localStorage.getItem('visionPhotoCity') || '';
             
             // D'ABORD aller aux questions pour que l'user voie sa photo
             switchScreen('questions');
@@ -1077,7 +1064,7 @@
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
-                        // ✅ Géoloc acceptée
+                        // ✅ Géoloc acceptée - utiliser les nouvelles coordonnées
                         state.location = `${pos.coords.latitude},${pos.coords.longitude}`;
                         state.geolocationApproved = true;
                         localStorage.setItem('visionPhotoGeoApproved', 'true');
@@ -1086,22 +1073,22 @@
                         console.log('✅ Géoloc acceptée:', state.location);
                     },
                     (err) => {
-                        // ❌ Géoloc refusée - demander la ville APRÈS affichage questions
+                        // ❌ Géoloc refusée - demander la ville avec la précédente en défaut
                         console.log('⚠️ Géoloc refusée:', err.message);
                         setTimeout(() => {
-                            const lieu = prompt(t.city_prompt) || '';
+                            const lieu = prompt(t.city_prompt, previousLocation) || previousLocation;
                             state.location = lieu;
                             if (lieu) {
                                 localStorage.setItem('visionPhotoCity', lieu);
                             }
-                        }, 300); // Petit délai pour que l'écran questions soit visible
+                        }, 300);
                     },
                     {timeout: 3000, enableHighAccuracy: false}
                 );
             } else {
-                // Pas de géoloc dispo - demander la ville après affichage
+                // Pas de géoloc dispo - demander la ville avec la précédente en défaut
                 setTimeout(() => {
-                    const lieu = prompt(t.city_prompt) || '';
+                    const lieu = prompt(t.city_prompt, previousLocation) || previousLocation;
                     state.location = lieu;
                     if (lieu) {
                         localStorage.setItem('visionPhotoCity', lieu);

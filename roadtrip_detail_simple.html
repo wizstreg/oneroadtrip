@@ -1781,9 +1781,7 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
 <script src="/js/ort-config.js"></script>
-<script src="/js/ort-utils.js"></script>
-<script src="/js/ort-data-loader.js"></script>
-<script src="/js/ort-routing.js"></script>
+<script src="/js/ort-partners.js"></script>
 <script defer src="/js/ort-tripid.js"></script>
 <script defer src="/js/ort-i18n.js"></script>
 <script>
@@ -1934,20 +1932,13 @@ document.head.appendChild(style);
   langSel.addEventListener('change', function(e) {
     const newLang = e.target.value;
     localStorage.setItem('lang', newLang);
-    document.documentElement.lang = newLang;
-    document.documentElement.dir = (newLang === 'ar') ? 'rtl' : 'ltr';
+    localStorage.setItem('ort_lang', newLang); // Sync pour RT Mobile
     
-    if (typeof window.applyI18N === 'function') {
-      window.applyI18N();
-    }
-    
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'lang',
-      newValue: newLang,
-      oldValue: currentLang
-    }));
-    
-    console.log('[LANG] Changé vers:', newLang);
+    // Reload avec la nouvelle langue dans l'URL
+    const url = new URL(location.href);
+    url.searchParams.set('lang', newLang);
+    console.log('[LANG] Changé vers:', newLang, '- Rechargement...');
+    location.replace(url.toString());
   });
   
   console.log('[LANG] ✅ Sélecteur initialisé');
@@ -1974,7 +1965,7 @@ document.head.appendChild(style);
     var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2).toLowerCase();
     var I18N_TOOLBAR = {
       dashboard: {fr:'Dashboard',en:'Dashboard',es:'Panel',it:'Dashboard',pt:'Dashboard',ar:'لوحة التحكم'},
-      mustBeSignedIn: {fr:'Vous devez être enregistré pour accéder au Dashboard.',en:'You must be signed in to access the Dashboard.',es:'Debe estar registrado para acceder.',it:'Devi essere registrato.',pt:'Você precisa estar conectado.',ar:'يجب أن تكون مسجّلًا'},
+      dashboardInfo: {fr:'Là où vous retrouverez vos voyages sauvegardés.',en:'Where you will find your saved trips.',es:'Donde encontrarás tus viajes guardados.',it:'Dove troverai i tuoi viaggi salvati.',pt:'Onde você encontrará suas viagens salvas.',ar:'حيث ستجد رحلاتك المحفوظة.'},mustBeSignedIn: {fr:'Connectez-vous pour y accéder.',en:'Sign in to access.',es:'Inicia sesión para acceder.',it:'Accedi per visualizzarli.',pt:'Faça login para acessar.',ar:'قم بتسجيل الدخول للوصول.'},
       centerOnRoute: {fr:'Centrer trajet',en:'Center route',es:'Centrar ruta',it:'Centra percorso',pt:'Centralizar rota',ar:'توسيط المسار'},
       generatePDF: {fr:'Générer PDF',en:'Generate PDF',es:'Generar PDF',it:'Genera PDF',pt:'Gerar PDF',ar:'إنشاء PDF'},
       pdfModuleNotLoaded: {fr:'Module PDF non chargé',en:'PDF module not loaded',es:'Módulo PDF no cargado',it:'Modulo PDF non caricato',pt:'Módulo PDF não carregado',ar:'وحدة PDF غير محملة'}
@@ -2019,43 +2010,39 @@ row.style.gap = '10px';
     a.style.padding = a.style.padding || '6px 12px';
     a.style.borderRadius = a.style.borderRadius || '10px';
 
-    // 6) Si non connecté, bloque et affiche un pop-up i18n
+    // 6) Affiche TOUJOURS un pop-up explicatif, bloque si non connecté
     a.addEventListener('click', function(ev){
       var user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+      var box = document.createElement('div');
+      Object.assign(box.style, {
+        position:'fixed', left:'50%', top:'18px', transform:'translateX(-50%)',
+        background:'#fff', color:'#113f7a',
+        padding:'10px 14px', borderRadius:'10px',
+        border:'1px solid #c3d6b6', boxShadow:'0 6px 18px rgba(0,0,0,.15)',
+        zIndex:9999, maxWidth:'90%', fontFamily:'system-ui,Segoe UI,Roboto,Arial,sans-serif'
+      });
       if(!user){
         ev.preventDefault();
-        var box = document.createElement('div');
-        Object.assign(box.style, {
-          position:'fixed', left:'50%', top:'18px', transform:'translateX(-50%)',
-          background:'#fff', color:'#113f7a',
-          padding:'10px 14px', borderRadius:'10px',
-          border:'1px solid #c3d6b6', boxShadow:'0 6px 18px rgba(0,0,0,.15)',
-          zIndex:9999, maxWidth:'90%', fontFamily:'system-ui,Segoe UI,Roboto,Arial,sans-serif'
-        });
-        box.textContent = t('mustBeSignedIn');
-        document.body.appendChild(box);
-        setTimeout(function(){ box.remove(); }, 2400);
+        box.textContent = t('dashboardInfo') + ' ' + t('mustBeSignedIn');
+      } else {
+        box.textContent = t('dashboardInfo');
       }
+      document.body.appendChild(box);
+      setTimeout(function(){ box.remove(); }, 2400);
     });
 
     row.appendChild(a);
 
-    // Bouton "Centrer trajet" à côté du Dashboard
-    var centerBtn = document.createElement('button');
-    centerBtn.id = 'centerRouteBtn';
-    centerBtn.className = 'hdr-btn';
-    centerBtn.type = 'button';
-    centerBtn.textContent = '🎯 ' + t('centerOnRoute');
-    centerBtn.title = t('centerOnRoute');
-    centerBtn.style.whiteSpace = 'nowrap';
-    row.appendChild(centerBtn);
+    // Bouton "Centrer trajet" SUPPRIMÉ - déplacé dans la carte
 
-    // Bouton "PDF" à côté de Centrer trajet
+    // Bouton "Guide de voyage" (ex-Carnet)
     var pdfBtn = document.createElement('button');
     pdfBtn.id = 'btnExportPDFHeader';
     pdfBtn.className = 'hdr-btn';
     pdfBtn.type = 'button';
-    pdfBtn.textContent = '📄 Carnet';
+    var GUIDE_LABELS = {fr:'📄 Guide de voyage',en:'📄 Travel guide',es:'📄 Guía de viaje',it:'📄 Guida di viaggio',pt:'📄 Guia de viagem',ar:'📄 دليل السفر'};
+    pdfBtn.textContent = GUIDE_LABELS[lang] || GUIDE_LABELS.fr;
+    pdfBtn.title = GUIDE_LABELS[lang] || GUIDE_LABELS.fr;
     pdfBtn.title = t('generatePDF');
     pdfBtn.style.whiteSpace = 'nowrap';
     pdfBtn.addEventListener('click', function(){
@@ -2589,66 +2576,7 @@ console.log('[TOOLBAR] ✅ Row ajouté au toolbar');
   bIns.style.cssText = `text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;border:1px solid #c3d6b6;background:#e63b2e;color:#fff;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.12);line-height:1;`;
 
 
-  // === MENU OUTILS (avec i18n) ===
-  (function(){
-    console.log('[TOOLBAR] === MENU OUTILS - Création début ===');
-    const toolsWrap = document.createElement('div');
-    toolsWrap.style.cssText = 'display:inline-flex; position:relative; z-index:100;';
-
-    const toolsBtn = document.createElement('button');
-    const updateToolsLabel = () => {
-      toolsBtn.innerHTML = '🔧 ' + (window.t ? window.t('tools') : 'Outils');
-    };
-    updateToolsLabel();
-    toolsBtn.style.cssText = 'padding:8px 14px;border-radius:6px;border:1px solid #c3d6b6;background:#f8fafc;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.12);';
-    
-    const dropdown = document.createElement('div');
-    dropdown.style.cssText = 'position:absolute;top:calc(100% + 8px);left:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);min-width:200px;z-index:1001;display:none;';
-    
-    const menuItems = [
-      { key: 'rateItinerary', emoji: '⭐', click: () => { if(window.openRatePopover && window.rtRateBtn) window.openRatePopover(window.rtRateBtn); } },
-      { key: 'reportError', emoji: '❗', click: () => { if(typeof openNoteDialog === 'function') openNoteDialog(); } },
-      { key: 'countrySheet', emoji: '🌍', click: () => { document.getElementById('countryTab')?.click(); } }
-    ];
-    
-    function renderMenuItems() {
-      dropdown.innerHTML = '';
-      console.log('[TOOLBAR] Menu Outils: renderMenuItems début, menuItems.length=', menuItems.length);
-      menuItems.forEach((item, i) => {
-        const btn = document.createElement('button');
-        const text = window.t ? window.t(item.key) : item.key;
-        btn.innerHTML = `<span style="font-size:16px;margin-right:8px;">${item.emoji}</span>${text}`;
-        btn.style.cssText = `display:block;width:100%;padding:10px 16px;border:none;background:none;text-align:left;cursor:pointer;font-size:14px;color:#1f2937;${i===0?'border-radius:8px 8px 0 0':''}${i===menuItems.length-1?'border-radius:0 0 8px 8px':''}`;
-        btn.onmouseover = () => btn.style.background = '#f5f5f5';
-        btn.onmouseout = () => btn.style.background = 'none';
-        btn.onclick = (e) => { console.log('[TOOLBAR] Click item Outils:', item.key); e.stopPropagation(); item.click(); dropdown.style.display = 'none'; };
-        dropdown.appendChild(btn);
-        console.log('[TOOLBAR] Item Outils ajouté:', item.key, i+1, '/', menuItems.length);
-      });
-      console.log('[TOOLBAR] Menu Outils: renderMenuItems fin, dropdown.children=', dropdown.children.length);
-    }
-    
-    renderMenuItems();
-    console.log('[TOOLBAR] Menu Outils items créés, attachement listeners...');
-    toolsBtn.onclick = (e) => { 
-      console.log('[TOOLBAR] Click sur toolsBtn'); 
-      e.stopPropagation(); 
-      const newDisplay = dropdown.style.display === 'none' ? 'block' : 'none';
-      dropdown.style.display = newDisplay;
-      console.log('[TOOLBAR] Dropdown Outils display changé à:', newDisplay, 'children:', dropdown.children.length);
-    };
-    document.addEventListener('click', (e) => { if(!toolsWrap.contains(e.target)) dropdown.style.display = 'none'; });
-    
-    // Ecouter les changements de langue
-    window.addEventListener('storage', (e) => { if(e.key === 'lang') { updateToolsLabel(); renderMenuItems(); } });
-    const langObserver = new MutationObserver(() => { updateToolsLabel(); renderMenuItems(); });
-    langObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    
-    toolsWrap.appendChild(toolsBtn);
-    toolsWrap.appendChild(dropdown);
-    wrap.appendChild(toolsWrap);
-    console.log('[TOOLBAR] ✅ Menu Outils ajouté à wrap');
-  })();
+  // === MENU OUTILS SUPPRIMÉ (version simple) ===
 
   // === MENU SERVICES (avec i18n) ===
   (function(){
@@ -2952,7 +2880,7 @@ const ORTSaves = {
     return true;
   }
 };
-// currentUser() → fourni par ort-utils.js
+function currentUser(){ try{ return (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null; }catch(_){ return null; } }
 
 // === Générer un tripId unique ===
 function getTripId() {
@@ -3203,7 +3131,19 @@ function scheduleAutosave(){
   // markUnsavedChanges() - SUPPRIMÉ (arrête de spammer l'alerte)
 }
 
-// safe() → fourni par ort-utils.js
+// Petite fonction d'échappement HTML (utilisée par renderRow / showStepPreview)
+function safe(v){
+  return String(v ?? '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+
+
+
 
 // === SIDs uniques & stables ===
 function __collectSids(){
@@ -3226,7 +3166,11 @@ function ensureSid(step){
   return sid;
 }
 
-// safeJSONParse() → fourni par ort-utils.js
+// ➜ AJOUT : parse JSON tolérant (utilisé plus bas pour les objets TEMP)
+function safeJSONParse(str){
+  try{ return str ? JSON.parse(str) : null; }
+  catch(e){ return null; }
+}
 
 // ============================================================================
 // === SYSTÈME AUTO-PLANNING : Calcul intelligent nuits + hôtels ===
@@ -3391,7 +3335,17 @@ function findNearbyPlaces(place_id, maxDistanceKm = 20) {
   return nearby.sort((a, b) => a.distance - b.distance);
 }
 
-// haversineDistance() → fourni par ort-utils.js
+// Calcul distance haversine (pour hub/satellite clustering)
+function haversineDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Rayon de la Terre en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 /**
  * Applique le calcul automatique des nuits à toutes les étapes
@@ -4194,10 +4148,7 @@ if (PARAM_LANG) {
   if (PARAM_LANG === 'ar') document.body.setAttribute('dir', 'rtl');
 }
 
-// PHOTOS_CACHE est géré par ort-data-loader.js (window.PHOTOS_CACHE)
-if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
-var PHOTOS_CACHE = window.PHOTOS_CACHE;
-
+let PHOTOS_CACHE={};
 const state={
   title:'Roadtrip', country:'XX', targetNights:0, steps:[],
   _rawItinsObj:null, _rawPlacesObj:null, 
@@ -4361,7 +4312,12 @@ function getStartDate(){
   const s = (state.startDateStr || '').trim();
   return s ? new Date(s+'T00:00:00') : null;
 }
-// addDays() et fmtD() → fournis par ort-utils.js
+function addDays(d,n){ const x=new Date(d); x.setDate(x.getDate()+n); return x; }
+function fmtD(d){
+  if(!d) return '—';
+  const lang=(document.documentElement.lang||'fr');
+  return d.toLocaleDateString(lang, { day:'2-digit', month:'short' });
+}
 function stepDateRange(idx){
   const base = getStartDate();
   if(!base) return null;
@@ -4389,18 +4345,57 @@ function dateTipLabel(){
 async function loadPhotosJSON(){
   try{
     const r=await fetch('./data/photos-json/photos_lieux.json',{cache:'no-store'});
-    if(r.ok) {
-      const data = await r.json() || {};
-      // Fusionner dans window.PHOTOS_CACHE pour que ort-data-loader.js y ait accès
-      Object.assign(window.PHOTOS_CACHE, data);
-      PHOTOS_CACHE = window.PHOTOS_CACHE;
-    }
+    if(r.ok) PHOTOS_CACHE=await r.json()||{};
   }catch(e){console.error('Photos:',e)}
 }
 
-// getPhotosForPlace() et findPhotosForPlace() → fournis par ort-data-loader.js
+function getPhotosForPlace(pid){return (PHOTOS_CACHE[pid]||{}).photos||[]}
 
-// toSlug() → fourni par ort-utils.js
+// Convertir un nom en slug pour matcher les place_id (format CC::nom-en-slug)
+function toSlug(name) {
+  if (!name) return '';
+  return name
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/['']/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+// Trouver les photos pour un lieu (essaie plusieurs formats de clé)
+function findPhotosForPlace(name, cc) {
+  if (!name || !PHOTOS_CACHE) return [];
+  
+  const slug = toSlug(name);
+  const ccUp = (cc || '').toUpperCase();
+  
+  const keys = [
+    `${ccUp}::${slug}`,
+    `${ccUp}::${name.toLowerCase()}`,
+    slug,
+    name.toLowerCase()
+  ];
+  
+  for (const key of keys) {
+    if (PHOTOS_CACHE[key]?.photos?.length) {
+      return PHOTOS_CACHE[key].photos;
+    }
+  }
+  
+  // Recherche partielle par nom
+  const found = Object.keys(PHOTOS_CACHE).find(k => {
+    const kName = k.split('::').pop() || k;
+    return kName === slug || kName.includes(slug) || slug.includes(kName);
+  });
+  
+  if (found && PHOTOS_CACHE[found]?.photos?.length) {
+    return PHOTOS_CACHE[found].photos;
+  }
+  
+  return [];
+}
 
 // --- DEBUG POPUP PHOTOS ---
 async function ensurePhotos(place) {
@@ -4452,12 +4447,102 @@ async function renderPopup(place) {
 }
 
 
-// loadJSON(), loadWithLangFallback(), ensurePlacesIndex(), coordsFromMaster() → fournis par ort-data-loader.js
+async function loadJSON(path){
+  try{
+    const r=await fetch(path,{cache:'no-store'});
+    if(!r.ok) return null;
+    const ct = r.headers.get('content-type')||'';
+    if(!ct.includes('application/json')) {
+      console.warn('[loadJSON] Not JSON:', path, 'content-type:', ct);
+      return null;
+    }
+    return await r.json();
+  }catch(e){console.error('[loadJSON] Error:',path,e);return null}
+}
 
-// PLACES_INDEX est géré par ort-data-loader.js (window.PLACES_INDEX)
-if (!window.PLACES_INDEX) window.PLACES_INDEX = {};
-// Alias local pour compatibilité
-var PLACES_INDEX = window.PLACES_INDEX;
+function isComposedId(id){return typeof id==='string'&&id.startsWith('COMPOSED::')}
+function parseComposedIds(id){if(!isComposedId(id))return[];return id.replace('COMPOSED::','').split('+').map(decodeURIComponent).filter(Boolean)}
+// Détection du mode tactile
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints>0);
+
+let PLACES_INDEX=null;
+// === Expose globals pour les scripts header (date de départ etc.)
+window.state = state;
+
+// === Fonction helper pour charger avec fallback langue ===
+async function loadWithLangFallback(baseUrl, lang) {
+  // Essayer dans l'ordre : langue demandée → EN → FR → ancien format
+  const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i); // unique
+  
+  for (const tryLang of langOrder) {
+    const url = baseUrl.replace('.json', `-${tryLang}.json`);
+    const result = await loadJSON(url);
+    if (result) {
+      console.log(`[LOAD] ✅ Chargé: ${url}`);
+      return { data: result, lang: tryLang };
+    }
+  }
+  
+  // Fallback: ancien format sans suffixe
+  const result = await loadJSON(baseUrl);
+  if (result) {
+    console.log(`[LOAD] ⚠️ Fallback ancien format: ${baseUrl}`);
+    return { data: result, lang: 'fr' };
+  }
+  
+  return null;
+}
+
+async function ensurePlacesIndex(){
+  const cc = (CC || state.cc || state.country || '').toUpperCase();
+  const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
+  
+  // Nouveau format avec suffixe langue
+  const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.places.master.json`;
+  const result = await loadWithLangFallback(basePath, lang);
+  
+  if(result && result.data){
+    const obj = result.data;
+    const arr = Array.isArray(obj) ? obj : (obj.places||[]);
+    PLACES_INDEX={};
+    arr.forEach(pl=>{
+      const pid=pl.place_id||pl.id;
+      if(!pid) return;
+      const visits = Array.isArray(pl.visits) ? pl.visits.map(v => (typeof v==='string'? {text:v} : v)) : [];
+      const activities = Array.isArray(pl.activities) ? pl.activities.map(a => (typeof a==='string'? {text:a} : a)) : [];
+      PLACES_INDEX[pid] = {
+        lat:Number(pl.lat)||null,
+        lon:Number(pl.lon)||Number(pl.lng)||null,
+        name:pl.name||pl.title||'',
+        visits,
+        activities,
+        rating: pl.rating || 1,
+        suggested_days: pl.suggested_days || 1
+      };
+    });
+    console.log(`[PLACES] ✅ Master chargé (${result.lang}): ${arr.length} lieux avec ratings`);
+    
+    // Injecter les ratings dans les steps existants
+    if (state.steps && state.steps.length > 0) {
+      state.steps.forEach(step => {
+        if (step.place_id && PLACES_INDEX[step.place_id]) {
+          step.rating = PLACES_INDEX[step.place_id].rating || 0;
+        }
+      });
+      console.log(`[PLACES] ✅ Ratings injectés dans ${state.steps.length} étapes`);
+    }
+    
+    return;
+  }
+  
+  PLACES_INDEX={};
+}
+function coordsFromMaster(pid){
+  if(!PLACES_INDEX||!pid) return {lat:null,lon:null,name:''};
+  const m=PLACES_INDEX[pid];
+  return m?{lat:m.lat,lon:m.lon,name:m.name}:{lat:null,lon:null,name:''};
+}
+
 
 async function loadItin(){
   const lang = (typeof LANG !== 'undefined' ? LANG : null) || localStorage.getItem('lang') || 'fr';
@@ -6478,6 +6563,31 @@ OtherCtl.onAdd = function(){
 
 OtherCtl.addTo(map);
 
+// === Bouton Centrer sur le trajet (dans la carte) ===
+const CenterCtl = L.control({position:'topleft'});
+CenterCtl.onAdd = function(){
+  const div = L.DomUtil.create('div','leaflet-control');
+  div.style.cssText = 'background:transparent;border:none;box-shadow:none;margin-top:6px';
+  const CENTER_LABELS = {fr:'Centrer',en:'Center',es:'Centrar',it:'Centra',pt:'Centralizar',ar:'توسيط'};
+  const uiLang = (document.documentElement.lang || 'fr').slice(0,2);
+  const label = CENTER_LABELS[uiLang] || CENTER_LABELS.fr;
+  div.innerHTML = `<button id="btnCenterMap" type="button" title="${label}" style="display:flex;align-items:center;gap:6px;padding:8px 10px;font:600 13px/1 system-ui;background:#fff;border:2px solid #cfd6e4;border-radius:8px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">🎯 <span>${label}</span></button>`;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+CenterCtl.addTo(map);
+
+// Événement click pour centrer la carte
+document.getElementById('btnCenterMap')?.addEventListener('click', () => {
+  if (map && state?.steps?.length > 0) {
+    const bounds = L.latLngBounds(state.steps.filter(s => s.lat && s.lon).map(s => [s.lat, s.lon]));
+    if (bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50] });
+      console.log('[MAP] ✅ Carte centrée sur le trajet');
+    }
+  }
+});
+
 // Appliquer les traductions aux nouveaux éléments
 if(typeof applyI18N === 'function') applyI18N();
 
@@ -7056,7 +7166,176 @@ async function calculateRoute(waypoints, mode = 'driving') {
   return { type: 'fallback', coordinates: waypoints };
 }
 
-// calculateOSRMRoute() et calculateMapboxRoute() → fournis par ort-routing.js
+/**
+ * Calcul route OSRM (voiture, vélo, pieds)
+ */
+async function calculateOSRMRoute(waypoints, mode) {
+  try {
+    // Profils OSRM : car (driving), bike (cycling), foot (walking)
+    const osrmProfile = mode === 'driving' ? 'car' : mode === 'cycling' ? 'bike' : 'foot';
+    
+    // Format OSRM : lon,lat;lon,lat;...
+    const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
+    
+    // URL OSRM public - avec annotations pour avoir les distances par segment
+    const osrmUrl = `https://router.project-osrm.org/route/v1/${osrmProfile}/${coordsStr}?overview=full&geometries=geojson&steps=false&annotations=distance,duration`;
+    
+    console.log('[OSRM] 🚗 Requête:', osrmUrl.substring(0, 100) + '...');
+    
+    const response = await fetch(osrmUrl).catch(err => {
+      console.warn('[OSRM] ⚠️ Erreur fetch:', err.message);
+      return null;
+    });
+    if (!response) return { type: 'fallback', coordinates: waypoints };
+    const data = await response.json().catch(err => {
+      console.warn('[OSRM] ⚠️ Erreur JSON:', err.message);
+      return null;
+    });
+    if (!data) return { type: 'fallback', coordinates: waypoints };
+    
+    if (data.code === 'Ok' && data.routes && data.routes[0]) {
+      const route = data.routes[0];
+      const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]);
+      
+      // Extraire les distances par leg (segment entre 2 waypoints)
+      const legs = route.legs || [];
+      const legDistances = legs.map(leg => ({
+        distance_km: Math.round(leg.distance / 1000 * 10) / 10,
+        duration_min: Math.round(leg.duration / 60)
+      }));
+      
+      console.log('[OSRM] ✅ Route calculée:', {
+        distance: (route.distance / 1000).toFixed(1) + ' km',
+        duration: (route.duration / 3600).toFixed(1) + ' h',
+        points: coordinates.length,
+        legs: legDistances.length
+      });
+      
+      // Stocker les distances dans state.steps si disponible
+      if (window.state?.steps && legDistances.length > 0) {
+        legDistances.forEach((leg, i) => {
+          if (state.steps[i]) {
+            state.steps[i]._osrmDistanceKm = leg.distance_km;
+            state.steps[i]._osrmDurationMin = leg.duration_min;
+          }
+        });
+        console.log('[OSRM] ✅ Distances injectées dans', legDistances.length, 'étapes');
+      }
+      
+      return {
+        type: 'osrm',
+        mode: mode,
+        coordinates: coordinates,
+        distance: route.distance,
+        duration: route.duration,
+        legs: legDistances,
+        color: mode === 'cycling' ? '#00bcd4' : mode === 'walking' ? '#4caf50' : '#113f7a'
+      };
+    }
+    
+    throw new Error('OSRM: Pas de route trouvée');
+    
+  } catch (error) {
+    console.warn('[OSRM] ⚠️ Erreur:', error.message);
+    return { type: 'fallback', coordinates: waypoints };
+  }
+}
+
+/**
+/**
+ * Calcul route Mapbox (train, métro, bus, voiture)
+ */
+async function calculateMapboxRoute(waypoints, mode) {
+  try {
+    const accessToken = window.ORT_CONFIG?.MAPBOX_ACCESS_TOKEN;
+    const baseUrl = window.ORT_CONFIG?.MAPBOX_BASE_URL || 'https://api.mapbox.com/directions/v5/mapbox';
+    
+    if (!accessToken) {
+      console.warn('[MAPBOX] ⚠️ Token manquant');
+      toast('⚠️ Mapbox : token requis (voir ort-config.js)', 4000);
+      return { type: 'fallback', coordinates: waypoints, color: '#ff5722', dashArray: '10, 5' };
+    }
+    
+    // Mode Mapbox : driving-traffic / walking / cycling / driving
+    // Pour transit, on utilise un profil spécial ou on combine
+    const mapboxProfile = mode === 'transit' ? 'driving' : mode;
+    
+    console.log('[MAPBOX] 🗺️ Profil:', mapboxProfile);
+    
+    // Mapbox limite à 25 waypoints par requête
+    if (waypoints.length > 25) {
+      console.warn('[MAPBOX] ⚠️ Trop de waypoints (', waypoints.length, '), simplification...');
+      // Garder seulement les points importants (début, fin, et quelques intermédiaires)
+      const step = Math.ceil(waypoints.length / 24);
+      const simplified = waypoints.filter((_, i) => i === 0 || i === waypoints.length - 1 || i % step === 0);
+      waypoints = simplified;
+      console.log('[MAPBOX] ✅ Simplifié à', waypoints.length, 'waypoints');
+    }
+    
+    // Format Mapbox : lon,lat;lon,lat;...
+    const coordsStr = waypoints.map(wp => `${wp[1]},${wp[0]}`).join(';');
+    
+    // URL Mapbox Directions
+    const mapboxUrl = `${baseUrl}/${mapboxProfile}/${coordsStr}?geometries=geojson&overview=full&access_token=${accessToken}`;
+    
+    console.log('[MAPBOX] 🚀 Requête:', mapboxUrl.substring(0, 120) + '...');
+    
+    const response = await fetch(mapboxUrl);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+      throw new Error('Aucune route trouvée');
+    }
+    
+    const route = data.routes[0];
+    const coordinates = route.geometry.coordinates.map(c => [c[1], c[0]]); // [lon,lat] → [lat,lon]
+    
+    console.log('[MAPBOX] ✅ Route calculée:', {
+      distance: (route.distance / 1000).toFixed(1) + ' km',
+      duration: (route.duration / 3600).toFixed(1) + ' h',
+      points: coordinates.length
+    });
+    
+    // Couleur selon le mode
+    let color = '#113f7a'; // Bleu par défaut (voiture)
+    let dashArray = null;
+    
+    if (mode === 'transit') {
+      color = '#ff5722'; // Rouge pour train
+      dashArray = '10, 5'; // Pointillés
+    } else if (mode === 'cycling') {
+      color = '#00bcd4'; // Cyan pour vélo
+    } else if (mode === 'walking') {
+      color = '#4caf50'; // Vert pour pieds
+    }
+    
+    return {
+      type: 'mapbox',
+      mode: mode,
+      coordinates: coordinates,
+      distance: route.distance, // mètres
+      duration: route.duration, // secondes
+      color: color,
+      weight: 3,
+      dashArray: dashArray
+    };
+    
+  } catch (error) {
+    console.error('[MAPBOX] ❌ Erreur:', error);
+    toast('❌ Erreur Mapbox : ' + error.message, 3000);
+    return { 
+      type: 'fallback', 
+      coordinates: waypoints, 
+      color: '#ff5722', 
+      dashArray: '10, 5' 
+    };
+  }
+}
 // ===== FIN FONCTIONS DE CALCUL =====
 
   // supprimer l'ancienne polyline si présente
@@ -9209,290 +9488,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 </div>
 
 <script>
-// === PARTNER MODAL CONTROLLER ===
-let partnerTarget = null;
-let partnerCountdownTimer = null;
-
-function getPartnerLang() {
-  return (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-}
-
-// I18N inline pour la modal partenaire
-const PARTNER_I18N = {
-  vehicleTitle: {
-    fr: '🚕 Véhicules & Transferts',
-    en: '🚕 Vehicles & Transfers',
-    es: '🚕 Vehículos y Traslados',
-    it: '🚕 Veicoli e Trasferimenti',
-    pt: '🚕 Veículos e Transfers',
-    ar: '🚕 المركبات والنقل'
-  },
-  vehicleText: {
-    fr: 'Que recherchez-vous pour votre voyage ?',
-    en: 'What are you looking for?',
-    es: '¿Qué necesitas para tu viaje?',
-    it: 'Di cosa hai bisogno per il tuo viaggio?',
-    pt: 'O que você precisa para sua viagem?',
-    ar: 'ماذا تحتاج لرحلتك؟'
-  },
-  carTitle: { fr: 'Location de voiture', en: 'Car Rental', es: 'Alquiler de coches', it: 'Noleggio auto', pt: 'Aluguel de carros', ar: 'تأجير السيارات' },
-  carDesc: { fr: 'Louez un véhicule et explorez en liberté', en: 'Rent a car and explore freely', es: 'Alquila un coche y explora libremente', it: 'Noleggia un\'auto ed esplora liberamente', pt: 'Alugue um carro e explore livremente', ar: 'استأجر سيارة واستكشف بحرية' },
-  transferTitle: { fr: 'Transfert aéroport', en: 'Airport Transfer', es: 'Traslado aeropuerto', it: 'Trasferimento aeroporto', pt: 'Transfer aeroporto', ar: 'النقل من المطار' },
-  transferDesc: { fr: 'Chauffeur privé, prix fixe garanti', en: 'Private driver, fixed price', es: 'Conductor privado, precio fijo', it: 'Autista privato, prezzo fisso', pt: 'Motorista particular, preço fixo', ar: 'سائق خاص، سعر ثابت' },
-  carRedirectTitle: { fr: '🚗 Location de voiture', en: '🚗 Car Rental', es: '🚗 Alquiler de coches', it: '🚗 Noleggio auto', pt: '🚗 Aluguel de carros', ar: '🚗 تأجير السيارات' },
-  carRedirectText: {
-    fr: 'Nous travaillons avec <strong>QEEQ.com</strong>, leader mondial de la location de véhicules.<br><br>🏆 <strong>Meilleurs prix garantis</strong> — Comparaison de +500 loueurs<br>🔄 <strong>Annulation gratuite</strong> — Flexibilité totale<br>🚗 <strong>+7 millions de véhicules</strong> — Du compact au SUV<br>🌍 <strong>Présent dans 170+ pays</strong>',
-    en: 'We partner with <strong>QEEQ.com</strong>, the world leader in car rental.<br><br>🏆 <strong>Best prices guaranteed</strong> — Comparing 500+ suppliers<br>🔄 <strong>Free cancellation</strong> — Total flexibility<br>🚗 <strong>+7 million vehicles</strong> — From compact to SUV<br>🌍 <strong>Available in 170+ countries</strong>',
-    es: 'Trabajamos con <strong>QEEQ.com</strong>, líder mundial en alquiler de vehículos.<br><br>🏆 <strong>Mejores precios garantizados</strong> — Comparación de +500 proveedores<br>🔄 <strong>Cancelación gratuita</strong> — Flexibilidad total<br>🚗 <strong>+7 millones de vehículos</strong> — Del compacto al SUV<br>🌍 <strong>Presente en 170+ países</strong>',
-    it: 'Collaboriamo con <strong>QEEQ.com</strong>, leader mondiale nel noleggio veicoli.<br><br>🏆 <strong>Miglior prezzo garantito</strong> — Confronto di +500 fornitori<br>🔄 <strong>Cancellazione gratuita</strong> — Flessibilità totale<br>🚗 <strong>+7 milioni di veicoli</strong> — Dalla compatta al SUV<br>🌍 <strong>Presente in 170+ paesi</strong>',
-    pt: 'Trabalhamos com <strong>QEEQ.com</strong>, líder mundial em aluguel de veículos.<br><br>🏆 <strong>Melhores preços garantidos</strong> — Comparação de +500 fornecedores<br>🔄 <strong>Cancelamento gratuito</strong> — Flexibilidade total<br>🚗 <strong>+7 milhões de veículos</strong> — Do compacto ao SUV<br>🌍 <strong>Presente em 170+ países</strong>',
-    ar: 'نتعاون مع <strong>QEEQ.com</strong>، الرائد العالمي في تأجير السيارات.<br><br>🏆 <strong>أفضل الأسعار مضمونة</strong> — مقارنة +500 مورد<br>🔄 <strong>إلغاء مجاني</strong> — مرونة كاملة<br>🚗 <strong>+7 مليون مركبة</strong> — من المدمجة إلى SUV<br>🌍 <strong>متوفر في 170+ دولة</strong>'
-  },
-  transferRedirectTitle: { fr: '🚐 Transfert aéroport', en: '🚐 Airport Transfer', es: '🚐 Traslado aeropuerto', it: '🚐 Trasferimento aeroporto', pt: '🚐 Transfer aeroporto', ar: '🚐 النقل من المطار' },
-  transferRedirectText: {
-    fr: 'Nous travaillons avec <strong>GetTransfer</strong>, spécialiste des transferts privés.<br><br>🚘 <strong>Chauffeur professionnel</strong> — Accueil personnalisé à l\'arrivée<br>💰 <strong>Prix fixe garanti</strong> — Pas de surprise, pas de compteur<br>⏰ <strong>Disponible 24h/24</strong> — Même pour les vols tardifs<br>📱 <strong>Suivi en temps réel</strong> — Localisation du chauffeur',
-    en: 'We partner with <strong>GetTransfer</strong>, the private transfer specialist.<br><br>🚘 <strong>Professional driver</strong> — Personalized welcome on arrival<br>💰 <strong>Fixed price guaranteed</strong> — No surprises, no meter<br>⏰ <strong>Available 24/7</strong> — Even for late flights<br>📱 <strong>Real-time tracking</strong> — Driver location',
-    es: 'Trabajamos con <strong>GetTransfer</strong>, especialista en traslados privados.<br><br>🚘 <strong>Conductor profesional</strong> — Bienvenida personalizada a la llegada<br>💰 <strong>Precio fijo garantizado</strong> — Sin sorpresas, sin taxímetro<br>⏰ <strong>Disponible 24/7</strong> — Incluso para vuelos tardíos<br>📱 <strong>Seguimiento en tiempo real</strong> — Ubicación del conductor',
-    it: 'Collaboriamo con <strong>GetTransfer</strong>, specialista nei trasferimenti privati.<br><br>🚘 <strong>Autista professionale</strong> — Accoglienza personalizzata all\'arrivo<br>💰 <strong>Prezzo fisso garantito</strong> — Nessuna sorpresa, nessun tassametro<br>⏰ <strong>Disponibile 24/7</strong> — Anche per voli in ritardo<br>📱 <strong>Tracciamento in tempo reale</strong> — Posizione dell\'autista',
-    pt: 'Trabalhamos com <strong>GetTransfer</strong>, especialista em transfers privados.<br><br>🚘 <strong>Motorista profissional</strong> — Recepção personalizada na chegada<br>💰 <strong>Preço fixo garantido</strong> — Sem surpresas, sem taxímetro<br>⏰ <strong>Disponível 24h</strong> — Mesmo para voos atrasados<br>📱 <strong>Rastreamento em tempo real</strong> — Localização do motorista',
-    ar: 'نتعاون مع <strong>GetTransfer</strong>، المتخصص في النقل الخاص.<br><br>🚘 <strong>سائق محترف</strong> — استقبال شخصي عند الوصول<br>💰 <strong>سعر ثابت مضمون</strong> — بدون مفاجآت، بدون عداد<br>⏰ <strong>متاح 24/7</strong> — حتى للرحلات المتأخرة<br>📱 <strong>تتبع في الوقت الحقيقي</strong> — موقع السائق'
-  },
-  insuranceTitle: { fr: '🛡 Assurance voyage', en: '🛡 Travel Insurance', es: '🛡 Seguro de viaje', it: '🛡 Assicurazione viaggio', pt: '🛡 Seguro viagem', ar: '🛡 تأمين السفر' },
-  insuranceText: {
-    fr: 'Nous vous dirigeons vers <strong>Ekta Traveling</strong>.<br><br>✅ Couverture médicale mondiale<br>✅ Annulation & bagages<br>✅ Assistance 24h/24',
-    en: 'Redirecting to <strong>Ekta Traveling</strong>.<br><br>✅ Worldwide medical coverage<br>✅ Cancellation & baggage<br>✅ 24/7 assistance',
-    es: 'Te redirigimos a <strong>Ekta Traveling</strong>.<br><br>✅ Cobertura médica mundial<br>✅ Cancelación y equipaje<br>✅ Asistencia 24/7',
-    it: 'Ti reindirizziamo a <strong>Ekta Traveling</strong>.<br><br>✅ Copertura medica mondiale<br>✅ Cancellazione e bagagli<br>✅ Assistenza 24/7',
-    pt: 'Redirecionando para <strong>Ekta Traveling</strong>.<br><br>✅ Cobertura médica mundial<br>✅ Cancelamento e bagagem<br>✅ Assistência 24h',
-    ar: 'نوجهك إلى <strong>Ekta Traveling</strong>.<br><br>✅ تغطية طبية عالمية<br>✅ الإلغاء والأمتعة<br>✅ مساعدة 24/7'
-  },
-  cancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' },
-  continue: { fr: 'Continuer', en: 'Continue', es: 'Continuar', it: 'Continua', pt: 'Continuar', ar: 'متابعة' },
-  redirecting: { fr: 'Redirection dans', en: 'Redirecting in', es: 'Redirigiendo en', it: 'Reindirizzamento tra', pt: 'Redirecionando em', ar: 'إعادة التوجيه في' },
-  loading: { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', it: 'Caricamento...', pt: 'Carregando...', ar: 'جار التحميل...' },
-  flightTabSearch: { fr: '🔍 Rechercher un vol', en: '🔍 Search flights', es: '🔍 Buscar vuelos', it: '🔍 Cerca voli', pt: '🔍 Pesquisar voos', ar: '🔍 البحث عن رحلات' },
-  flightTabCompensation: { fr: '💰 Compensation retard', en: '💰 Delay compensation', es: '💰 Compensación retraso', it: '💰 Rimborso ritardo', pt: '💰 Compensação atraso', ar: '💰 تعويض التأخير' }
-};
-
-function pt(key) {
-  const lang = getPartnerLang();
-  return PARTNER_I18N[key]?.[lang] || PARTNER_I18N[key]?.fr || key;
-}
-
-function showPartnerModal(type) {
-  const modal = document.getElementById('partnerModal');
-  const modalContent = document.getElementById('partnerModalContent');
-  const modalBody = document.getElementById('partnerModalBody');
-  const icon = document.getElementById('partnerIcon');
-  const title = document.getElementById('partnerTitle');
-  const text = document.getElementById('partnerText');
-  const choices = document.getElementById('partnerChoices');
-  const widgetContainer = document.getElementById('partnerWidgetContainer');
-  const footer = document.getElementById('partnerFooter');
-  const cancelBtn = document.getElementById('partnerCancelBtn');
-  const continueBtn = document.getElementById('partnerContinueBtn');
-  const countdown = document.getElementById('partnerCountdown');
-  const lang = getPartnerLang();
-  
-  // Reset
-  partnerTarget = null;
-  if (partnerCountdownTimer) clearInterval(partnerCountdownTimer);
-  text.style.display = '';
-  choices.style.display = 'none';
-  choices.innerHTML = '';
-  widgetContainer.style.display = 'none';
-  widgetContainer.innerHTML = '';
-  footer.style.display = '';
-  countdown.textContent = '';
-  modalContent.classList.remove('with-widget');
-  modalBody.classList.remove('widget-mode');
-  modal.classList.remove('top-aligned');
-  const header = document.querySelector('.partner-modal-header');
-  if (header) header.classList.remove('compact');
-  
-  if (type === 'vehicle') {
-    // Choix entre location et transfert
-    icon.textContent = '🚕';
-    title.textContent = pt('vehicleTitle');
-    text.innerHTML = `<p>${pt('vehicleText')}</p>`;
-    choices.innerHTML = `
-      <div class="partner-choice-btn car" onclick="selectPartnerChoice('car')">
-        <span class="choice-icon">🚗</span>
-        <div class="choice-title">${pt('carTitle')}</div>
-        <div class="choice-desc">${pt('carDesc')}</div>
-      </div>
-      <div class="partner-choice-btn transfer" onclick="selectPartnerChoice('transfer')">
-        <span class="choice-icon">🚐</span>
-        <div class="choice-title">${pt('transferTitle')}</div>
-        <div class="choice-desc">${pt('transferDesc')}</div>
-      </div>
-    `;
-    choices.style.display = 'flex';
-    footer.style.display = 'none';
-    
-  } else if (type === 'car') {
-    // Location voiture - lien QEEQ
-    partnerTarget = 'https://qeeq.tpo.li/rMRoXmko';
-    icon.textContent = '🚗';
-    title.textContent = pt('carRedirectTitle');
-    text.innerHTML = pt('carRedirectText');
-    cancelBtn.textContent = pt('cancel');
-    continueBtn.textContent = pt('continue');
-    startCountdown(countdown);
-    
-  } else if (type === 'transfer') {
-    // Transfert aéroport - lien GetTransfer
-    partnerTarget = 'https://gettransfer.tpo.li/NQ4bVvpZ';
-    icon.textContent = '🚐';
-    title.textContent = pt('transferRedirectTitle');
-    text.innerHTML = pt('transferRedirectText');
-    cancelBtn.textContent = pt('cancel');
-    continueBtn.textContent = pt('continue');
-    startCountdown(countdown);
-    
-  } else if (type === 'flight') {
-    // Vols avec deux onglets : Recherche + Compensation
-    partnerTarget = null;
-    text.style.display = 'none';
-    footer.style.display = 'none';
-    
-    const header = document.querySelector('.partner-modal-header');
-    if (header) header.classList.add('compact');
-    modal.classList.add('top-aligned');
-    
-    modalContent.classList.add('with-widget');
-    modalBody.classList.add('widget-mode');
-    widgetContainer.style.display = 'block';
-    
-    const locale = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang] || 'en';
-    const currency = { fr:'EUR', en:'USD', es:'EUR', it:'EUR', pt:'EUR', ar:'USD' }[lang] || 'EUR';
-    
-    // Widgets Travelpayouts
-    const searchWidgetUrl = `https://trpwdg.com/content?trs=478677&shmarker=688844&locale=${locale}&curr=${currency}&powered_by=true&border_radius=0&plain=true&color_button=%232681ff&color_button_text=%23ffffff&color_border=%232681ff&promo_id=4132&campaign_id=121`;
-    const compensationWidgetUrl = `https://trpwdg.com/content?trs=478677&shmarker=688844&locale=${locale}&width=100&powered_by=true&campaign_id=86&promo_id=2110`;
-    
-    widgetContainer.innerHTML = `
-      <style>
-        .flight-tabs { display:flex; gap:0; margin-bottom:16px; }
-        .flight-tab { flex:1; padding:12px 16px; border:2px solid #2681ff; background:#fff; color:#2681ff; font-weight:600; font-size:0.9rem; cursor:pointer; transition:all 0.2s; }
-        .flight-tab:first-child { border-radius:8px 0 0 8px; border-right:none; }
-        .flight-tab:last-child { border-radius:0 8px 8px 0; }
-        .flight-tab:hover { background:#eff6ff; }
-        .flight-tab.active { background:#2681ff; color:#fff; }
-        .flight-tab-content { min-height:200px; }
-      </style>
-      <div class="flight-tabs">
-        <button class="flight-tab active" data-tab="search">${pt('flightTabSearch')}</button>
-        <button class="flight-tab" data-tab="compensation">${pt('flightTabCompensation')}</button>
-      </div>
-      <div class="flight-tab-content" id="flightTabSearch"></div>
-      <div class="flight-tab-content" id="flightTabCompensation" style="display:none;"></div>
-    `;
-    
-    function loadWidgetInContainer(containerId, widgetUrl) {
-      const container = document.getElementById(containerId);
-      if (!container || container.dataset.loaded) return;
-      container.innerHTML = `<div style="text-align:center;padding:30px;color:#64748b;">${pt('loading')}</div>`;
-      const script = document.createElement('script');
-      script.src = widgetUrl;
-      script.async = true;
-      script.charset = 'utf-8';
-      script.onload = () => {
-        container.dataset.loaded = '1';
-        setTimeout(() => {
-          const loader = container.querySelector('div[style*="text-align:center"]');
-          if (loader && container.children.length > 1) loader.remove();
-        }, 500);
-      };
-      script.onerror = () => {
-        container.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;">Erreur de chargement</div>`;
-      };
-      container.appendChild(script);
-    }
-    
-    loadWidgetInContainer('flightTabSearch', searchWidgetUrl);
-    
-    widgetContainer.querySelectorAll('.flight-tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        widgetContainer.querySelectorAll('.flight-tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        
-        const isSearch = tab.dataset.tab === 'search';
-        document.getElementById('flightTabSearch').style.display = isSearch ? 'block' : 'none';
-        document.getElementById('flightTabCompensation').style.display = isSearch ? 'none' : 'block';
-        
-        if (!isSearch) {
-          loadWidgetInContainer('flightTabCompensation', compensationWidgetUrl);
-        }
-      });
-    });
-    
-  } else if (type === 'insurance') {
-    const insLang = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang] || 'en';
-    partnerTarget = `https://ektatraveling.com/${insLang}/?sub_id=8d611d0d167741c58fdfe9e61-688844&utm_source=travelpayouts`;
-    icon.textContent = '🛡';
-    title.textContent = pt('insuranceTitle');
-    text.innerHTML = pt('insuranceText');
-    cancelBtn.textContent = pt('cancel');
-    continueBtn.textContent = pt('continue');
-    startCountdown(countdown);
-  }
-  
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  console.log('[PARTNER] Modal ouverte pour:', type);
-}
-
-function selectPartnerChoice(choice) {
-  closePartnerModal();
-  setTimeout(() => showPartnerModal(choice), 100);
-}
-
-function startCountdown(countdownEl) {
-  let seconds = 5;
-  countdownEl.textContent = `${pt('redirecting')} ${seconds}s`;
-  
-  partnerCountdownTimer = setInterval(() => {
-    seconds--;
-    if (seconds <= 0) {
-      clearInterval(partnerCountdownTimer);
-      confirmPartnerRedirect();
-    } else {
-      countdownEl.textContent = `${pt('redirecting')} ${seconds}s`;
-    }
-  }, 1000);
-}
-
-function closePartnerModal() {
-  const modal = document.getElementById('partnerModal');
-  const widgetContainer = document.getElementById('partnerWidgetContainer');
-  const header = document.querySelector('.partner-modal-header');
-  if (modal) {
-    modal.classList.remove('show', 'top-aligned');
-    document.body.style.overflow = '';
-  }
-  if (header) header.classList.remove('compact');
-  if (widgetContainer) widgetContainer.innerHTML = '';
-  if (partnerCountdownTimer) {
-    clearInterval(partnerCountdownTimer);
-    partnerCountdownTimer = null;
-  }
-  partnerTarget = null;
-}
-
-function confirmPartnerRedirect() {
-  if (partnerCountdownTimer) {
-    clearInterval(partnerCountdownTimer);
-    partnerCountdownTimer = null;
-  }
-  if (partnerTarget) {
-    window.open(partnerTarget, '_blank', 'noopener');
-  }
-  closePartnerModal();
-}
-
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePartnerModal(); });
-document.getElementById('partnerModal')?.addEventListener('click', function(e) { if (e.target === this) closePartnerModal(); });
+// === PARTNER MODAL - Fourni par ort-partners.js ===
 console.log('[PARTNER] ✅ Partner modal ready');
 
 // === Prevent popup from closing when cursor moves from marker to popup ===

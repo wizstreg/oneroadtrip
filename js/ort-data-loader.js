@@ -102,7 +102,8 @@
       
       for (const cc of countriesToLoad) {
         if (!cc) continue;
-        const basePath = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.places.master.json`;
+        // Dossier en majuscules (LK, FR, IT...), fichier en minuscules
+        const basePath = `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toLowerCase()}.places.master.json`;
         const result = await this.loadWithLangFallback(basePath, lang);
         
         if (result && result.data) {

@@ -585,26 +585,38 @@ body:not(.preview-open) .itinerary-flow {
 }
 
 @media (max-width: 768px) {
-  /* Bandeau mobile collapsible */
+  /* Top-panel sticky en haut sur mobile */
+  .top-panel {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    margin: 0 !important;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 8px 12px;
+  }
+  
+  /* Bandeau mobile - sans toggle */
   .mobile-itin-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 12px;
+    padding: 8px 12px;
     background: #113f7a;
     color: #fff;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: 600;
     font-size: 14px;
+    cursor: default;
   }
+  
+  /* Masquer la flèche toggle */
   .mobile-itin-header .mobile-itin-toggle {
-    transition: transform 0.2s;
-    margin-left: 8px;
+    display: none !important;
   }
-  .mobile-itin-header.open .mobile-itin-toggle {
-    transform: rotate(180deg);
-  }
+  
   .validate-btn-mobile {
     background: #22c55e;
     color: #fff;
@@ -622,32 +634,35 @@ body:not(.preview-open) .itinerary-flow {
     display: none !important;
   }
   
-  /* Liste collapsible - cachée par défaut sur mobile */
+  /* Liste toujours visible avec scroll horizontal */
   .itinerary-flow {
-    max-height: 0;
-    overflow: hidden;
-    margin-top: 0;
-    padding: 0;
-    transition: max-height 0.3s ease, margin 0.3s ease, padding 0.3s ease;
-  }
-  .top-panel.list-open .itinerary-flow {
-    max-height: 300px;
-    overflow-y: auto;
+    display: flex;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
     margin-top: 10px;
-    padding-right: 0;
+    padding-bottom: 6px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    max-height: none !important;
   }
   
-  /* Ajuster hauteur carte quand liste fermée */
+  /* Plus besoin de .list-open pour afficher */
+  .top-panel.list-open .itinerary-flow {
+    max-height: none;
+  }
+  
+  /* Masquer la barre d'action mobile (bandeau rouge "Retirer") */
+  .mobile-action-bar {
+    display: none !important;
+  }
+  
+  /* Ajuster hauteur carte */
   .map-container { 
-    height: calc(100vh - 180px);
-    margin: 0 8px 8px;
-  }
-  .top-panel.list-open ~ .map-controls ~ .map-container,
-  .top-panel.list-open + .map-controls + .map-container {
-    height: calc(100vh - 320px);
+    height: calc(100vh - 160px);
+    margin: 8px;
   }
   
-  .top-panel { margin: 8px; }
   .map-controls { margin: 0 8px 8px; }
   
   /* Preview popup - Plein écran sur mobile */
@@ -662,7 +677,7 @@ body:not(.preview-open) .itinerary-flow {
     border-radius: 0;
     z-index: 20000;
     padding: 20px;
-    padding-bottom: 100px; /* Espace pour le bouton fixe en bas */
+    padding-bottom: 20px;
     border: none;
     overflow-y: auto;
   }
@@ -734,45 +749,14 @@ body:not(.preview-open) .itinerary-flow {
     font-size: 14px;
   }
   
-  /* Bouton ajouter fixé en bas sur mobile */
+  /* Bouton ajouter visible dans la popup sur mobile */
   .add-place-btn {
-    display: none; /* Masquer le bouton dans la popup sur mobile */
-  }
-  
-  /* Barre action fixe mobile */
-  .mobile-action-bar {
-    display: block !important;
-    position: fixed;
+    display: block;
+    position: sticky;
     bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    padding: 12px 20px 20px;
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.2);
-    z-index: 20001;
-    display: none;
-  }
-  
-  .mobile-action-bar.show {
-    display: block !important;
-  }
-  
-  .add-place-btn-mobile {
-    display: block !important;
-    width: 100%;
-    font-size: 17px;
-    padding: 16px 20px;
-    min-height: 56px;
-    background: #22c55e;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  
-  .add-place-btn-mobile.remove {
-    background: #e11d48;
+    margin-top: 16px;
+    font-size: 16px;
+    padding: 14px 20px;
   }
   
   /* Masquer les contrôles inutiles sur mobile */
@@ -931,11 +915,10 @@ body:not(.preview-open) .itinerary-flow {
 
 <!-- Panneau itinéraire personnalisé -->
 <div class="top-panel">
-  <!-- Bandeau collapsible mobile -->
-  <div id="mobileItinHeader" class="mobile-itin-header" onclick="toggleMobileItinList()">
+  <!-- Bandeau mobile -->
+  <div id="mobileItinHeader" class="mobile-itin-header">
     <span id="mobileItinCount">0 étapes</span>
-    <span class="mobile-itin-toggle">▼</span>
-    <button id="validateBtnMobile" class="validate-btn-mobile" onclick="event.stopPropagation(); document.getElementById('validateBtn').click();">✓ Valider</button>
+    <button id="validateBtnMobile" class="validate-btn-mobile" onclick="document.getElementById('validateBtn').click();">✓ Valider</button>
   </div>
   
   <div class="top-panel-header">
@@ -1534,45 +1517,85 @@ async function loadAllPlaces() {
       if (currentLang !== 'en') langFallback.push('en');
       if (currentLang !== 'fr') langFallback.push('fr');
 
-      // Chemins insensibles à la casse avec fallback langue
-      const placePaths = [];
+      // Essayer chaque langue dans l'ordre de priorité
       for (const lang of langFallback) {
-        // Dossier MAJUSCULE + Fichier minuscule (format standard)
-        placePaths.push(`data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`);
-        placePaths.push(`./data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`);
-        // Dossier minuscule + Fichier minuscule
-        placePaths.push(`data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`);
-        placePaths.push(`./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`);
-        // Dossier MAJUSCULE + Fichier MAJUSCULE
-        placePaths.push(`data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`);
-        placePaths.push(`./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`);
-        // Dossier minuscule + Fichier MAJUSCULE
-        placePaths.push(`data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`);
-        placePaths.push(`./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`);
-      }
-      // Fallback vers ancien format sans langue (toutes variantes)
-      placePaths.push(`data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`);
-      placePaths.push(`./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`);
-      placePaths.push(`data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`);
-      placePaths.push(`./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`);
-      placePaths.push(`data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`);
-      placePaths.push(`./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`);
+        // Chemins possibles pour cette langue (variations de casse)
+        const pathsForLang = [
+          `data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`
+        ];
 
-      for (const path of placePaths) {
+        for (const path of pathsForLang) {
+          try {
+            const res = await fetch(path);
+            if (res.ok) {
+              const data = await res.json();
+              let places = data.places || [];
+              
+              console.log(`✅ ${cc}: ${places.length} lieux (${lang})`);
+
+              // Calculer bounds du pays
+              if (places.length > 0) {
+                const lats = places.map(p => p.lat).filter(Boolean);
+                const lons = places.map(p => p.lon).filter(Boolean);
+                if (lats.length && lons.length) {
+                  countryBounds[cc] = L.latLngBounds(
+                    [Math.min(...lats), Math.min(...lons)],
+                    [Math.max(...lats), Math.max(...lons)]
+                  );
+                }
+              }
+
+              // Retourner immédiatement - on a trouvé un fichier valide
+              return places.map(p => {
+                let placeName = p.name;
+                if (!placeName && p.place_id) {
+                  const parts = p.place_id.split('::');
+                  if (parts[1]) {
+                    placeName = parts[1]
+                      .replace(/-/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase());
+                  }
+                }
+                return { ...p, cc, name: placeName || p.place_id };
+              });
+            }
+          } catch (e) {
+            // Ignore silencieusement
+          }
+        }
+      }
+
+      // Fallback vers ancien format sans langue (si aucun fichier avec langue trouvé)
+      const fallbackPaths = [
+        `data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`,
+        `data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`,
+        `data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`
+      ];
+
+      for (const path of fallbackPaths) {
         try {
           const res = await fetch(path);
           if (res.ok) {
             const data = await res.json();
             let places = data.places || [];
             
-            // Si ancien format, filtrer par langue
-            if (!path.includes(`-${currentLang}.json`) && places.length > 0 && places[0].language) {
+            // Filtrer par langue si ancien format avec champ language
+            if (places.length > 0 && places[0].language) {
               places = places.filter(p => p.language === currentLang || !p.language);
             }
             
-            console.log(`✅ ${cc}: ${places.length} lieux (${currentLang})`);
+            console.log(`✅ ${cc}: ${places.length} lieux (fallback)`);
 
-            // Calculer bounds du pays
             if (places.length > 0) {
               const lats = places.map(p => p.lat).filter(Boolean);
               const lons = places.map(p => p.lon).filter(Boolean);
@@ -1585,10 +1608,8 @@ async function loadAllPlaces() {
             }
 
             return places.map(p => {
-              // Générer le nom à partir du place_id si pas présent
               let placeName = p.name;
               if (!placeName && p.place_id) {
-                // Extraire le nom depuis place_id (ex: "IT::massafra" -> "Massafra")
                 const parts = p.place_id.split('::');
                 if (parts[1]) {
                   placeName = parts[1]
@@ -1603,6 +1624,7 @@ async function loadAllPlaces() {
           // Ignore silencieusement
         }
       }
+
       return [];
     });
 
@@ -2157,6 +2179,7 @@ function addPlaceToItinerary(place) {
   updateItineraryList();
   updateMarkerStyles();
   updateAddPlaceButton();
+  closePlacePreview(); // Fermer la modale après ajout
 }
 
 function removePlaceFromItinerary(placeId) {

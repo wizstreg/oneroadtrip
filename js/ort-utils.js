@@ -139,14 +139,15 @@
 
     /**
      * Parse un ID composé en tableau d'IDs
-     * @param {string} composedId - ID composé (COMPOSED::id1::id2::id3)
+     * Format: COMPOSED::id1+id2+id3 où chaque id peut être CC::xxx::yyy
+     * @param {string} composedId - ID composé
      * @returns {string[]} Tableau d'IDs
      */
     parseComposedIds: function(composedId) {
       if (!this.isComposedId(composedId)) return [composedId];
-      const parts = composedId.split('::');
-      // Retirer "COMPOSED" et retourner le reste
-      return parts.slice(1).filter(id => id && id.length > 0);
+      // Retirer "COMPOSED::" du début puis split par "+"
+      const withoutPrefix = composedId.substring('COMPOSED::'.length);
+      return withoutPrefix.split('+').filter(id => id && id.length > 0);
     },
 
     /**

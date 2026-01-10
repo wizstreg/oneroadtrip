@@ -1553,12 +1553,13 @@ html, body {
         <span class="service-name">Transferts</span>
         <span class="service-desc">Aéroport & plus</span>
       </a>
-      <div class="service-card" id="btnScanBooking">
+      <!-- Masqué temporairement - fonctionnalité en développement -->
+      <div class="service-card" id="btnScanBooking" style="display:none;">
         <span class="service-icon">📷</span>
         <span class="service-name">Scanner résa</span>
         <span class="service-desc">Photo → import</span>
       </div>
-      <div class="service-card" id="btnScanDocument">
+      <div class="service-card" id="btnScanDocument" style="display:none;">
         <span class="service-icon">🪪</span>
         <span class="service-name">Scanner doc</span>
         <span class="service-desc">Passeport, visa...</span>
@@ -1669,6 +1670,26 @@ html, body {
   </div>
 </div>
 
+<!-- Booking Detail Bottom Sheet -->
+<div class="bottom-sheet" id="bookingDetailSheet" style="max-height:85vh;">
+  <div class="sheet-handle" onclick="closeAllSheets()"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="bookingDetailTitle">📋 Réservation</div>
+    <button class="sheet-close-btn" onclick="closeAllSheets()" style="position:absolute;right:16px;top:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;">✕</button>
+  </div>
+  <div class="sheet-body" style="padding:16px;padding-bottom:120px;">
+    <div id="bookingDetailContent"></div>
+    <div style="display:flex;gap:12px;margin-top:20px;">
+      <button id="btnEditBooking" style="flex:1;padding:14px;background:#113f7a;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">
+        ✏️ Modifier
+      </button>
+      <button id="btnDeleteBooking" style="flex:1;padding:14px;background:#dc2626;color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;">
+        🗑️ Supprimer
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1684,6 +1705,7 @@ window.debugLog = function(msg) {
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
+<script src="/js/ort-partners.js"></script>
 <script src="/js/ort-utils.js"></script>
 <script src="/js/ort-data-loader.js"></script>
 <script src="/js/ort-routing.js"></script>
@@ -2033,33 +2055,10 @@ window.debugLog = function(msg) {
   };
 })();
 
-// === AFFILIATE LINKS ===
-// Stay22 Config (aligné avec RT detail)
-const STAY22_CONFIG = {
-  AID: 'oneroadtrip',
-  BASE_ALLEZ: 'https://www.stay22.com/allez/roam',
-  MAINCOLOR: '113f7a'
-};
-
-const AFFILIATE = {
-  // GetYourGuide (lien tpo.li)
-  gyg: (city) => `https://getyourguide.tpo.li/YQ9RFXj5?q=${encodeURIComponent(city)}`,
-  // Tiqets (lien tpo.li)
-  tiqets: (city, lang) => `https://tiqets.tpo.li/L1uxd085?q=${encodeURIComponent(city)}&lang=${lang}`,
-  // Stay22 Hotels - utilise allez/roam pour comparateur de prix
-  hotel: (lat, lng, city, nights, checkIn, campaign) => {
-    const params = new URLSearchParams({
-      aid: STAY22_CONFIG.AID,
-      campaign: campaign || 'oneroadtrip_mobile',
-      lat: lat?.toFixed?.(6) || lat,
-      lng: lng?.toFixed?.(6) || lng,
-      address: city,
-      checkin: checkIn,
-      nights: nights
-    });
-    return `${STAY22_CONFIG.BASE_ALLEZ}?${params.toString()}`;
-  }
-};
+// === AFFILIATE LINKS - Fourni par ort-partners.js ===
+// Alias pour compatibilité
+const STAY22_CONFIG = ORT_PARTNERS.STAY22_CONFIG;
+const AFFILIATE = ORT_PARTNERS.AFFILIATE;
 
 // Placeholder image
 const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTJlOGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+TtyBQaG90bzwvdGV4dD48L3N2Zz4=';
@@ -3054,6 +3053,15 @@ async function loadFromDashboard(tripId) {
 async function applyTripDataToState(tripData) {
   debugLog('applyTripDataToState: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' steps');
   
+  // DEBUG: Afficher les visites des steps bruts
+  if (tripData?.steps) {
+    tripData.steps.forEach((s, i) => {
+      if (s.visits?.length || s.pois?.length) {
+        debugLog(`Step ${i} (${s.name}): ${s.visits?.length || 0} visits, ${s.pois?.length || 0} pois`);
+      }
+    });
+  }
+  
   state.title = tripData.title || tripData.name || 'Roadtrip';
   state.cc = tripData.country || tripData.cc || 'XX';
   state.tripId = tripData.id || tripData.tripId;
@@ -3090,7 +3098,9 @@ async function applyTripDataToState(tripData) {
   
   // Charger les visites et activités des places depuis le master si vides
   if (state.cc) {
+    debugLog('🔄 Chargement PLACES_INDEX pour ' + state.cc);
     await ensurePlacesIndex([state.cc]);
+    debugLog('✅ PLACES_INDEX chargé: ' + Object.keys(PLACES_INDEX || {}).length + ' places');
   }
   
   // Budget si présent
@@ -3862,10 +3872,28 @@ function setupEvents() {
     opt.onclick = () => {
       const newLang = opt.dataset.lang;
       localStorage.setItem('lang', newLang);
+      localStorage.setItem('ort_lang', newLang); // Important pour RT Mobile
+      
+      // Nettoyer les caches de state MAIS PAS les itinéraires temporaires (ORT_TEMP_TRIP_)
+      // car ils contiennent les itinéraires personnalisés de l'utilisateur
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('ORT_TEMP_STATE_') || 
+            k.startsWith('ort_trip_temp_') ||
+            k.startsWith('ort_trip_')) {
+          // Ne PAS supprimer ORT_TEMP_TRIP_ qui contient les itinéraires custom
+          console.log('[LANG] Suppression cache:', k);
+          localStorage.removeItem(k);
+        }
+      });
+      
       state.lang = newLang;
       closeAllSheets();
       showToast(`✅ Langue: ${newLang.toUpperCase()}`);
-      setTimeout(() => location.reload(), 500);
+      
+      // Mettre à jour l'URL avec la nouvelle langue puis reload
+      const url = new URL(location.href);
+      url.searchParams.set('lang', newLang);
+      setTimeout(() => location.replace(url.toString()), 500);
     };
   });
 }
@@ -4278,8 +4306,9 @@ function openStepSheet(idx) {
   currentStepActivities = Array.isArray(step.activities) ? step.activities : [];
   
   // Si vides, chercher dans PLACES_INDEX (comme RT detail)
-  if (step.place_id && PLACES_INDEX && PLACES_INDEX[step.place_id]) {
-    const masterData = PLACES_INDEX[step.place_id];
+  const stepPlaceId = step.placeId || step.place_id;
+  if (stepPlaceId && PLACES_INDEX && PLACES_INDEX[stepPlaceId]) {
+    const masterData = PLACES_INDEX[stepPlaceId];
     if (currentStepVisits.length === 0 && masterData.visits) {
       currentStepVisits = masterData.visits;
       step.visits = currentStepVisits;  // Mettre à jour le step aussi
@@ -5015,6 +5044,150 @@ const SCANNER = {
     }
   }
 };
+
+// === BOOKING DETAIL FUNCTIONS ===
+let currentBookingData = null;
+
+function showBookingDetail(booking) {
+  console.log('[BOOKING] Show detail:', booking);
+  currentBookingData = booking;
+  
+  const content = $('bookingDetailContent');
+  const title = $('bookingDetailTitle');
+  
+  const icon = getCategoryIcon(booking.category);
+  title.textContent = `${icon} ${booking.name || 'Réservation'}`;
+  
+  // Construire le contenu détaillé
+  let html = '<div style="background:#f8f9fa;border-radius:12px;padding:16px;">';
+  
+  if (booking.category) {
+    const categoryLabels = {
+      flight: '✈️ Vol', car_rental: '🚗 Location voiture', insurance: '🛡️ Assurance',
+      hotel: '🏨 Hébergement', activity: '🎯 Activité', restaurant: '🍽️ Restaurant',
+      transport: '🚌 Transport', ferry: '⛴️ Ferry', train: '🚆 Train'
+    };
+    html += `<div style="margin-bottom:12px;"><strong>Catégorie:</strong> ${categoryLabels[booking.category] || booking.category}</div>`;
+  }
+  
+  if (booking.provider) {
+    html += `<div style="margin-bottom:12px;"><strong>Prestataire:</strong> ${booking.provider}</div>`;
+  }
+  
+  if (booking.date_start) {
+    html += `<div style="margin-bottom:12px;"><strong>Date début:</strong> ${formatDate(booking.date_start)}</div>`;
+  }
+  
+  if (booking.date_end) {
+    html += `<div style="margin-bottom:12px;"><strong>Date fin:</strong> ${formatDate(booking.date_end)}</div>`;
+  }
+  
+  if (booking.nights) {
+    html += `<div style="margin-bottom:12px;"><strong>Nuits:</strong> ${booking.nights}</div>`;
+  }
+  
+  if (booking.confirmation_number) {
+    html += `<div style="margin-bottom:12px;"><strong>N° confirmation:</strong> <span style="font-family:monospace;background:#e2e8f0;padding:2px 6px;border-radius:4px;">${booking.confirmation_number}</span></div>`;
+  }
+  
+  if (booking.price) {
+    const price = typeof booking.price === 'object' ? booking.price.amount : booking.price;
+    const currency = typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+    html += `<div style="margin-bottom:12px;"><strong>Prix:</strong> <span style="color:#059669;font-weight:600;">${parseFloat(price).toFixed(2)} ${currency}</span></div>`;
+  }
+  
+  if (booking.notes) {
+    html += `<div style="margin-bottom:12px;"><strong>Notes:</strong><br><span style="color:#666;">${booking.notes}</span></div>`;
+  }
+  
+  if (booking.link) {
+    html += `<div style="margin-top:16px;"><a href="${booking.link}" target="_blank" style="display:inline-block;padding:10px 16px;background:#113f7a;color:white;border-radius:8px;text-decoration:none;font-weight:500;">🔗 Voir la réservation</a></div>`;
+  }
+  
+  html += '</div>';
+  
+  content.innerHTML = html;
+  
+  // Ouvrir la sheet
+  closeAllSheets();
+  $('bookingDetailSheet').classList.add('open');
+  $('overlay').classList.add('active');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  } catch(e) {
+    return dateStr;
+  }
+}
+
+async function editBooking() {
+  if (!currentBookingData) return;
+  
+  // Rediriger vers RT Detail avec le tripId pour éditer
+  const tripId = state.tripId || localStorage.getItem('ORT_CURRENT_TRIP_ID');
+  if (tripId) {
+    const url = `roadtrip_detail.html?tripId=${tripId}&lang=${state.lang || 'fr'}&editBooking=${currentBookingData.id || ''}`;
+    showToast('🔄 Redirection vers l\'éditeur...');
+    setTimeout(() => {
+      window.location.href = url;
+    }, 500);
+  } else {
+    showToast('❌ Impossible d\'éditer - ID voyage manquant');
+  }
+}
+
+async function deleteBooking() {
+  if (!currentBookingData) return;
+  
+  const confirmDelete = confirm(`Supprimer la réservation "${currentBookingData.name || 'cette réservation'}" ?`);
+  if (!confirmDelete) return;
+  
+  try {
+    const tripId = state.tripId || localStorage.getItem('ORT_CURRENT_TRIP_ID');
+    
+    if (window.ORT_TRIP_DATA && tripId) {
+      // Supprimer via ORT_TRIP_DATA
+      const bookingId = currentBookingData.id;
+      const stepIndex = currentBookingData.stepIndex;
+      
+      if (currentBookingData.category === 'flight' || currentBookingData.category === 'car_rental' || currentBookingData.category === 'insurance') {
+        // Réservation voyage (travelBookings)
+        await ORT_TRIP_DATA.removeTravelBooking(bookingId);
+      } else if (stepIndex !== undefined) {
+        // Réservation d'étape
+        await ORT_TRIP_DATA.removeStepBooking(stepIndex, bookingId);
+      }
+      
+      showToast('✅ Réservation supprimée');
+      closeAllSheets();
+      
+      // Rafraîchir l'affichage
+      setTimeout(() => {
+        if (typeof renderBudgetSheet === 'function') {
+          renderBudgetSheet();
+        }
+        location.reload();
+      }, 500);
+      
+    } else {
+      showToast('❌ Impossible de supprimer - connexion requise');
+    }
+  } catch(e) {
+    console.error('[BOOKING DELETE]', e);
+    showToast('❌ Erreur: ' + e.message);
+  }
+}
+
+// Expose globally
+window.showBookingDetail = showBookingDetail;
+
+// Booking detail event handlers
+$('btnEditBooking').onclick = editBooking;
+$('btnDeleteBooking').onclick = deleteBooking;
 
 // Scanner event handlers
 $('btnScanBooking').onclick = () => SCANNER.open('booking');
