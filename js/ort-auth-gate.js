@@ -1,13 +1,10 @@
 // ort-auth-gate.js - Gate d'authentification BLOQUANTE
 // Pas de fermeture possible sans connexion
+// Utilise la modale de ort-header.js pour l'authentification
 (function() {
   'use strict';
 
-  const AUTH_GATE_DELAY = 1500; // Délai avant d'afficher la gate (laisser le temps à Firebase)
-  
-  // URLs de redirection (à adapter selon ton site)
-  const LOGIN_URL = '/login.html';
-  const SIGNUP_URL = '/signup.html';
+  const AUTH_GATE_DELAY = 500; // Délai avant d'afficher la gate
 
   // Créer la modale bloquante
   function createAuthGate() {
@@ -16,6 +13,7 @@
     const isRTL = i18n.isRTL ? i18n.isRTL() : false;
 
     // Overlay qui floute et bloque tout
+    // z-index 9999 pour que la modale auth (10000) passe au-dessus
     const overlay = document.createElement('div');
     overlay.id = 'ort-auth-gate-overlay';
     overlay.style.cssText = `
@@ -24,7 +22,7 @@
       background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
-      z-index: 999999;
+      z-index: 9999;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -59,6 +57,26 @@
       <p style="margin: 0 0 28px 0; font-size: 14px; color: #22c55e; font-weight: 600;">
         ${t('freeNote')}
       </p>
+      <button id="ort-auth-gate-google" style="
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 14px 24px;
+        margin-bottom: 12px;
+        background: white;
+        color: #333;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      ">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 20px; height: 20px;">
+        Google
+      </button>
       <button id="ort-auth-gate-signup" style="
         display: block;
         width: 100%;
@@ -102,8 +120,18 @@
     });
 
     // Hover effects
+    const googleBtn = document.getElementById('ort-auth-gate-google');
     const signupBtn = document.getElementById('ort-auth-gate-signup');
     const loginBtn = document.getElementById('ort-auth-gate-login');
+
+    googleBtn.addEventListener('mouseenter', () => {
+      googleBtn.style.borderColor = '#4285f4';
+      googleBtn.style.boxShadow = '0 4px 12px rgba(66, 133, 244, 0.3)';
+    });
+    googleBtn.addEventListener('mouseleave', () => {
+      googleBtn.style.borderColor = '#ddd';
+      googleBtn.style.boxShadow = 'none';
+    });
 
     signupBtn.addEventListener('mouseenter', () => {
       signupBtn.style.transform = 'translateY(-2px)';
@@ -123,17 +151,17 @@
       loginBtn.style.color = '#3b82f6';
     });
 
-    // Stocker l'URL actuelle pour revenir après login
-    const currentUrl = window.location.href;
-    sessionStorage.setItem('ort_auth_redirect', currentUrl);
-
     // Actions des boutons
+    googleBtn.addEventListener('click', () => {
+      signInWithGoogle();
+    });
+
     signupBtn.addEventListener('click', () => {
-      window.location.href = SIGNUP_URL + '?redirect=' + encodeURIComponent(currentUrl);
+      openEmailModal('signup');
     });
 
     loginBtn.addEventListener('click', () => {
-      window.location.href = LOGIN_URL + '?redirect=' + encodeURIComponent(currentUrl);
+      openEmailModal('login');
     });
 
     // BLOQUER toute fermeture
@@ -164,7 +192,7 @@
       }
       
       /* Cacher le contenu derrière */
-      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay) {
+      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay):not(#ortAuthModal):not(#emailModal):not(#coherenceAlert):not([id*="Modal"]):not([id*="modal"]) {
         filter: blur(5px);
         pointer-events: none;
         user-select: none;
@@ -183,6 +211,71 @@
     console.log('[ORT-AUTH-GATE] 🔒 Gate affichée - authentification requise');
   }
 
+  // Connexion avec Google
+  function signInWithGoogle() {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+          console.log('[ORT-AUTH-GATE] ✅ Connexion Google réussie:', result.user.email);
+          // La gate sera fermée automatiquement par onAuthStateChanged
+        })
+        .catch((error) => {
+          console.error('[ORT-AUTH-GATE] ❌ Erreur Google:', error);
+          alert(error.message || 'Erreur de connexion Google');
+        });
+    } catch (e) {
+      console.error('[ORT-AUTH-GATE] ❌ Erreur:', e);
+    }
+  }
+
+  // Ouvrir la modale email existante
+  function openEmailModal(mode) {
+    const isSignup = (mode === 'signup');
+    
+    // Option 1 : ORT_HEADER disponible
+    if (window.ORT_HEADER && window.ORT_HEADER.showEmailModal) {
+      window.ORT_HEADER.showEmailModal(mode);
+      return;
+    }
+
+    // Option 2 : emailModal inline
+    const modal = document.getElementById('emailModal');
+    if (modal) {
+      const title = document.getElementById('emailTitle');
+      const pwd2Group = document.getElementById('pwd2Group');
+      const emailInput = document.getElementById('emailInput');
+      
+      // Configurer le mode
+      if (title) {
+        const i18n = window.ORT_AUTH_I18N;
+        const lang = i18n?.getLang?.() || 'fr';
+        title.textContent = isSignup 
+          ? (lang === 'fr' ? 'Créer un compte' : 'Create account')
+          : (lang === 'fr' ? 'Connexion par e-mail' : 'Login by email');
+      }
+      if (pwd2Group) {
+        pwd2Group.style.display = isSignup ? 'block' : 'none';
+      }
+      
+      modal.style.display = 'flex';
+      if (emailInput) emailInput.focus();
+      console.log('[ORT-AUTH-GATE] Modale email ouverte en mode:', mode);
+      return;
+    }
+
+    // Option 3 : Simuler clic sur btnEmail
+    const btnEmail = document.getElementById('btnEmail');
+    if (btnEmail) {
+      btnEmail.click();
+      console.log('[ORT-AUTH-GATE] Clic simulé sur btnEmail');
+      return;
+    }
+
+    console.warn('[ORT-AUTH-GATE] ⚠️ Aucune modale email trouvée');
+  }
+
   // Supprimer la gate
   function removeAuthGate() {
     const overlay = document.getElementById('ort-auth-gate-overlay');
@@ -195,33 +288,50 @@
   }
 
   // Vérifier l'authentification
+  let authChecked = false;
+  
   function checkAuth() {
-    // Attendre que Firebase soit prêt
-    if (typeof firebase === 'undefined' || !firebase.auth) {
-      console.log('[ORT-AUTH-GATE] ⏳ Attente Firebase...');
-      setTimeout(checkAuth, 200);
-      return;
-    }
-
-    firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        console.log('[ORT-AUTH-GATE] ✅ Utilisateur connecté:', user.email);
-        removeAuthGate();
-      } else {
-        console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté');
-        // Vérifier si la gate existe déjà
-        if (!document.getElementById('ort-auth-gate-overlay')) {
-          createAuthGate();
-        }
+    // Tester Firebase directement
+    try {
+      if (typeof firebase === 'undefined' || !firebase.auth) {
+        throw new Error('Firebase not loaded');
       }
-    });
+      const auth = firebase.auth();
+      if (!auth) {
+        throw new Error('Auth not ready');
+      }
+      
+      console.log('[ORT-AUTH-GATE] ✅ Firebase prêt, attente état auth...');
+      
+      // TOUJOURS utiliser onAuthStateChanged, jamais currentUser directement
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          console.log('[ORT-AUTH-GATE] ✅ Utilisateur connecté:', user.email);
+          authChecked = true;
+          removeAuthGate();
+        } else if (!authChecked) {
+          // Premier callback avec null - attendre un peu car Firebase peut encore restaurer la session
+          console.log('[ORT-AUTH-GATE] ⏳ Pas encore connecté, attente restauration session...');
+          setTimeout(() => {
+            // Revérifier après le délai
+            if (!firebase.auth().currentUser && !document.getElementById('ort-auth-gate-overlay')) {
+              console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté (confirmé)');
+              createAuthGate();
+            }
+          }, 1000); // Attendre 1s pour la restauration de session
+        }
+      });
+    } catch (e) {
+      console.log('[ORT-AUTH-GATE] ⏳ Attente Firebase...', e.message);
+      setTimeout(checkAuth, 300);
+    }
   }
 
   // Démarrer après un court délai (laisser le temps à Firebase de s'initialiser)
   function init() {
     // Vérifier si on est sur une page qui nécessite l'auth
-    // (on peut exclure certaines pages comme login.html, signup.html)
-    const excludedPages = ['/login.html', '/signup.html', '/reset-password.html', '/index.html', '/'];
+    // Pages exclues : accueil, présentation, etc.
+    const excludedPages = ['/index.html', '/', '/presentation.html'];
     const currentPath = window.location.pathname;
     
     if (excludedPages.some(page => currentPath.endsWith(page) || currentPath === page)) {

@@ -177,6 +177,86 @@
   }
 
   // ============================================================
+  // REGROUPEMENT DES NUITS PAR LIEU
+  // ============================================================
+
+  /**
+   * Regroupe les nuits des jours consécutifs au même lieu
+   * Logique : nombre de jours au même lieu = nombre de nuits
+   * Exemple : 4 jours à Tokyo → première étape = 4 nuits, autres = 0
+   * @param {Array} steps - Les étapes à traiter
+   * @returns {Array} Les étapes avec nuits regroupées
+   */
+  function groupNightsByPlace(steps) {
+    if (!steps || !Array.isArray(steps) || steps.length === 0) return steps;
+    
+    console.log('[ORT-TRIP-CALC] === REGROUPEMENT DES NUITS PAR LIEU ===');
+    console.log(`[ORT-TRIP-CALC] ${steps.length} étapes à traiter`);
+    
+    let currentPlaceId = null;
+    let currentGroupStart = 0;
+    let currentGroupCount = 0;
+    let groupsFound = 0;
+    
+    for (let i = 0; i <= steps.length; i++) {
+      const step = steps[i];
+      const placeId = step?.place_id || step?.placeId || step?.night?.place_id || `step_${i}`;
+      
+      if (i === steps.length || placeId !== currentPlaceId) {
+        // Fin du groupe précédent - assigner les nuits
+        if (currentGroupCount > 0 && currentPlaceId !== null) {
+          // Première étape du groupe = nombre de jours dans le groupe
+          steps[currentGroupStart].nights = currentGroupCount;
+          steps[currentGroupStart]._isGroupHead = true;
+          steps[currentGroupStart]._groupSize = currentGroupCount;
+          
+          // Autres étapes du groupe = 0 nuit
+          for (let j = currentGroupStart + 1; j < currentGroupStart + currentGroupCount; j++) {
+            steps[j].nights = 0;
+            steps[j]._isGroupMember = true;
+            steps[j]._groupHead = currentGroupStart;
+          }
+          
+          if (currentGroupCount > 1) {
+            groupsFound++;
+            console.log(`[ORT-TRIP-CALC] Groupe ${groupsFound}: ${steps[currentGroupStart].name} (${currentGroupCount} jours) → ${currentGroupCount} nuit(s)`);
+          }
+        }
+        
+        // Démarrer nouveau groupe
+        if (i < steps.length) {
+          currentPlaceId = placeId;
+          currentGroupStart = i;
+          currentGroupCount = 1;
+        }
+      } else {
+        // Même lieu - continuer le groupe
+        currentGroupCount++;
+      }
+    }
+    
+    // Dernière étape = 0 nuit si c'est un aéroport
+    const lastStep = steps[steps.length - 1];
+    if (lastStep && (
+      lastStep.place_id?.includes('airport') || 
+      lastStep.name?.toLowerCase().includes('aéroport') || 
+      lastStep.name?.toLowerCase().includes('airport')
+    )) {
+      lastStep.nights = 0;
+      console.log(`[ORT-TRIP-CALC] ✈️ ${lastStep.name}: 0 nuit (aéroport/départ)`);
+    }
+    
+    if (groupsFound > 0) {
+      console.log(`[ORT-TRIP-CALC] ✅ ${groupsFound} groupe(s) multi-jours fusionné(s)`);
+    }
+    
+    const totalNights = steps.reduce((sum, s) => sum + (s.nights || 0), 0);
+    console.log(`[ORT-TRIP-CALC] Total après regroupement: ${totalNights} nuits`);
+    
+    return steps;
+  }
+
+  // ============================================================
   // CALCUL DES NUITS (HUB/SATELLITE)
   // ============================================================
 
@@ -415,11 +495,12 @@
     // 4. Dernière étape : vérifier si c'est un vrai hub ou juste un point de passage
     const lastIdx = n - 1;
     const lastStep = steps[lastIdx];
-    const lastRating = Number(lastStep.rating || lastStep.score || 0);
+    const lastRating = Number(lastStep.rating || lastStep.score || 5);
     const lastSuggestedDays = Number(lastStep.suggested_days || lastStep.suggestedDays || 0);
     
-    // Si la dernière étape a un bon rating (>= 4) ou des jours suggérés (>= 1), c'est un vrai hub
-    const lastIsRealHub = lastStep._isHub && (lastRating > 7.5 || lastSuggestedDays >= 1);
+    // Si la dernière étape est un hub et a un rating décent (>= 5) ou des jours suggérés, c'est un vrai hub
+    // On est moins restrictif car souvent la dernière étape mérite une nuit
+    const lastIsRealHub = lastStep._isHub && (lastRating >= 5 || lastSuggestedDays >= 1);
     
     // 5. Compter les hubs éligibles
     // Inclure la dernière étape seulement si c'est un vrai hub
@@ -506,9 +587,10 @@
       
       // Dernière étape : garder les nuits si c'est un vrai hub
       if (i === n - 1) {
-        const rating = Number(step.rating || step.score || 0);
+        const rating = Number(step.rating || step.score || 5);
         const suggestedDays = Number(step.suggested_days || step.suggestedDays || 0);
-        const isRealHub = step._isHub && (rating > 7.5 || suggestedDays >= 1);
+        // Condition assouplie : rating >= 5 au lieu de > 7.5
+        const isRealHub = step._isHub && (rating >= 5 || suggestedDays >= 1);
         
         if (!isRealHub) {
           step.nights = 0;
@@ -546,6 +628,7 @@
     getDateTooltip,
     
     // Nuits
+    groupNightsByPlace,
     determineNightsFromVisitTime,
     calculateHubScore,
     identifyGroups,
@@ -578,6 +661,9 @@
       return ORT_TRIP_CALC.autoCalculateNights(window.state, targetNights);
     }
     return 0;
+  };
+  global.groupNightsByPlace = function(steps) {
+    return ORT_TRIP_CALC.groupNightsByPlace(steps || window.state?.steps);
   };
   global.sumNights = function() {
     if (window.state?.steps) {

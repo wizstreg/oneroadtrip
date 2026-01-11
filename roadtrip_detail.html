@@ -2184,6 +2184,21 @@ if (typeof t !== 'function') {
 })();
 </script>
 
+<!-- Firebase SDK - chargé UNE SEULE FOIS en statique -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// Initialiser Firebase immédiatement
+(function() {
+  if (window.__FIREBASE_CONFIG__ && window.__FIREBASE_CONFIG__.apiKey && !firebase.apps.length) {
+    firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    console.log('[FIREBASE] ✅ Initialisé en statique');
+  }
+})();
+</script>
+
 <!-- Stay22 Integration -->
 <script>
   (function (s, t, a, y, twenty, two) {
@@ -3262,10 +3277,12 @@ hdr.appendChild(row);
     <div id="alertContainer"></div>
     <input id="emailInput" class="input" type="email" placeholder="Votre e-mail" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
     <div class="input-wrap" style="position:relative">
-      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd1" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
     </div>
-    <div id="pwd2Group" class="input-wrap" style="display:none">
-      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe" autocomplete="new-password" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+    <div id="pwd2Group" class="input-wrap" style="display:none;position:relative">
+      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe" autocomplete="new-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd2" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
     </div>
     <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
       <button id="emailCancel" class="btn" type="button" style="background:#fff;color:#113f7a;border-color:#113f7a" data-i18n="cancel">Annuler</button>
@@ -3288,20 +3305,10 @@ hdr.appendChild(row);
   }
 
  async function ensureFirebase(){
+    // Firebase est chargé en statique dans le head, on vérifie juste qu'il est prêt
     if(window.firebase?.apps?.length && typeof window.firebase.auth === 'function') return window.firebase;
     
-    // Charger les scripts si nécessaire
-    if (!window.firebase?.initializeApp) {
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-    }
-    if (typeof window.firebase?.auth !== 'function') {
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
-    }
-    if (!window.firebase?.firestore) {
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
-    }
-    
-    // Attendre que firebase.auth soit vraiment disponible
+    // Attendre que firebase.auth soit disponible (au cas où)
     for (let i = 0; i < 50; i++) {
       if (typeof window.firebase?.auth === 'function') break;
       await new Promise(r => setTimeout(r, 50));
@@ -3319,8 +3326,7 @@ hdr.appendChild(row);
     return window.firebase;
   }
   
-  function load(src){ return new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src=src; s.onload=ok; s.onerror=()=>ko(new Error('load '+src)); document.head.appendChild(s); }); }
-
+  
   function setHeaderLabel(user){
     if(!openAuth) return;
     if(user){
@@ -3361,22 +3367,46 @@ hdr.appendChild(row);
   const modal=$('emailModal');
   if(btnEmail && modal){
     const email=$('emailInput'), pwd=$('pwdInput'), pwd2=$('pwd2Input'), pwd2Group=$('pwd2Group'), btnValider=$('emailGo'), btnCancel=$('emailCancel'), title=$('emailTitle'), alertWrap=$('alertContainer');
+    const togglePwd1=$('togglePwd1'), togglePwd2=$('togglePwd2');
+    
+    // Toggle password visibility
+    if(togglePwd1){ togglePwd1.addEventListener('click', ()=>{ pwd.type = pwd.type==='password' ? 'text' : 'password'; togglePwd1.textContent = pwd.type==='password' ? '👁' : '🙈'; }); }
+    if(togglePwd2){ togglePwd2.addEventListener('click', ()=>{ pwd2.type = pwd2.type==='password' ? 'text' : 'password'; togglePwd2.textContent = pwd2.type==='password' ? '👁' : '🙈'; }); }
+    
     function showMsg(text, ok){ alertWrap.innerHTML='<div class="'+(ok?'alert-success':'alert-error')+'" style="padding:10px;border:1px solid '+(ok?'#bbf7d0':'#fecaca')+';border-radius:8px;margin:6px 0">'+text+'</div>'; }
-    function switchMode(signup){ title.textContent= signup ? t('createAccount') : t('emailLogin'); if(pwd2Group) pwd2Group.style.display= signup ? '' : 'none'; alertWrap.innerHTML=''; }
+    let isSignupMode = false;
+    function switchMode(signup){ isSignupMode = signup; title.textContent= signup ? t('createAccount') : t('emailLogin'); if(pwd2Group) pwd2Group.style.display= signup ? 'block' : 'none'; alertWrap.innerHTML=''; }
     btnEmail.addEventListener('click', ()=>{ switchMode(false); modal.style.display='flex'; email?.focus(); });
-    btnCancel?.addEventListener('click', ()=>{ modal.style.display='none'; alertWrap.innerHTML=''; });
+    btnCancel?.addEventListener('click', ()=>{ modal.style.display='none'; alertWrap.innerHTML=''; isSignupMode = false; });
     btnValider?.addEventListener('click', async()=>{
       try{
         const fb=await ensureFirebase(); const a=fb.auth();
         const mail=(email.value||'').trim().toLowerCase(); const pass=pwd.value||'';
         if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return showMsg("E-mail invalide", false);
         if(!pass || pass.length<6) return showMsg("Mot de passe ≥ 6 caractères", false);
+        
+        // Mode création de compte
+        if(isSignupMode || pwd2Group.style.display !== 'none'){
+          const pass2 = pwd2.value||'';
+          if(pass !== pass2) return showMsg("Les mots de passe ne correspondent pas", false);
+          const r = await a.createUserWithEmailAndPassword(mail, pass);
+          if(r?.user){ 
+            await r.user.sendEmailVerification();
+            showMsg("Compte créé ! Vérifiez votre e-mail.", true); 
+            setHeaderLabel(r.user); 
+            setTimeout(()=>{ modal.style.display='none'; }, 1500); 
+          }
+          return;
+        }
+        
+        // Mode connexion
         const r=await a.signInWithEmailAndPassword(mail,pass).catch(async(e)=>{
           if(e.code==='auth/user-not-found'){ switchMode(true); showMsg("Aucun compte. Création ci-dessous.", false); return null; }
+          if(e.code==='auth/wrong-password'){ showMsg("Mot de passe incorrect", false); return null; }
           throw e;
         });
         if(r?.user){ showMsg("Connexion réussie.", true); setHeaderLabel(r.user); setTimeout(()=>{ modal.style.display='none'; }, 500); }
-      }catch(e){ showMsg("Erreur. Réessayez.", false); }
+      }catch(e){ console.error('[AUTH]', e); showMsg("Erreur: " + (e.message || "Réessayez."), false); }
     });
   }
 
@@ -5018,7 +5048,13 @@ async function initFromItin(it){
   }
   */
   
-  // === CALCUL DES NUITS PAR PLACE_ID ===
+  // === CALCUL DES NUITS PAR PLACE_ID (centralisé dans ort-trip-calc.js) ===
+  if (window.ORT_TRIP_CALC) {
+    console.log('[LOG-CONTROLE][NIGHTS] Appel ORT_TRIP_CALC.groupNightsByPlace...');
+    ORT_TRIP_CALC.groupNightsByPlace(steps);
+  }
+  
+  /* >>> ANCIEN CODE INLINE - COMMENTÉ - À SUPPRIMER <<<
   // Logique simple : regrouper les nuits sur la première étape d'un même lieu consécutif
   // Exemple : Tokyo jour 1-5 → première étape Tokyo = 5 nuits, autres = 0
   
@@ -5069,6 +5105,7 @@ async function initFromItin(it){
     lastStep.nights = 0;
     console.log(`[LOG-CONTROLE][NIGHTS] ✈️ ${lastStep.name}: 0 nuit (aéroport/départ)`);
   }
+  FIN ANCIEN CODE */
   
   const finalTotal = steps.reduce((s, x) => s + x.nights, 0);
   console.log(`[LOG-CONTROLE][NIGHTS] ========== RÉSUMÉ CALCUL INITIAL ==========`);
@@ -11117,23 +11154,11 @@ if (previewBtn) {
 (async function initStateManager() {
   console.log('[LOG-CONTROLE][INIT] Initialisation State Manager...');
   
-  // Charger Firebase si pas déjà chargé
+  // Firebase est chargé en statique dans le head
   if (!window.firebase?.apps?.length) {
-    console.log('[LOG-CONTROLE][INIT] 🔄 Chargement Firebase...');
-    const load = (src) => new Promise((ok, ko) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = ok;
-      s.onerror = () => ko(new Error('load ' + src));
-      document.head.appendChild(s);
-    });
-    
+    console.log('[LOG-CONTROLE][INIT] 🔄 Initialisation Firebase...');
     try {
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
-      
-      // Attendre que firebase.auth soit vraiment disponible (le script peut mettre du temps à s'initialiser)
+      // Attendre que firebase.auth soit disponible (au cas où)
       let authReady = false;
       for (let i = 0; i < 50 && !authReady; i++) {
         if (typeof window.firebase?.auth === 'function') {
@@ -11144,7 +11169,7 @@ if (previewBtn) {
       }
       
       if (!authReady) {
-        throw new Error('firebase.auth not available after loading');
+        throw new Error('firebase.auth not available');
       }
       
       // Initialiser Firebase seulement si pas déjà fait

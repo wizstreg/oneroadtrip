@@ -5,12 +5,40 @@
  * Utilisé par : roadtrip_detail.html, roadtrip_detail_simple.html, roadtrip_mobile.html
  * 
  * Dépendances : Aucune (module autonome)
+ * 
+ * FONCTIONS PRINCIPALES :
+ * - loadItinerary(options) : Charge un itinéraire depuis les fichiers JSON
+ * - loadFromTemp(rtKey) : Charge depuis localStorage (itinéraires temporaires)
+ * - loadFromDashboard(tripId) : Charge depuis Firestore (voyages utilisateur)
+ * - ensurePlacesIndex(options) : Charge l'index des lieux
+ * - loadPhotosCache() : Charge le cache des photos
  */
 
 (function(global) {
   'use strict';
 
+  // ============================================================
+  // CONFIGURATION
+  // ============================================================
+  
+  const CONFIG = {
+    BASE_URL: './data/Roadtripsprefabriques/countries',
+    PHOTOS_PATHS: [
+      './data/photos-json/photos_lieux.json',
+      '/data/photos-json/photos_lieux.json',
+      '../data/photos-json/photos_lieux.json'
+    ]
+  };
+
+  // ============================================================
+  // MODULE PRINCIPAL
+  // ============================================================
+
   const ORT_DATA_LOADER = {
+
+    // ============================================================
+    // FONCTIONS UTILITAIRES DE BASE
+    // ============================================================
 
     /**
      * Charge un fichier JSON avec gestion d'erreurs
@@ -41,8 +69,7 @@
      * @returns {Promise<{data: Object, lang: string}|null>} Données et langue chargée, ou null
      */
     loadWithLangFallback: async function(baseUrl, lang) {
-      // Essayer dans l'ordre : langue demandée → EN → FR → ancien format
-      const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i); // unique
+      const langOrder = [lang, 'en', 'fr'].filter((v, i, a) => a.indexOf(v) === i);
       
       for (const tryLang of langOrder) {
         const url = baseUrl.replace('.json', `-${tryLang}.json`);
@@ -62,6 +89,366 @@
       
       return null;
     },
+
+    // ============================================================
+    // CHARGEMENT DES ITINÉRAIRES
+    // ============================================================
+
+    /**
+     * Charge un itinéraire depuis les fichiers JSON
+     * @param {Object} options - Options de chargement
+     * @param {string} options.cc - Code pays (ex: 'DE', 'FR')
+     * @param {string} options.itinId - ID de l'itinéraire
+     * @param {string} [options.lang='fr'] - Code langue
+     * @returns {Promise<Object>} Données de l'itinéraire avec steps normalisées
+     */
+    loadItinerary: async function(options) {
+      const { cc, itinId, lang = 'fr' } = options;
+      
+      if (!cc || !itinId) {
+        throw new Error('cc et itinId requis');
+      }
+      
+      console.log('[ORT-DATA] === LOAD ITINERARY ===');
+      console.log('[ORT-DATA] cc:', cc, '/ itinId:', itinId, '/ lang:', lang);
+      
+      // Vérifier si c'est un itinéraire composé (id1+id2+id3)
+      const isComposed = typeof global.isComposedId === 'function' 
+        ? global.isComposedId(itinId) 
+        : itinId.includes('+');
+      
+      if (isComposed) {
+        return await this._loadComposedItinerary(cc, itinId, lang);
+      }
+      
+      // Charger le fichier d'itinéraires
+      const ccLower = cc.toLowerCase();
+      const url = `${CONFIG.BASE_URL}/${ccLower}/${ccLower}.itins.modules-${lang}.json`;
+      
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status} pour ${url}`);
+      
+      const data = await resp.json();
+      const itins = data.itins || data.itineraries || data || [];
+      const itin = itins.find(i => (i.id || i.itin_id) === itinId);
+      
+      if (!itin) throw new Error(`Itinéraire ${itinId} non trouvé`);
+      
+      // Normaliser les steps
+      const steps = this._normalizeSteps(itin.days_plan || itin.steps || [], cc);
+      
+      // Appliquer le regroupement des nuits par lieu
+      if (global.ORT_TRIP_CALC && global.ORT_TRIP_CALC.groupNightsByPlace) {
+        global.ORT_TRIP_CALC.groupNightsByPlace(steps);
+      }
+      
+      console.log(`[ORT-DATA] ✅ ${steps.length} étapes chargées pour "${itin.title || itin.name}"`);
+      
+      return {
+        title: itin.title || itin.name || 'Roadtrip',
+        cc: cc.toUpperCase(),
+        originalItinId: itinId,
+        steps: steps,
+        raw: itin
+      };
+    },
+
+    /**
+     * Charge un itinéraire composé (plusieurs itinéraires fusionnés)
+     * @private
+     */
+    _loadComposedItinerary: async function(cc, composedId, lang) {
+      console.log('[ORT-DATA] Chargement itinéraire composé:', composedId);
+      
+      const ids = typeof global.parseComposedIds === 'function'
+        ? global.parseComposedIds(composedId)
+        : composedId.split('+');
+      
+      const allSteps = [];
+      const allTitles = [];
+      
+      for (const id of ids) {
+        try {
+          const result = await this.loadItinerary({ cc, itinId: id, lang });
+          if (result && result.steps) {
+            allSteps.push(...result.steps);
+            allTitles.push(result.title);
+          }
+        } catch (e) {
+          console.error(`[ORT-DATA] Erreur chargement ${id}:`, e);
+        }
+      }
+      
+      if (allSteps.length === 0) {
+        throw new Error('Aucun itinéraire composé n\'a pu être chargé');
+      }
+      
+      // Appliquer le regroupement des nuits
+      if (global.ORT_TRIP_CALC && global.ORT_TRIP_CALC.groupNightsByPlace) {
+        global.ORT_TRIP_CALC.groupNightsByPlace(allSteps);
+      }
+      
+      return {
+        title: allTitles.join(' + '),
+        cc: cc.toUpperCase(),
+        originalItinId: composedId,
+        steps: allSteps,
+        raw: null
+      };
+    },
+
+    /**
+     * Charge un itinéraire depuis localStorage (temporaire)
+     * @param {string} rtKey - Clé de l'itinéraire temporaire
+     * @returns {Promise<Object>} Données de l'itinéraire
+     */
+    loadFromTemp: async function(rtKey) {
+      console.log('[ORT-DATA] === LOAD FROM TEMP ===');
+      console.log('[ORT-DATA] rtKey:', rtKey);
+      
+      const rawItins = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_itins`);
+      const rawPlaces = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_places`);
+      
+      if (!rawItins) {
+        throw new Error('Itinéraire temporaire non trouvé');
+      }
+      
+      let itinsObj, placesObj;
+      try {
+        itinsObj = JSON.parse(rawItins);
+        placesObj = rawPlaces ? JSON.parse(rawPlaces) : {};
+      } catch (e) {
+        throw new Error('Données corrompues');
+      }
+      
+      // Trouver l'itinéraire à utiliser
+      let toUse = null;
+      if (Array.isArray(itinsObj.days_plan) || Array.isArray(itinsObj.places)) {
+        toUse = itinsObj;
+      } else if (itinsObj.itineraries?.[0]) {
+        toUse = itinsObj.itineraries[0];
+      } else if (itinsObj.itins?.[0]) {
+        toUse = itinsObj.itins[0];
+      }
+      
+      if (!toUse) throw new Error('Structure itinéraire invalide');
+      
+      // Extraire les étapes
+      const rawSteps = toUse.days_plan || toUse.places || toUse.steps || [];
+      const cc = toUse.itin_id ? toUse.itin_id.split('::')[0].toUpperCase() : (itinsObj.country || 'XX');
+      
+      const steps = this._normalizeStepsFromTemp(rawSteps, placesObj);
+      
+      // Appliquer le regroupement des nuits
+      if (global.ORT_TRIP_CALC && global.ORT_TRIP_CALC.groupNightsByPlace) {
+        global.ORT_TRIP_CALC.groupNightsByPlace(steps);
+      }
+      
+      console.log(`[ORT-DATA] ✅ ${steps.length} étapes chargées depuis temp`);
+      
+      return {
+        title: toUse.title || toUse.name || 'Roadtrip',
+        cc: cc,
+        originalItinId: rtKey,
+        steps: steps,
+        raw: toUse
+      };
+    },
+
+    /**
+     * Charge un itinéraire depuis Firestore (dashboard utilisateur)
+     * @param {string} tripId - ID du voyage
+     * @returns {Promise<Object>} Données de l'itinéraire
+     */
+    loadFromDashboard: async function(tripId) {
+      console.log('[ORT-DATA] === LOAD FROM DASHBOARD ===');
+      console.log('[ORT-DATA] tripId:', tripId);
+      
+      // Essayer d'abord localStorage (rapide)
+      const localKey = `ort_trip_${tripId}`;
+      const localData = localStorage.getItem(localKey);
+      
+      if (localData) {
+        try {
+          const tripData = JSON.parse(localData);
+          if (tripData && tripData.steps && tripData.steps.length > 0) {
+            console.log('[ORT-DATA] ✅ Chargé depuis localStorage');
+            
+            // Appliquer le regroupement si nécessaire
+            if (global.ORT_TRIP_CALC && global.ORT_TRIP_CALC.groupNightsByPlace) {
+              global.ORT_TRIP_CALC.groupNightsByPlace(tripData.steps);
+            }
+            
+            return {
+              title: tripData.title || 'Mon voyage',
+              cc: tripData.cc || tripData.country || '',
+              originalItinId: tripData.originalItinId || tripId,
+              steps: tripData.steps,
+              raw: tripData
+            };
+          }
+        } catch (e) {
+          console.warn('[ORT-DATA] localStorage invalide:', e);
+        }
+      }
+      
+      // Sinon charger depuis Firestore
+      if (typeof firebase === 'undefined' || !firebase.auth) {
+        throw new Error('Firebase non disponible');
+      }
+      
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        throw new Error('Utilisateur non connecté');
+      }
+      
+      const doc = await firebase.firestore()
+        .collection('users')
+        .doc(user.uid)
+        .collection('trips')
+        .doc(tripId)
+        .get();
+      
+      if (!doc.exists) {
+        throw new Error('Voyage non trouvé dans Firestore');
+      }
+      
+      const tripData = doc.data();
+      let steps = tripData.steps || [];
+      
+      // Désérialiser si nécessaire
+      if (typeof steps === 'string') {
+        steps = JSON.parse(steps);
+      }
+      
+      // Appliquer le regroupement
+      if (global.ORT_TRIP_CALC && global.ORT_TRIP_CALC.groupNightsByPlace) {
+        global.ORT_TRIP_CALC.groupNightsByPlace(steps);
+      }
+      
+      console.log(`[ORT-DATA] ✅ ${steps.length} étapes chargées depuis Firestore`);
+      
+      return {
+        title: tripData.title || 'Mon voyage',
+        cc: tripData.cc || tripData.country || '',
+        originalItinId: tripData.originalItinId || tripId,
+        steps: steps,
+        raw: tripData
+      };
+    },
+
+    // ============================================================
+    // NORMALISATION DES STEPS
+    // ============================================================
+
+    /**
+     * Normalise les steps depuis days_plan
+     * @private
+     */
+    _normalizeSteps: function(daysPlan, cc) {
+      const steps = [];
+      
+      daysPlan.forEach((day, idx) => {
+        const nightData = day.night || {};
+        const placeId = nightData.place_id || day.place_id || '';
+        const coords = nightData.coords || [];
+        const suggestedDays = day.suggested_days || 1;
+        const driveMin = day.to_next_leg?.drive_min || 0;
+        const distanceKm = day.to_next_leg?.distance_km || 0;
+        
+        // Bonus transport pour longs trajets
+        let transportBonus = driveMin > 300 ? 1.0 : driveMin > 180 ? 0.5 : 0;
+        const nights = Math.max(0, Math.round(suggestedDays + transportBonus));
+        
+        let name = day.name || '';
+        if (!name && placeId) {
+          const parts = placeId.split('::');
+          name = parts[parts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || `Étape ${idx + 1}`;
+        }
+        
+        const visits = Array.isArray(day.visits) ? day.visits.map(v => typeof v === 'string' ? {text: v} : v) : [];
+        const activities = Array.isArray(day.activities) ? day.activities.map(a => typeof a === 'string' ? {text: a} : a) : [];
+        
+        // Photos
+        let photos = [];
+        if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
+        else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+        else if (typeof day.image === 'string' && day.image) photos = [day.image];
+        else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
+        
+        steps.push({
+          _idx: steps.length,
+          name: name || `Étape ${idx + 1}`,
+          lat: coords[0] || day.lat,
+          lng: coords[1] || day.lng || day.lon,
+          nights,
+          description: visits.map(v => v.text || v).filter(Boolean).join(' '),
+          photos,
+          distance_km: distanceKm,
+          placeId: placeId,
+          place_id: placeId,
+          visits,
+          activities,
+          rating: day.rating || 0,
+          suggested_days: suggestedDays,
+          _suggestedDays: suggestedDays,
+          _driveMinToNext: driveMin,
+          to_next_leg: day.to_next_leg || null
+        });
+      });
+      
+      return steps;
+    },
+
+    /**
+     * Normalise les steps depuis localStorage temp
+     * @private
+     */
+    _normalizeStepsFromTemp: function(rawSteps, placesObj = {}) {
+      return rawSteps.map((s, idx) => {
+        let photos = [];
+        if (Array.isArray(s.images) && s.images.length) photos = s.images;
+        else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+        else if (s.image) photos = [s.image];
+        else if (s.photo) photos = [s.photo];
+        else if (s.placeId && placesObj[s.placeId]?.photos) photos = placesObj[s.placeId].photos;
+        
+        let visits = [];
+        let activities = [];
+        if (Array.isArray(s.visits)) {
+          visits = s.visits.map(v => typeof v === 'string' ? {text: v} : v);
+        }
+        if (Array.isArray(s.activities)) {
+          activities = s.activities.map(a => typeof a === 'string' ? {text: a} : a);
+        }
+        // Fallback depuis placesObj
+        if (visits.length === 0 && s.placeId && placesObj[s.placeId]?.visits) {
+          visits = placesObj[s.placeId].visits.map(v => typeof v === 'string' ? {text: v} : v);
+        }
+        if (activities.length === 0 && s.placeId && placesObj[s.placeId]?.activities) {
+          activities = placesObj[s.placeId].activities.map(a => typeof a === 'string' ? {text: a} : a);
+        }
+        
+        return {
+          _idx: idx,
+          name: s.name || s.place_name || `Étape ${idx + 1}`,
+          lat: s.lat || s.latitude,
+          lng: s.lng || s.lon || s.longitude,
+          nights: s.nights || s.adjustedDays || 0,
+          description: s.description || s.desc || '',
+          photos,
+          distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+          placeId: s.placeId || s.place_id || null,
+          place_id: s.place_id || s.placeId || null,
+          visits,
+          activities
+        };
+      });
+    },
+
+    // ============================================================
+    // PLACES INDEX
+    // ============================================================
 
     /**
      * Charge l'index des lieux (places_index) pour un ou plusieurs pays
@@ -103,7 +490,7 @@
       for (const cc of countriesToLoad) {
         if (!cc) continue;
         // Dossier en majuscules (LK, FR, IT...), fichier en minuscules
-        const basePath = `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toLowerCase()}.places.master.json`;
+        const basePath = `${CONFIG.BASE_URL}/${cc.toUpperCase()}/${cc.toLowerCase()}.places.master.json`;
         const result = await this.loadWithLangFallback(basePath, lang);
         
         if (result && result.data) {
@@ -186,6 +573,10 @@
       return window.PLACES_INDEX[pid] || null;
     },
 
+    // ============================================================
+    // PHOTOS
+    // ============================================================
+
     /**
      * Récupère les photos d'un lieu depuis PHOTOS_CACHE
      * @param {string} pid - Place ID
@@ -247,13 +638,7 @@
         return window.PHOTOS_CACHE;
       }
       
-      const paths = [
-        './data/photos-json/photos_lieux.json',
-        '/data/photos-json/photos_lieux.json',
-        '../data/photos-json/photos_lieux.json'
-      ];
-      
-      for (const path of paths) {
+      for (const path of CONFIG.PHOTOS_PATHS) {
         try {
           const result = await this.loadJSON(path);
           if (result) {
@@ -272,7 +657,10 @@
     }
   };
 
-  // Exposer globalement
+  // ============================================================
+  // EXPOSITION GLOBALE
+  // ============================================================
+
   global.ORT_DATA_LOADER = ORT_DATA_LOADER;
 
   // Raccourcis pour compatibilité avec le code existant
@@ -282,7 +670,6 @@
   // Note: ensurePlacesIndex a une signature différente selon les fichiers
   // On expose une version compatible qui accepte soit un array, soit un objet options
   global.ensurePlacesIndex = global.ensurePlacesIndex || async function(additionalCountriesOrOptions = []) {
-    // Compatibilité: si c'est un array, convertir en options
     if (Array.isArray(additionalCountriesOrOptions)) {
       return ORT_DATA_LOADER.ensurePlacesIndex({
         mainCC: window.CC || window.state?.cc || window.state?.country || '',
@@ -291,7 +678,6 @@
         state: window.state
       });
     }
-    // Sinon c'est déjà un objet options
     return ORT_DATA_LOADER.ensurePlacesIndex(additionalCountriesOrOptions);
   };
 

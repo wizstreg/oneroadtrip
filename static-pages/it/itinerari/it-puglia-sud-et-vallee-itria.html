@@ -551,6 +551,7 @@ body {
     display: grid;
     gap: 40px;
     margin-bottom: 80px;
+    position: relative;
 }
 
 .day-card-enhanced {
@@ -1307,74 +1308,13 @@ body {
     }
 }
 
-/* === BANDEAU FLOTTANT UNIFIÉ === */
-.floating-cta {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    padding: 10px 15px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
-    z-index: 1000;
-}
-
-.floating-cta a, .floating-cta button {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border-radius: 20px;
-    text-decoration: none;
-    font-weight: 500;
-    font-size: 0.85rem;
-    cursor: pointer;
-    border: none;
-    transition: transform 0.2s, opacity 0.2s;
-}
-
-.floating-cta a:hover, .floating-cta button:hover {
-    transform: translateY(-2px);
-    opacity: 0.9;
-}
-
-/* Boutons secondaires (tous les itinéraires, créer) */
-.floating-cta .btn-secondary {
-    background: rgba(255,255,255,0.15);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-/* Bouton principal (personnaliser) */
-.floating-cta .btn-primary {
-    background: linear-gradient(135deg, #e53935, #ff6f00);
-    color: white;
-    font-weight: 600;
-}
-
-@media (max-width: 768px) {
-    .floating-cta { 
-        padding: 8px 10px; 
-        gap: 6px; 
-    }
-    .floating-cta a { 
-        padding: 6px 10px; 
-        font-size: 0.75rem; 
-    }
-}
-
 /* === SECTIONS === */
 
 @media print {
     @page { size: A4 portrait; margin: 0; }
     
-    /* Cacher tout le web + bandeau flottant */
-    .hero-advanced, .container-advanced, .footer-advanced, .floating-cta { display: none !important; }
+    /* Cacher tout le web */
+    .hero-advanced, .container-advanced, .footer-advanced { display: none !important; }
     
     /* Afficher le print */
     .print-version { display: block !important; }
@@ -1791,12 +1731,10 @@ body {
 }
 
 .blur-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 30%, rgba(255,255,255,1) 100%);
-    padding: 80px 20px 40px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.8) 0%, rgba(255,255,255,1) 30%);
+    padding: 40px 20px 60px;
+    margin-top: -80px;
+    position: relative;
     z-index: 10;
 }
 
@@ -1807,7 +1745,8 @@ body {
     background: white;
     border-radius: var(--radius-xl);
     padding: 30px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    border: 3px solid var(--primary);
 }
 
 .blur-icon {
@@ -1843,176 +1782,50 @@ body {
     flex-wrap: wrap;
 }
 
-.btn-signup, .btn-login {
-    padding: 12px 28px;
+.blur-note {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.btn-continue {
+    display: inline-block;
+    padding: 14px 32px;
     border-radius: 25px;
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.3s ease;
     border: none;
-}
-
-.btn-signup {
     background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
     color: white;
-}
-
-.btn-signup:hover {
-    transform: scale(1.05);
-    box-shadow: var(--shadow);
-}
-
-.btn-login {
-    background: transparent;
-    color: var(--primary);
-    border: 2px solid var(--primary);
-}
-
-.btn-login:hover {
-    background: var(--primary);
-    color: white;
-}
-
-.or-text {
-    color: var(--text-light);
-    font-size: 0.9rem;
-}
-
-/* ===== MODALE AUTHENTIFICATION ===== */
-.auth-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.6);
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-}
-
-.auth-modal.open {
-    display: flex;
-}
-
-.auth-modal-content {
-    background: white;
-    border-radius: var(--radius-xl);
-    padding: 40px;
-    max-width: 420px;
-    width: 100%;
-    position: relative;
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.auth-modal-close {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: none;
-    border: none;
-    font-size: 1.8rem;
-    cursor: pointer;
-    color: var(--text-light);
-    line-height: 1;
-}
-
-.auth-modal-close:hover {
-    color: var(--text);
-}
-
-.auth-modal-title {
-    text-align: center;
-    color: var(--primary);
-    margin-bottom: 10px;
-    font-size: 1.5rem;
-}
-
-.auth-modal-subtitle {
-    text-align: center;
-    color: var(--text-light);
-    font-size: 0.9rem;
-    margin-bottom: 30px;
-    line-height: 1.5;
-}
-
-.auth-form {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.auth-input {
-    padding: 14px 18px;
-    border: 2px solid var(--border);
-    border-radius: var(--radius);
-    font-size: 1rem;
-    transition: border-color 0.3s;
-}
-
-.auth-input:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-.auth-submit {
-    padding: 14px;
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    color: white;
-    border: none;
-    border-radius: 25px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    margin-top: 10px;
-}
-
-.auth-submit:hover {
-    transform: scale(1.02);
-    box-shadow: var(--shadow);
-}
-
-.auth-switch {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 0.9rem;
-    color: var(--text-light);
-}
-
-.auth-switch a {
-    color: var(--primary);
-    font-weight: 600;
     text-decoration: none;
 }
 
-.auth-switch a:hover {
+.btn-continue:hover {
+    transform: scale(1.05);
+    box-shadow: var(--shadow-lg);
+}
+
+.blur-alt {
+    margin-top: 20px;
+    font-size: 0.95rem;
+}
+
+.blur-alt a {
+    color: var(--primary);
     text-decoration: underline;
+    font-weight: 500;
+}
+
+.blur-alt a:hover {
+    color: var(--accent-start);
 }
 
 @media (max-width: 480px) {
-    .auth-modal-content {
-        padding: 30px 20px;
-    }
     .blur-actions {
         flex-direction: column;
-    }
-    .or-text {
-        display: none;
     }
 }
 </style>
@@ -2376,7 +2189,21 @@ body {
             </div>
                 </div>
             </div>
-        </div><div class="day-card-enhanced day-card-blurred" id="day-7">
+        </div>
+            <div class="blur-overlay" id="blur-overlay">
+                <div class="blur-overlay-content">
+                    <div class="blur-icon">🔓</div>
+                    <p class="blur-message">Per vedere gratuitamente il resto di questo percorso, modificarlo, integrare le tue future prenotazioni, stampare e conservare la guida di viaggio, continua alla pagina successiva.</p>
+                    <p class="blur-note">Accesso o registrazione necessari</p>
+                    <div class="blur-stats">
+                        <span class="blur-count">+4 tappe in più</span>
+                    </div>
+                    <div class="blur-actions">
+                        <a href="/roadtrip_detail.html?cc=IT&itin=IT%3A%3Apuglia%3A%3Asud-et-vallee-itria&lang=it&days=14" class="btn-continue">Continua →</a>
+                    </div>
+                    <p class="blur-alt"><a href="https://www.oneroadtrip.com/presentation.html">Oppure crea il tuo itinerario da zero</a></p>
+                </div>
+            </div><div class="day-card-enhanced day-card-blurred" id="day-7">
             <div class="day-header">
                 <div class="day-badge-advanced">
                     <div class="day-number">7-8</div>
@@ -2700,47 +2527,11 @@ body {
                 </div>
             </div>
         </div>
-        
-        
-        <!-- OVERLAY BLUR -->
-        <div class="blur-overlay" id="blur-overlay">
-            <div class="blur-overlay-content">
-                <div class="blur-icon">🔒</div>
-                <p class="blur-message">Per vedere il resto di questo itinerario, stamparlo, personalizzarlo e salvare le tue prenotazioni future, devi essere registrato e accedere allo strumento principale di costruzione.</p>
-                <div class="blur-stats">
-                    <span class="blur-count">+4 tappe in più</span>
-                </div>
-                <div class="blur-actions">
-                    <button class="btn-signup" onclick="openAuthModal('signup')">Registrati gratis</button>
-                    <span class="or-text">o</span>
-                    <button class="btn-login" onclick="openAuthModal('login')">Accedi</button>
-                </div>
-            </div>
-        </div>
-        
     </div>
     
     <div class="map-section-advanced" id="map-section">
         <h2 class="section-title-advanced">🗺️ Mappa dell'itinerario</h2>
         <div id="map"></div>
-    </div>
-</div>
-
-<!-- MODALE AUTHENTIFICATION -->
-<div class="auth-modal" id="authModal">
-    <div class="auth-modal-content">
-        <button class="auth-modal-close" onclick="closeAuthModal()">&times;</button>
-        <h2 class="auth-modal-title">Accedi all'itinerario completo</h2>
-        <p class="auth-modal-subtitle">Per vedere il resto di questo itinerario, stamparlo, personalizzarlo e salvare le tue prenotazioni future, devi essere registrato e accedere allo strumento principale di costruzione.</p>
-        <div class="auth-form" id="authForm">
-            <input type="email" id="authEmail" placeholder="Email" class="auth-input" required>
-            <input type="password" id="authPassword" placeholder="Password" class="auth-input" required>
-            <button type="button" class="auth-submit" id="authSubmit" onclick="submitAuth()">Registrati gratis</button>
-        </div>
-        <div class="auth-switch">
-            <span id="authSwitchText"></span>
-            <a href="#" onclick="toggleAuthMode(); return false;" id="authSwitchLink"></a>
-        </div>
     </div>
 </div>
 
@@ -2817,71 +2608,6 @@ body {
 
 <!-- SCRIPT CARTE INTERACTIVE - Chargement différé -->
 <script>
-// === MODALE AUTHENTIFICATION ===
-var authMode = 'signup';
-var itinId = 'IT::puglia::sud-et-vallee-itria';
-var lang = 'it';
-
-function openAuthModal(mode) {
-    authMode = mode || 'signup';
-    updateAuthUI();
-    document.getElementById('authModal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeAuthModal() {
-    document.getElementById('authModal').classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-function toggleAuthMode() {
-    authMode = authMode === 'signup' ? 'login' : 'signup';
-    updateAuthUI();
-}
-
-function updateAuthUI() {
-    var t = {"signupBtn":"Registrati gratis","loginBtn":"Accedi"};
-    var btn = document.getElementById('authSubmit');
-    var switchText = document.getElementById('authSwitchText');
-    var switchLink = document.getElementById('authSwitchLink');
-    if (authMode === 'signup') {
-        btn.textContent = t.signupBtn;
-        switchText.textContent = 'Déjà inscrit ? ';
-        switchLink.textContent = t.loginBtn;
-    } else {
-        btn.textContent = t.loginBtn;
-        switchText.textContent = 'Pas encore inscrit ? ';
-        switchLink.textContent = t.signupBtn;
-    }
-}
-
-function submitAuth() {
-    var email = document.getElementById('authEmail').value;
-    var password = document.getElementById('authPassword').value;
-    if (!email || !password) return;
-    
-    // Redirection vers l'outil principal avec les paramètres
-    var isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    var targetPage = isMobile ? '/roadtrip_mobile.html' : '/roadtrip_detail.html';
-    var params = new URLSearchParams({
-        itin: itinId,
-        action: authMode,
-        email: email,
-        lang: lang
-    });
-    window.location.href = targetPage + '?' + params.toString();
-}
-
-// Fermer la modale avec Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeAuthModal();
-});
-
-// Fermer en cliquant à l'extérieur
-document.getElementById('authModal').addEventListener('click', function(e) {
-    if (e.target === this) closeAuthModal();
-});
-
 // Lazy load Leaflet quand la carte devient visible
 function loadLeaflet() {
     if (window.leafletLoaded) return;
@@ -3034,12 +2760,6 @@ updateCarousel = function(dayIdx) {
     }
 };
 </script>
-
-<!-- Bandeau flottant avec les actions principales -->
-<div class="floating-cta">
-    <a href="index.html" class="btn-secondary">📋 Tutti gli itinerari</a>
-    <a href="/roadtrip_detail.html?cc=IT&itin=IT%3A%3Apuglia%3A%3Asud-et-vallee-itria&lang=it&days=14" class="btn-primary">✏️ Personalizza questo itinerario</a>
-</div>
 
 <script>
 // Gestion des erreurs d'images

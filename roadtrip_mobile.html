@@ -1701,10 +1701,29 @@ window.debugLog = function(msg) {
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
+<script>
+// Initialiser Firebase immédiatement après ort-config.js
+(function() {
+  // Attendre que ort-config soit prêt
+  function initFb() {
+    const cfg = window.ORT_CONFIG?.PROD || window.ORT_CONFIG?.PREPROD;
+    if (cfg && cfg.apiKey && window.firebase && !firebase.apps.length) {
+      firebase.initializeApp(cfg);
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      console.log('[FIREBASE] ✅ Initialisé en statique');
+    }
+  }
+  if (window.ORT_CONFIG) {
+    initFb();
+  } else {
+    window.addEventListener('load', initFb);
+  }
+})();
+</script>
 <script src="/js/ort-partners.js"></script>
 <script src="/js/ort-widgets.js"></script>
 <script src="/js/ort-trip-calc.js"></script>
@@ -1817,15 +1836,21 @@ window.debugLog = function(msg) {
           margin-bottom:10px;font-size:1rem;
         ">
         
-        <input id="authPwd" type="password" style="
-          width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
-          margin-bottom:10px;font-size:1rem;
-        ">
+        <div style="position:relative">
+          <input id="authPwd" type="password" style="
+            width:100%;padding:12px;padding-right:40px;border:1.5px solid #113f7a;border-radius:10px;
+            margin-bottom:10px;font-size:1rem;
+          ">
+          <button type="button" id="toggleAuthPwd" style="position:absolute;right:10px;top:12px;background:none;border:none;cursor:pointer;font-size:18px;">👁</button>
+        </div>
         
-        <input id="authPwd2" type="password" style="
-          display:none;width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
-          margin-bottom:10px;font-size:1rem;
-        ">
+        <div id="authPwd2Wrap" style="display:none;position:relative">
+          <input id="authPwd2" type="password" style="
+            width:100%;padding:12px;padding-right:40px;border:1.5px solid #113f7a;border-radius:10px;
+            margin-bottom:10px;font-size:1rem;
+          ">
+          <button type="button" id="toggleAuthPwd2" style="position:absolute;right:10px;top:12px;background:none;border:none;cursor:pointer;font-size:18px;">👁</button>
+        </div>
         
         <button id="authSubmit" style="
           width:100%;padding:14px;background:#113f7a;color:#fff;
@@ -1870,6 +1895,18 @@ window.debugLog = function(msg) {
     };
     document.getElementById('authCancel').onclick = closeModal;
     
+    // Toggle password visibility
+    document.getElementById('toggleAuthPwd').onclick = function() {
+      const pwd = document.getElementById('authPwd');
+      pwd.type = pwd.type === 'password' ? 'text' : 'password';
+      this.textContent = pwd.type === 'password' ? '👁' : '🙈';
+    };
+    document.getElementById('toggleAuthPwd2').onclick = function() {
+      const pwd2 = document.getElementById('authPwd2');
+      pwd2.type = pwd2.type === 'password' ? 'text' : 'password';
+      this.textContent = pwd2.type === 'password' ? '👁' : '🙈';
+    };
+    
     // Enter key
     ['authEmail', 'authPwd', 'authPwd2'].forEach(id => {
       document.getElementById(id).onkeydown = e => { if (e.key === 'Enter') handleSubmit(); };
@@ -1882,7 +1919,7 @@ window.debugLog = function(msg) {
     const title = document.getElementById('authModalTitle');
     const email = document.getElementById('authEmail');
     const pwd = document.getElementById('authPwd');
-    const pwd2 = document.getElementById('authPwd2');
+    const pwd2Wrap = document.getElementById('authPwd2Wrap');
     const submit = document.getElementById('authSubmit');
     const google = document.getElementById('authGoogle');
     const googleText = document.getElementById('authGoogleText');
@@ -1893,15 +1930,15 @@ window.debugLog = function(msg) {
     
     msg.style.display = 'none';
     email.placeholder = t('email');
-    pwd.placeholder = t('password');
-    pwd2.placeholder = t('confirmPassword');
+    document.getElementById('authPwd').placeholder = t('password');
+    document.getElementById('authPwd2').placeholder = t('confirmPassword');
     cancel.textContent = t('cancel');
     googleText.textContent = t('orGoogle');
     
     if (currentMode === 'login') {
       title.textContent = t('loginTitle');
-      pwd.style.display = '';
-      pwd2.style.display = 'none';
+      pwd.parentElement.style.display = '';
+      pwd2Wrap.style.display = 'none';
       google.style.display = '';
       submit.textContent = t('login');
       toggle.textContent = t('noAccount');
@@ -1909,16 +1946,16 @@ window.debugLog = function(msg) {
       forgot.style.display = '';
     } else if (currentMode === 'signup') {
       title.textContent = t('signupTitle');
-      pwd.style.display = '';
-      pwd2.style.display = '';
+      pwd.parentElement.style.display = '';
+      pwd2Wrap.style.display = 'block';
       google.style.display = '';
       submit.textContent = t('signup');
       toggle.textContent = t('hasAccount');
       forgot.style.display = 'none';
     } else if (currentMode === 'reset') {
       title.textContent = t('resetTitle');
-      pwd.style.display = 'none';
-      pwd2.style.display = 'none';
+      pwd.parentElement.style.display = 'none';
+      pwd2Wrap.style.display = 'none';
       google.style.display = 'none';
       submit.textContent = t('sendReset');
       toggle.textContent = t('hasAccount');
@@ -2487,17 +2524,11 @@ setTimeout(() => {
 async function init() {
   console.log('[LOG-CONTROLE][MOBILE] Init');
   
-  // === INITIALISER FIREBASE ===
+  // === FIREBASE DÉJÀ INITIALISÉ EN STATIQUE ===
+  // Vérifier juste qu'il est prêt
   try {
-    // Attendre que les scripts Firebase soient chargés
-    let waitCount = 0;
-    while (typeof firebase === 'undefined') {
-      await new Promise(r => setTimeout(r, 50));
-      waitCount++;
-      if (waitCount > 100) break; // 5s max
-    }
-    
     if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
+      // Init de secours si pas encore fait
       const host = location.hostname;
       const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
       const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
@@ -2505,7 +2536,7 @@ async function init() {
       
       if (safe && safe.apiKey) {
         firebase.initializeApp(safe);
-        console.log('[LOG-CONTROLE][MOBILE] ✅ Firebase initialisé');
+        console.log('[LOG-CONTROLE][MOBILE] ✅ Firebase initialisé (fallback)');
       }
     }
   } catch (e) {
@@ -2610,6 +2641,8 @@ async function init() {
   
   state.cc = cc;
   state.lang = lang;
+  state.targetNights = requestedDays || 0; // Nombre de jours demandés depuis l'URL
+  state.startDateStr = departDate || null; // Date de départ
   localStorage.setItem('ort_lang', lang);
   
   // INIT ORT_TRIPID - Source de vérité unique pour le tripId
@@ -2691,47 +2724,71 @@ async function init() {
     
     debugLog('Chargement terminé! state.steps=' + state.steps.length);
     
-    // === CALCUL AUTOMATIQUE DES NUITS (ort-trip-calc.js) ===
-    // Attendre 7 secondes pour le calcul de route, puis lancer
-    console.log('%c[LOG-CONTROLE][MOBILE] ========== AVANT CALCUL NUITS ==========', 'background: #990099; color: white; font-size: 14px; padding: 4px 8px;');
-    console.log('[LOG-CONTROLE][MOBILE] state.steps.length:', state.steps.length);
-    console.log('[LOG-CONTROLE][MOBILE] state.targetNights:', state.targetNights);
-    console.log('[LOG-CONTROLE][MOBILE] state.startDateStr:', state.startDateStr);
-    console.log('[LOG-CONTROLE][MOBILE] autoCalculateNights disponible:', typeof autoCalculateNights === 'function');
-    
-    if (state.steps.length > 0 && typeof autoCalculateNights === 'function') {
-      console.log('[LOG-CONTROLE][MOBILE] ⏳ Attente 7s pour calcul de route...');
-      setTimeout(() => {
-        const target = state.targetNights || state.steps.reduce((s, st) => s + (st._suggestedDays || 1), 0);
-        console.log('%c[LOG-CONTROLE][MOBILE] 🚀 LANCEMENT autoCalculateNights', 'background: #00cc00; color: white; font-size: 14px; padding: 4px 8px;');
-        console.log('[LOG-CONTROLE][MOBILE] Target nuits:', target);
-        console.log('[LOG-CONTROLE][MOBILE] Étapes avant calcul:');
-        state.steps.forEach((s, i) => {
-          console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s), rating=${s.rating || 'N/A'}`);
-        });
-        
-        autoCalculateNights(target);
-        
-        console.log('[LOG-CONTROLE][MOBILE] Étapes après calcul:');
-        state.steps.forEach((s, i) => {
-          const type = s._isHub ? '🏨 HUB' : (s._isSatellite ? '📍 Satellite' : '📍');
-          console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s) ${type}`);
-        });
-        
-        // Re-render après calcul
-        if (typeof renderList === 'function') renderList();
-        if (typeof updateSummary === 'function') updateSummary();
-        
-        console.log('[LOG-CONTROLE][MOBILE] ✅ Calcul nuits terminé et rendu rafraîchi');
-      }, 7000);
-    } else {
-      console.log('[LOG-CONTROLE][MOBILE] ⚠️ Skip calcul nuits - steps:', state.steps.length, ', autoCalculateNights:', typeof autoCalculateNights);
-    }
+    // === CALCUL AUTOMATIQUE DES NUITS - DÉPLACÉ AVANT RENDERLIST ===
+    // Le calcul est maintenant fait immédiatement avant le rendu
+    console.log('[LOG-CONTROLE][MOBILE] ℹ️ Calcul nuits déjà fait avant rendu');
     
     // 🔴 S'assurer que state.tripId est défini (nécessaire pour partage/sauvegarde)
     if (!state.tripId) {
       state.tripId = window.ORT_TRIPID?.get() || effectiveTripId;
       debugLog('tripId récupéré après chargement: ' + state.tripId);
+    }
+    
+    // === REGROUPEMENT DES NUITS PAR LIEU (centralisé dans ort-trip-calc.js) ===
+    if (state.steps.length > 0 && window.ORT_TRIP_CALC) {
+      console.log('[LOG-CONTROLE][MOBILE] Appel ORT_TRIP_CALC.groupNightsByPlace...');
+      ORT_TRIP_CALC.groupNightsByPlace(state.steps);
+    }
+    
+    /* >>> ANCIEN CODE INLINE - COMMENTÉ - À SUPPRIMER <<<
+    // === REGROUPEMENT DES NUITS PAR LIEU (comme RT detail) ===
+    // Si plusieurs jours consécutifs au même place_id → fusionner sur la première étape
+    if (state.steps.length > 0) {
+      console.log('[LOG-CONTROLE][MOBILE] === REGROUPEMENT DES NUITS PAR LIEU ===');
+      let currentPlaceId = null;
+      let currentGroupStart = 0;
+      let currentGroupCount = 0;
+      
+      for (let i = 0; i <= state.steps.length; i++) {
+        const step = state.steps[i];
+        const placeId = step?.place_id || step?.placeId || `step_${i}`;
+        
+        if (i === state.steps.length || placeId !== currentPlaceId) {
+          // Fin du groupe précédent
+          if (currentGroupCount > 1 && currentPlaceId !== null) {
+            let totalNights = 0;
+            for (let j = currentGroupStart; j < currentGroupStart + currentGroupCount; j++) {
+              totalNights += state.steps[j].nights || 0;
+            }
+            state.steps[currentGroupStart].nights = totalNights;
+            state.steps[currentGroupStart]._isGroupHead = true;
+            for (let j = currentGroupStart + 1; j < currentGroupStart + currentGroupCount; j++) {
+              state.steps[j].nights = 0;
+              state.steps[j]._isGroupMember = true;
+            }
+            console.log(`[LOG-CONTROLE][MOBILE] Groupe: ${state.steps[currentGroupStart].name} (${currentGroupCount} jours) → ${totalNights} nuit(s)`);
+          }
+          if (i < state.steps.length) {
+            currentPlaceId = placeId;
+            currentGroupStart = i;
+            currentGroupCount = 1;
+          }
+        } else {
+          currentGroupCount++;
+        }
+      }
+    }
+    FIN ANCIEN CODE */
+    
+    // === CALCUL DES NUITS IMMÉDIAT (avant rendu) ===
+    if (state.steps.length > 0 && window.ORT_TRIP_CALC) {
+      const target = state.targetNights || state.steps.reduce((s, st) => s + (st._suggestedDays || 1), 0) || state.steps.length;
+      console.log('[LOG-CONTROLE][MOBILE] 🚀 Calcul nuits immédiat, target:', target);
+      console.log('[LOG-CONTROLE][MOBILE] state.steps.length:', state.steps.length);
+      ORT_TRIP_CALC.autoCalculateNights(state, target);
+      console.log('[LOG-CONTROLE][MOBILE] ✅ Nuits calculées avant rendu');
+    } else {
+      console.log('[LOG-CONTROLE][MOBILE] ⚠️ Skip calcul nuits - steps:', state.steps.length, ', ORT_TRIP_CALC:', !!window.ORT_TRIP_CALC);
     }
     
     debugLog('Appel renderList...');
@@ -3483,7 +3540,30 @@ FIN autoCalculateNights */
 // === DATA LOADING ===
 // isComposedId() et parseComposedIds() → fournis par ort-utils.js
 
+// === LOAD ITINERARY - UTILISE ORT_DATA_LOADER CENTRALISÉ ===
 async function loadItinerary(cc, itinId, lang) {
+  console.log('[LOG-CONTROLE][MOBILE] === loadItinerary via ORT_DATA_LOADER ===');
+  
+  if (!window.ORT_DATA_LOADER) {
+    throw new Error('ORT_DATA_LOADER non disponible');
+  }
+  
+  const result = await ORT_DATA_LOADER.loadItinerary({ cc, itinId, lang });
+  
+  // Appliquer au state
+  state.title = result.title;
+  state.cc = result.cc;
+  state._originalItinId = result.originalItinId;
+  state.steps = result.steps;
+  
+  console.log(`[LOG-CONTROLE][MOBILE] ✅ ${state.steps.length} étapes chargées via ORT_DATA_LOADER`);
+  state.steps.forEach((s, i) => {
+    console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s)`);
+  });
+}
+
+/* >>> ANCIEN CODE loadItinerary - COMMENTÉ - À SUPPRIMER <<<
+async function loadItinerary_OLD(cc, itinId, lang) {
   console.log('%c[LOG-CONTROLE][MOBILE] ========== LOAD ITINERARY ==========', 'background: #006699; color: white; font-size: 14px; padding: 4px 8px;');
   console.log('[LOG-CONTROLE][MOBILE] cc:', cc);
   console.log('[LOG-CONTROLE][MOBILE] itinId:', itinId);
@@ -3658,6 +3738,7 @@ async function loadItinerary(cc, itinId, lang) {
     console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s), lat=${s.lat}, lng=${s.lng}`);
   });
 }
+FIN ANCIEN CODE loadItinerary */
 
 async function loadFromFirebase(rtKey) {
   if (typeof firebase === 'undefined') {

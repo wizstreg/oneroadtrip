@@ -1843,6 +1843,21 @@ document.head.appendChild(style);
 })();
 </script>
 
+<!-- Firebase SDK - chargé UNE SEULE FOIS en statique -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// Initialiser Firebase immédiatement
+(function() {
+  if (window.__FIREBASE_CONFIG__ && window.__FIREBASE_CONFIG__.apiKey && !firebase.apps.length) {
+    firebase.initializeApp(window.__FIREBASE_CONFIG__);
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    console.log('[FIREBASE] ✅ Initialisé en statique');
+  }
+})();
+</script>
+
 <!-- Stay22 Affiliate Script -->
 <script>
   (function (s, t, a, y, twenty, two) {
@@ -1921,6 +1936,27 @@ document.head.appendChild(style);
     </div>
   </div>
 </header>
+
+<!-- Modale Email Auth -->
+<div id="emailModal" role="dialog" aria-modal="true" aria-label="E-mail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000">
+  <div class="modal-card" style="width:min(440px,92vw);background:#fff;border-radius:14px;border:1px solid #c3d6b6;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.16);color:#113f7a">
+    <h3 id="emailTitle" style="margin:0 0 6px" data-i18n="emailLogin">Connexion par e-mail</h3>
+    <div id="alertContainer"></div>
+    <input id="emailInput" class="input" type="email" placeholder="Votre e-mail" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+    <div class="input-wrap" style="position:relative">
+      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd1" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
+    </div>
+    <div id="pwd2Group" class="input-wrap" style="display:none;position:relative">
+      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe" autocomplete="new-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd2" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
+    </div>
+    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button id="emailCancel" class="btn" type="button" style="background:#fff;color:#113f7a;border-color:#113f7a" data-i18n="cancel">Annuler</button>
+      <button id="emailGo" class="btn" type="button" style="background:#113f7a;border-color:#113f7a" data-i18n="validate">Valider</button>
+    </div>
+  </div>
+</div>
 
 <!-- ⬇️ LANGUAGE SELECTOR HANDLER -->
 <script>
@@ -4827,7 +4863,16 @@ async function initFromItin(it){
   
   console.log(`[NIGHTS] Total suggéré: ${totalSuggested}j, Target: ${targetDays}j, Avg rating: ${avgRating.toFixed(1)}, Avg distance: ${avgDistanceKm.toFixed(0)}km`);
   
-  // 2.5. FUSIONNER les étapes identiques (même place_id)
+  // === 2.5. REGROUPEMENT DES NUITS PAR LIEU (centralisé dans ort-trip-calc.js) ===
+  if (window.ORT_TRIP_CALC) {
+    console.log('[NIGHTS] Appel ORT_TRIP_CALC.groupNightsByPlace...');
+    ORT_TRIP_CALC.groupNightsByPlace(steps);
+  }
+  
+  /* >>> ANCIEN CODE INLINE - FUSION DOUBLONS - COMMENTÉ - À SUPPRIMER <<<
+  // NOTE: Cette logique fusionnait TOUS les doublons (même non-consécutifs)
+  // La nouvelle logique groupNightsByPlace ne fusionne que les CONSÉCUTIFS
+  
   const mergedSteps = [];
   const placeMap = new Map(); // place_id → index dans mergedSteps
   
@@ -4901,6 +4946,7 @@ async function initFromItin(it){
     const newTargetDays = state.requestedDays > 0 ? state.requestedDays : (estimatedDaysBase > 0 ? estimatedDaysBase : newTotalSuggested);
     console.log(`[FUSION] Nouveau total suggéré: ${newTotalSuggested}j, Target: ${newTargetDays}j`);
   }
+  FIN ANCIEN CODE */
   
   // ⚠️ NETTOYER les anciens champs hub/satellite (peuvent venir du JSON)
   steps.forEach(step => {
@@ -8710,23 +8756,14 @@ console.log('[GROUPS V7] Attente de state...');
       await window.__ort_ready;
     }
     
-    // Charger Firebase si pas déjà chargé
-    function loadScript(src) {
-      return new Promise(function(ok, ko) {
-        if (document.querySelector('script[src="'+src+'"]')) return ok();
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = ok;
-        s.onerror = ko;
-        document.head.appendChild(s);
-      });
-    }
-    
+    // Firebase est chargé en statique dans le head
     async function ensureFb() {
       if (window.firebase?.apps?.length) return window.firebase;
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
-      await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+      // Attendre que firebase soit prêt (au cas où)
+      for (let i = 0; i < 50; i++) {
+        if (window.firebase?.apps?.length) return window.firebase;
+        await new Promise(r => setTimeout(r, 50));
+      }
       if (!window.firebase.apps?.length && window.__FIREBASE_CONFIG__) {
         window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
       }
@@ -8840,6 +8877,78 @@ console.log('[GROUPS V7] Attente de state...');
 })();
 </script>
 
+<!-- ===== EMAIL MODAL HANDLER ===== -->
+<script>
+(function(){
+  const modal = document.getElementById('emailModal');
+  if (!modal) return;
+  
+  const email = document.getElementById('emailInput');
+  const pwd = document.getElementById('pwdInput');
+  const pwd2 = document.getElementById('pwd2Input');
+  const pwd2Group = document.getElementById('pwd2Group');
+  const btnValider = document.getElementById('emailGo');
+  const btnCancel = document.getElementById('emailCancel');
+  const title = document.getElementById('emailTitle');
+  const alertWrap = document.getElementById('alertContainer');
+  const togglePwd1 = document.getElementById('togglePwd1');
+  const togglePwd2 = document.getElementById('togglePwd2');
+  
+  // Toggle password visibility
+  if(togglePwd1){ togglePwd1.addEventListener('click', ()=>{ pwd.type = pwd.type==='password' ? 'text' : 'password'; togglePwd1.textContent = pwd.type==='password' ? '👁' : '🙈'; }); }
+  if(togglePwd2){ togglePwd2.addEventListener('click', ()=>{ pwd2.type = pwd2.type==='password' ? 'text' : 'password'; togglePwd2.textContent = pwd2.type==='password' ? '👁' : '🙈'; }); }
+  
+  function showMsg(text, ok){ alertWrap.innerHTML='<div style="padding:10px;border:1px solid '+(ok?'#bbf7d0':'#fecaca')+';border-radius:8px;margin:6px 0;background:'+(ok?'#f0fdf4':'#fef2f2')+';color:'+(ok?'#166534':'#dc2626')+'">'+text+'</div>'; }
+  
+  let isSignupMode = false;
+  function switchMode(signup){ 
+    isSignupMode = signup; 
+    title.textContent = signup ? 'Créer un compte' : 'Connexion par e-mail'; 
+    if(pwd2Group) pwd2Group.style.display = signup ? 'block' : 'none'; 
+    alertWrap.innerHTML = ''; 
+  }
+  
+  btnCancel?.addEventListener('click', ()=>{ modal.style.display='none'; alertWrap.innerHTML=''; isSignupMode = false; });
+  
+  btnValider?.addEventListener('click', async()=>{
+    try{
+      if (typeof firebase === 'undefined' || !firebase.auth) {
+        return showMsg("Firebase non chargé. Réessayez.", false);
+      }
+      const a = firebase.auth();
+      const mail = (email.value||'').trim().toLowerCase();
+      const pass = pwd.value||'';
+      
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return showMsg("E-mail invalide", false);
+      if(!pass || pass.length<6) return showMsg("Mot de passe ≥ 6 caractères", false);
+      
+      // Mode création de compte
+      if(isSignupMode || pwd2Group.style.display !== 'none'){
+        const pass2 = pwd2.value||'';
+        if(pass !== pass2) return showMsg("Les mots de passe ne correspondent pas", false);
+        const r = await a.createUserWithEmailAndPassword(mail, pass);
+        if(r?.user){ 
+          await r.user.sendEmailVerification();
+          showMsg("Compte créé ! Vérifiez votre e-mail.", true); 
+          setTimeout(()=>{ modal.style.display='none'; }, 1500); 
+        }
+        return;
+      }
+      
+      // Mode connexion
+      const r = await a.signInWithEmailAndPassword(mail, pass).catch(async(e)=>{
+        if(e.code==='auth/user-not-found'){ switchMode(true); showMsg("Aucun compte. Création ci-dessous.", false); return null; }
+        if(e.code==='auth/wrong-password'){ showMsg("Mot de passe incorrect", false); return null; }
+        throw e;
+      });
+      if(r?.user){ showMsg("Connexion réussie.", true); setTimeout(()=>{ modal.style.display='none'; }, 500); }
+    }catch(e){ console.error('[AUTH]', e); showMsg("Erreur: " + (e.message || "Réessayez."), false); }
+  });
+  
+  console.log('[EMAIL-MODAL] ✅ Handler actif');
+})();
+</script>
+
 <!-- ===== INITIALISATION STATE MANAGER (SYNC) ===== -->
 <script>
 (async function initStateManager() {
@@ -8851,23 +8960,11 @@ console.log('[GROUPS V7] Attente de state...');
     console.log('[LOG-CONTROLE][INIT] ✅ Config Firebase prête');
   }
   
-  // Charger Firebase si pas déjà chargé
+  // Firebase est chargé en statique dans le head
   if (!window.firebase?.apps?.length) {
-    console.log('[LOG-CONTROLE][INIT] 🔄 Chargement Firebase...');
-    const load = (src) => new Promise((ok, ko) => {
-      const s = document.createElement('script');
-      s.src = src;
-      s.onload = ok;
-      s.onerror = () => ko(new Error('load ' + src));
-      document.head.appendChild(s);
-    });
-    
+    console.log('[LOG-CONTROLE][INIT] 🔄 Initialisation Firebase...');
     try {
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js");
-      await load("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js");
-      
-      // Attendre que firebase.auth soit vraiment disponible
+      // Attendre que firebase.auth soit disponible (au cas où)
       let authReady = false;
       for (let i = 0; i < 50 && !authReady; i++) {
         if (typeof window.firebase?.auth === 'function') {
@@ -8878,7 +8975,7 @@ console.log('[GROUPS V7] Attente de state...');
       }
       
       if (!authReady) {
-        throw new Error('firebase.auth not available after loading');
+        throw new Error('firebase.auth not available');
       }
       
       // Initialiser Firebase seulement si pas déjà fait
