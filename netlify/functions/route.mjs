@@ -1,5 +1,5 @@
 // netlify/functions/route.mjs
-// Format Netlify Functions v2 (pas Express)
+// Format Netlify Functions v2 - utilise Request/Response standard
 
 // ====== CONFIG ======
 const MAPBOX_KEY = process.env.MAPBOX_KEY || '';
@@ -35,16 +35,15 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
 const okResp = (km, minutes) => ({ ok: true, km: Math.round(km), minutes: Math.round(minutes) });
 const failResp = (msg) => ({ ok: false, error: msg });
 
-// ====== RESPONSE HELPER ======
-const jsonResponse = (statusCode, data) => ({
-  statusCode,
+// ====== RESPONSE HELPER (Netlify v2 - utilise Response standard) ======
+const jsonResponse = (statusCode, data) => new Response(JSON.stringify(data), {
+  status: statusCode,
   headers: {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Cache-Control': 'public, max-age=300'
-  },
-  body: JSON.stringify(data)
+  }
 });
 
 // ====== PROVIDERS ======
@@ -103,16 +102,16 @@ function routeEstimate(start, end) {
   return { km, minutes: (km / 65) * 60 };
 }
 
-// ====== MAIN HANDLER (Netlify Functions format) ======
-export default async (event, context) => {
+// ====== MAIN HANDLER (Netlify Functions v2 - request/Response standard) ======
+export default async (request, context) => {
   try {
     // Handle CORS preflight
-    if (event.httpMethod === 'OPTIONS') {
+    if (request.method === 'OPTIONS') {
       return jsonResponse(200, { ok: true });
     }
 
-    // Parse query parameters from URL
-    const url = new URL(event.rawUrl || `https://x.com${event.path}?${event.rawQuery || ''}`);
+    // Parse query parameters from request.url (standard Web API)
+    const url = new URL(request.url);
     const params = url.searchParams;
     
     const mode = params.get('mode') || 'driving';
