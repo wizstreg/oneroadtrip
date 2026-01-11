@@ -219,19 +219,35 @@
     // Attendre ORT_HEADER pour avoir showEmailModal
     await waitForHeader();
 
-    // Écouter les changements d'état auth
-    fb.auth().onAuthStateChanged((user) => {
-      if (user && (user.emailVerified || user.providerData?.some(p => p.providerId !== 'password'))) {
-        // Utilisateur connecté et vérifié (ou via Google)
-        console.log('[ORT-AUTH-GATE] Utilisateur authentifié:', user.email);
+    // Attendre que Firebase ait restauré la session (premier appel de onAuthStateChanged)
+    const user = await new Promise((resolve) => {
+      const unsubscribe = fb.auth().onAuthStateChanged((u) => {
+        unsubscribe(); // Se désabonner après le premier appel
+        resolve(u);
+      });
+    });
+
+    // Vérifier l'utilisateur
+    if (user && (user.emailVerified || user.providerData?.some(p => p.providerId !== 'password'))) {
+      // Utilisateur connecté et vérifié (ou via Google)
+      console.log('[ORT-AUTH-GATE] ✅ Utilisateur authentifié:', user.email);
+      // Ne rien faire, laisser la page se charger normalement
+    } else if (user && !user.emailVerified) {
+      // Connecté mais email non vérifié
+      console.log('[ORT-AUTH-GATE] ⚠️ Email non vérifié:', user.email);
+      showAuthRequiredModal();
+    } else {
+      // Non connecté
+      console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté');
+      showAuthRequiredModal();
+    }
+
+    // Écouter les changements futurs (logout, etc.)
+    fb.auth().onAuthStateChanged((u) => {
+      if (u && (u.emailVerified || u.providerData?.some(p => p.providerId !== 'password'))) {
         closeAuthRequiredModal();
-      } else if (user && !user.emailVerified) {
-        // Connecté mais email non vérifié
-        console.log('[ORT-AUTH-GATE] Email non vérifié:', user.email);
-        showAuthRequiredModal();
-      } else {
-        // Non connecté
-        console.log('[ORT-AUTH-GATE] Utilisateur non connecté');
+      } else if (!document.getElementById(MODAL_ID)) {
+        // Si déconnecté et modale pas affichée, l'afficher
         showAuthRequiredModal();
       }
     });
