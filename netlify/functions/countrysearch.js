@@ -123,7 +123,7 @@ function fallbackSearch(query, lang, limit) {
     }));
 }
 
-export async function handler(event) {
+export default async (request, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -131,25 +131,25 @@ export async function handler(event) {
     'Content-Type': 'application/json; charset=utf-8'
   };
   
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 204, headers });
   }
   
   try {
-    const params = event.queryStringParameters || {};
-    const query = (params.q || '').trim();
-    const lang = params.lang || 'fr';
-    const limit = Math.max(1, Math.min(20, parseInt(params.limit) || 12));
+    const url = new URL(request.url);
+    const query = (url.searchParams.get('q') || '').trim();
+    const lang = url.searchParams.get('lang') || 'fr';
+    const limit = Math.max(1, Math.min(20, parseInt(url.searchParams.get('limit')) || 12));
     
     if (!query || query.length < 2) {
-      return { statusCode: 200, headers, body: JSON.stringify({ items: [] }) };
+      return new Response(JSON.stringify({ items: [] }), { status: 200, headers });
     }
     
     // Cache
     const cacheKey = `country:${query.toLowerCase()}:${lang}`;
     const cached = getCached(cacheKey);
     if (cached) {
-      return { statusCode: 200, headers, body: JSON.stringify({ ...cached, cached: true }) };
+      return new Response(JSON.stringify({ ...cached, cached: true }), { status: 200, headers });
     }
     
     let items = [];
@@ -190,10 +190,10 @@ export async function handler(event) {
     const result = { items, source };
     setCache(cacheKey, result);
     
-    return { statusCode: 200, headers, body: JSON.stringify(result) };
+    return new Response(JSON.stringify(result), { status: 200, headers });
     
   } catch (e) {
     console.error('Error:', e);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message, items: [] }) };
+    return new Response(JSON.stringify({ error: e.message, items: [] }), { status: 500, headers });
   }
 }

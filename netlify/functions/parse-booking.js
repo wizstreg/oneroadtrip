@@ -3,7 +3,7 @@
  * Gemini Flash + Fallback OpenRouter gratuit
  */
 
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 // Init Firebase Admin avec Service Account
 if (!admin.apps.length) {
@@ -368,7 +368,7 @@ function makePreview(data) {
 }
 
 // ===== HANDLER =====
-exports.handler = async (event) => {
+export default async (request, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -376,31 +376,31 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 204, headers });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
   }
 
   try {
-    const { content } = JSON.parse(event.body || '{}');
+    const { content } = await request.json();
     
     if (!content || content.length < 50) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Contenu trop court' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Contenu trop court' }), { status: 400, headers });
     }
 
     // Auth
-    const user = await verifyToken(event.headers.authorization);
+    const user = await verifyToken(request.headers.get('authorization'));
     if (!user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Connexion requise' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Connexion requise' }), { status: 401, headers });
     }
 
     // Quota
     const quota = await checkQuota(user.uid, user.email);
     if (!quota.allowed) {
-      return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: `Quota atteint (${quota.limit}/mois)`, usage: quota }) };
+      return new Response(JSON.stringify({ success: false, error: `Quota atteint (${quota.limit}/mois)`, usage: quota }), { status: 429, headers });
     }
 
     // Parse
@@ -411,20 +411,16 @@ exports.handler = async (event) => {
     data.source = 'ai_parser';
     data.created_at = new Date().toISOString();
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data,
-        preview: makePreview(data),
-        usage: quota,
-        _meta: { model: result.model }
-      })
-    };
+    return new Response(JSON.stringify({
+      success: true,
+      data,
+      preview: makePreview(data),
+      usage: quota,
+      _meta: { model: result.model }
+    }), { status: 200, headers });
 
   } catch (e) {
     console.error('❌ Error:', e.message);
-    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers });
   }
 };

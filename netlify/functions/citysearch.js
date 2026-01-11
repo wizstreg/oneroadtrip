@@ -100,7 +100,7 @@ async function searchNominatim(query, countryCode, lang, limit) {
   return items;
 }
 
-export async function handler(event) {
+export default async (request, context) => {
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -110,26 +110,26 @@ export async function handler(event) {
   };
   
   // Préflight
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 204, headers });
   }
   
   try {
-    const params = event.queryStringParameters || {};
-    const query = (params.q || params.query || '').trim();
-    const countryCode = (params.country || params.countryCode || '').toUpperCase();
-    const lang = params.lang || 'fr';
-    const limit = Math.max(1, Math.min(20, parseInt(params.limit) || 12));
+    const url = new URL(request.url);
+    const query = (url.searchParams.get('q') || url.searchParams.get('query') || '').trim();
+    const countryCode = (url.searchParams.get('country') || url.searchParams.get('countryCode') || '').toUpperCase();
+    const lang = url.searchParams.get('lang') || 'fr';
+    const limit = Math.max(1, Math.min(20, parseInt(url.searchParams.get('limit')) || 12));
     
     if (!query || query.length < 2) {
-      return { statusCode: 200, headers, body: JSON.stringify({ items: [] }) };
+      return new Response(JSON.stringify({ items: [] }), { status: 200, headers });
     }
     
     // Cache
     const cacheKey = `${query.toLowerCase()}:${countryCode}:${lang}`;
     const cached = getCached(cacheKey);
     if (cached) {
-      return { statusCode: 200, headers, body: JSON.stringify({ ...cached, cached: true }) };
+      return new Response(JSON.stringify({ ...cached, cached: true }), { status: 200, headers });
     }
     
     const t0 = Date.now();
@@ -169,10 +169,10 @@ export async function handler(event) {
     const result = { items: unique, source, ms: Date.now() - t0 };
     setCache(cacheKey, result);
     
-    return { statusCode: 200, headers, body: JSON.stringify(result) };
+    return new Response(JSON.stringify(result), { status: 200, headers });
     
   } catch (e) {
     console.error('Error:', e);
-    return { statusCode: 500, headers, body: JSON.stringify({ error: e.message, items: [] }) };
+    return new Response(JSON.stringify({ error: e.message, items: [] }), { status: 500, headers });
   }
 }

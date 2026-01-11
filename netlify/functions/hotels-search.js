@@ -1,7 +1,7 @@
 // Netlify Function : Proxy pour API Hotelsbed
 // Fichier : netlify/functions/hotels-search.js
 
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const HOTELSBED_CONFIG = {
   apiKey: '67167daf09899646a6f16d5d6e6c6bfb',
@@ -15,7 +15,7 @@ function generateSignature() {
   return crypto.createHash('sha256').update(toHash).digest('hex');
 }
 
-exports.handler = async (event, context) => {
+export default async (request, context) => {
   // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -25,28 +25,20 @@ exports.handler = async (event, context) => {
   };
 
   // Preflight request
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 200, headers, body: '' };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 200, headers });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers });
   }
 
   try {
-    const params = JSON.parse(event.body);
+    const params = await request.json();
     const { lat, lon, checkIn, checkOut, radius = 15, maxResults = 3 } = params;
 
     if (!lat || !lon || !checkIn || !checkOut) {
-      return {
-        statusCode: 400,
-        headers,
-        body: JSON.stringify({ error: 'Missing required parameters: lat, lon, checkIn, checkOut' })
-      };
+      return new Response(JSON.stringify({ error: 'Missing required parameters: lat, lon, checkIn, checkOut' }), { status: 400, headers });
     }
 
     const signature = generateSignature();
@@ -89,14 +81,10 @@ exports.handler = async (event, context) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('[HOTELS-PROXY] API Error:', response.status, errorText);
-      return {
-        statusCode: response.status,
-        headers,
-        body: JSON.stringify({ 
-          error: `Hotelsbed API error: ${response.status}`,
-          details: errorText
-        })
-      };
+      return new Response(JSON.stringify({ 
+        error: `Hotelsbed API error: ${response.status}`,
+        details: errorText
+      }), { status: response.status, headers });
     }
 
     const data = await response.json();
@@ -140,18 +128,10 @@ exports.handler = async (event, context) => {
 
     console.log('[HOTELS-PROXY] Found:', hotels.length, 'hotels');
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({ hotels })
-    };
+    return new Response(JSON.stringify({ hotels }), { status: 200, headers });
 
   } catch (error) {
     console.error('[HOTELS-PROXY] Error:', error);
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: error.message })
-    };
+    return new Response(JSON.stringify({ error: error.message }), { status: 500, headers });
   }
 };

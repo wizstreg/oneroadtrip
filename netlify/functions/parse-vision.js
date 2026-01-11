@@ -4,7 +4,7 @@
  * Quotas: 2/jour, 15/mois par user
  */
 
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 // Init Firebase Admin
 if (!admin.apps.length) {
@@ -306,7 +306,7 @@ async function analyzePhoto(photoBase64, prompt, language) {
 }
 
 // ===== HANDLER =====
-exports.handler = async (event) => {
+export default async (request, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -314,30 +314,30 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 204, headers });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
   }
 
   try {
-    const { photo, prompt, language } = JSON.parse(event.body || '{}');
+    const { photo, prompt, language } = await request.json();
     
     // Validation
     if (!photo || !photo.startsWith('data:image')) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Photo invalide' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Photo invalide' }), { status: 400, headers });
     }
 
     if (!prompt || prompt.length < 3) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Demande trop courte' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Demande trop courte' }), { status: 400, headers });
     }
 
     // Auth
-    const user = await verifyToken(event.headers.authorization);
+    const user = await verifyToken(request.headers.get('authorization'));
     if (!user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Connexion requise' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Connexion requise' }), { status: 401, headers });
     }
 
     // Récupérer email (depuis token ou Firebase)
@@ -350,27 +350,23 @@ exports.handler = async (event) => {
     // Quota
     const quota = await checkQuota(user.uid, email);
     if (!quota.allowed) {
-      return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: quota.error, usage: quota }) };
+      return new Response(JSON.stringify({ success: false, error: quota.error, usage: quota }), { status: 429, headers });
     }
 
     // Analyze
     const result = await analyzePhoto(photo, prompt, language || 'fr');
     
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data: {
-          response: result.text
-        },
-        usage: quota,
-        _meta: { model: result.model }
-      })
-    };
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        response: result.text
+      },
+      usage: quota,
+      _meta: { model: result.model }
+    }), { status: 200, headers });
 
   } catch (e) {
     console.error('❌ Error:', e.message);
-    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers });
   }
 };

@@ -4,7 +4,7 @@
  * Quotas: 5/jour, 30/mois par user
  */
 
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 // Init Firebase Admin
 if (!admin.apps.length) {
@@ -182,7 +182,7 @@ async function saveDocument(uid, docData, thumbnail) {
 }
 
 // ===== HANDLER =====
-exports.handler = async (event) => {
+export default async (request, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -190,26 +190,26 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json'
   };
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers };
+  if (request.method === 'OPTIONS') {
+    return new Response('', { status: 204, headers });
   }
 
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ success: false, error: 'Method not allowed' }) };
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
   }
 
   try {
-    const { photo, save } = JSON.parse(event.body || '{}');
+    const { photo, save } = await request.json();
     
     // Validation photo
     if (!photo || !photo.startsWith('data:image')) {
-      return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Photo invalide' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Photo invalide' }), { status: 400, headers });
     }
 
     // Auth
-    const user = await verifyToken(event.headers.authorization);
+    const user = await verifyToken(request.headers.get('authorization'));
     if (!user) {
-      return { statusCode: 401, headers, body: JSON.stringify({ success: false, error: 'Connexion requise' }) };
+      return new Response(JSON.stringify({ success: false, error: 'Connexion requise' }), { status: 401, headers });
     }
 
     // Récupérer email
@@ -222,7 +222,7 @@ exports.handler = async (event) => {
     // Quota OCR
     const quota = await checkQuota(user.uid, email);
     if (!quota.allowed) {
-      return { statusCode: 429, headers, body: JSON.stringify({ success: false, error: quota.error, usage: quota }) };
+      return new Response(JSON.stringify({ success: false, error: quota.error, usage: quota }), { status: 429, headers });
     }
 
     // OCR via Gemini
@@ -236,17 +236,13 @@ exports.handler = async (event) => {
       // Vérifier limite documents
       const docLimit = await checkDocumentLimit(user.uid);
       if (!docLimit.allowed) {
-        return { 
-          statusCode: 200, 
-          headers, 
-          body: JSON.stringify({ 
-            success: true, 
-            data: docData, 
-            saved: false, 
-            error: `Limite de ${MAX_DOCUMENTS} documents atteinte`,
-            docLimit 
-          }) 
-        };
+        return new Response(JSON.stringify({ 
+          success: true, 
+          data: docData, 
+          saved: false, 
+          error: `Limite de ${MAX_DOCUMENTS} documents atteinte`,
+          docLimit 
+        }), { status: 200, headers });
       }
       
       // Créer thumbnail (garder version réduite)
@@ -254,20 +250,16 @@ exports.handler = async (event) => {
       savedDoc = await saveDocument(user.uid, docData, thumbnail);
     }
 
-    return {
-      statusCode: 200,
-      headers,
-      body: JSON.stringify({
-        success: true,
-        data: docData,
-        saved: !!savedDoc,
-        document: savedDoc,
-        usage: quota
-      })
-    };
+    return new Response(JSON.stringify({
+      success: true,
+      data: docData,
+      saved: !!savedDoc,
+      document: savedDoc,
+      usage: quota
+    }), { status: 200, headers });
 
   } catch (e) {
     console.error('❌ Error:', e.message);
-    return { statusCode: 500, headers, body: JSON.stringify({ success: false, error: e.message }) };
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers });
   }
 };

@@ -1,280 +1,243 @@
-/**
- * ORT-AUTH-GATE.js
- * Vérifie l'authentification au chargement des pages roadtrip_detail
- * Affiche une modale obligatoire si l'utilisateur n'est pas connecté
- * 
- * Prérequis :
- * - ort-i18n-auth.js chargé AVANT ce script
- * - ort-header.js chargé (pour showEmailModal)
- * - Firebase initialisé
- * 
- * Usage : Inclure ce script dans roadtrip_detail.html, roadtrip_detail_simple.html, roadtrip_mobile.html
- * <script src="/js/ort-auth-gate.js"></script>
- */
+// ort-auth-gate.js - Gate d'authentification BLOQUANTE
+// Pas de fermeture possible sans connexion
 (function() {
   'use strict';
 
-  const MODAL_ID = 'ortAuthGateModal';
-  const MODAL_ZINDEX = 10001; // Au-dessus de la modale auth standard
-
-  // ============================================
-  // UTILITAIRES
-  // ============================================
+  const AUTH_GATE_DELAY = 1500; // Délai avant d'afficher la gate (laisser le temps à Firebase)
   
-  /** Récupère la langue courante */
-  function getLang() {
-    return window.ORT_I18N_AUTH?.detectLang?.() || 'fr';
-  }
+  // URLs de redirection (à adapter selon ton site)
+  const LOGIN_URL = '/login.html';
+  const SIGNUP_URL = '/signup.html';
 
-  /** Récupère les traductions */
-  function getT() {
-    return window.ORT_I18N_AUTH?.get?.(getLang()) || window.ORT_I18N_AUTH?.fr || {};
-  }
+  // Créer la modale bloquante
+  function createAuthGate() {
+    const i18n = window.ORT_AUTH_I18N || {};
+    const t = (key) => i18n.t ? i18n.t(key) : key;
+    const isRTL = i18n.isRTL ? i18n.isRTL() : false;
 
-  /** Attend que Firebase soit prêt */
-  async function waitForFirebase(maxAttempts = 50) {
-    for (let i = 0; i < maxAttempts; i++) {
-      if (window.firebase?.auth) {
-        return window.firebase;
-      }
-      await new Promise(r => setTimeout(r, 100));
-    }
-    console.warn('[ORT-AUTH-GATE] Firebase non disponible après timeout');
-    return null;
-  }
-
-  /** Attend que ORT_HEADER soit prêt */
-  async function waitForHeader(maxAttempts = 50) {
-    for (let i = 0; i < maxAttempts; i++) {
-      if (window.ORT_HEADER?.showEmailModal) {
-        return window.ORT_HEADER;
-      }
-      await new Promise(r => setTimeout(r, 100));
-    }
-    console.warn('[ORT-AUTH-GATE] ORT_HEADER non disponible après timeout');
-    return null;
-  }
-
-  // ============================================
-  // MODALE INSCRIPTION REQUISE
-  // ============================================
-
-  /** Crée et affiche la modale d'inscription obligatoire */
-  function showAuthRequiredModal() {
-    // Ne pas afficher si déjà présente
-    if (document.getElementById(MODAL_ID)) return;
-
-    const T = getT();
-    const lang = getLang();
-    const isRTL = lang === 'ar';
-
-    const modal = document.createElement('div');
-    modal.id = MODAL_ID;
-    modal.style.cssText = `
+    // Overlay qui floute et bloque tout
+    const overlay = document.createElement('div');
+    overlay.id = 'ort-auth-gate-overlay';
+    overlay.style.cssText = `
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 999999;
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: ${MODAL_ZINDEX};
-      padding: 20px;
-      direction: ${isRTL ? 'rtl' : 'ltr'};
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+
+    // Modale
+    const modal = document.createElement('div');
+    modal.id = 'ort-auth-gate-modal';
+    modal.style.cssText = `
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      transform: scale(0.9);
+      transition: transform 0.3s ease;
+      ${isRTL ? 'direction: rtl;' : ''}
     `;
 
     modal.innerHTML = `
-      <div style="
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      <div style="font-size: 48px; margin-bottom: 20px;">🔐</div>
+      <h2 style="margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; font-weight: 700;">
+        ${t('title')}
+      </h2>
+      <p style="margin: 0 0 20px 0; font-size: 15px; color: #555; line-height: 1.6;">
+        ${t('message')}
+      </p>
+      <p style="margin: 0 0 28px 0; font-size: 14px; color: #22c55e; font-weight: 600;">
+        ${t('freeNote')}
+      </p>
+      <button id="ort-auth-gate-signup" style="
+        display: block;
         width: 100%;
-        max-width: 420px;
-        padding: 32px;
-        text-align: center;
+        padding: 14px 24px;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
       ">
-        <!-- Icône -->
-        <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
-        
-        <!-- Titre -->
-        <h2 style="
-          margin: 0 0 16px;
-          font-size: 1.5rem;
-          color: #1a1a2e;
-          font-weight: 700;
-        ">${T.authRequiredTitle || 'Inscription requise'}</h2>
-        
-        <!-- Texte explicatif -->
-        <p style="
-          margin: 0 0 12px;
-          color: #555;
-          font-size: 1rem;
-          line-height: 1.5;
-        ">${T.authRequiredText || 'Pour voir la suite de cet itinéraire, vous devez être inscrit.'}</p>
-        
-        <!-- Mention gratuit -->
-        <p style="
-          margin: 0 0 24px;
-          color: #10b981;
-          font-size: 0.95rem;
-          font-weight: 600;
-        ">✓ ${T.authRequiredFree || 'Toutes ces fonctionnalités sont entièrement gratuites.'}</p>
-        
-        <!-- Boutons -->
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <button id="ortAuthGateSignup" style="
-            background: #2563eb;
-            color: white;
-            border: none;
-            padding: 14px 24px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-          ">${T.authRequiredSignup || 'Créer mon compte gratuit'}</button>
-          
-          <button id="ortAuthGateLogin" style="
-            background: transparent;
-            color: #2563eb;
-            border: 2px solid #2563eb;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-          ">${T.authRequiredLogin || 'J\'ai déjà un compte'}</button>
-        </div>
-      </div>
+        ${t('btnSignup')}
+      </button>
+      <button id="ort-auth-gate-login" style="
+        display: block;
+        width: 100%;
+        padding: 14px 24px;
+        background: white;
+        color: #3b82f6;
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, color 0.2s;
+      ">
+        ${t('btnLogin')}
+      </button>
     `;
 
-    document.body.appendChild(modal);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    // Animation d'entrée
+    requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      modal.style.transform = 'scale(1)';
+    });
 
     // Hover effects
-    const btnSignup = document.getElementById('ortAuthGateSignup');
-    const btnLogin = document.getElementById('ortAuthGateLogin');
+    const signupBtn = document.getElementById('ort-auth-gate-signup');
+    const loginBtn = document.getElementById('ort-auth-gate-login');
 
-    btnSignup.addEventListener('mouseenter', () => btnSignup.style.background = '#1d4ed8');
-    btnSignup.addEventListener('mouseleave', () => btnSignup.style.background = '#2563eb');
-    
-    btnLogin.addEventListener('mouseenter', () => {
-      btnLogin.style.background = '#2563eb';
-      btnLogin.style.color = 'white';
+    signupBtn.addEventListener('mouseenter', () => {
+      signupBtn.style.transform = 'translateY(-2px)';
+      signupBtn.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
     });
-    btnLogin.addEventListener('mouseleave', () => {
-      btnLogin.style.background = 'transparent';
-      btnLogin.style.color = '#2563eb';
+    signupBtn.addEventListener('mouseleave', () => {
+      signupBtn.style.transform = 'translateY(0)';
+      signupBtn.style.boxShadow = 'none';
     });
 
-    // Event handlers
-    btnSignup.addEventListener('click', () => {
-      closeAuthRequiredModal();
-      if (window.ORT_HEADER?.showEmailModal) {
-        window.ORT_HEADER.showEmailModal('signup');
-      } else {
-        console.error('[ORT-AUTH-GATE] ORT_HEADER.showEmailModal non disponible');
+    loginBtn.addEventListener('mouseenter', () => {
+      loginBtn.style.background = '#3b82f6';
+      loginBtn.style.color = 'white';
+    });
+    loginBtn.addEventListener('mouseleave', () => {
+      loginBtn.style.background = 'white';
+      loginBtn.style.color = '#3b82f6';
+    });
+
+    // Stocker l'URL actuelle pour revenir après login
+    const currentUrl = window.location.href;
+    sessionStorage.setItem('ort_auth_redirect', currentUrl);
+
+    // Actions des boutons
+    signupBtn.addEventListener('click', () => {
+      window.location.href = SIGNUP_URL + '?redirect=' + encodeURIComponent(currentUrl);
+    });
+
+    loginBtn.addEventListener('click', () => {
+      window.location.href = LOGIN_URL + '?redirect=' + encodeURIComponent(currentUrl);
+    });
+
+    // BLOQUER toute fermeture
+    // Bloquer Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+
+    // Bloquer clic en dehors (ne fait rien)
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        // Petit shake pour montrer qu'on ne peut pas fermer
+        modal.style.animation = 'ort-shake 0.5s';
+        setTimeout(() => modal.style.animation = '', 500);
       }
     });
 
-    btnLogin.addEventListener('click', () => {
-      closeAuthRequiredModal();
-      if (window.ORT_HEADER?.showEmailModal) {
-        window.ORT_HEADER.showEmailModal('login');
-      } else {
-        console.error('[ORT-AUTH-GATE] ORT_HEADER.showEmailModal non disponible');
+    // Ajouter animation shake
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes ort-shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
       }
-    });
+      
+      /* Cacher le contenu derrière */
+      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay) {
+        filter: blur(5px);
+        pointer-events: none;
+        user-select: none;
+      }
+      
+      /* Empêcher le scroll */
+      body.ort-auth-blocked {
+        overflow: hidden !important;
+      }
+    `;
+    document.head.appendChild(style);
 
-    // Empêcher le scroll du body
-    document.body.style.overflow = 'hidden';
+    // Bloquer le body
+    document.body.classList.add('ort-auth-blocked');
 
-    console.log('[ORT-AUTH-GATE] Modale inscription requise affichée');
+    console.log('[ORT-AUTH-GATE] 🔒 Gate affichée - authentification requise');
   }
 
-  /** Ferme la modale */
-  function closeAuthRequiredModal() {
-    const modal = document.getElementById(MODAL_ID);
-    if (modal) {
-      modal.remove();
-      document.body.style.overflow = '';
+  // Supprimer la gate
+  function removeAuthGate() {
+    const overlay = document.getElementById('ort-auth-gate-overlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 300);
     }
+    document.body.classList.remove('ort-auth-blocked');
+    console.log('[ORT-AUTH-GATE] ✅ Gate retirée - utilisateur authentifié');
   }
 
-  // ============================================
-  // VÉRIFICATION D'AUTHENTIFICATION
-  // ============================================
-
-  /** Vérifie si l'utilisateur est authentifié */
-  async function checkAuth() {
-    const fb = await waitForFirebase();
-    if (!fb) {
-      console.warn('[ORT-AUTH-GATE] Firebase non disponible, affichage modale par défaut');
-      showAuthRequiredModal();
+  // Vérifier l'authentification
+  function checkAuth() {
+    // Attendre que Firebase soit prêt
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+      console.log('[ORT-AUTH-GATE] ⏳ Attente Firebase...');
+      setTimeout(checkAuth, 200);
       return;
     }
 
-    // Attendre ORT_HEADER pour avoir showEmailModal
-    await waitForHeader();
-
-    // Attendre que Firebase ait restauré la session (premier appel de onAuthStateChanged)
-    const user = await new Promise((resolve) => {
-      const unsubscribe = fb.auth().onAuthStateChanged((u) => {
-        unsubscribe(); // Se désabonner après le premier appel
-        resolve(u);
-      });
-    });
-
-    // Vérifier l'utilisateur
-    if (user && (user.emailVerified || user.providerData?.some(p => p.providerId !== 'password'))) {
-      // Utilisateur connecté et vérifié (ou via Google)
-      console.log('[ORT-AUTH-GATE] ✅ Utilisateur authentifié:', user.email);
-      // Ne rien faire, laisser la page se charger normalement
-    } else if (user && !user.emailVerified) {
-      // Connecté mais email non vérifié
-      console.log('[ORT-AUTH-GATE] ⚠️ Email non vérifié:', user.email);
-      showAuthRequiredModal();
-    } else {
-      // Non connecté
-      console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté');
-      showAuthRequiredModal();
-    }
-
-    // Écouter les changements futurs (logout, etc.)
-    fb.auth().onAuthStateChanged((u) => {
-      if (u && (u.emailVerified || u.providerData?.some(p => p.providerId !== 'password'))) {
-        closeAuthRequiredModal();
-      } else if (!document.getElementById(MODAL_ID)) {
-        // Si déconnecté et modale pas affichée, l'afficher
-        showAuthRequiredModal();
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        console.log('[ORT-AUTH-GATE] ✅ Utilisateur connecté:', user.email);
+        removeAuthGate();
+      } else {
+        console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté');
+        // Vérifier si la gate existe déjà
+        if (!document.getElementById('ort-auth-gate-overlay')) {
+          createAuthGate();
+        }
       }
     });
   }
 
-  // ============================================
-  // INITIALISATION
-  // ============================================
-
+  // Démarrer après un court délai (laisser le temps à Firebase de s'initialiser)
   function init() {
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', checkAuth);
-    } else {
-      // Petit délai pour laisser Firebase et ORT_HEADER s'initialiser
-      setTimeout(checkAuth, 100);
+    // Vérifier si on est sur une page qui nécessite l'auth
+    // (on peut exclure certaines pages comme login.html, signup.html)
+    const excludedPages = ['/login.html', '/signup.html', '/reset-password.html', '/index.html', '/'];
+    const currentPath = window.location.pathname;
+    
+    if (excludedPages.some(page => currentPath.endsWith(page) || currentPath === page)) {
+      console.log('[ORT-AUTH-GATE] Page exclue:', currentPath);
+      return;
     }
+
+    setTimeout(checkAuth, AUTH_GATE_DELAY);
   }
 
-  init();
-
-  // Exposer pour debug et usage externe
-  window.ORT_AUTH_GATE = {
-    showAuthRequiredModal,
-    closeAuthRequiredModal,
-    checkAuth
-  };
+  // Lancer au chargement
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 
   console.log('[ORT-AUTH-GATE] Module chargé');
-
 })();
