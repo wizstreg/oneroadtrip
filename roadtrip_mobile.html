@@ -1706,6 +1706,8 @@ window.debugLog = function(msg) {
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 <script src="/js/ort-config.js"></script>
 <script src="/js/ort-partners.js"></script>
+<script src="/js/ort-widgets.js"></script>
+<script src="/js/ort-trip-calc.js"></script>
 <script src="/js/ort-utils.js"></script>
 <script src="/js/ort-data-loader.js"></script>
 <script src="/js/ort-routing.js"></script>
@@ -2483,7 +2485,7 @@ setTimeout(() => {
 }, 8000);
 
 async function init() {
-  console.log('[MOBILE] Init');
+  console.log('[LOG-CONTROLE][MOBILE] Init');
   
   // === INITIALISER FIREBASE ===
   try {
@@ -2503,7 +2505,7 @@ async function init() {
       
       if (safe && safe.apiKey) {
         firebase.initializeApp(safe);
-        console.log('[MOBILE] ✅ Firebase initialisé');
+        console.log('[LOG-CONTROLE][MOBILE] ✅ Firebase initialisé');
       }
     }
   } catch (e) {
@@ -2517,11 +2519,11 @@ async function init() {
       await new Promise((resolve) => {
         if (typeof firebase !== 'undefined' && firebase.auth) {
           firebase.auth().onAuthStateChanged(user => {
-            console.log('[MOBILE] Auth state:', user ? user.email : 'non connecté');
+            console.log('[LOG-CONTROLE][MOBILE] Auth state:', user ? user.email : 'non connecté');
             resolve(user);
           });
         } else {
-          console.log('[MOBILE] Firebase Auth non disponible');
+          console.log('[LOG-CONTROLE][MOBILE] Firebase Auth non disponible');
           resolve(null);
         }
       });
@@ -2532,7 +2534,7 @@ async function init() {
       if (user) {
         await window.ORT_STATE.updateUser(user);
       }
-      console.log('[MOBILE] ✅ ORT_STATE initialisé');
+      console.log('[LOG-CONTROLE][MOBILE] ✅ ORT_STATE initialisé');
     } catch (e) {
       console.error('[MOBILE] Erreur init ORT_STATE:', e);
     }
@@ -2542,6 +2544,17 @@ async function init() {
   await loadPhotosCache();
   
   const params = new URLSearchParams(location.search);
+  
+  // ========== DEBUG LOGS - LOG-CONTROLE ==========
+  console.log('%c[LOG-CONTROLE][MOBILE] ========== PARSING URL ==========', 'background: #ff6600; color: white; font-size: 14px; padding: 4px 8px;');
+  console.log('[LOG-CONTROLE][MOBILE] URL complète:', location.href);
+  console.log('[LOG-CONTROLE][MOBILE] Search params:', location.search);
+  console.log('[LOG-CONTROLE][MOBILE] Tous les params:');
+  for (const [key, value] of params.entries()) {
+    console.log(`[LOG-CONTROLE][MOBILE]   - ${key} = "${value}"`);
+  }
+  // ===============================================
+  
   const shareToken = params.get('share'); // 🔴 Mode partage
   const cc = params.get('cc')?.toUpperCase() || '';
   const itinId = params.get('itin') || '';
@@ -2552,6 +2565,20 @@ async function init() {
   const builderMode = params.get('mode') === 'builder' || params.get('from') === 'builder';
   const fromBuilderResult = params.get('fromBuilder') === '1';
   const dashboardMode = tripId && tripId.startsWith('trip_');
+  
+  // Params harmonisés (departDate, days)
+  const departDate = params.get('departDate') || params.get('depart') || params.get('departure') || params.get('startDate') || '';
+  const requestedDays = parseInt(params.get('days') || params.get('nbDays') || '0', 10);
+  
+  console.log('%c[LOG-CONTROLE][MOBILE] ========== PARAMS PARSÉS ==========', 'background: #0066ff; color: white; font-size: 14px; padding: 4px 8px;');
+  console.log('[LOG-CONTROLE][MOBILE] cc:', cc);
+  console.log('[LOG-CONTROLE][MOBILE] itinId:', itinId);
+  console.log('[LOG-CONTROLE][MOBILE] tripId:', tripId);
+  console.log('[LOG-CONTROLE][MOBILE] departDate:', departDate);
+  console.log('[LOG-CONTROLE][MOBILE] requestedDays:', requestedDays);
+  console.log('[LOG-CONTROLE][MOBILE] fromTemp:', fromTemp);
+  console.log('[LOG-CONTROLE][MOBILE] builderMode:', builderMode);
+  console.log('[LOG-CONTROLE][MOBILE] dashboardMode:', dashboardMode);
   
   // === VÉRIFIER HANDOFF DEPUIS RT DETAIL ===
   // Si on vient d'une rotation depuis RT Detail, récupérer le tripId du handoff
@@ -2568,7 +2595,7 @@ async function init() {
   debugLog('fromTemp: ' + fromTemp + ' / builderMode: ' + builderMode);
   
   if (handoffTripId) {
-    console.log('[MOBILE] 🔄 Handoff détecté depuis RT Detail:', handoffTripId);
+    console.log('[LOG-CONTROLE][MOBILE] 🔄 Handoff détecté depuis RT Detail:', handoffTripId);
     localStorage.removeItem('ORT_MOBILE_HANDOFF'); // Nettoyer après utilisation
   }
   
@@ -2588,7 +2615,7 @@ async function init() {
   // INIT ORT_TRIPID - Source de vérité unique pour le tripId
   if (window.ORT_TRIPID) {
     state.tripId = window.ORT_TRIPID.init({ source: 'mobile' });
-    console.log('[MOBILE] TripId initialisé:', state.tripId);
+    console.log('[LOG-CONTROLE][MOBILE] TripId initialisé:', state.tripId);
   }
   
   setupTabs();
@@ -2664,6 +2691,43 @@ async function init() {
     
     debugLog('Chargement terminé! state.steps=' + state.steps.length);
     
+    // === CALCUL AUTOMATIQUE DES NUITS (ort-trip-calc.js) ===
+    // Attendre 7 secondes pour le calcul de route, puis lancer
+    console.log('%c[LOG-CONTROLE][MOBILE] ========== AVANT CALCUL NUITS ==========', 'background: #990099; color: white; font-size: 14px; padding: 4px 8px;');
+    console.log('[LOG-CONTROLE][MOBILE] state.steps.length:', state.steps.length);
+    console.log('[LOG-CONTROLE][MOBILE] state.targetNights:', state.targetNights);
+    console.log('[LOG-CONTROLE][MOBILE] state.startDateStr:', state.startDateStr);
+    console.log('[LOG-CONTROLE][MOBILE] autoCalculateNights disponible:', typeof autoCalculateNights === 'function');
+    
+    if (state.steps.length > 0 && typeof autoCalculateNights === 'function') {
+      console.log('[LOG-CONTROLE][MOBILE] ⏳ Attente 7s pour calcul de route...');
+      setTimeout(() => {
+        const target = state.targetNights || state.steps.reduce((s, st) => s + (st._suggestedDays || 1), 0);
+        console.log('%c[LOG-CONTROLE][MOBILE] 🚀 LANCEMENT autoCalculateNights', 'background: #00cc00; color: white; font-size: 14px; padding: 4px 8px;');
+        console.log('[LOG-CONTROLE][MOBILE] Target nuits:', target);
+        console.log('[LOG-CONTROLE][MOBILE] Étapes avant calcul:');
+        state.steps.forEach((s, i) => {
+          console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s), rating=${s.rating || 'N/A'}`);
+        });
+        
+        autoCalculateNights(target);
+        
+        console.log('[LOG-CONTROLE][MOBILE] Étapes après calcul:');
+        state.steps.forEach((s, i) => {
+          const type = s._isHub ? '🏨 HUB' : (s._isSatellite ? '📍 Satellite' : '📍');
+          console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s) ${type}`);
+        });
+        
+        // Re-render après calcul
+        if (typeof renderList === 'function') renderList();
+        if (typeof updateSummary === 'function') updateSummary();
+        
+        console.log('[LOG-CONTROLE][MOBILE] ✅ Calcul nuits terminé et rendu rafraîchi');
+      }, 7000);
+    } else {
+      console.log('[LOG-CONTROLE][MOBILE] ⚠️ Skip calcul nuits - steps:', state.steps.length, ', autoCalculateNights:', typeof autoCalculateNights);
+    }
+    
     // 🔴 S'assurer que state.tripId est défini (nécessaire pour partage/sauvegarde)
     if (!state.tripId) {
       state.tripId = window.ORT_TRIPID?.get() || effectiveTripId;
@@ -2700,7 +2764,7 @@ async function init() {
 
 // === LOAD FROM SHARE (voyage partagé) ===
 async function loadFromShare(shareToken, lang) {
-  console.log('[MOBILE] 🔗 loadFromShare:', shareToken);
+  console.log('[LOG-CONTROLE][MOBILE] 🔗 loadFromShare:', shareToken);
   
   // Attendre que ORT_SHARE soit disponible
   let waitCount = 0;
@@ -2720,7 +2784,7 @@ async function loadFromShare(shareToken, lang) {
       throw new Error('Voyage partagé non trouvé ou expiré');
     }
     
-    console.log('[MOBILE] ✅ Voyage partagé chargé:', sharedData);
+    console.log('[LOG-CONTROLE][MOBILE] ✅ Voyage partagé chargé:', sharedData);
     
     // Stocker pour référence
     window._sharedTripData = sharedData;
@@ -2757,7 +2821,7 @@ async function loadFromShare(shareToken, lang) {
       mainContent.style.top = 'calc(var(--header-height) + 44px)';
     }
     
-    console.log('[MOBILE] ✅ State chargé:', state.steps.length, 'étapes');
+    console.log('[LOG-CONTROLE][MOBILE] ✅ State chargé:', state.steps.length, 'étapes');
     
   } catch (error) {
     console.error('[MOBILE] ❌ Erreur chargement partage:', error);
@@ -2767,10 +2831,14 @@ async function loadFromShare(shareToken, lang) {
 
 // === LOAD FROM TEMP (localStorage) ===
 async function loadFromTemp(rtKey) {
-  console.log('[MOBILE] loadFromTemp:', rtKey);
+  console.log('%c[LOG-CONTROLE][MOBILE] ========== LOAD FROM TEMP ==========', 'background: #006699; color: white; font-size: 14px; padding: 4px 8px;');
+  console.log('[LOG-CONTROLE][MOBILE] rtKey:', rtKey);
   
   const rawItins = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_itins`);
   const rawPlaces = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_places`);
+  
+  console.log('[LOG-CONTROLE][MOBILE] rawItins trouvé:', !!rawItins, rawItins ? `(${rawItins.length} chars)` : '');
+  console.log('[LOG-CONTROLE][MOBILE] rawPlaces trouvé:', !!rawPlaces, rawPlaces ? `(${rawPlaces.length} chars)` : '');
   
   if (!rawItins) throw new Error('Itinéraire temporaire non trouvé');
   
@@ -2841,7 +2909,15 @@ async function loadFromTemp(rtKey) {
     };
   });
   
-  console.log(`[MOBILE] Loaded ${state.steps.length} steps from temp`);
+  console.log('[LOG-CONTROLE][MOBILE] ========== ÉTAT APRÈS LOAD FROM TEMP ==========');
+  console.log(`[LOG-CONTROLE][MOBILE] ${state.steps.length} étapes chargées`);
+  console.log('[LOG-CONTROLE][MOBILE] state.title:', state.title);
+  console.log('[LOG-CONTROLE][MOBILE] state.cc:', state.cc);
+  console.log('[LOG-CONTROLE][MOBILE] state.targetNights:', state.targetNights);
+  console.log('[LOG-CONTROLE][MOBILE] Étapes:');
+  state.steps.forEach((s, i) => {
+    console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s)`);
+  });
   
   // Charger les visites et activités des places depuis le master
   if (state.cc) {
@@ -3136,7 +3212,7 @@ async function initRouteBuilder(params) {
 
 // Charger le résultat du builder depuis localStorage
 async function loadBuilderResult() {
-  console.log('[MOBILE] Chargement résultat builder...');
+  console.log('[LOG-CONTROLE][MOBILE] Chargement résultat builder...');
   
   const raw = localStorage.getItem('ORT_BUILDER_RESULT');
   if (!raw) throw new Error('Résultat builder non trouvé');
@@ -3183,10 +3259,10 @@ async function loadBuilderResult() {
       }
     });
     
-    console.log('[MOBILE] ✅ Réservations restaurées:', Object.keys(data.bookings).length, 'étapes');
+    console.log('[LOG-CONTROLE][MOBILE] ✅ Réservations restaurées:', Object.keys(data.bookings).length, 'étapes');
   }
   
-  console.log(`[MOBILE] Builder result: ${state.steps.length} étapes`);
+  console.log(`[LOG-CONTROLE][MOBILE] Builder result: ${state.steps.length} étapes`);
   
   // Nettoyer localStorage
   localStorage.removeItem('ORT_BUILDER_RESULT');
@@ -3384,6 +3460,8 @@ function selectStepsAlongRoute(config, routeData, places) {
   return steps;
 }
 
+// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
+/* ANCIEN CODE - COMMENTÉ POUR RETOUR ARRIÈRE
 function autoCalculateNights(totalDays) {
   if (!state.steps.length) return;
   
@@ -3400,11 +3478,18 @@ function autoCalculateNights(totalDays) {
     state.steps[state.steps.length - 1].nights = 0;
   }
 }
+FIN autoCalculateNights */
 
 // === DATA LOADING ===
 // isComposedId() et parseComposedIds() → fournis par ort-utils.js
 
 async function loadItinerary(cc, itinId, lang) {
+  console.log('%c[LOG-CONTROLE][MOBILE] ========== LOAD ITINERARY ==========', 'background: #006699; color: white; font-size: 14px; padding: 4px 8px;');
+  console.log('[LOG-CONTROLE][MOBILE] cc:', cc);
+  console.log('[LOG-CONTROLE][MOBILE] itinId:', itinId);
+  console.log('[LOG-CONTROLE][MOBILE] lang:', lang);
+  console.log('[LOG-CONTROLE][MOBILE] isComposedId:', isComposedId(itinId));
+  
   const baseUrl = './data/Roadtripsprefabriques/countries';
   
   // === TRAITER COMPOSED ===
@@ -3564,6 +3649,14 @@ async function loadItinerary(cc, itinId, lang) {
   });
   
   state.steps = steps;
+  
+  console.log('[LOG-CONTROLE][MOBILE] ========== ÉTAT APRÈS LOAD ITINERARY ==========');
+  console.log(`[LOG-CONTROLE][MOBILE] ${state.steps.length} étapes chargées`);
+  console.log('[LOG-CONTROLE][MOBILE] state.title:', state.title);
+  console.log('[LOG-CONTROLE][MOBILE] Étapes:');
+  state.steps.forEach((s, i) => {
+    console.log(`[LOG-CONTROLE][MOBILE]   ${i}: ${s.name} - ${s.nights} nuit(s), lat=${s.lat}, lng=${s.lng}`);
+  });
 }
 
 async function loadFromFirebase(rtKey) {
@@ -4191,31 +4284,88 @@ function renderMarkers() {
   markers.forEach(m => map.removeLayer(m));
   markers = [];
   
+  // Nettoyer les lignes de groupe précédentes
+  if (window._hubLines) {
+    window._hubLines.forEach(l => { try { map.removeLayer(l); } catch(_) {} });
+  }
+  window._hubLines = [];
+  
+  // === Regrouper les étapes par coordonnées (tolérance ~100m) ===
+  console.log('[LOG-CONTROLE][MOBILE] ========== RENDER MARKERS ==========');
+  console.log(`[LOG-CONTROLE][MOBILE] ${state.steps.length} étapes à afficher`);
+  
+  const grouped = {};
   state.steps.forEach((step, idx) => {
     if (!step.lat || !step.lng) return;
-    
-    const icon = L.divIcon({
-      className: 'step-marker',
-      html: `${idx + 1}`,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13]
+    const key = `${step.lat.toFixed(3)},${step.lng.toFixed(3)}`;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(idx);
+  });
+  
+  // === Créer les marqueurs avec dispersion pour les groupes ===
+  const groupCount = Object.keys(grouped).length;
+  const multiGroups = Object.values(grouped).filter(g => g.length > 1).length;
+  console.log(`[LOG-CONTROLE][MOBILE] ${groupCount} positions uniques, ${multiGroups} groupe(s) avec plusieurs étapes`);
+  if (multiGroups > 0) {
+    Object.entries(grouped).filter(([k, v]) => v.length > 1).forEach(([key, indices]) => {
+      console.log(`[LOG-CONTROLE][MOBILE]   Groupe à ${key}: étapes ${indices.map(i => i+1).join(', ')}`);
     });
+  }
+  
+  Object.entries(grouped).forEach(([key, indices]) => {
+    const [centerLat, centerLon] = key.split(',').map(Number);
     
-    const marker = L.marker([step.lat, step.lng], { icon });
-    marker.on('click', () => {
-      const currentStep = state.steps[idx];
-      const photoUrl = getStepPhoto(currentStep);
-      const popupName = getCityDisplayName(currentStep, state.lang || 'fr') || currentStep.name;
-      marker.bindPopup(`
-        <div class="map-popup-mini">
-          <img src="${photoUrl}" onerror="this.src='${PLACEHOLDER_IMG}'">
-          <div class="name">${popupName}</div>
-          <button class="btn-details" onclick="openStepSheet(${idx})">Voir détails</button>
-        </div>
-      `).openPopup();
+    // Rayon de dispersion (plus grand pour être visible)
+    const radius = 0.006;
+    
+    indices.forEach((idx, subIndex) => {
+      const step = state.steps[idx];
+      
+      // Calculer la position (dispersée si groupe > 1)
+      let markerLat = step.lat;
+      let markerLng = step.lng;
+      
+      if (indices.length > 1) {
+        const angle = (subIndex / indices.length) * 2 * Math.PI - Math.PI / 2;
+        markerLat = centerLat + (Math.sin(angle) * radius);
+        markerLng = centerLon + (Math.cos(angle) * radius * 1.3);
+        
+        // === Ligne du centre vers le marqueur ===
+        const hubLine = L.polyline(
+          [[centerLat, centerLon], [markerLat, markerLng]], 
+          { 
+            color: '#666', 
+            weight: 1.5, 
+            opacity: 0.5, 
+            dashArray: '4,4'
+          }
+        ).addTo(map);
+        window._hubLines.push(hubLine);
+      }
+      
+      const icon = L.divIcon({
+        className: 'step-marker',
+        html: `${idx + 1}`,
+        iconSize: [26, 26],
+        iconAnchor: [13, 13]
+      });
+      
+      const marker = L.marker([markerLat, markerLng], { icon });
+      marker.on('click', () => {
+        const currentStep = state.steps[idx];
+        const photoUrl = getStepPhoto(currentStep);
+        const popupName = getCityDisplayName(currentStep, state.lang || 'fr') || currentStep.name;
+        marker.bindPopup(`
+          <div class="map-popup-mini">
+            <img src="${photoUrl}" onerror="this.src='${PLACEHOLDER_IMG}'">
+            <div class="name">${popupName}</div>
+            <button class="btn-details" onclick="openStepSheet(${idx})">Voir détails</button>
+          </div>
+        `).openPopup();
+      });
+      marker.addTo(map);
+      markers.push(marker);
     });
-    marker.addTo(map);
-    markers.push(marker);
   });
 }
 
@@ -5219,14 +5369,14 @@ document.addEventListener('visibilitychange', async function() {
     const timeSinceHidden = Date.now() - lastVisibilityTime;
     // Si on revient après plus de 2 secondes, rafraîchir les bookings
     if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
-      console.log('[MOBILE] Retour sur la page, refresh des bookings...');
+      console.log('[LOG-CONTROLE][MOBILE] Retour sur la page, refresh des bookings...');
       try {
         // Recharger les données depuis Firestore
         const tripId = window.ORT_TRIPID?.get();
         if (tripId) {
           await ORT_TRIP_DATA.loadTrip(tripId);
           renderBookings();
-          console.log('[MOBILE] ✅ Bookings rafraîchis');
+          console.log('[LOG-CONTROLE][MOBILE] ✅ Bookings rafraîchis');
         }
       } catch (e) {
         console.warn('[MOBILE] Erreur refresh bookings:', e);
@@ -5240,7 +5390,7 @@ document.addEventListener('visibilitychange', async function() {
 // Aussi sur pageshow (pour les navigations back/forward)
 window.addEventListener('pageshow', async function(event) {
   if (event.persisted && window.ORT_TRIP_DATA) {
-    console.log('[MOBILE] Page restaurée depuis cache, refresh...');
+    console.log('[LOG-CONTROLE][MOBILE] Page restaurée depuis cache, refresh...');
     const tripId = window.ORT_TRIPID?.get();
     if (tripId) {
       try {
@@ -5305,6 +5455,11 @@ window.addEventListener('pageshow', async function(event) {
 })();
 </script>
 <script src="./js/ort-modals.js"></script>
+
+<!-- Auth obligatoire -->
+<script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-header.js"></script>
+<script src="/js/ort-auth-gate.js"></script>
 
 </body>
 </html>

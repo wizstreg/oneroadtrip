@@ -291,6 +291,12 @@
     // 🔴 SI c'est un NEW tripId depuis catalogue: chercher le catalogue original
     const catalogSource = sessionStorage.getItem('ort_catalog_source');
     if (catalogSource && tripId.startsWith('trip_')) {
+      // Vérifier si déjà en cache pour éviter les appels répétés
+      if (tripsCache[tripId]) {
+        console.log('💨 [STATE] NEW tripId depuis catalogue - déjà en cache');
+        return tripsCache[tripId];
+      }
+      
       console.log('[STATE] 📚 NEW tripId depuis catalogue, cherche source:', catalogSource);
       // Faire un appel récursif pour charger le catalogue
       const catalogData = await getTrip(catalogSource, true);
@@ -299,7 +305,10 @@
         // Mettre à jour l'ID et cacher l'origine
         catalogData.id = tripId;
         catalogData.tripId = tripId;
-        // Pas nettoyer sessionStorage ici - nettoyer à la sauvegarde
+        // Mettre en cache pour éviter les appels répétés
+        tripsCache[tripId] = catalogData;
+        // Nettoyer sessionStorage maintenant qu'on a mis en cache
+        sessionStorage.removeItem('ort_catalog_source');
         return catalogData;
       }
     }

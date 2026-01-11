@@ -1,0 +1,2490 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JK3QGQGDDL');
+</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneRoadTrip – Constructeur d'Itinéraire</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+<link rel="dns-prefetch" href="//images.pexels.com">
+<link rel="dns-prefetch" href="//images.unsplash.com">
+<link rel="dns-prefetch" href="//commons.wikimedia.org">
+<link rel="preconnect" href="https://images.pexels.com" crossorigin>
+<link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+<style>
+:root {
+  --bg: #f6f9fb;
+  --ink: #113f7a;
+  --acc: #113f7a;
+  --card: #ffffff;
+  --bd: #c3d6b6;
+  --mut: #64748b;
+  --star5: #1E88E5;
+  --star4: #2E7D32;
+  --star3: #A5D6A7;
+  --star2: #FB8C00;
+  --star1: #FDD835;
+  --star0: #94a3b8;
+  --selected: #e11d48;
+}
+
+* { box-sizing: border-box; }
+html, body { 
+  margin: 0; 
+  padding: 0; 
+  height: 100%; 
+  background: url("assets/image_index.webp") center/cover fixed #113f7a;
+  color: var(--ink); 
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; 
+}
+
+[dir="rtl"] body { text-align: right; }
+[dir="rtl"] header, [dir="rtl"] .top-panel { direction: rtl; }
+
+/* Header ORT unifié */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #113f7a;
+  color: #fff;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  background: url("assets/image_index.webp") center/cover no-repeat #113f7a;
+}
+.header-row-1, .header-row-2 { display: flex; align-items: center; gap: 12px; width: 100%; }
+.header-row-2 { justify-content: flex-end; }
+.brandlink { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; }
+.brandlink img { width: 40px; height: 40px; }
+.brand { font-weight: 800; font-size: 16px; }
+.spacer { flex: 1; }
+.langpick { appearance: none; background: #fff; border: 1px solid #113f7a; border-radius: 8px; padding: 6px 8px; cursor: pointer; color: #113f7a; font-size: 13px; }
+.auth { position: relative; }
+.btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #ffffff80; background: #ffffff1a; color: #fff; cursor: pointer; font-size: 14px; }
+.btn:hover { background: #ffffff2b; }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.auth-pop { position: absolute; right: 0; top: 44px; background: #fff; color: #333; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); padding: 8px; display: none; min-width: 260px; z-index: 10001; }
+.auth-pop .btn { display: block; width: 100%; margin: 6px 0; background: #113f7a; border: 1px solid #113f7a; color: #fff; }
+.auth-pop .btn.out { background: #fff; color: #113f7a; }
+
+/* Panneau supérieur - Itinéraire personnalisé */
+.top-panel {
+  background: var(--card);
+  border: 2px solid var(--acc);
+  border-radius: 14px;
+  padding: 12px 16px;
+  margin: 12px 16px;
+  box-shadow: 0 4px 12px rgba(17, 63, 122, 0.15);
+}
+
+.top-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-panel h2 {
+  margin: 0;
+  color: var(--acc);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.top-panel .subtitle {
+  font-size: 13px;
+  color: var(--mut);
+  font-style: italic;
+  flex: 1;
+}
+
+.validate-btn {
+  padding: 8px 16px;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+  white-space: nowrap;
+}
+.validate-btn:hover { background: #16a34a; }
+.validate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.reset-btn {
+  padding: 8px 16px;
+  background: #f3f4f6;
+  color: var(--ink);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+  white-space: nowrap;
+}
+.reset-btn:hover { background: #e5e7eb; }
+
+/* Liste itinéraire horizontal avec flèches - s'adapte à la popup */
+.itinerary-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  min-height: 40px;
+  padding-right: 380px; /* Espace pour la popup */
+  transition: padding-right 0.3s;
+}
+
+body.preview-open .itinerary-flow {
+  padding-right: 380px;
+}
+
+body:not(.preview-open) .itinerary-flow {
+  padding-right: 0;
+}
+
+.itinerary-empty {
+  color: var(--mut);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+.itinerary-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 2px solid var(--bd);
+  border-radius: 20px;
+  padding: 6px 10px 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.itinerary-step .step-color {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.itinerary-step .step-name {
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.itinerary-step .step-remove {
+  background: none;
+  border: none;
+  color: #e11d48;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 2px;
+  line-height: 1;
+  font-weight: 700;
+}
+.itinerary-step .step-remove:hover { color: #be123c; }
+
+.itinerary-arrow {
+  color: var(--acc);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+/* Contrôles carte */
+.map-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 0 16px 12px;
+  flex-wrap: wrap;
+}
+
+.country-select {
+  padding: 8px 12px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  min-width: 200px;
+}
+
+.zoom-hint {
+  background: #fef9c3;
+  color: #713f12;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  border: 1px solid #fde68a;
+}
+
+.stats-box {
+  background: var(--card);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 600;
+  color: var(--acc);
+}
+
+/* Carte plein écran */
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+}
+
+.map-container {
+  position: relative;
+  height: calc(100vh - 280px);
+  min-height: 400px;
+  margin: 0 16px 16px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid var(--acc);
+  box-shadow: 0 8px 24px rgba(17, 63, 122, 0.2);
+}
+
+/* Preview popup - PLEINE HAUTEUR depuis le haut de la page */
+.place-preview {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 360px;
+  max-width: 40%;
+  background: #fff;
+  border-radius: 0;
+  padding: 16px;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  border-left: 2px solid var(--acc);
+  display: none;
+  overflow-y: auto;
+}
+
+/* Overlay pour bloquer les clics sur mobile */
+.preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9998;
+  display: none;
+}
+
+.preview-overlay.show {
+  display: none; /* Caché par défaut sur desktop */
+}
+
+/* Barre action mobile - cachée par défaut */
+.mobile-action-bar {
+  display: none;
+}
+
+.add-place-btn-mobile {
+  display: none;
+}
+
+.place-preview.show { display: block; }
+
+.place-preview h3 {
+  margin: 0 0 12px;
+  color: var(--acc);
+  font-size: 18px;
+  padding-right: 30px;
+}
+
+.place-preview .close-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--mut);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  line-height: 1;
+}
+.place-preview .close-btn:hover { color: var(--acc); }
+
+.preview-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.rating-stars {
+  color: #f59e0b;
+  font-size: 18px;
+}
+
+.rating-value {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Photo principale + carrousel */
+.preview-photos {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.preview-photos-main {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.preview-photos-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+/* Carrousel de photos avec flèches */
+.preview-photos-carousel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.carousel-arrow {
+  background: var(--acc);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.carousel-arrow:hover {
+  background: #0d2550;
+  transform: scale(1.1);
+}
+
+.carousel-arrow:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.carousel-info {
+  text-align: center;
+  flex: 1;
+  font-size: 12px;
+  color: var(--mut);
+  font-weight: 600;
+}
+
+.preview-section {
+  margin-bottom: 12px;
+}
+
+.preview-section h4 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  color: var(--acc);
+  font-weight: 700;
+}
+
+.preview-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.preview-duration {
+  background: #f0f9ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--acc);
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.add-place-btn {
+  width: 100%;
+  padding: 10px;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+}
+.add-place-btn:hover { background: #16a34a; }
+.add-place-btn.remove { background: #e11d48; }
+.add-place-btn.remove:hover { background: #be123c; }
+
+/* Légende couleurs */
+.color-legend {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  font-size: 12px;
+  backdrop-filter: blur(4px);
+}
+
+.legend-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--acc);
+  font-size: 13px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 5px 0;
+  font-size: 12px;
+  color: #333;
+}
+
+.legend-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.legend-dot.recommended {
+  background: #43A047;
+  width: 16px;
+  height: 16px;
+}
+
+.legend-dot.discover {
+  background: #78909C;
+  width: 14px;
+  height: 14px;
+}
+
+.legend-dot.selected-dot {
+  background: #e11d48;
+  width: 16px;
+  height: 16px;
+}
+
+.legend-star {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+}
+
+/* Clusters personnalisés - plus petits et discrets */
+.marker-cluster {
+  background: transparent !important;
+}
+
+.marker-cluster div {
+  background: rgba(30, 136, 229, 0.85);
+  border-radius: 50%;
+  font-weight: 600;
+  color: #fff;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border: 2px solid #fff;
+}
+
+.marker-cluster-small div {
+  width: 28px;
+  height: 28px;
+  font-size: 10px;
+}
+
+.marker-cluster-medium div {
+  background: rgba(46, 125, 50, 0.85);
+  width: 34px;
+  height: 34px;
+  font-size: 11px;
+}
+
+.marker-cluster-large div {
+  background: rgba(255, 152, 0, 0.9);
+  width: 40px;
+  height: 40px;
+  font-size: 12px;
+}
+
+/* Étoiles dorées */
+.star-marker {
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+  transition: transform 0.15s ease;
+}
+
+.star-marker:hover {
+  transform: scale(1.2);
+}
+
+.star-marker.selected {
+  filter: drop-shadow(0 2px 4px rgba(225,29,72,0.5));
+}
+
+/* Bandeau mobile collapsible - caché par défaut */
+.mobile-itin-header {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Top-panel sticky en haut sur mobile */
+  .top-panel {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    margin: 0 !important;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 8px 12px;
+  }
+  
+  /* Bandeau mobile - sans toggle */
+  .mobile-itin-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #113f7a;
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: default;
+  }
+  
+  /* Masquer la flèche toggle */
+  .mobile-itin-header .mobile-itin-toggle {
+    display: none !important;
+  }
+  
+  .validate-btn-mobile {
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .validate-btn-mobile:hover { background: #16a34a; }
+  
+  /* Cacher le header desktop sur mobile */
+  .top-panel-header {
+    display: none !important;
+  }
+  
+  /* Liste toujours visible avec scroll horizontal */
+  .itinerary-flow {
+    display: flex;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    margin-top: 10px;
+    padding-bottom: 6px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    max-height: none !important;
+  }
+  
+  /* Plus besoin de .list-open pour afficher */
+  .top-panel.list-open .itinerary-flow {
+    max-height: none;
+  }
+  
+  /* Masquer la barre d'action mobile (bandeau rouge "Retirer") */
+  .mobile-action-bar {
+    display: none !important;
+  }
+  
+  /* Ajuster hauteur carte */
+  .map-container { 
+    height: calc(100vh - 160px);
+    margin: 8px;
+  }
+  
+  .map-controls { margin: 0 8px 8px; }
+  
+  /* Preview popup - Plein écran sur mobile */
+  .place-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 0;
+    z-index: 20000;
+    padding: 20px;
+    padding-bottom: 20px;
+    border: none;
+    overflow-y: auto;
+  }
+  
+  /* Bouton fermer plus gros */
+  .place-preview .close-btn {
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  
+  /* Textes plus gros */
+  .place-preview h3 {
+    font-size: 22px !important;
+    margin-bottom: 16px;
+    padding-right: 50px;
+  }
+  
+  .rating-stars {
+    font-size: 28px !important;
+  }
+  
+  .preview-duration {
+    font-size: 18px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+  }
+  
+  .preview-section h4 {
+    font-size: 17px !important;
+    margin-bottom: 10px;
+  }
+  
+  .preview-list {
+    font-size: 16px !important;
+    line-height: 1.6;
+    padding-left: 24px;
+  }
+  
+  .preview-list li {
+    margin-bottom: 8px;
+  }
+  
+  /* Photos carousel sur mobile */
+  .preview-photos {
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .preview-photos-main {
+    aspect-ratio: 16/9;
+  }
+  
+  .carousel-arrow {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .carousel-info {
+    font-size: 14px;
+  }
+  
+  /* Bouton ajouter visible dans la popup sur mobile */
+  .add-place-btn {
+    display: block;
+    position: sticky;
+    bottom: 0;
+    margin-top: 16px;
+    font-size: 16px;
+    padding: 14px 20px;
+  }
+  
+  /* Masquer les contrôles inutiles sur mobile */
+  .country-select,
+  .stats-box {
+    display: none;
+  }
+  
+  /* Map-controls simplifié */
+  .map-controls {
+    justify-content: center;
+  }
+  
+  /* Overlay visible sur mobile */
+  .preview-overlay.show {
+    display: block !important;
+  }
+}
+
+/* Modal configuration */
+.config-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+
+.config-modal.show {
+  display: flex;
+}
+
+.config-modal-content {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 32px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.config-modal-content h2 {
+  margin: 0 0 24px;
+  color: var(--acc);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.config-field {
+  margin-bottom: 20px;
+}
+
+.config-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.config-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  font-size: 15px;
+  color: var(--ink);
+  background: #fff;
+}
+
+.config-input:focus {
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(17, 63, 122, 0.1);
+}
+
+.budget-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.budget-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--bd);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.budget-btn:hover {
+  border-color: var(--acc);
+  background: #f0f7ff;
+}
+
+.budget-btn.selected {
+  background: var(--acc);
+  color: #fff;
+  border-color: var(--acc);
+}
+
+.config-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.config-btn-cancel {
+  padding: 12px 24px;
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.config-btn-cancel:hover {
+  background: #f3f4f6;
+}
+
+.config-btn-confirm {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--acc);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.config-btn-confirm:hover {
+  background: #0d3461;
+}
+</style>
+</head>
+<body>
+
+<!-- Header ORT unifié -->
+<header id="site-header"></header>
+
+<!-- Panneau itinéraire personnalisé -->
+<div class="top-panel">
+  <!-- Bandeau mobile -->
+  <div id="mobileItinHeader" class="mobile-itin-header">
+    <span id="mobileItinCount">0 étapes</span>
+    <button id="validateBtnMobile" class="validate-btn-mobile" onclick="document.getElementById('validateBtn').click();">✓ Valider</button>
+  </div>
+  
+  <div class="top-panel-header">
+    <h2 id="panelTitle">🗺️ Mon itinéraire personnalisé</h2>
+    <button id="resetBtn" class="reset-btn">🔄 Réinitialiser</button>
+    <button id="validateBtn" class="validate-btn">✓ Valider</button>
+    <span class="subtitle" id="panelSubtitle">(modifiable sur la page suivante)</span>
+  </div>
+  <div id="itineraryFlow" class="itinerary-flow">
+    <span class="itinerary-empty" id="emptyMsg">Cliquez sur les lieux pour les ajouter</span>
+  </div>
+</div>
+
+<!-- Contrôles carte -->
+<div class="map-controls">
+  <select id="countrySelect" class="country-select">
+    <option value="">-- Tous les pays --</option>
+  </select>
+  <div class="zoom-hint" id="zoomHint">🔍 Zoomez pour voir plus de lieux</div>
+  <div class="stats-box" id="statsBox">0 lieux visibles</div>
+</div>
+
+<!-- Carte -->
+<div class="map-container">
+  <div id="map"></div>
+  
+  <!-- Preview lieu -->
+  <div id="placePreview" class="place-preview">
+    <button class="close-btn" onclick="closePlacePreview()">✕</button>
+    <h3 id="previewTitle">Nom du lieu</h3>
+    <div class="preview-rating">
+      <span class="rating-stars" id="previewStars">★★★★★</span>
+    </div>
+    <div class="preview-photos" id="previewPhotos">
+      <!-- 4 photos ici -->
+    </div>
+    <div class="preview-duration" id="previewDuration">⏱️ Durée estimée: 0 min</div>
+    <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
+    <div class="preview-section">
+      <h4 id="visitsLabel">🏛️ Visites possibles</h4>
+      <ul class="preview-list" id="previewVisits"></ul>
+    </div>
+    <div class="preview-section">
+      <h4 id="activitiesLabel">🎯 Activités</h4>
+      <ul class="preview-list" id="previewActivities"></ul>
+    </div>
+  </div>
+  
+  <!-- Barre fixe bouton (mobile uniquement) -->
+  <div id="mobileActionBar" class="mobile-action-bar">
+    <button id="addPlaceBtnMobile" class="add-place-btn-mobile">+ Ajouter à mon itinéraire</button>
+  </div>
+  
+  <!-- Légende couleurs -->
+  <div class="color-legend">
+    <div class="legend-title" id="legendTitle">Lieux</div>
+    <div class="legend-item"><svg class="legend-star" width="16" height="16" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span data-i18n="mustSee">Incontournable</span></div>
+    <div class="legend-item"><div class="legend-dot recommended"></div> <span data-i18n="recommended">Recommandé</span></div>
+    <div class="legend-item"><div class="legend-dot discover"></div> <span data-i18n="discover">À découvrir</span></div>
+    <div class="legend-item"><div class="legend-dot selected-dot"></div> <span data-i18n="selected">Sélectionné</span></div>
+  </div>
+</div>
+
+<!-- Overlay pour popup (mobile uniquement) -->
+<div id="previewOverlay" class="preview-overlay" onclick="closePlacePreview()"></div>
+
+<!-- Modal configuration voyage -->
+<div id="configModal" class="config-modal">
+  <div class="config-modal-content">
+    <h2 id="configTitle">Configurez votre voyage</h2>
+    
+    <div class="config-field">
+      <label id="labelDepartDate">Date de départ :</label>
+      <input type="date" id="departDate" class="config-input">
+    </div>
+    
+    <div class="config-field">
+      <label id="labelNbDays">Nombre de jours souhaités :</label>
+      <input type="number" id="nbDays" class="config-input" value="7" min="1" max="30">
+    </div>
+    
+    <div class="config-actions">
+      <button type="button" id="configCancel" class="config-btn-cancel">Annuler</button>
+      <button type="button" id="configConfirm" class="config-btn-confirm">Valider</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<script>
+// ===============================
+// TRADUCTIONS I18N
+// ===============================
+const T = {
+  fr: {
+    pageTitle: "Construisez votre itinéraire personnalisé",
+    panelTitle: "🗺️ Mon itinéraire personnalisé",
+    panelSubtitle: "(modifiable sur la page suivante)",
+    zoomHint: "🔍 Zoomez pour voir plus de lieux",
+    validate: "✓ Valider",
+    reset: "🔄 Réinitialiser",
+    visitsLabel: "🏛️ Visites possibles",
+    activitiesLabel: "🎯 Activités",
+    duration: "⏱️ Durée estimée",
+    day: "jour",
+    days: "jours",
+    minutes: "min",
+    emptyItinerary: "Cliquez sur les lieux pour les ajouter",
+    removePlace: "Retirer",
+    addPlace: "+ Ajouter à mon itinéraire",
+    removeFromItinerary: "✕ Retirer de l'itinéraire",
+    allCountries: "-- Tous les pays --",
+    placesVisible: "lieux visibles",
+    back: "← Retour",
+    legendTitle: "Lieux",
+    mustSee: "Incontournable",
+    recommended: "Recommandé",
+    discover: "À découvrir",
+    selected: "Sélectionné",
+    noVisits: "Aucune visite définie",
+    noActivities: "Aucune activité définie",
+    configTitle: "Configurez votre voyage",
+    labelDepartDate: "Date de départ :",
+    labelNbDays: "Nombre de jours souhaités :",
+    labelRythme: "Rythme :",
+    labelMaxHotels: "Changements d'hôtel maximum :",
+    labelBudget: "Budget hôtel (€/jour/personne) :",
+    rythmeSlow: "Tranquille",
+    rythmeNormal: "Normal",
+    rythmeFast: "Soutenu",
+    cancel: "Annuler",
+    confirm: "Valider"
+  },
+  en: {
+    pageTitle: "Build your custom itinerary",
+    panelTitle: "🗺️ My custom itinerary",
+    panelSubtitle: "(editable on the next page)",
+    zoomHint: "🔍 Zoom in to see more places",
+    validate: "✓ Validate",
+    reset: "🔄 Reset",
+    visitsLabel: "🏛️ Possible visits",
+    activitiesLabel: "🎯 Activities",
+    duration: "⏱️ Estimated duration",
+    day: "day",
+    days: "days",
+    minutes: "min",
+    emptyItinerary: "Click on places to add them",
+    removePlace: "Remove",
+    addPlace: "+ Add to my itinerary",
+    removeFromItinerary: "✕ Remove from itinerary",
+    allCountries: "-- All countries --",
+    placesVisible: "places visible",
+    back: "← Back",
+    legendTitle: "Places",
+    mustSee: "Must-see",
+    recommended: "Recommended",
+    discover: "Discover",
+    selected: "Selected",
+    noVisits: "No visits defined",
+    noActivities: "No activities defined",
+    configTitle: "Configure your trip",
+    labelDepartDate: "Departure date:",
+    labelNbDays: "Number of days:",
+    labelRythme: "Pace:",
+    labelMaxHotels: "Maximum hotel changes:",
+    labelBudget: "Hotel budget (€/day/person):",
+    rythmeSlow: "Relaxed",
+    rythmeNormal: "Normal",
+    rythmeFast: "Intensive",
+    cancel: "Cancel",
+    confirm: "Confirm"
+  },
+  it: {
+    pageTitle: "Costruisci il tuo itinerario personalizzato",
+    panelTitle: "🗺️ Il mio itinerario personalizzato",
+    panelSubtitle: "(modificabile nella pagina successiva)",
+    zoomHint: "🔍 Zoom per vedere più luoghi",
+    validate: "✓ Convalida",
+    reset: "🔄 Reimposta",
+    visitsLabel: "🏛️ Visite possibili",
+    activitiesLabel: "🎯 Attività",
+    duration: "⏱️ Durata stimata",
+    day: "giorno",
+    days: "giorni",
+    minutes: "min",
+    emptyItinerary: "Clicca sui luoghi per aggiungerli",
+    removePlace: "Rimuovi",
+    addPlace: "+ Aggiungi al mio itinerario",
+    removeFromItinerary: "✕ Rimuovi dall'itinerario",
+    allCountries: "-- Tutti i paesi --",
+    placesVisible: "luoghi visibili",
+    back: "← Indietro",
+    legendTitle: "Luoghi",
+    mustSee: "Imperdibile",
+    recommended: "Consigliato",
+    discover: "Da scoprire",
+    selected: "Selezionato",
+    noVisits: "Nessuna visita definita",
+    noActivities: "Nessuna attività definita",
+    configTitle: "Configura il tuo viaggio",
+    labelDepartDate: "Data di partenza:",
+    labelNbDays: "Numero di giorni:",
+    labelRythme: "Ritmo:",
+    labelMaxHotels: "Cambi hotel massimi:",
+    labelBudget: "Budget hotel (€/giorno/persona):",
+    rythmeSlow: "Rilassato",
+    rythmeNormal: "Normale",
+    rythmeFast: "Intenso",
+    cancel: "Annulla",
+    confirm: "Conferma"
+  },
+  es: {
+    pageTitle: "Construye tu itinerario personalizado",
+    panelTitle: "🗺️ Mi itinerario personalizado",
+    panelSubtitle: "(editable en la página siguiente)",
+    zoomHint: "🔍 Acerca para ver más lugares",
+    validate: "✓ Validar",
+    reset: "🔄 Reiniciar",
+    visitsLabel: "🏛️ Visitas posibles",
+    activitiesLabel: "🎯 Actividades",
+    duration: "⏱️ Duración estimada",
+    day: "día",
+    days: "días",
+    minutes: "min",
+    emptyItinerary: "Haz clic en los lugares para añadirlos",
+    removePlace: "Eliminar",
+    addPlace: "+ Añadir a mi itinerario",
+    removeFromItinerary: "✕ Eliminar del itinerario",
+    allCountries: "-- Todos los países --",
+    placesVisible: "lugares visibles",
+    back: "← Volver",
+    legendTitle: "Lugares",
+    mustSee: "Imprescindible",
+    recommended: "Recomendado",
+    discover: "Por descubrir",
+    selected: "Seleccionado",
+    noVisits: "Sin visitas definidas",
+    noActivities: "Sin actividades definidas",
+    configTitle: "Configura tu viaje",
+    labelDepartDate: "Fecha de salida:",
+    labelNbDays: "Número de días:",
+    labelRythme: "Ritmo:",
+    labelMaxHotels: "Cambios de hotel máximos:",
+    labelBudget: "Presupuesto hotel (€/día/persona):",
+    rythmeSlow: "Tranquilo",
+    rythmeNormal: "Normal",
+    rythmeFast: "Intenso",
+    cancel: "Cancelar",
+    confirm: "Validar"
+  },
+  pt: {
+    pageTitle: "Construa seu itinerário personalizado",
+    panelTitle: "🗺️ Meu itinerário personalizado",
+    panelSubtitle: "(editável na próxima página)",
+    zoomHint: "🔍 Aproxime para ver mais lugares",
+    validate: "✓ Validar",
+    reset: "🔄 Reiniciar",
+    visitsLabel: "🏛️ Visitas possíveis",
+    activitiesLabel: "🎯 Atividades",
+    duration: "⏱️ Duração estimada",
+    day: "dia",
+    days: "dias",
+    minutes: "min",
+    emptyItinerary: "Clique nos lugares para adicioná-los",
+    removePlace: "Remover",
+    addPlace: "+ Adicionar ao meu itinerário",
+    removeFromItinerary: "✕ Remover do itinerário",
+    allCountries: "-- Todos os países --",
+    placesVisible: "lugares visíveis",
+    back: "← Voltar",
+    legendTitle: "Lugares",
+    mustSee: "Imperdível",
+    recommended: "Recomendado",
+    discover: "Para descobrir",
+    selected: "Selecionado",
+    noVisits: "Nenhuma visita definida",
+    noActivities: "Nenhuma atividade definida",
+    configTitle: "Configure sua viagem",
+    labelDepartDate: "Data de partida:",
+    labelNbDays: "Número de dias:",
+    labelRythme: "Ritmo:",
+    labelMaxHotels: "Mudanças de hotel máximas:",
+    labelBudget: "Orçamento hotel (€/dia/pessoa):",
+    rythmeSlow: "Tranquilo",
+    rythmeNormal: "Normal",
+    rythmeFast: "Intenso",
+    cancel: "Cancelar",
+    confirm: "Validar"
+  },
+  ar: {
+    pageTitle: "ابنِ مسارك المخصص",
+    panelTitle: "🗺️ مساري المخصص",
+    panelSubtitle: "(قابل للتعديل في الصفحة التالية)",
+    zoomHint: "🔍 كبّر لرؤية المزيد من الأماكن",
+    validate: "✓ تأكيد",
+    reset: "🔄 إعادة تعيين",
+    visitsLabel: "🏛️ الزيارات الممكنة",
+    activitiesLabel: "🎯 الأنشطة",
+    duration: "⏱️ المدة المقدرة",
+    day: "يوم",
+    days: "أيام",
+    minutes: "دقيقة",
+    emptyItinerary: "انقر على الأماكن لإضافتها",
+    removePlace: "إزالة",
+    addPlace: "+ إضافة إلى مساري",
+    removeFromItinerary: "✕ إزالة من المسار",
+    allCountries: "-- جميع البلدان --",
+    placesVisible: "أماكن مرئية",
+    back: "← رجوع",
+    legendTitle: "الأماكن",
+    mustSee: "لا يفوتك",
+    recommended: "موصى به",
+    discover: "للاكتشاف",
+    selected: "محدد",
+    noVisits: "لا توجد زيارات محددة",
+    noActivities: "لا توجد أنشطة محددة",
+    configTitle: "إعداد رحلتك",
+    labelDepartDate: "تاريخ المغادرة:",
+    labelNbDays: "عدد الأيام:",
+    labelRythme: "الإيقاع:",
+    labelMaxHotels: "الحد الأقصى لتغيير الفنادق:",
+    labelBudget: "ميزانية الفندق (€/يوم/شخص):",
+    rythmeSlow: "هادئ",
+    rythmeNormal: "عادي",
+    rythmeFast: "مكثف",
+    cancel: "إلغاء",
+    confirm: "تأكيد"
+  }
+};
+
+// ===============================
+// VARIABLES GLOBALES
+// ===============================
+let map = null;
+let markersLayer = null;
+let allPlaces = [];
+let allMarkers = [];
+let selectedPlaces = [];
+let currentPreviewPlace = null;
+let countryBounds = {};
+let currentLang = localStorage.getItem('lang') || 'fr';
+let ratingThreshold = 0;
+let PHOTOS_CACHE = {};
+let previewCloseTimer = null;
+let isMouseOverPreview = false;
+let isPreviewPinned = false; // Si true, la popup reste ouverte jusqu'à clic sur ✕
+
+// Cache des traductions
+const TRANSLATIONS_CACHE = {};
+
+// ===============================
+// INITIALISATION
+// ===============================
+document.addEventListener('DOMContentLoaded', () => {
+  // Langue - Le sélecteur est maintenant géré par ort-header.js (id="langSel")
+  // On peut quand même ajouter notre propre logique si le sélecteur existe
+  const langSelect = document.getElementById('langSel');
+  if (langSelect) {
+    langSelect.value = currentLang;
+    // Note: ort-header.js gère aussi le changement et recharge la page
+    // Notre listener ici fait une mise à jour avant le reload
+    langSelect.addEventListener('change', async (e) => {
+      currentLang = e.target.value;
+      localStorage.setItem('lang', currentLang);
+      
+      // RTL pour arabe
+      if (currentLang === 'ar') {
+        document.body.setAttribute('dir', 'rtl');
+      } else {
+        document.body.removeAttribute('dir');
+      }
+      
+      // Appliquer traductions UI
+      applyTranslations();
+      
+      // Recharger les données dans la nouvelle langue
+      allPlaces = [];
+      allMarkers = [];
+      markersLayer.clearLayers();
+      selectedPlaces = [];
+      
+      await loadAllPlaces();
+      updateItineraryList();
+    });
+  }
+
+  // RTL pour arabe
+  if (currentLang === 'ar') {
+    document.body.setAttribute('dir', 'rtl');
+  }
+
+  applyTranslations();
+  initMap();
+  
+  // Cacher le hint - tous les points sont affichés dès le départ
+  document.getElementById('zoomHint').style.display = 'none';
+  
+  loadPhotosJSON(); // Charger les photos
+  loadAllPlaces();
+});
+
+// ===============================
+// CHARGEMENT PHOTOS
+// ===============================
+async function loadPhotosJSON() {
+  try {
+    const paths = [
+      './data/photos-json/photos_lieux.json',
+      'data/photos-json/photos_lieux.json'
+    ];
+    for (const path of paths) {
+      try {
+        const r = await fetch(path, { cache: 'no-store' });
+        if (r.ok) {
+          PHOTOS_CACHE = await r.json() || {};
+          console.log('✅ Photos chargées:', Object.keys(PHOTOS_CACHE).length, 'lieux');
+          return;
+        }
+      } catch (e) {
+        // Ignore
+      }
+    }
+  } catch (e) {
+    console.warn('Photos non disponibles:', e);
+  }
+}
+
+function getPhotosForPlace(pid) {
+  return (PHOTOS_CACHE[pid] || {}).photos || [];
+}
+
+// Optimiser les URLs d'images pour compression et performance
+function optimizeImageUrl(url, maxWidth = 800) {
+  if (!url) return url;
+  
+  // Pexels - ajouter les paramètres de compression
+  if (url.includes('images.pexels.com')) {
+    return `${url}?auto=compress&cs=tinysrgb&w=${maxWidth}&dpr=2`;
+  }
+  
+  // Unsplash - optimiser pour la résolution
+  if (url.includes('images.unsplash.com')) {
+    return `${url}?auto=format&fit=max&w=${maxWidth}&q=80`;
+  }
+  
+  // Wikimedia - optimiser
+  if (url.includes('commons.wikimedia.org')) {
+    return `${url}?format=webp&quality=80`;
+  }
+  
+  // URLs génériques - ajouter les paramètres si possible
+  if (url.includes('?')) {
+    return `${url}&compress=1`;
+  }
+  
+  return url;
+}
+
+// ===============================
+// TRADUCTIONS
+// ===============================
+function applyTranslations() {
+  const TXT = T[currentLang] || T.fr;
+  
+  document.title = `OneRoadTrip – ${TXT.pageTitle}`;
+  document.getElementById('panelTitle').textContent = TXT.panelTitle;
+  document.getElementById('panelSubtitle').textContent = TXT.panelSubtitle;
+  document.getElementById('zoomHint').textContent = TXT.zoomHint;
+  document.getElementById('validateBtn').textContent = TXT.validate;
+  document.getElementById('resetBtn').textContent = TXT.reset;
+  document.getElementById('visitsLabel').textContent = TXT.visitsLabel;
+  document.getElementById('activitiesLabel').textContent = TXT.activitiesLabel;
+  
+  // emptyMsg est créé dynamiquement dans updateItineraryList, pas dans le HTML
+  const emptyMsgEl = document.querySelector('.itinerary-empty');
+  if (emptyMsgEl) emptyMsgEl.textContent = TXT.emptyItinerary;
+  
+  // btnBack supprimé - le header est maintenant géré par ort-header.js
+  document.getElementById('legendTitle').textContent = TXT.legendTitle;
+  
+  // Légende
+  document.querySelector('[data-i18n="mustSee"]').textContent = TXT.mustSee;
+  document.querySelector('[data-i18n="recommended"]').textContent = TXT.recommended;
+  document.querySelector('[data-i18n="discover"]').textContent = TXT.discover;
+  document.querySelector('[data-i18n="selected"]').textContent = TXT.selected;
+  
+  // Modal configuration
+  document.getElementById('configTitle').textContent = TXT.configTitle;
+  document.getElementById('labelDepartDate').textContent = TXT.labelDepartDate;
+  document.getElementById('labelNbDays').textContent = TXT.labelNbDays;
+  document.getElementById('configCancel').textContent = TXT.cancel;
+  document.getElementById('configConfirm').textContent = TXT.confirm;
+}
+
+// ===============================
+// CARTE LEAFLET
+// ===============================
+function initMap() {
+  // Vérifier que Leaflet est chargé
+  if (typeof L === 'undefined') {
+    console.error('Leaflet non chargé, retry dans 100ms');
+    setTimeout(initMap, 100);
+    return;
+  }
+
+  map = L.map('map', {
+    center: [46, 2],      // Centré sur la France par défaut
+    zoom: 7,              // Zoom plus proche pour voir les points directement
+    minZoom: 2,
+    maxZoom: 18,
+    worldCopyJump: true,
+    preferCanvas: true    // Utiliser Canvas au lieu de SVG (plus rapide)
+  });
+
+  // Utiliser CartoDB Positron pour avoir les noms en anglais/latin
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors, © CARTO',
+    maxZoom: 19,
+    subdomains: 'abcd'
+  }).addTo(map);
+
+  markersLayer = L.markerClusterGroup({
+    maxClusterRadius: 80,           // Augmenté pour regrouper plus (moins de clusters = plus rapide)
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    disableClusteringAtZoom: 6,     // Abaisser pour voir les markers individuels dès le zoom 6
+    chunkedLoading: true,           // Chargement par lots (plus fluide)
+    chunkInterval: 50,              // Intervalle entre les lots (ms)
+    chunkDelay: 25,                 // Délai initial
+    animate: false,                 // Désactiver animations (plus rapide)
+    animateAddingMarkers: false,    // Pas d'animation à l'ajout
+    removeOutsideVisibleBounds: true, // Optimisation mémoire
+    iconCreateFunction: function(cluster) {
+      const count = cluster.getChildCount();
+      let size = 'small';
+      if (count > 50) size = 'large';
+      else if (count > 20) size = 'medium';
+      
+      return L.divIcon({
+        html: '<div>' + count + '</div>',
+        className: 'marker-cluster marker-cluster-' + size,
+        iconSize: L.point(40, 40)
+      });
+    }
+  }).addTo(map);
+
+  // Mise à jour visibilité au zoom
+  map.on('zoomend', updateMarkersVisibility);
+  map.on('moveend', updateStats);
+  
+  // Charger les marqueurs progressivement lors du mouvement et zoom
+  map.on('zoomend', loadMarkersInViewport);
+  map.on('moveend', loadMarkersInViewport);
+}
+
+// ===============================
+// CHARGEMENT DES DONNÉES
+// ===============================
+async function loadAllPlaces() {
+  try {
+    // Charger l'index des pays
+    const paths = [
+      'data/Roadtripsprefabriques/countries/countries.index.json',
+      './data/Roadtripsprefabriques/countries/countries.index.json'
+    ];
+
+    let countryList = [];
+    for (const path of paths) {
+      try {
+        const res = await fetch(path);
+        if (res.ok) {
+          const data = await res.json();
+          countryList = Array.isArray(data) ? data : (data.countries || []);
+          console.log(`✅ Index chargé: ${countryList.length} pays`);
+          break;
+        }
+      } catch (e) {
+        console.warn(`Tentative ${path} échouée`);
+      }
+    }
+
+    if (countryList.length === 0) {
+      console.error('❌ Aucun pays trouvé');
+      return;
+    }
+
+    // Charger les places de chaque pays avec la langue actuelle
+    const promises = countryList.map(async (countryObj) => {
+      const cc = String(countryObj.cc || countryObj.code || countryObj).toUpperCase();
+      const ccLower = cc.toLowerCase();
+
+      // Fallback langue: currentLang → en → fr
+      const langFallback = [currentLang];
+      if (currentLang !== 'en') langFallback.push('en');
+      if (currentLang !== 'fr') langFallback.push('fr');
+
+      // Essayer chaque langue dans l'ordre de priorité
+      for (const lang of langFallback) {
+        // Chemins possibles pour cette langue (variations de casse)
+        const pathsForLang = [
+          `data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${cc}/${ccLower}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master-${lang}.json`,
+          `data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`,
+          `./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master-${lang}.json`
+        ];
+
+        for (const path of pathsForLang) {
+          try {
+            const res = await fetch(path);
+            if (res.ok) {
+              const data = await res.json();
+              let places = data.places || [];
+              
+              console.log(`✅ ${cc}: ${places.length} lieux (${lang})`);
+
+              // Calculer bounds du pays
+              if (places.length > 0) {
+                const lats = places.map(p => p.lat).filter(Boolean);
+                const lons = places.map(p => p.lon).filter(Boolean);
+                if (lats.length && lons.length) {
+                  countryBounds[cc] = L.latLngBounds(
+                    [Math.min(...lats), Math.min(...lons)],
+                    [Math.max(...lats), Math.max(...lons)]
+                  );
+                }
+              }
+
+              // Retourner immédiatement - on a trouvé un fichier valide
+              return places.map(p => {
+                let placeName = p.name;
+                if (!placeName && p.place_id) {
+                  const parts = p.place_id.split('::');
+                  if (parts[1]) {
+                    placeName = parts[1]
+                      .replace(/-/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase());
+                  }
+                }
+                return { ...p, cc, name: placeName || p.place_id };
+              });
+            }
+          } catch (e) {
+            // Ignore silencieusement
+          }
+        }
+      }
+
+      // Fallback vers ancien format sans langue (si aucun fichier avec langue trouvé)
+      const fallbackPaths = [
+        `data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${cc}/${cc}.places.master.json`,
+        `data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${ccLower}/${cc}.places.master.json`,
+        `data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`,
+        `./data/Roadtripsprefabriques/countries/${ccLower}/${ccLower}.places.master.json`
+      ];
+
+      for (const path of fallbackPaths) {
+        try {
+          const res = await fetch(path);
+          if (res.ok) {
+            const data = await res.json();
+            let places = data.places || [];
+            
+            // Filtrer par langue si ancien format avec champ language
+            if (places.length > 0 && places[0].language) {
+              places = places.filter(p => p.language === currentLang || !p.language);
+            }
+            
+            console.log(`✅ ${cc}: ${places.length} lieux (fallback)`);
+
+            if (places.length > 0) {
+              const lats = places.map(p => p.lat).filter(Boolean);
+              const lons = places.map(p => p.lon).filter(Boolean);
+              if (lats.length && lons.length) {
+                countryBounds[cc] = L.latLngBounds(
+                  [Math.min(...lats), Math.min(...lons)],
+                  [Math.max(...lats), Math.max(...lons)]
+                );
+              }
+            }
+
+            return places.map(p => {
+              let placeName = p.name;
+              if (!placeName && p.place_id) {
+                const parts = p.place_id.split('::');
+                if (parts[1]) {
+                  placeName = parts[1]
+                    .replace(/-/g, ' ')
+                    .replace(/\b\w/g, l => l.toUpperCase());
+                }
+              }
+              return { ...p, cc, name: placeName || p.place_id };
+            });
+          }
+        } catch (e) {
+          // Ignore silencieusement
+        }
+      }
+
+      return [];
+    });
+
+    const results = await Promise.all(promises);
+    allPlaces = results.flat();
+    console.log(`✅ Total: ${allPlaces.length} lieux chargés`);
+
+    // Populer le sélecteur de pays
+    populateCountrySelect(countryList);
+
+    // Calculer le seuil top 20%
+    calculateRatingThreshold();
+
+    // Créer les marqueurs
+    createMarkers();
+
+    // Mise à jour initiale
+    updateMarkersVisibility();
+    updateStats();
+
+  } catch (error) {
+    console.error('Erreur chargement:', error);
+  }
+}
+
+function populateCountrySelect(countryList) {
+  const select = document.getElementById('countrySelect');
+  const TXT = T[currentLang] || T.fr;
+  
+  select.innerHTML = `<option value="">${TXT.allCountries}</option>`;
+  
+  countryList.forEach(countryObj => {
+    const cc = String(countryObj.cc || countryObj.code || countryObj).toUpperCase();
+    const name = countryObj.names?.[currentLang] || countryObj.name || cc;
+    const option = document.createElement('option');
+    option.value = cc;
+    option.textContent = `${getFlagEmoji(cc)} ${name}`;
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', (e) => {
+    const cc = e.target.value;
+    if (cc && countryBounds[cc]) {
+      map.fitBounds(countryBounds[cc], { padding: [50, 50] });
+    } else if (!cc) {
+      map.setView([30, 0], 3);
+    }
+  });
+}
+
+function getFlagEmoji(cc) {
+  const codePoints = cc.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+}
+
+function calculateRatingThreshold() {
+  const ratings = allPlaces.map(p => p.rating || 0).filter(r => r > 0).sort((a, b) => b - a);
+  if (ratings.length > 0) {
+    const topIndex = Math.floor(ratings.length * 0.2);
+    ratingThreshold = ratings[topIndex] || ratings[ratings.length - 1];
+    console.log(`📊 Seuil top 20%: ${ratingThreshold}`);
+  }
+}
+
+// ===============================
+// MARQUEURS
+// ===============================
+function createStarIcon(color, size, isSelected = false) {
+  const finalColor = isSelected ? '#e11d48' : color;
+  return L.divIcon({
+    html: `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${finalColor}" stroke="#fff" stroke-width="2">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+    </svg>`,
+    className: 'star-marker' + (isSelected ? ' selected' : ''),
+    iconSize: [size, size],
+    iconAnchor: [size/2, size/2]
+  });
+}
+
+// Système de chargement intelligent des marqueurs
+let loadedMarkersIds = new Set();
+let lastViewBounds = null;
+let markerLoadingInProgress = false;
+
+function createMarkerElement(place) {
+  const rating = place.rating || 0;
+  const starInfo = ratingToStars(rating);
+  const isTopRated = rating >= ratingThreshold;
+
+  let marker;
+  
+  if (starInfo.isStar) {
+    marker = L.marker([place.lat, place.lon], {
+      icon: createStarIcon(starInfo.color, 20)
+    });
+  } else {
+    marker = L.circleMarker([place.lat, place.lon], {
+      radius: starInfo.radius,
+      fillColor: starInfo.color,
+      color: '#fff',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.8
+    });
+  }
+
+  marker.placeData = place;
+  marker.isTopRated = isTopRated;
+  marker.starInfo = starInfo;
+
+  // Événements
+  marker.on('mouseover', () => {
+    if (!starInfo.isStar && marker.setStyle) {
+      marker.setStyle({ weight: 2, radius: (marker.options.radius || starInfo.radius) + 2 });
+    }
+    showPlacePreview(place);
+    if (previewCloseTimer) {
+      clearTimeout(previewCloseTimer);
+      previewCloseTimer = null;
+    }
+  });
+  
+  marker.on('mouseout', () => {
+    const isSelected = selectedPlaces.some(p => p.place_id === place.place_id);
+    if (!starInfo.isStar && marker.setStyle) {
+      marker.setStyle({
+        weight: isSelected ? 2 : 1.5,
+        radius: marker.starInfo.radius,
+        color: isSelected ? '#e11d48' : '#fff',
+        fillColor: isSelected ? '#e11d48' : marker.starInfo.color
+      });
+    }
+    if (!isPreviewPinned) {
+      previewCloseTimer = setTimeout(() => {
+        if (!isMouseOverPreview && !isPreviewPinned) {
+          closePlacePreview();
+        }
+      }, 300);
+    }
+  });
+  
+  marker.on('click', () => {
+    togglePlaceSelection(place);
+    isPreviewPinned = true;
+    showPlacePreview(place);
+  });
+
+  return marker;
+}
+
+function isPlaceInBounds(place, bounds) {
+  if (!bounds) return true;
+  return bounds.contains([place.lat, place.lon]);
+}
+
+function createMarkers() {
+  markersLayer.clearLayers();
+  allMarkers = [];
+  loadedMarkersIds.clear();
+  
+  // Étape 1 : Charger toutes les "super places" (top 20%)
+  console.log('📍 Chargement étape 1: Super places (top 20%)');
+  let superPlacesCount = 0;
+  allPlaces.forEach(place => {
+    if (!place.lat || !place.lon) return;
+    
+    const rating = place.rating || 0;
+    const isTopRated = rating >= ratingThreshold;
+    
+    if (isTopRated) {
+      const marker = createMarkerElement(place);
+      markersLayer.addLayer(marker);
+      allMarkers.push(marker);
+      loadedMarkersIds.add(place.place_id);
+      superPlacesCount++;
+    }
+  });
+  console.log(`✅ ${superPlacesCount} super places chargées`);
+  
+  // Étape 2 : Charger les autres places de la zone visible
+  loadMarkersInViewport();
+}
+
+function loadMarkersInViewport() {
+  if (markerLoadingInProgress) return;
+  markerLoadingInProgress = true;
+  
+  const bounds = map.getBounds();
+  if (!bounds) {
+    markerLoadingInProgress = false;
+    return;
+  }
+  
+  const zoom = map.getZoom();
+  let otherPlacesCount = 0;
+  
+  // Créer une version légèrement étendue des bounds pour les bordures
+  const padding = (bounds.getNorthWest().lng - bounds.getSouthEast().lng) * 0.2;
+  const extendedBounds = L.latLngBounds(
+    [bounds.getSouth() - padding, bounds.getWest() - padding],
+    [bounds.getNorth() + padding, bounds.getEast() + padding]
+  );
+  
+  allPlaces.forEach(place => {
+    if (!place.lat || !place.lon) return;
+    if (loadedMarkersIds.has(place.place_id)) return; // Déjà chargé
+    
+    const rating = place.rating || 0;
+    const isTopRated = rating >= ratingThreshold;
+    
+    // Charger les places non-top si elles sont dans les bounds étendus
+    if (!isTopRated && isPlaceInBounds(place, extendedBounds)) {
+      const marker = createMarkerElement(place);
+      markersLayer.addLayer(marker);
+      allMarkers.push(marker);
+      loadedMarkersIds.add(place.place_id);
+      otherPlacesCount++;
+    }
+  });
+  
+  if (otherPlacesCount > 0) {
+    console.log(`✅ ${otherPlacesCount} autres places chargées dans la vue`);
+  }
+  
+  markerLoadingInProgress = false;
+}
+
+function ratingToStars(rating) {
+  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 12, isStar: true };  // Bleu foncé - INCONTOURNABLE
+  if (rating >= 7.6) return { stars: 4, color: '#43A047', textColor: '#fff', radius: 9, isStar: false }; // Vert - Très bon
+  if (rating >= 6.1) return { stars: 3, color: '#7CB342', textColor: '#fff', radius: 8, isStar: false }; // Vert clair - Bon
+  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: 6, isStar: false }; // Gris-bleu - Moyen
+  if (rating > 0) return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: 5, isStar: false };    // Gris clair - Faible
+  return { stars: 0, color: '#CFD8DC', textColor: '#fff', radius: 5, isStar: false }; // Gris très clair - Non noté
+}
+
+// Compatibilité ancienne fonction
+function getRatingColor(rating) {
+  return ratingToStars(rating).color;
+}
+
+function updateMarkersVisibility() {
+  // Les markers sont déjà tous ajoutés au chargement via addLayers()
+  // Cette fonction ne fait que mettre à jour les styles si nécessaire
+  
+  allMarkers.forEach(marker => {
+    const isSelected = selectedPlaces.some(p => p.place_id === marker.placeData.place_id);
+    
+    // setStyle seulement pour circleMarker (pas pour L.marker avec icon)
+    if (!marker.starInfo.isStar && marker.setStyle) {
+      const baseOpacity = marker.starInfo.stars >= 4 ? 0.9 : (marker.starInfo.stars >= 3 ? 0.75 : 0.6);
+      marker.setStyle({ 
+        opacity: 1, 
+        fillOpacity: isSelected ? 0.95 : baseOpacity 
+      });
+    }
+  });
+
+  // Cacher le hint - plus besoin de zoomer
+  document.getElementById('zoomHint').style.display = 'none';
+}
+
+function updateStats() {
+  const bounds = map.getBounds();
+  
+  // Compter tous les lieux dans la vue actuelle
+  let visibleCount = 0;
+  allMarkers.forEach(marker => {
+    if (bounds.contains(marker.getLatLng())) {
+      visibleCount++;
+    }
+  });
+
+  const TXT = T[currentLang] || T.fr;
+  document.getElementById('statsBox').textContent = `${visibleCount} ${TXT.placesVisible}`;
+}
+
+function updateMarkerStyles() {
+  allMarkers.forEach(marker => {
+    const place = marker.placeData;
+    const isSelected = selectedPlaces.some(p => p.place_id === place.place_id);
+    
+    if (marker.starInfo.isStar) {
+      // Pour les étoiles, changer l'icône
+      marker.setIcon(createStarIcon(marker.starInfo.color, 20, isSelected));
+    } else if (marker.setStyle) {
+      // Pour les cercles
+      marker.setStyle({
+        color: isSelected ? '#e11d48' : '#fff',
+        fillColor: isSelected ? '#e11d48' : marker.starInfo.color,
+        weight: isSelected ? 2 : 1.5,
+        radius: isSelected ? marker.starInfo.radius + 2 : marker.starInfo.radius
+      });
+    }
+  });
+}
+
+function updateAddPlaceButton() {
+  const btn = document.getElementById('addPlaceBtn');
+  const btnMobile = document.getElementById('addPlaceBtnMobile');
+  if (!currentPreviewPlace) return;
+  
+  const TXT = T[currentLang] || T.fr;
+  const isSelected = selectedPlaces.some(p => p.place_id === currentPreviewPlace.place_id);
+  
+  const updateButton = (button) => {
+    if (!button) return;
+    if (isSelected) {
+      button.textContent = TXT.removeFromItinerary;
+      button.classList.add('remove');
+      button.onclick = () => {
+        removePlaceFromItinerary(currentPreviewPlace.place_id);
+      };
+    } else {
+      button.textContent = TXT.addPlace;
+      button.classList.remove('remove');
+      button.onclick = () => {
+        addPlaceToItinerary(currentPreviewPlace);
+      };
+    }
+  };
+  
+  updateButton(btn);
+  updateButton(btnMobile);
+}
+
+// ===============================
+// PREVIEW LIEU
+// ===============================
+function togglePlaceSelection(place) {
+  const isSelected = selectedPlaces.some(p => p.place_id === place.place_id);
+  
+  if (isSelected) {
+    // Retirer
+    selectedPlaces = selectedPlaces.filter(p => p.place_id !== place.place_id);
+  } else {
+    // Ajouter
+    selectedPlaces.push(place);
+  }
+  
+  updateItineraryList();
+  updateMarkerStyles();
+}
+
+async function showPlacePreview(place) {
+  currentPreviewPlace = place;
+  const preview = document.getElementById('placePreview');
+  const TXT = T[currentLang] || T.fr;
+
+  // Titre - déjà traduit dans les données chargées
+  const titleElement = document.getElementById('previewTitle');
+  titleElement.textContent = place.name;
+
+  // Rating avec nouveau système d'étoiles
+  const rating = place.rating || 0;
+  const starInfo = ratingToStars(rating);
+  const starsDisplay = '★'.repeat(starInfo.stars) + '☆'.repeat(5 - starInfo.stars);
+  document.getElementById('previewStars').textContent = starsDisplay;
+  document.getElementById('previewStars').style.color = starInfo.color;
+
+  // Photos (main avec flèches) avec lazy loading et optimisation
+  const photosContainer = document.getElementById('previewPhotos');
+  const photos = getPhotosForPlace(place.place_id).map(url => optimizeImageUrl(url, 800));
+  photosContainer.innerHTML = '';
+  
+  if (photos.length > 0) {
+    // Photo principale
+    const mainDiv = document.createElement('div');
+    mainDiv.className = 'preview-photos-main';
+    const mainImg = document.createElement('img');
+    mainImg.src = photos[0];
+    mainImg.alt = place.name;
+    mainImg.loading = 'lazy';
+    mainImg.decoding = 'async';
+    mainImg.onerror = () => mainImg.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="48" fill="%239ca3af"%3E📷%3C/text%3E%3C/svg%3E';
+    mainDiv.appendChild(mainImg);
+    photosContainer.appendChild(mainDiv);
+    
+    // Carrousel avec flèches si plusieurs photos
+    if (photos.length > 1) {
+      const carouselDiv = document.createElement('div');
+      carouselDiv.className = 'preview-photos-carousel';
+      
+      let currentPhotoIndex = 0;
+      
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'carousel-arrow';
+      prevBtn.textContent = '❮';
+      prevBtn.disabled = true;
+      
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'carousel-info';
+      infoDiv.textContent = `1 / ${photos.length}`;
+      
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'carousel-arrow';
+      nextBtn.textContent = '❯';
+      
+      const updateCarousel = () => {
+        mainImg.src = optimizeImageUrl(photos[currentPhotoIndex], 800);
+        mainImg.loading = 'lazy';
+        mainImg.decoding = 'async';
+        infoDiv.textContent = `${currentPhotoIndex + 1} / ${photos.length}`;
+        prevBtn.disabled = currentPhotoIndex === 0;
+        nextBtn.disabled = currentPhotoIndex === photos.length - 1;
+      };
+      
+      prevBtn.addEventListener('click', () => {
+        if (currentPhotoIndex > 0) {
+          currentPhotoIndex--;
+          updateCarousel();
+        }
+      });
+      
+      nextBtn.addEventListener('click', () => {
+        if (currentPhotoIndex < photos.length - 1) {
+          currentPhotoIndex++;
+          updateCarousel();
+        }
+      });
+      
+      carouselDiv.appendChild(prevBtn);
+      carouselDiv.appendChild(infoDiv);
+      carouselDiv.appendChild(nextBtn);
+      photosContainer.appendChild(carouselDiv);
+    }
+  } else {
+    // Placeholder si pas de photos
+    const mainDiv = document.createElement('div');
+    mainDiv.className = 'preview-photos-main';
+    mainDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+    mainDiv.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" style="width:100%;height:100%;"><rect fill="#e5e7eb" width="400" height="300"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="Arial" font-size="64" fill="#9ca3af">📷</text></svg>';
+    photosContainer.appendChild(mainDiv);
+  }
+
+  // Durée basée sur suggested_days
+  const suggestedDays = place.suggested_days || 0;
+  let durationText;
+  if (suggestedDays >= 1) {
+    durationText = `${TXT.duration}: ${suggestedDays} ${suggestedDays > 1 ? TXT.days : TXT.day}`;
+  } else if (suggestedDays > 0) {
+    // Convertir en heures pour les demi-journées
+    const hours = Math.round(suggestedDays * 24);
+    durationText = `${TXT.duration}: ~${hours}h`;
+  } else {
+    durationText = `${TXT.duration}: -`;
+  }
+  document.getElementById('previewDuration').textContent = durationText;
+
+  // Visites
+  const visitsList = document.getElementById('previewVisits');
+  visitsList.innerHTML = '';
+  if (place.visits && place.visits.length > 0) {
+    const visitsTexts = place.visits.slice(0, 6).map(v => v.text);
+    visitsTexts.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      visitsList.appendChild(li);
+    });
+  } else {
+    const li = document.createElement('li');
+    li.textContent = TXT.noVisits;
+    li.style.fontStyle = 'italic';
+    visitsList.appendChild(li);
+  }
+
+  // Activités
+  const activitiesList = document.getElementById('previewActivities');
+  activitiesList.innerHTML = '';
+  if (place.activities && place.activities.length > 0) {
+    const actsTexts = place.activities.slice(0, 6).map(a => a.text);
+    actsTexts.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      activitiesList.appendChild(li);
+    });
+  } else {
+    const li = document.createElement('li');
+    li.textContent = TXT.noActivities;
+    li.style.fontStyle = 'italic';
+    activitiesList.appendChild(li);
+  }
+
+  preview.classList.add('show');
+  document.body.classList.add('preview-open');
+  
+  // Afficher l'overlay sur mobile
+  document.getElementById('previewOverlay').classList.add('show');
+  
+  // Afficher la barre action mobile
+  document.getElementById('mobileActionBar').classList.add('show');
+  
+  // Mettre à jour le bouton d'ajout
+  updateAddPlaceButton();
+  
+  // Gérer le survol de la popup pour ne pas la fermer
+  preview.onmouseenter = () => {
+    isMouseOverPreview = true;
+    if (previewCloseTimer) {
+      clearTimeout(previewCloseTimer);
+      previewCloseTimer = null;
+    }
+  };
+  
+  preview.onmouseleave = () => {
+    isMouseOverPreview = false;
+    // Fermer après un court délai SEULEMENT si pas épinglé
+    if (!isPreviewPinned) {
+      previewCloseTimer = setTimeout(() => {
+        closePlacePreview();
+      }, 300);
+    }
+  };
+}
+
+function onMarkerClick(place, marker) {
+  currentPreviewPlace = place;
+  showPlacePreview(place);
+}
+
+function closePlacePreview() {
+  document.getElementById('placePreview').classList.remove('show');
+  document.getElementById('previewOverlay').classList.remove('show');
+  document.getElementById('mobileActionBar').classList.remove('show');
+  document.body.classList.remove('preview-open');
+  currentPreviewPlace = null;
+  isMouseOverPreview = false;
+  isPreviewPinned = false; // Réinitialiser l'état épinglé
+  if (previewCloseTimer) {
+    clearTimeout(previewCloseTimer);
+    previewCloseTimer = null;
+  }
+}
+
+// Toggle liste itinéraire sur mobile
+function toggleMobileItinList() {
+  const panel = document.querySelector('.top-panel');
+  const header = document.getElementById('mobileItinHeader');
+  if (panel && header) {
+    panel.classList.toggle('list-open');
+    header.classList.toggle('open');
+  }
+}
+
+// ===============================
+// GESTION ITINÉRAIRE
+// ===============================
+function addPlaceToItinerary(place) {
+  if (selectedPlaces.some(p => p.place_id === place.place_id)) return;
+
+  selectedPlaces.push(place);
+  updateItineraryList();
+  updateMarkerStyles();
+  updateAddPlaceButton();
+  closePlacePreview(); // Fermer la modale après ajout
+}
+
+function removePlaceFromItinerary(placeId) {
+  selectedPlaces = selectedPlaces.filter(p => p.place_id !== placeId);
+  updateItineraryList();
+  updateMarkerStyles();
+  updateAddPlaceButton();
+}
+
+function updateItineraryList() {
+  const flow = document.getElementById('itineraryFlow');
+  const emptyMsg = document.getElementById('emptyMsg');
+  const validateBtn = document.getElementById('validateBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const mobileCount = document.getElementById('mobileItinCount');
+  const TXT = T[currentLang] || T.fr;
+  
+  // Mise à jour compteur mobile
+  if (mobileCount) {
+    const count = selectedPlaces.length;
+    mobileCount.textContent = count === 0 ? TXT.emptyItinerary : `${count} étape${count > 1 ? 's' : ''}`;
+  }
+
+  if (selectedPlaces.length === 0) {
+    flow.innerHTML = `<span class="itinerary-empty">${TXT.emptyItinerary}</span>`;
+    validateBtn.style.display = 'none';
+    resetBtn.style.display = 'none';
+    return;
+  }
+
+  validateBtn.style.display = 'inline-block';
+  validateBtn.style.visibility = 'visible';
+  resetBtn.style.display = 'inline-block';
+
+  flow.innerHTML = '';
+  selectedPlaces.forEach((place, index) => {
+    // Vérification de sécurité
+    if (!place || !place.name) {
+      console.warn('Place invalide:', place);
+      return;
+    }
+    
+    // Étape avec couleur
+    const step = document.createElement('div');
+    step.className = 'itinerary-step';
+    
+    const rating = place.rating || 0;
+    const ratingColor = getRatingColor(rating);
+    const shortName = place.name.length > 20 ? place.name.substring(0, 20) + '...' : place.name;
+
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'step-name';
+    nameSpan.title = place.name;
+    nameSpan.textContent = shortName;
+
+    step.innerHTML = `
+      <span class="step-color" style="background:${ratingColor}"></span>
+    `;
+    step.appendChild(nameSpan);
+    
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'step-remove';
+    removeBtn.title = TXT.removePlace;
+    removeBtn.textContent = '✕';
+    removeBtn.onclick = () => removePlaceFromItinerary(place.place_id);
+    step.appendChild(removeBtn);
+
+    // Les données sont déjà traduites dans les fichiers JSON séparés par langue
+
+    flow.appendChild(step);
+
+    // Flèche si pas le dernier
+    if (index < selectedPlaces.length - 1) {
+      const arrow = document.createElement('span');
+      arrow.className = 'itinerary-arrow';
+      arrow.textContent = '→';
+      flow.appendChild(arrow);
+    }
+  });
+}
+
+// ===============================
+// RESET ITINÉRAIRE
+// ===============================
+document.getElementById('resetBtn').addEventListener('click', () => {
+  selectedPlaces = [];
+  updateItineraryList();
+  updateMarkerStyles();
+  closePlacePreview();
+});
+
+// ===============================
+// DRAG & DROP
+// ===============================
+let draggedIndex = null;
+
+function onDragStart(e) {
+  draggedIndex = parseInt(e.target.dataset.index);
+  e.target.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  const targetIndex = parseInt(e.target.closest('.itinerary-item').dataset.index);
+  
+  if (draggedIndex !== null && draggedIndex !== targetIndex) {
+    const movedPlace = selectedPlaces[draggedIndex];
+    selectedPlaces.splice(draggedIndex, 1);
+    selectedPlaces.splice(targetIndex, 0, movedPlace);
+    updateItineraryList();
+  }
+}
+
+function onDragEnd(e) {
+  e.target.classList.remove('dragging');
+  draggedIndex = null;
+}
+
+// ===============================
+// VALIDATION ET CONFIGURATION
+// ===============================
+let selectedBudgets = ['100-150']; // Valeur par défaut
+
+// Initialiser la modal
+function initConfigModal() {
+  const modal = document.getElementById('configModal');
+  const cancelBtn = document.getElementById('configCancel');
+  const confirmBtn = document.getElementById('configConfirm');
+  
+  // Date par défaut = aujourd'hui
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('departDate').value = today;
+  
+  // Annuler
+  cancelBtn.addEventListener('click', () => {
+    modal.classList.remove('show');
+  });
+  
+  // Clic en dehors pour fermer
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('show');
+    }
+  });
+  
+  // Confirmer
+  confirmBtn.addEventListener('click', () => {
+    submitItinerary();
+  });
+}
+
+function showConfigModal() {
+  const TXT = T[currentLang] || T.fr;
+  
+  // Calculer la somme des jours conseillés
+  const totalSuggestedDays = selectedPlaces.reduce((sum, place) => {
+    return sum + (place.suggested_days || 1);
+  }, 0);
+  
+  // Pré-remplir avec la somme (minimum 1, maximum 30)
+  const nbDaysInput = document.getElementById('nbDays');
+  nbDaysInput.value = Math.min(30, Math.max(1, totalSuggestedDays));
+  
+  // Mettre à jour les textes
+  document.getElementById('configTitle').textContent = TXT.configTitle;
+  document.getElementById('labelDepartDate').textContent = TXT.labelDepartDate;
+  document.getElementById('labelNbDays').textContent = TXT.labelNbDays;
+  document.getElementById('configCancel').textContent = TXT.cancel;
+  document.getElementById('configConfirm').textContent = TXT.confirm;
+  
+  document.getElementById('configModal').classList.add('show');
+}
+
+function submitItinerary() {
+  if (selectedPlaces.length === 0) return;
+
+  // Récupérer les paramètres de configuration
+  const config = {
+    departDate: document.getElementById('departDate').value,
+    nbDays: parseInt(document.getElementById('nbDays').value) || 7,
+    budgets: selectedBudgets.length > 0 ? selectedBudgets : ['100-150']
+  };
+
+  // Générer un titre basé sur les lieux sélectionnés
+  const firstPlace = selectedPlaces[0].name;
+  const lastPlace = selectedPlaces[selectedPlaces.length - 1].name;
+  const title = selectedPlaces.length > 1 
+    ? `${firstPlace} → ${lastPlace}` 
+    : firstPlace;
+
+  // Générer un ID unique pour cet itinéraire
+  const cc = selectedPlaces[0].cc || 'XX';
+  const timestamp = Date.now();
+  const rtKey = `${cc}_custom_${timestamp}`;
+  const itinId = `${cc}::custom-${timestamp}`;
+
+  // Créer la structure de l'itinéraire au format attendu par roadtrip_detail.html
+  const itineraryData = {
+    itins: [{
+      itin_id: itinId,
+      title: title,
+      places: selectedPlaces.map(place => ({
+        place_id: place.place_id,
+        name: place.name,
+        lat: place.lat,
+        lon: place.lon,
+        visits: place.visits || [],
+        activities: place.activities || [],
+        rating: place.rating || 0,
+        suggested_days: place.suggested_days || 1
+      }))
+    }]
+  };
+
+  // Créer la structure des places (pour référence)
+  const placesData = {
+    places: selectedPlaces.map(place => ({
+      place_id: place.place_id,
+      name: place.name,
+      lat: place.lat,
+      lon: place.lon,
+      cc: place.cc,
+      kinds: place.kinds || [],
+      visits: place.visits || [],
+      activities: place.activities || [],
+      hotels: place.hotels || [],
+      images: getPhotosForPlace(place.place_id),
+      rating: place.rating || 0,
+      suggested_days: place.suggested_days || 1
+    }))
+  };
+
+  // Sauvegarder dans localStorage
+  try {
+    localStorage.setItem(`ORT_TEMP_TRIP_${rtKey}_itins`, JSON.stringify(itineraryData));
+    localStorage.setItem(`ORT_TEMP_TRIP_${rtKey}_places`, JSON.stringify(placesData));
+    localStorage.setItem(`ORT_TEMP_TRIP_${rtKey}_config`, JSON.stringify(config));
+    
+    console.log('✅ Itinéraire sauvegardé:', rtKey);
+    console.log('   - Places:', selectedPlaces.length);
+    console.log('   - Config:', config);
+
+    // Générer un tripId cohérent
+    const tripId = `custom::${rtKey}`;
+    
+    // Stocker dans ORT_TRIPID et localStorage
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.store(tripId);
+    } else {
+      localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
+    }
+
+    // Construire l'URL avec tous les paramètres
+    const params = new URLSearchParams({
+      from: 'temp',
+      rtKey: rtKey,
+      tripId: tripId,
+      lang: currentLang,
+      mode: 'expert',
+      departDate: config.departDate,
+      nbDays: config.nbDays,
+      budgets: config.budgets.join(',')
+    });
+
+    // Rediriger vers roadtrip_detail.html avec les paramètres
+    window.location.href = `roadtrip_detail.html?${params.toString()}`;
+    
+  } catch (e) {
+    console.error('❌ Erreur de stockage:', e);
+    alert('Erreur de stockage local. Veuillez réessayer.');
+  }
+}
+
+// Bouton Valider -> ouvre la modal
+document.getElementById('validateBtn').addEventListener('click', () => {
+  if (selectedPlaces.length === 0) return;
+  showConfigModal();
+});
+
+// Initialiser la modal au chargement
+document.addEventListener('DOMContentLoaded', () => {
+  initConfigModal();
+});
+
+// ===============================
+// API DE TRADUCTION
+// ===============================
+// Fonctions de traduction API supprimées - les données sont déjà traduites dans les fichiers JSON séparés par langue
+</script>
+
+<!-- Footer ORT -->
+<footer id="footer-legal"></footer>
+
+<!-- Scripts ORT modulaires -->
+<script src="js/ort-config.js"></script>
+<script src="js/ort-tripid.js"></script>
+<script src="js/ort-i18n-auth.js"></script>
+<script src="js/ort-header.js"></script>
+<script src="js/ort-footer.js"></script>
+
+</body>
+</html>

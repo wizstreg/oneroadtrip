@@ -839,35 +839,6 @@ body:not(.preview-open) .itinerary-flow {
   box-shadow: 0 0 0 3px rgba(17, 63, 122, 0.1);
 }
 
-.budget-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.budget-btn {
-  padding: 10px 16px;
-  border: 1px solid var(--bd);
-  border-radius: 20px;
-  background: #fff;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.budget-btn:hover {
-  border-color: var(--acc);
-  background: #f0f7ff;
-}
-
-.budget-btn.selected {
-  background: var(--acc);
-  color: #fff;
-  border-color: var(--acc);
-}
-
 .config-actions {
   display: flex;
   justify-content: flex-end;
@@ -997,7 +968,7 @@ body:not(.preview-open) .itinerary-flow {
     
     <div class="config-field">
       <label id="labelNbDays">Nombre de jours souhaités :</label>
-      <input type="number" id="nbDays" class="config-input" value="7" min="1" max="30">
+      <input type="number" id="days" class="config-input" value="7" min="1" max="30">
     </div>
     
     <div class="config-actions">
@@ -1046,7 +1017,6 @@ const T = {
     labelNbDays: "Nombre de jours souhaités :",
     labelRythme: "Rythme :",
     labelMaxHotels: "Changements d'hôtel maximum :",
-    labelBudget: "Budget hôtel (€/jour/personne) :",
     rythmeSlow: "Tranquille",
     rythmeNormal: "Normal",
     rythmeFast: "Soutenu",
@@ -1085,7 +1055,6 @@ const T = {
     labelNbDays: "Number of days:",
     labelRythme: "Pace:",
     labelMaxHotels: "Maximum hotel changes:",
-    labelBudget: "Hotel budget (€/day/person):",
     rythmeSlow: "Relaxed",
     rythmeNormal: "Normal",
     rythmeFast: "Intensive",
@@ -1124,7 +1093,6 @@ const T = {
     labelNbDays: "Numero di giorni:",
     labelRythme: "Ritmo:",
     labelMaxHotels: "Cambi hotel massimi:",
-    labelBudget: "Budget hotel (€/giorno/persona):",
     rythmeSlow: "Rilassato",
     rythmeNormal: "Normale",
     rythmeFast: "Intenso",
@@ -1163,7 +1131,6 @@ const T = {
     labelNbDays: "Número de días:",
     labelRythme: "Ritmo:",
     labelMaxHotels: "Cambios de hotel máximos:",
-    labelBudget: "Presupuesto hotel (€/día/persona):",
     rythmeSlow: "Tranquilo",
     rythmeNormal: "Normal",
     rythmeFast: "Intenso",
@@ -1202,7 +1169,6 @@ const T = {
     labelNbDays: "Número de dias:",
     labelRythme: "Ritmo:",
     labelMaxHotels: "Mudanças de hotel máximas:",
-    labelBudget: "Orçamento hotel (€/dia/pessoa):",
     rythmeSlow: "Tranquilo",
     rythmeNormal: "Normal",
     rythmeFast: "Intenso",
@@ -1241,7 +1207,6 @@ const T = {
     labelNbDays: "عدد الأيام:",
     labelRythme: "الإيقاع:",
     labelMaxHotels: "الحد الأقصى لتغيير الفنادق:",
-    labelBudget: "ميزانية الفندق (€/يوم/شخص):",
     rythmeSlow: "هادئ",
     rythmeNormal: "عادي",
     rythmeFast: "مكثف",
@@ -2307,7 +2272,6 @@ function onDragEnd(e) {
 // ===============================
 // VALIDATION ET CONFIGURATION
 // ===============================
-let selectedBudgets = ['100-150']; // Valeur par défaut
 
 // Initialiser la modal
 function initConfigModal() {
@@ -2346,7 +2310,7 @@ function showConfigModal() {
   }, 0);
   
   // Pré-remplir avec la somme (minimum 1, maximum 30)
-  const nbDaysInput = document.getElementById('nbDays');
+  const nbDaysInput = document.getElementById('days');
   nbDaysInput.value = Math.min(30, Math.max(1, totalSuggestedDays));
   
   // Mettre à jour les textes
@@ -2365,8 +2329,7 @@ function submitItinerary() {
   // Récupérer les paramètres de configuration
   const config = {
     departDate: document.getElementById('departDate').value,
-    nbDays: parseInt(document.getElementById('nbDays').value) || 7,
-    budgets: selectedBudgets.length > 0 ? selectedBudgets : ['100-150']
+    days: parseInt(document.getElementById('days').value) || 7
   };
 
   // Générer un titre basé sur les lieux sélectionnés
@@ -2446,8 +2409,7 @@ function submitItinerary() {
       lang: currentLang,
       mode: 'expert',
       departDate: config.departDate,
-      nbDays: config.nbDays,
-      budgets: config.budgets.join(',')
+      days: config.days
     });
 
     // Rediriger vers roadtrip_detail.html avec les paramètres

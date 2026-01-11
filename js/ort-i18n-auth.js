@@ -40,6 +40,13 @@
       acceptCgu: "J'accepte les",
       cguLink: "Conditions Générales d'Utilisation",
       
+      // Auth - Modale enregistrement obligatoire
+      authRequiredTitle: "Inscription requise",
+      authRequiredText: "Pour voir la suite de cet itinéraire, l'imprimer, le personnaliser et enregistrer vos futures réservations, vous devez être inscrit.",
+      authRequiredFree: "Toutes ces fonctionnalités sont entièrement gratuites.",
+      authRequiredLogin: "J'ai déjà un compte",
+      authRequiredSignup: "Créer mon compte gratuit",
+      
       // Auth - Messages
       msgVerificationSent: "Un e-mail de vérification a été envoyé à {email}",
       msgResetSent: "Si l'adresse existe, un e-mail de réinitialisation a été envoyé.",
@@ -121,6 +128,13 @@
       // Auth - CGU
       acceptCgu: "I accept the",
       cguLink: "Terms of Service",
+      
+      // Auth - Registration required modal
+      authRequiredTitle: "Registration required",
+      authRequiredText: "To view the full itinerary, print it, customize it and save your future bookings, you must be registered.",
+      authRequiredFree: "All these features are completely free.",
+      authRequiredLogin: "I already have an account",
+      authRequiredSignup: "Create my free account",
       
       // Auth - Messages
       msgVerificationSent: "A verification e-mail has been sent to {email}",
@@ -204,6 +218,13 @@
       acceptCgu: "Acepto los",
       cguLink: "Términos de Servicio",
       
+      // Auth - Modale registro obligatorio
+      authRequiredTitle: "Registro requerido",
+      authRequiredText: "Para ver el itinerario completo, imprimirlo, personalizarlo y guardar tus futuras reservas, debes estar registrado.",
+      authRequiredFree: "Todas estas funciones son completamente gratuitas.",
+      authRequiredLogin: "Ya tengo una cuenta",
+      authRequiredSignup: "Crear mi cuenta gratis",
+      
       // Auth - Messages
       msgVerificationSent: "Se ha enviado un correo de verificación a {email}",
       msgResetSent: "Si la dirección existe, se ha enviado un correo de restablecimiento.",
@@ -285,6 +306,13 @@
       // Auth - CGU
       acceptCgu: "Accetto i",
       cguLink: "Termini di Servizio",
+      
+      // Auth - Modale registrazione obbligatoria
+      authRequiredTitle: "Registrazione richiesta",
+      authRequiredText: "Per vedere l'itinerario completo, stamparlo, personalizzarlo e salvare le tue future prenotazioni, devi essere registrato.",
+      authRequiredFree: "Tutte queste funzionalità sono completamente gratuite.",
+      authRequiredLogin: "Ho già un account",
+      authRequiredSignup: "Crea il mio account gratuito",
       
       // Auth - Messages
       msgVerificationSent: "È stata inviata un'e-mail di verifica a {email}",
@@ -368,6 +396,13 @@
       acceptCgu: "Aceito os",
       cguLink: "Termos de Serviço",
       
+      // Auth - Modal registo obrigatório
+      authRequiredTitle: "Registo obrigatório",
+      authRequiredText: "Para ver o itinerário completo, imprimi-lo, personalizá-lo e guardar as suas futuras reservas, deve estar registado.",
+      authRequiredFree: "Todas estas funcionalidades são totalmente gratuitas.",
+      authRequiredLogin: "Já tenho uma conta",
+      authRequiredSignup: "Criar a minha conta grátis",
+      
       // Auth - Messages
       msgVerificationSent: "Foi enviado um e-mail de verificação para {email}",
       msgResetSent: "Se o endereço existir, foi enviado um e-mail de redefinição.",
@@ -449,6 +484,13 @@
       // Auth - CGU
       acceptCgu: "أوافق على",
       cguLink: "شروط الخدمة",
+      
+      // Auth - نافذة التسجيل الإلزامي
+      authRequiredTitle: "التسجيل مطلوب",
+      authRequiredText: "لعرض المسار الكامل وطباعته وتخصيصه وحفظ حجوزاتك المستقبلية، يجب أن تكون مسجلاً.",
+      authRequiredFree: "جميع هذه الميزات مجانية تمامًا.",
+      authRequiredLogin: "لدي حساب بالفعل",
+      authRequiredSignup: "إنشاء حسابي المجاني",
       
       // Auth - Messages
       msgVerificationSent: "تم إرسال بريد التحقق إلى {email}",

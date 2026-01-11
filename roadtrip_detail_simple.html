@@ -1782,6 +1782,8 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 <!-- ⬇️ AJOUTER AVANT </head> -->
 <script src="/js/ort-config.js"></script>
 <script src="/js/ort-partners.js"></script>
+<script src="/js/ort-widgets.js"></script>
+<script src="/js/ort-trip-calc.js"></script>
 <script defer src="/js/ort-tripid.js"></script>
 <script defer src="/js/ort-i18n.js"></script>
 <script>
@@ -3335,6 +3337,8 @@ function findNearbyPlaces(place_id, maxDistanceKm = 20) {
   return nearby.sort((a, b) => a.distance - b.distance);
 }
 
+// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
+/* ANCIEN CODE - COMMENTÉ POUR RETOUR ARRIÈRE
 // Calcul distance haversine (pour hub/satellite clustering)
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Rayon de la Terre en km
@@ -3346,11 +3350,14 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }
+FIN haversineDistance */
 
 /**
  * Applique le calcul automatique des nuits à toutes les étapes
  * Modifie state.steps directement et sauvegarde automatiquement
  */
+// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
+/* ANCIEN CODE - COMMENTÉ POUR RETOUR ARRIÈRE
 function autoCalculateNights(targetNights) {
   if (!state.steps || state.steps.length === 0) return;
   
@@ -3477,17 +3484,33 @@ function autoCalculateNights(targetNights) {
   
   return totalNightsResult;
 }
+FIN autoCalculateNights */
 
 // Déclenchement automatique amélioré
 // 1. Au chargement initial (avec retry) - OPTION B : Toujours recalculer
 // SAUF si on vient de pres_simple avec des paramètres (PARAM_DAYS défini)
+// Attend 7 secondes pour laisser le calcul de route se faire
+const ROUTE_CALC_WAIT = 7000;
+
 window.addEventListener('load', () => {
+  // ========== DEBUG LOGS ==========
+  console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] ========== WINDOW LOAD ==========', 'background: #990099; color: white; font-size: 14px; padding: 4px 8px;');
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state existe:', !!state);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', state?.steps?.length || 0);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', state?.targetNights);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.startDateStr:', state?.startDateStr);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] autoCalculateNights existe:', typeof autoCalculateNights);
+  // ================================
+  
   // Vérifier si on vient de pres_simple avec paramètres
   const qs = new URLSearchParams(location.search);
-  const hasPresSimpleParams = qs.get('days') || qs.get('rythme');
+  // Skip seulement si rythme est défini (spécifique pres_simple qui gère ses propres nuits)
+  const hasRythmeParam = qs.get('rythme');
   
-  if(hasPresSimpleParams){
-    console.log('[AUTO] ⏭️ Skip autoCalculateNights - paramètres pres_simple détectés');
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] hasRythmeParam:', hasRythmeParam, '(days:', qs.get('days'), ', rythme:', qs.get('rythme'), ')');
+  
+  if(hasRythmeParam){
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⏭️ Skip autoCalculateNights - paramètres pres_simple détectés');
     return;
   }
   
@@ -3497,27 +3520,37 @@ window.addEventListener('load', () => {
   const tryAutoCalc = async () => {
     attempts++;
     
+    // ========== DEBUG LOGS ==========
+    console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] ========== TENTATIVE ' + attempts + ' ==========', 'background: #cc6600; color: white; font-size: 12px; padding: 2px 6px;');
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', state?.steps?.length || 0);
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', state?.targetNights);
+    // ================================
+    
     if (state.steps && state.steps.length > 0) {
       // S'assurer que PLACES_INDEX est chargé
       if (typeof PLACES_INDEX === 'undefined' || !PLACES_INDEX || Object.keys(PLACES_INDEX).length === 0) {
-        console.log('[AUTO] Chargement de PLACES_INDEX...');
+        console.log('[LOG-CONTROLE][AUTO-SIMPLE] Chargement de PLACES_INDEX...');
         try {
           await ensurePlacesIndex();
         } catch(e) {
-          console.log('[AUTO] ⚠️ Erreur chargement PLACES_INDEX:', e);
+          console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⚠️ Erreur chargement PLACES_INDEX:', e);
         }
       }
       
-      console.log('[AUTO] OPTION B : Recalcul systématique des nuits');
+      console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] 🚀 LANCEMENT autoCalculateNights avec target=' + state.targetNights, 'background: #00cc00; color: white; font-size: 14px; padding: 4px 8px;');
       autoCalculateNights(state.targetNights);
       if (typeof renderRows === 'function') renderRows();
     } else if (attempts < maxAttempts) {
-      console.log(`[AUTO] Tentative ${attempts}/${maxAttempts} - state pas encore prêt`);
+      console.log(`[AUTO-SIMPLE] Tentative ${attempts}/${maxAttempts} - state pas encore prêt`);
       setTimeout(tryAutoCalc, 1000);
+    } else {
+      console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] ❌ ÉCHEC après ' + maxAttempts + ' tentatives', 'background: #cc0000; color: white; font-size: 14px; padding: 4px 8px;');
     }
   };
   
-  setTimeout(tryAutoCalc, 500);
+  // Attendre 7 secondes pour le calcul de route, puis lancer
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⏳ Attente 7s pour calcul de route...');
+  setTimeout(tryAutoCalc, ROUTE_CALC_WAIT);
 });
 
 // 2. Hook sur le premier renderRows
@@ -3525,27 +3558,27 @@ const _originalRenderRows = window.renderRows;
 let _autoCalcDone = false;
 
 window.renderRows = async function() {
-  // Vérifier si on vient de pres_simple avec paramètres
+  // Skip seulement si rythme est défini (spécifique pres_simple qui gère ses propres nuits)
   const qs = new URLSearchParams(location.search);
-  const hasPresSimpleParams = qs.get('days') || qs.get('rythme');
+  const hasRythmeParam = qs.get('rythme');
   
-  // OPTION B : Toujours recalculer au premier appel SAUF si pres_simple
-  if (!_autoCalcDone && state.steps && state.steps.length > 0 && !hasPresSimpleParams) {
+  // OPTION B : Toujours recalculer au premier appel SAUF si pres_simple avec rythme
+  if (!_autoCalcDone && state.steps && state.steps.length > 0 && !hasRythmeParam) {
     // S'assurer que PLACES_INDEX est chargé
     if (typeof PLACES_INDEX === 'undefined' || !PLACES_INDEX || Object.keys(PLACES_INDEX).length === 0) {
-      console.log('[AUTO] Hook renderRows - Chargement PLACES_INDEX...');
+      console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - Chargement PLACES_INDEX...');
       try {
         await ensurePlacesIndex();
       } catch(e) {
-        console.log('[AUTO] ⚠️ Erreur chargement PLACES_INDEX:', e);
+        console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⚠️ Erreur chargement PLACES_INDEX:', e);
       }
     }
     
-    console.log('[AUTO] Hook renderRows - recalcul systématique (Option B)');
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - recalcul systématique');
     autoCalculateNights(state.targetNights);
     _autoCalcDone = true;
-  } else if(hasPresSimpleParams && !_autoCalcDone){
-    console.log('[AUTO] ⏭️ Skip hook autoCalculateNights - paramètres pres_simple');
+  } else if(hasRythmeParam && !_autoCalcDone){
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⏭️ Skip hook autoCalculateNights - paramètre rythme détecté');
     _autoCalcDone = true;
   }
   
@@ -4096,6 +4129,17 @@ window.closeMapPopup=()=>{
 const $=s=>document.querySelector(s);
 const $$=s=>Array.from(document.querySelectorAll(s));
 const qs=new URLSearchParams(location.search);
+
+// ========== DEBUG LOGS - À SUPPRIMER APRÈS VALIDATION ==========
+console.log('%c[LOG-CONTROLE][RT-SIMPLE] ========== PARSING URL ==========', 'background: #ff6600; color: white; font-size: 14px; padding: 4px 8px;');
+console.log('[LOG-CONTROLE][RT-SIMPLE] URL complète:', location.href);
+console.log('[LOG-CONTROLE][RT-SIMPLE] Search params:', location.search);
+console.log('[LOG-CONTROLE][RT-SIMPLE] Tous les params:');
+for (const [key, value] of qs.entries()) {
+  console.log(`  - ${key} = "${value}"`);
+}
+// ===============================================================
+
 const CC=(qs.get('cc')||'').toUpperCase();
 const ITIN_ID=decodeURIComponent(qs.get('itin')||'');
 const TEMP_MODE=qs.get('from')==='temp';
@@ -4103,11 +4147,25 @@ const RT_KEY=qs.get('rtKey')||'';
 
 // === Nouveaux paramètres depuis pres_simple ===
 const PARAM_LANG = qs.get('lang') || 'fr';
-const PARAM_BUDGET = qs.get('budget') || 'all';
-const PARAM_DEPART = qs.get('depart') || '';
-const PARAM_DAYS = parseInt(qs.get('days')) || 0;
+const PARAM_BUDGET = qs.get('budget') || 'all'; // Budget supprimé des frontends mais rétrocompat
+// Date de départ (harmonisé: departDate, rétrocompat: depart, departure, startDate)
+const PARAM_DEPART = qs.get('departDate') || qs.get('depart') || qs.get('departure') || qs.get('startDate') || '';
+// Nombre de jours (harmonisé: days, rétrocompat: nbDays)
+const PARAM_DAYS = parseInt(qs.get('days') || qs.get('nbDays') || '0') || 0;
 const PARAM_RYTHME = qs.get('rythme') || 'normal';
 const PARAM_MAX_HOTELS = parseInt(qs.get('maxHotels')) || 99;
+
+// ========== DEBUG LOGS - À SUPPRIMER APRÈS VALIDATION ==========
+console.log('%c[LOG-CONTROLE][RT-SIMPLE] ========== PARAMS PARSÉS ==========', 'background: #0066ff; color: white; font-size: 14px; padding: 4px 8px;');
+console.log('[LOG-CONTROLE][RT-SIMPLE] CC:', CC);
+console.log('[LOG-CONTROLE][RT-SIMPLE] ITIN_ID:', ITIN_ID);
+console.log('[LOG-CONTROLE][RT-SIMPLE] PARAM_DEPART:', PARAM_DEPART);
+console.log('[LOG-CONTROLE][RT-SIMPLE] PARAM_DAYS:', PARAM_DAYS);
+console.log('[LOG-CONTROLE][RT-SIMPLE] PARAM_RYTHME:', PARAM_RYTHME);
+console.log('[LOG-CONTROLE][RT-SIMPLE] PARAM_BUDGET:', PARAM_BUDGET);
+console.log('[LOG-CONTROLE][RT-SIMPLE] TEMP_MODE:', TEMP_MODE);
+console.log('[LOG-CONTROLE][RT-SIMPLE] RT_KEY:', RT_KEY);
+// ===============================================================
 
 // Coefficients rythme (nuits uniquement)
 const RYTHME_COEF = { slow: 1.25, normal: 1.0, fast: 0.75 };
@@ -4161,9 +4219,18 @@ const state={
   maxHotels: PARAM_MAX_HOTELS
 };
 
+// ========== DEBUG LOGS - À SUPPRIMER APRÈS VALIDATION ==========
+console.log('%c[LOG-CONTROLE][RT-SIMPLE] ========== STATE INITIAL ==========', 'background: #009900; color: white; font-size: 14px; padding: 4px 8px;');
+console.log('[LOG-CONTROLE][RT-SIMPLE] state.startDateStr:', state.startDateStr);
+console.log('[LOG-CONTROLE][RT-SIMPLE] state.requestedDays:', state.requestedDays);
+console.log('[LOG-CONTROLE][RT-SIMPLE] state.targetNights:', state.targetNights);
+console.log('[LOG-CONTROLE][RT-SIMPLE] state.rythme:', state.rythme);
+// ===============================================================
+
 let TOTALS={km:0, minutes:0, travelDays:0};
 
-const sumNights = ()=> state.steps.reduce((s,x)=>s+Number(x.nights||0),0);
+// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
+// const sumNights = ()=> state.steps.reduce((s,x)=>s+Number(x.nights||0),0);
 const fmtKm = (km)=> state.distanceUnit==='mi' ? `${Math.round(km*0.621371)} mi` : `${km} km`;
 const fmtDur = (min)=>{ const h=Math.floor(min/60), m=min%60; return `${h} h ${m} min`; };
 
@@ -4177,6 +4244,8 @@ const STAY22_CONFIG = {
   MARKERIMAGE: 'https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png'
 };
 
+// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
+/* ANCIEN CODE - COMMENTÉ POUR RETOUR ARRIÈRE
 // Format une date locale en YYYY-MM-DD (sans conversion timezone)
 function formatDateLocal(date) {
   const year = date.getFullYear();
@@ -4208,6 +4277,7 @@ function getStay22Dates(stepIndex) {
     checkout: formatDateLocal(checkout)
   };
 }
+FIN getStay22Dates */
 
 // Générer l'URL Stay22 Allez pour une étape
 function getStay22AllezUrl(step, stepIndex) {
@@ -5289,11 +5359,11 @@ async function initFromItin(it){
   // IMPORTANT: nuits = jours - 1 (ex: 7 jours = 6 nuits)
   if(state.requestedDays > 0){
     state.targetNights = Math.max(1, state.requestedDays - 1);
-    console.log(`[INIT] 🛏️ Target nuits: ${state.targetNights} (${state.requestedDays} jours - 1)`);
+    console.log(`[LOG-CONTROLE][INIT] 🛏️ Target nuits: ${state.targetNights} (${state.requestedDays} jours - 1)`);
   } else if(estimatedDaysBase > 0){
     const computedDays = Math.ceil(estimatedDaysBase * state.rythmeCoef);
     state.targetNights = Math.max(1, computedDays - 1);
-    console.log(`[INIT] 🛏️ Target nuits: ${state.targetNights} (${computedDays} jours estimés - 1)`);
+    console.log(`[LOG-CONTROLE][INIT] 🛏️ Target nuits: ${state.targetNights} (${computedDays} jours estimés - 1)`);
   } else {
     state.targetNights = steps.reduce((s,x)=>s+x.nights,0);
   }
@@ -5305,7 +5375,7 @@ async function initFromItin(it){
   
   if(hasHubs){
     // Toujours grouper quand des hubs sont détectés - SUPPRIMÉ
-    console.log(`[INIT] Hubs détectés → autoGroupHotels supprimé`);
+    console.log(`[LOG-CONTROLE][INIT] Hubs détectés → autoGroupHotels supprimé`);
     // autoGroupHotels(null) supprimé
   } else if(state.maxHotels && state.maxHotels < steps.length){
     // Regroupement automatique des hôtels si maxHotels défini - SUPPRIMÉ
@@ -5313,10 +5383,10 @@ async function initFromItin(it){
     if(targetDays < totalSuggested){
       const hotelRatio = targetDays / totalSuggested;
       effectiveMaxHotels = Math.max(3, Math.ceil(state.maxHotels * hotelRatio));
-      console.log(`[INIT] maxHotels ajusté: ${state.maxHotels} → ${effectiveMaxHotels} (ratio ${hotelRatio.toFixed(2)})`);
+      console.log(`[LOG-CONTROLE][INIT] maxHotels ajusté: ${state.maxHotels} → ${effectiveMaxHotels} (ratio ${hotelRatio.toFixed(2)})`);
     }
     
-    console.log('[INIT] autoGroupHotels supprimé');
+    console.log('[LOG-CONTROLE][INIT] autoGroupHotels supprimé');
     // autoGroupHotels(effectiveMaxHotels) supprimé
   }
   
@@ -7088,16 +7158,37 @@ Object.entries(grouped).forEach(([key, indices]) => {
 
 
   /// 2) Ajoute des mini-marqueurs individuels pour chaque sous-étape
+  /// + Lignes du centre vers chaque marqueur pour visualiser le groupement
   if (indices.length > 1) {
+    // Utiliser gLat/gLon comme centre du groupe (déjà définis plus haut)
+    const centerLat = gLat;
+    const centerLon = gLon;
+    
+    // Rayon adaptatif : plus grand pour être visible de loin
+    const radius = 0.006;
+    
     indices.forEach((stepIndex, subIndex) => {
       const step = state.steps[stepIndex];
       const sid  = (typeof ensureSid === 'function') ? ensureSid(step) : (step.__sid || (step.__sid = crypto?.randomUUID?.() || ('S'+Date.now()+Math.random().toString(36).slice(2))));
       const stepNumber = stepIndex + 1;
 
-      const angle = (subIndex / (indices.length - 1)) * Math.PI - Math.PI / 2;
-      const radius = 0.0015;
-      const offsetLat = step.lat + (Math.sin(angle) * radius);
-      const offsetLon = step.lon + (Math.cos(angle) * radius);
+      // Disperser en cercle complet (360°) autour du centre
+      const angle = (subIndex / indices.length) * 2 * Math.PI - Math.PI / 2;
+      const offsetLat = centerLat + (Math.sin(angle) * radius);
+      const offsetLon = centerLon + (Math.cos(angle) * radius * 1.3);
+      
+      // === Ligne du centre vers le marqueur ===
+      const hubLine = L.polyline(
+        [[centerLat, centerLon], [offsetLat, offsetLon]], 
+        { 
+          color: '#666', 
+          weight: 1.5, 
+          opacity: 0.5, 
+          dashArray: '4,4',
+          className: 'hub-satellite-line'
+        }
+      ).addTo(map);
+      groupLabels.push(hubLine);
 
       const miniMarker = L.marker([offsetLat, offsetLon], {
         icon: L.divIcon({
@@ -7117,13 +7208,12 @@ Object.entries(grouped).forEach(([key, indices]) => {
       miniMarker.isMiniMarker = true;
       
       // Événements hover pour agrandir
-      // Événements hover pour agrandir (mais PAS de popup auto)
       miniMarker.on('mouseover', function() {
         const el = miniMarker.getElement()?.querySelector('.mini-step-marker');
         if (el) {
           el.classList.add('mini-step-marker-hover');
         }
-        // Plus de popup automatique
+        hubLine.setStyle({ color: '#007bff', weight: 2.5, opacity: 0.8 });
       });
       
       miniMarker.on('mouseout', function() {
@@ -7131,7 +7221,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
         if (el) {
           el.classList.remove('mini-step-marker-hover');
         }
-        // Plus de masquage auto
+        hubLine.setStyle({ color: '#666', weight: 1.5, opacity: 0.5 });
       });
       
       // Stocker dans groupLabels pour pouvoir les gérer en mode réorg
@@ -8051,7 +8141,7 @@ state.country=CC;
      state.tripId = getTripId(); // Fallback si ORT_TRIPID pas chargé
    }
    state.id = state.tripId;  // Alias pour compatibilité
-   console.log('[INIT] ✅ TripId généré et assigné:', state.tripId);
+   console.log('[LOG-CONTROLE][INIT] ✅ TripId généré et assigné:', state.tripId);
    
    // ← AJOUT : Stocker la référence à l'itinéraire de base
    if (CC && ITIN_ID) {
@@ -8059,13 +8149,13 @@ state.country=CC;
        country: CC,
        itin: ITIN_ID
      };
-     console.log('[INIT] Référence itinéraire de base stockée:', state._itinRef);
+     console.log('[LOG-CONTROLE][INIT] Référence itinéraire de base stockée:', state._itinRef);
    }
    
    // Initialiser l'adaptateur State Manager avec le tripId (APRÈS assignation)
    if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.init === 'function') {
      window.ORT_DETAIL_ADAPTER.init(state.tripId, state);
-     console.log('[INIT] ✅ ORT_DETAIL_ADAPTER initialisé avec tripId:', state.tripId);
+     console.log('[LOG-CONTROLE][INIT] ✅ ORT_DETAIL_ADAPTER initialisé avec tripId:', state.tripId);
    }
    
    await initFromItin(it);
@@ -8447,92 +8537,7 @@ console.log('[GROUPS V7] Attente de state...');
   </div>
 </div>
 
-<script>
-// === GETYOURGUIDE WIDGET CONTROLLER ===
-function getGygLocale() {
-  const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-  return { fr:'fr-FR', en:'en-US', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'en-US' }[lang] || 'en-US';
-}
-
-function getGygDomain() {
-  const lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
-  return { fr:'fr', en:'com', es:'es', it:'it', pt:'pt', ar:'com' }[lang] || 'com';
-}
-
-function openGygModal(step, idx) {
-  const modal = document.getElementById('gygModal');
-  const container = document.getElementById('gygWidgetContainer');
-  const stepNameEl = document.getElementById('gygStepName');
-  const moreLinkEl = document.getElementById('gygMoreLink');
-  if (!modal || !container) return;
-  
-  const placeName = step?.name || 'cette destination';
-  const locale = getGygLocale();
-  const lang = locale.split('-')[0];
-  const gygDomain = getGygDomain();
-  
-  // Textes I18N
-  const i18n = {
-    activitiesNear: { fr:'Activités à proximité de', en:'Activities near', es:'Actividades cerca de', it:'Attività vicino a', pt:'Atividades perto de' },
-    loading: { fr:'Chargement des activités...', en:'Loading activities...', es:'Cargando actividades...', it:'Caricamento attività...', pt:'Carregando atividades...' },
-    seeMore: { fr:'Voir toutes les activités à', en:'See all activities in', es:'Ver todas las actividades en', it:'Vedi tutte le attività a', pt:'Ver todas as atividades em' }
-  };
-  const t = (k) => i18n[k]?.[lang] || i18n[k]?.fr || k;
-  
-  // Récupérer la date de l'étape (format YYYY-MM-DD) pour affichage
-  const stepDate = (typeof getStay22CheckinDate === 'function') ? getStay22CheckinDate(idx) : null;
-  
-  if (stepNameEl) {
-    const dateDisplay = stepDate ? ` <span style="color:#64748b;font-size:0.9em;">(${new Date(stepDate).toLocaleDateString(locale)})</span>` : '';
-    stepNameEl.innerHTML = `${t('activitiesNear')} <strong>${placeName}</strong>${dateDisplay}`;
-  }
-  
-  // Lien "Voir plus" vers GetYourGuide
-  const moreUrl = `https://www.getyourguide.${gygDomain}/s/?q=${encodeURIComponent(placeName)}&partner_id=YQ9RFXj5`;
-  if (moreLinkEl) {
-    moreLinkEl.innerHTML = `
-      <a href="${moreUrl}" target="_blank" rel="noopener" 
-         style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#113f7a;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;transition:background 0.2s;"
-         onmouseover="this.style.background='#0d2f5c'" onmouseout="this.style.background='#113f7a'">
-        🔍 ${t('seeMore')} ${placeName}
-      </a>
-    `;
-  }
-  
-  // URL du widget avec 6 items
-  const widgetUrl = `https://trpwdg.com/content?trs=478677&shmarker=688844&place=${encodeURIComponent(placeName)}&items=6&locale=${locale}&powered_by=true&campaign_id=108&promo_id=4039`;
-  
-  // Afficher loader puis charger le widget
-  container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">${t('loading')}</div>`;
-  
-  // Créer et injecter le script
-  const script = document.createElement('script');
-  script.src = widgetUrl;
-  script.async = true;
-  script.charset = 'utf-8';
-  
-  container.innerHTML = '';
-  container.appendChild(script);
-  
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-  console.log('[GYG] Modal ouverte pour:', placeName, '| locale:', locale);
-}
-
-function closeGygModal() {
-  const modal = document.getElementById('gygModal');
-  if (modal) {
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-    const container = document.getElementById('gygWidgetContainer');
-    if (container) container.innerHTML = '';
-  }
-}
-
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeGygModal(); });
-document.getElementById('gygModal')?.addEventListener('click', function(e) { if (e.target === this) closeGygModal(); });
-console.log('[GYG] ✅ GetYourGuide widget ready');
-</script>
+<!-- GYG Widget Controller - externalisé dans ort-widgets.js -->
 
 <!-- === TIQETS WIDGET (Billets & Visites) === -->
 <style>
@@ -8609,119 +8614,7 @@ console.log('[GYG] ✅ GetYourGuide widget ready');
   </div>
 </div>
 
-<script>
-// === TIQETS WIDGET CONTROLLER ===
-function getTiqetsLocale() {
-  return (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
-}
-
-function getTiqetsCurrency() {
-  const lang = getTiqetsLocale();
-  return { fr:'EUR', en:'USD', es:'EUR', it:'EUR', pt:'EUR', ar:'USD' }[lang] || 'EUR';
-}
-
-function openTiqetsModal(step, idx) {
-  const modal = document.getElementById('tiqetsModal');
-  const container = document.getElementById('tiqWidgetContainer');
-  const stepNameEl = document.getElementById('tiqStepName');
-  const moreLinkEl = document.getElementById('tiqMoreLink');
-  if (!modal || !container) return;
-  
-  const placeName = step?.name || 'cette destination';
-  const lang = getTiqetsLocale();
-  const currency = getTiqetsCurrency();
-  
-  const i18n = {
-    ticketsNear: {fr:'Billets & visites à',en:'Tickets & visits in',es:'Entradas y visitas en',it:'Biglietti e visite a',pt:'Bilhetes e visitas em',ar:'تذاكر وزيارات في'},
-    loading: {fr:'Chargement des billets...',en:'Loading tickets...',es:'Cargando entradas...',it:'Caricamento biglietti...',pt:'Carregando bilhetes...',ar:'جاري التحميل...'},
-    seeMore: {fr:'Voir tous les billets',en:'See all tickets',es:'Ver todas las entradas',it:'Vedi tutti i biglietti',pt:'Ver todos os bilhetes',ar:'عرض جميع التذاكر'},
-    errorLoad: {fr:'Impossible de charger. Cliquez ci-dessous.',en:'Unable to load. Click below.',es:'No se puede cargar.',it:'Impossibile caricare.',pt:'Não foi possível carregar.',ar:'تعذر التحميل.'}
-  };
-  const tiq = (k) => i18n[k]?.[lang] || i18n[k]?.en || k;
-  
-  // Date de l'étape
-  let dateParam = '';
-  let stepDate = null;
-  if (typeof getStay22CheckinDate === 'function') {
-    stepDate = getStay22CheckinDate(idx);
-    if (stepDate) dateParam = `&date=${stepDate}`;
-  }
-  
-  if (stepNameEl) {
-    const dateDisplay = stepDate ? ` <span style="color:#64748b;font-size:0.9em;">(${new Date(stepDate).toLocaleDateString()})</span>` : '';
-    stepNameEl.innerHTML = `${tiq('ticketsNear')} <strong>${placeName}</strong>${dateDisplay}`;
-  }
-  
-  const moreUrl = `https://tiqets.tpo.li/L1uxd085?q=${encodeURIComponent(placeName)}${dateParam}&lang=${lang}`;
-  if (moreLinkEl) {
-    moreLinkEl.innerHTML = `
-      <a href="${moreUrl}" target="_blank" rel="noopener" 
-         style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#0077b6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-        🔍 ${tiq('seeMore')}
-      </a>
-    `;
-  }
-  
-  const widgetUrl = `https://trpwdg.com/content?currency=${currency}&trs=478677&shmarker=688844&language=${lang}&layout=horizontal&powered_by=true&campaign_id=89&promo_id=3948`;
-  
-  container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">${tiq('loading')}</div>`;
-  
-  const script = document.createElement('script');
-  script.src = widgetUrl;
-  script.async = true;
-  script.charset = 'utf-8';
-  
-  const loadTimeout = setTimeout(() => {
-    if (!container.querySelector('[class*="trp"]')) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:30px;color:#64748b;">
-          <div style="font-size:2rem;margin-bottom:10px;">🎟️</div>
-          <p>${tiq('errorLoad')}</p>
-          <a href="${moreUrl}" target="_blank" rel="noopener" 
-             style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0077b6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-            🔍 ${tiq('seeMore')}
-          </a>
-        </div>
-      `;
-    }
-  }, 5000);
-  
-  script.onload = () => clearTimeout(loadTimeout);
-  script.onerror = () => {
-    clearTimeout(loadTimeout);
-    container.innerHTML = `
-      <div style="text-align:center;padding:30px;color:#64748b;">
-        <div style="font-size:2rem;margin-bottom:10px;">🎟️</div>
-        <p>${tiq('errorLoad')}</p>
-        <a href="${moreUrl}" target="_blank" rel="noopener" 
-           style="display:inline-block;margin-top:12px;padding:12px 24px;background:#0077b6;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-          🔍 ${tiq('seeMore')}
-        </a>
-      </div>
-    `;
-  };
-  
-  container.innerHTML = '';
-  container.appendChild(script);
-  
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeTiqetsModal() {
-  const modal = document.getElementById('tiqetsModal');
-  if (modal) {
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-    const container = document.getElementById('tiqWidgetContainer');
-    if (container) container.innerHTML = '';
-  }
-}
-
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTiqetsModal(); });
-document.getElementById('tiqetsModal')?.addEventListener('click', function(e) { if (e.target === this) closeTiqetsModal(); });
-console.log('[TIQETS] ✅ Tiqets widget ready');
-</script>
+<!-- Tiqets Widget Controller - externalisé dans ort-widgets.js -->
 
 <!-- === TICKETMASTER WIDGET (Spectacles) === -->
 <style>
@@ -8798,123 +8691,7 @@ console.log('[TIQETS] ✅ Tiqets widget ready');
   </div>
 </div>
 
-<script>
-// === TICKETMASTER WIDGET CONTROLLER ===
-function getTicketmasterLocale() {
-  const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
-  return { fr:'fr-FR', en:'en-US', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'en-US' }[lang] || 'en-US';
-}
-
-function getCountryFromCC() {
-  const cc = (window.CC || window.state?.cc || window.state?.country || '').toUpperCase();
-  const supported = ['US','CA','MX','AU','NZ','GB','IE','DE','FR','ES','IT','NL','BE','AT','CH','PL','SE','NO','DK','FI'];
-  return supported.includes(cc) ? cc : 'FR';
-}
-
-function openTicketmasterModal(step, idx) {
-  const modal = document.getElementById('ticketmasterModal');
-  const container = document.getElementById('tmWidgetContainer');
-  const stepNameEl = document.getElementById('tmStepName');
-  const moreLinkEl = document.getElementById('tmMoreLink');
-  if (!modal || !container) return;
-  
-  const placeName = step?.name || 'cette destination';
-  const locale = getTicketmasterLocale();
-  const lang = locale.split('-')[0];
-  const country = getCountryFromCC();
-  
-  const i18n = {
-    showsNear: {fr:'Spectacles à',en:'Shows in',es:'Espectáculos en',it:'Spettacoli a',pt:'Espetáculos em',ar:'عروض في'},
-    loading: {fr:'Chargement des spectacles...',en:'Loading shows...',es:'Cargando espectáculos...',it:'Caricamento spettacoli...',pt:'Carregando espetáculos...',ar:'جاري التحميل...'},
-    seeMore: {fr:'Voir tous les spectacles',en:'See all shows',es:'Ver todos los espectáculos',it:'Vedi tutti gli spettacoli',pt:'Ver todos os espetáculos',ar:'عرض جميع العروض'},
-    errorLoad: {fr:'Impossible de charger. Cliquez ci-dessous.',en:'Unable to load. Click below.',es:'No se puede cargar.',it:'Impossibile caricare.',pt:'Não foi possível carregar.',ar:'تعذر التحميل.'}
-  };
-  const tm = (k) => i18n[k]?.[lang] || i18n[k]?.fr || k;
-  
-  // Date de l'étape
-  let startDate = '';
-  if (typeof getStay22CheckinDate === 'function') {
-    startDate = getStay22CheckinDate(idx) || '';
-  }
-  if (!startDate) {
-    startDate = formatDateLocal(new Date());
-  }
-  
-  if (stepNameEl) {
-    const dateDisplay = ` <span style="color:#64748b;font-size:0.9em;">(${new Date(startDate).toLocaleDateString(locale)})</span>`;
-    stepNameEl.innerHTML = `${tm('showsNear')} <strong>${placeName}</strong>${dateDisplay}`;
-  }
-  
-  const moreUrl = `https://www.ticketmaster.com/search?q=${encodeURIComponent(placeName)}&startDate=${startDate}`;
-  if (moreLinkEl) {
-    moreLinkEl.innerHTML = `
-      <a href="${moreUrl}" target="_blank" rel="noopener" 
-         style="display:inline-flex;align-items:center;gap:8px;padding:12px 24px;background:#026cdf;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-        🔍 ${tm('seeMore')}
-      </a>
-    `;
-  }
-  
-  const widgetUrl = `https://trpwdg.com/content?trs=478677&start_date=${startDate}&country=${country}&sort=relevance%2Cdesc&powered_by=true&min_lines=5&promo_id=5431&shmarker=688844&campaign_id=183`;
-  
-  container.innerHTML = `<div style="text-align:center;padding:40px;color:#64748b;">${tm('loading')}</div>`;
-  
-  const script = document.createElement('script');
-  script.src = widgetUrl;
-  script.async = true;
-  script.charset = 'utf-8';
-  
-  const loadTimeout = setTimeout(() => {
-    if (!container.querySelector('[class*="trp"]')) {
-      container.innerHTML = `
-        <div style="text-align:center;padding:30px;color:#64748b;">
-          <div style="font-size:2rem;margin-bottom:10px;">🎭</div>
-          <p>${tm('errorLoad')}</p>
-          <a href="${moreUrl}" target="_blank" rel="noopener" 
-             style="display:inline-block;margin-top:12px;padding:12px 24px;background:#026cdf;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-            🔍 ${tm('seeMore')}
-          </a>
-        </div>
-      `;
-    }
-  }, 5000);
-  
-  script.onload = () => clearTimeout(loadTimeout);
-  script.onerror = () => {
-    clearTimeout(loadTimeout);
-    container.innerHTML = `
-      <div style="text-align:center;padding:30px;color:#64748b;">
-        <div style="font-size:2rem;margin-bottom:10px;">🎭</div>
-        <p>${tm('errorLoad')}</p>
-        <a href="${moreUrl}" target="_blank" rel="noopener" 
-           style="display:inline-block;margin-top:12px;padding:12px 24px;background:#026cdf;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
-          🔍 ${tm('seeMore')}
-        </a>
-      </div>
-    `;
-  };
-  
-  container.innerHTML = '';
-  container.appendChild(script);
-  
-  modal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeTicketmasterModal() {
-  const modal = document.getElementById('ticketmasterModal');
-  if (modal) {
-    modal.classList.remove('show');
-    document.body.style.overflow = '';
-    const container = document.getElementById('tmWidgetContainer');
-    if (container) container.innerHTML = '';
-  }
-}
-
-document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeTicketmasterModal(); });
-document.getElementById('ticketmasterModal')?.addEventListener('click', function(e) { if (e.target === this) closeTicketmasterModal(); });
-console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
-</script>
+<!-- Ticketmaster Widget Controller - externalisé dans ort-widgets.js -->
 
 <!-- ORT Header/Footer/Auth modules -->
 <script defer src="/js/ort-i18n-auth.js"></script>
@@ -9066,17 +8843,17 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
 <!-- ===== INITIALISATION STATE MANAGER (SYNC) ===== -->
 <script>
 (async function initStateManager() {
-  console.log('[INIT] Initialisation State Manager...');
+  console.log('[LOG-CONTROLE][INIT] Initialisation State Manager...');
   
   // ⚠️ IMPORTANT: Attendre que ort-config.js ait chargé la config Firebase
   if (window.__ort_ready) {
     await window.__ort_ready;
-    console.log('[INIT] ✅ Config Firebase prête');
+    console.log('[LOG-CONTROLE][INIT] ✅ Config Firebase prête');
   }
   
   // Charger Firebase si pas déjà chargé
   if (!window.firebase?.apps?.length) {
-    console.log('[INIT] 🔄 Chargement Firebase...');
+    console.log('[LOG-CONTROLE][INIT] 🔄 Chargement Firebase...');
     const load = (src) => new Promise((ok, ko) => {
       const s = document.createElement('script');
       s.src = src;
@@ -9109,26 +8886,26 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
         window.firebase.initializeApp(window.__FIREBASE_CONFIG__);
       }
       await window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
-      console.log('[INIT] ✅ Firebase chargé');
+      console.log('[LOG-CONTROLE][INIT] ✅ Firebase chargé');
     } catch (e) {
       console.warn('[INIT] ⚠️ Erreur chargement Firebase:', e);
     }
   }
   
   // Attend que Firebase Auth soit prêt
-  console.log('[INIT] 🔍 Firebase disponible?', !!window.firebase);
-  console.log('[INIT] 🔍 Firebase.auth disponible?', !!window.firebase?.auth);
+  console.log('[LOG-CONTROLE][INIT] 🔍 Firebase disponible?', !!window.firebase);
+  console.log('[LOG-CONTROLE][INIT] 🔍 Firebase.auth disponible?', !!window.firebase?.auth);
   
   const user = await new Promise(resolve => {
     if (window.firebase?.auth) {
-      console.log('[INIT] ⏳ Attente onAuthStateChanged...');
+      console.log('[LOG-CONTROLE][INIT] ⏳ Attente onAuthStateChanged...');
       const unsubscribe = firebase.auth().onAuthStateChanged(user => {
-        console.log('[INIT] ✅ Auth state:', user ? user.uid : 'null', 'email:', user?.email);
+        console.log('[LOG-CONTROLE][INIT] ✅ Auth state:', user ? user.uid : 'null', 'email:', user?.email);
         unsubscribe();
         resolve(user);
       });
     } else {
-      console.log('[INIT] ❌ Firebase.auth non disponible');
+      console.log('[LOG-CONTROLE][INIT] ❌ Firebase.auth non disponible');
       resolve(null);
     }
   });
@@ -9142,11 +8919,11 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
     
     // Mettre à jour le user pour activer Firestore
     if (user && typeof window.ORT_STATE.updateUser === 'function') {
-      console.log('[INIT] 🔄 Mise à jour user dans State Manager...');
+      console.log('[LOG-CONTROLE][INIT] 🔄 Mise à jour user dans State Manager...');
       await window.ORT_STATE.updateUser(user);
     }
     
-    console.log('[INIT] ✅ State Manager initialisé avec user:', user?.uid || 'non connecté');
+    console.log('[LOG-CONTROLE][INIT] ✅ State Manager initialisé avec user:', user?.uid || 'non connecté');
   } else {
     console.warn('[INIT] ⚠️ ORT_STATE non disponible');
   }
@@ -9157,7 +8934,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
   
   // MODE IMPORT : Ne pas utiliser le State Manager
   if (fromTemp && rtKey) {
-    console.log('[INIT] Mode IMPORT detecte - rtKey:', rtKey);
+    console.log('[LOG-CONTROLE][INIT] Mode IMPORT detecte - rtKey:', rtKey);
     const ccFromRtKey = rtKey.split('_')[0]?.toUpperCase() || 'XX';
     state._itinRef = { country: ccFromRtKey, itin: `${ccFromRtKey}::temp_${Date.now()}` };
     state.country = ccFromRtKey;
@@ -9170,7 +8947,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
         if (window.ORT_DETAIL_ADAPTER) window.ORT_DETAIL_ADAPTER.init(tempTripId, window.state);
         localStorage.setItem('ORT_CURRENT_TRIP_ID', tempTripId);
         localStorage.setItem(`ORT_TEMP_STATE_${tempTripId}`, JSON.stringify(window.state));
-        console.log('[INIT] Import initialisé avec tripId temp:', tempTripId);
+        console.log('[LOG-CONTROLE][INIT] Import initialisé avec tripId temp:', tempTripId);
       }
     }, 100);
     setTimeout(() => clearInterval(waitForImport), 5000);
@@ -9183,12 +8960,12 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
   const itinParam = urlParams.get('itin');
 
   if (tripIdFromUrl && !ccParam && !itinParam) {
-    console.log('[INIT] 📌 Mode DASHBOARD détecté - tripId:', tripIdFromUrl);
+    console.log('[LOG-CONTROLE][INIT] 📌 Mode DASHBOARD détecté - tripId:', tripIdFromUrl);
     
     const waitForDeps = setInterval(async () => {
       if (window.ORT_STATE && typeof window.ORT_STATE.getTrip === 'function' && typeof window.renderRows === 'function') {
         clearInterval(waitForDeps);
-        console.log('[INIT] ✅ Dépendances prêtes');
+        console.log('[LOG-CONTROLE][INIT] ✅ Dépendances prêtes');
         
         try {
           let savedTrip = null;
@@ -9203,7 +8980,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
           }
           
           if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
-            console.log('[INIT] ✅ Voyage trouvé:', savedTrip.title || tripIdFromUrl);
+            console.log('[LOG-CONTROLE][INIT] ✅ Voyage trouvé:', savedTrip.title || tripIdFromUrl);
             
             window.state = window.state || {};
             window.state.steps = savedTrip.steps;
@@ -9225,7 +9002,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
             window.renderRows();
             if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
             
-            console.log('[INIT] ✅ Mode DASHBOARD - Affichage terminé');
+            console.log('[LOG-CONTROLE][INIT] ✅ Mode DASHBOARD - Affichage terminé');
           }
         } catch (e) {
           console.error('[INIT] ❌ Erreur chargement:', e);
@@ -9241,7 +9018,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
   const waitForState = setInterval(async () => {
     if (window.state && window.state.steps) {
       clearInterval(waitForState);
-      console.log('[INIT] window.state prêt');
+      console.log('[LOG-CONTROLE][INIT] window.state prêt');
       
       // ✅ CORRECTION: Le tripId est DÉJÀ assigné à state par getTripId()
       // Pas besoin de logique redondante ici
@@ -9249,7 +9026,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
       
       if (!tripId) {
         console.error('[INIT] ❌ ERREUR CRITIQUE: tripId non défini!');
-        console.log('[INIT] Tentative de récupération manuelle...');
+        console.log('[LOG-CONTROLE][INIT] Tentative de récupération manuelle...');
         
         const urlParams = new URLSearchParams(location.search);
         const cc = urlParams.get('cc');
@@ -9261,10 +9038,10 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
         } else {
           window.state.tripId = getTripId();
         }
-        console.log('[INIT] ⚠️ TripId récupéré:', window.state.tripId);
+        console.log('[LOG-CONTROLE][INIT] ⚠️ TripId récupéré:', window.state.tripId);
       }
       
-      console.log('[INIT] ✅ TripId confirmé:', tripId || window.state.tripId);
+      console.log('[LOG-CONTROLE][INIT] ✅ TripId confirmé:', tripId || window.state.tripId);
       
       // Chercher modifications sauvegardées
       if (tripId && window.ORT_STATE && typeof window.ORT_STATE.getTrip === 'function') {
@@ -9272,7 +9049,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
           const savedTrip = await window.ORT_STATE.getTrip(tripId);
           
           if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
-            console.log('[INIT] ✅ Modifications trouvées, application...');
+            console.log('[LOG-CONTROLE][INIT] ✅ Modifications trouvées, application...');
             
             window.state.steps = savedTrip.steps;
             if (savedTrip.title) window.state.title = savedTrip.title;
@@ -9286,7 +9063,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
             if (typeof window.renderMap === 'function') window.renderMap();
             if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
             
-            console.log('[INIT] ✅ Modifications appliquées');
+            console.log('[LOG-CONTROLE][INIT] ✅ Modifications appliquées');
           }
         } catch (error) {
           console.error('[INIT] ❌ Erreur chargement modifications:', error);
@@ -9299,7 +9076,7 @@ console.log('[TICKETMASTER] ✅ Ticketmaster widget ready');
       }
       
       localStorage.setItem('ORT_CURRENT_TRIP_ID', tripId);
-      console.log('[INIT] ✅ State Manager initialisé pour trip:', tripId);
+      console.log('[LOG-CONTROLE][INIT] ✅ State Manager initialisé pour trip:', tripId);
     }
   }, 100);
   
@@ -9566,6 +9343,11 @@ document.addEventListener('keydown', function(e) {
   }
 })();
 </script>
+
+<!-- Auth obligatoire -->
+<script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-header.js"></script>
+<script src="/js/ort-auth-gate.js"></script>
 
 </body>
 </html>

@@ -180,10 +180,6 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
 .modal-group{margin-bottom:20px}
 .modal-group label{display:block;font-weight:600;margin-bottom:8px;color:var(--ink)}
 .modal-group input,.modal-group select{width:100%;padding:12px;border:1px solid var(--bd);border-radius:8px;font-size:15px}
-.budget-chips{display:flex;flex-wrap:wrap;gap:10px}
-.budget-chip{padding:10px 16px;border:2px solid var(--bd);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer;font-weight:600;font-size:14px;transition:all .2s}
-.budget-chip:hover{border-color:var(--acc);background:#f0f9ff}
-.budget-chip.selected{background:var(--acc);color:#fff;border-color:var(--acc)}
 .modal-actions{display:flex;gap:12px;justify-content:flex-end;margin-top:24px}
 .modal-btn{padding:12px 24px;border-radius:8px;border:0;cursor:pointer;font-weight:700;font-size:15px}
 .modal-btn.primary{background:var(--acc);color:#fff}
@@ -411,10 +407,6 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
     <div class="modal-group">
       <label id="labelNbDays">Nombre de jours souhaités :</label>
       <input type="number" id="inputNbDays" min="1" max="90">
-    </div>
-    <div class="modal-group">
-      <label id="labelBudget">Budget hôtel (€/jour/personne) :</label>
-      <div id="budgetChips" class="budget-chips"></div>
     </div>
     <div class="modal-actions">
       <button class="modal-btn secondary" id="modalCancel">Annuler</button>
@@ -1908,38 +1900,10 @@ function setupValidation() {
   const modal = document.getElementById('configModal');
   const btnCancel = document.getElementById('modalCancel');
   const btnConfirm = document.getElementById('modalConfirm');
-  const chipsContainer = document.getElementById('budgetChips');
 
   // Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('inputDepartDate').value = today;
-
-  // Generate budget chips
-  const budgetRanges = ['0-50', '50-100', '100-150', '150-200', '200-250', '250-300', '300-500', '500+'];
-  const budgetLabels = {
-    '0-50': L_TEXT.budget_0_50, '50-100': L_TEXT.budget_50_100,
-    '100-150': L_TEXT.budget_100_150, '150-200': L_TEXT.budget_150_200,
-    '200-250': L_TEXT.budget_200_250, '250-300': L_TEXT.budget_250_300,
-    '300-500': L_TEXT.budget_300_500, '500+': L_TEXT.budget_500plus
-  };
-
-  let selectedBudgets = [];
-  budgetRanges.forEach(range => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'budget-chip';
-    chip.textContent = budgetLabels[range];
-    chip.dataset.value = range;
-    chip.addEventListener('click', () => {
-      chip.classList.toggle('selected');
-      if (chip.classList.contains('selected')) {
-        selectedBudgets.push(range);
-      } else {
-        selectedBudgets = selectedBudgets.filter(b => b !== range);
-      }
-    });
-    chipsContainer.appendChild(chip);
-  });
 
   btnCancel.addEventListener('click', () => {
     modal.classList.remove('show');
@@ -1954,7 +1918,6 @@ function setupValidation() {
     
     const departDate = document.getElementById('inputDepartDate').value;
     const nbDays = document.getElementById('inputNbDays').value;
-    const budget = selectedBudgets.join(',') || 'all';
 
     const id = selectedItinerary.itin_id;
     const cc = (id.split('::')[0] || '').toUpperCase();
@@ -1964,8 +1927,7 @@ function setupValidation() {
     url.searchParams.set('itin', id);
     url.searchParams.set('lang', lang);
     url.searchParams.set('mode', 'simple');
-    url.searchParams.set('budget', budget);
-    url.searchParams.set('depart', departDate);
+    url.searchParams.set('departDate', departDate);
     url.searchParams.set('days', nbDays);
 
     window.location.href = url.toString();
