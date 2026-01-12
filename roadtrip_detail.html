@@ -2417,9 +2417,8 @@ function myRatingSet(obj){ try{ localStorage.setItem('ort.myRtRating::'+rtKeyFor
 function avg(arr){ if(!arr.length) return null; const s=arr.reduce((a,x)=>a+Number(x.score||0),0); return Math.round((s/arr.length)*10)/10; }
 function noteClass(v){ if(v==null) return ''; if(v<4) return 'note-bad'; if(v<7) return 'note-mid'; return 'note-good'; }
 
-// I18N tooltips
-// I18N tooltips
-const LANG = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+// I18N tooltips - Priorité: URL > localStorage > document.lang
+const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
 const TIP_SAVE = ({fr:'Sauvegarder ce road trip',en:'Save this road trip',it:'Salva questo road trip',es:'Guardar este road trip',pt:'Guardar este road trip',ar:'حفظ هذه الرحلة'})[LANG] || 'Save';
 const TIP_FLAG = ({
   fr:'Signaler un RT ou une erreur',
@@ -4048,7 +4047,7 @@ function setTitleTranslated(raw){
   const btnExit = document.getElementById('btnMapExit');
 
   // I18N tooltip pour le plein écran
-  const LANG = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
   const FULLSCREEN_HELP = {
     fr: "Vous passez en plein écran. Survolez une étape pour voir son descriptif. Cliquez pour définir l'ordre (1→n). Double-cliquez pour retirer une étape. Utilisez \"Valider\" pour appliquer les changements, ou \"Quitter\" pour annuler.",
     en: "You are entering fullscreen. Hover a step to see its description. Click to set order (1→n). Double-click to remove a step. Use \"Validate\" to apply changes, or \"Exit\" to cancel.",
@@ -9637,7 +9636,7 @@ const infoCloseBtn = modal?.querySelector('.btn-close-info');
   }
 
   // I18N pour le bouton et la modal
-  const LANG = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
   console.log('[REORG] Langue détectée:', LANG);  
   const I18N = {
     fr: {

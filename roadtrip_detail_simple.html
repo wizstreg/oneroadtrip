@@ -2221,7 +2221,8 @@ function avg(arr){ if(!arr.length) return null; const s=arr.reduce((a,x)=>a+Numb
 function noteClass(v){ if(v==null) return ''; if(v<4) return 'note-bad'; if(v<7) return 'note-mid'; return 'note-good'; }
 
 // I18N tooltips - utilise le système ort-i18n.js
-const LANG = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+// Priorité: URL > localStorage > document.lang > 'fr'
+const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
 
 // Helper pour obtenir les traductions dynamiquement
 const getTrans = (key, fallback) => (window.t ? window.t(key) : fallback);
@@ -3955,7 +3956,7 @@ document.body.classList.add('layout-side');
   const btnExit = document.getElementById('btnMapExit');
 
   // I18N tooltip pour le plein écran
-  const LANG = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
   const FULLSCREEN_HELP = {
     fr: "Vous passez en plein écran. Survolez une étape pour voir son descriptif. Cliquez pour définir l'ordre (1→n). Double-cliquez pour retirer une étape. Utilisez \"Valider\" pour appliquer les changements, ou \"Quitter\" pour annuler.",
     en: "You are entering fullscreen. Hover a step to see its description. Click to set order (1→n). Double-click to remove a step. Use \"Validate\" to apply changes, or \"Exit\" to cancel.",
