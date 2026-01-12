@@ -4948,6 +4948,58 @@ async function initFromItin(it){
   }
   FIN ANCIEN CODE */
   
+  // ✅ Si groupNightsByPlace a fait le travail, on skip le calcul des hubs
+  // et on fait juste un ajustement proportionnel au targetDays
+  const hasGrouping = steps.some(s => s._isGroupHead);
+  
+  if (hasGrouping) {
+    console.log('[NIGHTS] ✅ Regroupement par lieu déjà effectué, ajustement proportionnel...');
+    
+    // Calculer le total actuel des nuits
+    let currentTotal = steps.reduce((sum, s) => sum + (s.nights || 0), 0);
+    const targetNights = (state.requestedDays || 26) - 1; // -1 car dernière nuit = retour
+    
+    console.log(`[NIGHTS] Total actuel: ${currentTotal}, Target: ${targetNights}`);
+    
+    if (currentTotal !== targetNights && currentTotal > 0) {
+      const ratio = targetNights / currentTotal;
+      console.log(`[NIGHTS] Ratio d'ajustement: ${ratio.toFixed(2)}`);
+      
+      // Ajuster proportionnellement
+      let newTotal = 0;
+      steps.forEach(step => {
+        if (step.nights > 0) {
+          step.nights = Math.max(1, Math.round(step.nights * ratio));
+          newTotal += step.nights;
+        }
+      });
+      
+      // Ajuster la différence sur les étapes avec le plus de nuits
+      let diff = newTotal - targetNights;
+      if (diff !== 0) {
+        const sortedByNights = steps.filter(s => s.nights > 1).sort((a, b) => b.nights - a.nights);
+        for (const step of sortedByNights) {
+          if (diff === 0) break;
+          if (diff > 0 && step.nights > 1) {
+            step.nights--;
+            diff--;
+          } else if (diff < 0) {
+            step.nights++;
+            diff++;
+          }
+        }
+      }
+      
+      console.log(`[NIGHTS] ✅ Après ajustement: ${steps.reduce((s, x) => s + (x.nights || 0), 0)} nuits`);
+    }
+    
+    // Mettre à jour state.steps et passer au rendu
+    state.steps = steps;
+    
+  } else {
+    // Ancien code de calcul des hubs (si pas de regroupement)
+    console.log('[NIGHTS] Pas de regroupement, calcul hubs/satellites...');
+  
   // ⚠️ NETTOYER les anciens champs hub/satellite (peuvent venir du JSON)
   steps.forEach(step => {
     delete step._isHub;
@@ -5400,6 +5452,8 @@ async function initFromItin(it){
   // ⚠️ IMPORTANT: Assigner state.steps APRÈS calculateNightsV3
   // pour que les champs _satellites, _isHub, _isSatellite soient propagés
   state.steps = steps;
+  
+  } // Fin du else (calcul hubs/satellites)
   
   // targetNights = choix utilisateur (PARAM_DAYS) > recommandation (estimated_days_base) > somme calculée
   // IMPORTANT: nuits = jours - 1 (ex: 7 jours = 6 nuits)
