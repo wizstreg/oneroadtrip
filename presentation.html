@@ -4641,11 +4641,25 @@ function initGridCards() {
 
 // Mettre à jour les textes traduits du route builder
 function updateRouteBuilderTranslations() {
-  const lang = localStorage.getItem('lang') || 'fr';
+  // Même logique de détection que l'IIFE Auto-lang
+  const SUP = ["fr","en","it","es","pt","ar"];
+  let lang = new URLSearchParams(location.search).get('lang')
+           || localStorage.getItem('lang')
+           || (navigator.languages && navigator.languages[0]) || navigator.language || 'fr';
+  lang = (lang||'fr').slice(0,2).toLowerCase();
+  if(!SUP.includes(lang)) lang='fr';
+  
+  // Mettre à jour localStorage et sélecteur pour cohérence
+  localStorage.setItem('lang', lang);
+  const langSel = document.getElementById('langSel');
+  if (langSel) langSel.value = lang;
+  
   const L = T[lang] || T.fr;
   
   const setTextById = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   
+  // Titres des 4 carrés (doivent être ici car l'IIFE utilise parfois la langue du navigateur)
+  setTextById('mapTitle', L.mapTitle);
   setTextById('buildTitle', L.buildTitle);
   setTextById('importTitle', L.importTitle);
   setTextById('creatorsTitle2', L.creatorsTitle);
@@ -4657,6 +4671,7 @@ function updateRouteBuilderTranslations() {
   setTextById('labelMaxKm', L.labelMaxKm);
   setTextById('labelDetour', L.labelDetour);
   setTextById('labelDuration', L.labelDuration);
+  setTextById('labelDays', L.labelDaysUnit);
   setTextById('generateBtnText', L.generateBtn);
   
   // Placeholders

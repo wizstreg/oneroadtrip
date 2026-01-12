@@ -239,9 +239,16 @@
   // ============================================
   
   function getLang() {
+    // 1. Module i18n si disponible
     if (window.ORT_I18N_AUTH?.detectLang) {
       return window.ORT_I18N_AUTH.detectLang();
     }
+    // 2. Paramètre URL (prioritaire si module pas encore chargé)
+    const urlLang = new URLSearchParams(window.location.search).get('lang');
+    if (urlLang && COOKIE_I18N[urlLang]) {
+      return urlLang;
+    }
+    // 3. localStorage ou navigateur
     return localStorage.getItem('lang') || 
            (navigator.language || 'fr').substring(0, 2).toLowerCase();
   }
