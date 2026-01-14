@@ -252,7 +252,7 @@
     hdr.style.flexWrap = 'wrap';
     if(document.getElementById('ortDashRow')) return;
 
-    var lang = (localStorage.getItem('ORT_LANG') || document.documentElement.lang || 'fr').toLowerCase();
+    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').toLowerCase();
     var MSG = ({
       fr:'Vous devez être enregistré pour accéder au Dashboard.',
       en:'You must be signed in to access the Dashboard.',
@@ -2461,8 +2461,7 @@ function slugify(s){
 
 // Applique I18N
 function setLang(lang){
-  localStorage.setItem('ORT_LANG', lang);
-  localStorage.removeItem('lang'); // Nettoyer l'ancienne clé
+  localStorage.setItem('lang', lang);
   const t=I18N[lang]||I18N.fr;
   
   // Text content
@@ -2555,9 +2554,14 @@ function setLang(lang){
 
 // Init langue
 (function(){
+  const SUPPORTED_LANGS = ['fr', 'en', 'es', 'it', 'pt', 'ar'];
   const urlLang = new URLSearchParams(location.search).get('lang');
-  const saved   = localStorage.getItem('ORT_LANG') || localStorage.getItem('ORT_LANG');
-  const lang    = urlLang || saved || 'fr';
+  const saved   = localStorage.getItem('lang');
+  const navLang = ((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').slice(0,2).toLowerCase();
+  let lang = urlLang || saved || navLang;
+  lang = (lang || 'fr').slice(0,2).toLowerCase();
+  if (!SUPPORTED_LANGS.includes(lang)) lang = 'fr';
+  localStorage.setItem('lang', lang); // Synchroniser
   $('#langSel').value = lang;
   setLang(lang);
   $('#langSel').addEventListener('change', (e)=>{
@@ -2641,7 +2645,7 @@ if(btnGen) {
 
   setTimeout(() => {
     const {cleaned, removed} = cleanSourceText(raw);
-    const lang = (document.documentElement.lang || localStorage.getItem('ORT_LANG') || 'en').toLowerCase();
+    const lang = (document.documentElement.lang || localStorage.getItem('lang') || 'en').toLowerCase();
     const head = getPromptTemplate(lang,{mode, seeds, modelSubMode, modelSeeds});
     $('#prompt').textContent = head + cleaned;
 
@@ -3040,7 +3044,7 @@ cleaned = cleaned
   }
 
   function setHeaderLabel(user){
-    const lang = localStorage.getItem('ORT_LANG') || document.documentElement.lang || 'fr';
+    const lang = localStorage.getItem('lang') || document.documentElement.lang || 'fr';
     const LABELS = {
       fr:{signin:'Se connecter',  account:'Mon compte'},
       en:{signin:'Sign in',        account:'My account'},

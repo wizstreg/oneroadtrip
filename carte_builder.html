@@ -1225,7 +1225,19 @@ let allMarkers = [];
 let selectedPlaces = [];
 let currentPreviewPlace = null;
 let countryBounds = {};
-let currentLang = localStorage.getItem('lang') || 'fr';
+
+// Détection cohérente de la langue (URL > localStorage > navigator)
+const SUPPORTED_LANGS = ['fr', 'en', 'es', 'it', 'pt', 'ar'];
+let currentLang = (function() {
+  let lang = new URLSearchParams(location.search).get('lang')
+           || localStorage.getItem('lang')
+           || (navigator.languages && navigator.languages[0]) || navigator.language || 'fr';
+  lang = (lang || 'fr').slice(0, 2).toLowerCase();
+  if (!SUPPORTED_LANGS.includes(lang)) lang = 'fr';
+  localStorage.setItem('lang', lang); // Synchroniser
+  return lang;
+})();
+
 let ratingThreshold = 0;
 let PHOTOS_CACHE = {};
 let previewCloseTimer = null;
@@ -1240,10 +1252,10 @@ const TRANSLATIONS_CACHE = {};
 // ===============================
 document.addEventListener('DOMContentLoaded', () => {
   // Langue - Le sélecteur est maintenant géré par ort-header.js (id="langSel")
-  // On peut quand même ajouter notre propre logique si le sélecteur existe
+  // On synchronise avec notre détection
   const langSelect = document.getElementById('langSel');
   if (langSelect) {
-    langSelect.value = currentLang;
+    langSelect.value = currentLang; // Forcer la valeur détectée
     // Note: ort-header.js gère aussi le changement et recharge la page
     // Notre listener ici fait une mise à jour avant le reload
     langSelect.addEventListener('change', async (e) => {
