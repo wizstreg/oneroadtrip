@@ -18,7 +18,7 @@
 
     /* HERO : image réelle + overlay sombre ; contenu légèrement remonté */
     .hero{
-      position:relative; width:100%; min-height:65vh;
+      position:relative; width:100%; min-height:60vh;
       display:flex; align-items:flex-start; justify-content:center;
       text-align:left; color:#fff; background:var(--heroBase); overflow:hidden;
     }
@@ -34,7 +34,7 @@
     @keyframes heroIn{ from{ filter:saturate(1.05) contrast(1.05) brightness(.95) } to{ filter:saturate(1.05) contrast(1.05) brightness(1) } }
 
     .wrap{ max-width:var(--max); margin:0 auto; padding:16px }
-    .hero > .content{ position:relative; z-index:1; padding:clamp(48px, 12vh, 140px) 250px 32px 16px; width:100%; max-width:calc(var(--max) + 234px) }
+    .hero > .content{ position:relative; z-index:1; padding:clamp(20px, 5vh, 60px) 250px 32px 16px; width:100%; max-width:calc(var(--max) + 234px) }
 
     /* Titres + métriques */
     .headline{
@@ -389,7 +389,7 @@
 
     /* Boutons flottants - en haut sur desktop */
     .cta-container{
-      position:fixed; right:16px; top:16px; z-index:9;
+      position:fixed; right:16px; top:70px; z-index:60;
       display:flex; flex-direction:column; gap:10px; align-items:flex-end;
     }
     .cta-btn{
@@ -588,6 +588,170 @@
         padding-bottom:env(safe-area-inset-bottom);
       }
     }
+
+    /* ============================================
+       CARROUSEL DERNIERS ITINÉRAIRES (TOP BANNER)
+       ============================================ */
+    .latest-carousel-container {
+      background: linear-gradient(135deg, #b45309 0%, #d97706 50%, #f59e0b 100%);
+      padding: 14px 16px;
+      margin: 0;
+      position: relative;
+      z-index: 50;
+      box-shadow: 0 4px 12px rgba(180,83,9,0.4);
+    }
+    .latest-carousel {
+      max-width: var(--max);
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .carousel-label {
+      font-weight: 700;
+      color: #fff;
+      font-size: 15px;
+      white-space: nowrap;
+      background: rgba(0,0,0,0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      flex-shrink: 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .carousel-arrow {
+      background: rgba(0,0,0,0.2);
+      border: none;
+      color: #fff;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .carousel-arrow:hover {
+      background: rgba(0,0,0,0.35);
+      transform: scale(1.1);
+    }
+    .carousel-content {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .carousel-slides {
+      flex: 1;
+      position: relative;
+      height: 36px;
+      overflow: hidden;
+    }
+    .carousel-slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      opacity: 0;
+      transform: translateX(20px);
+      transition: all 0.4s ease;
+      pointer-events: none;
+      color: #fff;
+      cursor: pointer;
+      padding: 0 8px;
+      border-radius: 8px;
+    }
+    .carousel-slide.active {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .carousel-slide.exit {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    .carousel-slide:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .carousel-slide:hover .carousel-title {
+      text-decoration: underline;
+    }
+    .carousel-flag {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .carousel-title {
+      flex: 1;
+      font-weight: 600;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+    .carousel-days {
+      font-size: 13px;
+      opacity: 0.85;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: rgba(0,0,0,0.2);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .carousel-see-all {
+      color: #fff;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 6px;
+      background: rgba(0,0,0,0.2);
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    .carousel-see-all:hover {
+      color: #fff;
+      background: rgba(0,0,0,0.35);
+    }
+    /* Carrousel Tablette */
+    @media (max-width: 900px) {
+      .carousel-days { display: none; }
+      .carousel-title { font-size: 14px; }
+    }
+    /* Carrousel Mobile */
+    @media (max-width: 640px) {
+      .latest-carousel-container { padding: 10px 12px; }
+      .latest-carousel { gap: 6px; }
+      .carousel-label { 
+        font-size: 13px; 
+        padding: 4px 10px;
+      }
+      .carousel-arrow { 
+        width: 28px; 
+        height: 28px; 
+        font-size: 10px; 
+      }
+      .carousel-title { font-size: 13px; }
+      .carousel-flag { font-size: 18px; }
+      .carousel-see-all { 
+        font-size: 12px; 
+        padding: 4px 8px;
+      }
+    }
+    /* Très petit mobile */
+    @media (max-width: 480px) {
+      .carousel-label { display: none; }
+      .carousel-see-all span { display: none; }
+    }
+    /* RTL pour l'arabe */
+    [dir="rtl"] .latest-carousel { flex-direction: row-reverse; }
+    [dir="rtl"] .carousel-slide { flex-direction: row-reverse; }
   
 </style>
 </head>
@@ -1111,6 +1275,103 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       const nodes = [document.getElementById("nItins"), document.getElementById("nCountries"), document.getElementById("nPlaces"), document.getElementById("nVisits"), document.getElementById("nActivities")];
       const targets = [stats.itineraries, stats.countries, stats.places, stats.visits, stats.activities];
       animateCounters(nodes, targets, 4000);
+
+      // ============================================
+      // CARROUSEL DES DERNIERS ITINÉRAIRES (EN HAUT)
+      // ============================================
+      (async function initLatestCarousel() {
+        const CAROUSEL_I18N = {
+          fr: { title: '🆕 Nouveautés', seeAll: 'Voir tous →', days: 'jours' },
+          en: { title: '🆕 New trips', seeAll: 'See all →', days: 'days' },
+          es: { title: '🆕 Novedades', seeAll: 'Ver todos →', days: 'días' },
+          it: { title: '🆕 Novità', seeAll: 'Vedi tutti →', days: 'giorni' },
+          pt: { title: '🆕 Novidades', seeAll: 'Ver todos →', days: 'dias' },
+          ar: { title: '🆕 جديد', seeAll: '← عرض الكل', days: 'أيام' }
+        };
+        const COUNTRY_FLAGS = {
+          'NI':'🇳🇮','HR':'🇭🇷','LA':'🇱🇦','FR':'🇫🇷','ES':'🇪🇸','IT':'🇮🇹','PT':'🇵🇹','US':'🇺🇸','MX':'🇲🇽','JP':'🇯🇵',
+          'TH':'🇹🇭','VN':'🇻🇳','ID':'🇮🇩','AU':'🇦🇺','NZ':'🇳🇿','MA':'🇲🇦','ZA':'🇿🇦','GR':'🇬🇷','TR':'🇹🇷','EG':'🇪🇬',
+          'PE':'🇵🇪','AR':'🇦🇷','CL':'🇨🇱','BR':'🇧🇷','CO':'🇨🇴','CR':'🇨🇷','CU':'🇨🇺','IS':'🇮🇸','NO':'🇳🇴','SE':'🇸🇪',
+          'FI':'🇫🇮','PL':'🇵🇱','CZ':'🇨🇿','AT':'🇦🇹','CH':'🇨🇭','DE':'🇩🇪','BE':'🇧🇪','NL':'🇳🇱','GB':'🇬🇧','IE':'🇮🇪',
+          'IN':'🇮🇳','CN':'🇨🇳','KR':'🇰🇷','PH':'🇵🇭','MY':'🇲🇾','SG':'🇸🇬','KH':'🇰🇭','MM':'🇲🇲','NP':'🇳🇵','LK':'🇱🇰'
+        };
+        const LANG_FOLDERS = { fr:'fr/itineraires', en:'en/itineraries', es:'es/rutas', it:'it/itinerari', pt:'pt/roteiros', ar:'ar/masar' };
+        const labels = CAROUSEL_I18N[lang] || CAROUSEL_I18N.fr;
+        
+        try {
+          const response = await fetch('/static-pages/latest-itineraries.json');
+          if (!response.ok) { console.log('[CAROUSEL] latest-itineraries.json non trouvé'); return; }
+          const data = await response.json();
+          let itineraries = data.latest_by_lang?.[lang] || data.latest_global || [];
+          if (itineraries.length === 0) return;
+          itineraries = itineraries.slice(0, 10);
+          
+          // Construire la liste des slugs pour le filtre "Voir tous"
+          const slugList = itineraries.map(i => i.slug).join(',');
+          
+          // Créer le carrousel
+          const container = document.createElement('div');
+          container.className = 'latest-carousel-container';
+          container.innerHTML = `
+            <div class="latest-carousel">
+              <span class="carousel-label">${labels.title}</span>
+              <button class="carousel-arrow carousel-prev" aria-label="Précédent">◀</button>
+              <div class="carousel-content">
+                <div class="carousel-slides">
+                  ${itineraries.map((itin, idx) => `
+                    <div class="carousel-slide ${idx === 0 ? 'active' : ''}" data-index="${idx}" data-slug="${itin.slug}">
+                      <span class="carousel-flag">${COUNTRY_FLAGS[itin.country] || '🌍'}</span>
+                      <span class="carousel-title">${itin.title}</span>
+                      <span class="carousel-days">${itin.days} ${labels.days}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              <button class="carousel-arrow carousel-next" aria-label="Suivant">▶</button>
+              <a href="/static-pages/${LANG_FOLDERS[lang] || LANG_FOLDERS.fr}/index.html?filter=${encodeURIComponent(slugList)}" class="carousel-see-all">${labels.seeAll}</a>
+            </div>
+          `;
+          
+          // Insérer AVANT le hero (tout en haut)
+          const hero = document.querySelector('.hero');
+          if (hero) hero.before(container);
+          
+          // Navigation
+          let currentIndex = 0;
+          const slides = container.querySelectorAll('.carousel-slide');
+          
+          function navigateTo(newIndex) {
+            if (newIndex < 0) newIndex = slides.length - 1;
+            if (newIndex >= slides.length) newIndex = 0;
+            slides[currentIndex].classList.remove('active');
+            slides[currentIndex].classList.add('exit');
+            setTimeout(() => slides[currentIndex].classList.remove('exit'), 400);
+            currentIndex = newIndex;
+            slides[currentIndex].classList.add('active');
+          }
+          
+          container.querySelector('.carousel-prev').addEventListener('click', () => { navigateTo(currentIndex - 1); resetAutoplay(); });
+          container.querySelector('.carousel-next').addEventListener('click', () => { navigateTo(currentIndex + 1); resetAutoplay(); });
+          
+          // Clic sur slide → ouvre l'itinéraire
+          slides.forEach(slide => {
+            slide.addEventListener('click', () => {
+              const slug = slide.dataset.slug;
+              if (slug) window.location.href = `/static-pages/${LANG_FOLDERS[lang] || LANG_FOLDERS.fr}/${slug}.html`;
+            });
+          });
+          
+          // Autoplay
+          let autoplayInterval = setInterval(() => navigateTo(currentIndex + 1), 5000);
+          function resetAutoplay() { clearInterval(autoplayInterval); autoplayInterval = setInterval(() => navigateTo(currentIndex + 1), 5000); }
+          container.addEventListener('mouseenter', () => clearInterval(autoplayInterval));
+          container.addEventListener('mouseleave', resetAutoplay);
+          
+          console.log('[CAROUSEL] Initialisé avec', itineraries.length, 'itinéraires');
+        } catch (err) {
+          console.log('[CAROUSEL] Erreur:', err.message);
+        }
+      })();
 
       // Fonction pour créer et afficher un modal
       function showModal(title, text, onConfirm){

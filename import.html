@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ORT Import v2.4 - Build 2025-11-13 - Added multi-itinerary fusion instruction: when source lists multiple separate roadtrips, AI will merge all places into ONE coherent roadtrip -->
+<!-- ORT Import v3.2 - Build 2025-01-18 - Prompt v8: enriched format (subtitle, practical_context, practical_info, road_type) -->
 <html lang="fr" data-page="import_ia">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -307,73 +307,48 @@
 </header>
 
 <div class="wrap">
-  <!-- 1) Options d'interprétation (I18N) - EN HAUT -->
+  <!-- 1) Mode de génération simplifié -->
   <section class="card" style="margin-bottom:14px">
     <h2><span class="step-num">1</span><span id="optTitle"></span></h2>
-    <div class="interp-grid">
+    
+    <!-- Texte explicatif pour les utilisateurs -->
+    <p id="optExplain" style="color:#475569;line-height:1.6;margin-bottom:16px">Vous pouvez trouver un itinéraire sur le web, ou un descriptif de lieux que vous voulez visiter, ou coller plusieurs descriptifs de lieux et générer un prompt que vous copierez à une intelligence artificielle de votre choix. Inutile de nettoyer votre copie, vous pouvez copier la page entière et la coller telle quelle dans le premier onglet. Vous n'aurez plus qu'à recopier la réponse de l'IA dans le troisième onglet pour avoir un itinéraire sur mesure complètement modifiable.</p>
+    
+    <!-- Message pour utilisateurs normaux -->
+    <div id="userModeInfo" class="info-box" style="background:#e0f2fe;border:1px solid #0ea5e9;padding:16px;border-radius:10px;margin-bottom:16px">
+      <p style="margin:0;color:#0369a1;font-weight:500" id="userModeText">L'itinéraire sera automatiquement optimisé géographiquement pour éviter les allers-retours.</p>
+    </div>
+    
+    <!-- Input caché pour garder la compatibilité (mode logic par défaut) -->
+    <input type="hidden" name="opt-mode" value="logic" id="opt-default-mode" />
+      
+    <!-- Options admin - 4 choix directs (réservé admin) -->
+    <div class="interp-grid" id="adminOptionsGrid" style="display:none">
       <label class="interp-option" for="opt-follow">
-        <input id="opt-follow" name="opt-mode" type="radio" value="follow" checked />
-        <h3 id="opt1Title"></h3>
-        <p id="opt1Desc"></p>
+        <input id="opt-follow" name="opt-mode" type="radio" value="follow" />
+        <h3>📍 Parcours strict</h3>
+        <p>Conserver l'ordre exact de la source</p>
       </label>
-      
-      <label class="interp-option" for="opt-logic">
-        <input id="opt-logic" name="opt-mode" type="radio" value="logic" />
-        <h3 id="opt2Title"></h3>
-        <p id="opt2Desc"></p>
+      <label class="interp-option selected" for="opt-logic">
+        <input id="opt-logic" name="opt-mode" type="radio" value="logic" checked />
+        <h3>🗺️ Parcours logique</h3>
+        <p>Optimiser géographiquement</p>
       </label>
-      
       <label class="interp-option" for="opt-seed">
         <input id="opt-seed" name="opt-mode" type="radio" value="seed" />
-        <h3 id="opt3Title"></h3>
-        <p id="opt3Desc"></p>
+        <h3>🏠 Bases + boucles</h3>
+        <p>Excursions depuis villes d'attache</p>
       </label>
-      
       <label class="interp-option" for="opt-citytrip">
         <input id="opt-citytrip" name="opt-mode" type="radio" value="citytrip" />
-        <h3 id="opt4Title"></h3>
-        <p id="opt4Desc"></p>
-      </label>
-      
-      <!-- Option 5: Model JSON (réservé admin) -->
-      <label class="interp-option" for="opt-model" id="opt-model-wrapper" style="display:none">
-        <input id="opt-model" name="opt-mode" type="radio" value="model" />
-        <h3>🔧 Model JSON</h3>
-        <p>JSON propre pour intégration au modèle</p>
+        <h3>🏙️ City trip</h3>
+        <p>1 attraction = 1 jour</p>
       </label>
     </div>
     
-    <!-- Sous-options pour Model JSON -->
-    <div id="modelSubOptionsWrap" style="display:none;margin-top:16px;padding:16px;background:#f8fafc;border:2px solid #113f7a;border-radius:12px">
-      <label style="font-weight:600;margin-bottom:12px;display:block;color:#113f7a">Choisir le type de parcours :</label>
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
-          <input type="radio" name="model-sub" value="follow" checked style="width:18px;height:18px">
-          <span>Parcours strict</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
-          <input type="radio" name="model-sub" value="logic" style="width:18px;height:18px">
-          <span>Parcours logique</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
-          <input type="radio" name="model-sub" value="seed" style="width:18px;height:18px">
-          <span>Essaimage villes d'attache</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px;border:1px solid #cbd5e1;border-radius:8px;background:#fff">
-          <input type="radio" name="model-sub" value="citytrip" style="width:18px;height:18px">
-          <span>Parcours de ville</span>
-        </label>
-      </div>
-      
-      <!-- Champ villes pour essaimage dans model mode -->
-      <div id="modelSeedWrap" style="display:none;margin-top:12px">
-        <input id="modelSeedCities" class="input" type="text" placeholder="Ex.: Nice, Marseille, Toulon" style="width:100%;border:1px solid #113f7a;padding:8px 12px;border-radius:8px">
-      </div>
-    </div>
-    
-    <!-- Champ pour saisir les villes (affiché uniquement si opt-seed est sélectionné) -->
-    <div class="opt-inline" id="seedCitiesWrap" style="margin-top:12px;display:none">
-      <input id="seedCities" class="input" type="text" placeholder="" style="flex:1;border:1px solid #113f7a;padding:8px 12px;border-radius:8px">
+    <!-- Champ villes pour mode seed (admin) -->
+    <div id="seedCitiesWrap" style="display:none;margin-top:12px">
+      <input id="seedCities" class="input" type="text" placeholder="Ex.: Nice, Marseille, Toulon" style="width:100%;border:1px solid #113f7a;padding:8px 12px;border-radius:8px">
     </div>
     
     <p class="muted" id="optNote" style="margin-top:12px"></p>
@@ -487,97 +462,63 @@
   window.ORT_isMobile = isMobile;
 })();
 
-// === Gestion Options d'interprétation ===
+// === Gestion Options admin (follow/logic/seed/citytrip) ===
 (function(){
-  const optionCards = document.querySelectorAll('.interp-option');
-  const seedWrap = document.getElementById('seedCitiesWrap');
-  const seedInput = document.getElementById('seedCities');
-  const radios = document.querySelectorAll('input[name="opt-mode"]');
-
-  // Gestion du clic sur les cartes
-  optionCards.forEach(card => {
-    card.addEventListener('click', function(e){
-      // Si on clique sur le radio, laisser le comportement par défaut
-      if(e.target.tagName === 'INPUT') return;
-      
-      // Sinon, cocher le radio correspondant
-      const radio = this.querySelector('input[type="radio"]');
-      if(radio) radio.checked = true;
-      
-      // Mettre à jour l'affichage
-      updateSelection();
-    });
-  });
-
-  // Gestion du changement de sélection
-  radios.forEach(radio => {
-    radio.addEventListener('change', updateSelection);
-  });
-
-  function updateSelection(){
-    const selected = document.querySelector('input[name="opt-mode"]:checked');
+  // Initialisation appelée quand l'admin est détecté
+  window.initAdminOptions = function() {
+    const adminOptionsGrid = document.getElementById('adminOptionsGrid');
+    const seedWrap = document.getElementById('seedCitiesWrap');
+    const seedInput = document.getElementById('seedCities');
     
-    // Mettre à jour l'apparence des cartes
+    if(!adminOptionsGrid) return;
+    
+    const optionCards = adminOptionsGrid.querySelectorAll('.interp-option');
+    const radios = adminOptionsGrid.querySelectorAll('input[type="radio"]');
+    
+    // Gestion du clic sur les cartes
     optionCards.forEach(card => {
-      const radio = card.querySelector('input[type="radio"]');
-      if(radio && radio.checked){
-        card.classList.add('selected');
-      }else{
-        card.classList.remove('selected');
-      }
+      card.addEventListener('click', function(e){
+        if(e.target.tagName === 'INPUT') return;
+        const radio = this.querySelector('input[type="radio"]');
+        if(radio) {
+          radio.checked = true;
+          updateAdminSelection();
+        }
+      });
     });
     
-    // Ouvrir la section 2 sur mobile quand un mode est sélectionné
-    if(selected && window.ORT_expandSection){
-      window.ORT_expandSection('section2Container');
-    }
-
-    // Afficher/masquer le champ villes selon la sélection (mode normal)
-    if(seedWrap && seedInput){
-      if(selected && selected.value === 'seed'){
-        seedWrap.style.display = '';
-        seedInput.disabled = false;
-      }else{
-        seedWrap.style.display = 'none';
-        seedInput.disabled = true;
-        seedInput.value = '';
+    // Gestion du changement de sélection
+    radios.forEach(radio => {
+      radio.addEventListener('change', updateAdminSelection);
+    });
+    
+    function updateAdminSelection(){
+      // Mettre à jour l'apparence des cartes
+      optionCards.forEach(card => {
+        const radio = card.querySelector('input[type="radio"]');
+        if(radio && radio.checked){
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+      
+      // Afficher/masquer le champ villes si mode seed
+      const selected = document.querySelector('#adminOptionsGrid input[type="radio"]:checked');
+      if(seedWrap && seedInput){
+        if(selected && selected.value === 'seed'){
+          seedWrap.style.display = '';
+          seedInput.disabled = false;
+        } else {
+          seedWrap.style.display = 'none';
+          seedInput.disabled = true;
+        }
       }
     }
     
-    // Afficher/masquer la box de sous-options Model JSON
-    const modelSubWrap = document.getElementById('modelSubOptionsWrap');
-    if(modelSubWrap){
-      if(selected && selected.value === 'model'){
-        modelSubWrap.style.display = '';
-        updateModelSubSelection(); // Mise à jour des sous-options
-      }else{
-        modelSubWrap.style.display = 'none';
-      }
-    }
-  }
-  
-  // Gestion des sous-options Model JSON
-  function updateModelSubSelection(){
-    const modelSeedWrap = document.getElementById('modelSeedWrap');
-    const selectedSub = document.querySelector('input[name="model-sub"]:checked');
-    
-    if(modelSeedWrap){
-      if(selectedSub && selectedSub.value === 'seed'){
-        modelSeedWrap.style.display = '';
-      }else{
-        modelSeedWrap.style.display = 'none';
-      }
-    }
-  }
-  
-  // Écouter les changements de sous-options
-  const modelSubRadios = document.querySelectorAll('input[name="model-sub"]');
-  modelSubRadios.forEach(radio => {
-    radio.addEventListener('change', updateModelSubSelection);
-  });
-
-  // Initialiser l'état au chargement
-  if(optionCards.length > 0) updateSelection();
+    // Initialiser l'état
+    updateAdminSelection();
+  };
 })();
 </script>
 
@@ -612,6 +553,76 @@
     </section>
   </div><!-- /section4Container -->
   </main>
+
+  <!-- === SECTION ADMIN: Visualisation et export des RT === -->
+  <section id="adminRTViewer" class="section-group" style="display:none;margin-top:40px;background:rgba(220,38,38,0.05)">
+    <div class="section-group-title" style="background:#dc2626;color:#fff">🔴 ADMIN — Visualiser / Exporter les itinéraires</div>
+    
+    <div class="card" style="margin-top:20px">
+      <h2>📂 Charger un fichier JSON d'itinéraires</h2>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <input type="file" id="adminRTFile" accept=".json" style="flex:1;min-width:200px">
+        <span style="color:#64748b;font-size:13px">ou</span>
+        <input type="text" id="adminRTUrl" placeholder="URL du fichier JSON (ex: ./data/itins/FR.json)" style="flex:2;min-width:250px;padding:8px 12px;border:1px solid #cbd5e1;border-radius:8px">
+        <button class="btn ghost" id="adminLoadUrl" type="button">Charger URL</button>
+      </div>
+      <div id="adminRTStatus" style="display:none;padding:8px;border-radius:6px;font-size:13px"></div>
+    </div>
+
+    <div class="card" id="adminRTNavCard" style="display:none">
+      <h2>🗺️ Navigation dans les itinéraires</h2>
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+        <button class="btn ghost" id="adminPrevRT" type="button" style="font-size:20px;padding:8px 16px">◀</button>
+        <div style="flex:1;text-align:center">
+          <div id="adminRTCounter" style="font-size:14px;color:#64748b">0 / 0</div>
+          <div id="adminRTTitle" style="font-size:18px;font-weight:700;color:#113f7a;margin-top:4px">—</div>
+          <div id="adminRTMeta" style="font-size:13px;color:#64748b;margin-top:2px"></div>
+        </div>
+        <button class="btn ghost" id="adminNextRT" type="button" style="font-size:20px;padding:8px 16px">▶</button>
+      </div>
+      
+      <!-- Aperçu rapide -->
+      <div id="adminRTPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;max-height:300px;overflow-y:auto;font-size:13px;margin-bottom:16px">
+        <em style="color:#94a3b8">Aucun itinéraire chargé</em>
+      </div>
+      
+      <!-- Actions -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="adminExportPrompt" type="button">📝 Générer prompt de réécriture</button>
+        <button class="btn ghost" id="adminCopyJSON" type="button">📋 Copier JSON brut</button>
+        <button class="btn ghost" id="adminOpenRT" type="button">🔗 Ouvrir dans RT Detail</button>
+      </div>
+    </div>
+
+    <!-- Zone de prompt généré -->
+    <div class="card" id="adminPromptCard" style="display:none">
+      <h2>📝 Prompt de réécriture</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:12px">Copiez ce prompt et collez-le à l'IA avec vos articles de remplacement. Le JSON retourné aura le même itin_id et pourra remplacer l'ancien via import.</p>
+      <textarea id="adminPromptOutput" style="height:400px;font-size:12px" readonly></textarea>
+      <div style="margin-top:10px;display:flex;gap:10px">
+        <button class="btn" id="adminCopyPrompt" type="button">📋 Copier le prompt</button>
+        <button class="btn ghost" id="adminClosePrompt" type="button">Fermer</button>
+      </div>
+    </div>
+
+    <!-- Option suppression autres langues -->
+    <div class="card" style="margin-top:14px">
+      <h2>🗑️ Gestion des autres langues</h2>
+      <p style="font-size:13px;color:#64748b;margin-bottom:12px">
+        Après réécriture du FR, supprimez les versions EN/ES/IT/PT/AR pour les régénérer proprement via traduction.
+      </p>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="adminDeleteOtherLangs" style="width:18px;height:18px">
+          <span style="font-weight:600;color:#dc2626">Supprimer les autres langues (EN, ES, IT, PT, AR)</span>
+        </label>
+      </div>
+      <button class="btn" id="adminDeleteLangsBtn" type="button" style="background:#dc2626;display:none">
+        🗑️ Supprimer maintenant les autres langues
+      </button>
+      <div id="adminDeleteStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px"></div>
+    </div>
+  </section>
 
   <footer>
     <a href="mentions-legales.html">Mentions légales</a> ·
@@ -704,1133 +715,653 @@
 </script>
 
 <script>
-// === PROMPT TEMPLATES I18N — REWORKED (themes supprimés) ===
-// Base stricte + variantes selon le mode sélectionné (follow/logic/seed/citytrip)
+// === PROMPT TEMPLATES v6 - Admin & User ===
+// User: mode "logic" par défaut | Admin: sous-modes follow/logic/seed/citytrip
+
 const PROMPTS = {
-  fr: ({mode, seeds, modelSubMode, modelSeeds}) => `Transforme le contenu ci-dessous en un JSON "itins" (UN SEUL objet) complet et strictement valide.
+  // ============================================
+  // FRANÇAIS v8 - Format enrichi
+  // ============================================
+  fr: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `Tu es un extracteur de données structurées. Produis UNIQUEMENT du JSON valide, sans texte, sans balises Markdown.
 
-⚠️ SI LE TEXTE LISTE PLUSIEURS ROADTRIPS/ITINÉRAIRES DISTINCTS :
-- Extrais TOUS les lieux mentionnés dans tous les itinéraires
-- Réorganise-les en UN SEUL roadtrip cohérent et logique
-- Chaque lieu = 1 jour (day) distinct dans le JSON final
-- Optimise l'ordre pour minimiser les allers-retours
+Transforme le contenu SOURCE en JSON "itins" (UN SEUL objet). Suis cet exemple :
 
-RÈGLES GÉNÉRALES (NON NÉGOCIABLES) :
-- Inclure TOUTES les visites et TOUTES les activités (ne rien omettre).
-- Aucune invention : coordonnées GPS réelles et vérifiables, distances/durées réalistes.
-- Respecter le schéma ORT fourni ci-dessous (tous les champs obligatoires).
-- Répondre UNIQUEMENT par le JSON valide (aucun texte avant/après).
-- Ajouter un champ "created_at" au format ISO 8601 (date actuelle) dans chaque objet itins
-- Ajouter un champ "source_url" avec l'URL de la page source dans chaque objet itins (si disponible)
-
-**STYLE D'ÉCRITURE - TON AGENCE DE VOYAGE (OBLIGATOIRE POUR TOUS LES MODES) :**
-- Écris comme une agence de voyage professionnelle. Rends les lieux attractifs et engageants.
-- Chaque texte de visite/activité DOIT faire 2-3 phrases (minimum 40-80 mots) qui inspirent les voyageurs.
-- Utilise un langage descriptif et engageant qui met en valeur la beauté et l'intérêt de chaque lieu.
-- Inclus le contexte historique, les caractéristiques uniques ou des détails sensoriels qui rendent le lieu spécial.
-- Exemple : {"text": "Émerveillez-vous devant le Palais des Papes, le plus grand palais gothique d'Europe. Ce chef-d'œuvre classé UNESCO vous transporte au XIVe siècle lorsqu'Avignon était le siège puissant de la chrétienté. Ne manquez pas les fresques époustouflantes des appartements privés du pape et la vue panoramique depuis la tour."}
-- Reste 100% factuel - n'invente jamais de détails absents de la source.
-
-${mode==='model' ? atob('CuKaoO+4jyBBTlRJLUNPUFlSSUdIVCBSVUxFUyAoQURNSU4gTU9ERSAtIE1BTkRBVE9SWSk6Ci0gKipBRE9QVCBBIFRSQVZFTCBBR0VOQ1kgVE9ORSoqOiBNYWtlIGxvY2F0aW9ucyBhcHBlYWxpbmcgYW5kIGludml0aW5nIHdoaWxlIHN0YXlpbmcgc3RyaWN0bHkgZmFjdHVhbC4gVXNlIGVuZ2FnaW5nIGxhbmd1YWdlIHRoYXQgaGlnaGxpZ2h0cyB0aGUgaW50ZXJlc3QgYW5kIGJlYXV0eSBvZiBwbGFjZXMsIGJ1dCBuZXZlciBpbnZlbnQgZGV0YWlscyBvciBleGFnZ2VyYXRlLiBZb3VyIGRlc2NyaXB0aW9ucyBzaG91bGQgaW5zcGlyZSB0cmF2ZWwgd2hpbGUgcmVtYWluaW5nIDEwMCUgYWNjdXJhdGUgdG8gdGhlIHNvdXJjZS4KLSBSZW1vdmUgQUxMIHBlcnNvbmFsIGFuZWNkb3RlcywgZXhwZXJpZW5jZSBzdG9yaWVzLCBzZW5zYXRpb25zLCBlbW90aW9ucywgb3BpbmlvbnMKLSBSZW1vdmUgQUxMIHJlY29tbWVuZGVkIHJlc3RhdXJhbnRzLCBiYXJzLCBjYWbDqXMsIGhvdGVscywgYWNjb21tb2RhdGlvbnMKLSBSZW1vdmUgQUxMIHBlcnNvbmFsIHByYWN0aWNhbCBhZHZpY2UgKHdoZXJlIHRvIGVhdCwgd2hlcmUgdG8gc2xlZXAsIGluc2lkZXIgdGlwcykKLSBSZW1vdmUgQUxMIHF1b3RlcywgbWVtb3JhYmxlIHBocmFzZXMsIHVuaXF1ZSBleHByZXNzaW9ucyBmcm9tIHRoZSBhdXRob3IKLSBDT01QTEVURUxZIHJlcGhyYXNlIGRlc2NyaXB0aW9ucyBpbiB5b3VyIG93biB3b3JkcyAobm8gaWRlbnRpY2FsIHBocmFzZXMpCi0gQ3JlYXRlIGEgQ09NUExFVEVMWSBESUZGRVJFTlQgdGl0bGUgKG5ldmVyIGNvcHkgdGhlIG9yaWdpbmFsIHRpdGxlKQotIENoYW5nZSB0aGUgb3JkZXIgb2Ygc3RlcHMgaWYgcG9zc2libGUgKGdlb2dyYXBoaWNhbCBvcHRpbWl6YXRpb24pCi0gS2VlcCBvbmx5OiBvYmplY3RpdmUgdG91cmlzdCBzaXRlcywgbW9udW1lbnRzLCBuYXR1cmFsIHNpdGVzLCBtdXNldW1zLCBwdWJsaWMgYWN0aXZpdGllcwotIFJlcGxhY2Ugc3ViamVjdGl2ZSBkZXNjcmlwdGlvbnMgd2l0aCBvYmplY3RpdmUgYW5kIHZlcmlmaWFibGUgZmFjdHMKLSBUaGUgInNvdXJjZV91cmwiIGZpZWxkIGtlZXBzIHRoZSBvcmlnaW5hbCBVUkwgZm9yIGludGVybmFsIHRyYWNlYWJpbGl0eQotIFlvdXIgSlNPTiBtdXN0IGJlIGZhY3R1YWwsIG5ldXRyYWwgYW5kIGltcGVyc29uYWwsIGxpa2UgYW4gb2ZmaWNpYWwgdHJhdmVsIGd1aWRlCi0gTk8gZWxlbWVudCBzaG91bGQgYWxsb3cgaWRlbnRpZnlpbmcgdGhlIG9yaWdpbmFsIGF1dGhvcidzIHN0eWxlCi0gKipzdWdnZXN0ZWRfZGF5cyoqOiBSZXF1aXJlZCByZWNvbW1lbmRlZCB2aXNpdCB0aW1lIGZvciBlYWNoIGRheSAoMC41LCAxLCAxLjUsIDIsIDMuLi4pCg==') : ``}
-
-⚠️ EXIGENCES CRITIQUES :
-1. itin_id et place_id DOIVENT commencer par le code pays ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
-2. INTERDIT d'utiliser CC:: ou XX:: (invalide)
-3. Chaque "night" DOIT avoir "coords": [latitude, longitude] (obligatoire)
-4. Le dept_code doit correspondre au pays du namespace
-5. to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter dans activities : {"text":"Vol vers [destination]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: OBLIGATOIRE pour CHAQUE day. Attribuer selon l'intérêt :**
-   - 0.5 = Passage rapide (1-2 visites)
-   - 1.0 = Journée standard (3-4 visites)
-   - 1.5 = Destination riche (5-6 visites)
-   - 2.0 = Destination majeure (7+ visites)
-8. **Bonus temps de transport : Ajouter au suggested_days de l'étape de DÉPART :**
-   - drive_min ≤180 (≤3h) → +0
-   - drive_min 181-300 (3-5h) → +0.5
-   - drive_min >300 (>5h) → +1.0
-9. **estimated_days_base FORMULE : CEIL(Σ suggested_days_ajustés) + 1**
-   - Où suggested_days_ajusté = suggested_days + bonus_transport
-   - VÉRIFIER : Σ suggested_days ≈ estimated_days_base - 1 (tolérance ±1)
-10. **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language : Champ OBLIGATOIRE dans chaque objet itin - doit être : fr, en, pt, es, it ou ar**
-
-
-CONTRAINTES SPÉCIFIQUES AU MODE :
-${mode==='follow' ? `- SUIVIS STRICT : conserve l’ordre et les étapes exactement comme dans la source. Aucun réagencement, aucune insertion/suppression.` : ``}
-${mode==='logic' ? `- PARCOURS LOGIQUE : réorganise les étapes et jours pour éviter les zig-zags, regrouper les lieux proches et fluidifier l’itinéraire, sans supprimer aucune visite/activité.` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODE BASES + BOUCLES D'EXCURSIONS
-BASES : ${seeds||'[extraire du texte ou spécifier]'}
-═══════════════════════════════════════════════════════════════
-
-RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
-
-PRINCIPE :
-1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
-2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
-3. place_id = "CC::slug", coords partout
-4. Retours base : text "Retour à [BASE] — repos"
-
-EXEMPLE (Bases: Locorotondo, Lecce) :
-
-NODE_LIST :
-Locorotondo (J1) → Alberobello (J2) → Martina Franca (J3) → Cisternino (J4) → Locorotondo (J5-retour) 
-→ Monopoli (J6) → Grottes Castellana (J7) → Locorotondo (J8-retour) 
-→ Polignano (J9) → Ostuni (J10) → Locorotondo (J11-retour) 
-→ Lecce (J12-nouvelle base) → Otranto (J13) → Gallipoli (J14) → Lecce (J15-retour)
-
-STRUCTURE JSON :
-
-Jour 1 (BASE) :
-{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Locorotondo — installation"}]}
-
-Jour 2 (VISITE) :
-{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
- "visits": [{"text": "Alberobello — Trulli UNESCO"}],
- "to_next_leg": {"distance_km": 12, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}}
-
-Jour 5 (RETOUR BASE) :
-{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Retour à Locorotondo — repos/temps libre"}]}
-
-Jour 12 (NOUVELLE BASE) :
-{"day": 12, "slice": 1, "region_code": "IT-PUG", "suggested_days": 2,
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]}, 
- "visits": [{"text": "Lecce — installation, basilique Santa Croce"}]}
-
-⚠️ RÈGLES CRITIQUES :
-- Chaque nœud = 1 day distinct (JAMAIS fusionner)
-- Les BASES apparaissent plusieurs fois : installation, retours périodiques, changement de base
-- Pas de limite stricte de km (regrouper par proximité géographique logique)
-- Tous les place_id = "CC::slug" (CC = ISO2 pays)
-- to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter vol dans activities
-- \${LANG_INSTRUCTION}
-- **estimated_days_base : Compter le nombre de days_plan (entier)**
-- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
-- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5 (site majeur), 2+ (grande ville)**
-` : ``}
-${mode==='citytrip' ? `- PARCOURS DE VILLE : Chaque visite/attraction = 1 DAY distinct avec retour à la base le soir.
-  
-  ⚠️ RÈGLE CRITIQUE : 
-  - Chaque visite (Tour Eiffel, Arc de Triomphe, etc.) = 1 DAY séparé
-  - Le champ "night.place_id" = le lieu visité (ex: "FR::tour_eiffel")
-  - Le champ "night.coords" = coordonnées GPS PRÉCISES du lieu visité
-  - Le champ "visits" répète le nom du lieu visité
-  - NE PAS regrouper plusieurs visites dans un seul day
-  - Le front-end regroupera visuellement les jours avec retour à la base
-  - **suggested_days** = temps conseillé pour cette visite (0.5 = demi-journée, 1 = journée complète)
-  
-  EXEMPLE CONCRET (Paris - 4 jours) :
-  
-  {"day": 1, "suggested_days": 0.5, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Tour Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "suggested_days": 0.5, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "suggested_days": 1, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Musée du Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "suggested_days": 1, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRECT : night = lieu visité avec coords précises, 1 visite = 1 day, suggested_days obligatoire
-  ❌ INTERDIT : Regrouper plusieurs visites, ou mettre des coords génériques de ville
-  
-  \${LANG_INSTRUCTION}
-  Ne supprime aucune visite/activité. Ne mets pas « parcours de ville » dans le titre.
-  **estimated_days_base = nombre de days (= nombre de visites)**
-  **pacing_rules.factors : {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-${mode==='model' && !modelSubMode ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODE BASES + BOUCLES (PAR DÉFAUT ADMIN)
-BASES : ${modelSeeds||'locorotondo'}
-═══════════════════════════════════════════════════════════════
-
-RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
-
-PRINCIPE :
-1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
-2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
-3. place_id = "CC::slug", coords partout
-4. Retours base : text "Retour à [BASE] — repos"
-
-STRUCTURE JSON :
-
-Jour 1 (BASE) :
-{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Locorotondo — installation"}]}
-
-Jour 2 (VISITE) :
-{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
- "visits": [{"text": "Alberobello — Trulli"}]}
-
-Jour 5 (RETOUR BASE) :
-{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Retour à Locorotondo — repos"}]}
-
-⚠️ RÈGLES CRITIQUES :
-- Chaque nœud = 1 day distinct (JAMAIS fusionner)
-- Les BASES apparaissent plusieurs fois
-- Pas de limite km (proximité logique)
-- Tous place_id = "CC::slug"
-- \${LANG_INSTRUCTION}
-- **estimated_days_base : Compter le nombre de days_plan (entier)**
-- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
-- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5+ (site majeur)**
-` : ``}
-${mode==='model' && modelSubMode==='follow' ? `- SUIVIS STRICT : conserve l'ordre et les étapes exactement comme dans la source. Aucun réagencement, aucune insertion/suppression.` : ``}
-${mode==='model' && modelSubMode==='logic' ? `- PARCOURS LOGIQUE : réorganise les étapes et jours pour éviter les zig-zags, regrouper les lieux proches et fluidifier l'itinéraire, sans supprimer aucune visite/activité.` : ``}
-${mode==='model' && modelSubMode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODE BASES + BOUCLES D'EXCURSIONS (MODEL)
-BASES : ${modelSeeds||'[extraire du texte ou spécifier]'}
-═══════════════════════════════════════════════════════════════
-
-RÈGLE : Construire une NODE_LIST avec retours périodiques aux BASES
-
-PRINCIPE :
-1. NODE_LIST = BASE → lieux proches → BASE (retour tous les 3-5j) → autres lieux → BASE → nouvelle BASE → etc.
-2. 1 nœud = 1 day : night.place_id = nœud, visits[0] = écho nœud (coords réelles [lat,lon])
-3. place_id = "CC::slug", coords partout
-4. Retours base : text "Retour à [BASE] — repos"
-
-EXEMPLE (Bases: Locorotondo, Lecce) :
-
-NODE_LIST :
-Locorotondo (J1) → Alberobello (J2) → Martina Franca (J3) → Cisternino (J4) → Locorotondo (J5-retour) 
-→ Monopoli (J6) → Grottes Castellana (J7) → Locorotondo (J8-retour) 
-→ Polignano (J9) → Ostuni (J10) → Locorotondo (J11-retour) 
-→ Lecce (J12-nouvelle base) → Otranto (J13) → Gallipoli (J14) → Lecce (J15-retour)
-
-STRUCTURE JSON :
-
-Jour 1 (BASE) :
-{"day": 1, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Locorotondo — installation"}]}
-
-Jour 2 (VISITE) :
-{"day": 2, "slice": 1, "region_code": "IT-PUG", "suggested_days": 1.5,
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]}, 
- "visits": [{"text": "Alberobello — Trulli UNESCO"}]}
-
-Jour 5 (RETOUR BASE) :
-{"day": 5, "slice": 1, "region_code": "IT-PUG", "suggested_days": 0.5,
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]}, 
- "visits": [{"text": "Retour à Locorotondo — repos/temps libre"}]}
-
-Jour 12 (NOUVELLE BASE) :
-{"day": 12, "slice": 1, "region_code": "IT-PUG", "suggested_days": 2,
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]}, 
- "visits": [{"text": "Lecce — installation, basilique Santa Croce"}]}
-
-⚠️ RÈGLES CRITIQUES :
-- Chaque nœud = 1 day distinct (JAMAIS fusionner)
-- Les BASES apparaissent plusieurs fois : installation, retours périodiques, changement de base
-- Pas de limite stricte de km (regrouper par proximité géographique logique)
-- Tous les place_id = "CC::slug" (CC = ISO2 pays)
-- to_next_leg : inclure transport_mode ("car", "train", "flight"). Si distance >= 600km, ajouter vol dans activities
-- \${LANG_INSTRUCTION}
-- **estimated_days_base : Compter le nombre de days_plan (entier)**
-- **pacing_rules.factors : TOUJOURS {"slow":1.25,"standard":1.0,"fast":0.75}**
-- **suggested_days : 0.5 (repos/retour), 1 (visite standard), 1.5 (site majeur), 2+ (grande ville)**
-
-Ne mets pas Parcours logique dans le titre.` : ``}
-${mode==='model' && modelSubMode==='citytrip' ? `- PARCOURS DE VILLE : Chaque visite/attraction = 1 DAY distinct avec retour à la base le soir.
-  
-  ⚠️ RÈGLE CRITIQUE : 
-  - Chaque visite (Tour Eiffel, Arc de Triomphe, etc.) = 1 DAY séparé
-  - Le champ "night.place_id" = le lieu visité (ex: "FR::tour_eiffel")
-  - Le champ "night.coords" = coordonnées GPS PRÉCISES du lieu visité
-  - Le champ "visits" répète le nom du lieu visité
-  - NE PAS regrouper plusieurs visites dans un seul day
-  - Le front-end regroupera visuellement les jours avec retour à la base
-  - **suggested_days** = temps conseillé pour cette visite (0.5 = demi-journée, 1 = journée complète)
-  
-  EXEMPLE CONCRET (Paris - 4 jours) :
-  
-  {"day": 1, "suggested_days": 0.5, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Tour Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "suggested_days": 0.5, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "suggested_days": 1, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Musée du Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "suggested_days": 1, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRECT : night = lieu visité avec coords précises, 1 visite = 1 day, suggested_days obligatoire
-  ❌ INTERDIT : Regrouper plusieurs visites, ou mettre des coords génériques de ville
-  
-  \${LANG_INSTRUCTION}
-  Ne supprime aucune visite/activité. Ne mets pas « parcours de ville » dans le titre.
-  **estimated_days_base = nombre de days (= nombre de visites)**
-  **pacing_rules.factors : {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-SCHÉMA CIBLE EXEMPLE :
 {
   "itins": [{
-    "itin_id": "FR::provence::lavande",
+    "itin_id": "LA::nord::luang-prabang-vang-vieng",
     "language": "fr",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-    "dept_code": "84",
-    "dept_name": "Vaucluse",
-    "title": "Villages de lavande en Provence",
-    "estimated_days_base": 5,
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "Luang Prabang",
+    "title": "Entre temples et karsts du Nord Laos",
+    "subtitle": "Des moines de Luang Prabang aux lagons turquoise de Vang Vieng",
+    "estimated_days_base": 3,
     "pacing_rules": {
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
     },
-    "days_plan": [{
-      "day": 1,
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "Palais des Papes"}
-      ],
-      "activities": [
-        {"text": "Pont d'Avignon"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
+    "practical_context": {
+      "best_months": ["novembre", "décembre", "janvier", "février"],
+      "highlights": [
+        "Procession des moines à l'aube (tak bat)",
+        "Temples dorés de Luang Prabang",
+        "Grottes et lagons turquoise de Vang Vieng",
+        "Navigation sur le Mékong"
+      ]
+    },
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "Le Vat Xieng Thong déploie ses toits superposés jusqu'au sol dans le plus pur style lao. Ses mosaïques de verre rouge racontent la vie du Bouddha."},
+          {"text": "Gravissez les 328 marches du mont Phousi pour dominer la péninsule au confluent du Mékong et de la Nam Khan."},
+          {"text": "Le Palais Royal abrite aujourd'hui le musée national. Découvrez le trône et le Phra Bang, bouddha d'or qui donna son nom à la ville."},
+          {"text": "Admirez le porche doré du Vat Mai, sculpté de scènes du Ramayana. Les fidèles y affluent lors du Nouvel An lao."},
+          {"text": "Le Vat Visoun, plus ancien temple de la ville (1513), conserve un grand Bouddha en bois et le That Makmo."},
+          {"text": "Flânez le long de la Nam Khan jusqu'au Vat Xieng Mouane où les moines tissent encore des textiles traditionnels."}
+        ],
+        "activities": [
+          {"text": "Levez-vous à l'aube pour observer le tak bat, procession silencieuse où les moines collectent leur nourriture.", "practical_info": {"best_time": "5h30-6h30", "tip": "Restez discret, pas de flash"}},
+          {"text": "Le marché de nuit envahit Sisavangvong Road dès 17h avec textiles et artisanat."},
+          {"text": "Initiez-vous à la cuisine lao dans une école locale : laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cours de cuisine"}}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "road_type": "Goudron sinueux",
+          "method": "heuristic"
+        }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "La grotte Tham Chang s'ouvre dans la falaise face à la Nam Song. Un escalier mène à ses stalactites illuminées."},
+          {"text": "Plongez dans les eaux turquoise de la Blue Lagoon, nichée au pied des karsts."},
+          {"text": "Explorez la grotte Tham Phu Kham sur 500 mètres. Un bouddha couché veille dans la pénombre."},
+          {"text": "Le pont de bambou enjambe la Nam Song vers les rizières de la rive ouest."},
+          {"text": "Aventurez-vous dans la grotte Tham Nam en bouée sur une rivière souterraine."}
+        ],
+        "activities": [
+          {"text": "Descendez la Nam Song en kayak entre les falaises calcaires.", "practical_info": {"duration": "2-3h", "difficulty": "Facile"}},
+          {"text": "Les parois karstiques offrent des voies d'escalade pour tous niveaux."},
+          {"text": "Louez un vélo pour relier les lagunes et grottes par les chemins de terre."}
+        ]
+      }
+    ]
   }]
 }
 
-SOURCE:
----
-`,
-  en: ({mode, seeds, modelSubMode, modelSeeds}) => `Convert the content below into a JSON "itins" (SINGLE object), strictly valid and complete.
+📋 RÈGLES CRITIQUES :
 
-⚠️ IF THE TEXT LISTS MULTIPLE SEPARATE ROADTRIPS/ITINERARIES:
-- Extract ALL places mentioned across all itineraries
-- Reorganize them into ONE coherent and logical roadtrip
-- Each place = 1 distinct day in the final JSON
-- Optimize the order to minimize back-and-forth travel
+1. ORDRE LOGIQUE — Réorganiser les étapes pour un itinéraire géographiquement cohérent. Éviter les aller-retours.
+2. visits[] = lieux (monuments, temples, musées, sites, grottes, chutes)
+3. activities[] = actions (marchés, randos, kayak, vélo, cours, balades)
+4. 5-8 visits + 3-6 activities par day minimum — enrichir si la source manque de contenu
+5. suggested_days : 0.5 | 1.0 | 1.5 — au-delà, éclater en plusieurs days avec même place_id
+6. estimated_days_base = CEIL(somme des suggested_days) — ex: 1.5 + 1.0 = 2.5 → 3
+7. to_next_leg sur tous les days SAUF le dernier
+8. coords = [lat, lon] du centre-ville — ne PAS inventer de coordonnées précises
+9. itin_id = CC::region::slug (CC = ISO2 : FR, LA, TH, HR, IT...)
+10. region_code = CC-XX (code régional usuel, ex: LA-LP, HR-21, FR-84, IT-PUG)
+11. dept_code = abréviation régionale usuelle (LP, 21, 84, PUG...)
+12. slice = toujours 1
+13. source_url = URL de la SOURCE si disponible
+14. language = "fr" — TOUS les textes en français (traduire si source en autre langue, garder noms propres d'origine : Wat, Piazza, Playa...)
 
-NON-NEGOTIABLE RULES:
-- Include ALL visits and ALL activities (do not omit anything).
-- No invention: real GPS coordinates only, realistic distances/durations.
-- Follow the ORT schema below (all fields required).
-- Reply ONLY with valid JSON (no extra text).
-- Add a "created_at" field in ISO 8601 format (current date) to each itins object
-- Add a "source_url" field with the source page URL in each itins object (if available)
+📋 FORMAT ENRICHI (OBLIGATOIRE) :
+15. subtitle = 1 phrase d'accroche sous le titre (style "Des temples dorés aux plages de rêve")
+16. practical_context.best_months = tableau des meilleurs mois pour visiter (ex: ["mai", "juin", "septembre"])
+17. practical_context.highlights = 4-6 points forts de l'itinéraire
+18. practical_info = ajouter sur les activités importantes (randos, safaris, camping, locations...) avec duration, difficulty, tip, best_time selon contexte
+19. road_type = ajouter dans to_next_leg si pertinent (ex: "Goudron", "Piste", "Gravel", "Goudron puis piste")
 
-**WRITING STYLE - TRAVEL AGENCY TONE (MANDATORY FOR ALL MODES):**
-- Write like a professional travel agency. Make locations appealing and inviting.
-- Each visit/activity text MUST be 2-3 sentences (40-80 words minimum) that inspire travelers.
-- Use engaging, descriptive language that highlights the beauty and interest of each place.
-- Include historical context, unique features, or sensory details that make it special.
-- Example: {"text": "Marvel at the Palais des Papes, Europe's largest Gothic palace. This UNESCO World Heritage masterpiece transports you back to the 14th century when Avignon was the powerful seat of Christendom. Don't miss the stunning frescoes in the private papal apartments and the breathtaking views from the tower."}
-- Stay 100% factually accurate - never invent details not in the source.
+✍️ STYLE D'ÉCRITURE — VARIER LES FORMES :
+- Descriptif : "Le temple déploie ses toits dorés..."
+- Impératif : "Découvrez...", "Explorez...", "Admirez...", "Gravissez..."
+- Narratif : "Les moines tissent encore...", "Les fidèles y affluent..."
+ALTERNER ces 3 formes pour casser la monotonie. Ne pas enchaîner plus de 2 textes du même style.
 
-${mode==='model' ? atob('CuKaoO+4jyBBTlRJLUNPUFlSSUdIVCBSVUxFUyAoQURNSU4gTU9ERSAtIE1BTkRBVE9SWSk6Ci0gKipBRE9QVCBBIFRSQVZFTCBBR0VOQ1kgVE9ORSoqOiBNYWtlIGxvY2F0aW9ucyBhcHBlYWxpbmcgYW5kIGludml0aW5nIHdoaWxlIHN0YXlpbmcgc3RyaWN0bHkgZmFjdHVhbC4gVXNlIGVuZ2FnaW5nIGxhbmd1YWdlIHRoYXQgaGlnaGxpZ2h0cyB0aGUgaW50ZXJlc3QgYW5kIGJlYXV0eSBvZiBwbGFjZXMsIGJ1dCBuZXZlciBpbnZlbnQgZGV0YWlscyBvciBleGFnZ2VyYXRlLiBZb3VyIGRlc2NyaXB0aW9ucyBzaG91bGQgaW5zcGlyZSB0cmF2ZWwgd2hpbGUgcmVtYWluaW5nIDEwMCUgYWNjdXJhdGUgdG8gdGhlIHNvdXJjZS4KLSBSZW1vdmUgQUxMIHBlcnNvbmFsIGFuZWNkb3RlcywgZXhwZXJpZW5jZSBzdG9yaWVzLCBzZW5zYXRpb25zLCBlbW90aW9ucywgb3BpbmlvbnMKLSBSZW1vdmUgQUxMIHJlY29tbWVuZGVkIHJlc3RhdXJhbnRzLCBiYXJzLCBjYWbDqXMsIGhvdGVscywgYWNjb21tb2RhdGlvbnMKLSBSZW1vdmUgQUxMIHBlcnNvbmFsIHByYWN0aWNhbCBhZHZpY2UgKHdoZXJlIHRvIGVhdCwgd2hlcmUgdG8gc2xlZXAsIGluc2lkZXIgdGlwcykKLSBSZW1vdmUgQUxMIHF1b3RlcywgbWVtb3JhYmxlIHBocmFzZXMsIHVuaXF1ZSBleHByZXNzaW9ucyBmcm9tIHRoZSBhdXRob3IKLSBDT01QTEVURUxZIHJlcGhyYXNlIGRlc2NyaXB0aW9ucyBpbiB5b3VyIG93biB3b3JkcyAobm8gaWRlbnRpY2FsIHBocmFzZXMpCi0gQ3JlYXRlIGEgQ09NUExFVEVMWSBESUZGRVJFTlQgdGl0bGUgKG5ldmVyIGNvcHkgdGhlIG9yaWdpbmFsIHRpdGxlKQotIENoYW5nZSB0aGUgb3JkZXIgb2Ygc3RlcHMgaWYgcG9zc2libGUgKGdlb2dyYXBoaWNhbCBvcHRpbWl6YXRpb24pCi0gS2VlcCBvbmx5OiBvYmplY3RpdmUgdG91cmlzdCBzaXRlcywgbW9udW1lbnRzLCBuYXR1cmFsIHNpdGVzLCBtdXNldW1zLCBwdWJsaWMgYWN0aXZpdGllcwotIFJlcGxhY2Ugc3ViamVjdGl2ZSBkZXNjcmlwdGlvbnMgd2l0aCBvYmplY3RpdmUgYW5kIHZlcmlmaWFibGUgZmFjdHMKLSBUaGUgInNvdXJjZV91cmwiIGZpZWxkIGtlZXBzIHRoZSBvcmlnaW5hbCBVUkwgZm9yIGludGVybmFsIHRyYWNlYWJpbGl0eQotIFlvdXIgSlNPTiBtdXN0IGJlIGZhY3R1YWwsIG5ldXRyYWwgYW5kIGltcGVyc29uYWwsIGxpa2UgYW4gb2ZmaWNpYWwgdHJhdmVsIGd1aWRlCi0gTk8gZWxlbWVudCBzaG91bGQgYWxsb3cgaWRlbnRpZnlpbmcgdGhlIG9yaWdpbmFsIGF1dGhvcidzIHN0eWxlCi0gKipzdWdnZXN0ZWRfZGF5cyoqOiBSZXF1aXJlZCByZWNvbW1lbmRlZCB2aXNpdCB0aW1lIGZvciBlYWNoIGRheSAoMC41LCAxLCAxLjUsIDIsIDMuLi4pCg==') : ``}
+${effectiveMode === 'seed' ? `
+🏠 MODE BASES + BOUCLES - BASES : ${effectiveSeeds || '[extraire du texte]'}
+Structure : BASE → excursions → retour BASE (tous les 3-5j) → nouvelle BASE...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ MODE CITY TRIP - Chaque attraction = 1 day distinct. night.place_id = l'attraction.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 MODE SUIVI STRICT - Conserver l'ordre exact des étapes de la source.
+` : ''}
+${isAdmin ? `
+🚫 NEUTRALISATION (MODE ADMIN) - Ces JSON seront diffusés publiquement.
+✅ GARDER : Musées, monuments, temples, parcs, sites UNESCO, marchés publics
+❌ SUPPRIMER : Commerces nommés → "Les loueurs proposent..." | Personnes → supprimer | Prix → omettre | "à moto" → "par la route" | Dates récentes → supprimer | 1ère personne → reformuler
+` : ''}
 
-⚠️ CRITICAL REQUIREMENTS:
-1. itin_id and place_id MUST start with ISO2 country code (FR::, IT::, ES::, PT::, TR::, etc.)
-2. FORBIDDEN to use CC:: or XX:: (invalid)
-3. Each "night" MUST have "coords": [latitude, longitude] (mandatory)
-4. dept_code must correspond to the namespace country
-5. to_next_leg: include transport_mode ("car", "train", "flight"). If distance >= 600km, add in activities: {"text":"Flight to [destination]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: MANDATORY for EACH day. Assign based on interest:**
-   - 0.5 = Quick stop (1-2 visits)
-   - 1.0 = Standard day (3-4 visits)
-   - 1.5 = Rich destination (5-6 visits)
-   - 2.0 = Major destination (7+ visits)
-8. **Transport time bonus: Add to suggested_days of DEPARTURE step:**
-   - drive_min ≤180 (≤3h) → +0
-   - drive_min 181-300 (3-5h) → +0.5
-   - drive_min >300 (>5h) → +1.0
-9. **estimated_days_base FORMULA: CEIL(Σ suggested_days_adjusted) + 1**
-   - Where suggested_days_adjusted = suggested_days + transport_bonus
-   - VERIFY: Σ suggested_days ≈ estimated_days_base - 1 (tolerance ±1)
-10. **pacing_rules.factors: ALWAYS {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language: MANDATORY field in each itin object - must be one of: fr, en, pt, es, it, ar**
+🚫 INTERDIT : Phrases sans verbe ("Cathédrale gothique. Vitraux. Crypte.")
 
-RULES FOR suggested_days (recommended visit time):
-- 0.5 day: Small village, isolated castle, simple natural site
-- 1 day: Medium city, single major site, natural park
-- 1.5 days: Major tourist city, area with multiple attractions
-- 2 days: Regional capital, major destination (Prague, Barcelona...)
-- 3+ days: National capital, exceptional destination (Paris, Rome...)
-The sum of suggested_days should be close to estimated_days_base.
+SOURCE :
+`;
+  },
 
-MODE-SPECIFIC CONSTRAINTS:
-${mode==='follow' ? `- STRICT FOLLOW: keep order and stages exactly as in the source. No reordering, no insertion/deletion.` : ``}
-${mode==='logic' ? `- LOGICAL ROUTE: reorder days/stages to avoid zig-zags, cluster nearby places, keep all visits/activities.` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 BASES + EXCURSION LOOPS MODE
-BASES: ${seeds||'[extract from text or specify]'}
-═══════════════════════════════════════════════════════════════
+  // ============================================
+  // ENGLISH v8 - Enriched format
+  // ============================================
+  en: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `You are a structured data extractor. Output ONLY valid JSON, no text, no Markdown.
 
-RULE: Build a NODE_LIST with periodic returns to BASES
+Transform SOURCE content into JSON "itins" (SINGLE object). Follow this example:
 
-PRINCIPLE:
-1. NODE_LIST = BASE → nearby places → BASE (return every 3-5 days) → other places → BASE → new BASE → etc.
-2. 1 node = 1 day: night.place_id = node, visits[0] = echo node (real coords [lat,lon])
-3. place_id = "CC::slug", coords everywhere
-4. Base returns: text "Return to [BASE] — rest"
-
-EXAMPLE (Bases: Locorotondo, Lecce):
-
-NODE_LIST:
-Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-return)
-→ Monopoli (D6) → Castellana Caves (D7) → Locorotondo (D8-return)
-→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-return)
-→ Lecce (D12-new base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-return)
-
-JSON STRUCTURE:
-
-Day 1 (BASE):
-{"day": 1, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Locorotondo — arrival", }]}
-
-Day 2 (VISIT):
-{"day": 2, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
- "visits": [{"text": "Alberobello — UNESCO Trulli", }]}
-
-Day 5 (RETURN TO BASE):
-{"day": 5, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Return to Locorotondo — rest/free time", }]}
-
-Day 12 (NEW BASE):
-{"day": 12, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
- "visits": [{"text": "Lecce — arrival, Santa Croce basilica", }]}
-
-⚠️ CRITICAL RULES:
-- Each node = 1 distinct day (NEVER merge)
-- BASES appear multiple times: arrival, periodic returns, base change
-- No strict km limit (group by logical geographic proximity)
-- All place_id = "CC::slug" (CC = ISO2 country code)
-- All visits have real coords [lat, lon]
-` : ``}
-${mode==='citytrip' ? `- CITY TRIP: Each visit/attraction = 1 DISTINCT DAY with return to base in the evening.
-  
-  ⚠️ CRITICAL RULE:
-  - Each visit (Eiffel Tower, Arc de Triomphe, etc.) = 1 separate DAY
-  - The "night.place_id" field = the visited place (e.g.: "FR::tour_eiffel")
-  - The "night.coords" field = PRECISE GPS coordinates of the visited place
-  - The "visits" field repeats the name of the visited place
-  - DO NOT group multiple visits in a single day
-  - The front-end will visually group days with return to base
-  
-  CONCRETE EXAMPLE (Paris - 4 days):
-  
-  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Eiffel Tower"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arc de Triomphe"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Louvre Museum"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRECT: night = visited place with precise coords, 1 visit = 1 day
-  ❌ FORBIDDEN: Group multiple visits, or use generic city coords
-  
-  Keep all visits/activities. Do not put "city trip" in the title.
-  **estimated_days_base = number of days (= number of visits)**
-  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-TARGET SCHEMA EXAMPLE:
 {
   "itins": [{
-    "itin_id": "FR::provence::lavande",
-    "dept_code": "84",
+    "itin_id": "LA::north::luang-prabang-vang-vieng",
     "language": "en",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-    "dept_name": "Vaucluse",
-    "title": "Lavender villages in Provence",
-    "estimated_days_base": 5,
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "Luang Prabang",
+    "title": "Temples and Karsts of Northern Laos",
+    "subtitle": "From the monks of Luang Prabang to the turquoise lagoons of Vang Vieng",
+    "estimated_days_base": 3,
     "pacing_rules": {
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
     },
-    "days_plan": [{
-      "day": 1,
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "Palais des Papes"}
-      ],
-      "activities": [
-        {"text": "Pont d'Avignon"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
+    "practical_context": {
+      "best_months": ["November", "December", "January", "February"],
+      "highlights": [
+        "Dawn alms giving ceremony (tak bat)",
+        "Golden temples of Luang Prabang",
+        "Caves and turquoise lagoons of Vang Vieng",
+        "Mekong river navigation"
+      ]
+    },
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "Wat Xieng Thong spreads its sweeping roofs down to ground level in pure Lao style. Red glass mosaics depict the Buddha's life."},
+          {"text": "Climb the 328 steps of Mount Phousi to overlook the peninsula at the confluence of the Mekong and Nam Khan rivers."},
+          {"text": "The Royal Palace now houses the national museum with the throne and Phra Bang golden Buddha."},
+          {"text": "Wat Mai features a gilded porch carved with Ramayana scenes."},
+          {"text": "Wat Visoun, the oldest temple in town (1513), holds a large wooden Buddha."},
+          {"text": "Walk along the Nam Khan to Wat Xieng Mouane where monks still weave traditional textiles."}
+        ],
+        "activities": [
+          {"text": "Rise at dawn to witness tak bat, the silent procession where monks collect their daily food.", "practical_info": {"best_time": "5:30-6:30am", "tip": "Stay quiet, no flash photography"}},
+          {"text": "The night market takes over Sisavangvong Road from 5pm with textiles and handicrafts."},
+          {"text": "Local cooking schools teach Lao classics: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cooking class"}}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "road_type": "Winding tarmac",
+          "method": "heuristic"
+        }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "Tham Chang cave opens in the cliff facing the Nam Song with illuminated stalactites."},
+          {"text": "Blue Lagoon carves a turquoise pool at the foot of karst peaks."},
+          {"text": "Tham Phu Kham cave extends 500 meters with a reclining bronze Buddha."},
+          {"text": "The bamboo bridge crosses the Nam Song to rice paddies on the west bank."},
+          {"text": "Tham Nam cave is explored by tube on an underground river."}
+        ],
+        "activities": [
+          {"text": "Kayak down the Nam Song between limestone cliffs.", "practical_info": {"duration": "2-3h", "difficulty": "Easy"}},
+          {"text": "Climbing schools offer courses on the karst walls for all levels."},
+          {"text": "Rent a bike to connect lagoons and caves via dirt tracks."}
+        ]
+      }
+    ]
   }]
 }
 
-SOURCE:
----
-`,
-  it: ({mode, seeds, modelSubMode, modelSeeds}) => `Converti il contenuto seguente in un JSON "itins" (UN SOLO oggetto), valido e completo.
+📋 CRITICAL RULES:
 
-⚠️ SE IL TESTO ELENCA PIÙ ROADTRIP/ITINERARI DISTINTI:
-- Estrai TUTTI i luoghi menzionati in tutti gli itinerari
-- Riorganizzali in UN SOLO roadtrip coerente e logico
-- Ogni luogo = 1 giorno (day) distinto nel JSON finale
-- Ottimizza l'ordine per minimizzare gli spostamenti avanti e indietro
+1. LOGICAL ORDER — Reorganize stops for a geographically coherent route. Avoid backtracking.
+2. visits[] = places (monuments, temples, museums, sites, caves, waterfalls)
+3. activities[] = actions (markets, hikes, kayaking, cycling, courses, walks)
+4. 5-8 visits + 3-6 activities per day minimum
+5. suggested_days: 0.5 | 1.0 | 1.5 — beyond 1.5, split into multiple days
+6. estimated_days_base = CEIL(sum of suggested_days) — e.g.: 1.5 + 1.0 = 2.5 → 3
+7. to_next_leg on all days EXCEPT the last
+8. coords = [lat, lon] of city center
+9. itin_id = CC::region::slug (CC = ISO2)
+10. region_code = CC-XX (regional code, e.g.: LA-LP, HR-21, FR-84)
+11. dept_code = regional abbreviation (LP, 21, 84, PUG...)
+12. slice = always 1
+13. language = "en" — ALL texts in English (translate if source in other language, keep original proper nouns: Wat, Piazza, Playa...)
 
-REGOLE NON NEGOZIABILI:
-- Includi TUTTE le visite e TUTTE le attività.
-- Nessuna invenzione: coordinate GPS reali, distanze/durate realistiche.
-- Rispetta lo schema ORT (tutti i campi obbligatori).
-- Rispondi SOLO con JSON valido.
+📋 ENRICHED FORMAT (REQUIRED):
+14. subtitle = 1 catchy tagline below the title (e.g. "From golden temples to dream beaches")
+15. practical_context.best_months = array of best months to visit (e.g.: ["May", "June", "September"])
+16. practical_context.highlights = 4-6 itinerary highlights
+17. practical_info = add to important activities (hikes, safaris, camping, rentals...) with duration, difficulty, tip, best_time as relevant
+18. road_type = add in to_next_leg if relevant (e.g.: "Tarmac", "Gravel", "Track", "Tarmac then gravel")
 
-**STILE DI SCRITTURA - TONO AGENZIA DI VIAGGI (OBBLIGATORIO PER TUTTI I MODI):**
-- Scrivi come un'agenzia di viaggi professionale. Rendi i luoghi attraenti e coinvolgenti.
-- Ogni testo di visita/attività DEVE essere di 2-3 frasi (minimo 40-80 parole) che ispirano i viaggiatori.
-- Usa un linguaggio descrittivo e coinvolgente che evidenzi la bellezza e l'interesse di ogni luogo.
-- Includi contesto storico, caratteristiche uniche o dettagli sensoriali che rendono speciale il luogo.
-- Esempio: {"text": "Ammira il Palazzo dei Papi, il più grande palazzo gotico d'Europa. Questo capolavoro UNESCO ti trasporta nel XIV secolo quando Avignone era la potente sede della cristianità. Non perdere gli affreschi mozzafiato negli appartamenti privati del papa e la vista panoramica dalla torre."}
-- Rimani 100% fattuale - non inventare mai dettagli assenti dalla fonte.
+✍️ WRITING STYLE — VARY THE FORMS:
+- Descriptive: "The temple spreads its golden roofs..."
+- Imperative: "Discover...", "Explore...", "Admire...", "Climb..."
+- Narrative: "Monks still weave...", "Devotees gather..."
+ALTERNATE these 3 forms to break monotony. Don't chain more than 2 texts of the same style.
 
+${effectiveMode === 'seed' ? `🏠 BASE + LOOPS MODE - BASES: ${effectiveSeeds || '[extract from text]'}` : ''}
+${effectiveMode === 'citytrip' ? `🏙️ CITY TRIP MODE - Each attraction = 1 distinct day.` : ''}
+${effectiveMode === 'follow' ? `📍 STRICT FOLLOW MODE - Keep exact order of source.` : ''}
+${isAdmin ? `🚫 NEUTRALIZATION (ADMIN): Remove named businesses, people, prices, recent dates, first person` : ''}
 
-⚠️ REQUISITI CRITICI:
-1. itin_id e place_id DEVONO iniziare con il codice paese ISO2 (FR::, IT::, ES::, PT::, TR::, ecc.)
-2. VIETATO usare CC:: o XX:: (non valido)
-3. Ogni "night" DEVE avere "coords": [latitudine, longitudine] (obbligatorio)
-4. Il dept_code deve corrispondere al paese del namespace
-5. to_next_leg: includere transport_mode ("car", "train", "flight"). Se distanza >= 600km, aggiungere in activities: {"text":"Volo per [destinazione]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: OBBLIGATORIO per OGNI day. Assegnare in base all'interesse:**
-   - 0.5 = Sosta rapida (1-2 visite)
-   - 1.0 = Giornata standard (3-4 visite)
-   - 1.5 = Destinazione ricca (5-6 visite)
-   - 2.0 = Destinazione importante (7+ visite)
-8. **Bonus tempo di viaggio: Aggiungere al suggested_days della tappa di PARTENZA:**
-   - drive_min ≤180 (≤3h) → +0
-   - drive_min 181-300 (3-5h) → +0.5
-   - drive_min >300 (>5h) → +1.0
-9. **estimated_days_base FORMULA: CEIL(Σ suggested_days_adattati) + 1**
-   - Dove suggested_days_adattato = suggested_days + bonus_trasporto
-   - VERIFICARE: Σ suggested_days ≈ estimated_days_base - 1 (tolleranza ±1)
-10. **pacing_rules.factors: SEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language: Campo OBBLIGATORIO in ogni oggetto itin - deve essere: fr, en, pt, es, it o ar**
-
-
-VINCOLI PER MODALITÀ:
-${mode==='follow' ? `- SEGUITO STRETTO: mantieni ordine e tappe come in origine.` : ``}
-${mode==='logic' ? `- PERCORSO LOGICO: riordina per evitare zig-zag, raggruppa i luoghi vicini, mantieni tutte le visite/attività.` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODALITÀ BASI + CIRCUITI ESCURSIONI
-BASI: ${seeds||'[estrarre dal testo o specificare]'}
-═══════════════════════════════════════════════════════════════
-
-REGOLA: Costruire una NODE_LIST con ritorni periodici alle BASI
-
-PRINCIPIO:
-1. NODE_LIST = BASE → luoghi vicini → BASE (ritorno ogni 3-5 giorni) → altri luoghi → BASE → nuova BASE → ecc.
-2. 1 nodo = 1 day: night.place_id = nodo, visits[0] = eco nodo (coords reali [lat,lon])
-3. place_id = "CC::slug", coords ovunque
-4. Ritorni base: text "Ritorno a [BASE] — riposo"
-
-ESEMPIO (Basi: Locorotondo, Lecce):
-
-NODE_LIST:
-Locorotondo (G1) → Alberobello (G2) → Martina Franca (G3) → Cisternino (G4) → Locorotondo (G5-ritorno)
-→ Monopoli (G6) → Grotte Castellana (G7) → Locorotondo (G8-ritorno)
-→ Polignano (G9) → Ostuni (G10) → Locorotondo (G11-ritorno)
-→ Lecce (G12-nuova base) → Otranto (G13) → Gallipoli (G14) → Lecce (G15-ritorno)
-
-STRUTTURA JSON:
-
-Giorno 1 (BASE):
-{"day": 1, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Locorotondo — arrivo", }]}
-
-Giorno 2 (VISITA):
-{"day": 2, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
- "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
-
-Giorno 5 (RITORNO BASE):
-{"day": 5, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Ritorno a Locorotondo — riposo/tempo libero", }]}
-
-Giorno 12 (NUOVA BASE):
-{"day": 12, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
- "visits": [{"text": "Lecce — arrivo, basilica Santa Croce", }]}
-
-⚠️ REGOLE CRITICHE:
-- Ogni nodo = 1 day distinto (MAI fondere)
-- Le BASI appaiono più volte: arrivo, ritorni periodici, cambio base
-- Nessun limite km stretto (raggruppare per prossimità geografica logica)
-- Tutti place_id = "CC::slug" (CC = codice ISO2 paese)
-- Tutte le visits hanno coords reali [lat, lon]
-` : ``}
-${mode==='citytrip' ? `- CITY TRIP: Ogni visita/attrazione = 1 DAY distinto con ritorno alla base la sera.
-  
-  ⚠️ REGOLA CRITICA:
-  - Ogni visita (Torre Eiffel, Arco di Trionfo, ecc.) = 1 DAY separato
-  - Il campo "night.place_id" = il luogo visitato (es: "FR::tour_eiffel")
-  - Il campo "night.coords" = coordinate GPS PRECISE del luogo visitato
-  - Il campo "visits" ripete il nome del luogo visitato
-  - NON raggruppare più visite in un singolo day
-  - Il front-end raggrupperà visivamente i giorni con ritorno alla base
-  
-  ESEMPIO CONCRETO (Parigi - 4 giorni):
-  
-  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco di Trionfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museo del Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRETTO: night = luogo visitato con coord precise, 1 visita = 1 day
-  ❌ VIETATO: Raggruppare più visite, o usare coord generiche della città
-  
-  Mantieni tutte le visite/attività. Non mettere "city trip" nel titolo.
-  **estimated_days_base = numero di giorni (= numero di visite)**
-  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-SCHEMA DI RIFERIMENTO:
-{
-  "itins": [{
-    "itin_id": "FR::provence::lavande",
-    "dept_code": "84",
-    "dept_name": "Vaucluse",
-    "language": "it",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-    "title": "Villaggi della lavanda in Provenza",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-    "estimated_days_base": 5,
-    "pacing_rules": {
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
-      "merge_threshold": 0.85
-    },
-    "days_plan": [{
-      "day": 1,
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "Palazzo dei Papi"}
-      ],
-      "activities": [
-        {"text": "Ponte di Avignone"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
-  }]
-}
+🚫 FORBIDDEN: Verbless phrases ("Gothic cathedral. Stained glass. Crypt.")
 
 SOURCE:
----
-`,
-  es: ({mode, seeds, modelSubMode, modelSeeds}) => `Convierte el contenido en JSON "itins" (UN SOLO objeto), válido y completo.
+`;
+  },
 
-⚠️ SI EL TEXTO LISTA VARIOS ROADTRIPS/ITINERARIOS DISTINTOS:
-- Extrae TODOS los lugares mencionados en todos los itinerarios
-- Reorganízalos en UN SOLO roadtrip coherente y lógico
-- Cada lugar = 1 día (day) distinto en el JSON final
-- Optimiza el orden para minimizar los desplazamientos
+  // ============================================
+  // ESPAÑOL v7
+  // ============================================
+  es: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `Eres un extractor de datos estructurados. Produce SOLO JSON válido, sin texto, sin Markdown.
 
-REGLAS:
-- TODAS las visitas y actividades.
-- Sin invenciones: coordenadas reales, distancias realistas.
-- Sigue el esquema ORT (todos los campos).
-- Responde SOLO con JSON.
+Transforma el contenido SOURCE en JSON "itins" (UN SOLO objeto). Sigue este ejemplo:
 
-**ESTILO DE ESCRITURA - TONO AGENCIA DE VIAJES (OBLIGATORIO PARA TODOS LOS MODOS):**
-- Escribe como una agencia de viajes profesional. Haz que los lugares sean atractivos y atrayentes.
-- Cada texto de visita/actividad DEBE tener 2-3 frases (mínimo 40-80 palabras) que inspiren a los viajeros.
-- Usa lenguaje descriptivo y atractivo que resalte la belleza y el interés de cada lugar.
-- Incluye contexto histórico, características únicas o detalles sensoriales que hacen especial el lugar.
-- Ejemplo: {"text": "Maravíllate con el Palacio de los Papas, el palacio gótico más grande de Europa. Esta obra maestra de la UNESCO te transporta al siglo XIV cuando Aviñón era la poderosa sede de la cristiandad. No te pierdas los impresionantes frescos de los apartamentos privados del papa y las vistas panorámicas desde la torre."}
-- Mantente 100% fiel a los hechos - nunca inventes detalles ausentes de la fuente.
-
-
-⚠️ REQUISITOS CRÍTICOS:
-1. itin_id y place_id DEBEN comenzar con el código país ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
-2. PROHIBIDO usar CC:: o XX:: (inválido)
-3. Cada "night" DEBE tener "coords": [latitud, longitud] (obligatorio)
-4. El dept_code debe corresponder al país del namespace
-5. to_next_leg : incluir transport_mode ("car", "train", "flight"). Si distancia >= 600km, añadir en activities : {"text":"Vuelo a [destino]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: OBLIGATORIO para CADA day. Asignar según el interés:**
-   - 0.5 = Parada rápida (1-2 visitas)
-   - 1.0 = Día estándar (3-4 visitas)
-   - 1.5 = Destino rico (5-6 visitas)
-   - 2.0 = Destino importante (7+ visitas)
-8. **Bonus tiempo de transporte: Añadir al suggested_days de la etapa de SALIDA:**
-   - drive_min ≤180 (≤3h) → +0
-   - drive_min 181-300 (3-5h) → +0.5
-   - drive_min >300 (>5h) → +1.0
-9. **estimated_days_base FÓRMULA: CEIL(Σ suggested_days_ajustados) + 1**
-   - Donde suggested_days_ajustado = suggested_days + bonus_transporte
-   - VERIFICAR: Σ suggested_days ≈ estimated_days_base - 1 (tolerancia ±1)
-10. **pacing_rules.factors : SIEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language: Campo OBLIGATORIO en cada objeto itin - debe ser: fr, en, pt, es, it o ar**
-
-
-MODO:
-${mode==='follow' ? `- SEGUIR ESTRICTO.` : ``}
-${mode==='logic' ? `- RECORRIDO LÓGICO (evitar zig-zag).` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODO BASES + CIRCUITOS EXCURSIONES
-BASES: ${seeds||'[extraer del texto o especificar]'}
-═══════════════════════════════════════════════════════════════
-
-REGLA: Construir una NODE_LIST con retornos periódicos a las BASES
-
-PRINCIPIO:
-1. NODE_LIST = BASE → lugares cercanos → BASE (retorno cada 3-5 días) → otros lugares → BASE → nueva BASE → etc.
-2. 1 nodo = 1 day: night.place_id = nodo, visits[0] = eco nodo (coords reales [lat,lon])
-3. place_id = "CC::slug", coords en todas partes
-4. Retornos base: text "Regreso a [BASE] — descanso"
-
-EJEMPLO (Bases: Locorotondo, Lecce):
-
-NODE_LIST:
-Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-retorno)
-→ Monopoli (D6) → Grutas Castellana (D7) → Locorotondo (D8-retorno)
-→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-retorno)
-→ Lecce (D12-nueva base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-retorno)
-
-ESTRUCTURA JSON:
-
-Día 1 (BASE):
-{"day": 1, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Locorotondo — llegada", }]}
-
-Día 2 (VISITA):
-{"day": 2, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
- "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
-
-Día 5 (RETORNO BASE):
-{"day": 5, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Regreso a Locorotondo — descanso/tiempo libre", }]}
-
-Día 12 (NUEVA BASE):
-{"day": 12, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
- "visits": [{"text": "Lecce — llegada, basílica Santa Croce", }]}
-
-⚠️ REGLAS CRÍTICAS:
-- Cada nodo = 1 day distinto (NUNCA fusionar)
-- Las BASES aparecen varias veces: llegada, retornos periódicos, cambio base
-- Sin límite km estricto (agrupar por proximidad geográfica lógica)
-- Todos place_id = "CC::slug" (CC = código ISO2 país)
-- Todas las visits tienen coords reales [lat, lon]
-` : ``}
-${mode==='citytrip' ? `- CITY TRIP: Cada visita/atracción = 1 DAY distinto con regreso a la base por la noche.
-  
-  ⚠️ REGLA CRÍTICA:
-  - Cada visita (Torre Eiffel, Arco de Triunfo, etc.) = 1 DAY separado
-  - El campo "night.place_id" = el lugar visitado (ej: "FR::tour_eiffel")
-  - El campo "night.coords" = coordenadas GPS PRECISAS del lugar visitado
-  - El campo "visits" repite el nombre del lugar visitado
-  - NO agrupar varias visitas en un solo day
-  - El front-end agrupará visualmente los días con regreso a la base
-  
-  EJEMPLO CONCRETO (París - 4 días):
-  
-  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco de Triunfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museo del Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRECTO: night = lugar visitado con coords precisas, 1 visita = 1 day
-  ❌ PROHIBIDO: Agrupar varias visitas, o usar coords genéricas de ciudad
-  
-  Mantén todas las visitas/actividades. No pongas "city trip" en el título.
-  **estimated_days_base = número de días (= número de visitas)**
-  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-ESQUEMA:
 {
   "itins": [{
-    "itin_id": "FR::provence::lavande",
-    "dept_code": "84",
-    "dept_name": "Vaucluse",
-    "title": "Pueblos de lavanda en Provenza",
+    "itin_id": "LA::norte::luang-prabang-vang-vieng",
     "language": "es",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-    "estimated_days_base": 5,
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "Luang Prabang",
+    "title": "Templos y karsts del Norte de Laos",
+    "estimated_days_base": 2,
     "pacing_rules": {
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
     },
-    "days_plan": [{
-      "day": 1,
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "Palacio de los Papas"}
-      ],
-      "activities": [
-        {"text": "Puente de Aviñón"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "El Wat Xieng Thong despliega sus tejados superpuestos hasta el suelo en puro estilo lao."},
+          {"text": "Sube los 328 escalones del monte Phousi para dominar la península."},
+          {"text": "El Palacio Real alberga hoy el museo nacional con el Phra Bang, buda dorado."},
+          {"text": "El Wat Mai luce un pórtico dorado esculpido con escenas del Ramayana."},
+          {"text": "El Wat Visoun (1513) conserva un gran Buda de madera."}
+        ],
+        "activities": [
+          {"text": "Levántate al amanecer para observar el tak bat, procesión de los monjes."},
+          {"text": "El mercado nocturno invade Sisavangvong Road desde las 17h."},
+          {"text": "Las escuelas de cocina locales enseñan clásicos lao."}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "method": "heuristic"
+        }
+      }
+    ]
   }]
 }
 
+📋 REGLAS CRÍTICAS:
+
+1. ORDEN LÓGICO — Reorganizar etapas geográficamente. Evitar retrocesos.
+2. visits[] = lugares | activities[] = acciones
+3. 5-8 visits + 3-6 activities por día mínimo
+4. suggested_days: 0.5 | 1.0 | 1.5
+5. estimated_days_base = CEIL(suma de suggested_days)
+6. to_next_leg en todos los días EXCEPTO el último
+7. coords = [lat, lon] del centro ciudad
+8. region_code = CC-XX (código regional)
+9. language = "es" — TODOS los textos en español (traducir si fuente en otro idioma, mantener nombres propios: Wat, Piazza, Playa...)
+
+📋 FORMATO ENRIQUECIDO (OBLIGATORIO):
+10. subtitle = 1 frase gancho bajo el título (ej: "De los templos dorados a las playas de ensueño")
+11. practical_context.best_months = array de mejores meses (ej: ["mayo", "junio", "septiembre"])
+12. practical_context.highlights = 4-6 puntos destacados del itinerario
+13. practical_info = añadir en actividades importantes (senderismo, safari, camping...) con duration, difficulty, tip, best_time
+14. road_type = añadir en to_next_leg si relevante (ej: "Asfalto", "Grava", "Pista", "Asfalto y luego pista")
+
+✍️ ESTILO — VARIAR LAS FORMAS:
+- Descriptivo: "El templo despliega sus techos dorados..."
+- Imperativo: "Descubre...", "Explora...", "Admira...", "Sube..."
+- Narrativo: "Los monjes tejen...", "Los fieles acuden..."
+ALTERNAR estas 3 formas. No encadenar más de 2 textos del mismo estilo.
+
+${isAdmin ? `🚫 NEUTRALIZACIÓN: Eliminar comercios, personas, precios, fechas recientes` : ''}
+
+🚫 PROHIBIDO: Frases sin verbo ("Catedral gótica. Vidrieras. Cripta.")
+
 SOURCE:
----
-`,
-  pt: ({mode, seeds, modelSubMode, modelSeeds}) => `Converta em JSON "itins" (UM ÚNICO objeto), válido e completo.
+`;
+  },
 
-⚠️ SE O TEXTO LISTA VÁRIOS ROADTRIPS/ITINERÁRIOS DISTINTOS:
-- Extraia TODOS os locais mencionados em todos os itinerários
-- Reorganize-os em UM ÚNICO roadtrip coerente e lógico
-- Cada local = 1 dia (day) distinto no JSON final
-- Otimize a ordem para minimizar deslocamentos
+  // ============================================
+  // ITALIANO v7
+  // ============================================
+  it: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `Sei un estrattore di dati strutturati. Produci SOLO JSON valido, senza testo, senza Markdown.
 
-REGRAS:
-- TODAS as visitas e atividades.
-- Sem invenções: coordenadas reais, distâncias realistas.
-- Siga o esquema ORT.
-- Responda APENAS com JSON.
+Trasforma il contenuto SOURCE in JSON "itins" (UN SOLO oggetto). Segui questo esempio:
 
-**ESTILO DE ESCRITA - TOM AGÊNCIA DE VIAGENS (OBRIGATÓRIO PARA TODOS OS MODOS):**
-- Escreva como uma agência de viagens profissional. Torne os lugares atraentes e envolventes.
-- Cada texto de visita/atividade DEVE ter 2-3 frases (mínimo 40-80 palavras) que inspirem os viajantes.
-- Use linguagem descritiva e envolvente que destaque a beleza e o interesse de cada lugar.
-- Inclua contexto histórico, características únicas ou detalhes sensoriais que tornam o lugar especial.
-- Exemplo: {"text": "Maravilhe-se com o Palácio dos Papas, o maior palácio gótico da Europa. Esta obra-prima da UNESCO transporta-o ao século XIV quando Avignon era a poderosa sede da cristandade. Não perca os frescos deslumbrantes nos apartamentos privados do papa e as vistas panorâmicas da torre."}
-- Mantenha-se 100% fiel aos factos - nunca invente detalhes ausentes da fonte.
-
-
-⚠️ REQUISITOS CRÍTICOS:
-1. itin_id e place_id DEVEM começar com código país ISO2 (FR::, IT::, ES::, PT::, TR::, etc.)
-2. PROIBIDO usar CC:: ou XX:: (inválido)
-3. Cada "night" DEVE ter "coords": [latitude, longitude] (obrigatório)
-4. O dept_code deve corresponder ao país do namespace
-5. to_next_leg: incluir transport_mode ("car", "train", "flight"). Se distância >= 600km, adicionar em activities: {"text":"Voo para [destino]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: OBRIGATÓRIO para CADA day. Atribuir segundo o interesse:**
-   - 0.5 = Paragem rápida (1-2 visitas)
-   - 1.0 = Dia padrão (3-4 visitas)
-   - 1.5 = Destino rico (5-6 visitas)
-   - 2.0 = Destino importante (7+ visitas)
-8. **Bónus tempo de transporte: Adicionar ao suggested_days da etapa de PARTIDA:**
-   - drive_min ≤180 (≤3h) → +0
-   - drive_min 181-300 (3-5h) → +0.5
-   - drive_min >300 (>5h) → +1.0
-9. **estimated_days_base FÓRMULA: CEIL(Σ suggested_days_ajustados) + 1**
-   - Onde suggested_days_ajustado = suggested_days + bónus_transporte
-   - VERIFICAR: Σ suggested_days ≈ estimated_days_base - 1 (tolerância ±1)
-10. **pacing_rules.factors: SEMPRE {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language: Campo OBRIGATÓRIO em cada objeto itin - deve ser: fr, en, pt, es, it ou ar**
-
-
-MODO:
-${mode==='follow' ? `- SEGUIMENTO ESTRITO.` : ``}
-${mode==='logic' ? `- ROTEIRO LÓGICO (evitar zigue-zague).` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 MODO BASES + CIRCUITOS EXCURSÕES
-BASES: ${seeds||'[extrair do texto ou especificar]'}
-═══════════════════════════════════════════════════════════════
-
-REGRA: Construir uma NODE_LIST com retornos periódicos às BASES
-
-PRINCÍPIO:
-1. NODE_LIST = BASE → locais próximos → BASE (retorno a cada 3-5 dias) → outros locais → BASE → nova BASE → etc.
-2. 1 nó = 1 day: night.place_id = nó, visits[0] = eco nó (coords reais [lat,lon])
-3. place_id = "CC::slug", coords em todos os lugares
-4. Retornos base: text "Retorno a [BASE] — descanso"
-
-EXEMPLO (Bases: Locorotondo, Lecce):
-
-NODE_LIST:
-Locorotondo (D1) → Alberobello (D2) → Martina Franca (D3) → Cisternino (D4) → Locorotondo (D5-retorno)
-→ Monopoli (D6) → Grutas Castellana (D7) → Locorotondo (D8-retorno)
-→ Polignano (D9) → Ostuni (D10) → Locorotondo (D11-retorno)
-→ Lecce (D12-nova base) → Otranto (D13) → Gallipoli (D14) → Lecce (D15-retorno)
-
-ESTRUTURA JSON:
-
-Dia 1 (BASE):
-{"day": 1, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Locorotondo — chegada", }]}
-
-Dia 2 (VISITA):
-{"day": 2, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
- "visits": [{"text": "Alberobello — Trulli UNESCO", }]}
-
-Dia 5 (RETORNO BASE):
-{"day": 5, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Retorno a Locorotondo — descanso/tempo livre", }]}
-
-Dia 12 (NOVA BASE):
-{"day": 12, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
- "visits": [{"text": "Lecce — chegada, basílica Santa Croce", }]}
-
-⚠️ REGRAS CRÍTICAS:
-- Cada nó = 1 day distinto (NUNCA fundir)
-- As BASES aparecem várias vezes: chegada, retornos periódicos, mudança de base
-- Sem limite km estrito (agrupar por proximidade geográfica lógica)
-- Todos place_id = "CC::slug" (CC = código ISO2 país)
-- Todas as visits têm coords reais [lat, lon]
-` : ``}
-${mode==='citytrip' ? `- CITY TRIP: Cada visita/atração = 1 DAY distinto com retorno à base à noite.
-  
-  ⚠️ REGRA CRÍTICA:
-  - Cada visita (Torre Eiffel, Arco do Triunfo, etc.) = 1 DAY separado
-  - O campo "night.place_id" = o local visitado (ex: "FR::tour_eiffel")
-  - O campo "night.coords" = coordenadas GPS PRECISAS do local visitado
-  - O campo "visits" repete o nome do local visitado
-  - NÃO agrupar várias visitas em um único day
-  - O front-end agrupará visualmente os dias com retorno à base
-  
-  EXEMPLO CONCRETO (Paris - 4 dias):
-  
-  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "Torre Eiffel"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "Arco do Triunfo"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "Museu do Louvre"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "Montmartre"}]}
-  
-  ✅ CORRETO: night = local visitado com coords precisas, 1 visita = 1 day
-  ❌ PROIBIDO: Agrupar várias visitas, ou usar coords genéricas da cidade
-  
-  Mantenha todas as visitas/atividades. Não coloque "city trip" no título.
-  **estimated_days_base = número de dias (= número de visitas)**
-  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-ESQUEMA:
 {
   "itins": [{
-    "itin_id": "FR::provence::lavande",
-    "dept_code": "84",
-    "dept_name": "Vaucluse",
-    "title": "Aldeias de lavanda na Provença",
-    "estimated_days_base": 5,
+    "itin_id": "LA::nord::luang-prabang",
+    "language": "it",
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "Luang Prabang",
+    "title": "Templi e karst del Nord Laos",
+    "estimated_days_base": 2,
+    "pacing_rules": {
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
+      "merge_threshold": 0.85
+    },
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "Il Wat Xieng Thong dispiega i suoi tetti sovrapposti in puro stile lao."},
+          {"text": "Salite i 328 gradini del monte Phousi per dominare la penisola."},
+          {"text": "Il Palazzo Reale ospita oggi il museo nazionale con il Phra Bang."},
+          {"text": "Il Wat Mai sfoggia un portico dorato scolpito con scene del Ramayana."},
+          {"text": "Il Wat Visoun (1513) conserva un grande Buddha in legno."}
+        ],
+        "activities": [
+          {"text": "Alzatevi all'alba per osservare il tak bat, processione dei monaci."},
+          {"text": "Il mercato notturno invade Sisavangvong Road dalle 17."},
+          {"text": "Le scuole di cucina locali insegnano i classici lao."}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "method": "heuristic"
+        }
+      }
+    ]
+  }]
+}
+
+📋 REGOLE CRITICHE:
+
+1. ORDINE LOGICO — Riorganizzare le tappe geograficamente
+2. visits[] = luoghi | activities[] = azioni
+3. 5-8 visits + 3-6 activities per giorno minimo
+4. suggested_days: 0.5 | 1.0 | 1.5
+5. estimated_days_base = CEIL(somma dei suggested_days)
+6. to_next_leg su tutti i giorni TRANNE l'ultimo
+7. region_code = CC-XX (codice regionale)
+8. language = "it" — TUTTI i testi in italiano (tradurre se fonte in altra lingua, mantenere nomi propri: Wat, Piazza, Playa...)
+
+📋 FORMATO ARRICCHITO (OBBLIGATORIO):
+9. subtitle = 1 frase accattivante sotto il titolo (es: "Dai templi dorati alle spiagge da sogno")
+10. practical_context.best_months = array dei mesi migliori (es: ["maggio", "giugno", "settembre"])
+11. practical_context.highlights = 4-6 punti salienti dell'itinerario
+12. practical_info = aggiungere alle attività importanti (trekking, safari, campeggio...) con duration, difficulty, tip, best_time
+13. road_type = aggiungere in to_next_leg se rilevante (es: "Asfalto", "Sterrato", "Pista", "Asfalto poi sterrato")
+
+✍️ STILE — VARIARE LE FORME:
+- Descrittivo: "Il tempio dispiega i suoi tetti dorati..."
+- Imperativo: "Scoprite...", "Esplorate...", "Ammirate...", "Salite..."
+- Narrativo: "I monaci tessono ancora...", "I fedeli accorrono..."
+ALTERNARE queste 3 forme. Non concatenare più di 2 testi dello stesso stile.
+
+${isAdmin ? `🚫 NEUTRALIZZAZIONE: Eliminare commerci, persone, prezzi, date recenti` : ''}
+
+🚫 VIETATO: Frasi senza verbo ("Cattedrale gotica. Vetrate. Cripta.")
+
+SOURCE:
+`;
+  },
+
+  // ============================================
+  // PORTUGUÊS v7
+  // ============================================
+  pt: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `És um extrator de dados estruturados. Produz APENAS JSON válido, sem texto, sem Markdown.
+
+Transforma o conteúdo SOURCE em JSON "itins" (UM SÓ objeto). Segue este exemplo:
+
+{
+  "itins": [{
+    "itin_id": "LA::norte::luang-prabang",
     "language": "pt",
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "Luang Prabang",
+    "title": "Templos e carstes do Norte do Laos",
+    "estimated_days_base": 2,
     "pacing_rules": {
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
     },
-    "days_plan": [{
-      "day": 1,
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "Palácio dos Papas"}
-      ],
-      "activities": [
-        {"text": "Ponte de Avignon"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "O Wat Xieng Thong desdobra os seus telhados em puro estilo lao."},
+          {"text": "Suba os 328 degraus do monte Phousi para dominar a península."},
+          {"text": "O Palácio Real abriga hoje o museu nacional com o Phra Bang."}
+        ],
+        "activities": [
+          {"text": "Levante-se ao amanhecer para observar o tak bat dos monges."},
+          {"text": "O mercado noturno invade Sisavangvong Road a partir das 17h."}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "method": "heuristic"
+        }
+      }
+    ]
   }]
 }
+
+📋 REGRAS CRÍTICAS:
+
+1. ORDEM LÓGICA — Reorganizar etapas geograficamente
+2. visits[] = lugares | activities[] = ações
+3. 5-8 visits + 3-6 activities por dia mínimo
+4. suggested_days: 0.5 | 1.0 | 1.5
+5. estimated_days_base = CEIL(soma dos suggested_days)
+6. to_next_leg em todos os dias EXCETO o último
+7. region_code = CC-XX (código regional)
+8. language = "pt" — TODOS os textos em português (traduzir se fonte em outro idioma, manter nomes próprios: Wat, Piazza, Playa...)
+
+📋 FORMATO ENRIQUECIDO (OBRIGATÓRIO):
+9. subtitle = 1 frase de impacto sob o título (ex: "Dos templos dourados às praias de sonho")
+10. practical_context.best_months = array dos melhores meses (ex: ["maio", "junho", "setembro"])
+11. practical_context.highlights = 4-6 destaques do itinerário
+12. practical_info = adicionar nas atividades importantes (trilhas, safaris, campismo...) com duration, difficulty, tip, best_time
+13. road_type = adicionar em to_next_leg se relevante (ex: "Asfalto", "Terra batida", "Pista", "Asfalto depois terra")
+
+✍️ ESTILO — VARIAR AS FORMAS:
+- Descritivo: "O templo estende os seus telhados dourados..."
+- Imperativo: "Descubra...", "Explore...", "Admire...", "Suba..."
+- Narrativo: "Os monges tecem ainda...", "Os fiéis acorrem..."
+ALTERNAR estas 3 formas. Não encadear mais de 2 textos do mesmo estilo.
+
+${isAdmin ? `🚫 NEUTRALIZAÇÃO: Eliminar comércios, pessoas, preços, datas recentes` : ''}
+
+🚫 PROIBIDO: Frases sem verbo ("Catedral gótica. Vitrais. Cripta.")
 
 SOURCE:
----
-`,
-  ar: ({mode, seeds, modelSubMode, modelSeeds}) => `حوّل المحتوى إلى JSON "itins" (كائن واحد)، صالح وكامل.
+`;
+  },
 
-⚠️ إذا كان النص يسرد عدة رحلات/مسارات منفصلة:
-- استخرج جميع الأماكن المذكورة في جميع المسارات
-- أعد تنظيمها في رحلة واحدة متماسكة ومنطقية
-- كل مكان = يوم واحد (day) مميز في JSON النهائي
-- حسّن الترتيب لتقليل التنقلات
+  // ============================================
+  // ARABIC v7
+  // ============================================
+  ar: ({mode, seeds, modelSubMode, modelSeeds}) => {
+    const isAdmin = mode === 'model';
+    const effectiveMode = isAdmin ? modelSubMode : 'logic';
+    const effectiveSeeds = isAdmin ? modelSeeds : seeds;
+    
+    return `أنت مستخرج بيانات منظمة. أنتج JSON صالح فقط، بدون نص، بدون Markdown.
 
-القواعد:
-- تضمين جميع الزيارات والأنشطة.
-- دون اختلاق: إحداثيات حقيقية ومسافات/أزمنة واقعية.
-- اتبع مخطط ORT.
-- أجب بـ JSON فقط.
+حوّل محتوى SOURCE إلى JSON "itins" (كائن واحد). اتبع هذا المثال:
 
-**أسلوب الكتابة - نبرة وكالة السفر (إلزامي لجميع الأوضاع):**
-- اكتب كوكالة سفر محترفة. اجعل الأماكن جذابة ومثيرة للاهتمام.
-- كل نص زيارة/نشاط يجب أن يكون 2-3 جمل (40-80 كلمة كحد أدنى) تلهم المسافرين.
-- استخدم لغة وصفية وجذابة تبرز جمال وأهمية كل مكان.
-- ضمّن السياق التاريخي أو الميزات الفريدة أو التفاصيل الحسية التي تجعل المكان مميزاً.
-- مثال: {"text": "تعجّب من قصر البابوات، أكبر قصر قوطي في أوروبا. هذه التحفة المدرجة في اليونسكو تنقلك إلى القرن الرابع عشر عندما كانت أفينيون مقر المسيحية القوي. لا تفوت اللوحات الجدارية المذهلة في الشقق الخاصة للبابا والمنظر البانورامي من البرج."}
-- ابق 100% دقيقاً - لا تخترع أبداً تفاصيل غير موجودة في المصدر.
-
-
-⚠️ المتطلبات الحرجة:
-1. itin_id و place_id يجب أن يبدأوا برمز البلد ISO2 (FR::، IT::، ES::، PT::، TR::، إلخ.)
-2. ممنوع استخدام CC:: أو XX:: (غير صالح)
-3. كل "night" يجب أن يحتوي على "coords": [خط العرض، خط الطول] (إلزامي)
-4. يجب أن يتطابق dept_code مع بلد namespace
-5. to_next_leg: تضمين transport_mode ("car"، "train"، "flight"). إذا كانت المسافة >= 600 كم، أضف في activities: {"text":"رحلة إلى [الوجهة]"}
-6. \${LANG_INSTRUCTION}
-7. **suggested_days: إلزامي لكل day. التعيين حسب الأهمية:**
-   - 0.5 = توقف سريع (1-2 زيارة)
-   - 1.0 = يوم قياسي (3-4 زيارات)
-   - 1.5 = وجهة غنية (5-6 زيارات)
-   - 2.0 = وجهة مهمة (7+ زيارات)
-8. **مكافأة وقت النقل: إضافة إلى suggested_days للمرحلة المغادرة:**
-   - drive_min ≤180 (≤3 ساعات) → +0
-   - drive_min 181-300 (3-5 ساعات) → +0.5
-   - drive_min >300 (>5 ساعات) → +1.0
-9. **estimated_days_base الصيغة: CEIL(Σ suggested_days_معدل) + 1**
-   - حيث suggested_days_معدل = suggested_days + مكافأة_النقل
-   - التحقق: Σ suggested_days ≈ estimated_days_base - 1 (تفاوت ±1)
-10. **pacing_rules.factors: دائمًا {"slow":1.25,"standard":1.0,"fast":0.75}**
-11. **language: حقل إلزامي في كل كائن itin - يجب أن يكون: fr أو en أو pt أو es أو it أو ar**
-
-
-وضع التشغيل:
-${mode==='follow' ? `- اتباع صارم.` : ``}
-${mode==='logic' ? `- مسار منطقي (تجنب المتعرجات).` : ``}
-${mode==='seed' ? `
-═══════════════════════════════════════════════════════════════
-🏠 وضع القواعد + حلقات الرحلات
-القواعد: ${seeds||'[استخراج من النص أو تحديد]'}
-═══════════════════════════════════════════════════════════════
-
-القاعدة: بناء NODE_LIST مع عودة دورية للقواعد
-
-المبدأ:
-1. NODE_LIST = قاعدة → أماكن قريبة → قاعدة (عودة كل 3-5 أيام) → أماكن أخرى → قاعدة → قاعدة جديدة → إلخ.
-2. 1 عقدة = 1 يوم: night.place_id = عقدة، visits[0] = صدى العقدة (إحداثيات حقيقية [lat,lon])
-3. place_id = "CC::slug"، إحداثيات في كل مكان
-4. عودة القاعدة: text "العودة إلى [القاعدة] — راحة"
-
-مثال (القواعد: Locorotondo، Lecce):
-
-NODE_LIST:
-Locorotondo (ي1) → Alberobello (ي2) → Martina Franca (ي3) → Cisternino (ي4) → Locorotondo (ي5-عودة)
-→ Monopoli (ي6) → كهوف Castellana (ي7) → Locorotondo (ي8-عودة)
-→ Polignano (ي9) → Ostuni (ي10) → Locorotondo (ي11-عودة)
-→ Lecce (ي12-قاعدة جديدة) → Otranto (ي13) → Gallipoli (ي14) → Lecce (ي15-عودة)
-
-بنية JSON:
-
-اليوم 1 (قاعدة):
-{"day": 1, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "Locorotondo — وصول", }]}
-
-اليوم 2 (زيارة):
-{"day": 2, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::alberobello", "coords": [40.7816, 17.2372]},
- "visits": [{"text": "Alberobello — تروللي اليونسكو", }]}
-
-اليوم 5 (عودة للقاعدة):
-{"day": 5, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::locorotondo", "coords": [40.7558, 17.3278]},
- "visits": [{"text": "العودة إلى Locorotondo — راحة/وقت حر", }]}
-
-اليوم 12 (قاعدة جديدة):
-{"day": 12, "slice": 1, "region_code": "IT-PUG",
- "night": {"place_id": "IT::lecce", "coords": [40.3515, 18.1750]},
- "visits": [{"text": "Lecce — وصول، كنيسة سانتا كروتشي", }]}
-
-⚠️ قواعد حاسمة:
-- كل عقدة = يوم واحد متميز (لا تدمج أبدًا)
-- تظهر القواعد عدة مرات: وصول، عودات دورية، تغيير القاعدة
-- بدون حد كم صارم (التجميع حسب القرب الجغرافي المنطقي)
-- جميع place_id = "CC::slug" (CC = كود ISO2 للبلد)
-- جميع الزيارات لديها إحداثيات حقيقية [lat، lon]
-` : ``}
-${mode==='citytrip' ? `- مسار داخل المدينة: كل زيارة/معلم = يوم واحد (DAY) متميز مع العودة إلى القاعدة في المساء.
-  
-  ⚠️ قاعدة حرجة:
-  - كل زيارة (برج إيفل، قوس النصر، إلخ.) = يوم واحد (DAY) منفصل
-  - حقل "night.place_id" = المكان المُزار (مثال: "FR::tour_eiffel")
-  - حقل "night.coords" = إحداثيات GPS دقيقة للمكان المُزار
-  - حقل "visits" يكرر اسم المكان المُزار
-  - لا تجمع عدة زيارات في يوم واحد
-  - الواجهة الأمامية ستجمع الأيام بصريًا مع العودة إلى القاعدة
-  
-  مثال ملموس (باريس - 4 أيام):
-  
-  {"day": 1, "night": {"place_id": "FR::tour_eiffel", "coords": [48.8584, 2.2945]}, "visits": [{"text": "برج إيفل"}], "to_next_leg": {"distance_km": 3, "drive_min": 15, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 2, "night": {"place_id": "FR::arc_de_triomphe", "coords": [48.8738, 2.2950]}, "visits": [{"text": "قوس النصر"}], "to_next_leg": {"distance_km": 4, "drive_min": 20, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 3, "night": {"place_id": "FR::musee_louvre", "coords": [48.8606, 2.3376]}, "visits": [{"text": "متحف اللوفر"}], "to_next_leg": {"distance_km": 2, "drive_min": 10, "transport_mode": "car", "method": "heuristic"}},
-  {"day": 4, "night": {"place_id": "FR::montmartre", "coords": [48.8867, 2.3431]}, "visits": [{"text": "مونمارتر"}]}
-  
-  ✅ صحيح: night = المكان المُزار مع إحداثيات دقيقة، زيارة واحدة = يوم واحد
-  ❌ ممنوع: تجميع عدة زيارات، أو استخدام إحداثيات عامة للمدينة
-  
-  احتفظ بجميع الزيارات/الأنشطة. لا تضع "مسار المدينة" في العنوان.
-  **estimated_days_base = عدد الأيام (= عدد الزيارات)**
-  **pacing_rules.factors: {"slow":1.25,"standard":1.0,"fast":0.75}**` : ``}
-
-المخطط:
 {
   "itins": [{
-    "itin_id": "FR::provence::lavande",
-    "dept_code": "84",
-    "dept_name": "Vaucluse",
-    "title": "قرى الخزامى في بروفانس",
-    "estimated_days_base": 5,
+    "itin_id": "LA::north::luang-prabang",
+    "language": "ar",
+    "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
+    "source_url": "",
+    "dept_code": "LP",
+    "dept_name": "لوانغ برابانغ",
+    "title": "معابد وتشكيلات كارست شمال لاوس",
+    "estimated_days_base": 2,
     "pacing_rules": {
-      "factors": {"slow":1.25,"standard":1.0,"fast":0.75},
+      "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
     },
-    "days_plan": [{
-      "day": 1,
-    "created_at": "2024-12-08T20:30:00Z",
-    "source_url": "https://example.com/provence-lavande",
-      "slice": 1,
-      "region_code": "PACA",
-      "suggested_days": 1.5,
-      "night": {"place_id": "FR::avignon", "coords": [43.9493, 4.8055]},
-      "visits": [
-        {"text": "قصر الباباوات"}
-      ],
-      "activities": [
-        {"text": "جسر أفينيون"}
-      ],
-      "to_next_leg": {"distance_km": 35, "drive_min": 40, "transport_mode": "car", "method": "heuristic"}
-    }]
+    "days_plan": [
+      {
+        "day": 1,
+        "slice": 1,
+        "region_code": "LA-LP",
+        "suggested_days": 1.5,
+        "night": {
+          "place_id": "LA::luang_prabang",
+          "coords": [19.8856, 102.1347]
+        },
+        "visits": [
+          {"text": "يمد وات شيانغ ثونغ أسطحه المتراكبة بأسلوب لاوي أصيل."},
+          {"text": "اصعد 328 درجة من جبل فوسي لتطل على شبه الجزيرة."},
+          {"text": "يضم القصر الملكي اليوم المتحف الوطني مع فرا بانغ الذهبي."}
+        ],
+        "activities": [
+          {"text": "استيقظ عند الفجر لمشاهدة تاك بات، موكب الرهبان الصامت."},
+          {"text": "يغزو السوق الليلي شارع سيسافانغفونغ من الساعة 5 مساءً."}
+        ],
+        "to_next_leg": {
+          "distance_km": 230,
+          "drive_min": 270,
+          "transport_mode": "car",
+          "method": "heuristic"
+        }
+      }
+    ]
   }]
 }
 
-المصدر:
----
-`
+📋 القواعد الحاسمة:
+
+1. ترتيب منطقي — إعادة ترتيب المحطات جغرافياً
+2. visits[] = أماكن | activities[] = أنشطة
+3. 5-8 visits + 3-6 activities لكل يوم
+4. suggested_days: 0.5 | 1.0 | 1.5
+5. estimated_days_base = CEIL(مجموع suggested_days)
+6. to_next_leg في جميع الأيام ما عدا الأخير
+7. region_code = CC-XX (رمز إقليمي)
+8. language = "ar" — جميع النصوص بالعربية (ترجم إذا كان المصدر بلغة أخرى، احتفظ بالأسماء الأصلية: Wat, Piazza, Playa...)
+
+📋 التنسيق المُحسّن (إلزامي):
+9. subtitle = جملة جذابة تحت العنوان (مثال: "من المعابد الذهبية إلى الشواطئ الحالمة")
+10. practical_context.best_months = مصفوفة أفضل الأشهر (مثال: ["مايو", "يونيو", "سبتمبر"])
+11. practical_context.highlights = 4-6 أبرز معالم الرحلة
+12. practical_info = إضافة للأنشطة المهمة (المشي، السفاري، التخييم...) مع duration, difficulty, tip, best_time
+13. road_type = إضافة في to_next_leg إذا كان ذلك مناسباً (مثال: "طريق معبّد", "حصى", "مسار ترابي")
+
+✍️ الأسلوب — تنويع الأشكال:
+- وصفي: "يمد المعبد أسطحه الذهبية..."
+- أمري: "اكتشف..."، "استكشف..."، "تأمل..."، "اصعد..."
+- سردي: "الرهبان يحيكون..."، "المصلون يتوافدون..."
+تبديل هذه الأشكال الثلاثة. لا تسلسل أكثر من نصين بنفس الأسلوب.
+
+${isAdmin ? `🚫 التحييد: إزالة المتاجر والأشخاص والأسعار والتواريخ الحديثة` : ''}
+
+🚫 ممنوع: جمل بدون فعل ("كاتدرائية قوطية. زجاج ملون. سرداب.")
+
+SOURCE:
+`;
+  }
 };
 
-// === LANG INSTRUCTIONS (I18N) ===
-const LANG_INSTRUCTIONS = {
-  fr: '**LANGUE : TOUS les textes (title, notes, visits, activities) DOIVENT être en FRANÇAIS**',
-  en: '**LANGUAGE: ALL texts (title, notes, visits, activities) MUST be in ENGLISH**',
-  it: '**LINGUA: TUTTI i testi (title, notes, visits, activities) DEVONO essere in ITALIANO**',
-  es: '**IDIOMA: TODOS los textos (title, notes, visits, activities) DEBEN estar en ESPAÑOL**',
-  pt: '**IDIOMA: TODOS os textos (title, notes, visits, activities) DEVEM estar em PORTUGUÊS**',
-  ar: '**اللغة: جميع النصوص (title، notes، visits، activities) يجب أن تكون بالعربية**'
-};
-
-// helper restitution
-function getPromptTemplate(lang,{mode, seeds, modelSubMode, modelSeeds}) {
-  const l = (lang||document.documentElement.lang||'fr').toLowerCase();
-  const LANG_INSTRUCTION = LANG_INSTRUCTIONS[l] || LANG_INSTRUCTIONS.fr;
+// Helper function to get prompt
+function getPromptTemplate(lang, {mode, seeds, modelSubMode, modelSeeds}) {
+  const l = (lang || document.documentElement.lang || 'fr').toLowerCase();
   const fn = PROMPTS[l] || PROMPTS.fr;
-  let prompt = fn({mode, seeds, modelSubMode, modelSeeds});
-  // Remplacer la variable ${LANG_INSTRUCTION}
-  prompt = prompt.replace(/\$\{LANG_INSTRUCTION\}/g, LANG_INSTRUCTION);
-  return prompt;
+  return fn({mode, seeds, modelSubMode, modelSeeds});
 }
 
 // === I18N UI labels (ajout des libellés options) ===
@@ -1868,7 +1399,9 @@ const I18N={
     processing:"Traitement...",
 
     // NEW
-    optTitle:"Que voulez-vous faire ?",
+    optTitle:"Génération d'itinéraire",
+    optExplain:"Vous pouvez trouver un itinéraire sur le web, ou un descriptif de lieux que vous voulez visiter, ou coller plusieurs descriptifs de lieux et générer un prompt que vous copierez à une intelligence artificielle de votre choix. Inutile de nettoyer votre copie, vous pouvez copier la page entière et la coller telle quelle dans le premier onglet. Vous n'aurez plus qu'à recopier la réponse de l'IA dans le troisième onglet pour avoir un itinéraire sur mesure complètement modifiable.",
+    userModeText:"L'itinéraire sera automatiquement optimisé géographiquement pour éviter les allers-retours.",
     opt1Title:"Suivre l'itinéraire exactement",
     opt1Desc:"L'ordre des éléments collés est respecté tel quel",
     opt2Title:"Adopter un parcours logique",
@@ -1947,7 +1480,9 @@ const I18N={
     processing:"Processing...",
 
     // NEW
-    optTitle:"What do you want to do?",
+    optTitle:"Itinerary Generation",
+    optExplain:"You can find an itinerary on the web, or a description of places you want to visit, or paste multiple place descriptions and generate a prompt to copy to an AI of your choice. No need to clean your copy, you can copy the entire page and paste it as-is in the first tab. Then simply paste the AI's response in the third tab to get a fully customizable itinerary.",
+    userModeText:"The itinerary will be automatically optimized geographically to avoid backtracking.",
     opt1Title:"Follow the itinerary exactly",
     opt1Desc:"The order of pasted elements is respected as is",
     opt2Title:"Adopt a logical route",
@@ -2023,7 +1558,9 @@ const I18N={
     repairSuccess:"✓ Riparazione riuscita!",
     processing:"Elaborazione...",
 
-    optTitle:"Cosa vuoi fare?",
+    optTitle:"Generazione itinerario",
+    optExplain:"Puoi trovare un itinerario sul web, o una descrizione di luoghi che vuoi visitare, o incollare più descrizioni di luoghi e generare un prompt da copiare a un'IA di tua scelta. Non serve pulire la copia, puoi copiare l'intera pagina e incollarla così com'è nella prima scheda. Poi basta incollare la risposta dell'IA nella terza scheda per avere un itinerario su misura completamente modificabile.",
+    userModeText:"L'itinerario sarà automaticamente ottimizzato geograficamente per evitare ritorni.",
     opt1Title:"Seguire esattamente l'itinerario",
     opt1Desc:"L'ordine degli elementi incollati è rispettato",
     opt2Title:"Adottare un percorso logico",
@@ -2099,7 +1636,9 @@ const I18N={
     repairSuccess:"✓ ¡Reparado!",
     processing:"Procesando...",
 
-    optTitle:"¿Qué quieres hacer?",
+    optTitle:"Generación de itinerario",
+    optExplain:"Puedes encontrar un itinerario en la web, o una descripción de lugares que quieres visitar, o pegar varias descripciones de lugares y generar un prompt para copiarlo a una IA de tu elección. No necesitas limpiar tu copia, puedes copiar la página entera y pegarla tal cual en la primera pestaña. Luego solo tienes que pegar la respuesta de la IA en la tercera pestaña para tener un itinerario a medida completamente modificable.",
+    userModeText:"El itinerario será optimizado automáticamente geográficamente para evitar retrocesos.",
     opt1Title:"Seguir el itinerario exactamente",
     opt1Desc:"El orden de los elementos pegados se respeta",
     opt2Title:"Adoptar una ruta lógica",
@@ -2175,7 +1714,9 @@ const I18N={
     repairSuccess:"✓ Reparo bem-sucedido!",
     processing:"Processando...",
 
-    optTitle:"O que você quer fazer?",
+    optTitle:"Geração de itinerário",
+    optExplain:"Pode encontrar um itinerário na web, ou uma descrição de lugares que quer visitar, ou colar várias descrições de lugares e gerar um prompt para copiar a uma IA da sua escolha. Não precisa limpar a sua cópia, pode copiar a página inteira e colá-la tal como está na primeira aba. Depois é só colar a resposta da IA na terceira aba para ter um itinerário personalizado completamente modificável.",
+    userModeText:"O itinerário será automaticamente otimizado geograficamente para evitar retornos.",
     opt1Title:"Seguir o itinerário exatamente",
     opt1Desc:"A ordem dos elementos colados é respeitada",
     opt2Title:"Adotar uma rota lógica",
@@ -2251,7 +1792,9 @@ const I18N={
     repairSuccess:"✓ تم الإصلاح!",
     processing:"جارٍ المعالجة...",
 
-    optTitle:"ماذا تريد أن تفعل؟",
+    optTitle:"إنشاء خط السير",
+    optExplain:"يمكنك العثور على خط سير على الويب، أو وصف للأماكن التي تريد زيارتها، أو لصق عدة أوصاف للأماكن وإنشاء prompt لنسخه إلى ذكاء اصطناعي من اختيارك. لا حاجة لتنظيف نسختك، يمكنك نسخ الصفحة بأكملها ولصقها كما هي في التبويب الأول. ثم ما عليك سوى لصق رد الذكاء الاصطناعي في التبويب الثالث للحصول على خط سير مخصص قابل للتعديل بالكامل.",
+    userModeText:"سيتم تحسين خط السير جغرافياً تلقائياً لتجنب الرجوع.",
     opt1Title:"اتّباع المسار بالضبط",
     opt1Desc:"ترتيب العناصر الملصقة محترم كما هو",
     opt2Title:"اعتماد طريق منطقي",
@@ -2488,6 +2031,8 @@ function setLang(lang){
 
   // NEW: options labels
   const optTitle = $('#optTitle'); if(optTitle) optTitle.textContent = t.optTitle;
+  const optExplain = $('#optExplain'); if(optExplain) optExplain.textContent = t.optExplain;
+  const userModeText = $('#userModeText'); if(userModeText) userModeText.textContent = t.userModeText || t.optTitle;
   const opt1Title = $('#opt1Title'); if(opt1Title) opt1Title.textContent = t.opt1Title;
   const opt1Desc = $('#opt1Desc'); if(opt1Desc) opt1Desc.textContent = t.opt1Desc;
   const opt2Title = $('#opt2Title'); if(opt2Title) opt2Title.textContent = t.opt2Title;
@@ -2577,18 +2122,7 @@ function setLang(lang){
   });
 })();
 
-// === NEW: gestion UI options (enable/disable seed input)
-(function(){
-  const optSeed = $('#opt-seed');
-  const seed = $('#seedCities');
-  const radios = ['#opt-follow','#opt-logic','#opt-seed','#opt-citytrip'].map(s=>$(s));
-  function refresh(){
-    if(optSeed.checked){ seed.disabled = false; seed.classList.remove('opt-disabled'); }
-    else { seed.disabled = true; seed.classList.add('opt-disabled'); }
-  }
-  radios.forEach(r=> r.addEventListener('change', refresh));
-  refresh();
-})();
+// === v3: Code seed input supprimé (plus de mode seed pour utilisateurs) ===
 
 // Générer le prompt (MAJ: utilise options + supprime thèmes imposés)
 const btnGen = $('#btn-gen');
@@ -2602,41 +2136,25 @@ if(btnGen) {
     if(!raw){ alert(t.needSrc); return; }
 
   // récupère le mode
-  let mode = 'follow';
+  const adminOptionsGrid = document.getElementById('adminOptionsGrid');
+  const isAdmin = adminOptionsGrid && adminOptionsGrid.style.display !== 'none';
+  
+  let mode = 'logic'; // Mode par défaut pour les utilisateurs
   let modelSubMode = null;
   
-  if($('#opt-logic').checked) {
-    mode = 'logic';
-  } else if($('#opt-seed').checked) {
-    mode = 'seed';
-  } else if($('#opt-citytrip').checked) {
-    mode = 'citytrip';
-  } else if($('#opt-model') && $('#opt-model').checked) {
-    mode = 'model';
-    // Récupérer la sous-option sélectionnée
-    const modelSubRadio = document.querySelector('input[name="model-sub"]:checked');
-    modelSubMode = modelSubRadio ? modelSubRadio.value : 'follow';
+  if(isAdmin) {
+    // Mode admin - récupérer le choix depuis les radios
+    mode = 'model'; // Indique au prompt d'activer les règles admin
+    const selectedRadio = document.querySelector('#adminOptionsGrid input[type="radio"]:checked');
+    modelSubMode = selectedRadio ? selectedRadio.value : 'logic';
   }
   
-  const seeds = ($('#seedCities').value||'').trim();
-  const modelSeedsEl = $('#modelSeedCities');
-  const modelSeeds = ((modelSeedsEl ? modelSeedsEl.value : '') || '').trim();
-
+  const seeds = ($('#seedCities')?.value || '').trim();
+  const modelSeeds = seeds; // Même champ pour les deux
+  
   // Validation : si mode seed, au moins une ville requise
-  if(mode === 'seed' && !seeds){
-    alert(t.needSeeds || 'Veuillez indiquer au moins une ville d\'attache (vos hôtels), séparées par des virgules.');
-    return;
-  }
-  
-  // Validation : si mode model avec sous-option seed
-  if(mode === 'model' && modelSubMode === 'seed' && !modelSeeds){
+  if(isAdmin && modelSubMode === 'seed' && !seeds){
     alert('Veuillez indiquer au moins une ville d\'attache pour le mode essaimage.');
-    return;
-  }
-  
-  // Validation : si mode model SANS sous-option (par défaut = bases + boucles)
-  if(mode === 'model' && !modelSubMode && !modelSeeds){
-    alert('Veuillez indiquer au moins une ville d\'attache (vos bases/hôtels).');
     return;
   }
 
@@ -3099,21 +2617,29 @@ cleaned = cleaned
   }
   ensureFirebase().then(fb=>{ fb.auth().onAuthStateChanged((user)=>{ setHeaderLabel(user); checkModelOptionVisibility(user); }); }).catch(()=>{ setHeaderLabel(null); checkModelOptionVisibility(null); });
 
-  // Fonction pour afficher/masquer l'option Model JSON
+  // Fonction pour afficher/masquer les options admin
   function checkModelOptionVisibility(user){
-    const optModelWrapper = document.getElementById('opt-model-wrapper');
-    if(!optModelWrapper) return;
+    const adminOptionsGrid = document.getElementById('adminOptionsGrid');
+    const userModeInfo = document.getElementById('userModeInfo');
+    const adminRTViewer = document.getElementById('adminRTViewer');
+    
+    console.log('[ORT] checkModelOptionVisibility called, user:', user ? user.email : 'null');
     
     if(user && user.email === 'marcsorci@free.fr'){
-      optModelWrapper.style.display = '';
+      console.log('[ORT] Admin detected - showing admin options');
+      // Activer le mode admin - afficher les 4 options
+      if(adminOptionsGrid) adminOptionsGrid.style.display = '';
+      if(userModeInfo) userModeInfo.style.display = 'none';
+      if(adminRTViewer) adminRTViewer.style.display = '';
+      // Activer le script de gestion des options
+      if(window.initAdminOptions) window.initAdminOptions();
+      // Initialiser le viewer RT
+      if(window.initAdminRTViewer) window.initAdminRTViewer();
     } else {
-      optModelWrapper.style.display = 'none';
-      // Si l'option était sélectionnée, revenir à "follow"
-      const optModel = document.getElementById('opt-model');
-      if(optModel && optModel.checked){
-        const optFollow = document.getElementById('opt-follow');
-        if(optFollow) optFollow.checked = true;
-      }
+      // Mode utilisateur normal
+      if(adminOptionsGrid) adminOptionsGrid.style.display = 'none';
+      if(userModeInfo) userModeInfo.style.display = '';
+      if(adminRTViewer) adminRTViewer.style.display = 'none';
     }
   }
 
@@ -3190,6 +2716,390 @@ cleaned = cleaned
     }catch(e){ showAlert('err', e?.message || 'Erreur d’authentification.'); }
   });
 })();
+
+// === ADMIN RT VIEWER - Navigation et export des itinéraires ===
+window.initAdminRTViewer = function() {
+  console.log('[ADMIN RT] Initializing RT Viewer...');
+  
+  let allItins = [];
+  let currentIndex = 0;
+  let sourceFileName = '';
+  
+  const fileInput = document.getElementById('adminRTFile');
+  const urlInput = document.getElementById('adminRTUrl');
+  const loadUrlBtn = document.getElementById('adminLoadUrl');
+  const statusDiv = document.getElementById('adminRTStatus');
+  const navCard = document.getElementById('adminRTNavCard');
+  const prevBtn = document.getElementById('adminPrevRT');
+  const nextBtn = document.getElementById('adminNextRT');
+  const counterDiv = document.getElementById('adminRTCounter');
+  const titleDiv = document.getElementById('adminRTTitle');
+  const metaDiv = document.getElementById('adminRTMeta');
+  const previewDiv = document.getElementById('adminRTPreview');
+  const exportPromptBtn = document.getElementById('adminExportPrompt');
+  const copyJSONBtn = document.getElementById('adminCopyJSON');
+  const openRTBtn = document.getElementById('adminOpenRT');
+  const promptCard = document.getElementById('adminPromptCard');
+  const promptOutput = document.getElementById('adminPromptOutput');
+  const copyPromptBtn = document.getElementById('adminCopyPrompt');
+  const closePromptBtn = document.getElementById('adminClosePrompt');
+  
+  function showStatus(msg, type) {
+    statusDiv.style.display = 'block';
+    statusDiv.textContent = msg;
+    statusDiv.style.background = type === 'ok' ? '#f0fdf4' : type === 'err' ? '#fef2f2' : '#fef3c7';
+    statusDiv.style.color = type === 'ok' ? '#166534' : type === 'err' ? '#dc2626' : '#92400e';
+    statusDiv.style.border = `1px solid ${type === 'ok' ? '#bbf7d0' : type === 'err' ? '#fecaca' : '#fde047'}`;
+  }
+  
+  function loadItins(data, filename) {
+    try {
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      
+      // Supporter différents formats de fichiers
+      if (parsed.itineraries && Array.isArray(parsed.itineraries)) {
+        allItins = parsed.itineraries;
+      } else if (parsed.itins && Array.isArray(parsed.itins)) {
+        allItins = parsed.itins;
+      } else if (parsed.modules && Array.isArray(parsed.modules)) {
+        allItins = parsed.modules;
+      } else if (Array.isArray(parsed)) {
+        allItins = parsed;
+      } else {
+        // Chercher la première clé qui contient un array
+        const keys = Object.keys(parsed);
+        for (const key of keys) {
+          if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
+            allItins = parsed[key];
+            console.log('[ADMIN RT] Found array in key:', key);
+            break;
+          }
+        }
+      }
+      
+      sourceFileName = filename;
+      currentIndex = 0;
+      
+      if (!allItins || allItins.length === 0) {
+        showStatus('❌ Aucun itinéraire trouvé. Structure: ' + Object.keys(parsed).join(', '), 'err');
+        navCard.style.display = 'none';
+        return;
+      }
+      
+      showStatus(`✅ ${allItins.length} itinéraire(s) chargé(s) depuis ${filename}`, 'ok');
+      navCard.style.display = '';
+      renderCurrent();
+    } catch (e) {
+      showStatus('❌ Erreur de parsing JSON: ' + e.message, 'err');
+      navCard.style.display = 'none';
+    }
+  }
+  
+  function renderCurrent() {
+    if (allItins.length === 0) return;
+    
+    const itin = allItins[currentIndex];
+    counterDiv.textContent = `${currentIndex + 1} / ${allItins.length}`;
+    titleDiv.textContent = itin.title || itin.name || itin.itin_id || itin.module_id || '(sans titre)';
+    
+    // Supporter days_plan (itins) ou steps (modules) ou places
+    const daysData = itin.days_plan || itin.steps || itin.places || [];
+    const days = daysData.length || 0;
+    const totalVisits = daysData.reduce((sum, d) => sum + (d.visits?.length || 0), 0) || 0;
+    const totalActs = daysData.reduce((sum, d) => sum + (d.activities?.length || 0), 0) || 0;
+    const id = itin.itin_id || itin.module_id || itin.id || '?';
+    metaDiv.textContent = `${id} • ${days} jour(s)/étape(s) • ${totalVisits} visites • ${totalActs} activités`;
+    
+    // Aperçu des jours/étapes
+    let previewHTML = '';
+    if (daysData.length > 0) {
+      daysData.forEach((day, i) => {
+        const nightPlace = day.night?.place_id || day.place_id || day.name || '?';
+        const visitsCount = day.visits?.length || 0;
+        const actsCount = day.activities?.length || 0;
+        const dayNum = day.day || (i + 1);
+        const sugDays = day.suggested_days || day.nights || '?';
+        
+        previewHTML += `<div style="margin-bottom:8px;padding:8px;background:#fff;border-radius:6px;border-left:3px solid #113f7a">
+          <strong>Jour/Étape ${dayNum}</strong> — ${nightPlace} (${sugDays}j)
+          <div style="font-size:12px;color:#64748b;margin-top:4px">
+            ${visitsCount} visite(s): ${(day.visits || []).slice(0,2).map(v => (v.text || v.name || '').slice(0,50) + '...').join(' | ') || '—'}
+          </div>
+          <div style="font-size:12px;color:#64748b">
+            ${actsCount} activité(s): ${(day.activities || []).slice(0,2).map(a => (a.text || a.name || '').slice(0,50) + '...').join(' | ') || '—'}
+          </div>
+        </div>`;
+      });
+    } else {
+      previewHTML = '<em style="color:#94a3b8">Pas de days_plan/steps</em>';
+    }
+    previewDiv.innerHTML = previewHTML;
+    
+    // Activer/désactiver les boutons
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex >= allItins.length - 1;
+  }
+  
+  // Event listeners
+  fileInput?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => loadItins(ev.target.result, file.name);
+    reader.onerror = () => showStatus('Erreur de lecture du fichier', 'err');
+    reader.readAsText(file);
+  });
+  
+  loadUrlBtn?.addEventListener('click', async () => {
+    const url = urlInput.value.trim();
+    if (!url) { showStatus('Entrez une URL', 'warn'); return; }
+    showStatus('Chargement...', 'warn');
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      loadItins(data, url.split('/').pop());
+    } catch (e) {
+      showStatus('❌ Erreur: ' + e.message, 'err');
+    }
+  });
+  
+  prevBtn?.addEventListener('click', () => {
+    if (currentIndex > 0) { currentIndex--; renderCurrent(); }
+  });
+  
+  nextBtn?.addEventListener('click', () => {
+    if (currentIndex < allItins.length - 1) { currentIndex++; renderCurrent(); }
+  });
+  
+  copyJSONBtn?.addEventListener('click', () => {
+    if (allItins.length === 0) return;
+    const json = JSON.stringify({ itins: [allItins[currentIndex]] }, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+      copyJSONBtn.textContent = '✅ Copié !';
+      setTimeout(() => copyJSONBtn.textContent = '📋 Copier JSON brut', 1500);
+    });
+  });
+  
+  openRTBtn?.addEventListener('click', () => {
+    if (allItins.length === 0) return;
+    const itin = allItins[currentIndex];
+    const cc = itin.itin_id?.split('::')[0] || 'XX';
+    const itinId = itin.itin_id || '';
+    window.open(`./roadtrip_detail.html?cc=${cc}&itin=${encodeURIComponent(itinId)}`, '_blank');
+  });
+  
+  exportPromptBtn?.addEventListener('click', () => {
+    if (allItins.length === 0) return;
+    const itin = allItins[currentIndex];
+    
+    const prompt = generateRewritePrompt(itin);
+    promptOutput.value = prompt;
+    promptCard.style.display = '';
+  });
+  
+  copyPromptBtn?.addEventListener('click', () => {
+    navigator.clipboard.writeText(promptOutput.value).then(() => {
+      copyPromptBtn.textContent = '✅ Copié !';
+      setTimeout(() => copyPromptBtn.textContent = '📋 Copier le prompt', 1500);
+    });
+  });
+  
+  closePromptBtn?.addEventListener('click', () => {
+    promptCard.style.display = 'none';
+  });
+  
+  // === Gestion suppression autres langues ===
+  const deleteOtherLangsCheckbox = document.getElementById('adminDeleteOtherLangs');
+  const deleteLangsBtn = document.getElementById('adminDeleteLangsBtn');
+  const deleteStatus = document.getElementById('adminDeleteStatus');
+  
+  deleteOtherLangsCheckbox?.addEventListener('change', () => {
+    if (deleteLangsBtn) {
+      deleteLangsBtn.style.display = deleteOtherLangsCheckbox.checked ? '' : 'none';
+    }
+  });
+  
+  deleteLangsBtn?.addEventListener('click', async () => {
+    if (allItins.length === 0) {
+      showDeleteStatus('❌ Aucun itinéraire chargé', 'err');
+      return;
+    }
+    
+    const itin = allItins[currentIndex];
+    const itinId = itin.itin_id || itin.id;
+    const cc = itinId?.split('::')[0] || itin.country || 'XX';
+    
+    if (!itinId) {
+      showDeleteStatus('❌ Pas d\'itin_id trouvé', 'err');
+      return;
+    }
+    
+    const confirmMsg = `Supprimer les versions EN, ES, IT, PT, AR de:\n\n"${itin.title}"\n(${itinId})\n\nLa version FR sera conservée.`;
+    if (!confirm(confirmMsg)) return;
+    
+    deleteLangsBtn.disabled = true;
+    deleteLangsBtn.textContent = '⏳ Suppression...';
+    showDeleteStatus('⏳ Suppression en cours...', 'warn');
+    
+    try {
+      const resp = await fetch('http://localhost:8030/api/delete-itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          country: cc.toUpperCase(), 
+          itinId: itinId,
+          languages: ['en', 'es', 'it', 'pt', 'ar'],
+          confirmedBy: 'marcsorci@free.fr'
+        })
+      });
+      
+      const result = await resp.json();
+      
+      if (result.success) {
+        showDeleteStatus(`✅ Supprimé de: ${result.deletedFrom || 'fichiers autres langues'}`, 'ok');
+      } else {
+        showDeleteStatus(`❌ Erreur: ${result.error || 'Échec'}`, 'err');
+      }
+    } catch(err) {
+      showDeleteStatus(`❌ Serveur non accessible (localhost:8030): ${err.message}`, 'err');
+    } finally {
+      deleteLangsBtn.disabled = false;
+      deleteLangsBtn.textContent = '🗑️ Supprimer maintenant les autres langues';
+    }
+  });
+  
+  function showDeleteStatus(msg, type) {
+    if (!deleteStatus) return;
+    deleteStatus.style.display = 'block';
+    deleteStatus.textContent = msg;
+    deleteStatus.style.background = type === 'ok' ? '#f0fdf4' : type === 'err' ? '#fef2f2' : '#fef3c7';
+    deleteStatus.style.color = type === 'ok' ? '#166534' : type === 'err' ? '#dc2626' : '#92400e';
+    deleteStatus.style.border = `1px solid ${type === 'ok' ? '#bbf7d0' : type === 'err' ? '#fecaca' : '#fde047'}`;
+  }
+  
+  function generateRewritePrompt(itin) {
+    const hasPC = !!itin.practical_context;
+    const hasSeo = !!itin.seo;
+    
+    return `Tu es un expert en création d'itinéraires de voyage. Je vais te fournir un JSON existant et des articles/sources pour améliorer le contenu.
+
+🎯 OBJECTIF : Réécrire ET enrichir cet itinéraire au format professionnel.
+
+📋 JSON À AMÉLIORER :
+\`\`\`json
+${JSON.stringify({ itins: [itin] }, null, 2)}
+\`\`\`
+
+═══════════════════════════════════════════════════════════
+✅ À CONSERVER TEL QUEL
+═══════════════════════════════════════════════════════════
+- itin_id: "${itin.itin_id}"
+- Tous les coords et place_id
+- La structure days_plan (mêmes jours, même ordre)
+- to_next_leg.distance_km et to_next_leg.drive_min
+
+═══════════════════════════════════════════════════════════
+✍️ À RÉÉCRIRE / AMÉLIORER
+═══════════════════════════════════════════════════════════
+
+1️⃣ MÉTADONNÉES :
+- title: "${itin.title}" → Améliorer si nécessaire (< 60 car.)
+- subtitle: ${itin.subtitle ? `"${itin.subtitle}"` : '❌ MANQUANT → Ajouter (1 ligne accrocheuse)'} 
+- source_url: Mettre l'URL de tes articles sources
+
+2️⃣ CONTEXTE PRATIQUE ${hasPC ? '(existe, améliorer si besoin)' : '❌ MANQUANT → CRÉER'} :
+\`\`\`json
+"practical_context": {
+  "best_months": ["mois1", "mois2", ...],
+  "vehicle_type": "Type de véhicule recommandé",
+  "group_type": "Public cible (couple, famille...)",
+  "loop_type": "Boucle Ville ↔ Ville",
+  "total_km": XXXX,
+  "daily_average_km": XXX,
+  "highlights": [
+    "Point fort 1 (lieu emblématique)",
+    "Point fort 2 (expérience unique)",
+    "Point fort 3...",
+    "Point fort 4..."
+  ]
+}
+\`\`\`
+
+3️⃣ SEO ${hasSeo ? '(existe, vérifier)' : '❌ MANQUANT → CRÉER'} :
+\`\`\`json
+"seo": {
+  "h1_title": "Titre SEO optimisé",
+  "intro_paragraph": "2-3 phrases d'intro engageantes",
+  "seo_hook": "1 phrase d'accroche percutante",
+  "featured_list": ["Lieu : tagline", ...],
+  "places_taglines": { "CC::place-id": "tagline courte" }
+}
+\`\`\`
+
+4️⃣ VISITS (5-8 par jour) :
+- Textes de 2-3 phrases, style immersif et sensoriel
+- Varier : descriptif ("Le temple déploie..."), impératif ("Découvrez..."), narratif ("Les moines tissent...")
+
+5️⃣ ACTIVITIES (3-6 par jour) :
+- Textes de 2-3 phrases
+- AJOUTER practical_info sur les activités importantes :
+
+\`\`\`json
+// Exemple camping
+"practical_info": {
+  "camp_type": "NWR / Privé",
+  "facilities": "Sanitaires, piscine...",
+  "booking": "Site ou conseil réservation"
+}
+
+// Exemple randonnée
+"practical_info": {
+  "distance": "10 km",
+  "duration": "~4h",
+  "difficulty": "Modéré",
+  "water": "Emporter 2L minimum"
+}
+
+// Exemple safari
+"practical_info": {
+  "type": "Self-drive / Guidé",
+  "best_time": "Lever du soleil",
+  "wildlife": "Lions, éléphants..."
+}
+\`\`\`
+
+6️⃣ TO_NEXT_LEG :
+- Ajouter "road_type": "Goudron" / "Gravel" / "Piste" / "Goudron puis gravel"
+
+═══════════════════════════════════════════════════════════
+🚫 NEUTRALISATION
+═══════════════════════════════════════════════════════════
+- Pas de noms de commerces → "Les loueurs proposent..."
+- Pas de personnes nommées
+- Pas de prix
+- Pas de dates récentes
+- "à moto" → "par la route"
+
+═══════════════════════════════════════════════════════════
+📄 ARTICLES/SOURCES POUR ENRICHISSEMENT
+═══════════════════════════════════════════════════════════
+[COLLE ICI TES ARTICLES - le contenu servira à enrichir visits, activities et practical_info]
+
+═══════════════════════════════════════════════════════════
+🎯 RÉSULTAT ATTENDU
+═══════════════════════════════════════════════════════════
+Produis UNIQUEMENT le JSON valide { "itins": [...] }, sans texte autour, sans balises Markdown.
+Le JSON doit pouvoir remplacer directement l'ancien dans ${sourceFileName || 'le fichier source'}.`;
+  }
+  
+  console.log('[ADMIN RT] ✅ RT Viewer initialized');
+};
+
+// Auto-init si admin déjà détecté
+if (document.getElementById('adminRTViewer')?.style.display !== 'none') {
+  window.initAdminRTViewer?.();
+}
 </script>
 </body>
 </html>

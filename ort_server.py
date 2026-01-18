@@ -177,8 +177,12 @@ class ORTRequestHandler(http.server.SimpleHTTPRequestHandler):
                     if existing_id == itin_id:
                         # Fusionner : garder les champs existants, mettre à jour avec les nouveaux
                         merged = {**itin}
-                        # Mettre à jour les champs fournis
-                        for key in ['title', 'estimated_days_base', 'days_plan', 'pacing_rules']:
+                        # Mettre à jour TOUS les champs fournis (y compris seo, meta, etc.)
+                        for key in ['title', 'estimated_days_base', 'days_plan', 'pacing_rules',
+                                    'seo', 'meta', 'segments', 'variants', 'regions',
+                                    'nearby_itins', 'merge_suggestions', 'notes', 'specialties',
+                                    'dept_code', 'dept_name', 'source_url', 'created_at',
+                                    'subtitle', 'seo_keywords', 'practical_context']:
                             if key in itinerary:
                                 merged[key] = itinerary[key]
                         itins[i] = merged
@@ -261,6 +265,7 @@ class ORTRequestHandler(http.server.SimpleHTTPRequestHandler):
             itin_id = data.get('itinId') or data.get('itin_id')
             country_code = data.get('country', '').upper()
             all_languages = data.get('allLanguages', False)
+            specific_languages = data.get('languages', None)  # Liste explicite: ['en', 'es', ...]
             
             if not itin_id:
                 self.send_json_response(400, {'success': False, 'error': 'Missing itinId'})
@@ -290,8 +295,14 @@ class ORTRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json_response(404, {'success': False, 'error': f'Dossier pays non trouvé: {country_code}'})
                 return
             
-            # Liste des langues à traiter
-            languages = ['fr', 'en', 'es', 'it', 'pt', 'ar'] if all_languages else ['fr']
+            # Liste des langues à traiter (priorité: languages > allLanguages > défaut fr)
+            if specific_languages and isinstance(specific_languages, list):
+                languages = [lang.lower() for lang in specific_languages]
+                print(f"[DELETE] Langues spécifiques: {languages}")
+            elif all_languages:
+                languages = ['fr', 'en', 'es', 'it', 'pt', 'ar']
+            else:
+                languages = ['fr']
             deleted_from = []
             errors = []
             

@@ -191,11 +191,19 @@
         20%, 40%, 60%, 80% { transform: translateX(5px); }
       }
       
-      /* Cacher le contenu derrière */
-      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay):not(#ortAuthModal):not(#emailModal):not(#coherenceAlert):not([id*="Modal"]):not([id*="modal"]) {
+      /* Cacher le contenu derrière - SAUF bannières cookies */
+      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay):not(#ortAuthModal):not(#emailModal):not(#coherenceAlert):not([id*="Modal"]):not([id*="modal"]):not(#ortCookieBanner):not(#ortCookieModal):not([id*="cookie"]):not([id*="Cookie"]):not([id*="consent"]):not([id*="Consent"]) {
         filter: blur(5px);
         pointer-events: none;
         user-select: none;
+      }
+      
+      /* S'assurer que les bannières cookies ORT sont au-dessus et cliquables */
+      #ortCookieBanner, #ortCookieModal {
+        z-index: 100000 !important;
+        filter: none !important;
+        pointer-events: auto !important;
+        user-select: auto !important;
       }
       
       /* Empêcher le scroll */

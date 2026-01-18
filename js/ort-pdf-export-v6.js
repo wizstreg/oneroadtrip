@@ -3,6 +3,8 @@
  * 
  * Remplace l'ancien ort-pdf-export-v5.js
  * Ouvre l'éditeur de carnet au lieu de générer un PDF directement
+ * 
+ * v6.2 - Ajout support format enrichi (practical_context, practical_info, road_type)
  */
 
 (function(window) {
@@ -20,6 +22,55 @@
       console.error('[CARNET] Pas de données de voyage');
       alert('Aucune donnée de voyage à éditer');
       return;
+    }
+    
+    // === DEBUG: Lister les sources potentielles de practical_context ===
+    console.log('[CARNET] 🔍 Recherche practical_context...');
+    console.log('[CARNET] - state.practical_context:', state.practical_context);
+    console.log('[CARNET] - window.CURRENT_ITIN?.practical_context:', window.CURRENT_ITIN?.practical_context);
+    console.log('[CARNET] - window.ITIN_DATA?.practical_context:', window.ITIN_DATA?.practical_context);
+    console.log('[CARNET] - window.currentItinerary?.practical_context:', window.currentItinerary?.practical_context);
+    console.log('[CARNET] - window._currentItin?.practical_context:', window._currentItin?.practical_context);
+    console.log('[CARNET] - window.itinData?.practical_context:', window.itinData?.practical_context);
+    
+    // Vérifier ORT_STATE
+    if (window.ORT_STATE?.getState) {
+      const ortState = window.ORT_STATE.getState();
+      console.log('[CARNET] - ORT_STATE.getState()?.practical_context:', ortState?.practical_context);
+      console.log('[CARNET] - ORT_STATE.getState()?.itin?.practical_context:', ortState?.itin?.practical_context);
+    }
+    
+    // Vérifier si practical_context est dans l'itinéraire original
+    if (window.ORT_STATE?.getItinerary) {
+      const itin = window.ORT_STATE.getItinerary();
+      console.log('[CARNET] - ORT_STATE.getItinerary()?.practical_context:', itin?.practical_context);
+    }
+    
+    // === PRÉ-ENRICHIR STATE AVEC PRACTICAL_CONTEXT SI ABSENT ===
+    if (!state.practical_context) {
+      // Essayer de récupérer depuis les sources globales
+      const sources = [
+        { name: 'CURRENT_ITIN', obj: window.CURRENT_ITIN },
+        { name: 'ITIN_DATA', obj: window.ITIN_DATA },
+        { name: 'currentItinerary', obj: window.currentItinerary },
+        { name: '_currentItin', obj: window._currentItin },
+        { name: 'itinData', obj: window.itinData },
+        { name: 'ORT_STATE.getState()', obj: window.ORT_STATE?.getState?.() },
+        { name: 'ORT_STATE.getState().itin', obj: window.ORT_STATE?.getState?.()?.itin },
+        { name: 'ORT_STATE.getItinerary()', obj: window.ORT_STATE?.getItinerary?.() },
+      ];
+      
+      for (const { name, obj } of sources) {
+        if (obj?.practical_context) {
+          state.practical_context = obj.practical_context;
+          console.log(`[CARNET] ✅ practical_context injecté depuis ${name}`);
+          break;
+        }
+      }
+      
+      if (!state.practical_context) {
+        console.log('[CARNET] ⚠️ practical_context non trouvé dans aucune source globale');
+      }
     }
     
     // Enrichir les données avec les photos du cache
@@ -48,9 +99,58 @@
   
   /**
    * Enrichit le state avec les photos depuis toutes les sources
+   * + Préserve les champs enrichis (practical_context, practical_info, road_type)
    */
   function enrichStateWithPhotos(state) {
     const enriched = JSON.parse(JSON.stringify(state));
+    
+    // === RÉCUPÉRER PRACTICAL_CONTEXT DEPUIS TOUTES LES SOURCES POSSIBLES ===
+    let practicalContext = state.practical_context || null;
+    
+    // Source 1: Déjà dans state
+    if (!practicalContext && enriched.practical_context) {
+      practicalContext = enriched.practical_context;
+    }
+    
+    // Source 2: Variable globale CURRENT_ITIN (roadtrip_detail.html)
+    if (!practicalContext && window.CURRENT_ITIN?.practical_context) {
+      practicalContext = window.CURRENT_ITIN.practical_context;
+      console.log('[CARNET] practical_context récupéré depuis CURRENT_ITIN');
+    }
+    
+    // Source 3: ORT_STATE_MANAGER
+    if (!practicalContext && window.ORT_STATE?.getState) {
+      const ortState = window.ORT_STATE.getState();
+      if (ortState?.practical_context) {
+        practicalContext = ortState.practical_context;
+        console.log('[CARNET] practical_context récupéré depuis ORT_STATE');
+      }
+    }
+    
+    // Source 4: Données itinéraire dans window
+    if (!practicalContext && window.ITIN_DATA?.practical_context) {
+      practicalContext = window.ITIN_DATA.practical_context;
+      console.log('[CARNET] practical_context récupéré depuis ITIN_DATA');
+    }
+    
+    // Source 5: ORT_TRIP_DATA
+    if (!practicalContext && window.ORT_TRIP_DATA?.getPracticalContext) {
+      practicalContext = window.ORT_TRIP_DATA.getPracticalContext();
+      console.log('[CARNET] practical_context récupéré depuis ORT_TRIP_DATA');
+    }
+    
+    // Stocker si trouvé
+    if (practicalContext) {
+      enriched.practical_context = practicalContext;
+      console.log('[CARNET] ✅ practical_context trouvé:', {
+        best_months: practicalContext.best_months?.length || 0,
+        highlights: practicalContext.highlights?.length || 0,
+        best_months_values: practicalContext.best_months || [],
+        highlights_values: (practicalContext.highlights || []).slice(0, 2)
+      });
+    } else {
+      console.log('[CARNET] ⚠️ practical_context non trouvé dans aucune source');
+    }
     
     // Calculer la date de départ si disponible
     const startDateStr = enriched.startDateStr || '';
@@ -121,14 +221,43 @@
       if (step.to_next_leg) {
         step.distanceKm = step.to_next_leg.distance_km || 0;
         step.driveMin = step.to_next_leg.drive_min || 0;
+        // === PRÉSERVER ROAD_TYPE ===
+        if (step.to_next_leg.road_type) {
+          step.roadType = step.to_next_leg.road_type;
+        }
       } else if (step._distanceKmToNext !== undefined || step._driveMinToNext !== undefined) {
         // Format alternatif utilisé dans roadtrip_detail.html
         step.distanceKm = step._distanceKmToNext || 0;
         step.driveMin = step._driveMinToNext || 0;
+        if (step._roadTypeToNext) {
+          step.roadType = step._roadTypeToNext;
+        }
       } else if (step.distanceToNext !== undefined) {
         // Autre format possible
         step.distanceKm = step.distanceToNext || 0;
         step.driveMin = step.driveMinToNext || Math.round((step.distanceToNext || 0) * 1.2);
+      }
+      
+      // === PRÉSERVER PRACTICAL_INFO SUR LES ACTIVITÉS ===
+      if (step.activities && Array.isArray(step.activities)) {
+        step.activities = step.activities.map(act => {
+          // Si c'est un objet avec practical_info, le préserver
+          if (typeof act === 'object' && act !== null) {
+            return act; // Déjà un objet, préserver tel quel
+          }
+          // Si c'est une string, la convertir en objet
+          return { text: act };
+        });
+      }
+      
+      // === PRÉSERVER PRACTICAL_INFO SUR LES VISITS ===
+      if (step.visits && Array.isArray(step.visits)) {
+        step.visits = step.visits.map(visit => {
+          if (typeof visit === 'object' && visit !== null) {
+            return visit;
+          }
+          return { text: visit };
+        });
       }
       
       // Calculer les dates de l'étape
@@ -150,7 +279,10 @@
         nightsOffset += nights;
       }
       
-      console.log(`[CARNET] Étape ${idx} (${step.name}): ${step.photos.length} photos, ${step.distanceKm || 0}km, date: ${step.arrivalDate || 'N/A'}`);
+      // Debug avec les nouveaux champs
+      const hasRoadType = step.roadType ? ` [${step.roadType}]` : '';
+      const activitiesWithInfo = (step.activities || []).filter(a => a?.practical_info).length;
+      console.log(`[CARNET] Étape ${idx} (${step.name}): ${step.photos.length} photos, ${step.distanceKm || 0}km${hasRoadType}, ${activitiesWithInfo} activités avec infos pratiques`);
     });
     
     // Hero image
@@ -266,12 +398,12 @@
     export: openEditor,
     exportPDF: openEditor,
     openEditor: openEditor,
-    VERSION: '6.1 (Editor + Dashboard TripId)'
+    VERSION: '6.2 (Editor + Format Enrichi)'
   };
   
   // Alias pour compatibilité
   window.ORT_CARNET = window.ORT_PDF;
   
-  console.log('[CARNET] ✅ Module Carnet v6.1 chargé');
+  console.log('[CARNET] ✅ Module Carnet v6.2 chargé (support format enrichi)');
   
 })(window);

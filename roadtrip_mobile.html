@@ -226,6 +226,80 @@ html, body {
   text-transform: uppercase;
 }
 
+/* === PRACTICAL CONTEXT (format enrichi) === */
+.practical-context-card {
+  display: none;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #7dd3fc;
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+.practical-context-card.show { display: block; }
+.pc-best-months {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #0c4a6e;
+  margin-bottom: 8px;
+}
+.pc-best-months .pc-icon { font-size: 16px; }
+.pc-best-months .pc-value { font-weight: 600; }
+.pc-highlights-mobile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pc-highlight-tag {
+  background: #fff;
+  border: 1px solid #7dd3fc;
+  border-radius: 16px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: #0c4a6e;
+}
+
+/* === PRACTICAL INFO (sous activités) === */
+.practical-info-mobile {
+  background: #f1f5f9;
+  border-left: 3px solid #0ea5e9;
+  border-radius: 0 8px 8px 0;
+  padding: 8px 10px;
+  margin: 6px 0 0 0;
+  font-size: 12px;
+}
+.practical-info-mobile .pi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+.practical-info-mobile .pi-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #475569;
+}
+.practical-info-mobile .pi-value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* === ROAD TYPE (badge) === */
+.road-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.road-type-badge.paved { background: #dcfce7; color: #166534; }
+.road-type-badge.gravel { background: #fef3c7; color: #92400e; }
+.road-type-badge.track { background: #fee2e2; color: #991b1b; }
+.road-type-badge.mixed { background: #f3e8ff; color: #6b21a8; }
+
 /* Bookings styles */
 #bookingsContainer {
   padding: 12px;
@@ -726,6 +800,39 @@ html, body {
 /* Sub-panel Google Maps */
 #subPanelMap {
   padding: 0;
+}
+
+.gmap-filters {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--ort-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.gmap-filter-btn {
+  padding: 8px 14px;
+  border: 2px solid var(--ort-border);
+  border-radius: 20px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.gmap-filter-btn.active {
+  background: var(--ort-blue);
+  border-color: var(--ort-blue);
+  color: #fff;
+}
+
+.gmap-filter-btn:not(.active):active {
+  background: #f1f5f9;
 }
 
 .gmap-iframe-wrapper {
@@ -1628,6 +1735,10 @@ html, body {
         <div class="label">Km</div>
       </div>
     </div>
+    
+    <!-- Practical Context (format enrichi) -->
+    <div class="practical-context-card" id="practicalContextMobile"></div>
+    
     <div id="stepsList"></div>
   </div>
   
@@ -1676,6 +1787,14 @@ html, body {
             <div class="viz-step-nights"></div>
           </div>
           <button class="viz-nav-btn viz-nav-next">›</button>
+        </div>
+        <div class="gmap-filters">
+          <button class="gmap-filter-btn active" data-filter="">📍 Lieu</button>
+          <button class="gmap-filter-btn" data-filter="restaurants">🍽️ Restos</button>
+          <button class="gmap-filter-btn" data-filter="monuments">🏛️ Monuments</button>
+          <button class="gmap-filter-btn" data-filter="museums">🎨 Musées</button>
+          <button class="gmap-filter-btn" data-filter="hotels">🏨 Hôtels</button>
+          <button class="gmap-filter-btn" data-filter="supermarket">🛒 Courses</button>
         </div>
         <div class="gmap-iframe-wrapper" id="gmapWrapper">
           <div class="gmap-placeholder">
@@ -3168,6 +3287,7 @@ async function init() {
     renderBookings();
     debugLog('Appel updateSummary...');
     updateSummary();
+    renderPracticalContextMobile();
     debugLog('Appel initMap...');
     initMap();
     debugLog('✅ RENDU TERMINÉ - ' + state.title);
@@ -3290,6 +3410,9 @@ async function loadFromTemp(rtKey) {
   
   if (!toUse) throw new Error('Structure itinéraire invalide');
   
+  // Stocker practical_context si présent
+  state._originalPracticalContext = toUse.practical_context || null;
+  
   // Extraire les étapes
   const rawSteps = toUse.days_plan || toUse.places || toUse.steps || [];
   state.title = toUse.title || toUse.name || 'Roadtrip';
@@ -3330,6 +3453,7 @@ async function loadFromTemp(rtKey) {
       description: s.description || s.desc || '',
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      _roadType: s.to_next_leg?.road_type || null,
       placeId: s.placeId || s.place_id || null,
       place_id: s.place_id || s.placeId || null,
       visits: visits,
@@ -3592,6 +3716,7 @@ async function applyTripDataToState(tripData) {
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || s._distanceKmToNext || 0,
       drive_min: s.drive_min || s.to_next_leg?.drive_min || s._driveMinToNext || 0,
+      _roadType: s._roadType || s.to_next_leg?.road_type || null,
       placeId: s.placeId || s.place_id || null,
       visits: s.visits || s.pois || [],
       activities: s.activities || [],
@@ -4716,6 +4841,51 @@ function updateSummary() {
   $('statKm').textContent = Math.round(km);
 }
 
+// === PRACTICAL CONTEXT (format enrichi) ===
+function renderPracticalContextMobile() {
+  const box = document.getElementById('practicalContextMobile');
+  if (!box) return;
+  
+  const pc = state._originalPracticalContext;
+  if (!pc) {
+    box.classList.remove('show');
+    return;
+  }
+  
+  // Ne rien afficher si aucune info pertinente
+  const hasBestMonths = pc.best_months && pc.best_months.length;
+  const hasHighlights = pc.highlights && pc.highlights.length;
+  if (!hasBestMonths && !hasHighlights) {
+    box.classList.remove('show');
+    return;
+  }
+  
+  // Utiliser le système I18N centralisé
+  const t = (key) => {
+    const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
+    return window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+  };
+  
+  let html = '';
+  
+  // Best months
+  if (hasBestMonths) {
+    const months = Array.isArray(pc.best_months) ? pc.best_months.join(', ') : pc.best_months;
+    html += `<div class="pc-best-months"><span class="pc-icon">📅</span><span>${t('bestPeriod')}:</span><span class="pc-value">${months}</span></div>`;
+  }
+  
+  // Highlights
+  if (hasHighlights) {
+    html += `<div class="pc-highlights-mobile">
+      ${pc.highlights.map(h => `<span class="pc-highlight-tag">• ${h}</span>`).join('')}
+    </div>`;
+  }
+  
+  box.innerHTML = html;
+  box.classList.add('show');
+  console.log('[MOBILE][PRACTICAL_CONTEXT] ✅ Affiché');
+}
+
 // === MAP ===
 function initMap() {
   if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
@@ -5819,6 +5989,9 @@ window.nativeShare = nativeShare;
   // Index de l'étape courante PARTAGÉ entre les 3 sous-onglets
   let vizCurrentStep = 0;
   
+  // Filtre POI actuel pour Google Maps
+  let currentMapFilter = '';
+  
   // Gestion des sous-onglets
   document.querySelectorAll('.sub-tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -5856,6 +6029,20 @@ window.nativeShare = nativeShare;
         vizCurrentStep++;
         renderCurrentStep();
       }
+    });
+  });
+  
+  // Gestion des filtres POI Google Maps
+  document.querySelectorAll('.gmap-filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      // Désactiver tous les boutons
+      document.querySelectorAll('.gmap-filter-btn').forEach(b => b.classList.remove('active'));
+      // Activer celui cliqué
+      this.classList.add('active');
+      // Mettre à jour le filtre
+      currentMapFilter = this.dataset.filter || '';
+      // Recharger la carte
+      renderGoogleMap();
     });
   });
   
@@ -5987,10 +6174,29 @@ window.nativeShare = nativeShare;
       activities.forEach((a, i) => {
         const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
         const title = typeof a === 'object' && a.title ? a.title : null;
+        const pi = typeof a === 'object' && a.practical_info ? a.practical_info : null;
+        
+        // Rendu practical_info si présent
+        let piHtml = '';
+        if (pi && typeof pi === 'object') {
+          const piEntries = Object.entries(pi).filter(([k,v]) => v && v !== '');
+          if (piEntries.length > 0) {
+            const icons = { distance: '📏', duration: '⏱️', difficulty: '💪', water: '💧', camp_type: '⛺', facilities: '🚿', booking: '📅', type: '🎯', best_time: '🌅', wildlife: '🦁' };
+            const piItems = piEntries.map(([k, v]) => {
+              const icon = icons[k] || 'ℹ️';
+              return `<span class="pi-item"><span>${icon}</span><span class="pi-value">${v}</span></span>`;
+            }).join('');
+            piHtml = `<div class="practical-info-mobile"><div class="pi-row">${piItems}</div></div>`;
+          }
+        }
+        
         html += `
           <div class="viz-item">
             ${title ? '<div class="viz-item-title">' + title + '</div>' : ''}
             <div class="viz-item-desc">${text}</div>
+            ${piHtml}
+          </div>
+        `;
           </div>
         `;
       });
@@ -6032,10 +6238,18 @@ window.nativeShare = nativeShare;
     const name = encodeURIComponent(step.name || 'Lieu');
     
     let mapUrl = '';
-    if (lat && lng) {
-      mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
-    } else if (step.name) {
-      mapUrl = `https://maps.google.com/maps?q=${name}&output=embed`;
+    
+    if (currentMapFilter) {
+      // Recherche par catégorie de POI près du lieu
+      const searchQuery = encodeURIComponent(`${currentMapFilter} near ${step.name || ''}`);
+      mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
+    } else {
+      // Affichage du lieu simple
+      if (lat && lng) {
+        mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&z=14&output=embed`;
+      } else if (step.name) {
+        mapUrl = `https://maps.google.com/maps?q=${name}&output=embed`;
+      }
     }
     
     if (mapUrl) {
@@ -6049,7 +6263,7 @@ window.nativeShare = nativeShare;
       `;
     }
     
-    console.log('[VIZ] Google Map rendu pour étape', vizCurrentStep + 1);
+    console.log('[VIZ] Google Map rendu pour étape', vizCurrentStep + 1, 'filtre:', currentMapFilter || 'aucun');
   }
   
   // Rendre Stay22

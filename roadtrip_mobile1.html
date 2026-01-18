@@ -1,0 +1,5128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>OneRoadTrip</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-JK3QGQGDDL');
+</script>
+<!-- 🔴 CHECK CATALOGUE: redirection immédiate si c'est un catalogue -->
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const tripId = qs.get('tripId') || qs.get('id');
+  const cc = qs.get('cc');
+  const itin = qs.get('itin');
+  const from = qs.get('from');
+  
+  // Cas 1: tripId explicitement catalog:: ou custom::
+  if (tripId && (tripId.startsWith('catalog::') || tripId.startsWith('custom::'))) {
+    const sourceType = tripId.startsWith('catalog::') ? 'Catalogue' : 'Custom (Carte/Import)';
+    console.log(`[INIT-EARLY] 📚 ${sourceType} détecté (tripId), génération NEW tripId`);
+    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    sessionStorage.setItem('ort_catalog_source', tripId);
+    console.log('[INIT-EARLY] ✅ Source sauvegardée:', tripId);
+    
+    // Remplacer tripId mais conserver tous les autres paramètres
+    qs.set('tripId', newTripId);
+    const newUrl = `${location.pathname}?${qs.toString()}`;
+    console.log('[INIT-EARLY] Redirect vers:', newUrl);
+    window.location.href = newUrl;
+    return;
+  }
+  
+  // Cas 2: cc + itin (accès catalogue via paramètres séparés) - inclut COMPOSED::
+  if (cc && itin && !tripId) {
+    console.log('[INIT-EARLY] 📚 Catalogue détecté (cc+itin), génération NEW tripId');
+    const catalogId = `catalog::${cc.toUpperCase()}::${itin}`;
+    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    sessionStorage.setItem('ort_catalog_source', catalogId);
+    console.log('[INIT-EARLY] ✅ Source catalogue sauvegardée:', catalogId);
+    
+    // Ajouter tripId mais conserver tous les autres paramètres (cc, itin, days, depart, mode, etc.)
+    qs.set('tripId', newTripId);
+    const newUrl = `${location.pathname}?${qs.toString()}`;
+    console.log('[INIT-EARLY] Redirect vers:', newUrl);
+    window.location.href = newUrl;
+    return;
+  }
+  
+  // Cas 3: from=builder ou from=temp sans tripId valide (Route Builder, Carte Builder, Import IA)
+  if ((from === 'builder' || from === 'temp') && (!tripId || !tripId.startsWith('trip_'))) {
+    const sourceType = from === 'builder' ? 'Route Builder' : 'Carte/Import';
+    console.log(`[INIT-EARLY] 🛠️ ${sourceType} détecté sans tripId, génération NEW tripId`);
+    const newTripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Sauvegarder la source si rtKey existe
+    const rtKey = qs.get('rtKey');
+    if (rtKey) {
+      sessionStorage.setItem('ort_catalog_source', `custom::${rtKey}`);
+      console.log('[INIT-EARLY] ✅ Source custom sauvegardée:', `custom::${rtKey}`);
+    }
+    
+    qs.set('tripId', newTripId);
+    const newUrl = `${location.pathname}?${qs.toString()}`;
+    console.log('[INIT-EARLY] Redirect vers:', newUrl);
+    window.location.href = newUrl;
+    return;
+  }
+})();
+</script>
+<!-- Clean redirect marker on mobile arrival -->
+<script>
+(function(){
+  // Clear all redirect markers when arriving on mobile (successful redirect)
+  for (let i = 0; i < 24; i++) {
+    localStorage.removeItem('ort_redirect_in_progress_' + i);
+  }
+  console.log('[ORT-MOBILE] Redirect markers cleaned');
+})();
+</script>
+<style>
+:root {
+  --ort-blue: #113f7a;
+  --ort-green: #c3d6b6;
+  --ort-light: #f8fafc;
+  --ort-border: #e2e8f0;
+  --tab-height: 56px;
+  --header-height: 56px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { 
+  height: 100%; 
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--ort-light);
+  color: #1e293b;
+}
+
+/* === HEADER === */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-height);
+  background: var(--ort-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-back {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-title {
+  flex: 1;
+  font-weight: 700;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-menu {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* === MAIN CONTENT === */
+.main-content {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: calc(var(--tab-height) + var(--safe-bottom));
+  overflow: hidden;
+}
+
+.tab-panel {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  display: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* === MAP TAB === */
+#mapPanel { overflow: hidden; }
+#map { width: 100%; height: 100%; }
+.leaflet-container { font-family: inherit; }
+
+/* === LIST TAB === */
+#listPanel {
+  padding: 12px;
+  padding-bottom: 24px;
+  background: var(--ort-light);
+}
+
+/* Summary card */
+.summary-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 70px;
+}
+
+.summary-stat .value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ort-blue);
+}
+
+.summary-stat .label {
+  font-size: 11px;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+/* Bookings styles */
+#bookingsContainer {
+  padding: 12px;
+  overflow-y: auto;
+  height: calc(100% - 12px);
+}
+
+.booking-day {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border-left: 4px solid #113f7a;
+}
+
+.booking-day-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #113f7a;
+  margin: 0 0 10px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.booking-section {
+  margin-bottom: 16px;
+}
+.booking-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #113f7a;
+  padding: 12px 16px 8px;
+  border-bottom: 2px solid #113f7a;
+  margin: 0 0 8px 0;
+}
+
+.booking-item {
+  background: white;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 0 12px 8px 12px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.booking-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.booking-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.booking-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 2px;
+}
+
+.booking-detail {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 2px 0;
+}
+
+.booking-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #16a34a;
+  white-space: nowrap;
+}
+
+.booking-budget {
+  background: linear-gradient(135deg, #113f7a 0%, #1e5090 100%);
+  color: white;
+  border-radius: 12px;
+  margin: 16px 12px;
+  padding: 16px;
+  text-align: center;
+}
+.budget-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-bottom: 4px;
+}
+.budget-amount {
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+/* Step cards */
+.step-card {
+  background: #fff;
+  border-radius: 14px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  display: flex;
+  align-items: stretch;
+  min-height: 90px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.step-card:active {
+  transform: scale(0.98);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+.step-card-num {
+  width: 44px;
+  background: var(--ort-blue);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.step-card-photo {
+  width: 80px;
+  height: 90px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #e2e8f0;
+}
+
+.step-card-info {
+  flex: 1;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.step-card-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ort-blue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-card-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.step-card-nights {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--ort-green);
+  color: var(--ort-blue);
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-top: 6px;
+  width: fit-content;
+}
+
+.step-card-booking {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: #dcfce7;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.step-bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-booking-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid var(--ort-border);
+}
+
+.step-booking-icon {
+  font-size: 20px;
+  width: 32px;
+  text-align: center;
+}
+
+.step-booking-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-booking-name {
+  font-weight: 600;
+  color: var(--ort-blue);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.step-booking-dates {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.step-booking-price {
+  font-weight: 600;
+  color: #16a34a;
+  font-size: 14px;
+}
+
+.step-card-chevron {
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+/* === TAB BAR === */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: calc(var(--tab-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: #fff;
+  border-top: 1px solid var(--ort-border);
+  display: flex;
+  z-index: 100;
+}
+
+.tab-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-family: inherit;
+  font-size: 10px;
+  color: #64748b;
+  cursor: pointer;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tab-btn.active {
+  color: var(--ort-blue);
+}
+
+.tab-btn .tab-icon {
+  font-size: 22px;
+}
+
+.tab-btn.active .tab-icon {
+  transform: scale(1.1);
+}
+
+/* === BOTTOM SHEET === */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s, visibility 0.25s;
+}
+
+.sheet-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.bottom-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  z-index: 201;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bottom-sheet.show {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 40px;
+  height: 5px;
+  background: #d1d5db;
+  border-radius: 3px;
+  margin: 10px auto;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  padding: 0 16px 12px;
+  border-bottom: 1px solid var(--ort-border);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.sheet-header-center {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.step-nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--ort-border);
+  background: #fff;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ort-blue);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step-nav-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+  border-color: var(--ort-blue);
+}
+
+.step-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sheet-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ort-blue);
+}
+
+.sheet-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sheet-photo {
+  width: 100%;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  background: #e2e8f0;
+}
+
+.sheet-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sheet-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.sheet-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* Nights control */
+.nights-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px;
+  background: var(--ort-light);
+  border-radius: 12px;
+}
+
+.nights-btn {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--ort-blue);
+  background: #fff;
+  color: var(--ort-blue);
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nights-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.nights-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ort-blue);
+  min-width: 80px;
+  text-align: center;
+}
+
+.nights-label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Affiliate buttons - compact row at top */
+.affiliate-buttons {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.affiliate-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.15s;
+}
+
+.affiliate-btn:active {
+  transform: scale(0.96);
+}
+
+.affiliate-gyg {
+  background: linear-gradient(135deg, #ff5533 0%, #ff7744 100%);
+  color: #fff;
+}
+
+.affiliate-tiqets {
+  background: linear-gradient(135deg, #00a0e3 0%, #0077b6 100%);
+  color: #fff;
+}
+
+.affiliate-hotel {
+  background: var(--ort-green);
+  color: var(--ort-blue);
+}
+
+/* Content buttons (Visites / Activités) */
+.content-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.content-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 2px solid var(--ort-border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ort-blue);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.content-btn:active {
+  background: var(--ort-light);
+  border-color: var(--ort-blue);
+}
+
+.content-btn span:first-of-type {
+  flex: 1;
+  text-align: left;
+}
+
+.content-count {
+  background: var(--ort-blue);
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.content-count:empty,
+.content-count[data-count="0"] {
+  display: none;
+}
+
+/* Content Modal (Visites / Activités) */
+.content-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content-modal.open {
+  display: flex;
+}
+
+.content-modal-header {
+  padding: 20px 16px;
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.content-modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.content-modal-step {
+  font-size: 13px;
+  opacity: 0.8;
+  margin-top: 4px;
+  display: block;
+}
+
+.content-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 80px;
+}
+
+/* Content items inside modal */
+.content-item {
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid var(--ort-blue);
+}
+
+.content-item-title {
+  font-weight: 700;
+  color: var(--ort-blue);
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.content-item-text {
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.content-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+/* Floating back button */
+.floating-back-btn {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 32px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(26, 54, 93, 0.4);
+  z-index: 2001;
+  transition: transform 0.2s;
+}
+
+.floating-back-btn:active {
+  transform: translateX(-50%) scale(0.96);
+}
+
+/* Share Modal Styles */
+.share-options {
+  padding: 8px 0;
+}
+
+.share-mode-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.share-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 2px solid var(--ort-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.share-mode-option:has(input:checked) {
+  border-color: var(--ort-blue);
+  background: #f0f7ff;
+}
+
+.share-mode-option input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ort-blue);
+}
+
+.share-mode-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.share-mode-icon {
+  font-size: 24px;
+}
+
+.share-mode-info strong {
+  display: block;
+  color: var(--ort-blue);
+  margin-bottom: 2px;
+}
+
+.share-mode-info p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.share-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.share-generate-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+}
+
+.share-generate-btn:active {
+  opacity: 0.9;
+}
+
+.share-result {
+  margin-bottom: 16px;
+}
+
+.share-url-input {
+  width: 100%;
+  padding: 14px;
+  border: 2px solid var(--ort-border);
+  border-radius: 10px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  background: #f8fafc;
+}
+
+.share-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.share-action-btn {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid var(--ort-blue);
+  background: #fff;
+  color: var(--ort-blue);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-action-btn:active {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.share-revoke-btn {
+  width: 100%;
+  padding: 14px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Sheet actions */
+.sheet-actions {
+  padding: 12px 16px calc(12px + var(--safe-bottom));
+  border-top: 1px solid var(--ort-border);
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.sheet-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.sheet-btn-primary {
+  background: var(--ort-blue);
+  color: #fff;
+}
+
+.sheet-btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  flex: 0 0 auto;
+  padding: 14px 18px;
+}
+
+/* === MENU SHEET === */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ort-border);
+  font-size: 16px;
+  color: #1e293b;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background: var(--ort-light);
+  margin: 0 -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.menu-icon {
+  font-size: 22px;
+  width: 32px;
+  text-align: center;
+}
+
+.menu-item.desktop-only {
+  color: #94a3b8;
+}
+
+/* === SERVICES SHEET === */
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 12px;
+  background: #fff;
+  border-radius: 14px;
+  border: 2px solid var(--ort-border);
+  text-decoration: none;
+  color: #1e293b;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.service-card:active {
+  transform: scale(0.97);
+  border-color: var(--ort-blue);
+  box-shadow: 0 4px 12px rgba(17,63,122,0.15);
+}
+
+.service-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.service-desc {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+  margin-top: 4px;
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: calc(var(--tab-height) + var(--safe-bottom) + 16px);
+  left: 16px;
+  right: 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  z-index: 300;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: transform 0.3s, opacity 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* === LOADING === */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--ort-blue);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  color: #fff;
+}
+
+.loading-overlay.hide {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+}
+
+/* === POPUP LEAFLET MOBILE === */
+.leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; }
+.leaflet-popup-content { margin: 0; width: 200px !important; }
+
+.map-popup-mini {
+  padding: 12px;
+  text-align: center;
+}
+
+.map-popup-mini img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.map-popup-mini .name {
+  font-weight: 700;
+  color: var(--ort-blue);
+  font-size: 14px;
+}
+
+.map-popup-mini .btn-details {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+}
+
+/* Step marker */
+.step-marker {
+  background: var(--ort-blue);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: bold;
+  text-align: center;
+  line-height: 26px;
+  width: 26px;
+  height: 26px;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Scanner buttons */
+.scan-btn {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: none;
+  cursor: pointer;
+}
+.scan-btn.primary {
+  background: #113f7a;
+  color: #fff;
+}
+.scan-btn.secondary {
+  background: #e5e7eb;
+  color: #333;
+}
+.scan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scan result card */
+.scan-result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+.scan-result-row:last-child {
+  border-bottom: none;
+}
+.scan-result-label {
+  color: #666;
+  font-size: 0.85rem;
+}
+.scan-result-value {
+  font-weight: 600;
+  color: #333;
+}
+</style>
+<!-- Mode partage - masquer édition -->
+<style>
+  body.shared-view-only #btnSave,
+  body.shared-view-only #btnAddStep,
+  body.shared-view-only #btnAddMapRoute,
+  body.shared-view-only .delete-btn,
+  body.shared-view-only button.trash,
+  body.shared-view-only [contenteditable="true"] {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Chargement...</div>
+</div>
+
+<!-- Header -->
+<header class="header">
+  <button class="header-back" id="btnHome" aria-label="Dashboard" onclick="location.href='dashboard_user.html'">🏠</button>
+  <button class="header-back" id="btnBack" aria-label="Retour">←</button>
+  <div style="flex:1;"></div>
+  <button class="header-btn" id="btnLangHeader" aria-label="Langue" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">🌐</button>
+  <button class="header-btn" id="btnSaveHeader" aria-label="Sauvegarder" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">💾</button>
+  <button class="header-btn" id="btnShareHeader" aria-label="Partager" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">🔗</button>
+  <button class="header-btn" id="btnUser" aria-label="Profil utilisateur" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;color:#fff;">👤</button>
+</header>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Map Panel -->
+  <!-- Bookings Panel (NEW) -->
+  <div class="tab-panel" id="bookingsPanel">
+    <div id="bookingsContainer">
+      <p style="padding: 20px; text-align: center; color: #999;">Aucune réservation</p>
+    </div>
+  </div>
+  
+  <!-- Map Panel -->
+  <div class="tab-panel" id="mapPanel">
+    <div id="map"></div>
+    <button id="btnCenterMap" aria-label="Centrer la carte" style="position:absolute;bottom:20px;right:16px;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:20px;cursor:pointer;z-index:500;display:flex;align-items:center;justify-content:center;">🎯</button>
+  </div>
+  
+  <!-- List Panel -->
+  <div class="tab-panel active" id="listPanel">
+    <div class="summary-card" id="summaryCard">
+      <div class="summary-stat">
+        <div class="value" id="statSteps">-</div>
+        <div class="label" data-i18n="steps">Étapes</div>
+      </div>
+      <div class="summary-stat">
+        <div class="value" id="statNights">-</div>
+        <div class="label" data-i18n="nights">Nuits</div>
+      </div>
+      <div class="summary-stat">
+        <div class="value" id="statKm">-</div>
+        <div class="label">Km</div>
+      </div>
+    </div>
+    <div id="stepsList"></div>
+  </div>
+</main>
+
+<!-- Tab Bar -->
+<nav class="tab-bar">
+  <button class="tab-btn active" id="tabList" data-panel="listPanel">
+    <span class="tab-icon">📋</span>
+    <span data-i18n="itinerary">Itinéraire</span>
+  </button>
+  <button class="tab-btn" id="tabMap" data-panel="mapPanel">
+    <span class="tab-icon">🗺️</span>
+    <span data-i18n="map">Carte</span>
+  </button>
+  <button class="tab-btn" id="tabBookings" data-panel="bookingsPanel">
+    <span class="tab-icon">🏨</span>
+    <span data-i18n="bookings">Réservations</span>
+  </button>
+  <button class="tab-btn" id="tabServices">
+    <span class="tab-icon">🛎️</span>
+    <span data-i18n="services">Services</span>
+  </button>
+</nav>
+
+<!-- Sheet Overlay -->
+<div class="sheet-overlay" id="sheetOverlay"></div>
+
+<!-- Step Detail Bottom Sheet -->
+<div class="bottom-sheet" id="stepSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <button class="step-nav-btn" id="btnPrevStep" onclick="navigateStep(-1)">‹</button>
+    <div class="sheet-header-center">
+      <div class="sheet-title" id="sheetStepName">-</div>
+      <div class="sheet-subtitle" id="sheetStepMeta">-</div>
+    </div>
+    <button class="step-nav-btn" id="btnNextStep" onclick="navigateStep(1)">›</button>
+  </div>
+  <div class="sheet-body">
+    <img class="sheet-photo" id="sheetStepPhoto" src="" alt="">
+    
+    <!-- Liens affiliés EN HAUT -->
+    <div class="affiliate-buttons">
+      <a class="affiliate-btn affiliate-gyg" id="btnGyg" href="#" target="_blank" rel="noopener">
+        🎫 Tours
+      </a>
+      <a class="affiliate-btn affiliate-tiqets" id="btnTiqets" href="#" target="_blank" rel="noopener">
+        🎟️ Billets
+      </a>
+      <a class="affiliate-btn affiliate-hotel" id="btnHotel" href="#" target="_blank" rel="noopener">
+        🏨 Hôtel
+      </a>
+    </div>
+    
+    <!-- Boutons vers modales Visites et Activités -->
+    <div class="sheet-section">
+      <div class="content-buttons">
+        <button class="content-btn" id="btnOpenVisits" onclick="openVisitsModal()">
+          📍 <span data-i18n="seeVisits">Voir les visites</span>
+          <span class="content-count" id="visitsCount">0</span>
+        </button>
+        <button class="content-btn" id="btnOpenActivities" onclick="openActivitiesModal()">
+          🎯 <span data-i18n="seeActivities">Voir les activités</span>
+          <span class="content-count" id="activitiesCount">0</span>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Contrôle des nuits -->
+    <div class="sheet-section">
+      <div class="sheet-section-title" data-i18n="numberOfNights">Nombre de nuits</div>
+      <div class="nights-control">
+        <button class="nights-btn" id="btnNightsMinus">−</button>
+        <div>
+          <div class="nights-value" id="nightsValue">0</div>
+          <div class="nights-label" data-i18n="nightPlural">nuits</div>
+        </div>
+        <button class="nights-btn" id="btnNightsPlus">+</button>
+      </div>
+    </div>
+    
+    <!-- Section réservations de l'étape -->
+    <div class="sheet-section" id="stepBookingsSection" style="display:none">
+      <div class="sheet-section-title" data-i18n="myBookings">Mes réservations</div>
+      <div class="step-bookings-list" id="stepBookingsList"></div>
+    </div>
+  </div>
+  <div class="sheet-actions">
+    <button class="sheet-btn sheet-btn-danger" id="btnDeleteStep">🗑️</button>
+    <button class="sheet-btn sheet-btn-primary" id="btnCloseSheet" data-i18n="close">Fermer</button>
+  </div>
+</div>
+
+<!-- Modale Visites -->
+<div class="content-modal" id="visitsModal">
+  <div class="content-modal-header">
+    <h2 data-i18n="plannedVisits">📍 Visites prévues</h2>
+    <span class="content-modal-step" id="visitsModalStep"></span>
+  </div>
+  <div class="content-modal-body" id="visitsModalBody">
+    <!-- Contenu rempli dynamiquement -->
+  </div>
+  <button class="floating-back-btn" onclick="closeVisitsModal()">
+    <span data-i18n="back">← Retour</span>
+  </button>
+</div>
+
+<!-- Modale Activités -->
+<div class="content-modal" id="activitiesModal">
+  <div class="content-modal-header">
+    <h2>🎯 <span data-i18n="activities">Activités</span></h2>
+    <span class="content-modal-step" id="activitiesModalStep"></span>
+  </div>
+  <div class="content-modal-body" id="activitiesModalBody">
+    <!-- Contenu rempli dynamiquement -->
+  </div>
+  <button class="floating-back-btn" onclick="closeActivitiesModal()">
+    <span data-i18n="back">← Retour</span>
+  </button>
+</div>
+
+<!-- Modale Partage -->
+<div class="content-modal" id="shareModal">
+  <div class="content-modal-header">
+    <h2 data-i18n="shareTitle">🔗 Partager ce voyage</h2>
+    <span class="content-modal-step" id="shareModalTitle"></span>
+  </div>
+  <div class="content-modal-body">
+    <div class="share-options">
+      <!-- Avertissement -->
+      <div class="share-warning" data-i18n="shareWarning" style="margin-bottom:20px;">
+        ⚠️ Toute personne avec ce lien pourra voir votre voyage
+      </div>
+      
+      <!-- Bouton générer -->
+      <button class="share-generate-btn" id="btnGenerateShare" onclick="generateShareLink()" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;">
+        <span data-i18n="shareGenerate">🔗 Générer le lien</span>
+      </button>
+      
+      <!-- Résultat (caché par défaut) -->
+      <div class="share-result" id="shareResult" style="display:none;margin-top:16px;">
+        <input type="text" class="share-url-input" id="shareUrlInput" readonly style="width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;">
+        <div class="share-actions" style="display:flex;gap:10px;">
+          <button class="share-action-btn" onclick="copyShareLink()" style="flex:1;padding:12px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+            <span data-i18n="shareCopy">📋 Copier</span>
+          </button>
+          <button class="share-action-btn" onclick="nativeShare()" style="flex:1;padding:12px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;">
+            <span data-i18n="shareNative">📤 Partager</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="floating-back-btn" onclick="closeShareModal()">
+    <span data-i18n="back">← Retour</span>
+  </button>
+</div>
+
+<!-- Modale Login Requis pour Partage -->
+<div class="share-alert-modal" id="loginRequiredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:10001;">
+  <div style="width:min(340px,90vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.25);text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">🔐</div>
+    <h3 data-i18n="loginRequired" style="margin:0 0 12px;color:#113f7a;font-size:1.2rem;">Connexion requise</h3>
+    <p data-i18n="loginRequiredDesc" style="color:#666;margin:0 0 20px;font-size:0.95rem;">Connectez-vous pour partager ce voyage avec vos proches.</p>
+    <button id="btnLoginRequiredLogin" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">
+      <span data-i18n="loginBtn">Se connecter</span>
+    </button>
+    <button id="btnLoginRequiredCancel" style="width:100%;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.95rem;cursor:pointer;">
+      <span data-i18n="cancelBtn">Annuler</span>
+    </button>
+  </div>
+</div>
+
+<!-- Modale Sauvegarde Requise pour Partage -->
+<div class="share-alert-modal" id="saveRequiredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:10001;">
+  <div style="width:min(340px,90vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.25);text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">💾</div>
+    <h3 data-i18n="saveRequired" style="margin:0 0 12px;color:#113f7a;font-size:1.2rem;">Sauvegarde requise</h3>
+    <p data-i18n="saveRequiredDesc" style="color:#666;margin:0 0 20px;font-size:0.95rem;">Sauvegardez votre voyage avant de le partager.</p>
+    <button id="btnSaveRequiredSave" style="width:100%;padding:14px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;">
+      <span data-i18n="saveBtn">Sauvegarder</span>
+    </button>
+    <button id="btnSaveRequiredCancel" style="width:100%;padding:12px;background:#f5f5f5;color:#666;border:none;border-radius:10px;font-size:0.95rem;cursor:pointer;">
+      <span data-i18n="cancelBtn">Annuler</span>
+    </button>
+  </div>
+</div>
+
+<!-- Services Bottom Sheet -->
+<div class="bottom-sheet" id="servicesSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">🛎️ Services voyage</div>
+    <div class="sheet-subtitle">Réservez tout pour votre roadtrip</div>
+  </div>
+  <div class="sheet-body">
+    <div class="service-grid">
+      <a class="service-card" href="https://ektatraveling.tpo.li/KrBrIrRc" target="_blank" rel="noopener">
+        <span class="service-icon">🛡️</span>
+        <span class="service-name">Assurance</span>
+        <span class="service-desc">Voyage serein</span>
+      </a>
+      <a class="service-card" href="https://trip.tpo.li/ljpidUUf" target="_blank" rel="noopener">
+        <span class="service-icon">✈️</span>
+        <span class="service-name">Vols</span>
+        <span class="service-desc">Meilleurs prix</span>
+      </a>
+      <a class="service-card" href="https://qeeq.tpo.li/rMRoXmko" target="_blank" rel="noopener">
+        <span class="service-icon">🚗</span>
+        <span class="service-name">Location auto</span>
+        <span class="service-desc">Comparer les offres</span>
+      </a>
+      <a class="service-card" href="https://gettransfer.tpo.li/NQ4bVvpZ" target="_blank" rel="noopener">
+        <span class="service-icon">🚐</span>
+        <span class="service-name">Transferts</span>
+        <span class="service-desc">Aéroport & plus</span>
+      </a>
+      <div class="service-card" id="btnScanBooking">
+        <span class="service-icon">📷</span>
+        <span class="service-name">Scanner résa</span>
+        <span class="service-desc">Photo → import</span>
+      </div>
+      <div class="service-card" id="btnScanDocument">
+        <span class="service-icon">🪪</span>
+        <span class="service-name">Scanner doc</span>
+        <span class="service-desc">Passeport, visa...</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Menu Bottom Sheet -->
+<!-- User Profile Bottom Sheet -->
+<div class="bottom-sheet" id="userSheet">
+  <div class="sheet-handle" onclick="closeAllSheets()"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" data-i18n="profile">Profil</div>
+    <button class="sheet-close-btn" onclick="closeAllSheets()" style="position:absolute;right:16px;top:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div id="userInfoSection" style="padding:16px;text-align:center;border-bottom:1px solid #eee;">
+      <div id="userEmail" style="font-weight:600;margin-bottom:8px;" data-i18n="notConnected">Non connecté</div>
+      <div id="userStatus" style="font-size:12px;color:#666;"></div>
+    </div>
+    <div id="userAuthSection" style="padding:16px;">
+      <button id="btnUserLogin" class="btn btn-primary" style="width:100%;margin-bottom:8px;display:none;" data-i18n="loginBtn">🔐 Se connecter</button>
+      <button id="btnUserLogout" class="btn btn-danger" style="width:100%;margin-bottom:8px;display:none;" data-i18n="logout">🔓 Déconnexion</button>
+      <button id="btnUserEmail" class="btn" style="width:100%;margin-bottom:8px;display:none;" data-i18n="changeEmail">✉️ Changer email</button>
+      <button id="btnUserPassword" class="btn" style="width:100%;margin-bottom:8px;display:none;" data-i18n="changePassword">🔑 Changer mot de passe</button>
+      <button id="btnUserDelete" class="btn btn-danger" style="width:100%;display:none;opacity:0.5;" data-i18n="deleteAccount">🗑️ Supprimer compte</button>
+    </div>
+  </div>
+</div>
+<div class="bottom-sheet" id="langSheet">
+  <div class="sheet-handle" onclick="closeAllSheets()"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">🌐 Langue / Language</div>
+    <button class="sheet-close-btn" onclick="closeAllSheets()" style="position:absolute;right:16px;top:16px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="service-grid">
+      <div class="service-card lang-option" data-lang="fr">
+        <span class="service-icon">🇫🇷</span>
+        <span class="service-name">Français</span>
+      </div>
+      <div class="service-card lang-option" data-lang="en">
+        <span class="service-icon">🇬🇧</span>
+        <span class="service-name">English</span>
+      </div>
+      <div class="service-card lang-option" data-lang="es">
+        <span class="service-icon">🇪🇸</span>
+        <span class="service-name">Español</span>
+      </div>
+      <div class="service-card lang-option" data-lang="it">
+        <span class="service-icon">🇮🇹</span>
+        <span class="service-name">Italiano</span>
+      </div>
+      <div class="service-card lang-option" data-lang="pt">
+        <span class="service-icon">🇵🇹</span>
+        <span class="service-name">Português</span>
+      </div>
+      <div class="service-card lang-option" data-lang="ar">
+        <span class="service-icon">🇸🇦</span>
+        <span class="service-name">العربية</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Scanner Bottom Sheet -->
+<div class="bottom-sheet" id="scannerSheet" style="max-height:90vh;">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="scannerTitle">📷 Scanner</div>
+    <div class="sheet-subtitle" id="scannerSubtitle">Prenez une photo</div>
+  </div>
+  <div class="sheet-body" style="padding-bottom:20px;">
+    <!-- Étape 1: Capture -->
+    <div id="scanStep1">
+      <div style="text-align:center;padding:20px 0;">
+        <label for="scannerInput" style="display:inline-flex;flex-direction:column;align-items:center;gap:12px;padding:30px 40px;background:#f0f4f8;border-radius:16px;border:2px dashed #113f7a;cursor:pointer;">
+          <span style="font-size:3rem;">📷</span>
+          <span style="font-weight:600;color:#113f7a;">Prendre une photo</span>
+          <span style="font-size:0.85rem;color:#666;">ou choisir dans la galerie</span>
+        </label>
+        <input type="file" id="scannerInput" accept="image/*" capture="environment" style="display:none;">
+      </div>
+      <div id="scanPreview" style="display:none;text-align:center;margin-top:16px;">
+        <img id="scanPreviewImg" style="max-width:100%;max-height:200px;border-radius:12px;border:1px solid #ddd;">
+        <div style="margin-top:12px;display:flex;gap:10px;justify-content:center;">
+          <button class="scan-btn secondary" id="btnScanRetake">🔄 Reprendre</button>
+          <button class="scan-btn primary" id="btnScanAnalyze">✨ Analyser</button>
+        </div>
+      </div>
+    </div>
+    <!-- Étape 2: Loading -->
+    <div id="scanStep2" style="display:none;text-align:center;padding:40px 20px;">
+      <div style="font-size:3rem;animation:spin 1s linear infinite;">⏳</div>
+      <div style="margin-top:16px;color:#666;">Analyse en cours...</div>
+    </div>
+    <!-- Étape 3: Résultat -->
+    <div id="scanStep3" style="display:none;">
+      <div id="scanResult" style="background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="scan-btn secondary" id="btnScanNew">📷 Nouveau scan</button>
+        <button class="scan-btn primary" id="btnScanSave">💾 Enregistrer</button>
+      </div>
+    </div>
+    <!-- Erreur -->
+    <div id="scanError" style="display:none;background:#fee;color:#c33;padding:12px;border-radius:8px;margin-top:16px;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// Debug logger (console only)
+window.debugLog = function(msg) {
+  console.log('[MOBILE-DEBUG] ' + msg);
+};
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-partners.js"></script>
+<script src="/js/ort-utils.js"></script>
+<script src="/js/ort-data-loader.js"></script>
+<script src="/js/ort-routing.js"></script>
+<script src="/js/ort-tripid.js"></script>
+<script src="/js/ort-trip-data.js"></script>
+<script src="./js/ort-share.js"></script>
+<script src="/js/ort-state-manager.js"></script>
+<script src="/js/ort-i18n.js"></script>
+
+<!-- ========== MODALE AUTH LÉGÈRE POUR MOBILE ========== -->
+<script>
+(function() {
+  'use strict';
+  
+  const MODAL_ID = 'ortMobileAuthModal';
+  let currentMode = 'login'; // 'login' | 'signup' | 'reset'
+  
+  // Traductions
+  const T = {
+    fr: {
+      loginTitle: 'Se connecter',
+      signupTitle: 'Créer un compte',
+      resetTitle: 'Mot de passe oublié',
+      email: 'E-mail',
+      password: 'Mot de passe',
+      confirmPassword: 'Confirmer',
+      login: 'Connexion',
+      signup: 'Créer',
+      sendReset: 'Envoyer',
+      cancel: 'Annuler',
+      noAccount: 'Pas de compte ?',
+      hasAccount: 'Déjà un compte ?',
+      forgotPwd: 'Mot de passe oublié ?',
+      orGoogle: 'ou avec Google',
+      success: '✅ Connecté !',
+      resetSent: '✅ E-mail envoyé !',
+      accountCreated: '✅ Compte créé ! Vérifiez vos e-mails.',
+      errFill: 'Remplissez tous les champs',
+      errEmail: 'E-mail invalide',
+      errPwdShort: 'Mot de passe trop court (min 6)',
+      errPwdMatch: 'Mots de passe différents',
+      errWrongPwd: 'Mot de passe incorrect',
+      errNotFound: 'Compte inexistant',
+      errExists: 'E-mail déjà utilisé',
+      errGeneric: 'Erreur, réessayez'
+    },
+    en: {
+      loginTitle: 'Sign in',
+      signupTitle: 'Create account',
+      resetTitle: 'Forgot password',
+      email: 'E-mail',
+      password: 'Password',
+      confirmPassword: 'Confirm',
+      login: 'Sign in',
+      signup: 'Create',
+      sendReset: 'Send',
+      cancel: 'Cancel',
+      noAccount: 'No account?',
+      hasAccount: 'Have an account?',
+      forgotPwd: 'Forgot password?',
+      orGoogle: 'or with Google',
+      success: '✅ Signed in!',
+      resetSent: '✅ Email sent!',
+      accountCreated: '✅ Account created! Check your emails.',
+      errFill: 'Fill all fields',
+      errEmail: 'Invalid email',
+      errPwdShort: 'Password too short (min 6)',
+      errPwdMatch: 'Passwords don\'t match',
+      errWrongPwd: 'Wrong password',
+      errNotFound: 'Account not found',
+      errExists: 'Email already used',
+      errGeneric: 'Error, try again'
+    }
+  };
+  
+  function t(key) {
+    const lang = localStorage.getItem('ort_lang') || 'fr';
+    return T[lang]?.[key] || T.fr[key] || key;
+  }
+  
+  function createModal() {
+    let modal = document.getElementById(MODAL_ID);
+    if (modal) return modal;
+    
+    modal = document.createElement('div');
+    modal.id = MODAL_ID;
+    modal.style.cssText = `
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.6);
+      align-items:center;justify-content:center;
+      z-index:10000;
+    `;
+    modal.innerHTML = `
+      <div style="
+        width:min(360px,92vw);
+        background:#fff;
+        border-radius:16px;
+        padding:20px;
+        box-shadow:0 10px 40px rgba(0,0,0,.25);
+      ">
+        <h3 id="authModalTitle" style="margin:0 0 16px;color:#113f7a;font-size:1.3rem;text-align:center"></h3>
+        
+        <div id="authModalMsg" style="display:none;padding:10px;border-radius:8px;margin-bottom:12px;text-align:center;font-size:0.9rem"></div>
+        
+        <input id="authEmail" type="email" style="
+          width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <input id="authPwd" type="password" style="
+          width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <input id="authPwd2" type="password" style="
+          display:none;width:100%;padding:12px;border:1.5px solid #113f7a;border-radius:10px;
+          margin-bottom:10px;font-size:1rem;
+        ">
+        
+        <button id="authSubmit" style="
+          width:100%;padding:14px;background:#113f7a;color:#fff;
+          border:none;border-radius:10px;font-size:1rem;font-weight:600;
+          cursor:pointer;margin-bottom:10px;
+        "></button>
+        
+        <button id="authGoogle" style="
+          width:100%;padding:12px;background:#fff;color:#333;
+          border:1px solid #ddd;border-radius:10px;font-size:0.95rem;
+          cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+        ">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:20px;height:20px">
+          <span id="authGoogleText"></span>
+        </button>
+        
+        <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:0.9rem">
+          <button id="authToggle" style="background:none;border:none;color:#113f7a;text-decoration:underline;cursor:pointer"></button>
+          <button id="authForgot" style="background:none;border:none;color:#666;cursor:pointer"></button>
+        </div>
+        
+        <button id="authCancel" style="
+          width:100%;padding:10px;background:#f5f5f5;color:#666;
+          border:none;border-radius:10px;font-size:0.95rem;
+          cursor:pointer;margin-top:12px;
+        "></button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Events
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+    document.getElementById('authSubmit').onclick = handleSubmit;
+    document.getElementById('authGoogle').onclick = handleGoogle;
+    document.getElementById('authToggle').onclick = () => {
+      currentMode = currentMode === 'login' ? 'signup' : 'login';
+      updateModalUI();
+    };
+    document.getElementById('authForgot').onclick = () => {
+      currentMode = 'reset';
+      updateModalUI();
+    };
+    document.getElementById('authCancel').onclick = closeModal;
+    
+    // Enter key
+    ['authEmail', 'authPwd', 'authPwd2'].forEach(id => {
+      document.getElementById(id).onkeydown = e => { if (e.key === 'Enter') handleSubmit(); };
+    });
+    
+    return modal;
+  }
+  
+  function updateModalUI() {
+    const title = document.getElementById('authModalTitle');
+    const email = document.getElementById('authEmail');
+    const pwd = document.getElementById('authPwd');
+    const pwd2 = document.getElementById('authPwd2');
+    const submit = document.getElementById('authSubmit');
+    const google = document.getElementById('authGoogle');
+    const googleText = document.getElementById('authGoogleText');
+    const toggle = document.getElementById('authToggle');
+    const forgot = document.getElementById('authForgot');
+    const cancel = document.getElementById('authCancel');
+    const msg = document.getElementById('authModalMsg');
+    
+    msg.style.display = 'none';
+    email.placeholder = t('email');
+    pwd.placeholder = t('password');
+    pwd2.placeholder = t('confirmPassword');
+    cancel.textContent = t('cancel');
+    googleText.textContent = t('orGoogle');
+    
+    if (currentMode === 'login') {
+      title.textContent = t('loginTitle');
+      pwd.style.display = '';
+      pwd2.style.display = 'none';
+      google.style.display = '';
+      submit.textContent = t('login');
+      toggle.textContent = t('noAccount');
+      forgot.textContent = t('forgotPwd');
+      forgot.style.display = '';
+    } else if (currentMode === 'signup') {
+      title.textContent = t('signupTitle');
+      pwd.style.display = '';
+      pwd2.style.display = '';
+      google.style.display = '';
+      submit.textContent = t('signup');
+      toggle.textContent = t('hasAccount');
+      forgot.style.display = 'none';
+    } else if (currentMode === 'reset') {
+      title.textContent = t('resetTitle');
+      pwd.style.display = 'none';
+      pwd2.style.display = 'none';
+      google.style.display = 'none';
+      submit.textContent = t('sendReset');
+      toggle.textContent = t('hasAccount');
+      forgot.style.display = 'none';
+    }
+  }
+  
+  function showMsg(text, isError) {
+    const msg = document.getElementById('authModalMsg');
+    msg.textContent = text;
+    msg.style.display = '';
+    msg.style.background = isError ? '#fee' : '#efe';
+    msg.style.color = isError ? '#c00' : '#060';
+  }
+  
+  async function handleSubmit() {
+    const email = document.getElementById('authEmail').value.trim().toLowerCase();
+    const pwd = document.getElementById('authPwd').value;
+    const pwd2 = document.getElementById('authPwd2').value;
+    const submit = document.getElementById('authSubmit');
+    
+    if (!email || !email.includes('@')) {
+      showMsg(t('errEmail'), true);
+      return;
+    }
+    
+    if (currentMode !== 'reset') {
+      if (!pwd || pwd.length < 6) {
+        showMsg(t('errPwdShort'), true);
+        return;
+      }
+    }
+    
+    if (currentMode === 'signup' && pwd !== pwd2) {
+      showMsg(t('errPwdMatch'), true);
+      return;
+    }
+    
+    const oldText = submit.textContent;
+    submit.disabled = true;
+    submit.textContent = '...';
+    
+    try {
+      const auth = firebase.auth();
+      
+      if (currentMode === 'login') {
+        await auth.signInWithEmailAndPassword(email, pwd);
+        showMsg(t('success'), false);
+        setTimeout(closeModal, 1000);
+        
+      } else if (currentMode === 'signup') {
+        const result = await auth.createUserWithEmailAndPassword(email, pwd);
+        await result.user.sendEmailVerification();
+        showMsg(t('accountCreated'), false);
+        setTimeout(() => { currentMode = 'login'; updateModalUI(); }, 2000);
+        
+      } else if (currentMode === 'reset') {
+        await auth.sendPasswordResetEmail(email);
+        showMsg(t('resetSent'), false);
+        setTimeout(() => { currentMode = 'login'; updateModalUI(); }, 2000);
+      }
+      
+    } catch (e) {
+      let msg = t('errGeneric');
+      if (e.code === 'auth/user-not-found') msg = t('errNotFound');
+      else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') msg = t('errWrongPwd');
+      else if (e.code === 'auth/email-already-in-use') msg = t('errExists');
+      showMsg(msg, true);
+    } finally {
+      submit.disabled = false;
+      submit.textContent = oldText;
+    }
+  }
+  
+  async function handleGoogle() {
+    try {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await firebase.auth().signInWithPopup(provider);
+      showMsg(t('success'), false);
+      setTimeout(closeModal, 1000);
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        showMsg(t('errGeneric'), true);
+      }
+    }
+  }
+  
+  function closeModal() {
+    const modal = document.getElementById(MODAL_ID);
+    if (modal) modal.style.display = 'none';
+  }
+  
+  // API publique
+  window.openAuth = function(mode = 'login') {
+    currentMode = mode;
+    createModal();
+    updateModalUI();
+    document.getElementById(MODAL_ID).style.display = 'flex';
+    document.getElementById('authEmail').value = '';
+    document.getElementById('authPwd').value = '';
+    document.getElementById('authPwd2').value = '';
+    document.getElementById('authEmail').focus();
+  };
+  
+  console.log('[ORT-MOBILE-AUTH] ✅ Modale auth initialisée');
+})();
+</script>
+
+<script>
+// === GLOBAL REDIRECT PROTECTION ===
+// Intercept location.replace/assign to ensure desktop redirects include mobile=0
+(function(){
+  const originalReplace = window.location.replace.bind(window.location);
+  const originalAssign = window.location.assign.bind(window.location);
+
+  window.location.replace = function(url) {
+    if (typeof url === 'string' && (url.includes('roadtrip_detail') || url.includes('route_builder'))) {
+      if (!url.includes('mobile=0')) {
+        const sep = url.includes('?') ? '&' : '?';
+        url = url + sep + 'mobile=0';
+        console.log('[ORT-MOBILE] Protected redirect with mobile=0:', url);
+      }
+    }
+    return originalReplace(url);
+  };
+
+  window.location.assign = function(url) {
+    if (typeof url === 'string' && (url.includes('roadtrip_detail') || url.includes('route_builder'))) {
+      if (!url.includes('mobile=0')) {
+        const sep = url.includes('?') ? '&' : '?';
+        url = url + sep + 'mobile=0';
+        console.log('[ORT-MOBILE] Protected assignment with mobile=0:', url);
+      }
+    }
+    return originalAssign(url);
+  };
+})();
+
+// === AFFILIATE LINKS - Fourni par ort-partners.js ===
+// Alias pour compatibilité
+const STAY22_CONFIG = ORT_PARTNERS.STAY22_CONFIG;
+const AFFILIATE = ORT_PARTNERS.AFFILIATE;
+
+// Placeholder image
+const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTJlOGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIiBmb250LXNpemU9IjE2IiBmaWxsPSIjOTRhM2I4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+8J+TtyBQaG90bzwvdGV4dD48L3N2Zz4=';
+
+// PHOTOS_CACHE est géré par ort-data-loader.js (window.PHOTOS_CACHE)
+if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
+var PHOTOS_CACHE = window.PHOTOS_CACHE;
+
+// toSlug() → fourni par ort-utils.js
+// findPhotosForPlace(), getPhotosForPlace(), loadPhotosCache() → fournis par ort-data-loader.js
+
+// === STATE ===
+let state = { title: 'Roadtrip', steps: [], cc: '', lang: 'fr', _originalItinId: null };
+let map = null;
+let markers = [];
+let routeLayer = null;
+let currentStepIndex = null;
+let hasUnsavedChanges = false;
+let totalRouteKm = 0;
+let CITY_NAMES_INDEX = {};
+// PLACES_INDEX est géré par ort-data-loader.js (window.PLACES_INDEX)
+if (!window.PLACES_INDEX) window.PLACES_INDEX = {};
+// Alias local pour compatibilité
+var PLACES_INDEX = window.PLACES_INDEX;
+
+// === I18N GLOBAL ===
+const I18N_MOBILE = {
+  fr: {
+    // Navigation
+    steps: 'Étapes',
+    nights: 'Nuits',
+    night: 'nuit',
+    nightPlural: 'nuits',
+    itinerary: 'Itinéraire',
+    map: 'Carte',
+    bookings: 'Réservations',
+    services: 'Services',
+    noBookings: 'Aucune réservation',
+    // Step sheet
+    stepOf: 'Étape {0} sur {1}',
+    numberOfNights: 'Nombre de nuits',
+    myBookings: 'Mes réservations',
+    close: 'Fermer',
+    // Visites & Activités
+    visits: 'Visites',
+    activities: 'Activités',
+    seeVisits: 'Voir les visites',
+    seeActivities: 'Voir les activités',
+    plannedVisits: '📍 Visites prévues',
+    noVisits: 'Aucune visite prévue pour cette étape',
+    noActivities: 'Aucune activité prévue pour cette étape',
+    visit: 'Visite',
+    activity: 'Activité',
+    // Partage
+    shareTitle: '🔗 Partager ce voyage',
+    shareWarning: '⚠️ Toute personne avec ce lien pourra voir votre voyage',
+    shareGenerate: '🔗 Générer le lien',
+    shareRegenerate: '🔄 Régénérer le lien',
+    shareGenerating: '⏳ Génération...',
+    shareCopy: '📋 Copier',
+    shareNative: '📤 Partager',
+    back: '← Retour',
+    // Auth
+    loginRequired: '🔐 Connexion requise',
+    loginRequiredDesc: 'Connectez-vous pour sauvegarder et partager ce voyage.',
+    loginBtn: 'Se connecter',
+    saveRequired: '💾 Sauvegarde requise',
+    saveRequiredDesc: 'Sauvegardez votre voyage avant de le partager.',
+    saveBtn: 'Sauvegarder',
+    cancelBtn: 'Annuler',
+    // User profile
+    profile: 'Profil',
+    notConnected: 'Non connecté',
+    connectionRequired: 'Connexion requise',
+    connectedSince: 'Connecté depuis',
+    logout: '🔓 Déconnexion',
+    changeEmail: '✉️ Changer email',
+    changePassword: '🔑 Changer mot de passe',
+    deleteAccount: '🗑️ Supprimer compte',
+    // Messages
+    linkCreated: '✅ Lien créé !',
+    linkCopied: '📋 Lien copié !',
+    saved: '✅ Sauvegardé !',
+    mapCentered: '🎯 Carte centrée',
+    noStepsToShare: '❌ Aucune étape à partager',
+    tripNotSaved: '❌ Voyage non sauvegardé',
+    unsavedChanges: 'Modifications non sauvegardées. Quitter ?'
+  },
+  en: {
+    steps: 'Steps',
+    nights: 'Nights',
+    night: 'night',
+    nightPlural: 'nights',
+    itinerary: 'Itinerary',
+    map: 'Map',
+    bookings: 'Bookings',
+    services: 'Services',
+    noBookings: 'No bookings',
+    stepOf: 'Step {0} of {1}',
+    numberOfNights: 'Number of nights',
+    myBookings: 'My bookings',
+    close: 'Close',
+    visits: 'Visits',
+    activities: 'Activities',
+    seeVisits: 'See visits',
+    seeActivities: 'See activities',
+    plannedVisits: '📍 Planned visits',
+    noVisits: 'No visits planned for this step',
+    noActivities: 'No activities planned for this step',
+    visit: 'Visit',
+    activity: 'Activity',
+    shareTitle: '🔗 Share this trip',
+    shareWarning: '⚠️ Anyone with this link can view your trip',
+    shareGenerate: '🔗 Generate link',
+    shareRegenerate: '🔄 Regenerate link',
+    shareGenerating: '⏳ Generating...',
+    shareCopy: '📋 Copy',
+    shareNative: '📤 Share',
+    back: '← Back',
+    loginRequired: '🔐 Login required',
+    loginRequiredDesc: 'Sign in to save and share this trip.',
+    loginBtn: 'Sign in',
+    saveRequired: '💾 Save required',
+    saveRequiredDesc: 'Save your trip before sharing it.',
+    saveBtn: 'Save',
+    cancelBtn: 'Cancel',
+    profile: 'Profile',
+    notConnected: 'Not connected',
+    connectionRequired: 'Login required',
+    connectedSince: 'Connected since',
+    logout: '🔓 Logout',
+    changeEmail: '✉️ Change email',
+    changePassword: '🔑 Change password',
+    deleteAccount: '🗑️ Delete account',
+    linkCreated: '✅ Link created!',
+    linkCopied: '📋 Link copied!',
+    saved: '✅ Saved!',
+    mapCentered: '🎯 Map centered',
+    noStepsToShare: '❌ No steps to share',
+    tripNotSaved: '❌ Trip not saved',
+    unsavedChanges: 'Unsaved changes. Leave?'
+  },
+  es: {
+    steps: 'Etapas',
+    nights: 'Noches',
+    night: 'noche',
+    nightPlural: 'noches',
+    itinerary: 'Itinerario',
+    map: 'Mapa',
+    bookings: 'Reservas',
+    services: 'Servicios',
+    noBookings: 'Sin reservas',
+    stepOf: 'Etapa {0} de {1}',
+    numberOfNights: 'Número de noches',
+    myBookings: 'Mis reservas',
+    close: 'Cerrar',
+    visits: 'Visitas',
+    activities: 'Actividades',
+    seeVisits: 'Ver visitas',
+    seeActivities: 'Ver actividades',
+    plannedVisits: '📍 Visitas previstas',
+    noVisits: 'Sin visitas previstas para esta etapa',
+    noActivities: 'Sin actividades previstas para esta etapa',
+    visit: 'Visita',
+    activity: 'Actividad',
+    shareTitle: '🔗 Compartir este viaje',
+    shareWarning: '⚠️ Cualquiera con este enlace podrá ver tu viaje',
+    shareGenerate: '🔗 Generar enlace',
+    shareRegenerate: '🔄 Regenerar enlace',
+    shareGenerating: '⏳ Generando...',
+    shareCopy: '📋 Copiar',
+    shareNative: '📤 Compartir',
+    back: '← Volver',
+    loginRequired: '🔐 Inicio de sesión requerido',
+    loginRequiredDesc: 'Inicia sesión para guardar y compartir este viaje.',
+    loginBtn: 'Iniciar sesión',
+    saveRequired: '💾 Guardado requerido',
+    saveRequiredDesc: 'Guarda tu viaje antes de compartirlo.',
+    saveBtn: 'Guardar',
+    cancelBtn: 'Cancelar',
+    profile: 'Perfil',
+    notConnected: 'No conectado',
+    connectionRequired: 'Inicio de sesión requerido',
+    connectedSince: 'Conectado desde',
+    logout: '🔓 Cerrar sesión',
+    changeEmail: '✉️ Cambiar email',
+    changePassword: '🔑 Cambiar contraseña',
+    deleteAccount: '🗑️ Eliminar cuenta',
+    linkCreated: '✅ ¡Enlace creado!',
+    linkCopied: '📋 ¡Enlace copiado!',
+    saved: '✅ ¡Guardado!',
+    mapCentered: '🎯 Mapa centrado',
+    noStepsToShare: '❌ Sin etapas para compartir',
+    tripNotSaved: '❌ Viaje no guardado',
+    unsavedChanges: 'Cambios no guardados. ¿Salir?'
+  },
+  it: {
+    steps: 'Tappe',
+    nights: 'Notti',
+    night: 'notte',
+    nightPlural: 'notti',
+    itinerary: 'Itinerario',
+    map: 'Mappa',
+    bookings: 'Prenotazioni',
+    services: 'Servizi',
+    noBookings: 'Nessuna prenotazione',
+    stepOf: 'Tappa {0} di {1}',
+    numberOfNights: 'Numero di notti',
+    myBookings: 'Le mie prenotazioni',
+    close: 'Chiudi',
+    visits: 'Visite',
+    activities: 'Attività',
+    seeVisits: 'Vedi visite',
+    seeActivities: 'Vedi attività',
+    plannedVisits: '📍 Visite previste',
+    noVisits: 'Nessuna visita prevista per questa tappa',
+    noActivities: 'Nessuna attività prevista per questa tappa',
+    visit: 'Visita',
+    activity: 'Attività',
+    shareTitle: '🔗 Condividi questo viaggio',
+    shareWarning: '⚠️ Chiunque con questo link potrà vedere il tuo viaggio',
+    shareGenerate: '🔗 Genera link',
+    shareRegenerate: '🔄 Rigenera link',
+    shareGenerating: '⏳ Generazione...',
+    shareCopy: '📋 Copia',
+    shareNative: '📤 Condividi',
+    back: '← Indietro',
+    loginRequired: '🔐 Accesso richiesto',
+    loginRequiredDesc: 'Accedi per salvare e condividere questo viaggio.',
+    loginBtn: 'Accedi',
+    saveRequired: '💾 Salvataggio richiesto',
+    saveRequiredDesc: 'Salva il tuo viaggio prima di condividerlo.',
+    saveBtn: 'Salva',
+    cancelBtn: 'Annulla',
+    profile: 'Profilo',
+    notConnected: 'Non connesso',
+    connectionRequired: 'Accesso richiesto',
+    connectedSince: 'Connesso da',
+    logout: '🔓 Esci',
+    changeEmail: '✉️ Cambia email',
+    changePassword: '🔑 Cambia password',
+    deleteAccount: '🗑️ Elimina account',
+    linkCreated: '✅ Link creato!',
+    linkCopied: '📋 Link copiato!',
+    saved: '✅ Salvato!',
+    mapCentered: '🎯 Mappa centrata',
+    noStepsToShare: '❌ Nessuna tappa da condividere',
+    tripNotSaved: '❌ Viaggio non salvato',
+    unsavedChanges: 'Modifiche non salvate. Uscire?'
+  },
+  pt: {
+    steps: 'Etapas',
+    nights: 'Noites',
+    night: 'noite',
+    nightPlural: 'noites',
+    itinerary: 'Itinerário',
+    map: 'Mapa',
+    bookings: 'Reservas',
+    services: 'Serviços',
+    noBookings: 'Sem reservas',
+    stepOf: 'Etapa {0} de {1}',
+    numberOfNights: 'Número de noites',
+    myBookings: 'Minhas reservas',
+    close: 'Fechar',
+    visits: 'Visitas',
+    activities: 'Atividades',
+    seeVisits: 'Ver visitas',
+    seeActivities: 'Ver atividades',
+    plannedVisits: '📍 Visitas previstas',
+    noVisits: 'Nenhuma visita prevista para esta etapa',
+    noActivities: 'Nenhuma atividade prevista para esta etapa',
+    visit: 'Visita',
+    activity: 'Atividade',
+    shareTitle: '🔗 Partilhar esta viagem',
+    shareWarning: '⚠️ Qualquer pessoa com este link poderá ver a sua viagem',
+    shareGenerate: '🔗 Gerar link',
+    shareRegenerate: '🔄 Regenerar link',
+    shareGenerating: '⏳ A gerar...',
+    shareCopy: '📋 Copiar',
+    shareNative: '📤 Partilhar',
+    back: '← Voltar',
+    loginRequired: '🔐 Login necessário',
+    loginRequiredDesc: 'Entre para guardar e partilhar esta viagem.',
+    loginBtn: 'Entrar',
+    saveRequired: '💾 Guardar necessário',
+    saveRequiredDesc: 'Guarde a sua viagem antes de a partilhar.',
+    saveBtn: 'Guardar',
+    cancelBtn: 'Cancelar',
+    profile: 'Perfil',
+    notConnected: 'Não conectado',
+    connectionRequired: 'Login necessário',
+    connectedSince: 'Conectado desde',
+    logout: '🔓 Sair',
+    changeEmail: '✉️ Alterar email',
+    changePassword: '🔑 Alterar senha',
+    deleteAccount: '🗑️ Eliminar conta',
+    linkCreated: '✅ Link criado!',
+    linkCopied: '📋 Link copiado!',
+    saved: '✅ Guardado!',
+    mapCentered: '🎯 Mapa centrado',
+    noStepsToShare: '❌ Sem etapas para partilhar',
+    tripNotSaved: '❌ Viagem não guardada',
+    unsavedChanges: 'Alterações não guardadas. Sair?'
+  },
+  ar: {
+    steps: 'المراحل',
+    nights: 'الليالي',
+    night: 'ليلة',
+    nightPlural: 'ليالي',
+    itinerary: 'خط السير',
+    map: 'الخريطة',
+    bookings: 'الحجوزات',
+    services: 'الخدمات',
+    noBookings: 'لا توجد حجوزات',
+    stepOf: 'مرحلة {0} من {1}',
+    numberOfNights: 'عدد الليالي',
+    myBookings: 'حجوزاتي',
+    close: 'إغلاق',
+    visits: 'الزيارات',
+    activities: 'الأنشطة',
+    seeVisits: 'عرض الزيارات',
+    seeActivities: 'عرض الأنشطة',
+    plannedVisits: '📍 الزيارات المخططة',
+    noVisits: 'لا توجد زيارات مخططة لهذه المرحلة',
+    noActivities: 'لا توجد أنشطة مخططة لهذه المرحلة',
+    visit: 'زيارة',
+    activity: 'نشاط',
+    shareTitle: '🔗 مشاركة هذه الرحلة',
+    shareWarning: '⚠️ أي شخص لديه هذا الرابط يمكنه رؤية رحلتك',
+    shareGenerate: '🔗 إنشاء رابط',
+    shareRegenerate: '🔄 إعادة إنشاء الرابط',
+    shareGenerating: '⏳ جارٍ الإنشاء...',
+    shareCopy: '📋 نسخ',
+    shareNative: '📤 مشاركة',
+    back: '← رجوع',
+    loginRequired: '🔐 تسجيل الدخول مطلوب',
+    loginRequiredDesc: 'سجّل الدخول لحفظ ومشاركة هذه الرحلة.',
+    loginBtn: 'تسجيل الدخول',
+    saveRequired: '💾 الحفظ مطلوب',
+    saveRequiredDesc: 'احفظ رحلتك قبل مشاركتها.',
+    saveBtn: 'حفظ',
+    cancelBtn: 'إلغاء',
+    profile: 'الملف الشخصي',
+    notConnected: 'غير متصل',
+    connectionRequired: 'تسجيل الدخول مطلوب',
+    connectedSince: 'متصل منذ',
+    logout: '🔓 تسجيل الخروج',
+    changeEmail: '✉️ تغيير البريد',
+    changePassword: '🔑 تغيير كلمة المرور',
+    deleteAccount: '🗑️ حذف الحساب',
+    linkCreated: '✅ تم إنشاء الرابط!',
+    linkCopied: '📋 تم نسخ الرابط!',
+    saved: '✅ تم الحفظ!',
+    mapCentered: '🎯 تم توسيط الخريطة',
+    noStepsToShare: '❌ لا توجد مراحل للمشاركة',
+    tripNotSaved: '❌ الرحلة غير محفوظة',
+    unsavedChanges: 'تغييرات غير محفوظة. هل تريد المغادرة؟'
+  }
+};
+
+function i18n(key) {
+  const lang = localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+  // 1. Chercher dans I18N_MOBILE local
+  if (I18N_MOBILE[lang]?.[key]) return I18N_MOBILE[lang][key];
+  if (I18N_MOBILE.fr?.[key]) return I18N_MOBILE.fr[key];
+  // 2. Chercher dans ORT_I18N global (ort-i18n.js)
+  if (window.ORT_I18N?.[key]?.[lang]) return window.ORT_I18N[key][lang];
+  if (window.ORT_I18N?.[key]?.fr) return window.ORT_I18N[key].fr;
+  return key;
+}
+
+function applyI18n() {
+  const lang = localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = i18n(key);
+    if (text && text !== key) el.textContent = text;
+  });
+}
+
+/**
+ * Retourne le nom de ville dans la langue demandée avec fallbacks
+ */
+function getCityDisplayName(place, lang) {
+  if (!place) return '';
+  const pid = place.place_id || place.placeId;
+  
+  // 1. Chercher dans CITY_NAMES_INDEX
+  if (pid && CITY_NAMES_INDEX[pid]?.names) {
+    const names = CITY_NAMES_INDEX[pid].names;
+    if (names[lang]) return names[lang];
+    if (names.en) return names.en;
+    if (names.fr) return names.fr;
+    if (names._default) return names._default;
+  }
+  
+  // 2. Fallback: place.names
+  if (place.names) {
+    if (place.names[lang]) return place.names[lang];
+    if (place.names.en) return place.names.en;
+    if (place.names.fr) return place.names.fr;
+  }
+  
+  // 3. Nom original
+  return place.name || '';
+}
+
+// === FUNCTIONS POUR CHARGER PLACES ===
+// loadJSON(), loadWithLangFallback(), ensurePlacesIndex() → fournis par ort-data-loader.js
+
+// === DOM REFS ===
+const $ = id => document.getElementById(id);
+
+// === INIT ===
+document.addEventListener('DOMContentLoaded', init);
+
+setTimeout(() => {
+  const overlay = $('loadingOverlay');
+  if (overlay && !overlay.classList.contains('hide')) {
+    overlay.classList.add('hide');
+  }
+}, 8000);
+
+async function init() {
+  console.log('[MOBILE] Init');
+  
+  // === INITIALISER FIREBASE ===
+  try {
+    // Attendre que les scripts Firebase soient chargés
+    let waitCount = 0;
+    while (typeof firebase === 'undefined') {
+      await new Promise(r => setTimeout(r, 50));
+      waitCount++;
+      if (waitCount > 100) break; // 5s max
+    }
+    
+    if (typeof firebase !== 'undefined' && firebase.apps && !firebase.apps.length) {
+      const host = location.hostname;
+      const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
+      const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+      const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+      
+      if (safe && safe.apiKey) {
+        firebase.initializeApp(safe);
+        console.log('[MOBILE] ✅ Firebase initialisé');
+      }
+    }
+  } catch (e) {
+    console.warn('[MOBILE] ⚠️ Erreur init Firebase:', e);
+  }
+  
+  // === INITIALISER ORT_STATE POUR SAUVEGARDE ===
+  if (window.ORT_STATE) {
+    try {
+      // Attendre Firebase Auth
+      await new Promise((resolve) => {
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+          firebase.auth().onAuthStateChanged(user => {
+            console.log('[MOBILE] Auth state:', user ? user.email : 'non connecté');
+            resolve(user);
+          });
+        } else {
+          console.log('[MOBILE] Firebase Auth non disponible');
+          resolve(null);
+        }
+      });
+      
+      const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+      await window.ORT_STATE.init({ user: user, premium: false });
+      
+      if (user) {
+        await window.ORT_STATE.updateUser(user);
+      }
+      console.log('[MOBILE] ✅ ORT_STATE initialisé');
+    } catch (e) {
+      console.error('[MOBILE] Erreur init ORT_STATE:', e);
+    }
+  }
+  
+  // Charger le cache de photos AVANT tout le reste
+  await loadPhotosCache();
+  
+  const params = new URLSearchParams(location.search);
+  const shareToken = params.get('share'); // 🔴 Mode partage
+  const cc = params.get('cc')?.toUpperCase() || '';
+  const itinId = params.get('itin') || '';
+  const rtKey = params.get('rtKey') || '';
+  const tripId = params.get('tripId') || params.get('id') || '';
+  const lang = params.get('lang') || localStorage.getItem('ort_lang') || 'fr';
+  const fromTemp = params.get('from') === 'temp';
+  const builderMode = params.get('mode') === 'builder' || params.get('from') === 'builder';
+  const fromBuilderResult = params.get('fromBuilder') === '1';
+  const dashboardMode = tripId && tripId.startsWith('trip_');
+  
+  // === VÉRIFIER HANDOFF DEPUIS RT DETAIL ===
+  // Si on vient d'une rotation depuis RT Detail, récupérer le tripId du handoff
+  const handoffTripId = localStorage.getItem('ORT_MOBILE_HANDOFF');
+  const effectiveTripId = tripId || handoffTripId;
+  const effectiveDashboardMode = effectiveTripId && (effectiveTripId.startsWith('trip_') || effectiveTripId.startsWith('user::'));
+  
+  debugLog('======= INIT MOBILE =======');
+  debugLog('URL tripId: ' + tripId);
+  debugLog('handoffTripId: ' + handoffTripId);
+  debugLog('effectiveTripId: ' + effectiveTripId);
+  debugLog('effectiveDashboardMode: ' + effectiveDashboardMode);
+  debugLog('cc: ' + cc + ' / itinId: ' + itinId);
+  debugLog('fromTemp: ' + fromTemp + ' / builderMode: ' + builderMode);
+  
+  if (handoffTripId) {
+    console.log('[MOBILE] 🔄 Handoff détecté depuis RT Detail:', handoffTripId);
+    localStorage.removeItem('ORT_MOBILE_HANDOFF'); // Nettoyer après utilisation
+  }
+  
+  // 🔴 DETECT NEW TRIP: tripId avec source (pas encore dans Firestore)
+  // Si on a un tripId trip_xxx MAIS aussi des paramètres source (cc+itin, from+rtKey, etc.)
+  // → C'est un NOUVEAU voyage, pas un voyage existant dans Firestore
+  const hasSourceParams = (cc && itinId) || (fromTemp && rtKey) || builderMode;
+  const isNewTrip = effectiveTripId && effectiveTripId.startsWith('trip_') && hasSourceParams;
+  if (isNewTrip) {
+    debugLog('🆕 Nouveau voyage détecté (tripId + source params)');
+  }
+  
+  state.cc = cc;
+  state.lang = lang;
+  localStorage.setItem('ort_lang', lang);
+  
+  // INIT ORT_TRIPID - Source de vérité unique pour le tripId
+  if (window.ORT_TRIPID) {
+    state.tripId = window.ORT_TRIPID.init({ source: 'mobile' });
+    console.log('[MOBILE] TripId initialisé:', state.tripId);
+  }
+  
+  setupTabs();
+  setupEvents();
+  applyI18n(); // Appliquer les traductions
+  
+  try {
+    debugLog('Mode sélectionné...');
+    
+    // 🔴 MODE PARTAGÉ - Priorité absolue
+    if (shareToken) {
+      debugLog('→ loadFromShare(' + shareToken + ')');
+      await loadFromShare(shareToken, lang);
+    } else if (fromBuilderResult) {
+      debugLog('→ loadBuilderResult');
+      await loadBuilderResult();
+    } else if (builderMode) {
+      debugLog('→ initRouteBuilder');
+      await initRouteBuilder(params);
+    } else if (effectiveDashboardMode && !isNewTrip) {
+      // 🔴 ONLY load from dashboard if NOT a new trip with source params
+      debugLog('→ loadFromDashboard(' + effectiveTripId + ')');
+      await loadFromDashboard(effectiveTripId);
+    } else if (fromTemp && rtKey) {
+      debugLog('→ loadFromTemp');
+      await loadFromTemp(rtKey);
+    } else if (rtKey) {
+      debugLog('→ loadFromFirebase');
+      await loadFromFirebase(rtKey);
+    } else if (cc && itinId) {
+      debugLog('→ loadItinerary');
+      await loadItinerary(cc, itinId, lang);
+    } else {
+      debugLog('❌ Aucun mode correspondant!');
+      throw new Error('Aucun itinéraire spécifié');
+    }
+    
+    // Charger les noms multilingues pour tous les pays des steps
+    const countriesToLoad = new Set();
+    if (state.cc) countriesToLoad.add(state.cc.toUpperCase());
+    if (state.steps && state.steps.length > 0) {
+      state.steps.forEach(step => {
+        let stepCC = step.cc;
+        if (!stepCC && (step.place_id || step.placeId)) {
+          const pid = step.place_id || step.placeId;
+          if (pid.includes('::')) stepCC = pid.split('::')[0];
+        }
+        if (stepCC) countriesToLoad.add(stepCC.toUpperCase());
+      });
+    }
+    
+    for (const cc of countriesToLoad) {
+      const namesPaths = [
+        `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toLowerCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toUpperCase()}_names.json`,
+        `./data/Roadtripsprefabriques/countries/${cc.toUpperCase()}/${cc.toUpperCase()}_names.json`
+      ];
+      for (const namesPath of namesPaths) {
+        try {
+          const namesResp = await fetch(namesPath);
+          if (namesResp.ok) {
+            const namesData = await namesResp.json();
+            for (const [pid, data] of Object.entries(namesData)) {
+              if (!CITY_NAMES_INDEX[pid]) CITY_NAMES_INDEX[pid] = data;
+            }
+            console.log(`[NAMES] ✅ ${cc}: ${Object.keys(namesData).length} noms chargés`);
+            break;
+          }
+        } catch (e) { /* next path */ }
+      }
+    }
+    
+    debugLog('Chargement terminé! state.steps=' + state.steps.length);
+    
+    // 🔴 S'assurer que state.tripId est défini (nécessaire pour partage/sauvegarde)
+    if (!state.tripId) {
+      state.tripId = window.ORT_TRIPID?.get() || effectiveTripId;
+      debugLog('tripId récupéré après chargement: ' + state.tripId);
+    }
+    
+    debugLog('Appel renderList...');
+    renderList();
+    debugLog('Appel renderBookings...');
+    renderBookings();
+    debugLog('Appel updateSummary...');
+    updateSummary();
+    debugLog('Appel initMap...');
+    initMap();
+    debugLog('✅ RENDU TERMINÉ - ' + state.title);
+    
+  } catch (err) {
+    debugLog('❌ ERREUR: ' + err.message);
+    console.error('[MOBILE] Error:', err);
+    if (err.message !== 'Redirection en cours...') {
+      showToast('❌ ' + (err.message || 'Erreur'));
+      // Afficher message d'erreur au lieu de démo
+      state.title = '❌ Erreur';
+      state.steps = [];
+      renderList();
+      renderBookings();
+      updateSummary();
+      initMap();
+    }
+  }
+  
+  setTimeout(() => $('loadingOverlay')?.classList.add('hide'), 300);
+}
+
+// === LOAD FROM SHARE (voyage partagé) ===
+async function loadFromShare(shareToken, lang) {
+  console.log('[MOBILE] 🔗 loadFromShare:', shareToken);
+  
+  // Attendre que ORT_SHARE soit disponible
+  let waitCount = 0;
+  while (typeof ORT_SHARE === 'undefined' && waitCount < 50) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+  }
+  
+  if (typeof ORT_SHARE === 'undefined') {
+    throw new Error('Module de partage non disponible');
+  }
+  
+  try {
+    const sharedData = await ORT_SHARE.checkSharedAccess();
+    
+    if (!sharedData || !sharedData.data) {
+      throw new Error('Voyage partagé non trouvé ou expiré');
+    }
+    
+    console.log('[MOBILE] ✅ Voyage partagé chargé:', sharedData);
+    
+    // Stocker pour référence
+    window._sharedTripData = sharedData;
+    
+    // Mode lecture seule
+    document.body.classList.add('shared-view-only');
+    
+    // Charger les données dans state
+    const tripData = sharedData.data;
+    state.title = tripData.title || 'Voyage partagé';
+    state.cc = tripData.country || tripData.cc || '';
+    state.steps = tripData.steps || [];
+    state.lang = lang;
+    state._isShared = true; // Marquer comme partagé
+    state._shareToken = shareToken;
+    
+    // Afficher banner de lecture seule
+    const banner = document.createElement('div');
+    banner.id = 'shareBanner';
+    banner.style.cssText = `
+      position: fixed; top: 56px; left: 0; right: 0;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); 
+      color: white; padding: 10px 16px; 
+      text-align: center; z-index: 99; font-weight: 600;
+      font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    `;
+    const ownerName = sharedData.ownerName || 'Un voyageur';
+    banner.innerHTML = `👁️ Voyage partagé par <strong>${ownerName}</strong> • Mode lecture seule`;
+    document.body.appendChild(banner);
+    
+    // Ajuster le contenu principal
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.style.top = 'calc(var(--header-height) + 44px)';
+    }
+    
+    console.log('[MOBILE] ✅ State chargé:', state.steps.length, 'étapes');
+    
+  } catch (error) {
+    console.error('[MOBILE] ❌ Erreur chargement partage:', error);
+    throw new Error('Impossible de charger le voyage partagé: ' + error.message);
+  }
+}
+
+// === LOAD FROM TEMP (localStorage) ===
+async function loadFromTemp(rtKey) {
+  console.log('[MOBILE] loadFromTemp:', rtKey);
+  
+  const rawItins = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_itins`);
+  const rawPlaces = localStorage.getItem(`ORT_TEMP_TRIP_${rtKey}_places`);
+  
+  if (!rawItins) throw new Error('Itinéraire temporaire non trouvé');
+  
+  let itinsObj, placesObj;
+  try {
+    itinsObj = JSON.parse(rawItins);
+    placesObj = rawPlaces ? JSON.parse(rawPlaces) : {};
+  } catch (e) {
+    throw new Error('Données corrompues');
+  }
+  
+  // Trouver l'itinéraire à utiliser
+  let toUse = null;
+  if (Array.isArray(itinsObj.days_plan) || Array.isArray(itinsObj.places)) {
+    toUse = itinsObj;
+  } else if (itinsObj.itineraries?.[0]) {
+    toUse = itinsObj.itineraries[0];
+  } else if (itinsObj.itins?.[0]) {
+    toUse = itinsObj.itins[0];
+  }
+  
+  if (!toUse) throw new Error('Structure itinéraire invalide');
+  
+  // Extraire les étapes
+  const rawSteps = toUse.days_plan || toUse.places || toUse.steps || [];
+  state.title = toUse.title || toUse.name || 'Roadtrip';
+  state.cc = toUse.itin_id ? toUse.itin_id.split('::')[0].toUpperCase() : (itinsObj.country || 'XX');
+  state._originalItinId = rtKey;
+  
+  state.steps = rawSteps.map((s, idx) => {
+    let photos = [];
+    if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (s.image) photos = [s.image];
+    else if (s.photo) photos = [s.photo];
+    else if (s.placeId && placesObj[s.placeId]?.photos) photos = placesObj[s.placeId].photos;
+    
+    // Récupérer visits et activities
+    let visits = [];
+    let activities = [];
+    if (Array.isArray(s.visits)) {
+      visits = s.visits.map(v => typeof v === 'string' ? {text: v} : v);
+    }
+    if (Array.isArray(s.activities)) {
+      activities = s.activities.map(a => typeof a === 'string' ? {text: a} : a);
+    }
+    // Fallback depuis placesObj si disponible
+    if (visits.length === 0 && s.placeId && placesObj[s.placeId]?.visits) {
+      visits = placesObj[s.placeId].visits.map(v => typeof v === 'string' ? {text: v} : v);
+    }
+    if (activities.length === 0 && s.placeId && placesObj[s.placeId]?.activities) {
+      activities = placesObj[s.placeId].activities.map(a => typeof a === 'string' ? {text: a} : a);
+    }
+    
+    return {
+      _idx: idx,
+      name: s.name || s.place_name || `Étape ${idx + 1}`,
+      lat: s.lat || s.latitude,
+      lng: s.lng || s.lon || s.longitude,
+      nights: s.nights || s.adjustedDays || 0,
+      description: s.description || s.desc || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      placeId: s.placeId || s.place_id || null,
+      place_id: s.place_id || s.placeId || null,
+      visits: visits,
+      activities: activities
+    };
+  });
+  
+  console.log(`[MOBILE] Loaded ${state.steps.length} steps from temp`);
+  
+  // Charger les visites et activités des places depuis le master
+  if (state.cc) {
+    await ensurePlacesIndex([state.cc]);
+  }
+}
+
+// === LOAD FROM DASHBOARD (Firestore users/{uid}/trips/{tripId}) ===
+async function loadFromDashboard(tripId) {
+  debugLog('======= loadFromDashboard =======');
+  debugLog('tripId: ' + tripId);
+  debugLog('URL: ' + location.href);
+  
+  // === ESSAYER D'ABORD LOCALSTORAGE (rapide, fonctionne offline) ===
+  const localKey = `ort_trip_${tripId}`;
+  const localData = localStorage.getItem(localKey);
+  debugLog('localStorage key: ' + localKey);
+  debugLog('localStorage existe: ' + (!!localData));
+  
+  if (localData) {
+    try {
+      const tripData = JSON.parse(localData);
+      debugLog('localStorage parsed: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' étapes');
+      if (tripData && tripData.steps && tripData.steps.length > 0) {
+        debugLog('✅ Chargé depuis localStorage!');
+        await applyTripDataToState(tripData);
+        
+        // IMPORTANT: Charger aussi ORT_TRIP_DATA pour les bookings (stockés séparément)
+        if (window.ORT_TRIP_DATA) {
+          try {
+            debugLog('📥 Chargement ORT_TRIP_DATA pour les bookings...');
+            await window.ORT_TRIP_DATA.loadTrip(tripId);
+            debugLog('✅ ORT_TRIP_DATA chargé (bookings disponibles)');
+          } catch (e) {
+            debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+          }
+        }
+        
+        return; // Succès !
+      } else {
+        debugLog('⚠️ localStorage steps vide/invalide');
+      }
+    } catch (e) {
+      debugLog('❌ Erreur parsing localStorage: ' + e.message);
+    }
+  }
+  
+  // === SINON ESSAYER FIRESTORE ===
+  debugLog('📥 Tentative Firestore...');
+  debugLog('firebase défini: ' + (typeof firebase !== 'undefined'));
+  debugLog('ORT_CONFIG défini: ' + (!!window.ORT_CONFIG));
+  
+  // Attendre que Firebase soit chargé et initialisé
+  let waitCount = 0;
+  while (typeof firebase === 'undefined' || !firebase.apps) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+    if (waitCount > 50) {
+      debugLog('❌ Firebase jamais chargé après 5s');
+      throw new Error('Firebase non disponible');
+    }
+  }
+  debugLog('Firebase apps.length: ' + firebase.apps.length);
+  
+  // Initialiser Firebase si pas encore fait
+  if (!firebase.apps.length) {
+    const host = location.hostname;
+    const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0|test-oneroadtrip/.test(host);
+    debugLog('Host: ' + host + ' isPreprod: ' + isPreprod);
+    
+    const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+    const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+    debugLog('Config apiKey: ' + (!!safe?.apiKey));
+    
+    if (safe && safe.apiKey) {
+      firebase.initializeApp(safe);
+      debugLog('✅ Firebase initialisé');
+    } else {
+      debugLog('❌ Pas de config Firebase!');
+      throw new Error('Config Firebase manquante');
+    }
+  }
+  
+  // Attendre firebase.auth
+  debugLog('firebase.auth dispo: ' + (!!firebase.auth));
+  waitCount = 0;
+  while (!firebase.auth) {
+    await new Promise(r => setTimeout(r, 100));
+    waitCount++;
+    if (waitCount > 30) {
+      debugLog('❌ firebase.auth jamais dispo');
+      throw new Error('Firebase Auth non disponible');
+    }
+  }
+  
+  // === ATTENDRE L'UTILISATEUR ===
+  // L'auth est probablement déjà faite dans l'init, vérifier d'abord currentUser
+  let user = firebase.auth().currentUser;
+  if (!user) {
+    debugLog('⏳ Pas de currentUser, attente auth...');
+    user = await new Promise((resolve) => {
+      const unsubscribe = firebase.auth().onAuthStateChanged((u) => {
+        debugLog('Auth reçu: ' + (u?.email || 'non connecté'));
+        unsubscribe();
+        resolve(u);
+      });
+      setTimeout(() => {
+        debugLog('⚠️ Timeout auth 3s');
+        unsubscribe();
+        resolve(null);
+      }, 3000); // Réduit à 3s
+    });
+  } else {
+    debugLog('✅ currentUser déjà présent: ' + user.email);
+  }
+  
+  if (!user) {
+    debugLog('❌ Non connecté!');
+    throw new Error('Connectez-vous pour voir ce voyage');
+  }
+  
+  // === CHARGER DEPUIS FIRESTORE ===
+  debugLog('📥 Firestore: users/' + user.uid + '/trips/' + tripId);
+  
+  try {
+    // MÉTHODE 1: Utiliser ORT_STATE qui désérialise correctement
+    if (window.ORT_STATE) {
+      debugLog('Tentative via ORT_STATE...');
+      const trip = await window.ORT_STATE.getTrip(tripId);
+      if (trip && trip.steps && trip.steps.length > 0) {
+        debugLog('✅ ORT_STATE: ' + trip.title + ' / ' + trip.steps.length + ' steps');
+        await applyTripDataToState(trip);
+        
+        // Charger aussi ORT_TRIP_DATA pour les bookings
+        if (window.ORT_TRIP_DATA) {
+          try {
+            await window.ORT_TRIP_DATA.loadTrip(tripId);
+            debugLog('✅ ORT_TRIP_DATA chargé');
+          } catch (e) {
+            debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+          }
+        }
+        
+        // Cache localStorage
+        localStorage.setItem(localKey, JSON.stringify(trip));
+        debugLog('💾 Mis en cache localStorage');
+        return;
+      }
+    }
+    
+    // MÉTHODE 2: Fallback direct Firestore avec désérialisation manuelle
+    debugLog('Fallback: lecture Firestore directe...');
+    const db = firebase.firestore();
+    const tripRef = db.collection('users').doc(user.uid).collection('trips').doc(tripId);
+    const tripDoc = await tripRef.get();
+    debugLog('Doc exists: ' + tripDoc.exists);
+    
+    if (!tripDoc.exists) {
+      debugLog('❌ Doc non trouvé dans Firestore');
+      throw new Error('Voyage non trouvé');
+    }
+    
+    const tripData = tripDoc.data();
+    debugLog('📄 Firestore brut: ' + tripData?.title);
+    
+    // Désérialiser les steps si c'est une string JSON
+    if (tripData.steps && typeof tripData.steps === 'string') {
+      try {
+        tripData.steps = JSON.parse(tripData.steps);
+        debugLog('🔓 Steps désérialisés: ' + tripData.steps.length);
+      } catch (e) {
+        debugLog('❌ Erreur désérialisation steps');
+      }
+    }
+    
+    debugLog('Steps après désérialisation: ' + (tripData.steps?.length || 0));
+    await applyTripDataToState(tripData);
+    
+    // Charger ORT_TRIP_DATA pour les bookings
+    if (window.ORT_TRIP_DATA) {
+      try {
+        await window.ORT_TRIP_DATA.loadTrip(tripId);
+        debugLog('✅ ORT_TRIP_DATA chargé');
+        // Debug: vérifier les bookings par étape
+        state.steps.forEach((s, i) => {
+          const bookings = ORT_TRIP_DATA.getStepBookings(i) || [];
+          if (bookings.length > 0) {
+            console.log(`[BOOKING-DEBUG] Étape ${i+1} (${s.name}): ${bookings.length} résa(s)`, bookings.map(b => b.name));
+          }
+        });
+      } catch (e) {
+        debugLog('⚠️ ORT_TRIP_DATA: ' + e.message);
+      }
+    }
+    
+    // Cache localStorage
+    localStorage.setItem(localKey, JSON.stringify(tripData));
+    debugLog('💾 Mis en cache localStorage');
+    
+  } catch (e) {
+    debugLog('❌ Erreur: ' + e.message);
+    throw e;
+  }
+  
+  debugLog('======= FIN loadFromDashboard =======');
+}
+
+// Applique les données du trip au state
+async function applyTripDataToState(tripData) {
+  debugLog('applyTripDataToState: ' + tripData?.title + ' / ' + tripData?.steps?.length + ' steps');
+  
+  // DEBUG: Afficher les visites des steps bruts
+  if (tripData?.steps) {
+    tripData.steps.forEach((s, i) => {
+      if (s.visits?.length || s.pois?.length) {
+        debugLog(`Step ${i} (${s.name}): ${s.visits?.length || 0} visits, ${s.pois?.length || 0} pois`);
+      }
+    });
+  }
+  
+  state.title = tripData.title || tripData.name || 'Roadtrip';
+  state.cc = tripData.country || tripData.cc || 'XX';
+  state.tripId = tripData.id || tripData.tripId;
+  state._originalItinId = tripData.itinId || tripData._originalItinId;
+  state.startDateStr = tripData.startDateStr || tripData.startDate || '';
+  
+  // Convertir les steps
+  const rawSteps = tripData.steps || [];
+  state.steps = rawSteps.map((s, idx) => {
+    // Photos
+    let photos = [];
+    if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (s.photo) photos = [s.photo];
+    else if (s.image) photos = [s.image];
+    
+    return {
+      _idx: idx,
+      name: s.name || s.place_name || `Étape ${idx + 1}`,
+      lat: s.lat || s.latitude,
+      lng: s.lng || s.lon || s.longitude,
+      nights: Number(s.nights) || 0,
+      description: s.description || s.desc || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || s._distanceKmToNext || 0,
+      drive_min: s.drive_min || s.to_next_leg?.drive_min || s._driveMinToNext || 0,
+      placeId: s.placeId || s.place_id || null,
+      visits: s.visits || s.pois || [],
+      activities: s.activities || [],
+    };
+  });
+  
+  debugLog('✅ state.steps = ' + state.steps.length);
+  
+  // Charger les visites et activités des places depuis le master si vides
+  if (state.cc) {
+    debugLog('🔄 Chargement PLACES_INDEX pour ' + state.cc);
+    await ensurePlacesIndex([state.cc]);
+    debugLog('✅ PLACES_INDEX chargé: ' + Object.keys(PLACES_INDEX || {}).length + ' places');
+  }
+  
+  // Budget si présent
+  if (tripData.totalBudget) {
+    state.totalBudget = tripData.totalBudget;
+  }
+}
+
+// === ROUTE BUILDER ===
+// haversineDistance() → fourni par ort-utils.js
+
+async function initRouteBuilder(params) {
+  console.log('[MOBILE-BUILDER] Redirection vers RT Detail pour calcul...');
+  
+  // Construire l'URL vers RT Detail avec returnTo=mobile
+  const newParams = new URLSearchParams(params);
+  newParams.set('returnTo', 'mobile');
+  
+  // Rediriger vers RT Detail qui fera le calcul
+  const url = `roadtrip_detail.html?${newParams.toString()}`;
+  console.log('[MOBILE-BUILDER] Redirect:', url);
+  
+  showToast('🔄 Calcul de l\'itinéraire...');
+  
+  // Petit délai pour voir le toast
+  setTimeout(() => {
+    window.location.href = url;
+  }, 500);
+  
+  // Ne jamais arriver ici, mais au cas où
+  throw new Error('Redirection en cours...');
+}
+
+// Charger le résultat du builder depuis localStorage
+async function loadBuilderResult() {
+  console.log('[MOBILE] Chargement résultat builder...');
+  
+  const raw = localStorage.getItem('ORT_BUILDER_RESULT');
+  if (!raw) throw new Error('Résultat builder non trouvé');
+  
+  const data = JSON.parse(raw);
+  if (!data || !data.steps?.length) throw new Error('Données builder invalides');
+  
+  state.title = data.title || 'Roadtrip';
+  state.cc = data.cc || 'XX';
+  state._fromBuilder = true;
+  
+  state.steps = data.steps.map((s, idx) => {
+    // Récupérer photos
+    let photos = s.images || s.photos || [];
+    if (!photos.length && s.name) {
+      photos = findPhotosForPlace(s.name, s.cc || state.cc);
+    }
+    
+    return {
+      _idx: idx,
+      name: s.name,
+      lat: s.lat,
+      lng: s.lng || s.lon,
+      nights: s.nights || 0,
+      description: s.description || '',
+      photos: photos,
+      distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      placeId: s.place_id || null,
+      visits: s.visits || [],
+      activities: s.activities || []
+    };
+  });
+  
+  // === RESTAURER LES RÉSERVATIONS ===
+  if (data.bookings && typeof globalMobileBookingManager !== 'undefined' && globalMobileBookingManager) {
+    state.bookings = data.bookings;
+    
+    // Charger dans le gestionnaire de réservations mobile
+    Object.entries(data.bookings).forEach(([stepIdx, bookings]) => {
+      if (Array.isArray(bookings)) {
+        bookings.forEach(booking => {
+          globalMobileBookingManager.addBooking(booking);
+        });
+      }
+    });
+    
+    console.log('[MOBILE] ✅ Réservations restaurées:', Object.keys(data.bookings).length, 'étapes');
+  }
+  
+  console.log(`[MOBILE] Builder result: ${state.steps.length} étapes`);
+  
+  // Nettoyer localStorage
+  localStorage.removeItem('ORT_BUILDER_RESULT');
+}
+
+// calculateOSRMRoute() → fourni par ort-routing.js
+// Note: ort-routing.js accepte les deux formats: (waypoints, mode) et ({lat,lon}, {lat,lon})
+
+async function loadPlacesForRoute(config, routeData) {
+  const SEARCH_RADIUS = 50; // km
+  const countries = new Set();
+  if (config.start.cc) countries.add(config.start.cc);
+  if (config.end.cc) countries.add(config.end.cc);
+  
+  // Détecter pays traversés via bbox
+  const COUNTRY_BBOX = {
+    'FR': { minLat: 41, maxLat: 51.5, minLon: -5.5, maxLon: 10 },
+    'ES': { minLat: 35.5, maxLat: 44, minLon: -10, maxLon: 5 },
+    'PT': { minLat: 36.5, maxLat: 42.5, minLon: -10, maxLon: -6 },
+    'IT': { minLat: 35.5, maxLat: 47.5, minLon: 6, maxLon: 19 },
+    'CH': { minLat: 45.5, maxLat: 48, minLon: 5.5, maxLon: 10.5 },
+    'DE': { minLat: 47, maxLat: 55.5, minLon: 5.5, maxLon: 15.5 },
+    'BE': { minLat: 49.5, maxLat: 51.5, minLon: 2.5, maxLon: 6.5 },
+    'NL': { minLat: 50.5, maxLat: 53.5, minLon: 3, maxLon: 7.5 },
+    'AT': { minLat: 46.5, maxLat: 49, minLon: 9.5, maxLon: 17 },
+    'PL': { minLat: 49, maxLat: 55, minLon: 14, maxLon: 24 }
+  };
+  
+  for (const [lat, lon] of routeData.coords) {
+    for (const [cc, bbox] of Object.entries(COUNTRY_BBOX)) {
+      if (lat >= bbox.minLat && lat <= bbox.maxLat && lon >= bbox.minLon && lon <= bbox.maxLon) {
+        countries.add(cc);
+      }
+    }
+  }
+  
+  console.log('[MOBILE-BUILDER] Pays:', Array.from(countries).join(', '));
+  
+  // Charger les places de chaque pays
+  const allPlaces = {};
+  const lang = state.lang || 'fr';
+  
+  for (const cc of countries) {
+    try {
+      const url = `./data/places-json/${cc.toLowerCase()}.places-${lang}.json`;
+      const resp = await fetch(url);
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      
+      const placesArray = data.places || data;
+      for (const p of placesArray) {
+        if (!p.lat || !p.lng && !p.lon) continue;
+        const plat = p.lat;
+        const plon = p.lng || p.lon;
+        
+        // Vérifier si proche de la route
+        let minDist = Infinity;
+        for (const [rlat, rlon] of routeData.coords) {
+          const d = haversineDistance(plat, plon, rlat, rlon);
+          if (d < minDist) minDist = d;
+        }
+        
+        if (minDist <= SEARCH_RADIUS) {
+          const slug = toSlug(p.name);
+          const id = p.place_id || `${cc}::${slug}`;
+          
+          // Récupérer photos du cache
+          let photos = p.photos || (p.photo ? [p.photo] : []);
+          if (!photos.length) {
+            photos = findPhotosForPlace(p.name, cc);
+          }
+          
+          allPlaces[id] = { ...p, lat: plat, lng: plon, _distToRoute: minDist, cc, photos, placeId: id };
+        }
+      }
+    } catch (e) {
+      console.warn(`[MOBILE-BUILDER] Failed to load ${cc}:`, e);
+    }
+  }
+  
+  return allPlaces;
+}
+
+function selectStepsAlongRoute(config, routeData, places) {
+  const totalDist = routeData.distance;
+  const targetSteps = Math.max(2, Math.ceil(totalDist / config.maxKm));
+  const stepDist = totalDist / targetSteps;
+  
+  console.log(`[MOBILE-BUILDER] Target: ${targetSteps} étapes, ~${Math.round(stepDist)}km entre chaque`);
+  
+  // Ajouter départ avec recherche de photos
+  const startPhotos = findPhotosForPlace(config.start.name, config.start.cc);
+  const steps = [{
+    name: config.start.name,
+    lat: config.start.lat,
+    lng: config.start.lon,
+    nights: 1,
+    description: 'Point de départ',
+    photos: startPhotos,
+    placeId: `${config.start.cc}::${toSlug(config.start.name)}`,
+    _progress: 0,
+    _isEndpoint: true
+  }];
+  
+  // Convertir places en array avec progress
+  const placesList = Object.values(places).map(p => {
+    // Calculer progress sur la route
+    let bestProgress = 0;
+    let minDist = Infinity;
+    for (let i = 0; i < routeData.coords.length; i++) {
+      const d = haversineDistance(p.lat, p.lng, routeData.coords[i][0], routeData.coords[i][1]);
+      if (d < minDist) {
+        minDist = d;
+        bestProgress = routeData.cumDist[i] / totalDist;
+      }
+    }
+    return { ...p, _progress: bestProgress };
+  });
+  
+  // Sélectionner étapes intermédiaires
+  for (let i = 1; i < targetSteps; i++) {
+    const targetProgress = i / targetSteps;
+    
+    // Trouver le meilleur candidat
+    let best = null;
+    let bestScore = -Infinity;
+    
+    for (const p of placesList) {
+      // Déjà utilisé ?
+      if (steps.some(s => s.name === p.name)) continue;
+      
+      const progressDiff = Math.abs(p._progress - targetProgress);
+      if (progressDiff > 0.3) continue; // Trop loin du target
+      
+      // Score basé sur: proximité du target progress + rating + faible détour
+      const score = (1 - progressDiff * 3) * 50 + 
+                    (p.global_rating || p.rating || 3) * 10 -
+                    (p._distToRoute || 0) * 0.5;
+      
+      if (score > bestScore) {
+        bestScore = score;
+        best = p;
+      }
+    }
+    
+    if (best) {
+      // Récupérer photos du cache
+      const placeId = best.placeId || best.place_id || `${best.cc}::${toSlug(best.name)}`;
+      let photos = best.photos || [];
+      
+      // Chercher dans PHOTOS_CACHE si pas de photos
+      if (!photos.length) {
+        photos = findPhotosForPlace(best.name, best.cc);
+      }
+      
+      steps.push({
+        name: best.name || best.place_name,
+        lat: best.lat,
+        lng: best.lng,
+        nights: 1,
+        description: best.description || best.desc || '',
+        photos: photos,
+        placeId: placeId,
+        _progress: best._progress
+      });
+    }
+  }
+  
+  // Ajouter arrivée avec recherche de photos
+  const endPhotos = findPhotosForPlace(config.end.name, config.end.cc);
+  steps.push({
+    name: config.end.name,
+    lat: config.end.lat,
+    lng: config.end.lon,
+    nights: 1,
+    description: 'Point d\'arrivée',
+    photos: endPhotos,
+    placeId: `${config.end.cc}::${toSlug(config.end.name)}`,
+    _progress: 1,
+    _isEndpoint: true
+  });
+  
+  // Trier par progress
+  steps.sort((a, b) => a._progress - b._progress);
+  
+  // Calculer distances entre étapes
+  for (let i = 0; i < steps.length - 1; i++) {
+    steps[i].distance_km = Math.round(haversineDistance(
+      steps[i].lat, steps[i].lng,
+      steps[i+1].lat, steps[i+1].lng
+    ));
+  }
+  steps[steps.length - 1].distance_km = 0;
+  
+  return steps;
+}
+
+function autoCalculateNights(totalDays) {
+  if (!state.steps.length) return;
+  
+  const total = totalDays || 7;
+  const perStep = Math.floor(total / state.steps.length);
+  let remaining = total - perStep * state.steps.length;
+  
+  state.steps.forEach((s, i) => {
+    s.nights = perStep + (i < remaining ? 1 : 0);
+  });
+  
+  // Dernière étape = 0 nuit (fin du voyage)
+  if (state.steps.length > 1) {
+    state.steps[state.steps.length - 1].nights = 0;
+  }
+}
+
+// === DATA LOADING ===
+// isComposedId() et parseComposedIds() → fournis par ort-utils.js
+
+async function loadItinerary(cc, itinId, lang) {
+  const baseUrl = './data/Roadtripsprefabriques/countries';
+  
+  // === TRAITER COMPOSED ===
+  if (isComposedId(itinId)) {
+    const ids = parseComposedIds(itinId);
+    const allSteps = [];
+    const allTitles = [];
+    
+    // Charger chaque itinéraire depuis son pays
+    for (const id of ids) {
+      try {
+        // Parser l'ID pour extraire le pays si présent (format: CC::slug ou juste slug/id)
+        let ccForItin = cc;
+        let idToSearch = id;
+        
+        if (id.includes('::')) {
+          const parts = id.split('::');
+          ccForItin = parts[0];
+          idToSearch = parts.slice(1).join('::');
+        }
+        
+        const ccLower = ccForItin.toLowerCase();
+        const url = `${baseUrl}/${ccLower}/${ccLower}.itins.modules-${lang}.json`;
+        
+        const resp = await fetch(url);
+        if (!resp.ok) continue;
+        
+        const data = await resp.json();
+        const itins = data.itins || data.itineraries || data || [];
+        const itin = itins.find(i => {
+          const checkId = i.id || i.itin_id || '';
+          return checkId === idToSearch || checkId === id;
+        });
+        
+        if (!itin) continue;
+        
+        allTitles.push(itin.title || itin.name || 'RT');
+        
+        const daysPlan = itin.days_plan || itin.steps || [];
+        daysPlan.forEach((day, idx) => {
+          const nightData = day.night || {};
+          const placeId = nightData.place_id || day.place_id || '';
+          const coords = nightData.coords || [];
+          const suggestedDays = day.suggested_days || 1;
+          const driveMin = day.to_next_leg?.drive_min || 0;
+          const distanceKm = day.to_next_leg?.distance_km || 0;
+          
+          let transportBonus = driveMin > 300 ? 1.0 : driveMin > 180 ? 0.5 : 0;
+          const nights = Math.max(0, Math.round(suggestedDays + transportBonus));
+          
+          let name = day.name || '';
+          if (!name && placeId) {
+            const parts = placeId.split('::');
+            name = parts[parts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || `Étape ${idx + 1}`;
+          }
+          
+          const visits = Array.isArray(day.visits) ? day.visits.map(v => typeof v === 'string' ? {text: v} : v) : [];
+          const activities = Array.isArray(day.activities) ? day.activities.map(a => typeof a === 'string' ? {text: a} : a) : [];
+          const description = visits.map(v => v.text || v).filter(Boolean).join(' ');
+          
+          let photos = [];
+          if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
+          else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+          else if (typeof day.image === 'string' && day.image) photos = [day.image];
+          else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
+          else if (typeof day.thumb === 'string' && day.thumb) photos = [day.thumb];
+          
+          allSteps.push({
+            _idx: allSteps.length,
+            name: name || `Étape ${idx + 1}`,
+            lat: coords[0] || day.lat,
+            lng: coords[1] || day.lng || day.lon,
+            nights, description,
+            photos: photos,
+            distance_km: distanceKm,
+            placeId: day.place_id || day.placeId || placeId,
+            place_id: day.place_id || day.placeId || placeId,
+            visits: visits,
+            activities: activities
+          });
+        });
+      } catch (e) {
+        console.error(`[COMPOSED] Erreur chargement ${id}:`, e);
+      }
+    }
+    
+    if (allSteps.length === 0) throw new Error('Aucun itinéraire composé n\'a pu être chargé');
+    
+    state.title = allTitles.join(' + ');
+    state._originalItinId = itinId;
+    state.cc = cc;
+    state.steps = allSteps;
+    return;
+  }
+  
+  // === CAS NORMAL: UN SEUL ITINÉRAIRE ===
+  const ccLower = cc.toLowerCase();
+  const url = `${baseUrl}/${ccLower}/${ccLower}.itins.modules-${lang}.json`;
+  
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  
+  const data = await resp.json();
+  const itins = data.itins || data.itineraries || data || [];
+  const itin = itins.find(i => (i.id || i.itin_id) === itinId);
+  if (!itin) throw new Error('Itinéraire non trouvé');
+  
+  state.title = itin.title || itin.name || 'Roadtrip';
+  state._originalItinId = itinId;
+  state.cc = cc;
+  
+  const steps = [];
+  const daysPlan = itin.days_plan || itin.steps || [];
+  
+  daysPlan.forEach((day, idx) => {
+    const nightData = day.night || {};
+    const placeId = nightData.place_id || day.place_id || '';
+    const coords = nightData.coords || [];
+    const suggestedDays = day.suggested_days || 1;
+    const driveMin = day.to_next_leg?.drive_min || 0;
+    const distanceKm = day.to_next_leg?.distance_km || 0;
+    
+    let transportBonus = driveMin > 300 ? 1.0 : driveMin > 180 ? 0.5 : 0;
+    const nights = Math.max(0, Math.round(suggestedDays + transportBonus));
+    
+    let name = day.name || '';
+    if (!name && placeId) {
+      const parts = placeId.split('::');
+      name = parts[parts.length - 1]?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || `Étape ${idx + 1}`;
+    }
+    
+    const visits = Array.isArray(day.visits) ? day.visits.map(v => typeof v === 'string' ? {text: v} : v) : [];
+    const activities = Array.isArray(day.activities) ? day.activities.map(a => typeof a === 'string' ? {text: a} : a) : [];
+    const description = visits.map(v => v.text || v).filter(Boolean).join(' ');
+    
+    // Récupérer les photos avec plusieurs fallbacks
+    let photos = [];
+    if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
+    else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+    else if (typeof day.image === 'string' && day.image) photos = [day.image];
+    else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
+    else if (typeof day.thumb === 'string' && day.thumb) photos = [day.thumb];
+    
+    steps.push({
+      _idx: steps.length,
+      name: name || `Étape ${idx + 1}`,
+      lat: coords[0] || day.lat,
+      lng: coords[1] || day.lng || day.lon,
+      nights, description,
+      photos: photos,
+      distance_km: distanceKm,
+      placeId: day.place_id || day.placeId || placeId,
+      place_id: day.place_id || day.placeId || placeId,
+      visits: visits,
+      activities: activities
+    });
+  });
+  
+  state.steps = steps;
+}
+
+async function loadFromFirebase(rtKey) {
+  if (typeof firebase === 'undefined') {
+    await new Promise(r => setTimeout(r, 1000));
+    if (typeof firebase === 'undefined') throw new Error('Firebase non disponible');
+  }
+  
+  const doc = await firebase.firestore().collection('trips').doc(rtKey).get();
+  if (!doc.exists) throw new Error('Voyage non trouvé');
+  
+  const data = doc.data();
+  state.title = data.title || 'Roadtrip';
+  state._originalItinId = rtKey;
+  state.cc = data.cc || 'FR';
+  state.steps = (data.steps || []).map((s, idx) => {
+    // Récupérer les photos avec plusieurs fallbacks
+    let photos = [];
+    if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    else if (typeof s.image === 'string' && s.image) photos = [s.image];
+    else if (typeof s.photo === 'string' && s.photo) photos = [s.photo];
+    else if (typeof s.thumb === 'string' && s.thumb) photos = [s.thumb];
+    else if (typeof s.img === 'string' && s.img) photos = [s.img];
+    // Fallback: chercher dans cachedPhotos si disponible
+    else if (s.placeId && window._cachedPhotos?.[s.placeId]) {
+      photos = [window._cachedPhotos[s.placeId]];
+    }
+    
+    // Récupérer visits et activities
+    const visits = Array.isArray(s.visits) ? s.visits.map(v => typeof v === 'string' ? {text: v} : v) : [];
+    const activities = Array.isArray(s.activities) ? s.activities.map(a => typeof a === 'string' ? {text: a} : a) : [];
+    
+    return {
+      _idx: idx,
+      name: s.name || `Étape ${idx + 1}`,
+      lat: s.lat, lng: s.lng || s.lon,
+      nights: s.nights || s.adjustedDays || 0,
+      description: s.description || '',
+      photos: photos,
+      distance_km: s.distance_km || 0,
+      placeId: s.placeId || s.place_id || null,
+      place_id: s.place_id || s.placeId || null,
+      visits: visits,
+      activities: activities
+    };
+  });
+}
+
+// === RENDER BOOKINGS (4e onglet) ===
+function renderBookings() {
+  const container = $('bookingsContainer');
+  if (!container) return;
+  
+  let html = '';
+  let totalBudget = 0;
+  
+  // Helper pour formater les dates
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString(state.lang || 'fr', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
+  // Helper pour afficher la ligne de date
+  function getDateLine(b, nights) {
+    let dateParts = [];
+    if (b.date_start) {
+      dateParts.push(formatDate(b.date_start));
+    }
+    if (b.date_end && b.date_end !== b.date_start) {
+      dateParts.push(formatDate(b.date_end));
+    }
+    
+    let line = '';
+    if (dateParts.length === 1) {
+      line = `📅 ${dateParts[0]}`;
+    } else if (dateParts.length === 2) {
+      line = `📅 ${dateParts[0]} → ${dateParts[1]}`;
+    }
+    
+    // Ajouter les nuits si applicable (hôtels)
+    if (nights && nights > 0) {
+      line += line ? ` (${nights} nuit${nights > 1 ? 's' : ''})` : `🌙 ${nights} nuit${nights > 1 ? 's' : ''}`;
+    }
+    
+    return line;
+  }
+  
+  // === RÉSERVATIONS VOYAGE (vols, voiture, assurance) ===
+  let travelBookings = [];
+  if (window.ORT_TRIP_DATA) {
+    travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
+  }
+  
+  if (travelBookings.length > 0) {
+    html += `<div class="booking-section">
+      <h3 class="booking-section-title">🌍 Réservations voyage</h3>`;
+    
+    travelBookings.forEach(b => {
+      const icon = getCategoryIcon(b.category);
+      const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+      totalBudget += parseFloat(price) || 0;
+      const dateLine = getDateLine(b, b.nights);
+      
+      html += `
+        <div class="booking-item" onclick="showBookingDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+          <div class="booking-icon">${icon}</div>
+          <div class="booking-info">
+            <div class="booking-name">${b.name || 'Réservation'}</div>
+            ${dateLine ? `<div class="booking-detail">${dateLine}</div>` : ''}
+            ${b.provider ? `<div class="booking-detail">🏢 ${b.provider}</div>` : ''}
+          </div>
+          ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+        </div>
+      `;
+    });
+    
+    html += '</div>';
+  }
+  
+  // === RÉSERVATIONS PAR ÉTAPE (hôtels, activités) ===
+  const stepBookingsMap = new Map(); // Pour dédupliquer
+  
+  if (window.ORT_TRIP_DATA) {
+    state.steps.forEach((step, stepIdx) => {
+      const stepBookings = ORT_TRIP_DATA.getStepBookings(stepIdx) || [];
+      stepBookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+        if (!stepBookingsMap.has(bookingId)) {
+          stepBookingsMap.set(bookingId, {
+            booking: b,
+            steps: [stepIdx],
+            firstStepIndex: stepIdx
+          });
+        } else {
+          const existing = stepBookingsMap.get(bookingId);
+          if (!existing.steps.includes(stepIdx)) {
+            existing.steps.push(stepIdx);
+          }
+        }
+      });
+    });
+  } else if (state.bookings) {
+    // Fallback: ancien format state.bookings
+    Object.entries(state.bookings).forEach(([stepIdx, bookings]) => {
+      bookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+        if (!stepBookingsMap.has(bookingId)) {
+          stepBookingsMap.set(bookingId, {
+            booking: b,
+            steps: [parseInt(stepIdx)],
+            firstStepIndex: parseInt(stepIdx)
+          });
+        }
+      });
+    });
+  }
+  
+  if (stepBookingsMap.size > 0) {
+    // Grouper par première étape
+    const byStep = new Map();
+    stepBookingsMap.forEach((data, id) => {
+      const firstStep = data.firstStepIndex;
+      if (!byStep.has(firstStep)) byStep.set(firstStep, []);
+      byStep.get(firstStep).push(data);
+    });
+    
+    byStep.forEach((bookingsData, stepIdx) => {
+      const step = state.steps[stepIdx];
+      if (!step) return;
+      
+      html += `<div class="booking-section">
+        <h3 class="booking-section-title">📍 ${step.name}</h3>`;
+      
+      bookingsData.forEach(data => {
+        const b = data.booking;
+        const icon = getCategoryIcon(b.category);
+        const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+        totalBudget += parseFloat(price) || 0;
+        
+        // Calculer le nombre de nuits (pour hôtels)
+        const nights = b.category === 'hotel' ? (b.nights || data.steps.length) : b.nights;
+        const dateLine = getDateLine(b, nights);
+        
+        html += `
+          <div class="booking-item">
+            <div class="booking-icon">${icon}</div>
+            <div class="booking-info">
+              <div class="booking-name">${b.name || 'Réservation'}</div>
+              ${dateLine ? `<div class="booking-detail">${dateLine}</div>` : ''}
+              ${b.address ? `<div class="booking-detail">📍 ${b.address}</div>` : ''}
+              ${b.reference ? `<div class="booking-detail">🔖 ${b.reference}</div>` : ''}
+            </div>
+            ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+          </div>
+        `;
+      });
+      
+      html += '</div>';
+    });
+  }
+  
+  // Vérifier s'il y a des réservations
+  if (!html) {
+    container.innerHTML = `
+      <div style="padding: 40px 20px; text-align: center; color: #999;">
+        <div style="font-size: 3rem; margin-bottom: 16px;">📋</div>
+        <div>Aucune réservation</div>
+        <div style="font-size: 0.85rem; margin-top: 8px;">Ajoutez des réservations depuis RT Detail</div>
+      </div>`;
+    return;
+  }
+  
+  // Budget total
+  if (totalBudget > 0) {
+    html += `
+      <div class="booking-budget">
+        <div class="budget-label">💰 Budget total</div>
+        <div class="budget-amount">${totalBudget.toFixed(2)} €</div>
+      </div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+function getCategoryIcon(category) {
+  const icons = {
+    lodging: '🏨',
+    hotel: '🏨',
+    flight: '✈️',
+    car: '🚗',
+    train: '🚆',
+    restaurant: '🍽️',
+    activity: '🎯',
+    other: '📄'
+  };
+  return icons[category] || '📄';
+}
+
+function calculateDayNumber(dateStr, startDate) {
+  // Simplifié: assume que c'est le jour calculé depuis la date de départ
+  if (!startDate) return 1;
+  const date = new Date(dateStr);
+  const start = new Date(startDate);
+  const diffTime = date - start;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays + 1;
+}
+
+// === TABS ===
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (btn.id === 'tabServices') {
+        openSheet($('servicesSheet'));
+        return;
+      }
+      
+      const panelId = btn.dataset.panel;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      $(panelId)?.classList.add('active');
+      
+      if (panelId === 'mapPanel' && map) {
+        setTimeout(() => { map.invalidateSize(); fitMapBounds(); }, 100);
+      }
+    });
+  });
+}
+
+// === EVENTS ===
+function setupEvents() {
+  $('btnBack').onclick = () => {
+    if (hasUnsavedChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
+    history.back();
+  };
+  
+  // === NOUVEAUX BOUTONS HEADER ===
+  $('btnSaveHeader').onclick = saveTrip;
+  $('btnLangHeader').onclick = () => openSheet($('langSheet'));
+  $('btnShareHeader').onclick = openShareModal;
+  $('btnCenterMap').onclick = centerMap;
+  
+  // === USER PROFILE BUTTON ===
+  $('btnUser').onclick = () => {
+    updateUserUI();
+    openSheet($('userSheet'));
+  };
+  $('sheetOverlay').onclick = closeAllSheets;
+  
+  $('btnNightsMinus').onclick = () => adjustNights(-1);
+  $('btnNightsPlus').onclick = () => adjustNights(1);
+  $('btnDeleteStep').onclick = deleteCurrentStep;
+  $('btnCloseSheet').onclick = closeAllSheets;
+  
+  // Handlers changement de langue
+  document.querySelectorAll('.lang-option').forEach(opt => {
+    opt.onclick = () => {
+      const newLang = opt.dataset.lang;
+      localStorage.setItem('lang', newLang);
+      localStorage.setItem('ort_lang', newLang); // Important pour RT Mobile
+      state.lang = newLang;
+      closeAllSheets();
+      showToast(`✅ Langue: ${newLang.toUpperCase()}`);
+      setTimeout(() => location.reload(), 500);
+    };
+  });
+}
+
+// === USER PROFILE MANAGEMENT ===
+function updateUserUI() {
+  try {
+    const user = window.firebase?.auth?.()?.currentUser;
+    const emailEl = $('userEmail');
+    const statusEl = $('userStatus');
+    const loginBtn = $('btnUserLogin');
+    const logoutBtn = $('btnUserLogout');
+    const emailBtn = $('btnUserEmail');
+    const passBtn = $('btnUserPassword');
+    const deleteBtn = $('btnUserDelete');
+    
+    if (user) {
+      emailEl.textContent = user.email || 'Utilisateur';
+      statusEl.textContent = `Connecté depuis ${new Date(user.metadata.creationTime).toLocaleDateString('fr-FR')}`;
+      
+      loginBtn.style.display = 'none';
+      logoutBtn.style.display = 'block';
+      emailBtn.style.display = 'block';
+      passBtn.style.display = 'block';
+      deleteBtn.style.display = 'block';
+    } else {
+      emailEl.textContent = 'Non connecté';
+      statusEl.textContent = 'Connexion requise';
+      
+      loginBtn.style.display = 'block';
+      logoutBtn.style.display = 'none';
+      emailBtn.style.display = 'none';
+      passBtn.style.display = 'none';
+      deleteBtn.style.display = 'none';
+    }
+  } catch (e) {
+    console.warn('[USER] Error updating UI:', e);
+  }
+}
+
+// Gestion des boutons utilisateur
+(function() {
+  const $ = id => document.getElementById(id);
+  
+  $('btnUserLogin').onclick = () => {
+    closeSheet($('userSheet'));
+    if (window.openAuth) window.openAuth();
+    else alert('Redirection vers la connexion...');
+  };
+  
+  $('btnUserLogout').onclick = () => {
+    if (confirm('Confirmer la déconnexion?')) {
+      window.firebase?.auth?.().signOut().then(() => {
+        closeSheet($('userSheet'));
+        updateUserUI();
+        showToast('👋 Déconnecté');
+      });
+    }
+  };
+  
+  $('btnUserEmail').onclick = () => {
+    const newEmail = prompt('Nouvel email:');
+    if (newEmail && newEmail.trim()) {
+      const user = window.firebase?.auth?.()?.currentUser;
+      if (user) {
+        user.verifyBeforeUpdateEmail(newEmail.trim()).then(() => {
+          showToast('✅ Vérification envoyée à ' + newEmail);
+        }).catch(e => showToast('❌ ' + e.message));
+      }
+    }
+  };
+  
+  $('btnUserPassword').onclick = () => {
+    const user = window.firebase?.auth?.()?.currentUser;
+    if (user && user.email) {
+      window.firebase?.auth?.().sendPasswordResetEmail(user.email).then(() => {
+        showToast('✅ Email de réinitialisation envoyé');
+      }).catch(e => showToast('❌ ' + e.message));
+    }
+  };
+  
+  $('btnUserDelete').onclick = () => {
+    if (confirm('⚠️ Cette action est irréversible. Supprimer le compte?')) {
+      if (confirm('Êtes-vous vraiment sûr?')) {
+        const user = window.firebase?.auth?.()?.currentUser;
+        if (user) {
+          user.delete().then(() => {
+            showToast('❌ Compte supprimé');
+            setTimeout(() => location.href = 'dashboard_user.html', 1000);
+          }).catch(e => showToast('Erreur: ' + e.message));
+        }
+      }
+    }
+  };
+})();
+
+// === RENDERING ===
+
+// Tracking des photos utilisées pour éviter les doublons
+const usedPhotos = new Set();
+
+// Récupérer toutes les photos disponibles pour une étape (ordre de priorité)
+function getAllStepPhotos(step) {
+  const photos = [];
+  
+  // 1. PRIORITÉ: Photos sauvegardées dans Firestore (step.photos ou step.images)
+  if (step.photos?.length) {
+    photos.push(...step.photos.filter(p => p && typeof p === 'string'));
+  }
+  if (step.images?.length) {
+    step.images.forEach(img => {
+      const url = typeof img === 'string' ? img : img?.url;
+      if (url && !photos.includes(url)) photos.push(url);
+    });
+  }
+  if (step.image && !photos.includes(step.image)) photos.push(step.image);
+  
+  // 2. Photos du cache via placeId
+  if (step.placeId) {
+    const cached = getPhotosForPlace(step.placeId);
+    cached.forEach(p => { if (!photos.includes(p)) photos.push(p); });
+  }
+  
+  // 3. Chercher par nom avec la fonction smart
+  const found = findPhotosForPlace(step.name, state.cc);
+  found.forEach(p => { if (!photos.includes(p)) photos.push(p); });
+  
+  return photos;
+}
+
+// Choisir la meilleure photo pour une étape (évite les doublons)
+function getStepPhoto(step, stepIdx = -1) {
+  const allPhotos = getAllStepPhotos(step);
+  
+  // Trouver une photo pas encore utilisée
+  for (const photo of allPhotos) {
+    if (!usedPhotos.has(photo)) {
+      if (stepIdx >= 0) usedPhotos.add(photo); // Marquer comme utilisée
+      return photo;
+    }
+  }
+  
+  // Si toutes les photos sont utilisées, utiliser un index rotatif
+  if (allPhotos.length > 0 && stepIdx >= 0) {
+    // Utiliser l'index de l'étape pour choisir une photo différente
+    const photoIndex = stepIdx % allPhotos.length;
+    return allPhotos[photoIndex];
+  }
+  
+  // Si toutes les photos sont utilisées, prendre la première disponible
+  if (allPhotos.length > 0) {
+    return allPhotos[0];
+  }
+  
+  return PLACEHOLDER_IMG;
+}
+
+// Reset les photos utilisées (appelé au chargement d'un nouveau trip)
+function resetUsedPhotos() {
+  usedPhotos.clear();
+}
+
+// Charger une image avec timeout et fallback
+function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
+  if (!urls || urls.length === 0) {
+    imgElement.src = PLACEHOLDER_IMG;
+    return;
+  }
+  
+  let currentIndex = 0;
+  let timeoutId = null;
+  
+  function tryNext() {
+    if (currentIndex >= urls.length) {
+      imgElement.src = PLACEHOLDER_IMG;
+      return;
+    }
+    
+    const url = urls[currentIndex];
+    currentIndex++;
+    
+    // Clear previous timeout
+    if (timeoutId) clearTimeout(timeoutId);
+    
+    // Set timeout pour passer à la suivante si trop lent
+    timeoutId = setTimeout(() => {
+      console.log(`[PHOTO] Timeout pour ${url.substring(0, 50)}..., essai suivant`);
+      tryNext();
+    }, timeoutMs);
+    
+    imgElement.onload = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+    
+    imgElement.onerror = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      console.log(`[PHOTO] Erreur pour ${url.substring(0, 50)}..., essai suivant`);
+      tryNext();
+    };
+    
+    imgElement.src = url;
+  }
+  
+  tryNext();
+}
+
+function renderList() {
+  const list = $('stepsList');
+  list.innerHTML = '';
+  const lang = state.lang || 'fr';
+  
+  // Reset les photos utilisées pour ce rendu
+  resetUsedPhotos();
+  
+  state.steps.forEach((step, idx) => {
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.onclick = () => openStepSheet(idx);
+    
+    // Utiliser getStepPhoto avec l'index pour éviter les doublons
+    const photoUrl = getStepPhoto(step, idx);
+    const nightsText = step.nights > 0 ? `${step.nights} nuit${step.nights > 1 ? 's' : ''}` : '';
+    const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
+    const stepDisplayName = getCityDisplayName(step, lang) || step.name;
+    
+    // Vérifier si l'étape a des réservations
+    let bookingIndicator = '';
+    if (window.ORT_TRIP_DATA) {
+      const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+      if (stepBookings.length > 0) {
+        const hasHotel = stepBookings.some(b => b.category === 'hotel');
+        const hasActivity = stepBookings.some(b => ['activity', 'visit', 'show'].includes(b.category));
+        if (hasHotel || hasActivity) {
+          bookingIndicator = `<span class="step-card-booking">${hasHotel ? '🏨' : '🎫'}</span>`;
+        }
+      }
+    }
+    
+    card.innerHTML = `
+      <div class="step-card-num">${idx + 1}</div>
+      <img class="step-card-photo" data-step-idx="${idx}" src="${PLACEHOLDER_IMG}" alt="" loading="lazy">
+      <div class="step-card-info">
+        <div class="step-card-name">${stepDisplayName}</div>
+        <div class="step-card-meta">${distText}</div>
+        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}${bookingIndicator}</div>` : (bookingIndicator ? `<div class="step-card-nights">${bookingIndicator}</div>` : '')}
+      </div>
+      <div class="step-card-chevron">›</div>
+    `;
+    list.appendChild(card);
+    
+    // Charger l'image avec fallback et timeout
+    const imgEl = card.querySelector('.step-card-photo');
+    // Filtrer les photos déjà utilisées par d'autres étapes
+    const allPhotos = getAllStepPhotos(step);
+    const availablePhotos = allPhotos.filter(p => !usedPhotos.has(p));
+    // Utiliser les photos disponibles, ou toutes si aucune disponible
+    const photosToUse = availablePhotos.length > 0 ? availablePhotos : allPhotos;
+    if (photosToUse.length > 0) {
+      // Marquer la première comme utilisée
+      usedPhotos.add(photosToUse[0]);
+      loadImageWithFallback(imgEl, photosToUse, 3000);
+    } else {
+      console.warn(`[PHOTO] Aucune photo pour étape ${idx + 1}: ${step.name}`);
+    }
+  });
+}
+
+function updateSummary() {
+  const totalSteps = state.steps.length;
+  const totalNights = state.steps.reduce((sum, s) => sum + (s.nights || 0), 0);
+  const km = totalRouteKm || state.steps.reduce((sum, s) => sum + (s.distance_km || 0), 0);
+  
+  $('statSteps').textContent = totalSteps;
+  $('statNights').textContent = totalNights;
+  $('statKm').textContent = Math.round(km);
+}
+
+// === MAP ===
+function initMap() {
+  if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
+  if (map) return;
+  
+  map = L.map('map', { zoomControl: true, attributionControl: false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
+  }).addTo(map);
+  
+  renderMarkers();
+  fetchAndDrawRoute();
+  fitMapBounds();
+}
+
+function renderMarkers() {
+  if (!map) return;
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  
+  state.steps.forEach((step, idx) => {
+    if (!step.lat || !step.lng) return;
+    
+    const icon = L.divIcon({
+      className: 'step-marker',
+      html: `${idx + 1}`,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+    
+    const marker = L.marker([step.lat, step.lng], { icon });
+    marker.on('click', () => {
+      const currentStep = state.steps[idx];
+      const photoUrl = getStepPhoto(currentStep);
+      const popupName = getCityDisplayName(currentStep, state.lang || 'fr') || currentStep.name;
+      marker.bindPopup(`
+        <div class="map-popup-mini">
+          <img src="${photoUrl}" onerror="this.src='${PLACEHOLDER_IMG}'">
+          <div class="name">${popupName}</div>
+          <button class="btn-details" onclick="openStepSheet(${idx})">Voir détails</button>
+        </div>
+      `).openPopup();
+    });
+    marker.addTo(map);
+    markers.push(marker);
+  });
+}
+
+async function fetchAndDrawRoute() {
+  if (!map) return;
+  const coords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lng, s.lat]);
+  if (coords.length < 2) return;
+  
+  try {
+    const coordsStr = coords.map(c => c.join(',')).join(';');
+    const resp = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?overview=full&geometries=geojson`, { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    
+    const data = await resp.json();
+    if (data.code !== 'Ok' || !data.routes?.[0]) throw new Error('No route');
+    
+    const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    totalRouteKm = Math.round(data.routes[0].distance / 1000);
+    
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = L.polyline(routeCoords, { color: '#113f7a', weight: 4, opacity: 0.8 }).addTo(map);
+    $('statKm').textContent = totalRouteKm;
+  } catch (err) {
+    console.warn('[ROUTE] Fallback:', err.message);
+    const fallbackCoords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
+    if (routeLayer) map.removeLayer(routeLayer);
+    routeLayer = L.polyline(fallbackCoords, { color: '#113f7a', weight: 3, opacity: 0.7, dashArray: '8,8' }).addTo(map);
+  }
+}
+
+function fitMapBounds() {
+  if (!map) return;
+  const coords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
+  if (coords.length > 0) map.fitBounds(coords, { padding: [30, 30] });
+}
+
+function centerMap() {
+  closeAllSheets();
+  fitMapBounds();
+  $('tabMap').click();
+  showToast('🎯 Carte centrée');
+}
+
+// === SHEETS ===
+function openSheet(sheet) {
+  $('sheetOverlay').classList.add('show');
+  sheet.classList.add('show');
+}
+
+function closeSheet(sheet) {
+  $('sheetOverlay').classList.remove('show');
+  sheet.classList.remove('show');
+}
+
+function closeAllSheets() {
+  $('sheetOverlay').classList.remove('show');
+  $('stepSheet').classList.remove('show');
+  $('servicesSheet').classList.remove('show');
+  $('langSheet').classList.remove('show');
+  $('scannerSheet').classList.remove('show');
+  $('userSheet').classList.remove('show');
+  currentStepIndex = null;
+}
+
+// Variables pour stocker les visites/activités de l'étape courante
+let currentStepVisits = [];
+let currentStepActivities = [];
+
+function openStepSheet(idx) {
+  currentStepIndex = idx;
+  const step = state.steps[idx];
+  const lang = state.lang || 'fr';
+  
+  $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
+  
+  // i18n pour "Étape X sur Y"
+  const stepOfText = i18n('stepOf').replace('{0}', idx + 1).replace('{1}', state.steps.length);
+  $('sheetStepMeta').textContent = stepOfText;
+  
+  $('nightsValue').textContent = step.nights || 0;
+  
+  // Boutons de navigation
+  $('btnPrevStep').disabled = idx === 0;
+  $('btnNextStep').disabled = idx === state.steps.length - 1;
+  
+  // Stocker les visites et activités
+  currentStepVisits = Array.isArray(step.visits) ? step.visits : [];
+  currentStepActivities = Array.isArray(step.activities) ? step.activities : [];
+  
+  // Si vides, chercher dans PLACES_INDEX (comme RT detail)
+  const stepPlaceId = step.placeId || step.place_id;
+  if (stepPlaceId && PLACES_INDEX && PLACES_INDEX[stepPlaceId]) {
+    const masterData = PLACES_INDEX[stepPlaceId];
+    if (currentStepVisits.length === 0 && masterData.visits) {
+      currentStepVisits = masterData.visits;
+      step.visits = currentStepVisits;  // Mettre à jour le step aussi
+    }
+    if (currentStepActivities.length === 0 && masterData.activities) {
+      currentStepActivities = masterData.activities;
+      step.activities = currentStepActivities;  // Mettre à jour le step aussi
+    }
+  }
+  
+  // Mettre à jour les compteurs
+  const visitsCount = currentStepVisits.length;
+  const activitiesCount = currentStepActivities.length;
+  $('visitsCount').textContent = visitsCount || '';
+  $('visitsCount').dataset.count = visitsCount;
+  $('activitiesCount').textContent = activitiesCount || '';
+  $('activitiesCount').dataset.count = activitiesCount;
+  
+  // Toujours afficher les boutons (même si vides - on montre un message dans la modale)
+  $('btnOpenVisits').style.display = '';
+  $('btnOpenActivities').style.display = '';
+  
+  // Charger la photo avec fallback et timeout
+  const photoEl = $('sheetStepPhoto');
+  const allPhotos = getAllStepPhotos(step);
+  if (allPhotos.length > 0) {
+    loadImageWithFallback(photoEl, allPhotos, 3000);
+  } else {
+    photoEl.src = PLACEHOLDER_IMG;
+  }
+  
+  // Liens affiliés pour cette étape
+  const cityName = step.name || '';
+  const checkIn = new Date().toISOString().split('T')[0];
+  const nights = step.nights || 1;
+  const campaign = `ort_mobile_step${idx + 1}`;
+  
+  $('btnGyg').href = AFFILIATE.gyg(cityName);
+  $('btnTiqets').href = AFFILIATE.tiqets(cityName, state.lang);
+  // Stay22 - toujours visible, utilise 1 nuit minimum pour le lien
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
+  $('btnHotel').style.display = ''; // Toujours visible
+  
+  // Afficher les réservations de cette étape
+  const bookingsSection = $('stepBookingsSection');
+  const bookingsList = $('stepBookingsList');
+  
+  if (window.ORT_TRIP_DATA) {
+    const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+    if (stepBookings.length > 0) {
+      bookingsSection.style.display = '';
+      bookingsList.innerHTML = stepBookings.map(b => {
+        const icon = getCategoryIcon(b.category);
+        const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : null;
+        let dateStr = '';
+        if (b.date_start) {
+          const ds = new Date(b.date_start).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          if (b.date_end && b.date_end !== b.date_start) {
+            const de = new Date(b.date_end).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const nights = Math.ceil((new Date(b.date_end) - new Date(b.date_start)) / 86400000);
+            dateStr = `${ds} → ${de}${nights > 0 ? ` (${nights} nuit${nights > 1 ? 's' : ''})` : ''}`;
+          } else {
+            dateStr = ds;
+          }
+        }
+        return `
+          <div class="step-booking-item">
+            <div class="step-booking-icon">${icon}</div>
+            <div class="step-booking-info">
+              <div class="step-booking-name">${b.name || 'Réservation'}</div>
+              ${dateStr ? `<div class="step-booking-dates">📅 ${dateStr}</div>` : ''}
+            </div>
+            ${price ? `<div class="step-booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+          </div>
+        `;
+      }).join('');
+    } else {
+      bookingsSection.style.display = 'none';
+    }
+  } else {
+    bookingsSection.style.display = 'none';
+  }
+  
+  // Appliquer les traductions i18n
+  applyI18n();
+  
+  openSheet($('stepSheet'));
+}
+
+// Navigation entre étapes
+function navigateStep(delta) {
+  const newIdx = currentStepIndex + delta;
+  if (newIdx >= 0 && newIdx < state.steps.length) {
+    openStepSheet(newIdx);
+  }
+}
+
+// === MODALES VISITES / ACTIVITÉS ===
+
+function openVisitsModal() {
+  const step = state.steps[currentStepIndex];
+  const stepName = getCityDisplayName(step, state.lang) || step.name;
+  
+  // i18n pour "Étape X sur Y"
+  const stepOfText = i18n('stepOf').replace('{0}', currentStepIndex + 1).replace('{1}', state.steps.length);
+  $('visitsModalStep').textContent = `${stepName} - ${stepOfText}`;
+  
+  const body = $('visitsModalBody');
+  if (currentStepVisits.length === 0) {
+    body.innerHTML = `<div class="content-empty">${i18n('noVisits')}</div>`;
+  } else {
+    body.innerHTML = currentStepVisits.map((v, idx) => {
+      const text = typeof v === 'string' ? v : (v.text || v.description || v.name || '');
+      const title = typeof v === 'object' && v.title ? v.title : `${i18n('visit')} ${idx + 1}`;
+      return `
+        <div class="content-item">
+          ${typeof v === 'object' && v.title ? `<div class="content-item-title">${title}</div>` : ''}
+          <div class="content-item-text">${text}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  $('visitsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeVisitsModal() {
+  $('visitsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openActivitiesModal() {
+  const step = state.steps[currentStepIndex];
+  const stepName = getCityDisplayName(step, state.lang) || step.name;
+  
+  // i18n pour "Étape X sur Y"
+  const stepOfText = i18n('stepOf').replace('{0}', currentStepIndex + 1).replace('{1}', state.steps.length);
+  $('activitiesModalStep').textContent = `${stepName} - ${stepOfText}`;
+  
+  const body = $('activitiesModalBody');
+  if (currentStepActivities.length === 0) {
+    body.innerHTML = `<div class="content-empty">${i18n('noActivities')}</div>`;
+  } else {
+    body.innerHTML = currentStepActivities.map((a, idx) => {
+      const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
+      const title = typeof a === 'object' && a.title ? a.title : `${i18n('activity')} ${idx + 1}`;
+      return `
+        <div class="content-item">
+          ${typeof a === 'object' && a.title ? `<div class="content-item-title">${title}</div>` : ''}
+          <div class="content-item-text">${text}</div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  $('activitiesModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeActivitiesModal() {
+  $('activitiesModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// === ACTIONS ===
+function adjustNights(delta) {
+  if (currentStepIndex === null) return;
+  const step = state.steps[currentStepIndex];
+  step.nights = Math.max(0, (step.nights || 0) + delta);
+  $('nightsValue').textContent = step.nights;
+  hasUnsavedChanges = true;
+  
+  // MAJ lien hôtel - toujours visible, utilise 1 nuit minimum
+  const checkIn = new Date().toISOString().split('T')[0];
+  const campaign = `ort_mobile_step${currentStepIndex + 1}`;
+  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
+  $('btnHotel').style.display = ''; // Toujours visible
+  
+  renderList();
+  renderBookings();
+  updateSummary();
+}
+
+function deleteCurrentStep() {
+  if (currentStepIndex === null) return;
+  const step = state.steps[currentStepIndex];
+  if (!confirm(`Supprimer "${step.name}" ?`)) return;
+  
+  state.steps.splice(currentStepIndex, 1);
+  hasUnsavedChanges = true;
+  closeAllSheets();
+  renderList();
+  renderBookings();
+  updateSummary();
+  renderMarkers();
+  fetchAndDrawRoute();
+  showToast('🗑️ Étape supprimée');
+}
+
+async function saveTrip() {
+  closeAllSheets();
+  try {
+    // Vérifier si Firebase est disponible et utilisateur connecté
+    const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+    
+    // 🔴 Si pas connecté, afficher modale de login
+    if (!user) {
+      $('loginRequiredModal').style.display = 'flex';
+      applyI18n();
+      return;
+    }
+    
+    if (user && window.ORT_STATE) {
+      // Utilise ORT_TRIPID pour garantir un tripId cohérent
+      let tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : null;
+      if (!tripId) {
+        tripId = state.tripId || state._originalItinId || `mobile::${Date.now()}`;
+      }
+      
+      // 🔴 DÉTECTION CATALOGUE: Forcer génération NEW tripId si c'est un catalogue
+      if (tripId && tripId.startsWith('catalog::')) {
+        console.log('[SAVE] 📚 Détection catalogue, génération NEW tripId');
+        tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('[SAVE] ✅ NEW tripId généré:', tripId);
+      }
+      
+      if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+      
+      const tripData = {
+        id: tripId,
+        title: state.title || 'Roadtrip',
+        country: state.cc || 'XX',
+        steps: state.steps.map(s => ({
+          name: s.name,
+          lat: s.lat,
+          lon: s.lng || s.lon,
+          lng: s.lng || s.lon,
+          nights: s.nights || 0,
+          place_id: s.place_id || s.placeId,
+          photos: s.photos || [],
+          description: s.description || ''
+        })),
+        nights: state.steps.reduce((sum, s) => sum + (s.nights || 0), 0),
+        kms: state.totalKm || 0,
+        saved: true,  // IMPORTANT: Pour apparaître dans le Dashboard
+        updatedAt: Date.now(),
+        createdAt: state._createdAt || Date.now(),
+        source: 'mobile'
+      };
+      
+      // Sauvegarder via State Manager
+      await window.ORT_STATE.saveTrip(tripData);
+      
+      // Mettre à jour le tripId dans state pour les sauvegardes suivantes
+      state.tripId = tripId;
+      if (window.ORT_TRIPID) window.ORT_TRIPID.store(tripId);
+      
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé dans votre Dashboard !');
+      console.log('[SAVE] ✅ Trip sauvegardé via ORT_STATE:', tripId);
+    } else if (user) {
+      // Fallback Firestore direct si ORT_STATE non disponible
+      console.warn('[SAVE] ORT_STATE non disponible, fallback Firestore direct');
+      let tripId = state._originalItinId || `mobile_${Date.now()}`;
+      
+      // 🔴 DÉTECTION CATALOGUE: Forcer génération NEW tripId si c'est un catalogue
+      if (tripId && tripId.startsWith('catalog::')) {
+        console.log('[SAVE] 📚 Détection catalogue (fallback), génération NEW tripId');
+        tripId = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      
+      const tripData = {
+        title: state.title || 'Roadtrip',
+        cc: state.cc || 'XX',
+        steps: state.steps.map(s => ({
+          name: s.name,
+          lat: s.lat,
+          lng: s.lng || s.lon,
+          nights: s.nights || 0,
+          place_id: s.place_id || s.placeId,
+          photos: s.photos || [],
+          description: s.description || ''
+        })),
+        saved: true,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        userId: user.uid,
+        source: 'mobile'
+      };
+      
+      // CORRECTION: Utiliser users/{uid}/trips au lieu de trips
+      await firebase.firestore()
+        .collection('users').doc(user.uid)
+        .collection('trips').doc(tripId)
+        .set(tripData, { merge: true });
+      
+      // Mettre à jour le tripId dans state
+      state.tripId = tripId;
+      
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé dans votre Dashboard !');
+    } else {
+      // Fallback localStorage pour non-connectés
+      let saveKey = state._originalItinId || Date.now();
+      // 🔴 DÉTECTION CATALOGUE: Ne pas utiliser l'ID catalogue
+      if (saveKey && String(saveKey).startsWith('catalog::')) {
+        saveKey = `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      }
+      localStorage.setItem(`ort_trip_${saveKey}`, JSON.stringify({ ...state, savedAt: new Date().toISOString() }));
+      hasUnsavedChanges = false;
+      showToast('✅ Sauvegardé localement (connectez-vous pour synchroniser)');
+    }
+  } catch (err) {
+    console.error('[SAVE]', err);
+    showToast('❌ Erreur de sauvegarde');
+  }
+}
+
+function openShareModal() {
+  // Appliquer les traductions
+  applyI18n();
+  
+  // 🔴 1) Vérifier que l'utilisateur est connecté
+  const user = typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser;
+  if (!user) {
+    // Afficher modale "Connexion requise"
+    $('loginRequiredModal').style.display = 'flex';
+    return;
+  }
+  
+  // 🔴 2) Vérifier que le voyage est sauvegardé
+  const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : state.tripId;
+  const isSaved = tripId && !tripId.startsWith('catalog::') && !tripId.startsWith('custom::') && !tripId.startsWith('temp_');
+  
+  if (!isSaved) {
+    // Afficher modale "Sauvegarde requise"
+    $('saveRequiredModal').style.display = 'flex';
+    return;
+  }
+  
+  // 🔴 3) Tout est OK, ouvrir la modale de partage
+  openShareModalDirect();
+}
+
+function openShareModalDirect() {
+  // Appliquer les traductions à la modale
+  applyI18n();
+  
+  // Mettre à jour le titre avec le nom du voyage
+  $('shareModalTitle').textContent = state.title || 'Mon roadtrip';
+  
+  // Reset état
+  $('shareResult').style.display = 'none';
+  $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+  $('btnGenerateShare').disabled = false;
+  
+  // Ouvrir la modale
+  $('shareModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLoginRequiredModal() {
+  $('loginRequiredModal').style.display = 'none';
+}
+
+function closeSaveRequiredModal() {
+  $('saveRequiredModal').style.display = 'none';
+}
+
+// Handlers pour les modales d'alerte
+document.addEventListener('DOMContentLoaded', () => {
+  // Login Required Modal
+  const btnLoginRequiredLogin = document.getElementById('btnLoginRequiredLogin');
+  const btnLoginRequiredCancel = document.getElementById('btnLoginRequiredCancel');
+  const loginRequiredModal = document.getElementById('loginRequiredModal');
+  
+  if (btnLoginRequiredLogin) {
+    btnLoginRequiredLogin.onclick = () => {
+      closeLoginRequiredModal();
+      if (window.openAuth) window.openAuth('login');
+    };
+  }
+  if (btnLoginRequiredCancel) {
+    btnLoginRequiredCancel.onclick = closeLoginRequiredModal;
+  }
+  if (loginRequiredModal) {
+    loginRequiredModal.onclick = (e) => {
+      if (e.target === loginRequiredModal) closeLoginRequiredModal();
+    };
+  }
+  
+  // Save Required Modal
+  const btnSaveRequiredSave = document.getElementById('btnSaveRequiredSave');
+  const btnSaveRequiredCancel = document.getElementById('btnSaveRequiredCancel');
+  const saveRequiredModal = document.getElementById('saveRequiredModal');
+  
+  if (btnSaveRequiredSave) {
+    btnSaveRequiredSave.onclick = async () => {
+      closeSaveRequiredModal();
+      await saveTrip();
+      // Après sauvegarde, ouvrir la modale de partage
+      setTimeout(() => openShareModal(), 500);
+    };
+  }
+  if (btnSaveRequiredCancel) {
+    btnSaveRequiredCancel.onclick = closeSaveRequiredModal;
+  }
+  if (saveRequiredModal) {
+    saveRequiredModal.onclick = (e) => {
+      if (e.target === saveRequiredModal) closeSaveRequiredModal();
+    };
+  }
+});
+
+function closeShareModal() {
+  $('shareModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function loadExistingShare() {
+  // Plus besoin - on génère le lien à la volée
+}
+
+async function generateShareLink() {
+  // Les vérifications user/sauvegarde sont déjà faites dans openShareModal
+  
+  $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerating')}</span>`;
+  $('btnGenerateShare').disabled = true;
+  
+  try {
+    const tripId = state.tripId || (window.ORT_TRIPID ? window.ORT_TRIPID.get() : null);
+    
+    if (!tripId) {
+      showToast('❌ Voyage non sauvegardé');
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+      $('btnGenerateShare').disabled = false;
+      return;
+    }
+    
+    // Vérifier que state.steps existe
+    if (!state.steps || state.steps.length === 0) {
+      showToast('❌ Aucune étape à partager');
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+      $('btnGenerateShare').disabled = false;
+      return;
+    }
+    
+    console.log('[SHARE] 📤 Partage de', state.steps.length, 'étapes');
+    console.log('[SHARE] Titre:', state.title, 'Pays:', state.cc);
+    
+    // Utiliser ORT_SHARE si disponible
+    if (window.ORT_SHARE && typeof ORT_SHARE.createShareLink === 'function') {
+      const result = await ORT_SHARE.createShareLink(state, state.title || 'Voyage');
+      
+      console.log('[SHARE] Résultat ORT_SHARE:', result ? '✅' : '❌');
+      
+      if (result && result.shareUrl) {
+        // Pointer vers roadtrip_detail.html
+        let shareUrl = result.shareUrl
+          .replace('roadtrip_mobile.html', 'roadtrip_detail.html')
+          .replace(/roadtrip_mobile(\?|$)/, 'roadtrip_detail.html$1');
+        
+        $('shareUrlInput').value = shareUrl;
+        $('shareResult').style.display = '';
+        $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
+        showToast(i18n('linkCreated'));
+      } else {
+        throw new Error('Échec création lien');
+      }
+    } else {
+      // Fallback: lien simple (ne fonctionnera que si le destinataire est connecté au même compte)
+      console.warn('[SHARE] ORT_SHARE non disponible, fallback lien simple');
+      const baseUrl = location.origin + location.pathname.replace('roadtrip_mobile.html', 'roadtrip_detail.html');
+      const shareUrl = `${baseUrl}?tripId=${encodeURIComponent(tripId)}`;
+      
+      $('shareUrlInput').value = shareUrl;
+      $('shareResult').style.display = '';
+      $('btnGenerateShare').innerHTML = `<span>${i18n('shareRegenerate')}</span>`;
+      showToast(i18n('linkCreated'));
+    }
+    
+  } catch (e) {
+    console.error('[SHARE] Erreur:', e);
+    showToast('❌ ' + (e.message || 'Erreur'));
+    $('btnGenerateShare').innerHTML = `<span>${i18n('shareGenerate')}</span>`;
+  } finally {
+    $('btnGenerateShare').disabled = false;
+  }
+}
+
+function copyShareLink() {
+  const url = $('shareUrlInput').value;
+  if (url) {
+    navigator.clipboard.writeText(url);
+    showToast(i18n('linkCopied'));
+  }
+}
+
+function nativeShare() {
+  const url = $('shareUrlInput').value;
+  if (url && navigator.share) {
+    navigator.share({
+      title: state.title || 'Mon roadtrip',
+      text: `Découvre mon roadtrip : ${state.title}`,
+      url: url
+    });
+  } else {
+    copyShareLink();
+  }
+}
+
+function exportPdf() {
+  closeAllSheets();
+  showToast('📄 Ouverture version imprimable...');
+  
+  // Ouvre la version desktop avec trigger PDF
+  // Note: utilise roadtrip_detail_simple.html car c'est le fichier déployé
+  const sep = location.search ? '&' : '?';
+  let desktopUrl = location.href
+    .replace('roadtrip_mobile.html', 'roadtrip_detail_simple.html')
+    .replace('roadtrip_mobile', 'roadtrip_detail_simple');
+  desktopUrl += sep + 'action=pdf&mobile=0';
+  window.open(desktopUrl, '_blank');
+}
+
+// currentUser() → fourni par ort-utils.js
+
+// === TOAST ===
+function showToast(message, duration = 2500) {
+  const toast = $('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// ===== SCANNER MODULE =====
+const SCANNER = {
+  mode: null, // 'booking' ou 'document'
+  photoBase64: null,
+  result: null,
+  
+  API_BOOKING: '/.netlify/functions/parse-booking-photo',
+  API_DOCUMENT: '/.netlify/functions/parse-document',
+  
+  async getToken() {
+    if (window.firebase?.auth) {
+      const user = firebase.auth().currentUser;
+      if (user) return user.getIdToken();
+    }
+    return null;
+  },
+  
+  open(mode) {
+    this.mode = mode;
+    this.photoBase64 = null;
+    this.result = null;
+    
+    // Reset UI
+    $('scanStep1').style.display = 'block';
+    $('scanStep2').style.display = 'none';
+    $('scanStep3').style.display = 'none';
+    $('scanPreview').style.display = 'none';
+    $('scanError').style.display = 'none';
+    $('scannerInput').value = '';
+    
+    // Update titles
+    if (mode === 'booking') {
+      $('scannerTitle').textContent = '📷 Scanner une réservation';
+      $('scannerSubtitle').textContent = 'Photo de confirmation, email, PDF...';
+    } else {
+      $('scannerTitle').textContent = '🪪 Scanner un document';
+      $('scannerSubtitle').textContent = 'Passeport, visa, permis...';
+    }
+    
+    closeAllSheets();
+    openSheet($('scannerSheet'));
+  },
+  
+  handleFile(file) {
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoBase64 = e.target.result;
+      $('scanPreviewImg').src = this.photoBase64;
+      $('scanPreview').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  },
+  
+  retake() {
+    this.photoBase64 = null;
+    $('scanPreview').style.display = 'none';
+    $('scannerInput').value = '';
+    $('scanError').style.display = 'none';
+  },
+  
+  async analyze() {
+    if (!this.photoBase64) return;
+    
+    const token = await this.getToken();
+    if (!token) {
+      this.showError('Connectez-vous pour utiliser le scanner');
+      return;
+    }
+    
+    // Show loading
+    $('scanStep1').style.display = 'none';
+    $('scanStep2').style.display = 'block';
+    $('scanError').style.display = 'none';
+    
+    try {
+      const url = this.mode === 'booking' ? this.API_BOOKING : this.API_DOCUMENT;
+      const body = this.mode === 'booking' 
+        ? { photo: this.photoBase64 }
+        : { photo: this.photoBase64, save: false };
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(body)
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Erreur analyse');
+      }
+      
+      this.result = this.mode === 'booking' ? data.items?.[0] : data.data;
+      this.renderResult();
+      
+    } catch (e) {
+      console.error('[SCANNER]', e);
+      $('scanStep2').style.display = 'none';
+      $('scanStep1').style.display = 'block';
+      this.showError(e.message);
+    }
+  },
+  
+  renderResult() {
+    $('scanStep2').style.display = 'none';
+    $('scanStep3').style.display = 'block';
+    
+    const r = this.result;
+    let html = '';
+    
+    if (this.mode === 'booking') {
+      const typeIcons = { hotel: '🏨', flight: '✈️', car: '🚗', train: '🚆', activity: '🎯', restaurant: '🍽️' };
+      html = `
+        <div style="text-align:center;margin-bottom:12px;">
+          <span style="font-size:2rem;">${typeIcons[r.type] || '📄'}</span>
+          <div style="font-weight:700;font-size:1.1rem;margin-top:4px;">${r.name || 'Réservation'}</div>
+        </div>
+        ${r.confirmation_number ? `<div class="scan-result-row"><span class="scan-result-label">N° confirmation</span><span class="scan-result-value">${r.confirmation_number}</span></div>` : ''}
+        ${r.date_start ? `<div class="scan-result-row"><span class="scan-result-label">Date</span><span class="scan-result-value">${r.date_start}${r.date_end ? ' → ' + r.date_end : ''}</span></div>` : ''}
+        ${r.city ? `<div class="scan-result-row"><span class="scan-result-label">Lieu</span><span class="scan-result-value">${r.city}</span></div>` : ''}
+        ${r.price?.amount ? `<div class="scan-result-row"><span class="scan-result-label">Prix</span><span class="scan-result-value">${r.price.amount} ${r.price.currency || ''}</span></div>` : ''}
+      `;
+    } else {
+      const typeIcons = { passport: '🛂', visa: '📑', id_card: '🪪', driving_license: '🚗', health_card: '🏥' };
+      html = `
+        <div style="text-align:center;margin-bottom:12px;">
+          <span style="font-size:2rem;">${typeIcons[r.type] || '📄'}</span>
+          <div style="font-weight:700;font-size:1.1rem;margin-top:4px;">${r.document_name || 'Document'}</div>
+        </div>
+        ${r.holder_name ? `<div class="scan-result-row"><span class="scan-result-label">Titulaire</span><span class="scan-result-value">${r.holder_name}</span></div>` : ''}
+        ${r.document_number ? `<div class="scan-result-row"><span class="scan-result-label">Numéro</span><span class="scan-result-value">${r.document_number}</span></div>` : ''}
+        ${r.expiry_date ? `<div class="scan-result-row"><span class="scan-result-label">Expiration</span><span class="scan-result-value">${r.expiry_date}</span></div>` : ''}
+        ${r.country_code ? `<div class="scan-result-row"><span class="scan-result-label">Pays</span><span class="scan-result-value">${r.country_code}</span></div>` : ''}
+      `;
+    }
+    
+    $('scanResult').innerHTML = html;
+  },
+  
+  showError(msg) {
+    $('scanError').textContent = msg;
+    $('scanError').style.display = 'block';
+  },
+  
+  newScan() {
+    this.photoBase64 = null;
+    this.result = null;
+    $('scanStep3').style.display = 'none';
+    $('scanStep1').style.display = 'block';
+    $('scanPreview').style.display = 'none';
+    $('scannerInput').value = '';
+    $('scanError').style.display = 'none';
+  },
+  
+  async save() {
+    if (!this.result) return;
+    
+    const token = await this.getToken();
+    if (!token) {
+      showToast('❌ Connexion requise');
+      return;
+    }
+    
+    try {
+      if (this.mode === 'booking') {
+        // Ajouter aux bookings du voyage
+        if (!state.bookings) state.bookings = [];
+        state.bookings.push(this.result);
+        showToast('✅ Réservation ajoutée !');
+      } else {
+        // Sauvegarder le document via API
+        const res = await fetch(this.API_DOCUMENT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ photo: this.photoBase64, save: true })
+        });
+        
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        
+        showToast('✅ Document enregistré !');
+      }
+      
+      closeAllSheets();
+      
+    } catch (e) {
+      console.error('[SCANNER SAVE]', e);
+      showToast('❌ ' + e.message);
+    }
+  }
+};
+
+// Scanner event handlers
+$('btnScanBooking').onclick = () => SCANNER.open('booking');
+$('btnScanDocument').onclick = () => SCANNER.open('document');
+$('scannerInput').onchange = (e) => SCANNER.handleFile(e.target.files[0]);
+$('btnScanRetake').onclick = () => SCANNER.retake();
+$('btnScanAnalyze').onclick = () => SCANNER.analyze();
+$('btnScanNew').onclick = () => SCANNER.newScan();
+$('btnScanSave').onclick = () => SCANNER.save();
+
+// Expose
+window.openStepSheet = openStepSheet;
+window.navigateStep = navigateStep;
+window.openVisitsModal = openVisitsModal;
+window.closeVisitsModal = closeVisitsModal;
+window.openActivitiesModal = openActivitiesModal;
+window.closeActivitiesModal = closeActivitiesModal;
+window.closeShareModal = closeShareModal;
+window.generateShareLink = generateShareLink;
+window.copyShareLink = copyShareLink;
+window.nativeShare = nativeShare;
+
+// Rafraîchir les bookings quand on revient sur cette page
+// (après avoir été sur rt-booking-import par exemple)
+let lastVisibilityTime = Date.now();
+
+document.addEventListener('visibilitychange', async function() {
+  if (document.visibilityState === 'visible') {
+    const timeSinceHidden = Date.now() - lastVisibilityTime;
+    // Si on revient après plus de 2 secondes, rafraîchir les bookings
+    if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
+      console.log('[MOBILE] Retour sur la page, refresh des bookings...');
+      try {
+        // Recharger les données depuis Firestore
+        const tripId = window.ORT_TRIPID?.get();
+        if (tripId) {
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderBookings();
+          console.log('[MOBILE] ✅ Bookings rafraîchis');
+        }
+      } catch (e) {
+        console.warn('[MOBILE] Erreur refresh bookings:', e);
+      }
+    }
+  } else {
+    lastVisibilityTime = Date.now();
+  }
+});
+
+// Aussi sur pageshow (pour les navigations back/forward)
+window.addEventListener('pageshow', async function(event) {
+  if (event.persisted && window.ORT_TRIP_DATA) {
+    console.log('[MOBILE] Page restaurée depuis cache, refresh...');
+    const tripId = window.ORT_TRIPID?.get();
+    if (tripId) {
+      try {
+        await ORT_TRIP_DATA.loadTrip(tripId);
+        renderBookings();
+      } catch (e) {
+        console.warn('[MOBILE] Erreur refresh pageshow:', e);
+      }
+    }
+  }
+});
+</script>
+
+<!-- Bouton flottant pour ajouter une réservation (visible sur l'onglet Réservations) -->
+<button id="btnAddBookingFab" style="position:fixed;bottom:100px;right:16px;width:56px;height:56px;border-radius:50%;background:#3b82f6;color:#fff;border:none;font-size:32px;font-weight:bold;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,0.4);z-index:200;display:none;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;" title="Ajouter une réservation">+</button>
+<script>
+(function() {
+  const fab = document.getElementById('btnAddBookingFab');
+  if (!fab) return;
+  
+  // Fonction pour naviguer vers l'import de réservations
+  function goToBookingImport(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[FAB] Clic détecté, navigation...');
+    
+    if (window.ORT_TRIPID) {
+      window.ORT_TRIPID.navigateTo('rt-booking-import.html');
+    } else {
+      const tripId = new URLSearchParams(location.search).get('tripId') || '';
+      window.location.href = 'rt-booking-import.html?tripId=' + encodeURIComponent(tripId);
+    }
+  }
+  
+  // Écouter click ET touchend pour mobile
+  fab.addEventListener('click', goToBookingImport);
+  fab.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    goToBookingImport(e);
+  }, { passive: false });
+  
+  // Afficher/masquer le FAB selon l'onglet actif
+  function updateFabVisibility() {
+    const bookingsPanel = document.getElementById('bookingsPanel');
+    if (fab && bookingsPanel) {
+      const isActive = bookingsPanel.classList.contains('active');
+      fab.style.display = isActive ? 'flex' : 'none';
+      console.log('[FAB] Visibilité mise à jour:', isActive ? 'visible' : 'masqué');
+    }
+  }
+  
+  // Observer les changements d'onglet
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      setTimeout(updateFabVisibility, 100);
+    });
+  });
+  
+  // Vérifier au chargement et après un court délai
+  setTimeout(updateFabVisibility, 500);
+  document.addEventListener('DOMContentLoaded', () => setTimeout(updateFabVisibility, 100));
+})();
+</script>
+<script src="./js/ort-modals.js"></script>
+
+</body>
+</html>
