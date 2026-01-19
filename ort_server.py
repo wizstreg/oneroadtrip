@@ -182,7 +182,8 @@ class ORTRequestHandler(http.server.SimpleHTTPRequestHandler):
                                     'seo', 'meta', 'segments', 'variants', 'regions',
                                     'nearby_itins', 'merge_suggestions', 'notes', 'specialties',
                                     'dept_code', 'dept_name', 'source_url', 'created_at',
-                                    'subtitle', 'seo_keywords', 'practical_context']:
+                                    'subtitle', 'seo_keywords', 'practical_context',
+                                    'essential_tips', 'summary']:
                             if key in itinerary:
                                 merged[key] = itinerary[key]
                         itins[i] = merged

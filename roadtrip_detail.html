@@ -5116,6 +5116,7 @@ async function initFromItin(it){
       steps.push({
         place_id:pid,name,lat,lon,nights:1,visits,activities,
         rating,
+        region_code: d.region_code || '',
         _suggestedDays: suggestedDays,
         _driveMinToNext: d.to_next_leg?.drive_min || 0,
         _distanceKmToNext: d.to_next_leg?.distance_km || 0,
@@ -8933,9 +8934,14 @@ window.initSaveSourceButton = function(){
       },
       visits: (s.visits || []).map(v => typeof v === 'string' ? { text: v, visit_duration_min: 75 } : v),
       activities: (s.activities || []).map(a => {
-        if (typeof a === 'string') return { text: a, visit_duration_min: 60 };
-        // Préserver practical_info si présent
-        const act = { text: a.text || a.name || '', visit_duration_min: a.visit_duration_min || 60 };
+        if (typeof a === 'string') return { text: a, activity_duration_min: 60 };
+        // Préserver tous les champs de l'activité (v3.3)
+        const act = { 
+          text: a.text || a.name || '', 
+          activity_duration_min: a.activity_duration_min || a.visit_duration_min || 60 
+        };
+        if (a.place_id) act.place_id = a.place_id;
+        if (a.coords) act.coords = a.coords;
         if (a.practical_info) act.practical_info = a.practical_info;
         return act;
       }),
@@ -8989,8 +8995,11 @@ window.initSaveSourceButton = function(){
     if (state._originalSubtitle) itinToSave.subtitle = state._originalSubtitle;
     if (state._originalSeoKeywords) itinToSave.seo_keywords = state._originalSeoKeywords;
     if (state._originalPracticalContext) itinToSave.practical_context = state._originalPracticalContext;
+    // Champs enrichis supplémentaires (v3.3)
+    if (state._originalEssentialTips) itinToSave.essential_tips = state._originalEssentialTips;
+    if (state._originalSummary) itinToSave.summary = state._originalSummary;
     
-    console.log('[SAVE SOURCE] 📦 Métadonnées incluses:', itinToSave.seo ? 'SEO ✓' : 'SEO ✗', itinToSave.practical_context ? 'practical_context ✓' : '');
+    console.log('[SAVE SOURCE] 📦 Métadonnées incluses:', itinToSave.seo ? 'SEO ✓' : 'SEO ✗', itinToSave.practical_context ? 'practical_context ✓' : '', itinToSave.essential_tips ? 'essential_tips ✓' : '', itinToSave.summary ? 'summary ✓' : '');
     
     // Confirmation avec message adapté
     const action = isTemp ? '🆕 AJOUTER' : '✏️ MODIFIER';
@@ -9285,7 +9294,10 @@ if(itinsObj){
         if (toUse.subtitle) state._originalSubtitle = toUse.subtitle;
         if (toUse.seo_keywords) state._originalSeoKeywords = toUse.seo_keywords;
         if (toUse.practical_context) state._originalPracticalContext = toUse.practical_context;
-        console.log('[IMPORT] 📦 Métadonnées stockées:', toUse.seo ? 'SEO ✓' : 'SEO ✗', toUse.meta ? 'meta ✓' : 'meta ✗', toUse.practical_context ? 'practical_context ✓' : '');
+        // Champs enrichis supplémentaires (v3.3)
+        if (toUse.essential_tips) state._originalEssentialTips = toUse.essential_tips;
+        if (toUse.summary) state._originalSummary = toUse.summary;
+        console.log('[IMPORT] 📦 Métadonnées stockées:', toUse.seo ? 'SEO ✓' : 'SEO ✗', toUse.meta ? 'meta ✓' : 'meta ✗', toUse.practical_context ? 'practical_context ✓' : '', toUse.essential_tips ? 'essential_tips ✓' : '', toUse.summary ? 'summary ✓' : '');
         
 await initFromItin(toUse);
 

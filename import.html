@@ -2307,8 +2307,7 @@ if(raw.includes('```')){
 }
 cleaned = cleaned
   .replace(/[""]/g, '"')
-  .replace(/['']/g, "'")
-  .replace(/[—–]/g, '-')
+  // Préserver typographie française : apostrophes et tirets conservés
   .replace(/\u00A0/g, ' ')
   .normalize('NFC');
       data = JSON.parse(cleaned);
@@ -2366,10 +2365,9 @@ cleaned = cleaned
 
     function cleanJSON(obj) {
       let str = JSON.stringify(obj);
+      // Normaliser uniquement les guillemets doubles pour JSON valide
       str = str.replace(/[""]/g, '"');
-      str = str.replace(/['']/g, "'");
-      str = str.replace(/œ/g, 'oe');
-      str = str.replace(/Œ/g, 'OE');
+      // Préserver typographie française : œ, ', – conservés
       str = str.normalize('NFC');
       return JSON.parse(str);
     }
