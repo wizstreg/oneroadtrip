@@ -412,22 +412,6 @@ html, body {
   cursor: pointer;
 }
 
-/* Map keywords (lieux à voir) */
-.map-keywords-show-btn {
-  width: 100%;
-  padding: 10px;
-  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
-  border: 1px solid #86efac;
-  border-radius: 10px;
-  color: #166534;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.map-keywords-show-btn:active {
-  background: #166534;
-  color: #fff;
-}
 
 .step-bookings-list {
   display: flex;
@@ -1895,6 +1879,7 @@ html, body {
         </div>
         <div class="gmap-filters">
           <button class="gmap-filter-btn active" data-filter="">📍 Lieu</button>
+          <button class="gmap-filter-btn" data-filter="visits">🗺️ Visites</button>
           <button class="gmap-filter-btn" data-filter="restaurants">🍽️ Restos</button>
           <button class="gmap-filter-btn" data-filter="monuments">🏛️ Monuments</button>
           <button class="gmap-filter-btn" data-filter="museums">🎨 Musées</button>
@@ -1997,11 +1982,6 @@ html, body {
           <span class="content-count" id="activitiesCount">0</span>
         </button>
       </div>
-    </div>
-    
-    <!-- Lieux à visiter sur la carte -->
-    <div class="sheet-section" id="mapKeywordsSection" style="display:none">
-      <button class="map-keywords-show-btn" id="btnShowOnMap" onclick="showKeywordsOnMap()">🗺️ Voir les lieux sur la carte</button>
     </div>
     
     <!-- Contrôle des nuits -->
@@ -5127,72 +5107,6 @@ function centerMap() {
   showToast('🎯 Carte centrée');
 }
 
-// === MAP KEYWORDS — Afficher les lieux sur la carte ===
-const _geocodeCache = {};
-let _kwMarkers = [];
-
-async function geocodeKeyword(kw) {
-  if (_geocodeCache[kw]) return _geocodeCache[kw];
-  try {
-    const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(kw)}`);
-    const data = await resp.json();
-    if (data.length > 0) {
-      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: kw };
-      _geocodeCache[kw] = result;
-      return result;
-    }
-  } catch (e) { console.warn('[GEOCODE]', kw, e.message); }
-  return null;
-}
-
-async function showKeywordsOnMap() {
-  const step = state.steps[currentStepIndex];
-  const kws = step?._mapKeywords || [];
-  if (!kws.length || !map) return;
-  
-  // Fermer le sheet, basculer sur l'onglet carte
-  closeAllSheets();
-  $('tabMap').click();
-  showToast('🔍 Recherche des lieux...');
-  
-  // Nettoyer les anciens markers
-  _kwMarkers.forEach(m => { try { map.removeLayer(m); } catch(_) {} });
-  _kwMarkers = [];
-  
-  // Géocoder tous les keywords en parallèle (max 1 req/s pour Nominatim)
-  const results = [];
-  for (const kw of kws) {
-    const r = await geocodeKeyword(kw);
-    if (r) results.push(r);
-    // Respecter le rate limit Nominatim si pas en cache
-    if (!_geocodeCache[kw]) await new Promise(ok => setTimeout(ok, 1100));
-  }
-  
-  if (results.length === 0) {
-    showToast('❌ Aucun lieu trouvé');
-    return;
-  }
-  
-  // Créer les markers
-  results.forEach((r, i) => {
-    const icon = L.divIcon({
-      className: 'kw-marker',
-      html: `<div style="background:#166534;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)">${i+1}</div>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
-    const m = L.marker([r.lat, r.lng], { icon })
-      .bindPopup(`<div style="padding:4px"><div style="font-size:13px;font-weight:600;margin-bottom:6px">${r.name}</div><a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(r.name)}" target="_blank" rel="noopener" style="font-size:12px;color:#166534">📍 Ouvrir dans Maps</a></div>`)
-      .addTo(map);
-    _kwMarkers.push(m);
-  });
-  
-  // Zoomer sur les résultats
-  const bounds = results.map(r => [r.lat, r.lng]);
-  map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-  showToast(`📍 ${results.length} lieu(x) affiché(s)`);
-}
-
 // === SHEETS ===
 function openSheet(sheet) {
   $('sheetOverlay').classList.add('show');
@@ -5285,10 +5199,6 @@ function openStepSheet(idx) {
   // Stay22 - toujours visible, utilise 1 nuit minimum pour le lien
   $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
   $('btnHotel').style.display = ''; // Toujours visible
-  
-  // Afficher le bouton map_keywords si présents
-  const mkSection = $('mapKeywordsSection');
-  mkSection.style.display = (step._mapKeywords && step._mapKeywords.length) ? '' : 'none';
   
   // Afficher les réservations de cette étape
   const bookingsSection = $('stepBookingsSection');
@@ -6578,7 +6488,18 @@ window.deleteActivity = deleteActivity;
     
     let mapUrl = '';
     
-    if (currentMapFilter) {
+    if (currentMapFilter === 'visits') {
+      // Afficher les lieux à visiter depuis map_keywords
+      const kws = step._mapKeywords || [];
+      if (kws.length > 0) {
+        const searchQuery = encodeURIComponent(kws.join(' | '));
+        mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
+      } else if (lat && lng) {
+        // Fallback: attractions near step
+        const searchQuery = encodeURIComponent(`tourist attractions near ${step.name || ''}`);
+        mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
+      }
+    } else if (currentMapFilter) {
       // Recherche par catégorie de POI près du lieu
       const searchQuery = encodeURIComponent(`${currentMapFilter} near ${step.name || ''}`);
       mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
@@ -6761,6 +6682,7 @@ window.addEventListener('pageshow', async function(event) {
 
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-auth-modal.js"></script>
 <script src="/js/ort-auth-gate.js"></script>
 
 </body>
