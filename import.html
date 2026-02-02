@@ -52,6 +52,14 @@
     grid-template-columns: 1fr !important;
   }
   
+  #section2Container.section-collapsed {
+    display: none !important;
+  }
+  
+  #section2Container.section-expanded {
+    display: grid !important;
+  }
+  
   #section34Container {
     display: grid !important;
   }
@@ -355,7 +363,7 @@
   </section>
 
   <!-- Grille 2 colonnes pour pavés 2 et 2bis -->
-  <div id="section2Container" class="section-collapsed" style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:30px">
+  <div id="section2Container" class="section-expanded" style="display:grid;grid-template-columns:1fr;gap:14px;margin-top:30px">
     
   <!-- 2) I18N - Import avec traduction automatique (Silver/Gold uniquement) - COMMENTÉE TEMPORAIREMENT
   <div class="section-premium">
@@ -448,9 +456,15 @@
     console.log('[ORT] classList now:', section.className);
   }
   
-  // Initialiser : sections 2-3-4 masquées sur mobile
+  // Initialiser : section 2 visible, sections 3-4 masquées sur mobile
   if (isMobile()) {
-    document.getElementById('section2Container')?.classList.add('section-collapsed');
+    // Section 2 doit être visible par défaut (c'est là qu'on colle le texte)
+    const s2 = document.getElementById('section2Container');
+    if (s2) {
+      s2.classList.remove('section-collapsed');
+      s2.classList.add('section-expanded');
+    }
+    // Sections 3-4 restent cachées jusqu'à la génération du prompt
     document.getElementById('section34Container')?.classList.add('section-collapsed');
     document.getElementById('section3Container')?.classList.add('section-collapsed');
     document.getElementById('section4Container')?.classList.add('section-collapsed');
@@ -658,26 +672,36 @@
 </div><!-- /emailModal -->
 
 <!-- Modal Configuration Voyage -->
-<div id="configTripModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000">
-  <div class="modal-card" style="max-width:500px">
-    <h3 id="cfgTitleText" style="color:#113f7a;margin-bottom:16px">Configurez votre voyage</h3>
+<div id="configTripModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center;z-index:10000">
+  <div class="modal-card" style="max-width:500px;animation:modalPop 0.3s ease;box-shadow:0 20px 60px rgba(0,0,0,0.4);border:3px solid #113f7a">
+    <h3 id="cfgTitleText" style="color:#113f7a;margin-bottom:16px;font-size:1.4em;text-align:center">🗓️ Configurer votre voyage</h3>
+    
+    <div style="background:#e0f2fe;border:1px solid #0ea5e9;border-radius:8px;padding:12px;margin-bottom:16px;color:#0369a1;font-size:14px;text-align:center">
+      <strong>Dernière étape !</strong> Définissez vos dates pour finaliser l'import.
+    </div>
     
     <div style="margin-bottom:14px">
       <label id="cfgStartDateLabel" style="display:block;font-weight:600;margin-bottom:6px">Date de départ :</label>
-      <input type="date" id="cfgStartDate" class="input" style="width:100%">
+      <input type="date" id="cfgStartDate" class="input" style="width:100%;font-size:16px;padding:12px">
     </div>
     
     <div style="margin-bottom:14px">
-      <label id="cfgNbDaysLabel" style="display:block;font-weight:600;margin-bottom:6px">Nombre de jours souhaités :</label>
-      <input type="number" id="cfgNbDays" class="input" value="7" min="1" max="60" style="width:100%">
+      <label id="cfgNbDaysLabel" style="display:block;font-weight:600;margin-bottom:6px">Nombre de jours souhaité :</label>
+      <input type="number" id="cfgNbDays" class="input" value="7" min="1" max="60" style="width:100%;font-size:16px;padding:12px">
     </div>
     
-    <div class="actions" style="margin-top:20px">
-      <button id="btnCancelConfig" class="btn-outline" type="button">Annuler</button>
-      <button id="btnValidateConfig" class="btn-primary" type="button">Valider</button>
+    <div class="actions" style="margin-top:20px;gap:12px">
+      <button id="btnCancelConfig" class="btn-outline" type="button" style="padding:12px 20px">Annuler</button>
+      <button id="btnValidateConfig" class="btn-primary" type="button" style="padding:12px 24px;font-size:16px;font-weight:700">✅ Valider et ouvrir</button>
     </div>
   </div>
 </div>
+<style>
+@keyframes modalPop {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+</style>
 
 <!-- Charge la config centralisée AVANT l’init Firebase -->
 <script src="/js/ort-config.js"></script>
@@ -715,7 +739,7 @@
 </script>
 
 <script>
-// === PROMPT TEMPLATES v6 - Admin & User ===
+// === PROMPT TEMPLATES v8 - Admin & User ===
 // User: mode "logic" par défaut | Admin: sous-modes follow/logic/seed/citytrip
 
 const PROMPTS = {
@@ -763,20 +787,36 @@ Transforme le contenu SOURCE en JSON "itins" (UN SEUL objet). Suis cet exemple :
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
-          "coords": [19.8856, 102.1347]
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ],
+          "coords": [19.8856, 102.1347],
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mont Phousi Luang Prabang",
+            "Palais Royal Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ]
         },
         "visits": [
-          {"text": "Le Vat Xieng Thong déploie ses toits superposés jusqu'au sol dans le plus pur style lao. Ses mosaïques de verre rouge racontent la vie du Bouddha."},
-          {"text": "Gravissez les 328 marches du mont Phousi pour dominer la péninsule au confluent du Mékong et de la Nam Khan."},
-          {"text": "Le Palais Royal abrite aujourd'hui le musée national. Découvrez le trône et le Phra Bang, bouddha d'or qui donna son nom à la ville."},
-          {"text": "Admirez le porche doré du Vat Mai, sculpté de scènes du Ramayana. Les fidèles y affluent lors du Nouvel An lao."},
-          {"text": "Le Vat Visoun, plus ancien temple de la ville (1513), conserve un grand Bouddha en bois et le That Makmo."},
-          {"text": "Flânez le long de la Nam Khan jusqu'au Vat Xieng Mouane où les moines tissent encore des textiles traditionnels."}
+          {"text": "Les toits du Vat Xieng Thong descendent jusqu'au sol. Ses mosaïques de verre rouge illustrent la vie du Bouddha."},
+          {"text": "Montez les 328 marches du mont Phousi pour voir le Mékong et la Nam Khan se rejoindre."},
+          {"text": "Le Palais Royal expose le trône et le Phra Bang, bouddha d'or qui a donné son nom à la ville."},
+          {"text": "Le porche doré du Vat Mai est sculpté de scènes du Ramayana. Les fidèles s'y retrouvent au Nouvel An lao."},
+          {"text": "Le Vat Visoun date de 1513. On y voit un grand Bouddha en bois et le stupa That Makmo."},
+          {"text": "Suivez la Nam Khan jusqu'au Vat Xieng Mouane où les moines tissent des textiles traditionnels."}
         ],
         "activities": [
-          {"text": "Levez-vous à l'aube pour observer le tak bat, procession silencieuse où les moines collectent leur nourriture.", "practical_info": {"best_time": "5h30-6h30", "tip": "Restez discret, pas de flash"}},
-          {"text": "Le marché de nuit envahit Sisavangvong Road dès 17h avec textiles et artisanat."},
-          {"text": "Initiez-vous à la cuisine lao dans une école locale : laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cours de cuisine"}}
+          {"text": "Levez-vous à l'aube pour le tak bat : les moines passent en silence collecter leur nourriture.", "practical_info": {"best_time": "5h30-6h30", "tip": "Restez discret, pas de flash"}},
+          {"text": "Le marché de nuit s'installe sur Sisavangvong Road dès 17h. Textiles, artisanat et lanternes."},
+          {"text": "Apprenez à cuisiner lao : laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cours de cuisine"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
@@ -793,19 +833,33 @@ Transforme le contenu SOURCE en JSON "itins" (UN SEUL objet). Suis cet exemple :
         "suggested_days": 1.0,
         "night": {
           "place_id": "LA::vang_vieng",
-          "coords": [18.9220, 102.4476]
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
+          "coords": [18.9220, 102.4476],
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ]
         },
         "visits": [
-          {"text": "La grotte Tham Chang s'ouvre dans la falaise face à la Nam Song. Un escalier mène à ses stalactites illuminées."},
-          {"text": "Plongez dans les eaux turquoise de la Blue Lagoon, nichée au pied des karsts."},
-          {"text": "Explorez la grotte Tham Phu Kham sur 500 mètres. Un bouddha couché veille dans la pénombre."},
-          {"text": "Le pont de bambou enjambe la Nam Song vers les rizières de la rive ouest."},
-          {"text": "Aventurez-vous dans la grotte Tham Nam en bouée sur une rivière souterraine."}
+          {"text": "La grotte Tham Chang s'ouvre dans la falaise face à la Nam Song. Un escalier monte vers ses stalactites éclairées."},
+          {"text": "La Blue Lagoon : eau turquoise au pied des karsts, parfaite pour la baignade."},
+          {"text": "La grotte Tham Phu Kham s'enfonce sur 500 mètres. Un bouddha couché dort dans la pénombre."},
+          {"text": "Un pont de bambou traverse la Nam Song vers les rizières de la rive ouest."},
+          {"text": "La grotte Tham Nam se visite en bouée, portée par une rivière souterraine."}
         ],
         "activities": [
-          {"text": "Descendez la Nam Song en kayak entre les falaises calcaires.", "practical_info": {"duration": "2-3h", "difficulty": "Facile"}},
-          {"text": "Les parois karstiques offrent des voies d'escalade pour tous niveaux."},
-          {"text": "Louez un vélo pour relier les lagunes et grottes par les chemins de terre."}
+          {"text": "Descendez la Nam Song en kayak. Les falaises calcaires défilent de chaque côté.", "practical_info": {"duration": "2-3h", "difficulty": "Facile"}},
+          {"text": "Les parois karstiques proposent des voies d'escalade pour tous niveaux."},
+          {"text": "Louez un vélo pour rejoindre lagunes et grottes par les chemins de terre."}
         ]
       }
     ]
@@ -815,32 +869,56 @@ Transforme le contenu SOURCE en JSON "itins" (UN SEUL objet). Suis cet exemple :
 📋 RÈGLES CRITIQUES :
 
 1. ORDRE LOGIQUE — Réorganiser les étapes pour un itinéraire géographiquement cohérent. Éviter les aller-retours.
-2. visits[] = lieux (monuments, temples, musées, sites, grottes, chutes)
-3. activities[] = actions (marchés, randos, kayak, vélo, cours, balades)
-4. 5-8 visits + 3-6 activities par day minimum — enrichir si la source manque de contenu
-5. suggested_days : 0.5 | 1.0 | 1.5 — au-delà, éclater en plusieurs days avec même place_id
-6. estimated_days_base = CEIL(somme des suggested_days) — ex: 1.5 + 1.0 = 2.5 → 3
-7. to_next_leg sur tous les days SAUF le dernier
-8. coords = [lat, lon] du centre-ville — ne PAS inventer de coordonnées précises
-9. itin_id = CC::region::slug (CC = ISO2 : FR, LA, TH, HR, IT...)
-10. region_code = CC-XX (code régional usuel, ex: LA-LP, HR-21, FR-84, IT-PUG)
-11. dept_code = abréviation régionale usuelle (LP, 21, 84, PUG...)
-12. slice = toujours 1
-13. source_url = URL de la SOURCE si disponible
-14. language = "fr" — TOUS les textes en français (traduire si source en autre langue, garder noms propres d'origine : Wat, Piazza, Playa...)
+
+2. ⚠️ DISTINCTION VISITS vs ACTIVITIES (IMPORTANT) :
+   **visits[] = LIEUX à voir** 
+   - Monuments, temples, cathédrales, musées, sites archéologiques, grottes, châteaux, palais
+   - Décrit CE QU'ON VOIT : architecture, histoire, collections
+   - Exemple : "La cathédrale Notre-Dame domine la ville de sa flèche de 142 mètres"
+   
+   **activities[] = ACTIONS à faire**
+   - Randonnées, kayak, vélo, plongée, cours de cuisine, marchés, croisières, safaris, parachute
+   - Décrit CE QU'ON FAIT : expériences, activités sportives, culturelles, gastronomiques
+   - Exemple : "Descendez la Nam Song en kayak. Les falaises calcaires défilent de chaque côté."
+   
+   ❌ NE JAMAIS mettre un musée, monument ou lieu dans activities
+   ❌ NE JAMAIS répéter le même contenu dans visits et activities
+
+3. 5-8 visits + 3-6 activities par day minimum — enrichir si la source manque de contenu
+4. suggested_days : 0.5 | 1.0 | 1.5 — au-delà, éclater en plusieurs days avec même place_id
+5. estimated_days_base = CEIL(somme des suggested_days) — ex: 1.5 + 1.0 = 2.5 → 3
+6. to_next_leg sur tous les days SAUF le dernier
+7. coords = [lat, lon] du centre-ville — ne PAS inventer de coordonnées précises
+8. itin_id = CC::region::slug (CC = ISO2 : FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (code régional usuel, ex: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = abréviation régionale usuelle (LP, 21, 84, PUG...)
+11. slice = toujours 1
+12. source_url = URL de la SOURCE si disponible
+13. language = "fr" — TOUS les textes en français (traduire si source en autre langue, garder noms propres d'origine : Wat, Piazza, Playa...)
 
 📋 FORMAT ENRICHI (OBLIGATOIRE) :
 15. subtitle = 1 phrase d'accroche sous le titre (style "Des temples dorés aux plages de rêve")
 16. practical_context.best_months = tableau des meilleurs mois pour visiter (ex: ["mai", "juin", "septembre"])
 17. practical_context.highlights = 4-6 points forts de l'itinéraire
 18. practical_info = ajouter sur les activités importantes (randos, safaris, camping, locations...) avec duration, difficulty, tip, best_time selon contexte
-19. road_type = ajouter dans to_next_leg si pertinent (ex: "Goudron", "Piste", "Gravel", "Goudron puis piste")
+19. road_type = ajouter dans to_next_leg UNIQUEMENT si route non goudronnée (ex: "Piste", "Gravel", "Goudron puis piste")
+20. ⚠️ map_keywords = OBLIGATOIRE dans night{} pour chaque jour
+    - Array de mots-clés pour Google Maps
+    - Format: "Nom exact du lieu + Ville" (ex: "Wat Xieng Thong Luang Prabang")
+    - Reprendre TOUTES les visits du jour dans l'ORDRE LOGIQUE de visite
+    - 5-8 keywords par jour selon le nombre de visits
+    - Les keywords doivent être recherchables sur Google Maps
 
 ✍️ STYLE D'ÉCRITURE — VARIER LES FORMES :
-- Descriptif : "Le temple déploie ses toits dorés..."
-- Impératif : "Découvrez...", "Explorez...", "Admirez...", "Gravissez..."
-- Narratif : "Les moines tissent encore...", "Les fidèles y affluent..."
-ALTERNER ces 3 formes pour casser la monotonie. Ne pas enchaîner plus de 2 textes du même style.
+- Informatif simple : "Les toits du Vat Xieng Thong descendent jusqu'au sol. Ses mosaïques..."
+- Impératif : "Rejoignez...", "Empruntez...", "Poussez la porte...", "Grimpez...", "Traversez..." — varie les verbes
+- Narratif : "Les moines tissent encore...", "Les fidèles affluent..."
+- Invitation : "Rendez-vous à l'aube pour le tak bat"
+- Question/suggestion : "Envie de voir le Mékong d'en haut ? Mont Phousi et ses 328 marches"
+
+ALTERNER ces formes pour casser la monotonie. Ne pas enchaîner plus de 2 textes du même style.
+
+PAS DE MOTS POMPEUX / IA (Obligatoire) : garder un style simple, informatif qui explique ce qu'il y a à voir et pourquoi c'est intéressant. Donner des détails historiques, architecturaux, naturels concrets.
 
 ${effectiveMode === 'seed' ? `
 🏠 MODE BASES + BOUCLES - BASES : ${effectiveSeeds || '[extraire du texte]'}
@@ -908,20 +986,28 @@ Transform SOURCE content into JSON "itins" (SINGLE object). Follow this example:
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ]
           "coords": [19.8856, 102.1347]
         },
         "visits": [
-          {"text": "Wat Xieng Thong spreads its sweeping roofs down to ground level in pure Lao style. Red glass mosaics depict the Buddha's life."},
-          {"text": "Climb the 328 steps of Mount Phousi to overlook the peninsula at the confluence of the Mekong and Nam Khan rivers."},
-          {"text": "The Royal Palace now houses the national museum with the throne and Phra Bang golden Buddha."},
-          {"text": "Wat Mai features a gilded porch carved with Ramayana scenes."},
-          {"text": "Wat Visoun, the oldest temple in town (1513), holds a large wooden Buddha."},
-          {"text": "Walk along the Nam Khan to Wat Xieng Mouane where monks still weave traditional textiles."}
+          {"text": "Wat Xieng Thong's roofs sweep down to ground level. Red glass mosaics depict the Buddha's life."},
+          {"text": "Climb the 328 steps of Mount Phousi to see the Mekong and Nam Khan converge."},
+          {"text": "The Royal Palace displays the throne and Phra Bang, the golden Buddha that gave the city its name."},
+          {"text": "Wat Mai's gilded porch is carved with Ramayana scenes. Devotees gather here during Lao New Year."},
+          {"text": "Wat Visoun dates from 1513. Inside is a large wooden Buddha and That Makmo stupa."},
+          {"text": "Follow the Nam Khan to Wat Xieng Mouane where monks still weave traditional textiles."}
         ],
         "activities": [
-          {"text": "Rise at dawn to witness tak bat, the silent procession where monks collect their daily food.", "practical_info": {"best_time": "5:30-6:30am", "tip": "Stay quiet, no flash photography"}},
-          {"text": "The night market takes over Sisavangvong Road from 5pm with textiles and handicrafts."},
-          {"text": "Local cooking schools teach Lao classics: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cooking class"}}
+          {"text": "Wake at dawn for tak bat: monks pass silently to collect their food.", "practical_info": {"best_time": "5:30-6:30am", "tip": "Stay quiet, no flash"}},
+          {"text": "The night market fills Sisavangvong Road from 5pm. Textiles, crafts and lanterns."},
+          {"text": "Learn to cook Lao: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Cooking class"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
@@ -938,19 +1024,26 @@ Transform SOURCE content into JSON "itins" (SINGLE object). Follow this example:
         "suggested_days": 1.0,
         "night": {
           "place_id": "LA::vang_vieng",
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
           "coords": [18.9220, 102.4476]
         },
         "visits": [
-          {"text": "Tham Chang cave opens in the cliff facing the Nam Song with illuminated stalactites."},
-          {"text": "Blue Lagoon carves a turquoise pool at the foot of karst peaks."},
-          {"text": "Tham Phu Kham cave extends 500 meters with a reclining bronze Buddha."},
-          {"text": "The bamboo bridge crosses the Nam Song to rice paddies on the west bank."},
-          {"text": "Tham Nam cave is explored by tube on an underground river."}
+          {"text": "Tham Chang cave opens in the cliff facing the Nam Song. Stairs lead up to illuminated stalactites."},
+          {"text": "Blue Lagoon: turquoise water at the foot of karsts, perfect for swimming."},
+          {"text": "Tham Phu Kham cave extends 500 meters. A reclining Buddha sleeps in the darkness."},
+          {"text": "A bamboo bridge crosses the Nam Song to the rice paddies on the west bank."},
+          {"text": "Tham Nam cave is explored by tubing on an underground river."}
         ],
         "activities": [
-          {"text": "Kayak down the Nam Song between limestone cliffs.", "practical_info": {"duration": "2-3h", "difficulty": "Easy"}},
-          {"text": "Climbing schools offer courses on the karst walls for all levels."},
-          {"text": "Rent a bike to connect lagoons and caves via dirt tracks."}
+          {"text": "Kayak down the Nam Song. Limestone cliffs scroll past on both sides.", "practical_info": {"duration": "2-3h", "difficulty": "Easy"}},
+          {"text": "The karst walls offer climbing routes for all levels."},
+          {"text": "Rent a bike to reach lagoons and caves by dirt roads."}
         ]
       }
     ]
@@ -959,46 +1052,82 @@ Transform SOURCE content into JSON "itins" (SINGLE object). Follow this example:
 
 📋 CRITICAL RULES:
 
-1. LOGICAL ORDER — Reorganize stops for a geographically coherent route. Avoid backtracking.
-2. visits[] = places (monuments, temples, museums, sites, caves, waterfalls)
-3. activities[] = actions (markets, hikes, kayaking, cycling, courses, walks)
-4. 5-8 visits + 3-6 activities per day minimum
-5. suggested_days: 0.5 | 1.0 | 1.5 — beyond 1.5, split into multiple days
-6. estimated_days_base = CEIL(sum of suggested_days) — e.g.: 1.5 + 1.0 = 2.5 → 3
-7. to_next_leg on all days EXCEPT the last
-8. coords = [lat, lon] of city center
-9. itin_id = CC::region::slug (CC = ISO2)
-10. region_code = CC-XX (regional code, e.g.: LA-LP, HR-21, FR-84)
-11. dept_code = regional abbreviation (LP, 21, 84, PUG...)
-12. slice = always 1
-13. language = "en" — ALL texts in English (translate if source in other language, keep original proper nouns: Wat, Piazza, Playa...)
+1. LOGICAL ORDER — Reorganize steps for geographically coherent itinerary. Avoid backtracking.
 
-📋 ENRICHED FORMAT (REQUIRED):
-14. subtitle = 1 catchy tagline below the title (e.g. "From golden temples to dream beaches")
-15. practical_context.best_months = array of best months to visit (e.g.: ["May", "June", "September"])
-16. practical_context.highlights = 4-6 itinerary highlights
-17. practical_info = add to important activities (hikes, safaris, camping, rentals...) with duration, difficulty, tip, best_time as relevant
-18. road_type = add in to_next_leg if relevant (e.g.: "Tarmac", "Gravel", "Track", "Tarmac then gravel")
+2. ⚠️ VISITS vs ACTIVITIES DISTINCTION (IMPORTANT):
+   **visits[] = PLACES to see**
+   - Monuments, temples, cathedrals, museums, archaeological sites, caves, castles, palaces
+   - Describes WHAT YOU SEE: architecture, history, collections
+   - Example: "Wat Xieng Thong's roofs sweep down to ground level. Red glass mosaics depict the Buddha's life."
+   
+   **activities[] = ACTIONS to do**
+   - Hiking, kayaking, cycling, diving, cooking classes, markets, cruises, safaris, paragliding
+   - Describes WHAT YOU DO: experiences, sports, cultural or gastronomic activities
+   - Example: "Kayak down the Nam Song. Limestone cliffs scroll past on both sides."
+   
+   ❌ NEVER put a museum, monument or place in activities
+   ❌ NEVER repeat the same content in visits and activities
 
-✍️ WRITING STYLE — VARY THE FORMS:
-- Descriptive: "The temple spreads its golden roofs..."
-- Imperative: "Discover...", "Explore...", "Admire...", "Climb..."
-- Narrative: "Monks still weave...", "Devotees gather..."
-ALTERNATE these 3 forms to break monotony. Don't chain more than 2 texts of the same style.
+3. 5-8 visits + 3-6 activities per day minimum — enrich if source lacks content
+4. suggested_days: 0.5 | 1.0 | 1.5 — beyond that, split into multiple days with same place_id
+5. estimated_days_base = CEIL(sum of suggested_days) — ex: 1.5 + 1.0 = 2.5 → 3
+6. to_next_leg on all days EXCEPT the last
+7. coords = [lat, lon] of city center — do NOT invent precise coordinates
+8. itin_id = CC::region::slug (CC = ISO2: FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (regional code, ex: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = regional abbreviation (LP, 21, 84, PUG...)
+11. slice = always 1
+12. source_url = SOURCE URL if available
+13. language = "en" — ALL texts in English (translate if source in other language, keep original proper names: Wat, Piazza, Playa...)
 
-${effectiveMode === 'seed' ? `🏠 BASE + LOOPS MODE - BASES: ${effectiveSeeds || '[extract from text]'}` : ''}
-${effectiveMode === 'citytrip' ? `🏙️ CITY TRIP MODE - Each attraction = 1 distinct day.` : ''}
-${effectiveMode === 'follow' ? `📍 STRICT FOLLOW MODE - Keep exact order of source.` : ''}
-${isAdmin ? `🚫 NEUTRALIZATION (ADMIN): Remove named businesses, people, prices, recent dates, first person` : ''}
+📋 ENRICHED FORMAT (MANDATORY):
+15. subtitle = 1 catchy phrase under title (style "From golden temples to dream beaches")
+16. practical_context.best_months = array of best visiting months (ex: ["May", "June", "September"])
+17. practical_context.highlights = 4-6 itinerary highlights
+18. practical_info = add for important activities (hikes, safaris, camping, rentals...) with duration, difficulty, tip, best_time as appropriate
+19. road_type = add in to_next_leg ONLY if road is NOT standard tarmac (ex: "Track", "Gravel", "Tarmac then track")
+20. ⚠️ map_keywords = MANDATORY in night{} for each day
+    - Array of keywords for Google Maps
+    - Format: "Exact place name + City" (ex: "Wat Xieng Thong Luang Prabang")
+    - Include ALL visits of the day in LOGICAL visiting order
+    - 5-8 keywords per day depending on number of visits
+    - Keywords must be searchable on Google Maps
 
-🚫 FORBIDDEN: Verbless phrases ("Gothic cathedral. Stained glass. Crypt.")
+✍️ WRITING STYLE — VARY FORMS:
+- Simple informative: "Wat Xieng Thong's roofs sweep down to ground level. Its mosaics..."
+- Imperative: "Head to...", "Take...", "Push open...", "Climb...", "Cross..." — vary verbs
+- Narrative: "Monks still weave...", "Devotees flock..."
+- Invitation: "Meet at dawn for tak bat"
+- Question/suggestion: "Want to see the Mekong from above? Mount Phousi and its 328 steps"
+
+ALTERNATE these forms to break monotony. Don't chain more than 2 texts of the same style.
+
+NO POMPOUS / AI WORDS (Mandatory): keep a simple, informative style that explains what there is to see and why it's interesting. Give concrete historical, architectural, natural details.
+
+${effectiveMode === 'seed' ? `
+🏠 BASES + LOOPS MODE - BASES: ${effectiveSeeds || '[extract from text]'}
+Structure: BASE → excursions → return BASE (every 3-5d) → new BASE...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ CITY TRIP MODE - Each attraction = 1 distinct day. night.place_id = the attraction.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 STRICT FOLLOW MODE - Keep exact order of steps from source.
+` : ''}
+${isAdmin ? `
+🚫 NEUTRALIZATION (ADMIN MODE) - These JSONs will be publicly distributed.
+✅ KEEP: Museums, monuments, temples, parks, UNESCO sites, public markets
+❌ REMOVE: Named businesses → "Rental companies offer..." | People → remove | Prices → omit | "by motorbike" → "by road" | Recent dates → remove | 1st person → rephrase
+` : ''}
+
+🚫 FORBIDDEN: Sentences without verbs ("Gothic cathedral. Stained glass. Crypt.")
 
 SOURCE:
 `;
   },
 
   // ============================================
-  // ESPAÑOL v7
+  // ESPAÑOL v8
   // ============================================
   es: ({mode, seeds, modelSubMode, modelSeeds}) => {
     const isAdmin = mode === 'model';
@@ -1018,10 +1147,20 @@ Transforma el contenido SOURCE en JSON "itins" (UN SOLO objeto). Sigue este ejem
     "dept_code": "LP",
     "dept_name": "Luang Prabang",
     "title": "Templos y karsts del Norte de Laos",
-    "estimated_days_base": 2,
+    "subtitle": "De los monjes de Luang Prabang a las lagunas turquesa de Vang Vieng",
+    "estimated_days_base": 3,
     "pacing_rules": {
       "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
+    },
+    "practical_context": {
+      "best_months": ["noviembre", "diciembre", "enero", "febrero"],
+      "highlights": [
+        "Procesión de monjes al amanecer (tak bat)",
+        "Templos dorados de Luang Prabang",
+        "Cuevas y lagunas turquesa de Vang Vieng",
+        "Navegación por el Mekong"
+      ]
     },
     "days_plan": [
       {
@@ -1031,26 +1170,65 @@ Transforma el contenido SOURCE en JSON "itins" (UN SOLO objeto). Sigue este ejem
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ],
           "coords": [19.8856, 102.1347]
         },
         "visits": [
-          {"text": "El Wat Xieng Thong despliega sus tejados superpuestos hasta el suelo en puro estilo lao."},
-          {"text": "Sube los 328 escalones del monte Phousi para dominar la península."},
-          {"text": "El Palacio Real alberga hoy el museo nacional con el Phra Bang, buda dorado."},
-          {"text": "El Wat Mai luce un pórtico dorado esculpido con escenas del Ramayana."},
-          {"text": "El Wat Visoun (1513) conserva un gran Buda de madera."}
+          {"text": "Los techos del Wat Xieng Thong bajan hasta el suelo. Sus mosaicos de vidrio rojo ilustran la vida de Buda."},
+          {"text": "Sube los 328 escalones del monte Phousi para ver el Mekong y la Nam Khan confluir."},
+          {"text": "El Palacio Real expone el trono y el Phra Bang, buda dorado que dio nombre a la ciudad."},
+          {"text": "El pórtico dorado del Wat Mai está esculpido con escenas del Ramayana. Los fieles se reúnen aquí en el Año Nuevo lao."},
+          {"text": "El Wat Visoun data de 1513. Se ve un gran Buda de madera y el estupa That Makmo."},
+          {"text": "Sigue la Nam Khan hasta el Wat Xieng Mouane donde los monjes tejen textiles tradicionales."}
         ],
         "activities": [
-          {"text": "Levántate al amanecer para observar el tak bat, procesión de los monjes."},
-          {"text": "El mercado nocturno invade Sisavangvong Road desde las 17h."},
-          {"text": "Las escuelas de cocina locales enseñan clásicos lao."}
+          {"text": "Levántate al amanecer para el tak bat: los monjes pasan en silencio a recoger su comida.", "practical_info": {"best_time": "5h30-6h30", "tip": "Mantén el silencio, sin flash"}},
+          {"text": "El mercado nocturno se instala en Sisavangvong Road desde las 17h. Textiles, artesanía y linternas."},
+          {"text": "Aprende a cocinar lao: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Clase de cocina"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
           "drive_min": 270,
           "transport_mode": "car",
+          "road_type": "Asfalto sinuoso",
           "method": "heuristic"
         }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "La cueva Tham Chang se abre en el acantilado frente al Nam Song. Una escalera sube hacia sus estalactitas iluminadas."},
+          {"text": "Blue Lagoon: agua turquesa al pie de los karsts, perfecta para bañarse."},
+          {"text": "La cueva Tham Phu Kham se adentra 500 metros. Un buda reclinado duerme en la penumbra."},
+          {"text": "Un puente de bambú cruza el Nam Song hacia los arrozales de la orilla oeste."},
+          {"text": "La cueva Tham Nam se visita en flotador, llevado por un río subterráneo."}
+        ],
+        "activities": [
+          {"text": "Baja el Nam Song en kayak. Los acantilados calizos desfilan a ambos lados.", "practical_info": {"duration": "2-3h", "difficulty": "Fácil"}},
+          {"text": "Las paredes kársticas ofrecen vías de escalada para todos los niveles."},
+          {"text": "Alquila una bici para llegar a lagunas y cuevas por caminos de tierra."}
+        ]
       }
     ]
   }]
@@ -1059,29 +1237,72 @@ Transforma el contenido SOURCE en JSON "itins" (UN SOLO objeto). Sigue este ejem
 📋 REGLAS CRÍTICAS:
 
 1. ORDEN LÓGICO — Reorganizar etapas geográficamente. Evitar retrocesos.
-2. visits[] = lugares | activities[] = acciones
-3. 5-8 visits + 3-6 activities por día mínimo
-4. suggested_days: 0.5 | 1.0 | 1.5
-5. estimated_days_base = CEIL(suma de suggested_days)
+
+2. ⚠️ DISTINCIÓN VISITS vs ACTIVITIES (IMPORTANTE):
+   **visits[] = LUGARES para ver**
+   - Monumentos, templos, catedrales, museos, sitios arqueológicos, cuevas, castillos, palacios
+   - Describe LO QUE SE VE: arquitectura, historia, colecciones
+   - Ejemplo: "Los techos del Wat Xieng Thong bajan hasta el suelo. Sus mosaicos de vidrio rojo ilustran la vida de Buda."
+   
+   **activities[] = ACCIONES para hacer**
+   - Senderismo, kayak, bicicleta, buceo, clases de cocina, mercados, cruceros, safaris, parapente
+   - Describe LO QUE SE HACE: experiencias, deportes, actividades culturales o gastronómicas
+   - Ejemplo: "Baja el Nam Song en kayak. Los acantilados calizos desfilan a ambos lados."
+   
+   ❌ NUNCA poner un museo, monumento o lugar en activities
+   ❌ NUNCA repetir el mismo contenido en visits y activities
+
+3. 5-8 visits + 3-6 activities por día mínimo — enriquecer si la fuente carece de contenido
+4. suggested_days: 0.5 | 1.0 | 1.5 — más allá, dividir en varios días con mismo place_id
+5. estimated_days_base = CEIL(suma de suggested_days) — ej: 1.5 + 1.0 = 2.5 → 3
 6. to_next_leg en todos los días EXCEPTO el último
-7. coords = [lat, lon] del centro ciudad
-8. region_code = CC-XX (código regional)
-9. language = "es" — TODOS los textos en español (traducir si fuente en otro idioma, mantener nombres propios: Wat, Piazza, Playa...)
+7. coords = [lat, lon] del centro ciudad — NO inventar coordenadas precisas
+8. itin_id = CC::region::slug (CC = ISO2: FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (código regional, ej: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = abreviatura regional (LP, 21, 84, PUG...)
+11. slice = siempre 1
+12. source_url = URL de la FUENTE si disponible
+13. language = "es" — TODOS los textos en español (traducir si fuente en otro idioma, mantener nombres propios: Wat, Piazza, Playa...)
 
 📋 FORMATO ENRIQUECIDO (OBLIGATORIO):
-10. subtitle = 1 frase gancho bajo el título (ej: "De los templos dorados a las playas de ensueño")
-11. practical_context.best_months = array de mejores meses (ej: ["mayo", "junio", "septiembre"])
-12. practical_context.highlights = 4-6 puntos destacados del itinerario
-13. practical_info = añadir en actividades importantes (senderismo, safari, camping...) con duration, difficulty, tip, best_time
-14. road_type = añadir en to_next_leg si relevante (ej: "Asfalto", "Grava", "Pista", "Asfalto y luego pista")
+15. subtitle = 1 frase gancho bajo el título (estilo "De los templos dorados a las playas de ensueño")
+16. practical_context.best_months = array de mejores meses (ej: ["mayo", "junio", "septiembre"])
+17. practical_context.highlights = 4-6 puntos destacados del itinerario
+18. practical_info = añadir en actividades importantes (caminatas, safaris, camping, alquileres...) con duration, difficulty, tip, best_time según contexto
+19. road_type = añadir en to_next_leg SOLO si la ruta NO es asfalto normal (ej: "Grava", "Pista", "Asfalto luego pista")
+20. ⚠️ map_keywords = OBLIGATORIO en night{} para cada día
+    - Array de palabras clave para Google Maps
+    - Formato: "Nombre exacto del lugar + Ciudad" (ej: "Wat Xieng Thong Luang Prabang")
+    - Incluir TODAS las visits del día en ORDEN LÓGICO de visita
+    - 5-8 keywords por día según número de visits
+    - Las keywords deben ser buscables en Google Maps
 
 ✍️ ESTILO — VARIAR LAS FORMAS:
-- Descriptivo: "El templo despliega sus techos dorados..."
-- Imperativo: "Descubre...", "Explora...", "Admira...", "Sube..."
-- Narrativo: "Los monjes tejen...", "Los fieles acuden..."
-ALTERNAR estas 3 formas. No encadenar más de 2 textos del mismo estilo.
+- Informativo simple: "Los techos del Wat Xieng Thong bajan hasta el suelo. Sus mosaicos..."
+- Imperativo: "Dirígete a...", "Toma...", "Abre la puerta...", "Sube...", "Cruza..." — varía verbos
+- Narrativo: "Los monjes tejen aún...", "Los fieles acuden..."
+- Invitación: "Reúnete al amanecer para el tak bat"
+- Pregunta/sugerencia: "¿Quieres ver el Mekong desde arriba? Monte Phousi y sus 328 escalones"
 
-${isAdmin ? `🚫 NEUTRALIZACIÓN: Eliminar comercios, personas, precios, fechas recientes` : ''}
+ALTERNAR estas formas para romper la monotonía. No encadenar más de 2 textos del mismo estilo.
+
+SIN PALABRAS POMPOSAS / IA (Obligatorio): mantener estilo simple, informativo que explica qué hay para ver y por qué es interesante. Dar detalles históricos, arquitectónicos, naturales concretos.
+
+${effectiveMode === 'seed' ? `
+🏠 MODO BASES + BUCLES - BASES: ${effectiveSeeds || '[extraer del texto]'}
+Estructura: BASE → excursiones → vuelta BASE (cada 3-5d) → nueva BASE...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ MODO CITY TRIP - Cada atracción = 1 día distinto. night.place_id = la atracción.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 MODO SEGUIMIENTO ESTRICTO - Conservar orden exacto de etapas de la fuente.
+` : ''}
+${isAdmin ? `
+🚫 NEUTRALIZACIÓN (MODO ADMIN) - Estos JSON se distribuirán públicamente.
+✅ MANTENER: Museos, monumentos, templos, parques, sitios UNESCO, mercados públicos
+❌ ELIMINAR: Comercios nombrados → "Los alquileres ofrecen..." | Personas → eliminar | Precios → omitir | "en moto" → "por carretera" | Fechas recientes → eliminar | 1ª persona → reformular
+` : ''}
 
 🚫 PROHIBIDO: Frases sin verbo ("Catedral gótica. Vidrieras. Cripta.")
 
@@ -1090,7 +1311,7 @@ SOURCE:
   },
 
   // ============================================
-  // ITALIANO v7
+  // ITALIANO v8
   // ============================================
   it: ({mode, seeds, modelSubMode, modelSeeds}) => {
     const isAdmin = mode === 'model';
@@ -1103,17 +1324,27 @@ Trasforma il contenuto SOURCE in JSON "itins" (UN SOLO oggetto). Segui questo es
 
 {
   "itins": [{
-    "itin_id": "LA::nord::luang-prabang",
+    "itin_id": "LA::nord::luang-prabang-vang-vieng",
     "language": "it",
     "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
     "source_url": "",
     "dept_code": "LP",
     "dept_name": "Luang Prabang",
     "title": "Templi e karst del Nord Laos",
-    "estimated_days_base": 2,
+    "subtitle": "Dai monaci di Luang Prabang alle lagune turchesi di Vang Vieng",
+    "estimated_days_base": 3,
     "pacing_rules": {
       "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
+    },
+    "practical_context": {
+      "best_months": ["novembre", "dicembre", "gennaio", "febbraio"],
+      "highlights": [
+        "Processione dei monaci all'alba (tak bat)",
+        "Templi dorati di Luang Prabang",
+        "Grotte e lagune turchesi di Vang Vieng",
+        "Navigazione sul Mekong"
+      ]
     },
     "days_plan": [
       {
@@ -1123,26 +1354,65 @@ Trasforma il contenuto SOURCE in JSON "itins" (UN SOLO oggetto). Segui questo es
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ],
           "coords": [19.8856, 102.1347]
         },
         "visits": [
-          {"text": "Il Wat Xieng Thong dispiega i suoi tetti sovrapposti in puro stile lao."},
-          {"text": "Salite i 328 gradini del monte Phousi per dominare la penisola."},
-          {"text": "Il Palazzo Reale ospita oggi il museo nazionale con il Phra Bang."},
-          {"text": "Il Wat Mai sfoggia un portico dorato scolpito con scene del Ramayana."},
-          {"text": "Il Wat Visoun (1513) conserva un grande Buddha in legno."}
+          {"text": "I tetti del Wat Xieng Thong scendono fino a terra. I suoi mosaici di vetro rosso illustrano la vita del Buddha."},
+          {"text": "Salite i 328 gradini del monte Phousi per vedere il Mekong e la Nam Khan confluire."},
+          {"text": "Il Palazzo Reale espone il trono e il Phra Bang, buddha dorato che ha dato il nome alla città."},
+          {"text": "Il portico dorato del Wat Mai è scolpito con scene del Ramayana. I fedeli si riuniscono qui al Capodanno lao."},
+          {"text": "Il Wat Visoun risale al 1513. Si vede un grande Buddha in legno e lo stupa That Makmo."},
+          {"text": "Seguite la Nam Khan fino al Wat Xieng Mouane dove i monaci tessono tessuti tradizionali."}
         ],
         "activities": [
-          {"text": "Alzatevi all'alba per osservare il tak bat, processione dei monaci."},
-          {"text": "Il mercato notturno invade Sisavangvong Road dalle 17."},
-          {"text": "Le scuole di cucina locali insegnano i classici lao."}
+          {"text": "Alzatevi all'alba per il tak bat: i monaci passano in silenzio a raccogliere il cibo.", "practical_info": {"best_time": "5h30-6h30", "tip": "Restate discreti, niente flash"}},
+          {"text": "Il mercato notturno si installa su Sisavangvong Road dalle 17. Tessuti, artigianato e lanterne."},
+          {"text": "Imparate a cucinare lao: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Corso di cucina"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
           "drive_min": 270,
           "transport_mode": "car",
+          "road_type": "Asfalto sinuoso",
           "method": "heuristic"
         }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "La grotta Tham Chang si apre nella falesia di fronte al Nam Song. Una scala sale verso le stalattiti illuminate."},
+          {"text": "Blue Lagoon: acqua turchese ai piedi dei karst, perfetta per nuotare."},
+          {"text": "La grotta Tham Phu Kham si addentra per 500 metri. Un buddha sdraiato dorme nella penombra."},
+          {"text": "Un ponte di bambù attraversa il Nam Song verso le risaie della riva ovest."},
+          {"text": "La grotta Tham Nam si visita in gommone, trasportati da un fiume sotterraneo."}
+        ],
+        "activities": [
+          {"text": "Scendete il Nam Song in kayak. Le falesie calcaree scorrono su entrambi i lati.", "practical_info": {"duration": "2-3h", "difficulty": "Facile"}},
+          {"text": "Le pareti carsiche offrono vie di arrampicata per tutti i livelli."},
+          {"text": "Noleggiate una bici per raggiungere lagune e grotte per strade sterrate."}
+        ]
       }
     ]
   }]
@@ -1150,29 +1420,73 @@ Trasforma il contenuto SOURCE in JSON "itins" (UN SOLO oggetto). Segui questo es
 
 📋 REGOLE CRITICHE:
 
-1. ORDINE LOGICO — Riorganizzare le tappe geograficamente
-2. visits[] = luoghi | activities[] = azioni
-3. 5-8 visits + 3-6 activities per giorno minimo
-4. suggested_days: 0.5 | 1.0 | 1.5
-5. estimated_days_base = CEIL(somma dei suggested_days)
+1. ORDINE LOGICO — Riorganizzare le tappe geograficamente. Evitare ritorni.
+
+2. ⚠️ DISTINZIONE VISITS vs ACTIVITIES (IMPORTANTE):
+   **visits[] = LUOGHI da vedere**
+   - Monumenti, templi, cattedrali, musei, siti archeologici, grotte, castelli, palazzi
+   - Descrive COSA SI VEDE: architettura, storia, collezioni
+   - Esempio: "I tetti del Wat Xieng Thong scendono fino a terra. I suoi mosaici di vetro rosso illustrano la vita del Buddha."
+   
+   **activities[] = AZIONI da fare**
+   - Escursioni, kayak, bicicletta, immersioni, corsi di cucina, mercati, crociere, safari, parapendio
+   - Descrive COSA SI FA: esperienze, sport, attività culturali o gastronomiche
+   - Esempio: "Scendete il Nam Song in kayak. Le falesie calcaree scorrono su entrambi i lati."
+   
+   ❌ MAI mettere un museo, monumento o luogo in activities
+   ❌ MAI ripetere lo stesso contenuto in visits e activities
+
+3. 5-8 visits + 3-6 activities per giorno minimo — arricchire se la fonte manca di contenuto
+4. suggested_days: 0.5 | 1.0 | 1.5 — oltre, dividere in più giorni con stesso place_id
+5. estimated_days_base = CEIL(somma di suggested_days) — es: 1.5 + 1.0 = 2.5 → 3
 6. to_next_leg su tutti i giorni TRANNE l'ultimo
-7. region_code = CC-XX (codice regionale)
-8. language = "it" — TUTTI i testi in italiano (tradurre se fonte in altra lingua, mantenere nomi propri: Wat, Piazza, Playa...)
+7. coords = [lat, lon] del centro città — NON inventare coordinate precise
+8. itin_id = CC::region::slug (CC = ISO2: FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (codice regionale, es: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = abbreviazione regionale (LP, 21, 84, PUG...)
+11. slice = sempre 1
+12. source_url = URL della FONTE se disponibile
+13. language = "it" — TUTTI i testi in italiano (tradurre se fonte in altra lingua, mantenere nomi propri: Wat, Piazza, Playa...)
 
 📋 FORMATO ARRICCHITO (OBBLIGATORIO):
-9. subtitle = 1 frase accattivante sotto il titolo (es: "Dai templi dorati alle spiagge da sogno")
-10. practical_context.best_months = array dei mesi migliori (es: ["maggio", "giugno", "settembre"])
-11. practical_context.highlights = 4-6 punti salienti dell'itinerario
-12. practical_info = aggiungere alle attività importanti (trekking, safari, campeggio...) con duration, difficulty, tip, best_time
-13. road_type = aggiungere in to_next_leg se rilevante (es: "Asfalto", "Sterrato", "Pista", "Asfalto poi sterrato")
+15. subtitle = 1 frase accattivante sotto il titolo (stile "Dai templi dorati alle spiagge da sogno")
+16. practical_context.best_months = array dei mesi migliori (es: ["maggio", "giugno", "settembre"])
+17. practical_context.highlights = 4-6 punti salienti dell'itinerario
+18. practical_info = aggiungere alle attività importanti (escursioni, safari, campeggio, noleggi...) con duration, difficulty, tip, best_time secondo contesto
+19. road_type = aggiungere in to_next_leg SOLO se la strada NON è asfalto normale (es: "Sterrato", "Pista", "Asfalto poi sterrato")
+20. ⚠️ map_keywords = OBBLIGATORIO in night{} per ogni giorno
+    - Array di parole chiave per Google Maps
+    - Formato: "Nome esatto del luogo + Città" (es: "Wat Xieng Thong Luang Prabang")
+    - Includere TUTTE le visits del giorno in ORDINE LOGICO di visita
+    - 5-8 keywords per giorno secondo numero di visits
+    - Le keywords devono essere ricercabili su Google Maps
 
 ✍️ STILE — VARIARE LE FORME:
-- Descrittivo: "Il tempio dispiega i suoi tetti dorati..."
-- Imperativo: "Scoprite...", "Esplorate...", "Ammirate...", "Salite..."
+- Informativo semplice: "I tetti del Wat Xieng Thong scendono fino a terra. I suoi mosaici..."
+- Imperativo: "Dirigetevi a...", "Prendete...", "Aprite la porta...", "Salite...", "Attraversate..." — variate verbi
 - Narrativo: "I monaci tessono ancora...", "I fedeli accorrono..."
-ALTERNARE queste 3 forme. Non concatenare più di 2 testi dello stesso stile.
+- Invito: "Trovatevi all'alba per il tak bat"
+- Domanda/suggerimento: "Volete vedere il Mekong dall'alto? Monte Phousi e i suoi 328 gradini"
 
-${isAdmin ? `🚫 NEUTRALIZZAZIONE: Eliminare commerci, persone, prezzi, date recenti` : ''}
+ALTERNARE queste forme per rompere la monotonia. Non concatenare più di 2 testi dello stesso stile.
+
+SENZA PAROLE POMPOSE / IA (Obbligatorio): mantenere stile semplice, informativo che spiega cosa c'è da vedere e perché è interessante. Dare dettagli storici, architettonici, naturali concreti.
+
+${effectiveMode === 'seed' ? `
+🏠 MODO BASI + ANELLI - BASI: ${effectiveSeeds || '[estrarre dal testo]'}
+Struttura: BASE → escursioni → ritorno BASE (ogni 3-5g) → nuova BASE...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ MODO CITY TRIP - Ogni attrazione = 1 giorno distinto. night.place_id = l'attrazione.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 MODO SEGUITO STRETTO - Conservare ordine esatto delle tappe dalla fonte.
+` : ''}
+${isAdmin ? `
+🚫 NEUTRALIZZAZIONE (MODO ADMIN) - Questi JSON saranno distribuiti pubblicamente.
+✅ MANTENERE: Musei, monumenti, templi, parchi, siti UNESCO, mercati pubblici
+❌ ELIMINARE: Commerci nominati → "I noleggi offrono..." | Persone → eliminare | Prezzi → omettere | "in moto" → "su strada" | Date recenti → eliminare | 1ª persona → riformulare
+` : ''}
 
 🚫 VIETATO: Frasi senza verbo ("Cattedrale gotica. Vetrate. Cripta.")
 
@@ -1181,7 +1495,7 @@ SOURCE:
   },
 
   // ============================================
-  // PORTUGUÊS v7
+  // PORTUGUÊS v8
   // ============================================
   pt: ({mode, seeds, modelSubMode, modelSeeds}) => {
     const isAdmin = mode === 'model';
@@ -1194,17 +1508,27 @@ Transforma o conteúdo SOURCE em JSON "itins" (UM SÓ objeto). Segue este exempl
 
 {
   "itins": [{
-    "itin_id": "LA::norte::luang-prabang",
+    "itin_id": "LA::norte::luang-prabang-vang-vieng",
     "language": "pt",
     "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
     "source_url": "",
     "dept_code": "LP",
     "dept_name": "Luang Prabang",
     "title": "Templos e carstes do Norte do Laos",
-    "estimated_days_base": 2,
+    "subtitle": "Dos monges de Luang Prabang às lagoas turquesa de Vang Vieng",
+    "estimated_days_base": 3,
     "pacing_rules": {
       "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
+    },
+    "practical_context": {
+      "best_months": ["novembro", "dezembro", "janeiro", "fevereiro"],
+      "highlights": [
+        "Procissão dos monges ao amanhecer (tak bat)",
+        "Templos dourados de Luang Prabang",
+        "Grutas e lagoas turquesa de Vang Vieng",
+        "Navegação no Mekong"
+      ]
     },
     "days_plan": [
       {
@@ -1214,23 +1538,65 @@ Transforma o conteúdo SOURCE em JSON "itins" (UM SÓ objeto). Segue este exempl
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ],
           "coords": [19.8856, 102.1347]
         },
         "visits": [
-          {"text": "O Wat Xieng Thong desdobra os seus telhados em puro estilo lao."},
-          {"text": "Suba os 328 degraus do monte Phousi para dominar a península."},
-          {"text": "O Palácio Real abriga hoje o museu nacional com o Phra Bang."}
+          {"text": "Os telhados do Wat Xieng Thong descem até ao chão. Os seus mosaicos de vidro vermelho ilustram a vida de Buda."},
+          {"text": "Suba os 328 degraus do monte Phousi para ver o Mekong e a Nam Khan confluírem."},
+          {"text": "O Palácio Real expõe o trono e o Phra Bang, buda dourado que deu o nome à cidade."},
+          {"text": "O pórtico dourado do Wat Mai está esculpido com cenas do Ramayana. Os fiéis reúnem-se aqui no Ano Novo lao."},
+          {"text": "O Wat Visoun data de 1513. Vê-se um grande Buda de madeira e o estupa That Makmo."},
+          {"text": "Siga a Nam Khan até ao Wat Xieng Mouane onde os monges ainda tecem têxteis tradicionais."}
         ],
         "activities": [
-          {"text": "Levante-se ao amanhecer para observar o tak bat dos monges."},
-          {"text": "O mercado noturno invade Sisavangvong Road a partir das 17h."}
+          {"text": "Levante-se ao amanhecer para o tak bat: os monges passam em silêncio para recolher a comida.", "practical_info": {"best_time": "5h30-6h30", "tip": "Mantenha o silêncio, sem flash"}},
+          {"text": "O mercado noturno instala-se na Sisavangvong Road a partir das 17h. Têxteis, artesanato e lanternas."},
+          {"text": "Aprenda a cozinhar lao: laap, tam mak houng, khao niaw.", "practical_info": {"duration": "3h", "type": "Aula de culinária"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
           "drive_min": 270,
           "transport_mode": "car",
+          "road_type": "Asfalto sinuoso",
           "method": "heuristic"
         }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "A gruta Tham Chang abre-se na falésia em frente ao Nam Song. Uma escada sobe para as estalactites iluminadas."},
+          {"text": "Blue Lagoon: água turquesa aos pés dos carstes, perfeita para nadar."},
+          {"text": "A gruta Tham Phu Kham estende-se por 500 metros. Um buda reclinado dorme na penumbra."},
+          {"text": "Uma ponte de bambu atravessa o Nam Song para os arrozais da margem oeste."},
+          {"text": "A gruta Tham Nam visita-se em boia, levado por um rio subterrâneo."}
+        ],
+        "activities": [
+          {"text": "Desça o Nam Song de caiaque. As falésias calcárias desfilam de ambos os lados.", "practical_info": {"duration": "2-3h", "difficulty": "Fácil"}},
+          {"text": "As paredes cársticas oferecem vias de escalada para todos os níveis."},
+          {"text": "Alugue uma bicicleta para chegar a lagoas e grutas por caminhos de terra."}
+        ]
       }
     ]
   }]
@@ -1238,29 +1604,73 @@ Transforma o conteúdo SOURCE em JSON "itins" (UM SÓ objeto). Segue este exempl
 
 📋 REGRAS CRÍTICAS:
 
-1. ORDEM LÓGICA — Reorganizar etapas geograficamente
-2. visits[] = lugares | activities[] = ações
-3. 5-8 visits + 3-6 activities por dia mínimo
-4. suggested_days: 0.5 | 1.0 | 1.5
-5. estimated_days_base = CEIL(soma dos suggested_days)
+1. ORDEM LÓGICA — Reorganizar etapas geograficamente. Evitar retornos.
+
+2. ⚠️ DISTINÇÃO VISITS vs ACTIVITIES (IMPORTANTE):
+   **visits[] = LUGARES para ver**
+   - Monumentos, templos, catedrais, museus, sítios arqueológicos, grutas, castelos, palácios
+   - Descreve O QUE SE VÊ: arquitetura, história, coleções
+   - Exemplo: "Os telhados do Wat Xieng Thong descem até ao chão. Os seus mosaicos de vidro vermelho ilustram a vida de Buda."
+   
+   **activities[] = AÇÕES para fazer**
+   - Caminhadas, caiaque, bicicleta, mergulho, aulas de culinária, mercados, cruzeiros, safaris, parapente
+   - Descreve O QUE SE FAZ: experiências, desportos, atividades culturais ou gastronómicas
+   - Exemplo: "Desça o Nam Song de caiaque. As falésias calcárias desfilam de ambos os lados."
+   
+   ❌ NUNCA colocar um museu, monumento ou lugar em activities
+   ❌ NUNCA repetir o mesmo conteúdo em visits e activities
+
+3. 5-8 visits + 3-6 activities por dia mínimo — enriquecer se a fonte carece de conteúdo
+4. suggested_days: 0.5 | 1.0 | 1.5 — além disso, dividir em vários dias com mesmo place_id
+5. estimated_days_base = CEIL(soma de suggested_days) — ex: 1.5 + 1.0 = 2.5 → 3
 6. to_next_leg em todos os dias EXCETO o último
-7. region_code = CC-XX (código regional)
-8. language = "pt" — TODOS os textos em português (traduzir se fonte em outro idioma, manter nomes próprios: Wat, Piazza, Playa...)
+7. coords = [lat, lon] do centro cidade — NÃO inventar coordenadas precisas
+8. itin_id = CC::region::slug (CC = ISO2: FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (código regional, ex: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = abreviatura regional (LP, 21, 84, PUG...)
+11. slice = sempre 1
+12. source_url = URL da FONTE se disponível
+13. language = "pt" — TODOS os textos em português (traduzir se fonte em outro idioma, manter nomes próprios: Wat, Piazza, Playa...)
 
 📋 FORMATO ENRIQUECIDO (OBRIGATÓRIO):
-9. subtitle = 1 frase de impacto sob o título (ex: "Dos templos dourados às praias de sonho")
-10. practical_context.best_months = array dos melhores meses (ex: ["maio", "junho", "setembro"])
-11. practical_context.highlights = 4-6 destaques do itinerário
-12. practical_info = adicionar nas atividades importantes (trilhas, safaris, campismo...) com duration, difficulty, tip, best_time
-13. road_type = adicionar em to_next_leg se relevante (ex: "Asfalto", "Terra batida", "Pista", "Asfalto depois terra")
+15. subtitle = 1 frase de impacto sob o título (estilo "Dos templos dourados às praias de sonho")
+16. practical_context.best_months = array dos melhores meses (ex: ["maio", "junho", "setembro"])
+17. practical_context.highlights = 4-6 destaques do itinerário
+18. practical_info = adicionar nas atividades importantes (trilhas, safaris, campismo, alugueres...) com duration, difficulty, tip, best_time segundo contexto
+19. road_type = adicionar em to_next_leg APENAS se a estrada NÃO for asfalto normal (ex: "Terra batida", "Pista", "Asfalto depois terra")
+20. ⚠️ map_keywords = OBRIGATÓRIO em night{} para cada dia
+    - Array de palavras-chave para Google Maps
+    - Formato: "Nome exato do lugar + Cidade" (ex: "Wat Xieng Thong Luang Prabang")
+    - Incluir TODAS as visits do dia em ORDEM LÓGICA de visita
+    - 5-8 keywords por dia conforme número de visits
+    - As keywords devem ser pesquisáveis no Google Maps
 
 ✍️ ESTILO — VARIAR AS FORMAS:
-- Descritivo: "O templo estende os seus telhados dourados..."
-- Imperativo: "Descubra...", "Explore...", "Admire...", "Suba..."
+- Informativo simples: "Os telhados do Wat Xieng Thong descem até ao chão. Os seus mosaicos..."
+- Imperativo: "Dirija-se a...", "Tome...", "Abra a porta...", "Suba...", "Atravesse..." — varie verbos
 - Narrativo: "Os monges tecem ainda...", "Os fiéis acorrem..."
-ALTERNAR estas 3 formas. Não encadear mais de 2 textos do mesmo estilo.
+- Convite: "Encontre-se ao amanhecer para o tak bat"
+- Pergunta/sugestão: "Quer ver o Mekong do alto? Monte Phousi e os seus 328 degraus"
 
-${isAdmin ? `🚫 NEUTRALIZAÇÃO: Eliminar comércios, pessoas, preços, datas recentes` : ''}
+ALTERNAR estas formas para quebrar a monotonia. Não encadear mais de 2 textos do mesmo estilo.
+
+SEM PALAVRAS POMPOSAS / IA (Obrigatório): manter estilo simples, informativo que explica o que há para ver e porquê é interessante. Dar detalhes históricos, arquitetónicos, naturais concretos.
+
+${effectiveMode === 'seed' ? `
+🏠 MODO BASES + VOLTAS - BASES: ${effectiveSeeds || '[extrair do texto]'}
+Estrutura: BASE → excursões → regresso BASE (cada 3-5d) → nova BASE...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ MODO CITY TRIP - Cada atração = 1 dia distinto. night.place_id = a atração.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 MODO SEGUIMENTO ESTRITO - Conservar ordem exata das etapas da fonte.
+` : ''}
+${isAdmin ? `
+🚫 NEUTRALIZAÇÃO (MODO ADMIN) - Estes JSON serão distribuídos publicamente.
+✅ MANTER: Museus, monumentos, templos, parques, sítios UNESCO, mercados públicos
+❌ ELIMINAR: Comércios nomeados → "Os alugueres oferecem..." | Pessoas → eliminar | Preços → omitir | "de mota" → "pela estrada" | Datas recentes → eliminar | 1ª pessoa → reformular
+` : ''}
 
 🚫 PROIBIDO: Frases sem verbo ("Catedral gótica. Vitrais. Cripta.")
 
@@ -1269,7 +1679,7 @@ SOURCE:
   },
 
   // ============================================
-  // ARABIC v7
+  // ARABIC v8
   // ============================================
   ar: ({mode, seeds, modelSubMode, modelSeeds}) => {
     const isAdmin = mode === 'model';
@@ -1282,17 +1692,27 @@ SOURCE:
 
 {
   "itins": [{
-    "itin_id": "LA::north::luang-prabang",
+    "itin_id": "LA::north::luang-prabang-vang-vieng",
     "language": "ar",
     "created_at": "${new Date().toISOString().split('T')[0]}T12:00:00Z",
     "source_url": "",
     "dept_code": "LP",
     "dept_name": "لوانغ برابانغ",
     "title": "معابد وتشكيلات كارست شمال لاوس",
-    "estimated_days_base": 2,
+    "subtitle": "من رهبان لوانغ برابانغ إلى البحيرات الفيروزية في فانغ فيينغ",
+    "estimated_days_base": 3,
     "pacing_rules": {
       "factors": {"slow": 1.25, "standard": 1.0, "fast": 0.75},
       "merge_threshold": 0.85
+    },
+    "practical_context": {
+      "best_months": ["نوفمبر", "ديسمبر", "يناير", "فبراير"],
+      "highlights": [
+        "موكب الرهبان عند الفجر (تاك بات)",
+        "معابد لوانغ برابانغ الذهبية",
+        "كهوف وبحيرات فانغ فيينغ الفيروزية",
+        "الإبحار في نهر الميكونغ"
+      ]
     },
     "days_plan": [
       {
@@ -1302,23 +1722,65 @@ SOURCE:
         "suggested_days": 1.5,
         "night": {
           "place_id": "LA::luang_prabang",
+          "map_keywords": [
+            "Wat Xieng Thong Luang Prabang",
+            "Mount Phousi Luang Prabang",
+            "Royal Palace Luang Prabang",
+            "Wat Mai Luang Prabang",
+            "Wat Visoun Luang Prabang",
+            "Wat Xieng Mouane Luang Prabang"
+          ],
           "coords": [19.8856, 102.1347]
         },
         "visits": [
-          {"text": "يمد وات شيانغ ثونغ أسطحه المتراكبة بأسلوب لاوي أصيل."},
-          {"text": "اصعد 328 درجة من جبل فوسي لتطل على شبه الجزيرة."},
-          {"text": "يضم القصر الملكي اليوم المتحف الوطني مع فرا بانغ الذهبي."}
+          {"text": "تنحدر أسطح وات شيانغ ثونغ حتى الأرض. فسيفساء الزجاج الأحمر تصور حياة بوذا."},
+          {"text": "اصعد 328 درجة من جبل فوسي لترى التقاء نهري الميكونغ ونام خان."},
+          {"text": "يعرض القصر الملكي العرش وفرا بانغ، بوذا الذهبي الذي أعطى المدينة اسمها."},
+          {"text": "بوابة وات ماي الذهبية منحوتة بمشاهد من الرامايانا. يجتمع المصلون هنا في رأس السنة اللاوية."},
+          {"text": "يعود وات فيسون إلى 1513. يُرى بوذا خشبي كبير وستوبا ذات ماكمو."},
+          {"text": "اتبع نهر نام خان إلى وات شيانغ موان حيث لا يزال الرهبان ينسجون المنسوجات التقليدية."}
         ],
         "activities": [
-          {"text": "استيقظ عند الفجر لمشاهدة تاك بات، موكب الرهبان الصامت."},
-          {"text": "يغزو السوق الليلي شارع سيسافانغفونغ من الساعة 5 مساءً."}
+          {"text": "استيقظ عند الفجر لتاك بات: يمر الرهبان في صمت لجمع طعامهم.", "practical_info": {"best_time": "5:30-6:30", "tip": "ابق صامتًا، بدون فلاش"}},
+          {"text": "يحل السوق الليلي في شارع سيسافانغفونغ من الساعة 5 مساءً. منسوجات وحرف يدوية وفوانيس."},
+          {"text": "تعلم الطبخ اللاوي: لاب، تام ماك هونغ، خاو نياو.", "practical_info": {"duration": "3 ساعات", "type": "درس طبخ"}}
         ],
         "to_next_leg": {
           "distance_km": 230,
           "drive_min": 270,
           "transport_mode": "car",
+          "road_type": "أسفلت متعرج",
           "method": "heuristic"
         }
+      },
+      {
+        "day": 2,
+        "slice": 1,
+        "region_code": "LA-VT",
+        "suggested_days": 1.0,
+        "night": {
+          "place_id": "LA::vang_vieng",
+          "map_keywords": [
+            "Tham Chang Cave Vang Vieng",
+            "Blue Lagoon Vang Vieng",
+            "Tham Phu Kham Cave Vang Vieng",
+            "Bamboo Bridge Vang Vieng",
+            "Tham Nam Cave Vang Vieng"
+          ],
+          "coords": [18.9220, 102.4476]
+        },
+        "visits": [
+          {"text": "ينفتح كهف ثام تشانغ في الجرف المواجه لنهر نام سونغ. تصعد السلالم إلى الهوابط المضيئة."},
+          {"text": "البحيرة الزرقاء: مياه فيروزية عند سفح التشكيلات الكارستية، مثالية للسباحة."},
+          {"text": "يمتد كهف ثام فو خام على 500 متر. بوذا مستلق ينام في الظلام."},
+          {"text": "جسر من الخيزران يعبر نهر نام سونغ إلى حقول الأرز في الضفة الغربية."},
+          {"text": "يُزار كهف ثام نام بالعوامة، محمولاً بنهر تحت الأرض."}
+        ],
+        "activities": [
+          {"text": "انزل بالقوارب على نهر نام سونغ. تمر المنحدرات الكلسية على كلا الجانبين.", "practical_info": {"duration": "2-3 ساعات", "difficulty": "سهل"}},
+          {"text": "توفر جدران الكارست طرق تسلق لجميع المستويات."},
+          {"text": "استأجر دراجة للوصول إلى البحيرات والكهوف عبر الطرق الترابية."}
+        ]
       }
     ]
   }]
@@ -1326,29 +1788,73 @@ SOURCE:
 
 📋 القواعد الحاسمة:
 
-1. ترتيب منطقي — إعادة ترتيب المحطات جغرافياً
-2. visits[] = أماكن | activities[] = أنشطة
-3. 5-8 visits + 3-6 activities لكل يوم
-4. suggested_days: 0.5 | 1.0 | 1.5
-5. estimated_days_base = CEIL(مجموع suggested_days)
-6. to_next_leg في جميع الأيام ما عدا الأخير
-7. region_code = CC-XX (رمز إقليمي)
-8. language = "ar" — جميع النصوص بالعربية (ترجم إذا كان المصدر بلغة أخرى، احتفظ بالأسماء الأصلية: Wat, Piazza, Playa...)
+1. ترتيب منطقي — إعادة ترتيب المحطات جغرافيًا. تجنب العودة.
+
+2. ⚠️ التمييز بين VISITS و ACTIVITIES (مهم):
+   **visits[] = أماكن للمشاهدة**
+   - نصب، معابد، كاتدرائيات، متاحف، مواقع أثرية، كهوف، قلاع، قصور
+   - يصف ما تراه: العمارة، التاريخ، المجموعات
+   - مثال: "تنحدر أسطح وات شيانغ ثونغ حتى الأرض. فسيفساء الزجاج الأحمر تصور حياة بوذا."
+   
+   **activities[] = إجراءات للقيام بها**
+   - رحلات، تجديف، دراجات، غطس، دروس طبخ، أسواق، رحلات بحرية، سفاري، طيران شراعي
+   - يصف ما تفعله: تجارب، رياضة، أنشطة ثقافية أو تذوق طعام
+   - مثال: "انزل بالقوارب على نهر نام سونغ. تمر المنحدرات الكلسية على كلا الجانبين."
+   
+   ❌ لا تضع أبدًا متحفًا أو نصبًا أو مكانًا في activities
+   ❌ لا تكرر أبدًا نفس المحتوى في visits و activities
+
+3. 5-8 visits + 3-6 activities لكل يوم كحد أدنى — إثراء إذا كان المصدر يفتقر للمحتوى
+4. suggested_days: 0.5 | 1.0 | 1.5 — ما فوق ذلك، قسم إلى عدة أيام بنفس place_id
+5. estimated_days_base = CEIL(مجموع suggested_days) — مثال: 1.5 + 1.0 = 2.5 → 3
+6. to_next_leg في جميع الأيام باستثناء الأخير
+7. coords = [lat, lon] لمركز المدينة — لا تخترع إحداثيات دقيقة
+8. itin_id = CC::region::slug (CC = ISO2: FR, LA, TH, HR, IT...)
+9. region_code = CC-XX (رمز إقليمي، مثال: LA-LP, HR-21, FR-84, IT-PUG)
+10. dept_code = اختصار إقليمي (LP, 21, 84, PUG...)
+11. slice = دائمًا 1
+12. source_url = رابط المصدر إن وُجد
+13. language = "ar" — جميع النصوص بالعربية (ترجم إذا كان المصدر بلغة أخرى، احتفظ بالأسماء الأصلية: Wat, Piazza, Playa...)
 
 📋 التنسيق المُحسّن (إلزامي):
-9. subtitle = جملة جذابة تحت العنوان (مثال: "من المعابد الذهبية إلى الشواطئ الحالمة")
-10. practical_context.best_months = مصفوفة أفضل الأشهر (مثال: ["مايو", "يونيو", "سبتمبر"])
-11. practical_context.highlights = 4-6 أبرز معالم الرحلة
-12. practical_info = إضافة للأنشطة المهمة (المشي، السفاري، التخييم...) مع duration, difficulty, tip, best_time
-13. road_type = إضافة في to_next_leg إذا كان ذلك مناسباً (مثال: "طريق معبّد", "حصى", "مسار ترابي")
+15. subtitle = جملة جذابة تحت العنوان (مثال: "من المعابد الذهبية إلى الشواطئ الحالمة")
+16. practical_context.best_months = مصفوفة أفضل الأشهر (مثال: ["مايو", "يونيو", "سبتمبر"])
+17. practical_context.highlights = 4-6 أبرز معالم الرحلة
+18. practical_info = إضافة للأنشطة المهمة (رحلات، سفاري، تخييم، إيجارات...) مع duration, difficulty, tip, best_time حسب السياق
+19. road_type = إضافة في to_next_leg فقط إذا لم تكن الطريق أسفلت عادي (مثال: "مسار", "حصى", "أسفلت ثم مسار")
+20. ⚠️ map_keywords = إلزامي في night{} لكل يوم
+    - مصفوفة من الكلمات المفتاحية لخرائط جوجل
+    - الصيغة: "اسم المكان الدقيق + المدينة" (مثال: "Wat Xieng Thong Luang Prabang")
+    - تضمين جميع الزيارات لليوم بترتيب منطقي للزيارة
+    - 5-8 كلمات مفتاحية في اليوم حسب عدد الزيارات
+    - يجب أن تكون الكلمات المفتاحية قابلة للبحث على خرائط جوجل
 
 ✍️ الأسلوب — تنويع الأشكال:
-- وصفي: "يمد المعبد أسطحه الذهبية..."
-- أمري: "اكتشف..."، "استكشف..."، "تأمل..."، "اصعد..."
-- سردي: "الرهبان يحيكون..."، "المصلون يتوافدون..."
-تبديل هذه الأشكال الثلاثة. لا تسلسل أكثر من نصين بنفس الأسلوب.
+- إعلامي بسيط: "تنحدر أسطح وات شيانغ ثونغ حتى الأرض. فسيفساءه..."
+- أمري: "اتجه إلى...", "خذ...", "افتح الباب...", "اصعد...", "اعبر..." — نوّع الأفعال
+- سردي: "الرهبان يحيكون...", "المصلون يتوافدون..."
+- دعوة: "التق عند الفجر لتاك بات"
+- سؤال/اقتراح: "تريد رؤية الميكونغ من الأعلى؟ جبل فوسي و328 درجة"
 
-${isAdmin ? `🚫 التحييد: إزالة المتاجر والأشخاص والأسعار والتواريخ الحديثة` : ''}
+بدّل هذه الأشكال لكسر الرتابة. لا تسلسل أكثر من نصين بنفس الأسلوب.
+
+بدون كلمات منمقة / ذكاء اصطناعي (إلزامي): احتفظ بأسلوب بسيط، إعلامي يشرح ما يمكن رؤيته ولماذا هو مثير للاهتمام. أعط تفاصيل تاريخية، معمارية، طبيعية ملموسة.
+
+${effectiveMode === 'seed' ? `
+🏠 وضع القواعد + الحلقات - القواعد: ${effectiveSeeds || '[استخرج من النص]'}
+هيكل: قاعدة → رحلات → عودة قاعدة (كل 3-5 أيام) → قاعدة جديدة...
+` : ''}
+${effectiveMode === 'citytrip' ? `
+🏙️ وضع رحلة المدينة - كل معلم = يوم منفصل. night.place_id = المعلم.
+` : ''}
+${effectiveMode === 'follow' ? `
+📍 وضع المتابعة الصارمة - احتفظ بالترتيب الدقيق للمحطات من المصدر.
+` : ''}
+${isAdmin ? `
+🚫 التحييد (وضع المسؤول) - ستُوزع هذه JSON علنًا.
+✅ احتفظ: متاحف، نصب، معابد، حدائق، مواقع يونسكو، أسواق عامة
+❌ احذف: متاجر مسماة → "توفر الإيجارات..." | أشخاص → احذف | أسعار → تجاهل | "بالدراجة النارية" → "بالطريق" | تواريخ حديثة → احذف | ضمير المتكلم → أعد الصياغة
+` : ''}
 
 🚫 ممنوع: جمل بدون فعل ("كاتدرائية قوطية. زجاج ملون. سرداب.")
 
@@ -2307,7 +2813,8 @@ if(raw.includes('```')){
 }
 cleaned = cleaned
   .replace(/[""]/g, '"')
-  // Préserver typographie française : apostrophes et tirets conservés
+  .replace(/['']/g, "'")
+  .replace(/[—–]/g, '-')
   .replace(/\u00A0/g, ' ')
   .normalize('NFC');
       data = JSON.parse(cleaned);
@@ -2365,9 +2872,10 @@ cleaned = cleaned
 
     function cleanJSON(obj) {
       let str = JSON.stringify(obj);
-      // Normaliser uniquement les guillemets doubles pour JSON valide
       str = str.replace(/[""]/g, '"');
-      // Préserver typographie française : œ, ', – conservés
+      str = str.replace(/['']/g, "'");
+      str = str.replace(/œ/g, 'oe');
+      str = str.replace(/Œ/g, 'OE');
       str = str.normalize('NFC');
       return JSON.parse(str);
     }
@@ -2519,7 +3027,11 @@ cleaned = cleaned
           days: days
         });
         
-        window.location.href = `./roadtrip_detail.html?${params.toString()}`;
+        // Détecter mobile et rediriger directement vers roadtrip_mobile
+        const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const targetPage = (isMobile && window.innerWidth < 900) ? 'roadtrip_mobile.html' : 'roadtrip_detail.html';
+        
+        window.location.href = `./${targetPage}?${params.toString()}`;
       }
     });
   }
@@ -2978,16 +3490,73 @@ window.initAdminRTViewer = function() {
   
   function generateRewritePrompt(itin) {
     const hasPC = !!itin.practical_context;
-    const hasSeo = !!itin.seo;
     
-    return `Tu es un expert en création d'itinéraires de voyage. Je vais te fournir un JSON existant et des articles/sources pour améliorer le contenu.
+    // Extraire les segments ou créer des segments automatiques
+    const segments = itin.segments || [];
+    
+    // Si pas de segments définis, créer des segments de 3 jours max
+    const autoSegments = [];
+    if (segments.length === 0 && itin.days_plan) {
+      for (let i = 0; i < itin.days_plan.length; i += 3) {
+        const fromDay = itin.days_plan[i].day;
+        const toDay = Math.min(itin.days_plan[Math.min(i + 2, itin.days_plan.length - 1)].day, itin.days_plan[itin.days_plan.length - 1].day);
+        autoSegments.push({
+          from_day: fromDay,
+          to_day: toDay,
+          days: itin.days_plan.slice(i, Math.min(i + 3, itin.days_plan.length))
+        });
+      }
+    }
+    
+    const workingSegments = segments.length > 0 ? segments : autoSegments;
+    
+    return `Tu es un expert en création d'itinéraires de voyage. Je vais te fournir un JSON existant que tu dois réécrire et enrichir PAR SEGMENTS.
 
-🎯 OBJECTIF : Réécrire ET enrichir cet itinéraire au format professionnel.
+🎯 OBJECTIF : Réécrire ET enrichir cet itinéraire SEGMENT PAR SEGMENT avec des informations VÉRIFIÉES.
 
-📋 JSON À AMÉLIORER :
+📋 JSON COMPLET À AMÉLIORER :
 \`\`\`json
 ${JSON.stringify({ itins: [itin] }, null, 2)}
 \`\`\`
+
+═══════════════════════════════════════════════════════════
+📦 APPROCHE PAR SEGMENTS
+═══════════════════════════════════════════════════════════
+Cet itinéraire sera traité en ${workingSegments.length} segments :
+
+${workingSegments.map((seg, i) => `
+SEGMENT ${i + 1} : Jours ${seg.from_day} à ${seg.to_day}
+${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d => `  • Jour ${d.day} : ${d.night.place_id}`).join('\n')}
+`).join('\n')}
+
+⚠️ PROCÉDURE IMPORTANTE :
+1️⃣ Commence par le SEGMENT 1 UNIQUEMENT
+2️⃣ Recherche web SEULEMENT pour les lieux du Segment 1
+3️⃣ Rédige le JSON complet pour le Segment 1
+4️⃣ Passe au Segment 2, puis 3, etc.
+5️⃣ À LA FIN, fusionne tous les segments en UN SEUL JSON final
+
+🚨 NE RECHERCHE PAS TOUS LES LIEUX D'UN COUP - Traite segment par segment !
+
+═══════════════════════════════════════════════════════════
+🔍 RECHERCHE WEB PAR SEGMENT
+═══════════════════════════════════════════════════════════
+Pour CHAQUE segment, recherche UNIQUEMENT les lieux de CE segment.
+
+${workingSegments.map((seg, i) => `
+**SEGMENT ${i + 1} - Lieux à rechercher POUR CE SEGMENT :**
+${[...new Set(itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d => d.night.place_id))].map(p => `- ${p}`).join('\n')}
+`).join('\n')}
+
+🎯 MÉTHODOLOGIE :
+- **Étape 1** : Recherche web pour le Segment 1 uniquement (${[...new Set(itin.days_plan.filter(d => d.day >= workingSegments[0].from_day && d.day <= workingSegments[0].to_day).map(d => d.night.place_id))].length} lieux)
+- **Étape 2** : Rédige visits/activities pour le Segment 1
+- **Étape 3** : Passe au Segment 2 (ne recherche que ces nouveaux lieux)
+- **Étape 4** : Continue ainsi pour tous les segments
+- **Étape 5** : Fusionne tout en UN JSON final
+
+Si tu manques d'infos sur un lieu → DEMANDE à l'user de fournir une source pour CE lieu
+N'INVENTE RIEN
 
 ═══════════════════════════════════════════════════════════
 ✅ À CONSERVER TEL QUEL
@@ -2998,97 +3567,122 @@ ${JSON.stringify({ itins: [itin] }, null, 2)}
 - to_next_leg.distance_km et to_next_leg.drive_min
 
 ═══════════════════════════════════════════════════════════
-✍️ À RÉÉCRIRE / AMÉLIORER
+✍️ FORMAT ET STYLE (identique pour tous les segments)
 ═══════════════════════════════════════════════════════════
 
-1️⃣ MÉTADONNÉES :
-- title: "${itin.title}" → Améliorer si nécessaire (< 60 car.)
-- subtitle: ${itin.subtitle ? `"${itin.subtitle}"` : '❌ MANQUANT → Ajouter (1 ligne accrocheuse)'} 
-- source_url: Mettre l'URL de tes articles sources
+**VISITS (5-8 par jour) - EXEMPLES :**
+\`\`\`json
+"visits": [
+  {"text": "Les toits du Vat Xieng Thong descendent jusqu'au sol. Ses mosaïques de verre rouge illustrent la vie du Bouddha."},
+  {"text": "Montez les 328 marches du mont Phousi pour voir le Mékong et la Nam Khan se rejoindre."},
+  {"text": "Le Palais Royal expose le trône et le Phra Bang, bouddha d'or qui a donné son nom à la ville."}
+]
+\`\`\`
 
-2️⃣ CONTEXTE PRATIQUE ${hasPC ? '(existe, améliorer si besoin)' : '❌ MANQUANT → CRÉER'} :
+⚠️ **DISTINCTION VISITS vs ACTIVITIES (CRITIQUE) :**
+- **visits[] = LIEUX à voir** : monuments, temples, cathédrales, musées, sites archéologiques, châteaux, grottes
+  → Décrit CE QU'ON VOIT (architecture, histoire, collections)
+- **activities[] = ACTIONS à faire** : randonnées, kayak, vélo, plongée, cours de cuisine, marchés, safaris, croisières
+  → Décrit CE QU'ON FAIT (expériences, sports, activités culturelles/gastronomiques)
+- ❌ NE JAMAIS mettre un musée, monument ou lieu dans activities
+- ❌ NE JAMAIS répéter le même contenu dans visits et activities
+
+**STYLE D'ÉCRITURE - VARIER LES FORMES :**
+- Informatif simple : "Les toits descendent jusqu'au sol. Ses mosaïques..."
+- Impératif : "Rejoignez...", "Empruntez...", "Poussez la porte...", "Grimpez...", "Traversez..."
+- Narratif : "Les moines tissent encore...", "Les fidèles affluent..."
+- Invitation : "Rendez-vous à l'aube pour..."
+- Question : "Envie de voir X ?"
+
+⚠️ ALTERNER ces formes. Ne pas enchaîner plus de 2 textes du même style.
+⚠️ PAS DE MOTS POMPEUX / IA : style simple avec détails historiques CONCRETS
+
+**ACTIVITIES (3-6 par jour) - EXEMPLES :**
+\`\`\`json
+"activities": [
+  {"text": "Levez-vous à l'aube pour le tak bat : les moines passent en silence.", "practical_info": {"best_time": "5h30-6h30", "tip": "Restez discret"}},
+  {"text": "Le marché de nuit s'installe dès 17h. Textiles, artisanat et lanternes."}
+]
+\`\`\`
+
+**PRACTICAL_INFO selon type d'activité :**
+\`\`\`json
+// Randonnée
+"practical_info": {
+  "distance": "10 km",
+  "duration": "~4h",
+  "difficulty": "Modéré"
+}
+
+// Visite guidée
+"practical_info": {
+  "duration": "2h",
+  "booking": "Réservation conseillée"
+}
+\`\`\`
+
+**PRACTICAL_CONTEXT ${hasPC ? '(existe, améliorer si besoin)' : '❌ MANQUANT → CRÉER'} :**
 \`\`\`json
 "practical_context": {
-  "best_months": ["mois1", "mois2", ...],
-  "vehicle_type": "Type de véhicule recommandé",
-  "group_type": "Public cible (couple, famille...)",
-  "loop_type": "Boucle Ville ↔ Ville",
-  "total_km": XXXX,
-  "daily_average_km": XXX,
+  "best_months": ["mai", "juin", "septembre", "octobre"],
   "highlights": [
     "Point fort 1 (lieu emblématique)",
     "Point fort 2 (expérience unique)",
-    "Point fort 3...",
-    "Point fort 4..."
+    "Point fort 3",
+    "Point fort 4"
   ]
 }
 \`\`\`
 
-3️⃣ SEO ${hasSeo ? '(existe, vérifier)' : '❌ MANQUANT → CRÉER'} :
+**TO_NEXT_LEG :**
+- Ajouter "road_type" UNIQUEMENT si la route N'EST PAS du goudron classique
+- Exemples : "Gravel" / "Piste" / "Route de montagne non goudronnée" / "Goudron puis gravel"
+- Si route goudronnée normale → ne pas ajouter road_type
+
+**MAP_KEYWORDS ⚠️ OBLIGATOIRE :**
 \`\`\`json
-"seo": {
-  "h1_title": "Titre SEO optimisé",
-  "intro_paragraph": "2-3 phrases d'intro engageantes",
-  "seo_hook": "1 phrase d'accroche percutante",
-  "featured_list": ["Lieu : tagline", ...],
-  "places_taglines": { "CC::place-id": "tagline courte" }
+"night": {
+  "place_id": "FR::strasbourg",
+  "coords": [48.5734, 7.7521],
+  "map_keywords": [
+    "Cathédrale Notre-Dame Strasbourg",
+    "Petite France Strasbourg",
+    "Palais Rohan Strasbourg",
+    "Musée Alsacien Strasbourg",
+    "Ponts Couverts Strasbourg"
+  ]
 }
 \`\`\`
-
-4️⃣ VISITS (5-8 par jour) :
-- Textes de 2-3 phrases, style immersif et sensoriel
-- Varier : descriptif ("Le temple déploie..."), impératif ("Découvrez..."), narratif ("Les moines tissent...")
-
-5️⃣ ACTIVITIES (3-6 par jour) :
-- Textes de 2-3 phrases
-- AJOUTER practical_info sur les activités importantes :
-
-\`\`\`json
-// Exemple camping
-"practical_info": {
-  "camp_type": "NWR / Privé",
-  "facilities": "Sanitaires, piscine...",
-  "booking": "Site ou conseil réservation"
-}
-
-// Exemple randonnée
-"practical_info": {
-  "distance": "10 km",
-  "duration": "~4h",
-  "difficulty": "Modéré",
-  "water": "Emporter 2L minimum"
-}
-
-// Exemple safari
-"practical_info": {
-  "type": "Self-drive / Guidé",
-  "best_time": "Lever du soleil",
-  "wildlife": "Lions, éléphants..."
-}
-\`\`\`
-
-6️⃣ TO_NEXT_LEG :
-- Ajouter "road_type": "Goudron" / "Gravel" / "Piste" / "Goudron puis gravel"
+- Reprendre TOUTES les visits principales du jour
+- Format: "Nom exact du lieu + Ville"
+- Ordre LOGIQUE de visite (circuit cohérent)
+- 5-8 keywords par jour
+- Doivent être recherchables sur Google Maps
 
 ═══════════════════════════════════════════════════════════
 🚫 NEUTRALISATION
 ═══════════════════════════════════════════════════════════
-- Pas de noms de commerces → "Les loueurs proposent..."
+- Pas de commerces nommés → "Les loueurs proposent..."
 - Pas de personnes nommées
 - Pas de prix
 - Pas de dates récentes
 - "à moto" → "par la route"
 
 ═══════════════════════════════════════════════════════════
-📄 ARTICLES/SOURCES POUR ENRICHISSEMENT
-═══════════════════════════════════════════════════════════
-[COLLE ICI TES ARTICLES - le contenu servira à enrichir visits, activities et practical_info]
-
-═══════════════════════════════════════════════════════════
 🎯 RÉSULTAT ATTENDU
 ═══════════════════════════════════════════════════════════
-Produis UNIQUEMENT le JSON valide { "itins": [...] }, sans texte autour, sans balises Markdown.
-Le JSON doit pouvoir remplacer directement l'ancien dans ${sourceFileName || 'le fichier source'}.`;
+1. JSON final complet { "itins": [...] } avec TOUS les segments fusionnés
+2. Liste de tes SOURCES par segment :
+
+**SOURCES PAR SEGMENT :**
+- Segment 1 (Jours ${workingSegments[0]?.from_day}-${workingSegments[0]?.to_day}) : URL1, URL2...
+- Segment 2 (Jours ${workingSegments[1]?.from_day}-${workingSegments[1]?.to_day}) : URL1, URL2...
+etc.
+
+Le JSON final doit remplacer directement l'ancien dans ${sourceFileName || 'le fichier source'}.
+
+Si tu manques d'informations pour un lieu, écris :
+"⚠️ INFORMATIONS INSUFFISANTES pour [nom du lieu] - veuillez fournir une source"`;
   }
   
   console.log('[ADMIN RT] ✅ RT Viewer initialized');

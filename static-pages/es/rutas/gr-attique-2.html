@@ -1163,26 +1163,168 @@ body {
     transform: translateX(5px);
 }
 
-/* ===== FOOTER ===== */
-.footer-advanced {
-    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    color: white;
-    padding: 50px 30px;
+/* ===== CTA SECTION PRINCIPALE ===== */
+.cta-main-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 80px 30px;
     text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-top: 60px;
 }
 
-.footer-logo-advanced {
+.cta-main-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+}
+
+.cta-main-content {
+    position: relative;
+    z-index: 2;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.cta-main-title {
     font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    margin-bottom: 15px;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    color: white;
+    margin-bottom: 20px;
     font-weight: 700;
+    line-height: 1.2;
 }
 
-.footer-content {
-    opacity: 0.8;
+.cta-main-subtitle {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 40px;
+    line-height: 1.5;
+}
+
+.cta-features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 50px;
+    text-align: left;
+}
+
+.cta-feature {
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 25px;
+    transition: all 0.3s ease;
+}
+
+.cta-feature:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-5px);
+}
+
+.cta-feature-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.cta-feature-text {
+    color: white;
+    font-size: 1rem;
+    line-height: 1.5;
+    margin: 0;
+    font-weight: 500;
+}
+
+.cta-main-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.cta-main-btn-primary,
+.cta-main-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 40px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+.cta-main-btn-primary {
+    background: white;
+    color: #667eea;
+}
+
+.cta-main-btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.4);
+}
+
+.cta-main-btn-secondary {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    color: white;
+    border: 2px solid rgba(255,255,255,0.4);
+}
+
+.cta-main-btn-secondary:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-3px);
+}
+
+.cta-main-free {
     font-size: 0.95rem;
+    color: rgba(255,255,255,0.9);
+    margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
+@media (max-width: 768px) {
+    .cta-main-section {
+        padding: 50px 20px;
+        margin-top: 40px;
+    }
+    
+    .cta-features-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .cta-feature {
+        padding: 20px;
+    }
+    
+    .cta-main-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .cta-main-btn-primary,
+    .cta-main-btn-secondary {
+        width: 100%;
+        padding: 16px 30px;
+        font-size: 1rem;
+        justify-content: center;
+    }
+}
+
+/* ===== FOOTER ===== */
 /* ===== DISCLAIMER ===== */
 .disclaimer-box {
     max-width: 900px;
@@ -1741,201 +1883,126 @@ body {
     position: relative;
 }
 
-/* Bandeau CTA sticky flottant */
-.cta-sticky-banner {
+/* === CTA COMPACT (FOOTER DE PAGE) === */
+.cta-compact-bar {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
-    padding: 12px 20px;
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.25);
-    z-index: 1000;
+    background: linear-gradient(135deg, #1a5fb4 0%, #1e3a8a 100%);
+    padding: 10px 20px;
+    z-index: 900;
+    opacity: 0;
     transform: translateY(100%);
-    transition: transform 0.4s ease;
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
 }
-
-.cta-sticky-banner.visible {
+.cta-compact-bar.visible {
+    opacity: 1;
     transform: translateY(0);
 }
-
-.cta-sticky-content {
+.cta-compact-content {
     max-width: 1200px;
     margin: 0 auto;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.cta-sticky-text {
-    color: white;
-    font-size: 1rem;
-    font-weight: 500;
-}
-
-.cta-sticky-buttons {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-}
-
-.cta-sticky-btn {
-    display: inline-block;
-    padding: 10px 18px;
-    border-radius: 25px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.cta-sticky-primary {
-    background: linear-gradient(135deg, var(--accent-start), var(--accent-end));
-    color: white;
-}
-
-.cta-sticky-primary:hover {
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-}
-
-.cta-sticky-secondary {
-    background: rgba(255,255,255,0.2);
-    color: white;
-    border: none;
-}
-
-.cta-sticky-secondary:hover {
-    background: rgba(255,255,255,0.3);
-}
-
-.cta-sticky-close {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0,0,0,0.2);
-    border: none;
-    color: white;
-    font-size: 1.2rem;
-    cursor: pointer;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1;
-}
-
-.cta-sticky-close:hover {
-    background: rgba(0,0,0,0.3);
-}
-
-@media (max-width: 700px) {
-    .cta-sticky-banner {
-        padding: 10px 12px;
-        padding-top: 35px;
-    }
-    .cta-sticky-content {
-        gap: 8px;
-        justify-content: center;
-    }
-    .cta-sticky-text {
-        display: none;
-    }
-    .cta-sticky-buttons {
-        width: 100%;
-        justify-content: center;
-        gap: 8px;
-    }
-    .cta-sticky-btn {
-        padding: 12px 16px;
-        font-size: 0.85rem;
-        flex: 1;
-        max-width: 180px;
-    }
-    .cta-sticky-close {
-        top: 6px;
-        right: 6px;
-    }
-}
-
-/* === BARRE RÉSERVATIONS HORIZONTALE EN HAUT === */
-.booking-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255,255,255,0.97);
-    border-bottom: 1px solid #e5e7eb;
-    padding: 8px 20px;
-    z-index: 900;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    font-size: 0.8rem;
-    opacity: 0;
-    transform: translateY(-100%);
-    transition: opacity 0.3s, transform 0.3s;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-}
-.booking-bar.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-.booking-bar-title {
-    color: #64748b;
-    font-weight: 500;
-}
-.booking-bar-links {
-    display: flex;
+    justify-content: space-between;
     gap: 16px;
 }
-.booking-bar-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    color: #334155;
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    transition: background 0.2s, color 0.2s;
+.cta-compact-title {
+    color: white;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+.cta-compact-features {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+.cta-compact-feature {
+    color: rgba(255,255,255,0.95);
+    font-size: 0.95rem;
+    padding: 6px 16px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 16px;
+    display: inline-block;
+    transition: opacity 0.3s ease;
     font-weight: 500;
 }
-.booking-bar-link:hover {
-    background: #f1f5f9;
-    color: #0284c7;
+.cta-compact-actions {
+    display: flex;
+    gap: 8px;
 }
-.booking-bar-close {
-    background: none;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-    padding: 4px 8px;
-    font-size: 1.1rem;
-    line-height: 1;
+.cta-compact-btn,
+.cta-compact-btn-secondary {
+    padding: 6px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    white-space: nowrap;
 }
-.booking-bar-close:hover {
-    color: #64748b;
+.cta-compact-btn {
+    background: white;
+    color: #1a5fb4;
+}
+.cta-compact-btn:hover {
+    background: #f0f4f8;
+}
+.cta-compact-btn-secondary {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+.cta-compact-btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+}
+@media (max-width: 900px) {
+    .cta-compact-bar {
+        padding: 8px 15px;
+    }
+    .cta-compact-title {
+        font-size: 0.8rem;
+    }
+    .cta-compact-feature {
+        font-size: 0.85rem;
+        padding: 5px 14px;
+    }
+    .cta-compact-btn,
+    .cta-compact-btn-secondary {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+    }
 }
 @media (max-width: 700px) {
-    .booking-bar {
-        padding: 6px 12px;
-        gap: 8px;
+    .cta-compact-content {
+        flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
     }
-    .booking-bar-title {
-        display: none;
+    .cta-compact-title {
+        width: 100%;
+        margin-bottom: 4px;
+        font-size: 0.85rem;
     }
-    .booking-bar-links {
-        gap: 8px;
+    .cta-compact-features {
+        width: 100%;
+        margin-bottom: 6px;
     }
-    .booking-bar-link {
-        padding: 6px 10px;
+    .cta-compact-feature {
+        font-size: 0.8rem;
+    }
+    .cta-compact-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    .cta-compact-btn,
+    .cta-compact-btn-secondary {
+        flex: 1;
+    }
+}
         font-size: 0.75rem;
     }
     .booking-bar-link span:not(.icon) {
@@ -2610,31 +2677,89 @@ body {
     </div>
 </section>
 
-<!-- BARRE RÉSERVATIONS EN HAUT -->
-<div class="booking-bar" id="booking-bar">
-    <span class="booking-bar-title">🎒 Prepara tu viaje</span>
-    <div class="booking-bar-links">
-        <a href="https://www.stay22.com/allez/roam?aid=oneroadtrip&campaign=gr-attique-2&lat=38.4824&lng=22.501&address=Delphes" target="_blank" rel="noopener sponsored" class="booking-bar-link">
-            <span class="icon">🏨</span>
-            <span>Buscar hotel</span>
-        </a>
-        <a href="https://www.aviasales.com/?marker=688844" target="_blank" rel="noopener sponsored" class="booking-bar-link">
-            <span class="icon">✈️</span>
-            <span>Buscar vuelo</span>
-        </a>
-        <a href="https://qeeq.tpo.li/rMRoXmko" target="_blank" rel="noopener sponsored" class="booking-bar-link">
-            <span class="icon">🚗</span>
-            <span>Alquilar coche</span>
-        </a>
+<!-- CTA COMPACT (FOOTER DE PAGE) -->
+<div class="cta-compact-bar" id="cta-compact-bar">
+    <div class="cta-compact-content">
+        <div class="cta-compact-title">¿Listo para personalizar tu aventura?</div>
+        <div class="cta-compact-features">
+            <span class="cta-compact-feature" id="rotating-feature">✏️ Modifica cada etapa según tus preferencias</span>
+        </div>
+        <div class="cta-compact-actions">
+            <a href="/roadtrip_detail.html?cc=GR&itin=GR%3A%3Aattique-2&lang=es&days=5" class="cta-compact-btn">Modificar este itinerario gratis</a>
+            <a href="https://www.oneroadtrip.com/static-pages/es/rutas/index.html" class="cta-compact-btn-secondary">Todos los itinerarios</a>
+        </div>
     </div>
-    <button class="booking-bar-close" onclick="document.getElementById('booking-bar').classList.remove('visible')" aria-label="Fermer">×</button>
 </div>
 
-<footer class="footer-advanced">
-    <div class="footer-logo-advanced">OneRoadTrip</div>
-    <p class="footer-content">Viajes inolvidables por todo el mundo</p>
-    <p>© 2026 | Tous droits réservés</p>
-</footer>
+<script>
+// Rotation des bénéfices dans le CTA compact
+(function() {
+    var features = [
+        '✏️ Modifica cada etapa según tus preferencias',
+        '📍 Visualiza todas las visitas y actividades detalladas',
+        '🎫 Integra tus reservas (hoteles, vuelos, actividades)',
+        '💰 Calcula y gestiona tu presupuesto en tiempo real',
+        '📱 Lleva un diario de viaje completo en tu móvil',
+        '📷 Importa tus propias fotos'
+    ];
+    var currentIndex = 0;
+    var featureEl = document.getElementById('rotating-feature');
+    
+    if (featureEl) {
+        setInterval(function() {
+            currentIndex = (currentIndex + 1) % features.length;
+            featureEl.style.opacity = '0';
+            setTimeout(function() {
+                featureEl.textContent = features[currentIndex];
+                featureEl.style.opacity = '1';
+            }, 300);
+        }, 4000); // Change toutes les 4 secondes
+    }
+})();
+</script>
+
+<!-- SECTION CTA PRINCIPALE -->
+<section class="cta-main-section">
+    <div class="cta-main-content">
+        <h2 class="cta-main-title">Transforma este itinerario en TU viaje perfecto</h2>
+        <p class="cta-main-subtitle">En la página siguiente, accede gratis a todas las herramientas para planificar tu viaje:</p>
+        
+        <div class="cta-features-grid">
+            <div class="cta-feature">
+                <span class="cta-feature-icon">✏️</span>
+                <p class="cta-feature-text">✏️ Modifica cada etapa según tus preferencias</p>
+            </div>
+            <div class="cta-feature">
+                <span class="cta-feature-icon">📍</span>
+                <p class="cta-feature-text">📍 Visualiza todas las visitas y actividades detalladas</p>
+            </div>
+            <div class="cta-feature">
+                <span class="cta-feature-icon">🎫</span>
+                <p class="cta-feature-text">🎫 Integra tus reservas (hoteles, vuelos, actividades)</p>
+            </div>
+            <div class="cta-feature">
+                <span class="cta-feature-icon">💰</span>
+                <p class="cta-feature-text">💰 Calcula y gestiona tu presupuesto en tiempo real</p>
+            </div>
+            <div class="cta-feature">
+                <span class="cta-feature-icon">📱</span>
+                <p class="cta-feature-text">📱 Lleva un diario de viaje completo en tu móvil</p>
+            </div>
+            <div class="cta-feature">
+                <span class="cta-feature-icon">📷</span>
+                <p class="cta-feature-text">📷 Importa tus propias fotos</p>
+            </div>
+        </div>
+        
+        <div class="cta-main-actions">
+            <a href="/roadtrip_detail.html?cc=GR&itin=GR%3A%3Aattique-2&lang=es&days=5" class="cta-main-btn-primary">Modificar este itinerario gratis</a>
+            <a href="https://www.oneroadtrip.com/static-pages/es/rutas/index.html" class="cta-main-btn-secondary">Todos los itinerarios</a>
+        </div>
+        
+        <p class="cta-main-free">100% Gratis • Sin compromiso • Accesible en todas partes</p>
+    </div>
+</section>
+
 </main>
 
 <!-- SCRIPT CARTE INTERACTIVE - Chargement différé -->
@@ -2697,25 +2822,25 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// ===== BARRE RÉSERVATIONS - Apparaît après scroll =====
+// ===== CTA COMPACT - Apparaît après scroll =====
 (function() {
-    var bookingBar = document.getElementById('booking-bar');
+    var ctaBar = document.getElementById('cta-compact-bar');
     var ticking = false;
     
-    function updateBookingBar() {
-        if (!bookingBar) return;
+    function updateCtaBar() {
+        if (!ctaBar) return;
         if (window.scrollY > 300) {
-            bookingBar.classList.add('visible');
+            ctaBar.classList.add('visible');
         }
         if (window.scrollY < 150) {
-            bookingBar.classList.remove('visible');
+            ctaBar.classList.remove('visible');
         }
         ticking = false;
     }
     
     window.addEventListener('scroll', function() {
         if (!ticking) {
-            window.requestAnimationFrame(updateBookingBar);
+            window.requestAnimationFrame(updateCtaBar);
             ticking = true;
         }
     }, { passive: true });
@@ -2864,32 +2989,6 @@ window.addEventListener('load', function() {
         gtag('config', 'GT-WF83FMCX');
     };
 });
-</script>
-
-<!-- BANDEAU CTA STICKY -->
-<div class="cta-sticky-banner" id="cta-sticky">
-    <div class="cta-sticky-content">
-        <span class="cta-sticky-text">✨ ¿Listo para esta aventura?</span>
-        <div class="cta-sticky-buttons">
-            <a href="/roadtrip_detail.html?cc=GR&itin=GR%3A%3Aattique-2&lang=es&days=5" class="cta-sticky-btn cta-sticky-primary">Personalizar este itinerario</a>
-            <a href="https://www.oneroadtrip.com/static-pages/es/rutas/index.html" class="cta-sticky-btn cta-sticky-secondary">Todos los itinerarios</a>
-        </div>
-    </div>
-    <button class="cta-sticky-close" onclick="document.getElementById('cta-sticky').style.display='none'" aria-label="Fermer">×</button>
-</div>
-
-<script>
-// Afficher le bandeau après scroll de 800px (environ 3-4 cartes)
-(function() {
-    const banner = document.getElementById('cta-sticky');
-    let shown = false;
-    window.addEventListener('scroll', function() {
-        if (!shown && window.scrollY > 800) {
-            banner.classList.add('visible');
-            shown = true;
-        }
-    });
-})();
 </script>
 
 </body>

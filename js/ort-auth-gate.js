@@ -1,10 +1,13 @@
 // ort-auth-gate.js - Gate d'authentification BLOQUANTE
 // Pas de fermeture possible sans connexion
-// Utilise la modale de ort-header.js pour l'authentification
+// Utilise OrtAuthModal pour l'authentification email
 (function() {
   'use strict';
 
-  const AUTH_GATE_DELAY = 500; // Délai avant d'afficher la gate
+  // Délai de 30 secondes avant d'afficher la gate
+  // Permet aux visiteurs de voir le contenu des roadtrips avant de demander l'auth
+  const AUTH_GATE_DELAY = 30000; // 30 secondes
+  let authModal = null;
 
   // Créer la modale bloquante
   function createAuthGate() {
@@ -47,7 +50,7 @@
     `;
 
     modal.innerHTML = `
-      <div style="font-size: 48px; margin-bottom: 20px;">🔐</div>
+      <div style="font-size: 48px; margin-bottom: 20px;">🔒</div>
       <h2 style="margin: 0 0 16px 0; font-size: 24px; color: #1a1a1a; font-weight: 700;">
         ${t('title')}
       </h2>
@@ -192,7 +195,7 @@
       }
       
       /* Cacher le contenu derrière - SAUF bannières cookies */
-      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay):not(#ortAuthModal):not(#emailModal):not(#coherenceAlert):not([id*="Modal"]):not([id*="modal"]):not(#ortCookieBanner):not(#ortCookieModal):not([id*="cookie"]):not([id*="Cookie"]):not([id*="consent"]):not([id*="Consent"]) {
+      body.ort-auth-blocked > *:not(#ort-auth-gate-overlay):not(#authModalOverlay):not(#ortCookieBanner):not(#ortCookieModal):not([id*="cookie"]):not([id*="Cookie"]):not([id*="consent"]):not([id*="Consent"]) {
         filter: blur(5px);
         pointer-events: none;
         user-select: none;
@@ -238,50 +241,38 @@
     }
   }
 
-  // Ouvrir la modale email existante
-  function openEmailModal(mode) {
-    const isSignup = (mode === 'signup');
+  // Ouvrir la modale email avec OrtAuthModal
+  async function openEmailModal(mode) {
+    // Attendre que OrtAuthModal soit disponible
+    let attempts = 0;
+    while (typeof OrtAuthModal === 'undefined' && attempts < 20) {
+      await new Promise(r => setTimeout(r, 100));
+      attempts++;
+    }
     
-    // Option 1 : ORT_HEADER disponible
-    if (window.ORT_HEADER && window.ORT_HEADER.showEmailModal) {
-      window.ORT_HEADER.showEmailModal(mode);
+    if (typeof OrtAuthModal === 'undefined') {
+      console.error('[ORT-AUTH-GATE] OrtAuthModal non disponible après timeout');
+      alert('Erreur: Module d\'authentification non chargé');
       return;
     }
-
-    // Option 2 : emailModal inline
-    const modal = document.getElementById('emailModal');
-    if (modal) {
-      const title = document.getElementById('emailTitle');
-      const pwd2Group = document.getElementById('pwd2Group');
-      const emailInput = document.getElementById('emailInput');
-      
-      // Configurer le mode
-      if (title) {
-        const i18n = window.ORT_AUTH_I18N;
-        const lang = i18n?.getLang?.() || 'fr';
-        title.textContent = isSignup 
-          ? (lang === 'fr' ? 'Créer un compte' : 'Create account')
-          : (lang === 'fr' ? 'Connexion par e-mail' : 'Login by email');
+    
+    // Créer l'instance si nécessaire
+    if (!authModal) {
+      authModal = new OrtAuthModal();
+      const initialized = await authModal.init();
+      if (!initialized) {
+        console.error('[ORT-AUTH-GATE] Échec de l\'initialisation de OrtAuthModal');
+        alert('Erreur: Impossible d\'initialiser l\'authentification');
+        return;
       }
-      if (pwd2Group) {
-        pwd2Group.style.display = isSignup ? 'block' : 'none';
-      }
-      
-      modal.style.display = 'flex';
-      if (emailInput) emailInput.focus();
-      console.log('[ORT-AUTH-GATE] Modale email ouverte en mode:', mode);
-      return;
     }
-
-    // Option 3 : Simuler clic sur btnEmail
-    const btnEmail = document.getElementById('btnEmail');
-    if (btnEmail) {
-      btnEmail.click();
-      console.log('[ORT-AUTH-GATE] Clic simulé sur btnEmail');
-      return;
-    }
-
-    console.warn('[ORT-AUTH-GATE] ⚠️ Aucune modale email trouvée');
+    
+    // Configurer le mode (login ou signup)
+    authModal.mode = mode;
+    authModal.updateUI();
+    authModal.show();
+    
+    console.log('[ORT-AUTH-GATE] Modale email ouverte en mode:', mode);
   }
 
   // Supprimer la gate
@@ -324,7 +315,14 @@
             // Revérifier après le délai
             if (!firebase.auth().currentUser && !document.getElementById('ort-auth-gate-overlay')) {
               console.log('[ORT-AUTH-GATE] ❌ Utilisateur non connecté (confirmé)');
-              createAuthGate();
+              // Attendre 30 secondes avant d'afficher la gate (pour laisser voir le contenu)
+              console.log('[ORT-AUTH-GATE] ⏳ Délai de 30s pour laisser voir le contenu...');
+              setTimeout(() => {
+                // Vérifier une dernière fois que l'utilisateur ne s'est pas connecté entre temps
+                if (!firebase.auth().currentUser && !document.getElementById('ort-auth-gate-overlay')) {
+                  createAuthGate();
+                }
+              }, 30000); // 30 secondes
             }
           }, 1000); // Attendre 1s pour la restauration de session
         }
@@ -335,7 +333,7 @@
     }
   }
 
-  // Démarrer après un court délai (laisser le temps à Firebase de s'initialiser)
+  // Démarrer la vérification auth
   function init() {
     // Vérifier si on est sur une page qui nécessite l'auth
     // Pages exclues : accueil, présentation, etc.
@@ -347,7 +345,9 @@
       return;
     }
 
-    setTimeout(checkAuth, AUTH_GATE_DELAY);
+    // Démarrer immédiatement la vérification
+    // Si l'utilisateur n'est pas connecté, la gate s'affichera après 30s
+    setTimeout(checkAuth, 500); // Court délai pour laisser Firebase s'initialiser
   }
 
   // Lancer au chargement

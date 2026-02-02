@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>ORT Admin - Sélection Activités GetYourGuide</title>
+<style>
+body { font-family: system-ui; padding: 20px; max-width: 1800px; margin: 0 auto; background: #f8fafc; }
+h1 { color: #0f172a; margin: 0; }
+.header { background: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+/* Stats */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin: 15px 0; }
+.stat-card { background: #fef3c7; padding: 15px; border-radius: 8px; border: 1px solid #fde047; }
+.stat-card h3 { margin: 0 0 5px; color: #92400e; font-size: 14px; }
+.stat-card .value { font-size: 24px; font-weight: bold; color: #0f172a; }
+
+/* Layout */
+.main-layout { display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+.places-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; max-height: calc(100vh - 200px); overflow-y: auto; }
+.activities-panel { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
+
+/* Places list */
+.filter-bar { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+.filter-bar input { flex: 1; min-width: 150px; }
+
+.place-item { padding: 12px; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; }
+.place-item:hover { border-color: #f59e0b; background: #fffbeb; }
+.place-item.selected { border-color: #f59e0b; background: #fef3c7; }
+.place-item.done { border-left: 4px solid #10b981; }
+.place-item.partial { border-left: 4px solid #f59e0b; }
+.place-item .place-name { font-weight: 600; color: #1e293b; }
+.place-item .place-meta { font-size: 12px; color: #64748b; margin-top: 4px; }
+.place-item .activity-count { display: inline-block; background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 8px; }
+.place-item .selected-count { background: #d1fae5; color: #065f46; }
+
+/* Activities grid */
+.activities-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0; }
+.activities-header h2 { margin: 0; color: #1e293b; }
+.activities-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+
+.activity-card { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 12px; overflow: hidden; transition: all 0.2s; }
+.activity-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.activity-card.selected { border-color: #10b981; background: #f0fdf4; }
+.activity-card.selected .activity-checkbox { background: #10b981; color: white; }
+
+.activity-image { width: 100%; height: 160px; object-fit: cover; background: #e2e8f0; }
+.activity-content { padding: 15px; }
+.activity-name { font-weight: 600; color: #1e293b; font-size: 15px; margin-bottom: 8px; line-height: 1.3; }
+.activity-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.activity-rating { background: #f59e0b; color: white; padding: 3px 8px; border-radius: 6px; font-weight: bold; font-size: 13px; }
+.activity-reviews { color: #64748b; font-size: 12px; }
+.activity-price { color: #059669; font-weight: 600; font-size: 14px; }
+.activity-duration { color: #64748b; font-size: 12px; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; }
+.activity-category { font-size: 11px; color: #7c3aed; background: #ede9fe; padding: 2px 8px; border-radius: 4px; }
+
+.activity-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.activity-checkbox { padding: 8px 16px; border: 2px solid #cbd5e1; border-radius: 6px; background: white; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.activity-checkbox:hover { border-color: #10b981; }
+
+/* Buttons */
+.btn { padding: 10px 20px; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all 0.2s; }
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.btn-primary { background: #f59e0b; color: white; }
+.btn-success { background: #10b981; color: white; }
+.btn-warning { background: #8b5cf6; color: white; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* Status */
+.status { padding: 12px 16px; border-radius: 6px; margin: 10px 0; font-size: 14px; }
+.status.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+.status.error { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; }
+.status.info { background: #fef3c7; border: 1px solid #fde047; color: #92400e; }
+
+/* Modal export */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: white; border-radius: 12px; padding: 25px; max-width: 800px; width: 90%; max-height: 80vh; overflow: auto; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h3 { margin: 0; }
+.modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #64748b; }
+.modal pre { background: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 12px; max-height: 400px; overflow: auto; }
+
+/* Config */
+.config-section { background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+.config-section label { font-weight: 600; color: #7c3aed; }
+.config-section input { margin-top: 8px; width: 100%; padding: 10px; border: 1px solid #c4b5fd; border-radius: 6px; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🎯 ORT Admin - Sélection Activités GetYourGuide</h1>
+    <p style="color:#64748b;margin:5px 0 0">Sélectionnez 2-3 activités par place</p>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <h3>📍 Places</h3>
+            <div class="value" id="statPlaces">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>🎯 Activités trouvées</h3>
+            <div class="value" id="statActivities">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>✅ Places complétées</h3>
+            <div class="value" id="statDone">0</div>
+        </div>
+        <div class="stat-card">
+            <h3>🎫 Activités sélect.</h3>
+            <div class="value" id="statSelected">0</div>
+        </div>
+    </div>
+    
+    <div class="config-section">
+        <label>🔗 Lien affilié GetYourGuide (Travelpayouts)</label>
+        <input type="text" id="affiliateBase" placeholder="https://getyourguide.tpo.li/YQ9RFXj5" value="https://getyourguide.tpo.li/YQ9RFXj5">
+    </div>
+    
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input type="file" id="fileInput" accept=".json" style="display:none">
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">📂 Charger activities_scrape.json</button>
+        <button class="btn btn-success" onclick="exportSelected()">💾 Exporter sélection</button>
+        <button class="btn btn-warning" onclick="saveProgress()">📝 Sauvegarder progression</button>
+        <button class="btn" style="background:#64748b;color:white" onclick="loadProgress()">📥 Charger progression</button>
+    </div>
+    
+    <div id="statusMsg" class="status" style="display:none"></div>
+</div>
+
+<div class="main-layout">
+    <!-- Panel gauche: liste des places -->
+    <div class="places-panel">
+        <div class="filter-bar">
+            <input type="text" id="searchPlace" placeholder="🔍 Rechercher une place...">
+            <select id="filterCountry">
+                <option value="">Tous pays</option>
+            </select>
+            <select id="filterStatus">
+                <option value="">Tous</option>
+                <option value="done">✅ Complétés</option>
+                <option value="partial">🟡 Partiels</option>
+                <option value="todo">⬜ À faire</option>
+            </select>
+        </div>
+        <div id="placesList"></div>
+    </div>
+    
+    <!-- Panel droit: activités de la place sélectionnée -->
+    <div class="activities-panel">
+        <div id="activitiesContent">
+            <div class="empty-state">
+                <div style="font-size:60px">🎯</div>
+                <h3>Chargez le fichier activities_scrape.json</h3>
+                <p>Puis sélectionnez une place dans la liste de gauche</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal export -->
+<div class="modal" id="exportModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>📦 Export JSON</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div>
+            <button class="btn btn-primary btn-sm" onclick="copyExport()">📋 Copier</button>
+            <button class="btn btn-success btn-sm" onclick="downloadExport()">💾 Télécharger</button>
+        </div>
+        <pre id="exportContent"></pre>
+    </div>
+</div>
+
+<script>
+// ============ STATE ============
+let allData = {};           // Données brutes du scrape
+let selections = {};        // {place_id: {activities: [...]}}
+let currentPlaceId = null;
+
+// ============ INIT ============
+document.getElementById('fileInput').addEventListener('change', handleFileLoad);
+document.getElementById('searchPlace').addEventListener('input', renderPlacesList);
+document.getElementById('filterCountry').addEventListener('change', renderPlacesList);
+document.getElementById('filterStatus').addEventListener('change', renderPlacesList);
+
+// ============ FILE LOADING ============
+function handleFileLoad(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        try {
+            allData = JSON.parse(evt.target.result);
+            showStatus(`✅ ${Object.keys(allData).length} places chargées`, 'success');
+            populateCountryFilter();
+            renderPlacesList();
+            updateStats();
+        } catch(err) {
+            showStatus('❌ Erreur parsing JSON: ' + err.message, 'error');
+        }
+    };
+    reader.readAsText(file);
+}
+
+function populateCountryFilter() {
+    const countries = new Set();
+    Object.values(allData).forEach(p => countries.add(p.country));
+    
+    const select = document.getElementById('filterCountry');
+    select.innerHTML = '<option value="">Tous pays</option>';
+    [...countries].sort().forEach(cc => {
+        select.innerHTML += `<option value="${cc}">${cc}</option>`;
+    });
+}
+
+// ============ RENDER PLACES LIST ============
+function renderPlacesList() {
+    const search = document.getElementById('searchPlace').value.toLowerCase();
+    const countryFilter = document.getElementById('filterCountry').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+    
+    let places = Object.values(allData);
+    
+    // Filtres
+    if (search) {
+        places = places.filter(p => p.name.toLowerCase().includes(search) || p.place_id.toLowerCase().includes(search));
+    }
+    if (countryFilter) {
+        places = places.filter(p => p.country === countryFilter);
+    }
+    if (statusFilter) {
+        places = places.filter(p => {
+            const sel = selections[p.place_id];
+            const selectedCount = sel?.activities?.length || 0;
+            if (statusFilter === 'done') return selectedCount >= 2;
+            if (statusFilter === 'partial') return selectedCount === 1;
+            if (statusFilter === 'todo') return selectedCount === 0;
+            return true;
+        });
+    }
+    
+    // Trier par nom
+    places.sort((a, b) => a.name.localeCompare(b.name));
+    
+    const container = document.getElementById('placesList');
+    
+    if (places.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>Aucune place trouvée</p></div>';
+        return;
+    }
+    
+    container.innerHTML = places.map(p => {
+        const sel = selections[p.place_id];
+        const selectedCount = sel?.activities?.length || 0;
+        const statusClass = selectedCount >= 2 ? 'done' : selectedCount === 1 ? 'partial' : '';
+        const selectedClass = p.place_id === currentPlaceId ? 'selected' : '';
+        
+        return `
+            <div class="place-item ${statusClass} ${selectedClass}" onclick="selectPlace('${p.place_id}')">
+                <div class="place-name">
+                    ${p.name}
+                    <span class="activity-count">${p.activities?.length || 0} activités</span>
+                    ${selectedCount > 0 ? `<span class="activity-count selected-count">✓ ${selectedCount} sélect.</span>` : ''}
+                </div>
+                <div class="place-meta">${p.country} · ${p.place_id}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ============ SELECT PLACE ============
+function selectPlace(placeId) {
+    currentPlaceId = placeId;
+    renderPlacesList();
+    renderActivities();
+}
+
+// ============ RENDER ACTIVITIES ============
+function renderActivities() {
+    const container = document.getElementById('activitiesContent');
+    
+    if (!currentPlaceId || !allData[currentPlaceId]) {
+        container.innerHTML = '<div class="empty-state"><p>Sélectionnez une place</p></div>';
+        return;
+    }
+    
+    const place = allData[currentPlaceId];
+    const activities = place.activities || [];
+    const sel = selections[currentPlaceId] || { activities: [] };
+    
+    const affiliateBase = document.getElementById('affiliateBase').value;
+    
+    container.innerHTML = `
+        <div class="activities-header">
+            <div>
+                <h2>🎯 ${place.name}</h2>
+                <p style="color:#64748b;margin:5px 0 0">${place.country} · ${activities.length} activités trouvées</p>
+            </div>
+            <div>
+                <span style="color:#64748b">${sel.activities.length}/3 sélectionnées</span>
+            </div>
+        </div>
+        
+        ${activities.length === 0 ? `
+            <div class="empty-state">
+                <p>Aucune activité trouvée pour cette place</p>
+            </div>
+        ` : `
+            <div class="activities-grid">
+                ${activities.map((a, idx) => {
+                    const isSelected = sel.activities.some(s => s.name === a.name);
+                    const affiliateLink = a.gygUrl ? `${affiliateBase}?url=${encodeURIComponent(a.gygUrl)}` : '#';
+                    
+                    return `
+                        <div class="activity-card ${isSelected ? 'selected' : ''}" data-activity-idx="${idx}">
+                            <img class="activity-image" src="${a.imageUrl || 'https://via.placeholder.com/400x160?text=Activity'}" 
+                                 onerror="this.src='https://via.placeholder.com/400x160?text=Activity'" alt="${a.name}">
+                            <div class="activity-content">
+                                <div class="activity-name">${a.name}</div>
+                                <div class="activity-meta">
+                                    ${a.rating ? `<span class="activity-rating">★ ${a.rating}</span>` : ''}
+                                    ${a.reviews ? `<span class="activity-reviews">${a.reviews} avis</span>` : ''}
+                                    ${a.price ? `<span class="activity-price">${a.price}€</span>` : ''}
+                                </div>
+                                <div class="activity-meta">
+                                    ${a.duration ? `<span class="activity-duration">⏱️ ${a.duration}</span>` : ''}
+                                    ${a.category ? `<span class="activity-category">${a.category}</span>` : ''}
+                                </div>
+                                
+                                <div class="activity-actions">
+                                    <button class="activity-checkbox" onclick="toggleActivity('${a.name.replace(/'/g, "\\'")}', ${idx})">
+                                        ${isSelected ? '✅ Sélectionnée' : '☐ Sélectionner'}
+                                    </button>
+                                    <a href="${affiliateLink}" target="_blank" class="btn btn-sm" style="background:#ff5533;color:white;text-decoration:none">
+                                        🔗 GetYourGuide
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `}
+    `;
+}
+
+// ============ TOGGLE ACTIVITY SELECTION ============
+function toggleActivity(activityName, idx) {
+    if (!currentPlaceId) return;
+    
+    if (!selections[currentPlaceId]) {
+        selections[currentPlaceId] = { activities: [] };
+    }
+    
+    const sel = selections[currentPlaceId];
+    const place = allData[currentPlaceId];
+    const activity = place.activities[idx];
+    
+    const existingIdx = sel.activities.findIndex(a => a.name === activityName);
+    
+    if (existingIdx >= 0) {
+        // Désélectionner
+        sel.activities.splice(existingIdx, 1);
+    } else {
+        // Sélectionner (max 3)
+        if (sel.activities.length >= 3) {
+            showStatus('⚠️ Maximum 3 activités par place', 'error');
+            return;
+        }
+        sel.activities.push({
+            name: activity.name,
+            rating: activity.rating,
+            reviews: activity.reviews,
+            price: activity.price,
+            duration: activity.duration,
+            category: activity.category,
+            gygUrl: activity.gygUrl,
+            imageUrl: activity.imageUrl
+        });
+    }
+    
+    renderActivities();
+    renderPlacesList();
+    updateStats();
+}
+
+// ============ STATS ============
+function updateStats() {
+    const placesCount = Object.keys(allData).length;
+    const activitiesCount = Object.values(allData).reduce((sum, p) => sum + (p.activities?.length || 0), 0);
+    const doneCount = Object.values(selections).filter(s => s.activities?.length >= 2).length;
+    const selectedCount = Object.values(selections).reduce((sum, s) => sum + (s.activities?.length || 0), 0);
+    
+    document.getElementById('statPlaces').textContent = placesCount;
+    document.getElementById('statActivities').textContent = activitiesCount;
+    document.getElementById('statDone').textContent = doneCount;
+    document.getElementById('statSelected').textContent = selectedCount;
+}
+
+// ============ EXPORT ============
+function exportSelected() {
+    const affiliateBase = document.getElementById('affiliateBase').value;
+    
+    const exportData = {};
+    
+    for (const [placeId, sel] of Object.entries(selections)) {
+        if (!sel.activities || sel.activities.length === 0) continue;
+        
+        const place = allData[placeId];
+        if (!place) continue;
+        
+        exportData[placeId] = {
+            place_id: placeId,
+            name: place.name,
+            country: place.country,
+            coords: place.coords,
+            activities: sel.activities.map(a => ({
+                name: a.name,
+                rating: a.rating,
+                reviews: a.reviews,
+                price: a.price,
+                duration: a.duration,
+                category: a.category,
+                // Lien affilié
+                affiliate_link: a.gygUrl ? `${affiliateBase}?url=${encodeURIComponent(a.gygUrl)}` : null,
+                image: a.imageUrl
+            }))
+        };
+    }
+    
+    const json = JSON.stringify(exportData, null, 2);
+    document.getElementById('exportContent').textContent = json;
+    document.getElementById('exportModal').classList.add('show');
+}
+
+function copyExport() {
+    const content = document.getElementById('exportContent').textContent;
+    navigator.clipboard.writeText(content);
+    showStatus('✅ Copié dans le presse-papier', 'success');
+}
+
+function downloadExport() {
+    const content = document.getElementById('exportContent').textContent;
+    const blob = new Blob([content], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'activities_selected.json';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function closeModal() {
+    document.getElementById('exportModal').classList.remove('show');
+}
+
+// ============ SAVE/LOAD PROGRESS ============
+function saveProgress() {
+    const data = {
+        selections,
+        timestamp: new Date().toISOString()
+    };
+    const json = JSON.stringify(data);
+    localStorage.setItem('ort_activities_progress', json);
+    
+    // Aussi télécharger
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'activities_progress.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    showStatus('✅ Progression sauvegardée', 'success');
+}
+
+function loadProgress() {
+    // D'abord essayer localStorage
+    const stored = localStorage.getItem('ort_activities_progress');
+    if (stored) {
+        try {
+            const data = JSON.parse(stored);
+            selections = data.selections || {};
+            showStatus(`✅ Progression restaurée (${Object.keys(selections).length} places)`, 'success');
+            renderPlacesList();
+            updateStats();
+            return;
+        } catch(e) {}
+    }
+    
+    // Sinon demander un fichier
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = JSON.parse(evt.target.result);
+                selections = data.selections || {};
+                showStatus(`✅ Progression chargée (${Object.keys(selections).length} places)`, 'success');
+                renderPlacesList();
+                updateStats();
+            } catch(err) {
+                showStatus('❌ Erreur: ' + err.message, 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// ============ STATUS ============
+function showStatus(msg, type = 'info') {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+// Auto-load from localStorage on page load
+window.addEventListener('load', () => {
+    const stored = localStorage.getItem('ort_activities_progress');
+    if (stored) {
+        try {
+            const data = JSON.parse(stored);
+            selections = data.selections || {};
+            console.log(`Restored ${Object.keys(selections).length} selections from localStorage`);
+        } catch(e) {}
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Import URL v2 - Background Jobs</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .status {
+      padding: 10px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.pending { background: #fff3cd; color: #856404; }
+    .status.info { background: #e3f2fd; color: #1565c0; }
+    input[type="email"], input[type="password"], input[type="url"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+    input:focus { outline: none; border-color: #667eea; }
+    button {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-warning { background: #ffc107; color: #333; }
+    #logs {
+      background: #1a1a2e;
+      color: #00ff00;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      padding: 16px;
+      border-radius: 8px;
+      height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .log-info { color: #00bfff; }
+    .log-success { color: #00ff00; }
+    .log-error { color: #ff6b6b; }
+    .log-warn { color: #ffd93d; }
+    #result {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 16px;
+      max-height: 400px;
+      overflow: auto;
+      font-family: monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    .progress-container {
+      margin: 16px 0;
+      display: none;
+    }
+    .progress-container.visible { display: block; }
+    .progress-bar {
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    .progress-text {
+      margin-top: 8px;
+      font-size: 14px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test Import URL v2</h1>
+  <p>Architecture Background Jobs avec polling Firestore</p>
+
+  <!-- Auth -->
+  <div class="card">
+    <h3>🔐 Authentification</h3>
+    <div id="authStatus" class="status pending">Chargement...</div>
+    <div id="loginForm" style="display:none;">
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Mot de passe">
+      <button class="btn-primary" onclick="login()">Se connecter</button>
+    </div>
+    <div id="loggedIn" style="display:none;">
+      <button class="btn-secondary" onclick="logout()">Se déconnecter</button>
+    </div>
+  </div>
+
+  <!-- Import URL -->
+  <div class="card">
+    <h3>🔗 Import URL</h3>
+    <input type="url" id="urlInput" placeholder="https://provencelovers.fr/10-jours-cote-azur-itineraire-road-trip/">
+    <div>
+      <button id="importBtn" class="btn-primary" onclick="startImport()" disabled>🔮 Importer</button>
+      <button class="btn-warning" onclick="testFallback()">🧪 Tester Fallback</button>
+      <button class="btn-secondary" onclick="ORT_ImportUrl.open()">📦 Ouvrir Composant</button>
+    </div>
+    <div id="progressContainer" class="progress-container">
+      <div class="progress-bar">
+        <div id="progressFill" class="progress-fill"></div>
+      </div>
+      <div id="progressText" class="progress-text">En attente...</div>
+    </div>
+  </div>
+
+  <!-- Logs -->
+  <div class="card">
+    <h3>📋 Logs <button class="btn-secondary" onclick="clearLogs()" style="float:right;padding:4px 12px;font-size:12px;">🗑️ Effacer</button></h3>
+    <div id="logs">[--:--:--] En attente...</div>
+  </div>
+
+  <!-- Result -->
+  <div class="card">
+    <h3>✅ Résultat</h3>
+    <div id="result">Aucun résultat</div>
+    <div style="margin-top:16px;">
+      <button class="btn-success" onclick="openRTDetail()" disabled id="btnDetail">Ouvrir RT Detail</button>
+      <button class="btn-success" onclick="openRTEditor()" disabled id="btnEditor">Ouvrir RT Editor</button>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  
+  <!-- ORT Config -->
+  <script src="ort-config.js"></script>
+  
+  <!-- Import URL Component -->
+  <script src="js/ort-import-url-component.js"></script>
+
+  <script>
+    // ===== GLOBALS =====
+    let currentUser = null;
+    let currentJobId = null;
+    let currentUid = null;
+    let unsubscribe = null;
+    let lastImportKey = null;
+
+    // ===== LOGGING =====
+    function log(msg, type = 'info') {
+      const logs = document.getElementById('logs');
+      const time = new Date().toLocaleTimeString('fr-FR');
+      const classes = { info: 'log-info', success: 'log-success', error: 'log-error', warn: 'log-warn' };
+      logs.innerHTML += `<span class="${classes[type] || ''}">[${time}] ${msg}</span>\n`;
+      logs.scrollTop = logs.scrollHeight;
+      console.log(`[${type.toUpperCase()}]`, msg);
+    }
+
+    function clearLogs() {
+      document.getElementById('logs').innerHTML = '[--:--:--] Logs effacés\n';
+    }
+
+    // ===== FIREBASE INIT =====
+    async function initFirebase() {
+      log('Initialisation Firebase...');
+      
+      // Wait for ORT_CONFIG
+      if (typeof ORT_CONFIG === 'undefined') {
+        await new Promise(r => setTimeout(r, 500));
+      }
+      
+      if (!firebase.apps.length) {
+        firebase.initializeApp(ORT_CONFIG.firebase);
+      }
+      
+      log(`Firebase initialisé: ${ORT_CONFIG.firebase.projectId}`, 'success');
+      
+      firebase.auth().onAuthStateChanged(user => {
+        currentUser = user;
+        updateAuthUI();
+      });
+    }
+
+    function updateAuthUI() {
+      const status = document.getElementById('authStatus');
+      const loginForm = document.getElementById('loginForm');
+      const loggedIn = document.getElementById('loggedIn');
+      const importBtn = document.getElementById('importBtn');
+      
+      if (currentUser) {
+        status.className = 'status success';
+        status.textContent = `✅ Connecté: ${currentUser.email}`;
+        loginForm.style.display = 'none';
+        loggedIn.style.display = 'block';
+        importBtn.disabled = false;
+        log(`Utilisateur connecté: ${currentUser.email}`, 'success');
+      } else {
+        status.className = 'status error';
+        status.textContent = '❌ Non connecté';
+        loginForm.style.display = 'block';
+        loggedIn.style.display = 'none';
+        importBtn.disabled = true;
+      }
+    }
+
+    async function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      try {
+        await firebase.auth().signInWithEmailAndPassword(email, password);
+      } catch (e) {
+        log(`Erreur login: ${e.message}`, 'error');
+      }
+    }
+
+    function logout() {
+      firebase.auth().signOut();
+      log('Déconnexion', 'warn');
+    }
+
+    // ===== PROGRESS =====
+    function showProgress(visible = true) {
+      const container = document.getElementById('progressContainer');
+      container.classList.toggle('visible', visible);
+    }
+
+    function updateProgress(percent, text) {
+      document.getElementById('progressFill').style.width = percent + '%';
+      document.getElementById('progressText').textContent = text;
+    }
+
+    // ===== POLLING =====
+    function startPolling(uid, jobId) {
+      currentUid = uid;
+      currentJobId = jobId;
+      
+      log(`📡 Démarrage polling Firestore pour job: ${jobId}`);
+      showProgress(true);
+      
+      const db = firebase.firestore();
+      const jobRef = db.collection('users').doc(uid).collection('url_parse_jobs').doc(jobId);
+      
+      unsubscribe = jobRef.onSnapshot((doc) => {
+        if (!doc.exists) {
+          log('Job document not found', 'warn');
+          return;
+        }
+        
+        const data = doc.data();
+        log(`📊 Status: ${data.status}`, 'info');
+        
+        // Update progress
+        const statusMap = {
+          'pending': { percent: 10, text: '⏳ Démarrage de l\'analyse...' },
+          'processing': { percent: 30, text: '🔄 Récupération de la page...' },
+          'analyzing': { percent: 60, text: '🤖 L\'IA analyse le contenu...' },
+          'completed': { percent: 100, text: '✅ Terminé !' },
+          'error': { percent: 0, text: '❌ Erreur: ' + (data.error || '') }
+        };
+        
+        const config = statusMap[data.status] || statusMap.pending;
+        updateProgress(config.percent, config.text);
+        
+        if (data.status === 'completed') {
+          stopPolling();
+          handleSuccess(data.result);
+        } else if (data.status === 'error') {
+          stopPolling();
+          handleError(data.error || 'Unknown error');
+        }
+      }, (error) => {
+        log(`Polling error: ${error.message}`, 'error');
+        stopPolling();
+        handleError(error.message);
+      });
+    }
+
+    function stopPolling() {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    }
+
+    // ===== IMPORT =====
+    async function startImport() {
+      const url = document.getElementById('urlInput').value.trim();
+      if (!url) {
+        log('URL vide', 'error');
+        return;
+      }
+      
+      const importBtn = document.getElementById('importBtn');
+      importBtn.disabled = true;
+      
+      log(`Appel API parse-url: ${url}`);
+      
+      try {
+        const token = await currentUser.getIdToken();
+        log('Token obtenu, appel Netlify function...');
+        
+        const response = await fetch('/.netlify/functions/parse-url', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            url: url,
+            language: 'fr'
+          })
+        });
+        
+        log(`Réponse reçue: ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || 'Request failed');
+        }
+        
+        log(`✅ Job créé: ${data.jobId}`, 'success');
+        log(`Quota restant: ${data.usage?.remaining}`, 'info');
+        
+        // Start polling
+        startPolling(currentUser.uid, data.jobId);
+        
+      } catch (e) {
+        log(`❌ Erreur: ${e.message}`, 'error');
+        importBtn.disabled = false;
+        showProgress(false);
+      }
+    }
+
+    function handleSuccess(result) {
+      log('✅ Import réussi!', 'success');
+      log(`Modèle utilisé: ${result.model}`, 'info');
+      
+      // Display result
+      document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+      
+      // Save to localStorage
+      const itin = result.data?.itins?.[0];
+      if (itin) {
+        const cc = itin.itin_id?.split('::')[0] || 'XX';
+        const slug = (itin.title || 'trip').toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .substring(0, 40);
+        lastImportKey = `${cc}_${slug}_${Date.now()}`;
+        
+        const storageData = {
+          itins: result.data.itins,
+          places: result.places?.places || [],
+          _meta: {
+            importedAt: new Date().toISOString(),
+            source_url: document.getElementById('urlInput').value,
+            model: result.model
+          }
+        };
+        
+        localStorage.setItem(`ort_imported_${lastImportKey}`, JSON.stringify(storageData));
+        log(`💾 Sauvegardé: ${lastImportKey}`, 'success');
+        
+        document.getElementById('btnDetail').disabled = false;
+        document.getElementById('btnEditor').disabled = false;
+      }
+      
+      document.getElementById('importBtn').disabled = false;
+    }
+
+    function handleError(errorMessage) {
+      log(`❌ Erreur: ${errorMessage}`, 'error');
+      document.getElementById('importBtn').disabled = false;
+      showProgress(false);
+      updateProgress(0, '❌ ' + errorMessage);
+    }
+
+    // ===== ACTIONS =====
+    function openRTDetail() {
+      if (lastImportKey) {
+        window.open(`roadtrip_detail.html?import=${lastImportKey}`, '_blank');
+      }
+    }
+
+    function openRTEditor() {
+      if (lastImportKey) {
+        window.open(`roadtrip-editor.html?import=${lastImportKey}`, '_blank');
+      }
+    }
+
+    function testFallback() {
+      log('Test fallback modal', 'warn');
+      if (typeof ORT_ImportUrl !== 'undefined') {
+        // Simulate error
+        document.getElementById('ort-fallback-overlay')?.remove();
+        ORT_ImportUrl.open();
+        setTimeout(() => {
+          document.getElementById('ort-import-overlay')?.classList.remove('active');
+          // Create fallback manually
+          const overlay = document.createElement('div');
+          overlay.id = 'ort-fallback-overlay';
+          overlay.className = 'ort-import-overlay active';
+          overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;';
+          overlay.innerHTML = `
+            <div style="position:relative;background:white;border-radius:16px;padding:32px;max-width:500px;width:90%;">
+              <div style="font-size:64px;text-align:center;">🤖💨</div>
+              <div style="font-size:22px;font-weight:700;text-align:center;margin:16px 0;">Oups, l'IA a besoin d'une pause !</div>
+              <div style="text-align:center;color:#666;margin-bottom:24px;">Test du modal de fallback</div>
+              <button onclick="this.parentElement.parentElement.remove()" style="width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Fermer</button>
+            </div>
+          `;
+          document.body.appendChild(overlay);
+        }, 500);
+      }
+    }
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initFirebase();
+      log('Page de test prête', 'success');
+    });
+  </script>
+</body>
+</html>

@@ -1967,6 +1967,45 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 .step-details-panel.open {
   display: block;
 }
+.step-maps-section {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+.step-maps-section h4 {
+  font-size: 0.85rem;
+  color: #166534;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.maps-keywords-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.maps-keyword-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: #fff;
+  border: 1px solid #86efac;
+  border-radius: 20px;
+  color: #166534;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.maps-keyword-link:hover {
+  background: #166534;
+  color: #fff;
+  border-color: #166534;
+}
 .step-details-section {
   margin-bottom: 12px;
 }
@@ -2305,6 +2344,9 @@ if (typeof t !== 'function') {
   }
 })();
 </script>
+
+<!-- Share module - DOIT être chargé tôt pour checkSharedAccess et showModal -->
+<script src="./js/ort-share.js"></script>
 
 <!-- Stay22 Integration -->
 <script>
@@ -5121,6 +5163,7 @@ async function initFromItin(it){
         _driveMinToNext: d.to_next_leg?.drive_min || 0,
         _distanceKmToNext: d.to_next_leg?.distance_km || 0,
         _roadType: d.to_next_leg?.road_type || null,
+        _mapKeywords: Array.isArray(d.night?.map_keywords) ? d.night.map_keywords : [],
         images:getPhotosForPlace(pid),
         description:visits.map(v=>v.text||v).join('. ')
       });
@@ -6243,7 +6286,8 @@ function createStepDetailsPanel(step, idx) {
     bookShows: { fr:'Spectacles', en:'Shows', es:'Espectáculos', it:'Spettacoli', pt:'Espetáculos', ar:'العروض' },
     bookGuide: { fr:'Réserver un guide (bientôt)', en:'Book a guide (coming soon)', es:'Reservar un guía (próximamente)', it:'Prenota una guida (prossimamente)', pt:'Reservar um guia (em breve)', ar:'حجز مرشد (قريباً)' },
     noVisits: { fr:'Aucune visite prévue', en:'No visits planned', es:'Sin visitas previstas', it:'Nessuna visita prevista', pt:'Nenhuma visita prevista', ar:'لا توجد زيارات مخططة' },
-    noActivities: { fr:'Aucune activité', en:'No activities', es:'Sin actividades', it:'Nessuna attività', pt:'Nenhuma atividade', ar:'لا توجد أنشطة' }
+    noActivities: { fr:'Aucune activité', en:'No activities', es:'Sin actividades', it:'Nessuna attività', pt:'Nenhuma atividade', ar:'لا توجد أنشطة' },
+    seeOnMaps: { fr:'Voir sur Google Maps', en:'See on Google Maps', es:'Ver en Google Maps', it:'Vedi su Google Maps', pt:'Ver no Google Maps', ar:'عرض على خرائط جوجل' }
   };
   const t = (key) => I18N[key]?.[lang] || I18N[key]?.fr || key;
   
@@ -6363,6 +6407,18 @@ function createStepDetailsPanel(step, idx) {
         🎭 ${t('bookShows')}
       </button>
     </div>
+    
+    ${(step._mapKeywords && step._mapKeywords.length) ? `
+    <div class="step-maps-section">
+      <h4>📍 ${t('seeOnMaps')}</h4>
+      <div class="maps-keywords-list">
+        ${step._mapKeywords.map(kw => {
+          const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(kw);
+          return `<a href="${url}" class="maps-keyword-link" target="_blank" rel="noopener">📌 ${safe(kw)}</a>`;
+        }).join('')}
+      </div>
+    </div>
+    ` : ''}
     
     <div class="step-details-section">
       <h4><span class="section-icon" title="Photos">📸</span> Photos</h4>
@@ -8930,7 +8986,8 @@ window.initSaveSourceButton = function(){
       region_code: s.region_code || '',
       night: {
         place_id: s.place_id || '',
-        coords: [s.lat, s.lon]
+        coords: [s.lat, s.lon],
+        ...(s._mapKeywords && s._mapKeywords.length ? { map_keywords: s._mapKeywords } : {})
       },
       visits: (s.visits || []).map(v => typeof v === 'string' ? { text: v, visit_duration_min: 75 } : v),
       activities: (s.activities || []).map(a => {
@@ -13003,7 +13060,6 @@ if (mapPopup) {
 <script src="ort-map-resize-fix.js"></script>
 <script src="/js/ort-pdf-export-v6.js"></script>
 <script src="/js/ort-calendar-export.js"></script>
-<script src="./js/ort-share.js"></script>
 <script src="./js/ort-modals.js"></script>
 <script src="/js/ort-footer.js"></script>
 
