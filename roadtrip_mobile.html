@@ -1222,69 +1222,27 @@ html, body {
 
 /* Content items inside modal */
 .content-item {
-  padding: 16px;
-  margin-bottom: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
   background: #f8fafc;
   border-radius: 12px;
   border-left: 4px solid var(--ort-blue);
 }
 
-.content-item-title {
-  font-weight: 700;
-  color: var(--ort-blue);
-  font-size: 15px;
-  margin-bottom: 8px;
-}
-
 .content-item-text {
+  flex: 1;
   color: #475569;
   font-size: 14px;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
-.content-empty {
-  text-align: center;
-  padding: 40px 20px;
-  color: #94a3b8;
-  font-size: 15px;
-}
-
-/* Bouton ajouter dans le header de modale */
-.content-add-btn {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: #16a34a;
-  color: white;
-  border-radius: 50%;
-  font-size: 24px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4);
-}
-
-.content-add-btn:active {
-  transform: translateY(-50%) scale(0.95);
-}
-
-.content-modal-header {
-  position: relative;
-}
-
-/* Item éditable */
 .content-item-actions {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .content-item-btn {
@@ -1311,6 +1269,45 @@ html, body {
 
 .content-item-btn:active {
   transform: scale(0.95);
+}
+
+.content-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+/* Bouton ajouter EN BAS de la liste */
+.content-add-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px;
+  margin-top: 8px;
+  border: 2px dashed #cbd5e1;
+  background: transparent;
+  border-radius: 12px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.content-add-bottom:active {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* Ancien bouton header - masqué */
+.content-add-btn {
+  display: none;
+}
+
+.content-modal-header {
+  position: relative;
 }
 
 /* Mode édition */
@@ -5196,9 +5193,21 @@ function openStepSheet(idx) {
   
   $('btnGyg').href = AFFILIATE.gyg(cityName);
   $('btnTiqets').href = AFFILIATE.tiqets(cityName, state.lang);
-  // Stay22 - toujours visible, utilise 1 nuit minimum pour le lien
-  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
-  $('btnHotel').style.display = ''; // Toujours visible
+  
+  // Hôtels - Ouvrir la modale au lieu de Stay22 direct
+  const btnHotel = $('btnHotel');
+  btnHotel.href = '#';
+  btnHotel.style.display = '';
+  btnHotel.onclick = (e) => {
+    e.preventDefault();
+    if (typeof openHotelsModal === 'function') {
+      openHotelsModal(step, idx);
+    } else {
+      // Fallback vers Stay22 si modale non disponible
+      const stay22Url = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
+      window.open(stay22Url, '_blank');
+    }
+  };
   
   // Afficher les réservations de cette étape
   const bookingsSection = $('stepBookingsSection');
@@ -5266,20 +5275,21 @@ function openVisitsModal() {
   
   const body = $('visitsModalBody');
   if (currentStepVisits.length === 0) {
-    body.innerHTML = `<div class="content-empty">${i18n('noVisits')}<br><br><button class="content-item-save-btn" onclick="addVisit()">＋ Ajouter une visite</button></div>`;
+    body.innerHTML = `<div class="content-empty">${i18n('noVisits')}</div>
+      <button class="content-add-bottom" onclick="addVisit()">＋ Ajouter une visite</button>`;
   } else {
     body.innerHTML = currentStepVisits.map((v, idx) => {
       const text = typeof v === 'string' ? v : (v.text || v.description || v.name || '');
       return `
         <div class="content-item" id="visit-item-${idx}">
+          <div class="content-item-text">${text}</div>
           <div class="content-item-actions">
             <button class="content-item-btn edit-btn" onclick="editVisit(${idx})" title="Modifier">✏️</button>
             <button class="content-item-btn delete-btn" onclick="deleteVisit(${idx})" title="Supprimer">🗑️</button>
           </div>
-          <div class="content-item-text">${text}</div>
         </div>
       `;
-    }).join('');
+    }).join('') + `<button class="content-add-bottom" onclick="addVisit()">＋ Ajouter une visite</button>`;
   }
   
   $('visitsModal').classList.add('open');
@@ -5301,20 +5311,21 @@ function openActivitiesModal() {
   
   const body = $('activitiesModalBody');
   if (currentStepActivities.length === 0) {
-    body.innerHTML = `<div class="content-empty">${i18n('noActivities')}<br><br><button class="content-item-save-btn" onclick="addActivity()">＋ Ajouter une activité</button></div>`;
+    body.innerHTML = `<div class="content-empty">${i18n('noActivities')}</div>
+      <button class="content-add-bottom" onclick="addActivity()">＋ Ajouter une activité</button>`;
   } else {
     body.innerHTML = currentStepActivities.map((a, idx) => {
       const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
       return `
         <div class="content-item" id="activity-item-${idx}">
+          <div class="content-item-text">${text}</div>
           <div class="content-item-actions">
             <button class="content-item-btn edit-btn" onclick="editActivity(${idx})" title="Modifier">✏️</button>
             <button class="content-item-btn delete-btn" onclick="deleteActivity(${idx})" title="Supprimer">🗑️</button>
           </div>
-          <div class="content-item-text">${text}</div>
         </div>
       `;
-    }).join('');
+    }).join('') + `<button class="content-add-bottom" onclick="addActivity()">＋ Ajouter une activité</button>`;
   }
   
   $('activitiesModal').classList.add('open');
@@ -5463,11 +5474,20 @@ function adjustNights(delta) {
   $('nightsValue').textContent = step.nights;
   hasUnsavedChanges = true;
   
-  // MAJ lien hôtel - toujours visible, utilise 1 nuit minimum
-  const checkIn = new Date().toISOString().split('T')[0];
-  const campaign = `ort_mobile_step${currentStepIndex + 1}`;
-  $('btnHotel').href = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
-  $('btnHotel').style.display = ''; // Toujours visible
+  // MAJ lien hôtel - Ouvrir modale au lieu de Stay22 direct
+  const btnHotel = $('btnHotel');
+  btnHotel.href = '#';
+  btnHotel.onclick = (e) => {
+    e.preventDefault();
+    if (typeof openHotelsModal === 'function') {
+      openHotelsModal(step, currentStepIndex);
+    } else {
+      const checkIn = new Date().toISOString().split('T')[0];
+      const campaign = `ort_mobile_step${currentStepIndex + 1}`;
+      const stay22Url = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
+      window.open(stay22Url, '_blank');
+    }
+  };
   
   renderList();
   renderBookings();
@@ -6684,6 +6704,27 @@ window.addEventListener('pageshow', async function(event) {
 <script src="/js/ort-i18n-auth.js"></script>
 <script src="/js/ort-auth-modal.js"></script>
 <script src="/js/ort-auth-gate.js"></script>
+
+<!-- MODALE HÔTELS MOBILE -->
+<div id="hotelsModal" class="ort-modal">
+  <div class="hotels-modal-content">
+    <div class="hotels-modal-header">
+      <h3 id="hotelsModalTitle" class="hotels-modal-title">Meilleurs hôtels</h3>
+      <button onclick="closeHotelsModal()" class="hotels-modal-close" aria-label="Fermer">×</button>
+    </div>
+    <div id="hotelsModalContainer" class="hotels-modal-body">
+      <div class="hotels-modal-loading">Chargement...</div>
+    </div>
+    <div class="hotels-modal-footer">
+      <a id="hotelsModalChooseMap" href="#" target="_blank" rel="noopener">
+        <span>🗺️</span> <span>Choisir sur la carte</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="/js/ort-hotels.js"></script>
+<link rel="stylesheet" href="/css/ort-hotels.css">
 
 </body>
 </html>

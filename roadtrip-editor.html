@@ -2884,6 +2884,21 @@
                         <span class="day-badge">${t('day')} ${idx + 1}</span>
                         <h2 class="step-title" contenteditable="true" data-step="${idx}" data-field="name">${esc(step.name)}</h2>
                         
+                        <!-- Carousel hôtels -->
+                        <div id="hotels-step-${idx}" class="hotels-section-editor"></div>
+                        <script>
+                        (function() {
+                            if (typeof ORT_HOTELS !== 'undefined' && window.loadedHotelsForEditor !== true) {
+                                const step = ${JSON.stringify({ place_id: step.place_id, name: step.name, coords: step.coords || null, lat: step.lat || null, lon: step.lon || null })};
+                                ORT_HOTELS.loadHotelsForPlace(step.place_id).then(placeData => {
+                                    if (placeData && placeData.hotels && placeData.hotels.length > 0) {
+                                        ORT_HOTELS.renderHotelsCarousel(placeData.hotels, step.name, step.coords || [step.lat, step.lon], 'hotels-step-${idx}');
+                                    }
+                                }).catch(err => console.log('[EDITOR-HOTELS] Erreur:', err));
+                            }
+                        })();
+                        </script>
+                        
                         ${visitsPage1.length > 0 ? `
                             <div class="section-block">
                                 <div class="section-title">🔍 ${t('toDiscover')}</div>
@@ -3356,6 +3371,10 @@
         }
     })();
     </script>
+
+<!-- SCRIPTS HÔTELS -->
+<script src="/js/ort-hotels.js"></script>
+<link rel="stylesheet" href="/css/ort-hotels.css">
 
 </body>
 </html>

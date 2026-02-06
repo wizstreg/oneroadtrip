@@ -1,48 +1,68 @@
 /**
  * ORT-AUTH-MODAL.js
- * Modal d'authentification multilingue pour OneRoadTrip
+ * Modal d'authentification multilingue pour Vision Photo
  * Utilise Firebase Auth + ort-i18n-auth.js
  */
 
 class OrtAuthModal {
   constructor() {
     this.mode = 'login'; // 'login' ou 'signup'
-    this.lang = this.getLang();
+    this.lang = window.ORT_I18N_AUTH?.detectLang?.() || 'fr';
+    this.i18n = window.ORT_I18N_AUTH?.get?.(this.lang) || {};
     this.firebase = null;
   }
 
-  // Détecter la langue
-  getLang() {
-    if (window.ORT_AUTH_I18N?.getLang) {
-      return window.ORT_AUTH_I18N.getLang();
-    }
-    const urlLang = new URLSearchParams(location.search).get('lang');
-    const storedLang = localStorage.getItem('ort_lang');
-    const browserLang = navigator.language?.slice(0, 2);
-    return urlLang || storedLang || browserLang || 'fr';
-  }
-
-  // Obtenir traductions
-  t(key) {
-    if (window.ORT_AUTH_I18N?.t) {
-      return window.ORT_AUTH_I18N.t(key);
-    }
-    // Fallback minimal en français
-    const fallback = {
-      loginTitle: 'Connexion',
-      signupTitle: 'Créer un compte',
-      email: 'E-mail',
-      password: 'Mot de passe',
-      confirmPassword: 'Confirmer le mot de passe',
-      create: 'Créer mon compte',
-      validate: 'Se connecter',
-      errFillFields: 'Veuillez remplir tous les champs'
-    };
-    return fallback[key] || key;
-  }
-
   // ===== INIT =====
-  async init() {
+  async init(firebaseConfig) {
+    // Attendre ORT_I18N_AUTH - 10 secondes max
+    for (let i = 0; i < 100; i++) {
+      if (window.ORT_I18N_AUTH?.get) {
+        this.lang = window.ORT_I18N_AUTH.detectLang();
+        this.i18n = window.ORT_I18N_AUTH.get(this.lang);
+        console.log('[AUTH-MODAL] ✅ i18n chargé:', this.lang);
+        break;
+      }
+      await new Promise(r => setTimeout(r, 100));
+    }
+    
+    if (!this.i18n || Object.keys(this.i18n).length === 0) {
+      console.warn('[AUTH-MODAL] ⚠️ i18n non chargé, utilisation du fallback français');
+      // Fallback français COMPLET
+      this.i18n = {
+        loginTitle: 'Connexion',
+        signupTitle: 'Créer un compte',
+        email: 'Email',
+        password: 'Mot de passe',
+        confirmPassword: 'Confirmer le mot de passe',
+        validate: 'Valider',
+        create: 'Créer mon compte',
+        login: 'Se connecter',
+        createAccount: 'Créer un compte',
+        alreadyHaveAccount: 'Déjà un compte ?',
+        noAccountYet: 'Pas encore de compte ?',
+        acceptCgu: "J'accepte les",
+        cguLink: 'CGU',
+        errGeneric: 'Erreur lors de la connexion',
+        errInvalidEmail: 'Email invalide',
+        errWrongPassword: 'Mot de passe incorrect',
+        errUserNotFound: 'Utilisateur introuvable',
+        errEmailInUse: 'Cet email est déjà utilisé',
+        errWeakPassword: 'Mot de passe trop faible (minimum 6 caractères)',
+        errPasswordMismatch: 'Les mots de passe ne correspondent pas',
+        errCguNotAccepted: 'Vous devez accepter les CGU',
+        errFillFields: 'Veuillez remplir tous les champs',
+        errPasswordTooShort: 'Le mot de passe doit contenir au moins 6 caractères',
+        errAcceptCgu: 'Vous devez accepter les CGU',
+        errTooManyRequests: 'Trop de tentatives. Réessayez plus tard.',
+        errNetworkError: 'Erreur réseau. Vérifiez votre connexion.',
+        errPopupBlocked: 'Pop-up bloquée par le navigateur',
+        msgVerificationSent: 'Email de vérification envoyé à {email}',
+        msgLoginSuccess: 'Connexion réussie !',
+        showPassword: 'Afficher',
+        hidePassword: 'Masquer'
+      };
+    }
+    
     // Attendre Firebase
     for (let i = 0; i < 20; i++) {
       if (window.firebase?.apps?.length) {
@@ -53,27 +73,33 @@ class OrtAuthModal {
     }
 
     if (!this.firebase) {
-      console.error('[ORT-AUTH-MODAL] Firebase non initialisé après timeout');
+      console.error('[AUTH-MODAL] Firebase non initialisé après timeout');
       return false;
     }
 
     this.createHTML();
     this.attachEvents();
-    console.log('[ORT-AUTH-MODAL] ✅ Initialisé');
     return true;
   }
 
   // ===== CREATE HTML =====
   createHTML() {
+    // Vérifier si la modale existe déjà
+    const existing = document.getElementById('authModalOverlay');
+    if (existing) {
+      console.log('[AUTH-MODAL] Modale déjà présente, réutilisation');
+      return;
+    }
+    
     const html = `
-      <div id="authModalOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:10000;padding:20px;">
+      <div id="authModalOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;padding:20px;">
         <div id="authModal" style="background:white;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.2);width:100%;max-width:400px;padding:32px;position:relative;">
           
           <!-- Close button -->
-          <button id="authModalClose" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;cursor:pointer;color:#999;line-height:1;">✕</button>
+          <button id="authModalClose" style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;cursor:pointer;color:#999;">✕</button>
           
           <!-- Title -->
-          <h2 id="authTitle" style="margin:0 0 24px;text-align:center;font-size:1.5rem;color:#333;font-weight:700;"></h2>
+          <h2 id="authTitle" style="margin:0 0 24px;text-align:center;font-size:1.5rem;color:#333;"></h2>
           
           <!-- Form -->
           <form id="authForm" style="display:flex;flex-direction:column;gap:16px;">
@@ -81,19 +107,25 @@ class OrtAuthModal {
             <!-- Email -->
             <div>
               <label style="display:block;margin-bottom:6px;font-weight:500;color:#333;font-size:0.9rem;" id="labelEmail"></label>
-              <input type="email" id="authEmail" placeholder="user@example.com" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
+              <input type="email" id="authEmail" placeholder="user@example.com" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
             </div>
             
             <!-- Password -->
             <div>
               <label style="display:block;margin-bottom:6px;font-weight:500;color:#333;font-size:0.9rem;" id="labelPassword"></label>
-              <input type="password" id="authPassword" placeholder="••••••" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
+              <div style="position:relative;">
+                <input type="password" id="authPassword" placeholder="••••••" autocomplete="current-password" style="width:100%;padding:10px 40px 10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
+                <button type="button" id="togglePassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#666;cursor:pointer;font-size:0.85rem;padding:4px 8px;">👁️</button>
+              </div>
             </div>
             
             <!-- Confirm Password (signup only) -->
             <div id="confirmPasswordDiv" style="display:none;">
               <label style="display:block;margin-bottom:6px;font-weight:500;color:#333;font-size:0.9rem;" id="labelConfirmPassword"></label>
-              <input type="password" id="authConfirmPassword" placeholder="••••••" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
+              <div style="position:relative;">
+                <input type="password" id="authConfirmPassword" placeholder="••••••" autocomplete="new-password" style="width:100%;padding:10px 40px 10px 12px;border:1px solid #ddd;border-radius:6px;font-size:1rem;box-sizing:border-box;">
+                <button type="button" id="toggleConfirmPassword" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:#666;cursor:pointer;font-size:0.85rem;padding:4px 8px;">👁️</button>
+              </div>
             </div>
             
             <!-- CGU (signup only) -->
@@ -114,7 +146,7 @@ class OrtAuthModal {
           <!-- Mode toggle -->
           <div style="text-align:center;margin-top:20px;font-size:0.9rem;color:#666;">
             <span id="modeToggleText"></span>
-            <button id="authModeToggle" type="button" style="background:none;border:none;color:#2196f3;cursor:pointer;font-weight:600;text-decoration:underline;margin-left:4px;"></button>
+            <button id="authModeToggle" style="background:none;border:none;color:#2196f3;cursor:pointer;font-weight:600;text-decoration:underline;margin-left:4px;"></button>
           </div>
           
         </div>
@@ -130,13 +162,38 @@ class OrtAuthModal {
     const closeBtn = document.getElementById('authModalClose');
     const toggleBtn = document.getElementById('authModeToggle');
     const overlayEl = document.getElementById('authModalOverlay');
+    const togglePasswordBtn = document.getElementById('togglePassword');
+    const toggleConfirmPasswordBtn = document.getElementById('toggleConfirmPassword');
 
-    if (formEl) formEl.addEventListener('submit', (e) => this.handleSubmit(e));
-    if (closeBtn) closeBtn.addEventListener('click', () => this.close());
-    if (toggleBtn) toggleBtn.addEventListener('click', () => this.toggleMode());
-    if (overlayEl) {
-      overlayEl.addEventListener('click', (e) => {
-        if (e.target === overlayEl) this.close();
+    if (!formEl || !closeBtn || !toggleBtn || !overlayEl) {
+      console.error('[AUTH-MODAL] Éléments manquants:', { formEl: !!formEl, closeBtn: !!closeBtn, toggleBtn: !!toggleBtn, overlayEl: !!overlayEl });
+      return;
+    }
+
+    formEl.addEventListener('submit', (e) => this.handleSubmit(e));
+    closeBtn.addEventListener('click', () => this.close());
+    toggleBtn.addEventListener('click', () => this.toggleMode());
+    overlayEl.addEventListener('click', (e) => {
+      if (e.target === overlayEl) this.close();
+    });
+
+    // Toggle password visibility
+    if (togglePasswordBtn) {
+      togglePasswordBtn.addEventListener('click', () => {
+        const pwdInput = document.getElementById('authPassword');
+        const isPassword = pwdInput.type === 'password';
+        pwdInput.type = isPassword ? 'text' : 'password';
+        togglePasswordBtn.textContent = isPassword ? '🙈' : '👁️';
+      });
+    }
+
+    // Toggle confirm password visibility
+    if (toggleConfirmPasswordBtn) {
+      toggleConfirmPasswordBtn.addEventListener('click', () => {
+        const pwdInput = document.getElementById('authConfirmPassword');
+        const isPassword = pwdInput.type === 'password';
+        pwdInput.type = isPassword ? 'text' : 'password';
+        toggleConfirmPasswordBtn.textContent = isPassword ? '🙈' : '👁️';
       });
     }
 
@@ -146,53 +203,47 @@ class OrtAuthModal {
   // ===== UPDATE UI =====
   updateUI() {
     const isSignup = this.mode === 'signup';
+    const t = this.i18n;
 
     // Title
-    const authTitle = document.getElementById('authTitle');
-    if (authTitle) authTitle.textContent = isSignup ? this.t('signupTitle') : this.t('loginTitle');
+    document.getElementById('authTitle').textContent = isSignup ? t.signupTitle : t.loginTitle;
 
     // Labels
-    const labelEmail = document.getElementById('labelEmail');
-    const labelPassword = document.getElementById('labelPassword');
-    const labelConfirmPassword = document.getElementById('labelConfirmPassword');
-    
-    if (labelEmail) labelEmail.textContent = this.t('email');
-    if (labelPassword) labelPassword.textContent = this.t('password');
-    if (labelConfirmPassword) labelConfirmPassword.textContent = this.t('confirmPassword');
+    document.getElementById('labelEmail').textContent = t.email;
+    document.getElementById('labelPassword').textContent = t.password;
+    document.getElementById('labelConfirmPassword').textContent = t.confirmPassword;
 
     // CGU
     const cguDiv = document.getElementById('cguDiv');
-    if (cguDiv) {
-      cguDiv.style.display = isSignup ? 'block' : 'none';
-      if (isSignup) {
-        const cguText = document.getElementById('cguText');
-        if (cguText) {
-          cguText.innerHTML = `${this.t('acceptCgu')} <a href="/cgu-${this.lang}.html" target="_blank" style="color:#2196f3;text-decoration:underline;">${this.t('cguLink')}</a>`;
-        }
-      }
+    cguDiv.style.display = isSignup ? 'block' : 'none';
+    if (isSignup) {
+      document.getElementById('cguText').innerHTML = `${t.acceptCgu} <a href="/cgu-${this.lang}.html" target="_blank" style="color:#2196f3;text-decoration:underline;">${t.cguLink}</a>`;
     }
 
     // Confirm password
-    const confirmPasswordDiv = document.getElementById('confirmPasswordDiv');
-    if (confirmPasswordDiv) confirmPasswordDiv.style.display = isSignup ? 'block' : 'none';
+    document.getElementById('confirmPasswordDiv').style.display = isSignup ? 'block' : 'none';
 
     // Submit button
-    const authSubmit = document.getElementById('authSubmit');
-    if (authSubmit) authSubmit.textContent = isSignup ? this.t('create') : this.t('validate');
+    document.getElementById('authSubmit').textContent = isSignup ? t.create : t.validate;
 
     // Mode toggle
-    const modeToggleText = document.getElementById('modeToggleText');
-    const authModeToggle = document.getElementById('authModeToggle');
-    
-    if (modeToggleText) modeToggleText.textContent = isSignup ? this.t('alreadyHaveAccount') : this.t('noAccountYet');
-    if (authModeToggle) authModeToggle.textContent = isSignup ? this.t('login') : this.t('createAccount');
+    document.getElementById('modeToggleText').textContent = isSignup ? t.alreadyHaveAccount : t.noAccountYet;
+    document.getElementById('authModeToggle').textContent = isSignup ? t.login : t.createAccount;
 
     // Clear form
-    const authForm = document.getElementById('authForm');
-    if (authForm) authForm.reset();
+    document.getElementById('authForm').reset();
+    document.getElementById('authError').style.display = 'none';
     
-    const authError = document.getElementById('authError');
-    if (authError) authError.style.display = 'none';
+    // Reset password visibility toggles
+    const pwdInput = document.getElementById('authPassword');
+    const confirmPwdInput = document.getElementById('authConfirmPassword');
+    const togglePwdBtn = document.getElementById('togglePassword');
+    const toggleConfirmPwdBtn = document.getElementById('toggleConfirmPassword');
+    
+    if (pwdInput) pwdInput.type = 'password';
+    if (confirmPwdInput) confirmPwdInput.type = 'password';
+    if (togglePwdBtn) togglePwdBtn.textContent = '👁️';
+    if (toggleConfirmPwdBtn) toggleConfirmPwdBtn.textContent = '👁️';
   }
 
   // ===== TOGGLE MODE =====
@@ -205,84 +256,86 @@ class OrtAuthModal {
   async handleSubmit(e) {
     e.preventDefault();
 
-    const emailEl = document.getElementById('authEmail');
-    const passwordEl = document.getElementById('authPassword');
-    const confirmPasswordEl = document.getElementById('authConfirmPassword');
-    const cguEl = document.getElementById('authCgu');
-
-    if (!emailEl || !passwordEl) return;
-
-    const email = emailEl.value.trim();
-    const password = passwordEl.value;
-    const confirmPassword = confirmPasswordEl ? confirmPasswordEl.value : '';
-    const cguAccepted = cguEl ? cguEl.checked : false;
+    const email = document.getElementById('authEmail').value.trim().toLowerCase();
+    const password = document.getElementById('authPassword').value;
+    const confirmPassword = document.getElementById('authConfirmPassword').value;
+    const cguAccepted = document.getElementById('authCgu').checked;
+    const t = this.i18n;
 
     // Validation
     if (!email || !password) {
-      this.showError(this.t('errFillFields'));
+      this.showError('Veuillez remplir tous les champs');
       return;
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      this.showError(this.t('errInvalidEmail'));
+      this.showError('Email invalide');
       return;
     }
 
     if (password.length < 6) {
-      this.showError(this.t('errPasswordTooShort'));
+      this.showError('Mot de passe trop court (minimum 6 caractères)');
       return;
     }
 
     if (this.mode === 'signup') {
       if (password !== confirmPassword) {
-        this.showError(this.t('errPasswordMismatch'));
+        this.showError('Les mots de passe ne correspondent pas');
         return;
       }
       if (!cguAccepted) {
-        this.showError(this.t('errAcceptCgu'));
+        this.showError('Vous devez accepter les CGU');
         return;
       }
     }
 
-    // Auth
+    // Firebase auth
     try {
-      const auth = this.firebase.auth();
-
       if (this.mode === 'signup') {
-        await auth.createUserWithEmailAndPassword(email, password);
-        await auth.currentUser.sendEmailVerification();
-        this.showSuccess(this.t('msgVerificationSent').replace('{email}', email));
-        setTimeout(() => this.close(), 2000);
+        await this.firebase.auth().createUserWithEmailAndPassword(email, password);
+        await this.firebase.auth().currentUser.sendEmailVerification();
+        this.showSuccess('Compte créé ! Email de vérification envoyé.');
+        setTimeout(() => this.close(), 1500);
       } else {
-        await auth.signInWithEmailAndPassword(email, password);
-        this.showSuccess(this.t('msgLoginSuccess'));
-        setTimeout(() => this.close(), 1000);
+        await this.firebase.auth().signInWithEmailAndPassword(email, password);
+        this.showSuccess('Connexion réussie !');
+        setTimeout(() => this.close(), 800);
       }
     } catch (err) {
-      this.showError(this.mapFirebaseError(err.code));
+      let msg = 'Erreur : ' + err.message;
+      if (err.code === 'auth/email-already-in-use') msg = 'Cet email est déjà utilisé';
+      if (err.code === 'auth/user-not-found') msg = 'Utilisateur introuvable';
+      if (err.code === 'auth/wrong-password') msg = 'Mot de passe incorrect';
+      if (err.code === 'auth/invalid-credential') msg = 'Email ou mot de passe incorrect';
+      this.showError(msg);
     }
   }
 
   // ===== MAP FIREBASE ERRORS =====
   mapFirebaseError(code) {
+    const t = this.i18n;
     const map = {
-      'auth/user-not-found': 'errUserNotFound',
-      'auth/wrong-password': 'errWrongPassword',
-      'auth/email-already-in-use': 'errEmailInUse',
-      'auth/weak-password': 'errWeakPassword',
-      'auth/too-many-requests': 'errTooManyRequests',
-      'auth/network-request-failed': 'errNetworkError',
-      'auth/popup-blocked': 'errPopupBlocked',
+      'auth/user-not-found': t.errUserNotFound || 'Utilisateur introuvable',
+      'auth/wrong-password': t.errWrongPassword || 'Mot de passe incorrect',
+      'auth/email-already-in-use': t.errEmailInUse || 'Cet email est déjà utilisé',
+      'auth/weak-password': t.errWeakPassword || 'Mot de passe trop faible (minimum 6 caractères)',
+      'auth/invalid-email': t.errInvalidEmail || 'Email invalide',
+      'auth/too-many-requests': t.errTooManyRequests || 'Trop de tentatives. Réessayez plus tard.',
+      'auth/network-request-failed': t.errNetworkError || 'Erreur réseau. Vérifiez votre connexion.',
+      'auth/popup-blocked': t.errPopupBlocked || 'Pop-up bloquée par le navigateur',
+      'auth/missing-password': 'Le mot de passe est requis',
+      'auth/invalid-credential': t.errWrongPassword || 'Email ou mot de passe incorrect'
     };
-    const key = map[code] || 'errGeneric';
-    return this.t(key);
+    return map[code] || `${t.errGeneric || 'Erreur'} (${code})`;
   }
 
   // ===== SHOW ERROR =====
   showError(msg) {
     const errorDiv = document.getElementById('authError');
-    if (!errorDiv) return;
-    
+    if (!errorDiv) {
+      console.error('[AUTH-MODAL] Element #authError introuvable');
+      return;
+    }
     errorDiv.textContent = msg;
     errorDiv.style.display = 'block';
     errorDiv.style.background = '#fee';
@@ -292,8 +345,10 @@ class OrtAuthModal {
   // ===== SHOW SUCCESS =====
   showSuccess(msg) {
     const errorDiv = document.getElementById('authError');
-    if (!errorDiv) return;
-    
+    if (!errorDiv) {
+      console.error('[AUTH-MODAL] Element #authError introuvable');
+      return;
+    }
     errorDiv.textContent = msg;
     errorDiv.style.display = 'block';
     errorDiv.style.background = '#efe';
@@ -303,16 +358,21 @@ class OrtAuthModal {
   // ===== CLOSE =====
   close() {
     const overlay = document.getElementById('authModalOverlay');
-    if (overlay) overlay.remove();
+    if (overlay) {
+      overlay.style.opacity = '0';
+      setTimeout(() => overlay.remove(), 300);
+    }
   }
 
   // ===== SHOW =====
   show() {
     const overlay = document.getElementById('authModalOverlay');
-    if (overlay) overlay.style.display = 'flex';
+    if (overlay) {
+      overlay.style.display = 'flex';
+      overlay.style.opacity = '1';
+    }
   }
 }
 
 // Export
 window.OrtAuthModal = OrtAuthModal;
-console.log('[ORT-AUTH-MODAL] ✅ Classe chargée');

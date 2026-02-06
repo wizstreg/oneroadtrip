@@ -1858,19 +1858,6 @@ document.head.appendChild(style);
 })();
 </script>
 
-<!-- Stay22 Affiliate Script -->
-<script>
-  (function (s, t, a, y, twenty, two) {
-    s.Stay22 = s.Stay22 || {};
-    s.Stay22.params = { lmaID: '692f0c75b2478d16bb9b22fa' };
-    twenty = t.createElement(a);
-    two = t.getElementsByTagName(a)[0];
-    twenty.async = 1;
-    twenty.src = y;
-    two.parentNode.insertBefore(twenty, two);
-  })(window, document, 'script', 'https://scripts.stay22.com/letmeallez.js');
-</script>
-
 <!-- Flatpickr date picker i18n -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
@@ -6162,11 +6149,28 @@ row.appendChild(place);
   
   if (nights > 0 && stay22Url) {
     hotelCell.innerHTML = `
-      <a href="${stay22Url}" target="_blank" rel="noopener" 
-         class="btn" style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;padding:8px 12px;background:#113f7a;border-color:#113f7a;text-decoration:none;border-radius:8px;color:#fff"
+      <button class="btn btn-hotel-modal" data-step-idx="${idx}"
+         style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;padding:8px 12px;background:#113f7a;border:none;border-radius:8px;color:#fff;cursor:pointer"
          title="${tSearchHotel} ${cityName}">
         🏨 ${tChoose}
-      </a>`;
+      </button>`;
+    
+    // Attacher l'événement pour ouvrir la modale hôtels
+    setTimeout(() => {
+      const btn = hotelCell.querySelector('.btn-hotel-modal');
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (typeof openHotelsModal === 'function') {
+            openHotelsModal(hotelStep, idx);
+          } else {
+            console.warn('[HOTELS] openHotelsModal non disponible, fallback Stay22');
+            window.open(stay22Url, '_blank');
+          }
+        });
+      }
+    }, 0);
   } else if (nights > 0) {
     // Pas de coords → ne rien afficher
     hotelCell.innerHTML = ``;
@@ -9498,7 +9502,30 @@ document.addEventListener('keydown', function(e) {
 
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-auth-modal.js"></script>
 <script src="/js/ort-auth-gate.js"></script>
+
+<!-- MODALE HÔTELS -->
+<div id="hotelsModal" class="ort-modal">
+  <div class="hotels-modal-content">
+    <div class="hotels-modal-header">
+      <h3 id="hotelsModalTitle" class="hotels-modal-title">Meilleurs hôtels</h3>
+      <button onclick="closeHotelsModal()" class="hotels-modal-close" aria-label="Fermer">×</button>
+    </div>
+    <div id="hotelsModalContainer" class="hotels-modal-body">
+      <div class="hotels-modal-loading">Chargement des hôtels...</div>
+    </div>
+    <div class="hotels-modal-footer">
+      <a id="hotelsModalChooseMap" href="#" target="_blank" rel="noopener" class="hotels-modal-choose-btn">
+        <span class="hotel-choose-icon">🗺️</span>
+        <span>Choisir sur la carte</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="/js/ort-hotels.js"></script>
+<link rel="stylesheet" href="/css/ort-hotels.css">
 
 </body>
 </html>

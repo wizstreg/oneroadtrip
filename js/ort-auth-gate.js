@@ -243,28 +243,30 @@
 
   // Ouvrir la modale email avec OrtAuthModal
   async function openEmailModal(mode) {
-    // Attendre que OrtAuthModal soit disponible
+    // Attendre que OrtAuthModal soit disponible - 10 secondes max
     let attempts = 0;
-    while (typeof OrtAuthModal === 'undefined' && attempts < 20) {
+    while (typeof OrtAuthModal === 'undefined' && attempts < 100) {
       await new Promise(r => setTimeout(r, 100));
       attempts++;
     }
     
     if (typeof OrtAuthModal === 'undefined') {
-      console.error('[ORT-AUTH-GATE] OrtAuthModal non disponible après timeout');
-      alert('Erreur: Module d\'authentification non chargé');
+      console.error('[ORT-AUTH-GATE] OrtAuthModal non disponible après 10s timeout');
+      alert('Erreur: Module d\'authentification non chargé. Veuillez recharger la page.');
       return;
     }
     
     // Créer l'instance si nécessaire
     if (!authModal) {
+      console.log('[ORT-AUTH-GATE] Création de l\'instance OrtAuthModal...');
       authModal = new OrtAuthModal();
       const initialized = await authModal.init();
       if (!initialized) {
         console.error('[ORT-AUTH-GATE] Échec de l\'initialisation de OrtAuthModal');
-        alert('Erreur: Impossible d\'initialiser l\'authentification');
+        alert('Erreur: Impossible d\'initialiser l\'authentification. Veuillez recharger la page.');
         return;
       }
+      console.log('[ORT-AUTH-GATE] ✅ OrtAuthModal initialisé');
     }
     
     // Configurer le mode (login ou signup)

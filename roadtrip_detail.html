@@ -2348,19 +2348,6 @@ if (typeof t !== 'function') {
 <!-- Share module - DOIT être chargé tôt pour checkSharedAccess et showModal -->
 <script src="./js/ort-share.js"></script>
 
-<!-- Stay22 Integration -->
-<script>
-  (function (s, t, a, y, twenty, two) {
-    s.Stay22 = s.Stay22 || {};
-    s.Stay22.params = { lmaID: '692f0c75b2478d16bb9b22fa' };
-    twenty = t.createElement(a);
-    two = t.getElementsByTagName(a)[0];
-    twenty.async = 1;
-    twenty.src = y;
-    two.parentNode.insertBefore(twenty, two);
-  })(window, document, 'script', 'https://scripts.stay22.com/letmeallez.js');
-</script>
-
 <!-- Module réservations -->
 <script src="bookings-module.js"></script>
 <style id="bookings-modal-styles"></style>
@@ -6139,14 +6126,19 @@ dateCell.style.textAlign='left';
           🏨 ${t('chooseHotel').split(' ')[0]}
         </button>`;
       
-      // Handler pour ouvrir la carte
+      // Handler pour ouvrir la modale hôtels
       setTimeout(() => {
         const btn = hotel.querySelector('.btn-hotel-choose');
         if (btn) {
           btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            openStay22MapForStep(step, idx);
+            // Ouvrir la modale hôtels
+            if (typeof openHotelsModal === 'function') {
+              openHotelsModal(step, idx);
+            } else {
+              console.warn('[HOTELS] openHotelsModal non disponible');
+            }
           });
         }
       }, 0);
@@ -6700,163 +6692,6 @@ const BUDGET_TO_PRICE = {
   'budget_300_500': { min: 300, max: 500 },
   'budget_500plus': { min: 500, max: null }
 };
-
-function getStay22PriceRange() {
-  try {
-    const budgetStr = localStorage.getItem('ort.budget');
-    if (!budgetStr) return { min: 50, max: 150 }; // défaut
-    
-    const budgets = JSON.parse(budgetStr);
-    if (!Array.isArray(budgets) || budgets.length === 0) return { min: 50, max: 150 };
-    
-    // Extraire les prix de toutes les tranches sélectionnées
-    const allPrices = [];
-    budgets.forEach(b => {
-      const range = BUDGET_TO_PRICE[b];
-      if (range) {
-        allPrices.push(range.min);
-        if (range.max) allPrices.push(range.max);
-      }
-    });
-    
-    if (allPrices.length === 0) return { min: 50, max: 150 };
-    
-    // Prendre min global et max global
-    const min = Math.min(...allPrices);
-    const max = Math.max(...allPrices.filter(p => p !== null));
-    
-    return { min, max: max || null };
-  } catch (e) {
-    console.warn('[STAY22] Erreur lecture budget:', e);
-    return { min: 50, max: 150 };
-  }
-}
-
-// >>> EXTERNALISÉ dans /js/ort-trip-calc.js <<<
-/*
-function getStay22CheckinDate(stepIdx) {
-  // Récupérer la date depuis l'input OU state.startDateStr
-  let startStr = (state.startDateStr || '').trim();
-  
-  // Fallback: lire directement depuis l'input si state pas à jour
-  const dateInput = document.getElementById('rtStartDate');
-  if (dateInput && dateInput.value) {
-    startStr = dateInput.value;
-  }
-  
-  if (!startStr) return null;
-  
-  try {
-    // Calculer le nombre de jours avant cette étape
-    let daysOffset = 0;
-    for (let i = 0; i < stepIdx; i++) {
-      daysOffset += Number(state.steps[i].nights || 0);
-    }
-    
-    const startDate = new Date(startStr);
-    startDate.setDate(startDate.getDate() + daysOffset);
-    
-    // Format YYYY-MM-DD
-    return startDate.toISOString().split('T')[0];
-  } catch (e) {
-    return null;
-  }
-}
-*/
-
-function generateStay22Url(step, idx) {
-  if (!step.lat || !step.lon) return null;
-  
-  const itinId = (state._originalItinId || ITIN_ID || 'unknown').replace(/::/g, '_');
-  const campaign = `ort_${itinId}_step${idx + 1}`;
-  
-  const priceRange = getStay22PriceRange();
-  const checkin = getStay22CheckinDate(idx);
-  
-  const params = new URLSearchParams({
-    aid: STAY22_CONFIG.aid,
-    lat: step.lat,
-    lng: step.lon,
-    campaign: campaign
-  });
-  
-  if (priceRange.min !== undefined) params.set('price_min', priceRange.min);
-  if (priceRange.max) params.set('price_max', priceRange.max);
-  if (checkin) params.set('checkin', checkin);
-  
-  return `${STAY22_CONFIG.baseUrlAllez}?${params.toString()}`;
-}
-
-function generateStay22MapUrl() {
-  // Centre de l'itinéraire
-  const pts = (state.steps || []).filter(s => s.lat && s.lon);
-  if (pts.length === 0) return null;
-  
-  const centerLat = pts.reduce((sum, p) => sum + p.lat, 0) / pts.length;
-  const centerLng = pts.reduce((sum, p) => sum + p.lon, 0) / pts.length;
-  
-  const itinId = (state._originalItinId || ITIN_ID || 'unknown').replace(/::/g, '_');
-  const campaign = `ort_${itinId}_map`;
-  
-  const params = new URLSearchParams({
-    aid: STAY22_CONFIG.aid,
-    lat: centerLat.toFixed(6),
-    lng: centerLng.toFixed(6),
-    campaign: campaign,
-    maincolor: STAY22_CONFIG.maincolor
-  });
-  
-  // Titre de l'itinéraire comme nom du lieu
-  if (state.title) params.set('venue', state.title);
-  
-  return `${STAY22_CONFIG.baseUrlMap}?${params.toString()}`;
-}
-
-function openStay22Map() {
-  const url = generateStay22MapUrl();
-  if (!url) {
-    toast('❌ Aucune étape avec coordonnées');
-    return;
-  }
-  
-  // Ouvrir en plein écran (nouvel onglet)
-  window.open(url, '_blank');
-}
-
-// Ouvrir la carte Stay22 centrée sur une étape spécifique
-function openStay22MapForStep(step, idx) {
-  if (!step.lat || !step.lon) {
-    toast('❌ Coordonnées manquantes');
-    return;
-  }
-  
-  const itinId = (state._originalItinId || ITIN_ID || 'unknown').replace(/::/g, '_');
-  const campaign = `ort_${itinId}_step${idx + 1}`;
-  const checkin = getStay22CheckinDate(idx);
-  const checkout = checkin ? (() => {
-    const d = new Date(checkin);
-    d.setDate(d.getDate() + Math.max(1, Number(step.nights || 1)));
-    return d.toISOString().split('T')[0];
-  })() : null;
-  
-  const params = new URLSearchParams({
-    aid: STAY22_CONFIG.aid,
-    lat: step.lat,
-    lng: step.lon,
-    campaign: campaign,
-    maincolor: STAY22_CONFIG.maincolor
-  });
-  
-  // Nom du lieu pour le titre de la carte
-  if (step.name) params.set('venue', step.name);
-  if (checkin) params.set('checkin', checkin);
-  if (checkout) params.set('checkout', checkout);
-  
-  const url = `${STAY22_CONFIG.baseUrlMap}?${params.toString()}`;
-  
-  // Ouvrir en plein écran (nouvel onglet)
-  window.open(url, '_blank');
-}
 
 function trLabel(lang, key){
   lang = (lang||'fr').slice(0,2).toLowerCase();
@@ -13065,6 +12900,36 @@ if (mapPopup) {
 
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-auth-modal.js"></script>
 <script src="/js/ort-auth-gate.js"></script>
+<!-- MODALE HÔTELS - À ajouter avant la fermeture de </body> -->
+
+<div id="hotelsModal" class="ort-modal">
+  <div class="hotels-modal-content">
+    <!-- Header -->
+    <div class="hotels-modal-header">
+      <h3 id="hotelsModalTitle" class="hotels-modal-title">Meilleurs hôtels</h3>
+      <button onclick="closeHotelsModal()" class="hotels-modal-close" aria-label="Fermer">×</button>
+    </div>
+    
+    <!-- Body: Liste des hôtels -->
+    <div id="hotelsModalContainer" class="hotels-modal-body">
+      <div class="hotels-modal-loading">Chargement des hôtels...</div>
+    </div>
+    
+    <!-- Footer: Bouton "Choisir sur la carte" -->
+    <div class="hotels-modal-footer">
+      <a id="hotelsModalChooseMap" href="#" target="_blank" rel="noopener" class="hotels-modal-choose-btn">
+        <span class="hotel-choose-icon">🗺️</span>
+        <span>Choisir sur la carte</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SCRIPTS HÔTELS -->
+<script src="/js/ort-hotels.js"></script>
+<link rel="stylesheet" href="/css/ort-hotels.css">
+
 </body>
 </html>
