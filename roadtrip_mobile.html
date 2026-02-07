@@ -5521,6 +5521,12 @@ function deleteCurrentStep() {
   const step = state.steps[currentStepIndex];
   if (!confirm(`Supprimer "${step.name}" ?`)) return;
   
+  if (typeof globalBookingManager !== 'undefined' && globalBookingManager && globalBookingManager.reindexAfterDelete) {
+    globalBookingManager.reindexAfterDelete(currentStepIndex);
+  }
+  if (window.ORT_TRIP_DATA && ORT_TRIP_DATA.reindexAfterDelete) {
+    ORT_TRIP_DATA.reindexAfterDelete(currentStepIndex);
+  }
   state.steps.splice(currentStepIndex, 1);
   hasUnsavedChanges = true;
   closeAllSheets();

@@ -716,6 +716,61 @@
     saveTimer = null;
   }
 
+  // ===== REINDEX APRÈS SUPPRESSION/INSERTION D'ÉTAPE =====
+
+  /**
+   * Recale les stepIndex/stepIndexes dans les bookings après suppression d'une étape.
+   * Les bookings dans tripData.steps[] suivent automatiquement le splice du tableau steps,
+   * mais les champs stepIndex/stepIndexes internes aux objets booking doivent être mis à jour
+   * pour rester cohérents avec Firestore.
+   * @param {number} deletedIdx - Index de l'étape supprimée
+   */
+  function reindexAfterDelete(deletedIdx) {
+    if (!tripData?.steps) return;
+    
+    tripData.steps.forEach((step) => {
+      if (step.bookings && Array.isArray(step.bookings)) {
+        step.bookings.forEach(booking => {
+          if (typeof booking.stepIndex === 'number') {
+            if (booking.stepIndex > deletedIdx) booking.stepIndex--;
+          }
+          if (Array.isArray(booking.stepIndexes)) {
+            booking.stepIndexes = booking.stepIndexes
+              .filter(i => i !== deletedIdx)
+              .map(i => i > deletedIdx ? i - 1 : i);
+          }
+        });
+      }
+    });
+    
+    pendingChanges = true;
+    console.log('🔄 [TRIP-DATA] Reindex bookings après suppression étape', deletedIdx);
+  }
+
+  /**
+   * Recale les stepIndex/stepIndexes après insertion d'une étape
+   * @param {number} insertedIdx - Index où l'étape a été insérée
+   */
+  function reindexAfterInsert(insertedIdx) {
+    if (!tripData?.steps) return;
+    
+    tripData.steps.forEach((step) => {
+      if (step.bookings && Array.isArray(step.bookings)) {
+        step.bookings.forEach(booking => {
+          if (typeof booking.stepIndex === 'number' && booking.stepIndex >= insertedIdx) {
+            booking.stepIndex++;
+          }
+          if (Array.isArray(booking.stepIndexes)) {
+            booking.stepIndexes = booking.stepIndexes.map(i => i >= insertedIdx ? i + 1 : i);
+          }
+        });
+      }
+    });
+    
+    pendingChanges = true;
+    console.log('🔄 [TRIP-DATA] Reindex bookings après insertion étape', insertedIdx);
+  }
+
   // ===== API PUBLIQUE =====
   window.ORT_TRIP_DATA = {
     // Chargement
@@ -748,6 +803,10 @@
     save,
     forceSave,
     hasPendingChanges,
+
+    // Reindex
+    reindexAfterDelete,
+    reindexAfterInsert,
 
     // Stats
     getStats,

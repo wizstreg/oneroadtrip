@@ -276,6 +276,37 @@ class BookingManager {
       return sum + (isNaN(price) ? 0 : price);
     }, 0);
   }
+  
+  // Recaler les indices après suppression d'une étape
+  reindexAfterDelete(deletedIdx) {
+    const newBookings = {};
+    Object.keys(this.bookings).forEach(key => {
+      const idx = parseInt(key);
+      if (idx < deletedIdx) {
+        newBookings[idx] = this.bookings[idx];
+      } else if (idx > deletedIdx) {
+        newBookings[idx - 1] = this.bookings[idx];
+      }
+      // idx === deletedIdx → supprimé
+    });
+    this.bookings = newBookings;
+    console.log('[BOOKINGS] Reindex après suppression étape', deletedIdx, '→', Object.keys(newBookings).length, 'étapes avec résa');
+  }
+  
+  // Recaler les indices après insertion d'une étape
+  reindexAfterInsert(insertedIdx) {
+    const newBookings = {};
+    Object.keys(this.bookings).forEach(key => {
+      const idx = parseInt(key);
+      if (idx < insertedIdx) {
+        newBookings[idx] = this.bookings[idx];
+      } else {
+        newBookings[idx + 1] = this.bookings[idx];
+      }
+    });
+    this.bookings = newBookings;
+    console.log('[BOOKINGS] Reindex après insertion étape', insertedIdx);
+  }
 }
 
 // ============================================================

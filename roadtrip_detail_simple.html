@@ -6231,6 +6231,12 @@ row.appendChild(place);
   row.appendChild(del);
   del.querySelector('button').addEventListener('click', () => {
     if(confirm('Supprimer cette étape ?')) {
+      if (typeof globalBookingManager !== 'undefined' && globalBookingManager && globalBookingManager.reindexAfterDelete) {
+        globalBookingManager.reindexAfterDelete(idx);
+      }
+      if (window.ORT_TRIP_DATA && ORT_TRIP_DATA.reindexAfterDelete) {
+        ORT_TRIP_DATA.reindexAfterDelete(idx);
+      }
       state.steps.splice(idx, 1);
       autoRecenter = true; // Recentrer après suppression
       
@@ -7219,6 +7225,12 @@ Object.entries(grouped).forEach(([key, indices]) => {
           if (confirm(`Supprimer "${step.name || step.place_id}" ?`)) {
             const idx = state.steps.indexOf(step);
             if (idx > -1) {
+              if (typeof globalBookingManager !== 'undefined' && globalBookingManager && globalBookingManager.reindexAfterDelete) {
+                globalBookingManager.reindexAfterDelete(idx);
+              }
+              if (window.ORT_TRIP_DATA && ORT_TRIP_DATA.reindexAfterDelete) {
+                ORT_TRIP_DATA.reindexAfterDelete(idx);
+              }
               state.steps.splice(idx, 1);
               autoRecenter = true; // Recentrer après suppression
               
@@ -9191,13 +9203,14 @@ console.log('[GROUPS V7] Attente de state...');
             if (window.ORT_DETAIL_ADAPTER) window.ORT_DETAIL_ADAPTER.init(tripIdFromUrl, window.state);
             localStorage.setItem('ORT_CURRENT_TRIP_ID', tripIdFromUrl);
             
-            window.renderRows();
-            if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
-            
             // 🔒 BLOQUER le recalcul auto des nuits — trip déjà sauvegardé par l'utilisateur
+            // IMPORTANT: poser AVANT renderRows() pour éviter race condition si renderRows crash
             window._autoCalcNightsDone = true;
             window.state._isFromDashboard = true;
             console.log('[LOG-CONTROLE][INIT] 🔒 Recalcul auto des nuits BLOQUÉ (trip dashboard)');
+            
+            window.renderRows();
+            if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
             
             console.log('[LOG-CONTROLE][INIT] ✅ Mode DASHBOARD - Affichage terminé');
           }
