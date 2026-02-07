@@ -210,7 +210,8 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
 .btn-toggle-filters{display:none}
 .sidebar-overlay{display:none}
 .sidebar-header{display:none}
-.mobile-preview{display:none !important} /* Cachée sur desktop */
+.mobile-preview{display:none} /* Cachée sur desktop */
+.mobile-preview.show{display:none} /* Aussi cachée sur desktop même avec .show */
 
 @media (max-width:900px){
   /* Mode mobile ultra-simplifié */
@@ -232,7 +233,7 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
   
   /* Mini preview mobile SIMPLIFIÉ */
   .mobile-preview{
-    display:none !important;
+    display:none;
     position:fixed;
     bottom:0;
     left:0;
@@ -834,8 +835,10 @@ function initMap() {
 
   map.on('click', (e) => {
     const t = e.originalEvent?.target;
-    // Sur mobile, TOUJOURS fermer tout
+    // Sur mobile, ne PAS fermer si la mobile-preview est ouverte (laisser l'utilisateur valider)
     if (isMobile()) {
+      const mobilePreview = document.getElementById('mobilePreview');
+      if (mobilePreview && mobilePreview.classList.contains('show')) return;
       hardCloseOverlays();
       return;
     }
@@ -856,9 +859,13 @@ function initMap() {
     setTimeout(updateVisibleCount, 100);
   });
   
-  // Fermer preview sur mobile quand on zoome/déplace
+  // Fermer preview sur mobile quand on zoome/déplace (sauf si mobile-preview est ouverte)
   map.on('zoomstart movestart', () => {
-    if (isMobile()) closePreview();
+    if (isMobile()) {
+      const mobilePreview = document.getElementById('mobilePreview');
+      if (mobilePreview && mobilePreview.classList.contains('show')) return;
+      closePreview();
+    }
   });
   
   // FIX CRITIQUE: Forcer Leaflet à recalculer sa taille
@@ -1850,8 +1857,10 @@ function hardCloseOverlays() {
   const overlay = document.getElementById('sidebarOverlay');
   const sidebar = document.getElementById('mapSidebar');
   
-  // Sur mobile, fermer la mobile preview
-  if (isMobile() && mobilePreview) {
+  // Sur mobile, ne fermer la mobile preview QUE si elle n'est pas en interaction active
+  if (isMobile() && mobilePreview && mobilePreview.classList.contains('show')) {
+    // Ne pas fermer - l'utilisateur est en train de lire/valider
+  } else if (mobilePreview) {
     mobilePreview.classList.remove('show');
   }
   
@@ -1966,7 +1975,6 @@ if (typeof hardCloseOverlays === 'function') {
 <!-- Scripts ORT modulaires -->
 <script src="js/ort-config.js"></script>
 <script src="js/ort-i18n-auth.js"></script>
-<script src="js/ort-auth-modal.js"></script>  <!-- ← AJOUT -->
 <script src="js/ort-header.js"></script>
 <script src="js/ort-footer.js"></script>
 
