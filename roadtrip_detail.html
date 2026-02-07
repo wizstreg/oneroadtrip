@@ -6117,15 +6117,25 @@ dateCell.style.textAlign='left';
   hotel.className = 'cell hotel-cell';
   hotel.dataset.stepIdx = idx;
   
-  // Vérifier s'il y a un hôtel réservé pour cette étape
+  // Vérifier s'il y a un hôtel réservé pour cette étape (chercher dans TOUTES les sources)
   let bookedHotel = null;
-  let stepBookingsForHotel = [];
-  if (window.ORT_TRIP_DATA) {
-    stepBookingsForHotel = ORT_TRIP_DATA.getStepBookings(idx) || [];
-  } else if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
-    stepBookingsForHotel = globalBookingManager.getBookings(idx) || [];
+  const isHotelCat = (b) => b && (b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  
+  // Source 1: ORT_TRIP_DATA (Firestore async)
+  if (!bookedHotel && window.ORT_TRIP_DATA) {
+    const b = (ORT_TRIP_DATA.getStepBookings(idx) || []).find(isHotelCat);
+    if (b) bookedHotel = b;
   }
-  bookedHotel = stepBookingsForHotel.find(b => b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  // Source 2: globalBookingManager (restauré synchrone depuis savedTrip)
+  if (!bookedHotel && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+    const b = (globalBookingManager.getBookings(idx) || []).find(isHotelCat);
+    if (b) bookedHotel = b;
+  }
+  // Source 3: step.bookings directement (présent dans les steps restaurés)
+  if (!bookedHotel && step.bookings && Array.isArray(step.bookings)) {
+    const b = step.bookings.find(isHotelCat);
+    if (b) bookedHotel = b;
+  }
   
   if (Number(step.nights||0) > 0) {
     if (bookedHotel) {
@@ -6154,7 +6164,6 @@ dateCell.style.textAlign='left';
           btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            // Ouvrir la modale hôtels
             if (typeof openHotelsModal === 'function') {
               openHotelsModal(step, idx);
             } else {
@@ -11663,6 +11672,13 @@ if (tripIdFromUrl && (!hasValidCc || !hasValidItin)) {
             if (typeof loadBudgetData === 'function') {
               console.log('[LOG-CONTROLE][INIT] 🔄 Chargement budget/photos pour tripId:', tripIdFromUrl);
               loadBudgetData();
+              // Re-render après chargement async pour afficher les hôtels réservés
+              setTimeout(() => {
+                if (typeof renderRows === 'function') {
+                  console.log('[LOG-CONTROLE][INIT] 🔄 Re-render post-bookings pour colonnes hôtels');
+                  renderRows();
+                }
+              }, 2000);
             }
           }, 500);
           

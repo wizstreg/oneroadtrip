@@ -410,6 +410,10 @@ html, body {
   border-radius: 12px;
   font-size: 14px;
   cursor: pointer;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 
@@ -4911,16 +4915,29 @@ function renderList() {
     const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
     const stepDisplayName = getCityDisplayName(step, lang) || step.name;
     
-    // Vérifier si l'étape a des réservations
+    // Vérifier si l'étape a des réservations (chercher dans TOUTES les sources)
     let bookingIndicator = '';
+    let bookedHotelName = '';
+    const isHotelCat = (b) => b && (b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+    
+    // Collecter les bookings de toutes les sources
+    let allStepBookings = [];
     if (window.ORT_TRIP_DATA) {
-      const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
-      if (stepBookings.length > 0) {
-        const hasHotel = stepBookings.some(b => b.category === 'hotel');
-        const hasActivity = stepBookings.some(b => ['activity', 'visit', 'show'].includes(b.category));
-        if (hasHotel || hasActivity) {
-          bookingIndicator = `<span class="step-card-booking">${hasHotel ? '🏨' : '🎫'}</span>`;
-        }
+      allStepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+    }
+    if (allStepBookings.length === 0 && step.bookings && Array.isArray(step.bookings)) {
+      allStepBookings = step.bookings;
+    }
+    
+    if (allStepBookings.length > 0) {
+      const hotelBooking = allStepBookings.find(isHotelCat);
+      const hasActivity = allStepBookings.some(b => ['activity', 'visit', 'show'].includes(b.category));
+      if (hotelBooking) {
+        bookedHotelName = hotelBooking.name || hotelBooking.title || '';
+        const displayName = bookedHotelName.length > 22 ? bookedHotelName.substring(0, 20) + '…' : bookedHotelName;
+        bookingIndicator = `<span class="step-card-booking" style="font-size:11px;gap:3px">🏨 ${displayName || 'Réservé'}</span>`;
+      } else if (hasActivity) {
+        bookingIndicator = `<span class="step-card-booking">🎫</span>`;
       }
     }
     
@@ -4930,7 +4947,8 @@ function renderList() {
       <div class="step-card-info">
         <div class="step-card-name">${stepDisplayName}</div>
         <div class="step-card-meta">${distText}</div>
-        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}${bookingIndicator}</div>` : (bookingIndicator ? `<div class="step-card-nights">${bookingIndicator}</div>` : '')}
+        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
+        ${bookingIndicator ? `<div style="margin-top:3px">${bookingIndicator}</div>` : ''}
       </div>
       <div class="step-card-chevron">›</div>
     `;

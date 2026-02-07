@@ -6153,15 +6153,25 @@ row.appendChild(place);
   const tPassage = t('passage') || '(passage)';
   const tSearchHotel = t('searchHotelAt') || 'Chercher un hébergement à';
   
-  // Vérifier s'il y a un hôtel réservé pour cette étape
+  // Vérifier s'il y a un hôtel réservé pour cette étape (chercher dans TOUTES les sources)
   let bookedHotel = null;
-  let stepBookingsForHotel = [];
-  if (window.ORT_TRIP_DATA) {
-    stepBookingsForHotel = ORT_TRIP_DATA.getStepBookings(idx) || [];
-  } else if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
-    stepBookingsForHotel = globalBookingManager.getBookings(idx) || [];
+  const isHotelCat = (b) => b && (b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  
+  // Source 1: ORT_TRIP_DATA (Firestore async)
+  if (!bookedHotel && window.ORT_TRIP_DATA) {
+    const b = (ORT_TRIP_DATA.getStepBookings(idx) || []).find(isHotelCat);
+    if (b) bookedHotel = b;
   }
-  bookedHotel = stepBookingsForHotel.find(b => b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  // Source 2: globalBookingManager (restauré synchrone depuis savedTrip)
+  if (!bookedHotel && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+    const b = (globalBookingManager.getBookings(idx) || []).find(isHotelCat);
+    if (b) bookedHotel = b;
+  }
+  // Source 3: step.bookings directement (présent dans les steps restaurés)
+  if (!bookedHotel && step.bookings && Array.isArray(step.bookings)) {
+    const b = step.bookings.find(isHotelCat);
+    if (b) bookedHotel = b;
+  }
   
   if (nights > 0 && bookedHotel) {
     // ✅ Hôtel réservé → afficher son nom
