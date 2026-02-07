@@ -3251,6 +3251,8 @@ async function init() {
       // 🔴 ONLY load from dashboard if NOT a new trip with source params
       debugLog('→ loadFromDashboard(' + effectiveTripId + ')');
       await loadFromDashboard(effectiveTripId);
+      // 🔒 Marquer comme trip dashboard pour préserver les nuits
+      state._isFromDashboard = true;
     } else if (fromTemp && rtKey) {
       debugLog('→ loadFromTemp');
       await loadFromTemp(rtKey);
@@ -3359,8 +3361,10 @@ async function init() {
     }
     FIN ANCIEN CODE */
     
-    // === CALCUL DES NUITS IMMÉDIAT (avant rendu) ===
-    if (state.steps.length > 0 && window.ORT_TRIP_CALC) {
+    // === CALCUL DES NUITS IMMÉDIAT (avant rendu) — sauf si trip dashboard ===
+    if (state._isFromDashboard) {
+      console.log('[LOG-CONTROLE][MOBILE] 🔒 Skip calcul nuits - trip dashboard (nuits préservées)');
+    } else if (state.steps.length > 0 && window.ORT_TRIP_CALC) {
       const target = state.targetNights || state.steps.reduce((s, st) => s + (st._suggestedDays || 1), 0) || state.steps.length;
       console.log('[LOG-CONTROLE][MOBILE] 🚀 Calcul nuits immédiat, target:', target);
       console.log('[LOG-CONTROLE][MOBILE] state.steps.length:', state.steps.length);
