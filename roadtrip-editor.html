@@ -2884,20 +2884,13 @@
                         <span class="day-badge">${t('day')} ${idx + 1}</span>
                         <h2 class="step-title" contenteditable="true" data-step="${idx}" data-field="name">${esc(step.name)}</h2>
                         
-                        <!-- Carousel hôtels -->
-                        <div id="hotels-step-${idx}" class="hotels-section-editor"></div>
-                        <script>
-                        (function() {
-                            if (typeof ORT_HOTELS !== 'undefined' && window.loadedHotelsForEditor !== true) {
-                                const step = ${JSON.stringify({ place_id: step.place_id, name: step.name, coords: step.coords || null, lat: step.lat || null, lon: step.lon || null })};
-                                ORT_HOTELS.loadHotelsForPlace(step.place_id).then(placeData => {
-                                    if (placeData && placeData.hotels && placeData.hotels.length > 0) {
-                                        ORT_HOTELS.renderHotelsCarousel(placeData.hotels, step.name, step.coords || [step.lat, step.lon], 'hotels-step-${idx}');
-                                    }
-                                }).catch(err => console.log('[EDITOR-HOTELS] Erreur:', err));
-                            }
-                        })();
-                        </script>
+                        <!-- Carousel hôtels (chargé post-render) -->
+                        <div id="hotels-step-${idx}" class="hotels-section-editor"
+                             data-hotel-place-id="${esc(step.place_id || '')}"
+                             data-hotel-name="${esc(step.name || '')}"
+                             data-hotel-lat="${step.lat || ''}"
+                             data-hotel-lon="${step.lon || ''}"
+                             data-hotel-coords='${JSON.stringify(step.coords || null)}'></div>
                         
                         ${visitsPage1.length > 0 ? `
                             <div class="section-block">
@@ -3033,6 +3026,26 @@
             });
             
             container.innerHTML = html;
+            
+            // === CHARGEMENT HÔTELS POST-RENDER ===
+            if (typeof ORT_HOTELS !== 'undefined') {
+                document.querySelectorAll('[data-hotel-place-id]').forEach(div => {
+                    const placeId = div.dataset.hotelPlaceId;
+                    const name = div.dataset.hotelName;
+                    const lat = parseFloat(div.dataset.hotelLat) || null;
+                    const lon = parseFloat(div.dataset.hotelLon) || null;
+                    const coords = div.dataset.hotelCoords ? JSON.parse(div.dataset.hotelCoords) : null;
+                    const containerId = div.id;
+                    
+                    if (!placeId) return;
+                    
+                    ORT_HOTELS.loadHotelsForPlace(placeId).then(placeData => {
+                        if (placeData && placeData.hotels && placeData.hotels.length > 0) {
+                            ORT_HOTELS.renderHotelsCarousel(placeData.hotels, name, coords || [lat, lon], containerId);
+                        }
+                    }).catch(err => console.log('[EDITOR-HOTELS] Erreur:', err));
+                });
+            }
             
             // Stocker photos pour carrousel
             window._photos = {
