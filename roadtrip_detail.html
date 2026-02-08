@@ -4972,7 +4972,8 @@ window.applyListView = applyListView;
 // Utilise ort-trip-calc.js - attend 7 secondes pour laisser le calcul de route se faire
 (function() {
   // Flag GLOBAL pour éviter les doublons (partagé entre setTimeout et éventuels autres triggers)
-  window._autoCalcNightsDone = false;
+  // 🔒 Ne PAS écraser si déjà posé (mode partagé, dashboard, ou Firestore modifs)
+  if (!window._autoCalcNightsDone) window._autoCalcNightsDone = false;
   const ROUTE_CALC_WAIT = 7000;
   
   window.addEventListener('load', () => {

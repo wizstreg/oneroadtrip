@@ -9571,16 +9571,40 @@ document.addEventListener('keydown', function(e) {
         
         // Stocker les données pour le chargement
         window._sharedTripData = sharedData;
+        const tripData = sharedData.data || sharedData;
         
         // Mode lecture seule
         document.body.classList.add('shared-view-only');
         
-        // Charger les données partagées
-        if (sharedData.data) {
-          state.title = sharedData.data.title;
-          state.cc = sharedData.data.country;
-          state.steps = sharedData.data.steps || [];
+        // Charger les données partagées COMPLÈTES
+        if (tripData.steps && tripData.steps.length > 0) {
+          state.title = tripData.title || 'Voyage partagé';
+          state.cc = tripData.country || 'XX';
+          state.steps = tripData.steps;
+          if (tripData.targetNights) state.targetNights = tripData.targetNights;
+          if (tripData.initialNights) state.initialNights = tripData.initialNights;
+          if (tripData.startDateStr) state.startDateStr = tripData.startDateStr;
+          if (tripData._stepGroups) state._stepGroups = tripData._stepGroups;
+          if (tripData._itinRef) state._itinRef = tripData._itinRef;
+          if (tripData.travelBookings) state.travelBookings = tripData.travelBookings;
+          
+          // 🔒 BLOQUER tout recalcul auto
+          window._autoCalcNightsDone = true;
+          window._autoCalcDone = true;
+          state._isFromDashboard = true;
+          state._isShared = true;
+          
+          // Restaurer bookings dans globalBookingManager
+          if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+            tripData.steps.forEach((step, idx) => {
+              if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+                step.bookings.forEach(b => globalBookingManager.addBooking(idx, b));
+              }
+            });
+          }
+          
           renderRows();
+          console.log('[SHARE] ✅ State complet restauré:', state.steps.length, 'étapes,', state.targetNights, 'nuits');
         }
         
         // Afficher banner
@@ -9590,7 +9614,7 @@ document.addEventListener('keydown', function(e) {
           background: #f59e0b; color: white; padding: 10px; 
           text-align: center; z-index: 9999; font-weight: 600;
         `;
-        banner.textContent = '👁️ Mode lecture seule - Vous pouvez modifier votre copie';
+        banner.textContent = '👁️ Mode lecture seule - Voyage partagé';
         document.body.insertBefore(banner, document.body.firstChild);
         setTimeout(() => banner.remove(), 5000);
       }

@@ -3445,6 +3445,30 @@ async function loadFromShare(shareToken, lang) {
     state._isShared = true; // Marquer comme partagé
     state._shareToken = shareToken;
     
+    // === Restaurer TOUTES les métadonnées ===
+    if (tripData.targetNights) state.targetNights = tripData.targetNights;
+    if (tripData.initialNights) state.initialNights = tripData.initialNights;
+    if (tripData.startDateStr) state.startDateStr = tripData.startDateStr;
+    if (tripData._stepGroups) state._stepGroups = tripData._stepGroups;
+    if (tripData._itinRef) state._itinRef = tripData._itinRef;
+    if (tripData.travelBookings) state.travelBookings = tripData.travelBookings;
+    
+    // 🔒 BLOQUER tout recalcul auto
+    window._autoCalcNightsDone = true;
+    window._autoCalcDone = true;
+    state._isFromDashboard = true;
+    
+    // Restaurer bookings dans globalBookingManager
+    if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+      tripData.steps.forEach((step, idx) => {
+        if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+          step.bookings.forEach(b => globalBookingManager.addBooking(idx, b));
+        }
+      });
+    }
+    
+    console.log('[LOG-CONTROLE][MOBILE] ✅ State complet restauré:', state.steps.length, 'étapes,', state.targetNights, 'nuits');
+    
     // Afficher banner de lecture seule
     const banner = document.createElement('div');
     banner.id = 'shareBanner';
