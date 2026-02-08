@@ -3519,12 +3519,19 @@ const ROUTE_CALC_WAIT = 7000;
 window.addEventListener('load', () => {
   // ========== DEBUG LOGS ==========
   console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] ========== WINDOW LOAD ==========', 'background: #990099; color: white; font-size: 14px; padding: 4px 8px;');
-  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state existe:', !!state);
-  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', state?.steps?.length || 0);
-  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', state?.targetNights);
-  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.startDateStr:', state?.startDateStr);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state existe:', !!window.state);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', window.state?.steps?.length || 0);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', window.state?.targetNights);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.startDateStr:', window.state?.startDateStr);
   console.log('[LOG-CONTROLE][AUTO-SIMPLE] autoCalculateNights existe:', typeof autoCalculateNights);
+  console.log('[LOG-CONTROLE][AUTO-SIMPLE] _autoCalcDone:', !!window._autoCalcDone);
   // ================================
+  
+  // 🔒 Si le calcul a déjà été fait par le hook renderRows, on skip tout
+  if (window._autoCalcDone) {
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] 🔒 Skip window.load autoCalc - déjà fait par hook renderRows');
+    return;
+  }
   
   // Vérifier si on vient de pres_simple avec paramètres
   const qs = new URLSearchParams(location.search);
@@ -3550,13 +3557,19 @@ window.addEventListener('load', () => {
   const tryAutoCalc = async () => {
     attempts++;
     
+    // 🔒 Re-vérifier car le hook renderRows a pu faire le calcul entre-temps
+    if (window._autoCalcDone) {
+      console.log('[LOG-CONTROLE][AUTO-SIMPLE] 🔒 Skip tentative - déjà fait par hook renderRows');
+      return;
+    }
+    
     // ========== DEBUG LOGS ==========
     console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] ========== TENTATIVE ' + attempts + ' ==========', 'background: #cc6600; color: white; font-size: 12px; padding: 2px 6px;');
-    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', state?.steps?.length || 0);
-    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', state?.targetNights);
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.steps.length:', window.state?.steps?.length || 0);
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] state.targetNights:', window.state?.targetNights);
     // ================================
     
-    if (state.steps && state.steps.length > 0) {
+    if (window.state?.steps && window.state.steps.length > 0) {
       // S'assurer que PLACES_INDEX est chargé
       if (typeof PLACES_INDEX === 'undefined' || !PLACES_INDEX || Object.keys(PLACES_INDEX).length === 0) {
         console.log('[LOG-CONTROLE][AUTO-SIMPLE] Chargement de PLACES_INDEX...');
@@ -3567,8 +3580,9 @@ window.addEventListener('load', () => {
         }
       }
       
-      console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] 🚀 LANCEMENT autoCalculateNights avec target=' + state.targetNights, 'background: #00cc00; color: white; font-size: 14px; padding: 4px 8px;');
-      autoCalculateNights(state.targetNights);
+      console.log('%c[LOG-CONTROLE][AUTO-SIMPLE] 🚀 LANCEMENT autoCalculateNights avec target=' + window.state.targetNights, 'background: #00cc00; color: white; font-size: 14px; padding: 4px 8px;');
+      window._autoCalcDone = true; // Poser le flag AVANT pour éviter double appel
+      autoCalculateNights(window.state.targetNights);
       if (typeof renderRows === 'function') renderRows();
     } else if (attempts < maxAttempts) {
       console.log(`[AUTO-SIMPLE] Tentative ${attempts}/${maxAttempts} - state pas encore prêt`);
@@ -3586,35 +3600,49 @@ window.addEventListener('load', () => {
 // 2. Hook sur le premier renderRows
 const _originalRenderRows = window.renderRows;
 let _autoCalcDone = false;
+let _isRendering = false; // Guard anti-réentrance
 
 window.renderRows = async function() {
-  // Skip seulement si rythme est défini (spécifique pres_simple qui gère ses propres nuits)
-  const qs = new URLSearchParams(location.search);
-  const hasRythmeParam = qs.get('rythme');
+  // 🔒 Guard anti-réentrance - empêcher les boucles renderRows→drawMap→OSRM→renderRows
+  if (_isRendering) {
+    console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⚠️ renderRows déjà en cours, skip réentrance');
+    return;
+  }
+  _isRendering = true;
   
-  // OPTION B : Toujours recalculer au premier appel SAUF si pres_simple avec rythme OU trip dashboard
-  if (!_autoCalcDone && state.steps && state.steps.length > 0 && !hasRythmeParam && !window.state?._isFromDashboard) {
-    // S'assurer que PLACES_INDEX est chargé
-    if (typeof PLACES_INDEX === 'undefined' || !PLACES_INDEX || Object.keys(PLACES_INDEX).length === 0) {
-      console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - Chargement PLACES_INDEX...');
-      try {
-        await ensurePlacesIndex();
-      } catch(e) {
-        console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⚠️ Erreur chargement PLACES_INDEX:', e);
+  try {
+    // Skip seulement si rythme est défini (spécifique pres_simple qui gère ses propres nuits)
+    const qs = new URLSearchParams(location.search);
+    const hasRythmeParam = qs.get('rythme');
+    
+    // OPTION B : Toujours recalculer au premier appel SAUF si pres_simple avec rythme OU trip dashboard
+    if (!_autoCalcDone && !window._autoCalcDone && state.steps && state.steps.length > 0 && !hasRythmeParam && !window.state?._isFromDashboard) {
+      // S'assurer que PLACES_INDEX est chargé
+      if (typeof PLACES_INDEX === 'undefined' || !PLACES_INDEX || Object.keys(PLACES_INDEX).length === 0) {
+        console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - Chargement PLACES_INDEX...');
+        try {
+          await ensurePlacesIndex();
+        } catch(e) {
+          console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⚠️ Erreur chargement PLACES_INDEX:', e);
+        }
       }
+      
+      console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - recalcul systématique (unique)');
+      _autoCalcDone = true;
+      window._autoCalcDone = true; // Synchro avec window.load pour éviter double appel
+      autoCalculateNights(state.targetNights);
+    } else if(hasRythmeParam && !_autoCalcDone){
+      console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⏭️ Skip hook autoCalculateNights - paramètre rythme détecté');
+      _autoCalcDone = true;
+      window._autoCalcDone = true;
     }
     
-    console.log('[LOG-CONTROLE][AUTO-SIMPLE] Hook renderRows - recalcul systématique');
-    autoCalculateNights(state.targetNights);
-    _autoCalcDone = true;
-  } else if(hasRythmeParam && !_autoCalcDone){
-    console.log('[LOG-CONTROLE][AUTO-SIMPLE] ⏭️ Skip hook autoCalculateNights - paramètre rythme détecté');
-    _autoCalcDone = true;
-  }
-  
-  // Appeler la fonction originale
-  if (typeof _originalRenderRows === 'function') {
-    return _originalRenderRows.apply(this, arguments);
+    // Appeler la fonction originale
+    if (typeof _originalRenderRows === 'function') {
+      return _originalRenderRows.apply(this, arguments);
+    }
+  } finally {
+    _isRendering = false;
   }
 };
 
@@ -5876,6 +5904,14 @@ function trLabel(lang, key){
 }
 
 function renderRows(){
+  // 🔒 Guard anti-réentrance - empêcher les boucles renderRows→drawMap→OSRM→watcher→renderRows
+  if (window._renderRowsBusy) {
+    console.log('[LOG-CONTROLE][RENDER] ⚠️ renderRows déjà en cours (réentrance bloquée)');
+    return;
+  }
+  window._renderRowsBusy = true;
+  
+  try {
   const box=$('#rows');box.innerHTML='';
   state.steps.forEach((s,idx)=>box.appendChild(renderRow(s,idx)));
   enableDnD();
@@ -5896,6 +5932,11 @@ function renderRows(){
   
   // scheduleAutosave(); // SUPPRIMÉ - ne pas sauvegarder au simple affichage, seulement sur modification utilisateur
 
+  } finally {
+    // Libérer le guard après un court délai pour laisser drawMap/OSRM finir
+    // sans re-trigger un render synchrone
+    setTimeout(() => { window._renderRowsBusy = false; }, 200);
+  }
 }
 window.renderRows = renderRows;
 function renderRow(step,idx){
@@ -6241,7 +6282,7 @@ row.appendChild(place);
       autoRecenter = true; // Recentrer après suppression
       
       // Recalculer les groupes/nuits sauf si mode manuel
-      if(!state._manualMode) {
+      if(!state._manualMode && !state._isFromDashboard) {
         autoCalculateNights(state.targetNights);
       }
       
@@ -6716,7 +6757,7 @@ map=L.map('map', {
           autoRecenter = true; // Recentrer après ajout
           
           // Recalculer les groupes/nuits sauf si mode manuel
-          if(!state._manualMode) {
+          if(!state._manualMode && !state._isFromDashboard) {
             autoCalculateNights(state.targetNights);
           }
           
@@ -6954,7 +6995,7 @@ function openOtherPlaceDetails(p){
         autoRecenter = true; // Recentrer après ajout
         
         // Recalculer les groupes/nuits sauf si mode manuel
-        if(!state._manualMode) {
+        if(!state._manualMode && !state._isFromDashboard) {
           autoCalculateNights(state.targetNights);
         }
         
@@ -7235,7 +7276,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
               autoRecenter = true; // Recentrer après suppression
               
               // Recalculer les groupes/nuits sauf si mode manuel
-              if(!state._manualMode) {
+              if(!state._manualMode && !state._isFromDashboard) {
                 autoCalculateNights(state.targetNights);
               }
               
