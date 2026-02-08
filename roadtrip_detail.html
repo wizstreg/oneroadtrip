@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="/manifest.json">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>
@@ -2361,8 +2362,30 @@ if (typeof t !== 'function') {
     return entry ? (entry[_lang] || entry.fr || key) : key;
   };
 }
-</script>
-<script>
+// === Enrichir t() avec les clés custom du header (fonctionne même si ort-i18n.js est chargé) ===
+(function(){
+  const HEADER_I18N = {
+    dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' },
+    tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' },
+    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' },
+    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' },
+    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' },
+    customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' },
+    generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' },
+    menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' }
+  };
+  const _origT = window.t;
+  const _lang = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'fr').slice(0, 2);
+  window.t = function(key) {
+    // D'abord essayer la fonction originale
+    const orig = _origT ? _origT(key) : key;
+    // Si la fonction originale renvoie la clé brute, chercher dans nos clés custom
+    if (orig === key && HEADER_I18N[key]) {
+      return HEADER_I18N[key][_lang] || HEADER_I18N[key].fr || key;
+    }
+    return orig;
+  };
+})();
 // === Firebase config (préprod / prod) — via ORT_CONFIG ===
 (function(){
   const host = location.hostname;
@@ -13202,6 +13225,13 @@ if (mapPopup) {
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
 <script src="/js/ort-auth-modal.js"></script>
+<!-- Bypass auth gate pour liens partagés -->
+<script>
+if (new URLSearchParams(location.search).get('share')) {
+  window._ORT_AUTH_GATE_BYPASS = true;
+  console.log('[AUTH] 🔓 Bypass auth gate - mode partage');
+}
+</script>
 <script src="/js/ort-auth-gate.js"></script>
 <!-- MODALE HÔTELS - À ajouter avant la fermeture de </body> -->
 
@@ -13231,6 +13261,15 @@ if (mapPopup) {
 <!-- SCRIPTS HÔTELS -->
 <script src="/js/ort-hotels.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
+
+<!-- Service Worker pour mode offline -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(r => {
+    console.log('[SW] ✅ Enregistré, scope:', r.scope);
+  }).catch(e => console.warn('[SW] Échec:', e));
+}
+</script>
 
 </body>
 </html>

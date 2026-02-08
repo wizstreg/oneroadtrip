@@ -59,6 +59,7 @@
 })();
 </script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="manifest" href="/manifest.json">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>
@@ -9628,6 +9629,13 @@ document.addEventListener('keydown', function(e) {
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
 <script src="/js/ort-auth-modal.js"></script>
+<!-- Bypass auth gate pour liens partagés -->
+<script>
+if (new URLSearchParams(location.search).get('share')) {
+  window._ORT_AUTH_GATE_BYPASS = true;
+  console.log('[AUTH] 🔓 Bypass auth gate - mode partage');
+}
+</script>
 <script src="/js/ort-auth-gate.js"></script>
 
 <!-- MODALE HÔTELS -->
@@ -9651,6 +9659,15 @@ document.addEventListener('keydown', function(e) {
 
 <script src="/js/ort-hotels.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
+
+<!-- Service Worker pour mode offline -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(r => {
+    console.log('[SW] ✅ Enregistré, scope:', r.scope);
+  }).catch(e => console.warn('[SW] Échec:', e));
+}
+</script>
 
 </body>
 </html>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
 <title>OneRoadTrip</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <!-- Google Analytics -->
@@ -6977,6 +6978,13 @@ window.addEventListener('pageshow', async function(event) {
 <!-- Auth obligatoire -->
 <script src="/js/ort-i18n-auth.js"></script>
 <script src="/js/ort-auth-modal.js"></script>
+<!-- Bypass auth gate pour liens partagés -->
+<script>
+if (new URLSearchParams(location.search).get('share')) {
+  window._ORT_AUTH_GATE_BYPASS = true;
+  console.log('[AUTH] 🔓 Bypass auth gate - mode partage');
+}
+</script>
 <script src="/js/ort-auth-gate.js"></script>
 
 <!-- MODALE HÔTELS MOBILE -->
@@ -6999,6 +7007,15 @@ window.addEventListener('pageshow', async function(event) {
 
 <script src="/js/ort-hotels.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
+
+<!-- Service Worker pour mode offline -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(r => {
+    console.log('[SW] ✅ Enregistré, scope:', r.scope);
+  }).catch(e => console.warn('[SW] Échec:', e));
+}
+</script>
 
 </body>
 </html>
