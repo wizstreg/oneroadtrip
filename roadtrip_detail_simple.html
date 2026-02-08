@@ -9302,6 +9302,12 @@ console.log('[GROUPS V7] Attente de state...');
           if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
             console.log('[LOG-CONTROLE][INIT] ✅ Modifications trouvées, application...');
             
+            // 🔒 BLOQUER le recalcul auto des nuits — trip déjà sauvegardé par l'utilisateur
+            window._autoCalcNightsDone = true;
+            window._autoCalcDone = true;
+            window.state._isFromDashboard = true;
+            console.log('[LOG-CONTROLE][INIT] 🔒 Recalcul auto des nuits BLOQUÉ (trip sauvegardé Firestore)');
+            
             window.state.steps = savedTrip.steps;
             if (savedTrip.title) window.state.title = savedTrip.title;
             if (savedTrip.country) window.state.cc = savedTrip.country;

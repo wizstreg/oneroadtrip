@@ -11906,6 +11906,12 @@ if (!cc || !itin) {
           if (savedTrip && savedTrip.steps && savedTrip.steps.length > 0) {
             console.log('[LOG-CONTROLE][INIT] ✅ Modifications trouvées, application...');
             
+            // 🔒 BLOQUER le recalcul auto des nuits — trip déjà sauvegardé par l'utilisateur
+            // Les nuits sont déjà dans les steps sauvegardés, ne pas les écraser
+            window._autoCalcNightsDone = true;
+            window.state._isFromDashboard = true;
+            console.log('[LOG-CONTROLE][INIT] 🔒 Recalcul auto des nuits BLOQUÉ (trip sauvegardé Firestore)');
+            
             // Appliquer les modifications
             window.state.steps = savedTrip.steps;
             if (savedTrip.title) window.state.title = savedTrip.title;
@@ -11970,6 +11976,14 @@ if (!cc || !itin) {
             if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
             
             console.log('[LOG-CONTROLE][INIT] ✅ Modifications appliquées');
+            
+            // Re-render après chargement async ORT_TRIP_DATA pour afficher les hôtels réservés
+            setTimeout(() => {
+              if (typeof renderRows === 'function') {
+                console.log('[LOG-CONTROLE][INIT] 🔄 Re-render post-bookings (ORT_TRIP_DATA async)');
+                renderRows();
+              }
+            }, 2500);
           } else {
             console.log('[LOG-CONTROLE][INIT] ℹ️ Pas de modifications sauvegardées pour ce voyage');
           }
