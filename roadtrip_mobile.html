@@ -5217,6 +5217,7 @@ function closeAllSheets() {
   $('langSheet').classList.remove('show');
   $('scannerSheet').classList.remove('show');
   $('userSheet').classList.remove('show');
+  $('bookingDetailSheet')?.classList.remove('show');
   currentStepIndex = null;
 }
 
@@ -6229,17 +6230,20 @@ function showBookingDetail(booking) {
   
   // Ouvrir la sheet
   // Si on vient d'une autre sheet (étape), attendre sa fermeture
-  const wasSheetOpen = document.querySelector('.bottom-sheet.open') !== null;
+  const wasSheetOpen = document.querySelector('.bottom-sheet.show') !== null;
   closeAllSheets();
+  
+  // Aussi fermer la bookingDetailSheet si déjà ouverte
+  $('bookingDetailSheet').classList.remove('show');
   
   if (wasSheetOpen) {
     setTimeout(() => {
-      $('bookingDetailSheet').classList.add('open');
-      $('sheetOverlay').classList.add('active');
+      $('bookingDetailSheet').classList.add('show');
+      $('sheetOverlay').classList.add('show');
     }, 300);
   } else {
-    $('bookingDetailSheet').classList.add('open');
-    $('sheetOverlay').classList.add('active');
+    $('bookingDetailSheet').classList.add('show');
+    $('sheetOverlay').classList.add('show');
   }
 }
 
