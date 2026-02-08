@@ -763,53 +763,79 @@ body.view-itin-only .main>section>div:last-child {
   display: none !important;
 }
 
-/* === MODE PLEIN ÉCRAN LISTE (2 colonnes) === */
+/* === MODE PLEIN ÉCRAN LISTE (2/3 colonnes) === */
 body.view-itin-only #rows {
   max-width: 100%;
   margin: 0;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 3px 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 10px;
+  align-content: start;
+}
+body.view-itin-only #rows.fullscreen-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px 8px;
 }
 
 /* Lignes ultra-compactes en plein écran */
 body.view-itin-only .step-row {
-  padding: 3px 6px !important;
-  margin-bottom: 3px !important;
+  padding: 2px 5px !important;
+  margin-bottom: 1px !important;
   border-radius: 4px !important;
   min-height: auto !important;
-  font-size: 0.8rem !important;
-  column-gap: 6px !important;
+  font-size: 0.78rem !important;
+  column-gap: 4px !important;
   grid-template-columns:
-    32px                          /* # étape */
-    minmax(130px, 1.6fr)          /* nom lieu */
-    55px                          /* distance */
-    42px                          /* nuits */
-    60px                          /* dates */
-    minmax(75px, 0.6fr)           /* hôtel */
-    minmax(45px, auto)            /* réservations */
-    24px !important;              /* bouton ✕ */
+    32px                          /* Jx jour */
+    minmax(90px, 1.4fr)           /* nom lieu */
+    48px                          /* distance */
+    34px                          /* nuits */
+    50px                          /* dates */
+    minmax(60px, 0.6fr)           /* hôtel */
+    minmax(35px, auto)            /* réservations */
+    18px !important;              /* bouton ✕ */
+}
+/* 3 colonnes : encore plus compact */
+body.view-itin-only #rows.fullscreen-3col .step-row {
+  font-size: 0.72rem !important;
+  column-gap: 3px !important;
+  grid-template-columns:
+    30px                          /* Jx jour */
+    minmax(75px, 1.4fr)           /* nom lieu */
+    42px                          /* distance */
+    30px                          /* nuits */
+    46px                          /* dates */
+    minmax(50px, 0.5fr)           /* hôtel */
+    minmax(30px, auto)            /* réservations */
+    16px !important;              /* bouton ✕ */
+}
+/* Numéro de jour : fond bleu arrondi */
+body.view-itin-only .step-row .step-num {
+  width: 26px !important;
+  height: 20px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.3px;
 }
 body.view-itin-only .step-row .cell {
   padding: 1px 2px !important;
-}
-body.view-itin-only .step-row .step-num {
-  width: 20px !important;
-  height: 20px !important;
-  font-size: 11px !important;
-}
-body.view-itin-only .step-row .stars {
-  font-size: 0.65rem !important;
-}
-body.view-itin-only .step-row .visit-time {
-  font-size: 0.7rem !important;
 }
 /* Cacher les éléments non essentiels */
 body.view-itin-only .step-row .link-icon,
 body.view-itin-only .step-row [data-i18n-title="step.link"],
 body.view-itin-only .step-row .eye-btn,
-body.view-itin-only .step-row .copy-btn {
+body.view-itin-only .step-row .copy-btn,
+body.view-itin-only .step-row .step-expand-toggle,
+body.view-itin-only .step-row .visit-time {
   display: none !important;
+}
+/* Cacher le SVG drag dots mais garder le numéro */
+body.view-itin-only .step-row .cell:first-child svg {
+  display: none !important;
+}
+body.view-itin-only .step-row .stars {
+  font-size: 0.55rem !important;
+  line-height: 1 !important;
 }
 /* Réduire la taille des badges hôtel */
 body.view-itin-only .hotel-card {
@@ -855,8 +881,22 @@ body.view-itin-only .group-badge {
 
 /* Responsive: 1 colonne sur petits écrans */
 @media (max-width: 1100px) {
-  body.view-itin-only #rows {
+  body.view-itin-only #rows,
+  body.view-itin-only #rows.fullscreen-2col,
+  body.view-itin-only #rows.fullscreen-3col {
     grid-template-columns: 1fr;
+  }
+  body.view-itin-only .step-row,
+  body.view-itin-only #rows.fullscreen-3col .step-row {
+    grid-template-columns:
+      32px                          /* Jx jour */
+      minmax(130px, 1.6fr)          /* nom lieu */
+      55px                          /* distance */
+      42px                          /* nuits */
+      60px                          /* dates */
+      minmax(75px, 0.6fr)           /* hôtel */
+      minmax(45px, auto)            /* réservations */
+      24px !important;              /* bouton ✕ */
   }
 }
 
@@ -4770,23 +4810,100 @@ function applyListView(mode) {
   
   body.classList.toggle('view-itin-only', listOnly);
   
-  // Réordonner les lignes pour affichage colonne par colonne
+  // === Numérotation par jour et réordonner colonnes ===
   const rows = document.querySelectorAll('#rows .step-row');
   const n = rows.length;
-  const half = Math.ceil(n / 2);
   
-  rows.forEach((row, i) => {
-    if (listOnly && n > 1) {
-      // Colonne par colonne : 1,2,3... en col1 puis n/2+1,n/2+2... en col2
-      if (i < half) {
-        row.style.order = i * 2;
-      } else {
-        row.style.order = (i - half) * 2 + 1;
+  if (listOnly && n > 1) {
+    // Calculer le numéro de jour pour chaque étape
+    let dayNum = 1;
+    const dayNumbers = [];
+    if (state?.steps) {
+      for (let i = 0; i < state.steps.length; i++) {
+        dayNumbers.push(dayNum);
+        dayNum += Math.max(state.steps[i].nights || 0, i < state.steps.length - 1 ? 1 : 0);
+        // Si 0 nuits (passage), on reste au même jour sauf si c'est consécutif
+        if ((state.steps[i].nights || 0) === 0 && i > 0) {
+          // Passage : même jour que l'arrivée
+        }
       }
-    } else {
-      row.style.order = '';
     }
-  });
+    
+    // Recalculer proprement : jour = cumul des nuits précédentes + 1
+    let cumulNights = 0;
+    for (let i = 0; i < n; i++) {
+      const nights = state?.steps?.[i]?.nights || 0;
+      dayNumbers[i] = cumulNights + 1;
+      cumulNights += Math.max(nights, 1); // Au minimum 1 jour par étape pour avancer
+    }
+    // Dernière étape : pas de +1 si 0 nuits (simple passage final)
+    // Correction : étapes avec 0 nuits partagent le jour du hub précédent
+    cumulNights = 0;
+    for (let i = 0; i < n; i++) {
+      const nights = state?.steps?.[i]?.nights || 0;
+      if (nights > 0) {
+        dayNumbers[i] = cumulNights + 1;
+        cumulNights += nights;
+      } else {
+        // Passage (0 nuits) → même jour que la dernière étape avec nuits
+        dayNumbers[i] = cumulNights + 1;
+      }
+    }
+    
+    // Déterminer le nombre de colonnes (2 ou 3)
+    const screenW = window.innerWidth;
+    const cols = screenW >= 1600 ? 3 : 2;
+    
+    // Appliquer la classe pour le nombre de colonnes
+    const rowsContainer = document.getElementById('rows');
+    if (rowsContainer) {
+      rowsContainer.classList.remove('fullscreen-2col', 'fullscreen-3col');
+      rowsContainer.classList.add(cols === 3 ? 'fullscreen-3col' : 'fullscreen-2col');
+    }
+    
+    // Injecter "Jx" dans step-num et réordonner colonne par colonne
+    const perCol = Math.ceil(n / cols);
+    
+    rows.forEach((row, i) => {
+      const stepNum = row.querySelector('.step-num');
+      if (stepNum) {
+        // Stocker le numéro original pour restauration
+        if (!stepNum.dataset.origNum) stepNum.dataset.origNum = stepNum.textContent;
+        stepNum.textContent = 'J' + dayNumbers[i];
+        stepNum.title = 'Jour ' + dayNumbers[i] + ' (étape ' + (i + 1) + ')';
+      }
+      
+      // Réordonner : remplir colonnes verticalement
+      // Col 0: items 0..perCol-1, Col 1: perCol..2*perCol-1, etc.
+      let col, posInCol;
+      if (i < perCol) {
+        col = 0; posInCol = i;
+      } else if (i < perCol * 2) {
+        col = 1; posInCol = i - perCol;
+      } else {
+        col = 2; posInCol = i - perCol * 2;
+      }
+      row.style.order = posInCol * cols + col;
+    });
+    
+  } else {
+    // Restaurer les numéros d'étape originaux
+    rows.forEach((row, i) => {
+      const stepNum = row.querySelector('.step-num');
+      if (stepNum) {
+        stepNum.textContent = stepNum.dataset.origNum || (i + 1);
+        stepNum.title = '';
+        delete stepNum.dataset.origNum;
+      }
+      row.style.order = '';
+    });
+    
+    // Retirer les classes colonnes
+    const rowsContainer = document.getElementById('rows');
+    if (rowsContainer) {
+      rowsContainer.classList.remove('fullscreen-2col', 'fullscreen-3col');
+    }
+  }
   
   localStorage.setItem('ort.listView', listOnly ? 'list' : 'normal');
   
@@ -4796,7 +4913,7 @@ function applyListView(mode) {
     setTimeout(() => window.map.invalidateSize({pan: false}), 300);
   }
   
-  console.log('[LIST] Mode:', mode);
+  console.log('[LIST] Mode:', mode, listOnly ? '(' + (window.innerWidth >= 1600 ? '3' : '2') + ' colonnes)' : '');
 }
 
 // Échap = quitter plein écran liste
