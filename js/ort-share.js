@@ -26,26 +26,69 @@ window.ORT_SHARE = {
       const user = window.firebase.auth?.().currentUser;
       const shareId = this.generateShareId();
 
-      // Préparer les données sans l'ID user (visible publiquement)
+      // === Collecter TOUTES les données du voyage ===
+      const steps = (tripData.steps || []).map((s, idx) => {
+        const step = { ...s };
+        
+        // Inclure les bookings depuis ORT_TRIP_DATA si disponibles
+        if (!step.bookings || !step.bookings.length) {
+          if (window.ORT_TRIP_DATA) {
+            const b = ORT_TRIP_DATA.getStepBookings(idx);
+            if (b && b.length) step.bookings = b;
+          }
+          // Fallback: globalBookingManager
+          if ((!step.bookings || !step.bookings.length) && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+            const b = globalBookingManager.getBookings(idx);
+            if (b && b.length) step.bookings = b;
+          }
+        }
+        
+        return step;
+      });
+
+      // Collecter les réservations voyage (vol, voiture, guide, etc.)
+      let travelBookings = tripData.travelBookings || [];
+      if ((!travelBookings || !travelBookings.length) && window.ORT_TRIP_DATA) {
+        try {
+          const tripId = tripData.tripId || window.state?.tripId;
+          if (tripId) {
+            const td = await ORT_TRIP_DATA.loadTrip(tripId);
+            if (td && td.travelBookings) travelBookings = td.travelBookings;
+          }
+        } catch(e) { /* ignore */ }
+      }
+
       const shareData = {
         id: shareId,
         title: tripTitle || tripData.title || 'Voyage',
         country: tripData.country || tripData.cc || 'WORLD',
-        steps: tripData.steps || [],
+        steps: steps,
+        // Métadonnées du voyage
+        targetNights: tripData.targetNights || 0,
+        initialNights: tripData.initialNights || tripData.targetNights || 0,
+        startDateStr: tripData.startDateStr || '',
+        lang: tripData.lang || (document.documentElement.lang || 'fr').slice(0, 2),
+        // Réservations voyage (vol, voiture, guide...)
+        travelBookings: travelBookings,
+        // Groupes d'étapes
+        _stepGroups: tripData._stepGroups || {},
+        // Référence itinéraire original
+        _itinRef: tripData._itinRef || null,
+        // Métadonnées partage
         createdAt: new Date().toISOString(),
         createdBy: user?.email || 'anonymous',
-        createdByUserId: user?.uid || null, // Pour les rules Firestore
-        mode: 'viewer', // lecture seule
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 jours
+        createdByUserId: user?.uid || null,
+        mode: 'viewer',
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 jours
       };
 
       // Sauvegarder dans Firestore
       if (user && window.firebase.firestore()) {
         const db = window.firebase.firestore();
         await db.collection('shared_trips').doc(shareId).set(shareData);
-        console.log('[SHARE] ✅ Lien créé:', shareId);
+        const bookingCount = steps.filter(s => s.bookings && s.bookings.length).length;
+        console.log('[SHARE] ✅ Lien créé (Firestore):', shareId, '- steps:', steps.length, '- étapes avec bookings:', bookingCount);
       } else {
-        // Fallback localStorage
         localStorage.setItem(`ort_share_${shareId}`, JSON.stringify(shareData));
         console.log('[SHARE] ✅ Lien créé (localStorage):', shareId);
       }

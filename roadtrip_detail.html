@@ -2441,17 +2441,14 @@ if (typeof t !== 'function') {
     <div class="tools-separator"></div>
     <div class="tools-section-title" data-i18n="information">Informations</div>
     
-    <button class="tools-item" id="btnToolsCountry" type="button">
-      🌍 <span data-i18n="countrySheet">Fiche pays</span>
+    <button class="tools-item" id="btnShareTrip" type="button">
+      🔗 <span data-i18n="shareTrip">Partager ce voyage</span>
     </button>
     <button class="tools-item" id="btnToolsReport" type="button">
       ❗ <span data-i18n="reportError">Signaler une erreur</span>
     </button>
     <button class="tools-item" id="btnToolsRate" type="button">
       ⭐ <span data-i18n="rateTrip">Noter ce road trip</span>
-    </button>
-    <button class="tools-item" id="btnShareTrip" type="button">
-      🔗 <span data-i18n="shareTrip">Partager ce voyage</span>
     </button>
     
     <!-- SUPPRIMÉ: km/mi, modes transport, gestion nuits/groupes, hébergements -->
@@ -4367,7 +4364,42 @@ function initApp(){
           window.state.tripId = tripData.tripId || tripData.id;
           window.state._sharedMode = sharedData.mode;
           
-          console.log('[SHARE] ✅ State mis à jour:', window.state.steps.length, 'étapes');
+          // === Restaurer TOUTES les métadonnées du voyage ===
+          if (tripData.targetNights) window.state.targetNights = tripData.targetNights;
+          if (tripData.initialNights) window.state.initialNights = tripData.initialNights;
+          if (tripData.startDateStr) window.state.startDateStr = tripData.startDateStr;
+          if (tripData._stepGroups) window.state._stepGroups = tripData._stepGroups;
+          if (tripData._itinRef) window.state._itinRef = tripData._itinRef;
+          
+          // Restaurer les réservations voyage (vol, voiture, guide...)
+          if (tripData.travelBookings && tripData.travelBookings.length > 0) {
+            window.state.travelBookings = tripData.travelBookings;
+            console.log('[SHARE] ✅ Réservations voyage restaurées:', tripData.travelBookings.length);
+          }
+          
+          // Restaurer les bookings des étapes dans globalBookingManager
+          if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+            tripData.steps.forEach((step, idx) => {
+              if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+                step.bookings.forEach(booking => {
+                  globalBookingManager.addBooking(idx, booking);
+                });
+                console.log('[SHARE] ✅ Bookings étape', idx, ':', step.bookings.length);
+              }
+            });
+          }
+          
+          // 🔒 BLOQUER le recalcul auto des nuits — données exactes du partage
+          window._autoCalcNightsDone = true;
+          window.state._isFromDashboard = true;
+          
+          // Mettre à jour la date de départ dans le picker
+          if (tripData.startDateStr && window.ortDatePicker) {
+            window.ortDatePicker.setDate(tripData.startDateStr, true);
+          }
+          
+          console.log('[SHARE] ✅ State complet restauré:', window.state.steps.length, 'étapes,', 
+            window.state.targetNights, 'nuits cible, date:', window.state.startDateStr);
           
           // Mettre à jour le titre dans l'UI
           const titleEl = document.getElementById('tripTitle') || document.querySelector('.trip-title');
@@ -4384,6 +4416,14 @@ function initApp(){
               window.fitMapToSteps();
             }
           }, 500);
+          
+          // Re-render après chargement async pour afficher les hôtels réservés
+          setTimeout(() => {
+            if (typeof window.renderRows === 'function') {
+              console.log('[SHARE] 🔄 Re-render post-bookings');
+              window.renderRows();
+            }
+          }, 3000);
         } else {
           console.warn('[SHARE] ⚠️ Pas d\'étapes dans les données partagées:', tripData);
         }
@@ -9846,19 +9886,6 @@ if (typeof window.showLoginModalForSave !== 'function') {
   }
   
   // Bouton Fiche Pays → ouvre le drawer pays
-  const countryBtn = document.getElementById('btnToolsCountry');
-  if(countryBtn){
-    countryBtn.addEventListener('click', ()=>{
-      toolsPop.classList.remove('show');
-      if(typeof window.openCountryDrawer === 'function'){
-        window.openCountryDrawer();
-      } else {
-        const drawer = document.getElementById('countryDrawer');
-        if(drawer) drawer.classList.add('show');
-      }
-    });
-  }
-  
   // Bouton Signaler une erreur
   const reportBtn = document.getElementById('btnToolsReport');
   if(reportBtn){
@@ -9908,7 +9935,7 @@ if (typeof window.showLoginModalForSave !== 'function') {
   const shareBtn = document.getElementById('btnShareTrip');
   if(shareBtn){
     shareBtn.addEventListener('click', ()=>{
-      const u = currentUser();
+      const u = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
       if(!u){ showLoginModalForSave(); return; }
       
       const currentTripId = window.state?.tripId;
