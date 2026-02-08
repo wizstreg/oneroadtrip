@@ -2325,6 +2325,9 @@ if (typeof t !== 'function') {
     startDate: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' },
     tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' },
     generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' },
+    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' },
+    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' },
+    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' },
     bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' },
     bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' },
     bookInsurance: { fr: 'Assurance voyage', en: 'Travel insurance', es: 'Seguro de viaje', it: 'Assicurazione viaggio', pt: 'Seguro viagem', ar: 'تأمين السفر' },
@@ -2526,8 +2529,13 @@ row.style.marginBottom = '0';   // ↓ supprime l’espace dessous
     // renforts visuels au cas où hdr-btn n’existe pas partout
     a.style.textDecoration = 'none';
     a.style.whiteSpace = 'nowrap';
-    a.style.padding = a.style.padding || '6px 12px';
-    a.style.borderRadius = a.style.borderRadius || '10px';
+    a.style.padding = '6px 14px';
+    a.style.borderRadius = '10px';
+    a.style.color = '#dc2626';
+    a.style.border = '2px solid #dc2626';
+    a.style.fontWeight = '700';
+    a.style.fontSize = '14px';
+    a.style.background = '#fff';
 
     // 6) Si non connecté, bloque et affiche un pop-up i18n
     a.addEventListener('click', function(ev){
@@ -2968,7 +2976,7 @@ toolsBtnRow.className = 'hdr-btn';
 toolsBtnRow.textContent = '🔧 ' + t('tools');
 toolsBtnRow.title = t('tools');
 Object.assign(toolsBtnRow.style, {
-  marginLeft: '12px',
+  marginLeft: '8px',
   padding: '6px 14px',
   borderRadius: '10px',
   background: '#fff',
@@ -3007,28 +3015,27 @@ toolsBtnRow.addEventListener('click', function(e){
 row.appendChild(a);
 row.appendChild(toolsBtnRow);
 
-// === Bouton PDF dans le header ===
+// === Bouton PDF (Carnet) dans le header - CADRE ROUGE ===
 const pdfBtnRow = document.createElement('button');
 pdfBtnRow.id = 'btnExportPDFHeader';
 pdfBtnRow.type = 'button';
 pdfBtnRow.className = 'hdr-btn';
-pdfBtnRow.textContent = '📄 Carnet';
+pdfBtnRow.textContent = t('travelBook');
 pdfBtnRow.title = t('generatePdf');
 Object.assign(pdfBtnRow.style, {
-  marginLeft: '8px',
+  marginLeft: '6px',
   padding: '6px 14px',
   borderRadius: '10px',
   background: '#fff',
-  color: '#113f7a',
-  border: '1px solid #c3d6b6',
+  color: '#dc2626',
+  border: '2px solid #dc2626',
   cursor: 'pointer',
-  fontWeight: '600',
+  fontWeight: '700',
   fontSize: '14px'
 });
 pdfBtnRow.addEventListener('click', () => {
   if (window.ORT_PDF && window.state) {
     const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-    // Inclure practical_context si présent dans _originalPracticalContext
     if (state._originalPracticalContext && !state.practical_context) {
       state.practical_context = state._originalPracticalContext;
     }
@@ -3037,7 +3044,75 @@ pdfBtnRow.addEventListener('click', () => {
     alert('Module PDF non chargé ou state non disponible');
   }
 });
-row.appendChild(pdfBtnRow);
+// Insérer AVANT Outils
+row.insertBefore(pdfBtnRow, toolsBtnRow);
+
+// === Bouton Partager dans le header - CADRE ROUGE ===
+const shareBtnRow = document.createElement('button');
+shareBtnRow.id = 'btnShareTripHeader';
+shareBtnRow.type = 'button';
+shareBtnRow.className = 'hdr-btn';
+shareBtnRow.textContent = t('shareTrip');
+shareBtnRow.title = t('shareTrip');
+Object.assign(shareBtnRow.style, {
+  marginLeft: '6px',
+  padding: '6px 14px',
+  borderRadius: '10px',
+  background: '#fff',
+  color: '#dc2626',
+  border: '2px solid #dc2626',
+  cursor: 'pointer',
+  fontWeight: '700',
+  fontSize: '14px'
+});
+shareBtnRow.addEventListener('click', () => {
+  const u = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+  if (!u) { 
+    if (typeof showLoginModalForSave === 'function') showLoginModalForSave(); 
+    return; 
+  }
+  const currentTripId = window.state?.tripId;
+  if (!currentTripId || currentTripId.startsWith('temp_') || currentTripId.startsWith('catalog::')) {
+    if (typeof showSaveBeforeShareModal === 'function') showSaveBeforeShareModal();
+    return;
+  }
+  if (typeof ORT_SHARE !== 'undefined' && ORT_SHARE.showModal) {
+    const tripTitle = window.state?.title || document.getElementById('rtTitle')?.textContent || 'Voyage';
+    ORT_SHARE.showModal(currentTripId, tripTitle);
+  } else {
+    if (typeof toast === 'function') toast('❌ Module de partage non disponible');
+  }
+});
+row.insertBefore(shareBtnRow, toolsBtnRow);
+
+// === Bouton Importer Réservations - CADRE ROUGE ===
+const importBookBtnRow = document.createElement('button');
+importBookBtnRow.id = 'btnImportBookHeader';
+importBookBtnRow.type = 'button';
+importBookBtnRow.className = 'hdr-btn';
+importBookBtnRow.textContent = t('importBookings');
+importBookBtnRow.title = t('menuImportBooking');
+Object.assign(importBookBtnRow.style, {
+  marginLeft: '6px',
+  padding: '6px 14px',
+  borderRadius: '10px',
+  background: '#fff',
+  color: '#dc2626',
+  border: '2px solid #dc2626',
+  cursor: 'pointer',
+  fontWeight: '700',
+  fontSize: '14px'
+});
+importBookBtnRow.addEventListener('click', () => {
+  if (typeof navigateToCustomizePage === 'function') {
+    navigateToCustomizePage('rt-booking-import.html');
+  } else {
+    const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
+    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    window.location.href = `rt-booking-import.html?tripId=${tripId}&lang=${lang}`;
+  }
+});
+row.insertBefore(importBookBtnRow, toolsBtnRow);
 
 // === Menu Personnaliser (Photos, Résas, Documents) ===
 const customizeWrap = document.createElement('div');

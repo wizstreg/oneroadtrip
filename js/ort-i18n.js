@@ -2133,4 +2133,32 @@ window.ORT_I18N.dragToReorder = {
   ar: 'اسحبها لنقلها في القائمة'
 };
 
+// === BOUTONS HEADER (RT Detail) ===
+window.ORT_I18N.travelBook = {
+  fr: '📄 Carnet',
+  en: '📄 Travel Book',
+  es: '📄 Cuaderno',
+  it: '📄 Diario',
+  pt: '📄 Caderno',
+  ar: '📄 دفتر السفر'
+};
+
+window.ORT_I18N.shareTrip = {
+  fr: '🔗 Partager',
+  en: '🔗 Share',
+  es: '🔗 Compartir',
+  it: '🔗 Condividi',
+  pt: '🔗 Partilhar',
+  ar: '🔗 مشاركة'
+};
+
+window.ORT_I18N.importBookings = {
+  fr: '➕ Réservations',
+  en: '➕ Bookings',
+  es: '➕ Reservas',
+  it: '➕ Prenotazioni',
+  pt: '➕ Reservas',
+  ar: '➕ الحجوزات'
+};
+
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');
