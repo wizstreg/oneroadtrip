@@ -401,6 +401,44 @@
     return tripData?.steps?.[stepIndex]?.bookings || [];
   }
 
+  /**
+   * Met à jour une réservation d'étape
+   */
+  async function updateStepBooking(stepIndex, bookingId, updatedData) {
+    if (!tripData?.steps) return false;
+    
+    let updated = false;
+    tripData.steps.forEach((step, idx) => {
+      if (step.bookings) {
+        const bIdx = step.bookings.findIndex(b => b.id === bookingId);
+        if (bIdx >= 0) {
+          step.bookings[bIdx] = { ...step.bookings[bIdx], ...updatedData };
+          updated = true;
+          console.log('✏️ [TRIP-DATA] Booking mis à jour étape', idx, ':', bookingId);
+        }
+      }
+    });
+    
+    // Mettre à jour dans Firestore
+    if (updated && bookingId) {
+      const user = window.firebase?.auth?.()?.currentUser;
+      if (user && window.firebase?.firestore) {
+        try {
+          const db = firebase.firestore();
+          await db.collection('users').doc(user.uid)
+            .collection('trips').doc(currentTripId)
+            .collection('bookings').doc(bookingId).update(updatedData);
+          console.log('✏️ [TRIP-DATA] Réservation mise à jour Firestore:', bookingId);
+        } catch (e) {
+          console.warn('⚠️ [TRIP-DATA] Erreur update Firestore:', e);
+        }
+      }
+    }
+    
+    if (updated) scheduleSave();
+    return updated;
+  }
+
   // ===== RÉSERVATIONS VOYAGE (GLOBAL) =====
 
   /**
@@ -470,6 +508,35 @@
    */
   function getTravelBookings() {
     return tripData?.travelBookings || [];
+  }
+
+  /**
+   * Met à jour une réservation de voyage
+   */
+  async function updateTravelBooking(bookingId, updatedData) {
+    if (!tripData?.travelBookings) return false;
+    
+    const bIdx = tripData.travelBookings.findIndex(b => b.id === bookingId);
+    if (bIdx < 0) return false;
+    
+    tripData.travelBookings[bIdx] = { ...tripData.travelBookings[bIdx], ...updatedData };
+    console.log('✏️ [TRIP-DATA] Réservation voyage mise à jour:', bookingId);
+    
+    // Firestore
+    const user = window.firebase?.auth?.()?.currentUser;
+    if (user && window.firebase?.firestore) {
+      try {
+        const db = firebase.firestore();
+        await db.collection('users').doc(user.uid)
+          .collection('trips').doc(currentTripId)
+          .collection('bookings').doc(bookingId).update(updatedData);
+      } catch (e) {
+        console.warn('⚠️ [TRIP-DATA] Erreur update Firestore:', e);
+      }
+    }
+    
+    scheduleSave();
+    return true;
   }
 
   // ===== DOCUMENTS =====
@@ -787,11 +854,13 @@
     // Réservations par étape
     addStepBooking,
     removeStepBooking,
+    updateStepBooking,
     getStepBookings,
 
     // Réservations voyage
     addTravelBooking,
     removeTravelBooking,
+    updateTravelBooking,
     getTravelBookings,
 
     // Documents

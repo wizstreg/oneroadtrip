@@ -272,6 +272,11 @@ html, body {
   align-items: flex-start;
   gap: 12px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(17,63,122,0.1);
+}
+.booking-item:active {
+  background: #f0f4ff;
 }
 
 .booking-icon {
@@ -431,6 +436,11 @@ html, body {
   background: #f8fafc;
   border-radius: 10px;
   border: 1px solid var(--ort-border);
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(17,63,122,0.1);
+}
+.step-booking-item:active {
+  background: #e8f0fe;
 }
 
 .step-booking-icon {
@@ -733,6 +743,11 @@ html, body {
   background: #fff;
   border-radius: 8px;
   margin-top: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(17,63,122,0.1);
+}
+.viz-booking-item:active {
+  background: #fef3c7;
 }
 
 .viz-booking-icon {
@@ -4438,6 +4453,9 @@ function renderBookings() {
   const container = $('bookingsContainer');
   if (!container) return;
   
+  // Réinitialiser le cache de bookings
+  window._bookingCache = [];
+  
   let html = '';
   let totalBudget = 0;
   
@@ -4483,6 +4501,10 @@ function renderBookings() {
   if (window.ORT_TRIP_DATA) {
     travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
   }
+  // Fallback: state.travelBookings (mode partagé ou données locales)
+  if ((!travelBookings || travelBookings.length === 0) && state.travelBookings && state.travelBookings.length > 0) {
+    travelBookings = state.travelBookings;
+  }
   
   if (travelBookings.length > 0) {
     html += `<div class="booking-section">
@@ -4495,7 +4517,7 @@ function renderBookings() {
       const dateLine = getDateLine(b, b.nights);
       
       html += `
-        <div class="booking-item" onclick="showBookingDetail(${JSON.stringify(b).replace(/"/g, '&quot;')})">
+        <div class="booking-item" onclick="showBookingByIdx(${cacheBooking(b)})">
           <div class="booking-icon">${icon}</div>
           <div class="booking-info">
             <div class="booking-name">${b.name || 'Réservation'}</div>
@@ -4532,7 +4554,34 @@ function renderBookings() {
         }
       });
     });
-  } else if (state.bookings) {
+  }
+  
+  // Fallback: step.bookings directement (mode partagé) + globalBookingManager
+  if (stepBookingsMap.size === 0) {
+    state.steps.forEach((step, stepIdx) => {
+      let stepBookings = [];
+      // Source 1: step.bookings (données partagées inline)
+      if (step.bookings && Array.isArray(step.bookings) && step.bookings.length > 0) {
+        stepBookings = step.bookings;
+      }
+      // Source 2: globalBookingManager
+      if (stepBookings.length === 0 && typeof globalBookingManager !== 'undefined' && globalBookingManager) {
+        stepBookings = globalBookingManager.getBookings(stepIdx) || [];
+      }
+      stepBookings.forEach(b => {
+        const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+        if (!stepBookingsMap.has(bookingId)) {
+          stepBookingsMap.set(bookingId, {
+            booking: b,
+            steps: [stepIdx],
+            firstStepIndex: stepIdx
+          });
+        }
+      });
+    });
+  }
+  
+  if (stepBookingsMap.size === 0 && state.bookings) {
     // Fallback: ancien format state.bookings
     Object.entries(state.bookings).forEach(([stepIdx, bookings]) => {
       bookings.forEach(b => {
@@ -4575,7 +4624,7 @@ function renderBookings() {
         const dateLine = getDateLine(b, nights);
         
         html += `
-          <div class="booking-item">
+          <div class="booking-item" onclick="showBookingByIdx(${cacheBooking(Object.assign({}, b, {stepIndex: stepIdx}))})">
             <div class="booking-icon">${icon}</div>
             <div class="booking-info">
               <div class="booking-name">${b.name || 'Réservation'}</div>
@@ -5278,7 +5327,7 @@ function openStepSheet(idx) {
           }
         }
         return `
-          <div class="step-booking-item">
+          <div class="step-booking-item" onclick="showBookingByIdx(${cacheBooking(Object.assign({}, b, {stepIndex: idx}))})">
             <div class="step-booking-icon">${icon}</div>
             <div class="step-booking-info">
               <div class="step-booking-name">${b.name || 'Réservation'}</div>
@@ -6100,6 +6149,19 @@ const SCANNER = {
 
 // === BOOKING DETAIL FUNCTIONS ===
 let currentBookingData = null;
+// Cache de bookings pour event delegation (évite JSON dans onclick)
+window._bookingCache = [];
+
+function cacheBooking(booking) {
+  const idx = window._bookingCache.length;
+  window._bookingCache.push(booking);
+  return idx;
+}
+
+function showBookingByIdx(idx) {
+  const b = window._bookingCache[idx];
+  if (b) showBookingDetail(b);
+}
 
 function showBookingDetail(booking) {
   console.log('[BOOKING] Show detail:', booking);
@@ -6161,10 +6223,24 @@ function showBookingDetail(booking) {
   
   content.innerHTML = html;
   
+  // Restaurer les boutons Modifier/Supprimer
+  if ($('btnEditBooking')) $('btnEditBooking').style.display = '';
+  if ($('btnDeleteBooking')) $('btnDeleteBooking').style.display = '';
+  
   // Ouvrir la sheet
+  // Si on vient d'une autre sheet (étape), attendre sa fermeture
+  const wasSheetOpen = document.querySelector('.bottom-sheet.open') !== null;
   closeAllSheets();
-  $('bookingDetailSheet').classList.add('open');
-  $('overlay').classList.add('active');
+  
+  if (wasSheetOpen) {
+    setTimeout(() => {
+      $('bookingDetailSheet').classList.add('open');
+      $('overlay').classList.add('active');
+    }, 300);
+  } else {
+    $('bookingDetailSheet').classList.add('open');
+    $('overlay').classList.add('active');
+  }
 }
 
 function formatDate(dateStr) {
@@ -6180,18 +6256,160 @@ function formatDate(dateStr) {
 async function editBooking() {
   if (!currentBookingData) return;
   
-  // Rediriger vers RT Detail avec le tripId pour éditer
-  const tripId = state.tripId || localStorage.getItem('ORT_CURRENT_TRIP_ID');
-  if (tripId) {
-    const url = `roadtrip_detail.html?tripId=${tripId}&lang=${state.lang || 'fr'}&editBooking=${currentBookingData.id || ''}`;
-    showToast('🔄 Redirection vers l\'éditeur...');
-    setTimeout(() => {
-      window.location.href = url;
-    }, 500);
-  } else {
-    showToast('❌ Impossible d\'éditer - ID voyage manquant');
+  const content = $('bookingDetailContent');
+  const b = currentBookingData;
+  
+  // Déterminer les champs selon la catégorie
+  const isHotel = b.category === 'hotel';
+  const isFlight = b.category === 'flight';
+  const isCarRental = b.category === 'car_rental';
+  
+  const priceVal = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : '';
+  
+  content.innerHTML = `
+    <div style="background:#f8f9fa;border-radius:12px;padding:16px;">
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;">Nom</label>
+        <input type="text" id="editBookingName" value="${(b.name || '').replace(/"/g, '&quot;')}" 
+          style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+      </div>
+      ${b.provider !== undefined || isFlight || isCarRental ? `
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;">Prestataire</label>
+        <input type="text" id="editBookingProvider" value="${(b.provider || '').replace(/"/g, '&quot;')}" 
+          style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+      </div>` : ''}
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label style="font-weight:600;font-size:0.85rem;color:#555;">Date début</label>
+          <input type="date" id="editBookingDateStart" value="${b.date_start || ''}" 
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-weight:600;font-size:0.85rem;color:#555;">Date fin</label>
+          <input type="date" id="editBookingDateEnd" value="${b.date_end || ''}" 
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <div style="flex:1;">
+          <label style="font-weight:600;font-size:0.85rem;color:#555;">Prix (€)</label>
+          <input type="number" id="editBookingPrice" value="${priceVal}" step="0.01"
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+        </div>
+        ${isHotel ? `
+        <div style="flex:1;">
+          <label style="font-weight:600;font-size:0.85rem;color:#555;">Nuits</label>
+          <input type="number" id="editBookingNights" value="${b.nights || ''}" min="1"
+            style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+        </div>` : ''}
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;">N° confirmation</label>
+        <input type="text" id="editBookingRef" value="${(b.confirmation_number || b.reference || '').replace(/"/g, '&quot;')}" 
+          style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;">Lien</label>
+        <input type="url" id="editBookingLink" value="${(b.link || '').replace(/"/g, '&quot;')}" placeholder="https://..."
+          style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label style="font-weight:600;font-size:0.85rem;color:#555;">Notes</label>
+        <textarea id="editBookingNotes" rows="2" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:0.95rem;margin-top:4px;box-sizing:border-box;resize:vertical;">${b.notes || ''}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button onclick="cancelEditBooking()" style="flex:1;padding:12px;border:1px solid #ddd;border-radius:8px;background:#f0f0f0;font-weight:600;cursor:pointer;">Annuler</button>
+        <button onclick="saveEditBooking()" style="flex:1;padding:12px;border:none;border-radius:8px;background:#113f7a;color:white;font-weight:600;cursor:pointer;">✅ Enregistrer</button>
+      </div>
+    </div>
+  `;
+  
+  // Masquer les boutons Modifier/Supprimer pendant l'édition
+  $('btnEditBooking').style.display = 'none';
+  $('btnDeleteBooking').style.display = 'none';
+}
+
+function cancelEditBooking() {
+  // Ré-afficher le détail en lecture
+  if (currentBookingData) showBookingDetail(currentBookingData);
+  $('btnEditBooking').style.display = '';
+  $('btnDeleteBooking').style.display = '';
+}
+
+async function saveEditBooking() {
+  if (!currentBookingData) return;
+  
+  const updated = { ...currentBookingData };
+  updated.name = $('editBookingName')?.value || updated.name;
+  updated.date_start = $('editBookingDateStart')?.value || updated.date_start;
+  updated.date_end = $('editBookingDateEnd')?.value || updated.date_end;
+  updated.confirmation_number = $('editBookingRef')?.value || '';
+  updated.reference = updated.confirmation_number;
+  updated.link = $('editBookingLink')?.value || '';
+  updated.notes = $('editBookingNotes')?.value || '';
+  
+  const priceInput = $('editBookingPrice')?.value;
+  if (priceInput) {
+    updated.price = typeof updated.price === 'object' 
+      ? { ...updated.price, amount: parseFloat(priceInput) }
+      : parseFloat(priceInput);
+  }
+  
+  if ($('editBookingProvider')) updated.provider = $('editBookingProvider').value || '';
+  if ($('editBookingNights')) updated.nights = parseInt($('editBookingNights').value) || updated.nights;
+  
+  try {
+    const tripId = state.tripId || localStorage.getItem('ORT_CURRENT_TRIP_ID');
+    const stepIdx = currentBookingData.stepIndex;
+    
+    // Sauvegarder via ORT_TRIP_DATA
+    if (window.ORT_TRIP_DATA && tripId) {
+      const isTravelBooking = ['flight', 'car_rental', 'insurance', 'guide'].includes(updated.category);
+      if (isTravelBooking) {
+        await ORT_TRIP_DATA.updateTravelBooking(updated.id, updated);
+      } else if (stepIdx !== undefined) {
+        await ORT_TRIP_DATA.updateStepBooking(stepIdx, updated.id, updated);
+      }
+    }
+    
+    // Mettre à jour dans globalBookingManager aussi
+    if (typeof globalBookingManager !== 'undefined' && globalBookingManager && stepIdx !== undefined) {
+      if (typeof globalBookingManager.updateBooking === 'function') {
+        globalBookingManager.updateBooking(stepIdx, updated.id, updated);
+      } else {
+        // Fallback: remove + add
+        if (typeof globalBookingManager.removeBooking === 'function') globalBookingManager.removeBooking(stepIdx, updated.id);
+        if (typeof globalBookingManager.addBooking === 'function') globalBookingManager.addBooking(stepIdx, updated);
+      }
+    }
+    
+    // Mettre à jour dans state.steps.bookings
+    if (stepIdx !== undefined && state.steps[stepIdx]) {
+      const stepBookings = state.steps[stepIdx].bookings || [];
+      const bIdx = stepBookings.findIndex(b => b.id === updated.id || b.name === currentBookingData.name);
+      if (bIdx >= 0) {
+        state.steps[stepIdx].bookings[bIdx] = updated;
+      }
+    }
+    
+    showToast('✅ Réservation modifiée');
+    currentBookingData = updated;
+    showBookingDetail(updated);
+    $('btnEditBooking').style.display = '';
+    $('btnDeleteBooking').style.display = '';
+    
+    // Rafraîchir l'onglet réservations
+    setTimeout(() => renderBookings(), 300);
+    
+  } catch(e) {
+    console.error('[BOOKING EDIT]', e);
+    showToast('❌ Erreur: ' + e.message);
   }
 }
+
+window.cancelEditBooking = cancelEditBooking;
+window.saveEditBooking = saveEditBooking;
 
 async function deleteBooking() {
   if (!currentBookingData) return;
@@ -6510,7 +6728,7 @@ window.deleteActivity = deleteActivity;
             }
           }
           html += `
-            <div class="viz-booking-item">
+            <div class="viz-booking-item" onclick="showBookingByIdx(${cacheBooking(Object.assign({}, b, {stepIndex: vizCurrentStep}))})">
               <div class="viz-booking-icon">${icon}</div>
               <div class="viz-booking-info">
                 <div class="viz-booking-name">${b.name || 'Réservation'}</div>
