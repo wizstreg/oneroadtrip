@@ -4988,20 +4988,23 @@ function applyListView(mode) {
       }
     }
     
-    // Déterminer le nombre de colonnes (2 ou 3)
+    // Déterminer le nombre de colonnes (2 ou 3) — adaptatif
     const screenW = window.innerWidth;
-    const cols = screenW >= 1600 ? 3 : 2;
+    const cols = (screenW >= 1600 || n > 20) ? 3 : 2;
     
     // Appliquer la classe pour le nombre de colonnes
     const rowsContainer = document.getElementById('rows');
     if (rowsContainer) {
       rowsContainer.classList.remove('fullscreen-2col', 'fullscreen-3col');
       rowsContainer.classList.add(cols === 3 ? 'fullscreen-3col' : 'fullscreen-2col');
+      
+      // Fixer le nombre de lignes pour remplissage vertical colonne par colonne
+      const perCol = Math.ceil(n / cols);
+      rowsContainer.style.gridTemplateRows = 'repeat(' + perCol + ', auto)';
+      rowsContainer.style.gridAutoFlow = 'column';
     }
     
-    // Injecter "Jx" dans step-num et réordonner colonne par colonne
-    const perCol = Math.ceil(n / cols);
-    
+    // Injecter "Jx" dans step-num — pas besoin de réordonner, grid-auto-flow: column s'en charge
     rows.forEach((row, i) => {
       const stepNum = row.querySelector('.step-num');
       if (stepNum) {
@@ -5011,17 +5014,8 @@ function applyListView(mode) {
         stepNum.title = 'Jour ' + dayNumbers[i] + ' (étape ' + (i + 1) + ')';
       }
       
-      // Réordonner : remplir colonnes verticalement
-      // Col 0: items 0..perCol-1, Col 1: perCol..2*perCol-1, etc.
-      let col, posInCol;
-      if (i < perCol) {
-        col = 0; posInCol = i;
-      } else if (i < perCol * 2) {
-        col = 1; posInCol = i - perCol;
-      } else {
-        col = 2; posInCol = i - perCol * 2;
-      }
-      row.style.order = posInCol * cols + col;
+      // Retirer tout order précédent
+      row.style.order = '';
     });
     
   } else {
@@ -5040,6 +5034,8 @@ function applyListView(mode) {
     const rowsContainer = document.getElementById('rows');
     if (rowsContainer) {
       rowsContainer.classList.remove('fullscreen-2col', 'fullscreen-3col');
+      rowsContainer.style.gridTemplateRows = '';
+      rowsContainer.style.gridAutoFlow = '';
     }
   }
   
@@ -8738,11 +8734,37 @@ $('#btnSave').onclick = async ()=>{
   const u = currentUser();
   if(!u){ showLoginModalForSave(); return; }
 
-  // === AJOUTER LES RÉSERVATIONS À WINDOW.STATE AVANT SAUVEGARDE ===
+  // === AJOUTER TOUS LES CHAMPS UTILISATEUR À WINDOW.STATE AVANT SAUVEGARDE ===
+  
+  // 1. Réservations
   if (typeof globalBookingManager !== 'undefined' && globalBookingManager) {
     state.bookings = globalBookingManager.bookings;
     console.log('[BOOKINGS] 💾 Réservations ajoutées à state:', Object.keys(state.bookings).length, 'étapes');
   }
+  
+  // 2. Date de départ (déjà dans state.startDateStr normalement, mais on force)
+  if (!state.startDateStr && localStorage.getItem('ort.rtStartDate')) {
+    state.startDateStr = localStorage.getItem('ort.rtStartDate');
+  }
+  console.log('[SAVE] 📅 Date de départ:', state.startDateStr || 'non définie');
+  
+  // 3. Métadonnées originales (practical_context, seo, etc.)
+  // Ces champs sont normalement déjà dans state._originalXXX, on les force dans state pour l'export JSON
+  if (state._originalPracticalContext && !state.practical_context) {
+    state.practical_context = state._originalPracticalContext;
+  }
+  if (state._originalSeo && !state.seo) {
+    state.seo = state._originalSeo;
+  }
+  if (state._originalMeta && !state.meta) {
+    state.meta = state._originalMeta;
+  }
+  
+  console.log('[SAVE] 📦 Métadonnées:', 
+    state.practical_context ? 'practical_context ✓' : 'practical_context ✗',
+    state.seo ? 'seo ✓' : 'seo ✗',
+    state.meta ? 'meta ✓' : 'meta ✗'
+  );
 
   // == reconstitue le résumé comme dans scheduleAutosave() ==
   const rid = ensureRid();
@@ -8777,7 +8799,8 @@ $('#btnSave').onclick = async ()=>{
     detailUrl: location.href,
     coords,
     coordsPath,
-    coverUrl
+    coverUrl,
+    startDateStr: state.startDateStr || ''
   };
 // — Sauvegarde "plein" pour ouverture/partage par rid —
 // clé: ort.rt::<uid>::<rid>
@@ -12066,6 +12089,37 @@ if (!cc || !itin) {
             // Copier directement les bookings
             globalBookingManager.bookings = JSON.parse(JSON.stringify(trip.bookings));
             console.log('[LOG-CONTROLE][INIT] 🎫 Bookings restaurés dans globalBookingManager:', Object.keys(globalBookingManager.bookings).length, 'étapes');
+          }
+          
+          // Restaurer la date de départ
+          if (trip.startDateStr) {
+            window.state.startDateStr = trip.startDateStr;
+            state.startDateStr = trip.startDateStr;
+            localStorage.setItem('ort.rtStartDate', trip.startDateStr);
+            console.log('[LOG-CONTROLE][INIT] 📅 Date restaurée:', trip.startDateStr);
+            // Mettre à jour le date picker si disponible
+            if (window.ortDatePicker && typeof window.ortDatePicker.setDate === 'function') {
+              setTimeout(() => {
+                window.ortDatePicker.setDate(trip.startDateStr, true);
+                console.log('[LOG-CONTROLE][INIT] 📅 Date picker mis à jour');
+              }, 200);
+            }
+          } else {
+            console.warn('[LOG-CONTROLE][INIT] ⚠️ Pas de startDateStr dans le trip');
+          }
+          
+          // Restaurer les métadonnées
+          if (trip.practical_context) {
+            state._originalPracticalContext = trip.practical_context;
+            console.log('[LOG-CONTROLE][INIT] 📦 practical_context restauré');
+          }
+          if (trip.seo) {
+            state._originalSeo = trip.seo;
+            console.log('[LOG-CONTROLE][INIT] 📦 seo restauré');
+          }
+          if (trip.meta) {
+            state._originalMeta = trip.meta;
+            console.log('[LOG-CONTROLE][INIT] 📦 meta restauré');
           }
           
           window.ORT_DETAIL_ADAPTER.init(trip.id, window.state);

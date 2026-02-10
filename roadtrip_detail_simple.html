@@ -751,8 +751,12 @@ body.view-itin-only #rows{
   max-width: 100%;
   margin: 0;
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 3px 8px;
+}
+body.view-itin-only #rows.fullscreen-3col {
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px 6px;
 }
 /* Lignes ultra-compactes en plein écran */
 body.view-itin-only .step-row {
@@ -4127,21 +4131,55 @@ localStorage.setItem('ort.view', mapOnly ? 'map' : 'normal');
     // Réordonner les lignes pour affichage colonne par colonne
     const rows = document.querySelectorAll('#rows .step-row');
     const n = rows.length;
-    const half = Math.ceil(n / 2);
+    const rowsContainer = document.getElementById('rows');
     
-    rows.forEach((row, i) => {
-      if (listOnly && n > 1) {
-        // Colonne par colonne : 1,2,3,4,5 en col1 puis 6,7,8,9,10 en col2
-        // Position visuelle : éléments 0..half-1 aux positions paires, half..n-1 aux impaires
-        if (i < half) {
-          row.style.order = i * 2;
-        } else {
-          row.style.order = (i - half) * 2 + 1;
-        }
-      } else {
-        row.style.order = '';
+    if (listOnly && n > 1 && rowsContainer) {
+      // Choix adaptatif: 3 colonnes si écran large OU beaucoup d'étapes
+      const screenW = window.innerWidth;
+      const cols = (screenW >= 1600 || n > 20) ? 3 : 2;
+      
+      rowsContainer.classList.remove('fullscreen-3col');
+      if (cols === 3) rowsContainer.classList.add('fullscreen-3col');
+      
+      // Remplissage vertical colonne par colonne
+      const perCol = Math.ceil(n / cols);
+      rowsContainer.style.gridTemplateRows = 'repeat(' + perCol + ', auto)';
+      rowsContainer.style.gridAutoFlow = 'column';
+      
+      // Numérotation par jours
+      let cumulNights = 0;
+      const dayNumbers = [];
+      for (let i = 0; i < n; i++) {
+        const nights = state?.steps?.[i]?.nights || 0;
+        dayNumbers[i] = cumulNights + 1;
+        if (nights > 0) cumulNights += nights;
       }
-    });
+      
+      rows.forEach((row, i) => {
+        const stepNum = row.querySelector('.step-num');
+        if (stepNum) {
+          if (!stepNum.dataset.origNum) stepNum.dataset.origNum = stepNum.textContent;
+          stepNum.textContent = 'J' + dayNumbers[i];
+          stepNum.title = 'Jour ' + dayNumbers[i] + ' (étape ' + (i + 1) + ')';
+        }
+        row.style.order = '';
+      });
+    } else {
+      rows.forEach((row, i) => {
+        const stepNum = row.querySelector('.step-num');
+        if (stepNum) {
+          stepNum.textContent = stepNum.dataset.origNum || (i + 1);
+          stepNum.title = '';
+          delete stepNum.dataset.origNum;
+        }
+        row.style.order = '';
+      });
+      if (rowsContainer) {
+        rowsContainer.classList.remove('fullscreen-3col');
+        rowsContainer.style.gridTemplateRows = '';
+        rowsContainer.style.gridAutoFlow = '';
+      }
+    }
     
     localStorage.setItem('ort.listView', listOnly ? 'list' : 'normal');
     
