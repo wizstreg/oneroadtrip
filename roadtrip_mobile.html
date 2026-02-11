@@ -1845,6 +1845,45 @@ html, body {
         <div class="label">Km</div>
       </div>
     </div>
+    <!-- ═══ RÉSUMÉ IA ═══ -->
+    <style>
+    #aiSummaryBox{margin:12px 0;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff}
+    .ai-review-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:12px;margin-bottom:12px}
+    .ai-review-line{margin-bottom:4px;font-size:12px;line-height:1.5;color:#1a3d1a}
+    .ai-steps-grid{display:flex;flex-direction:column;gap:10px}
+    .ai-step-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:4px}
+    .ai-step-day{font-weight:800;font-size:11px;color:#6366f1;text-transform:uppercase;letter-spacing:.5px}
+    .ai-step-city{font-weight:700;font-size:13px;color:#1e3a5f}
+    .ai-step-highlights{font-size:11px;line-height:1.5;color:#475569}
+    .ai-step-next{font-size:10px;color:#6366f1;font-style:italic;margin-top:4px;padding-top:4px;border-top:1px dashed #e2e8f0}
+    </style>
+    <div id="aiSummaryBox">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:linear-gradient(135deg,#f0f4ff,#e8f0fe);cursor:pointer;user-select:none;" onclick="toggleAiSummary()">
+        <span id="aiSummaryTitleEl" style="font-weight:700;font-size:14px;color:#1e3a5f;">🤖 Résumé IA</span>
+        <span id="aiSummaryChevron" style="font-size:16px;transition:transform .2s;color:#64748b;">▸</span>
+      </div>
+      <div id="aiSummaryContent" style="display:none;padding:14px;">
+        <div id="aiSummaryPlaceholder" style="color:#64748b;font-size:12px;line-height:1.5;margin-bottom:12px;"></div>
+        <div id="aiSummaryActions">
+          <button id="btnAiSummary" type="button" onclick="generateAiSummary()" style="width:100%;padding:10px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">✨ Générer le résumé IA</button>
+        </div>
+        <div id="aiSummaryResult" style="display:none;margin-top:14px;">
+          <div id="aiReviewContainer" class="ai-review-box" style="display:none"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span id="aiSummaryItineraryTitle" style="font-weight:700;color:#1e3a5f;font-size:13px;">🗺️ Résumé</span>
+            <span id="aiSummaryCacheTag" style="display:none;font-size:10px;color:#94a3b8;font-style:italic;"></span>
+          </div>
+          <div id="aiStepsGrid" class="ai-steps-grid"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button id="btnCopyAiSummary" type="button" onclick="copyAiSummary()" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:11px;cursor:pointer;font-weight:600;">📋 Copier</button>
+            <button id="btnShareAiWhatsapp" type="button" onclick="shareAiSummary('whatsapp')" style="padding:8px 14px;border-radius:8px;border:1px solid #25d366;background:#25d366;color:#fff;font-size:11px;cursor:pointer;font-weight:700;">💬 WhatsApp</button>
+            <button id="btnShareAiSms" type="button" onclick="shareAiSummary('sms')" style="padding:8px 14px;border-radius:8px;border:1px solid #3b82f6;background:#3b82f6;color:#fff;font-size:11px;cursor:pointer;font-weight:700;">💬 SMS</button>
+            <button id="btnShareAiEmail" type="button" onclick="shareAiSummary('email')" style="padding:8px 14px;border-radius:8px;border:1px solid #6366f1;background:#6366f1;color:#fff;font-size:11px;cursor:pointer;font-weight:700;">✉️ Email</button>
+            <button id="btnShareAiNative" type="button" onclick="shareAiSummary('native')" style="display:none;padding:8px 14px;border-radius:8px;border:1px solid #1e3a5f;background:#1e3a5f;color:#fff;font-size:11px;cursor:pointer;font-weight:700;" >📤 <span id="btnShareAiNativeLabel">Partager</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
     <div id="stepsList"></div>
   </div>
   
@@ -3403,6 +3442,8 @@ async function init() {
     debugLog('Appel initMap...');
     initMap();
     debugLog('✅ RENDU TERMINÉ - ' + state.title);
+    // Expose state for AI summary script
+    window._ortState = state;
     
   } catch (err) {
     debugLog('❌ ERREUR: ' + err.message);
@@ -7015,6 +7056,311 @@ if ('serviceWorker' in navigator) {
     console.log('[SW] ✅ Enregistré, scope:', r.scope);
   }).catch(e => console.warn('[SW] Échec:', e));
 }
+</script>
+
+<!-- ═══ RÉSUMÉ IA - SCRIPT ═══ -->
+<script>
+(function(){
+  var AI_API = '/.netlify/functions/parse-summary';
+
+  function tAi(key) {
+    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['fr'] || '';
+    return '';
+  }
+  function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // Bridge: find the mobile state object
+  // The mobile script uses top-level "let state" which is NOT on window.
+  // We find it by looking at known exposures or DOM data.
+  function getMobileState() {
+    // 1. If someone exposed it
+    if (window._ortState) return window._ortState;
+    // 2. Try window.state (works in some engines with let)
+    if (window.state && window.state.steps && window.state.steps.length > 0) return window.state;
+    // 3. Read from ORT_TRIPID and localStorage
+    var tripId = null;
+    if (window.ORT_TRIPID && window.ORT_TRIPID.get) tripId = window.ORT_TRIPID.get();
+    if (!tripId) {
+      var p = new URLSearchParams(location.search);
+      tripId = p.get('tripId') || p.get('id') || null;
+    }
+    if (tripId) {
+      try {
+        var stored = localStorage.getItem('ort_trip_' + tripId);
+        if (stored) {
+          var parsed = JSON.parse(stored);
+          if (parsed && parsed.steps && parsed.steps.length > 0) {
+            parsed.tripId = parsed.tripId || parsed.id || tripId;
+            // Reconstruct _originalItinId if missing
+            console.log('[AI-SUMMARY] LS raw keys:', Object.keys(parsed).join(', '));
+            console.log('[AI-SUMMARY] LS _originalItinId:', parsed._originalItinId);
+            console.log('[AI-SUMMARY] LS itinId:', parsed.itinId);
+            console.log('[AI-SUMMARY] LS baseItinerary:', JSON.stringify(parsed.baseItinerary || null));
+            console.log('[AI-SUMMARY] LS _itinRef:', JSON.stringify(parsed._itinRef || null));
+            if (!parsed._originalItinId) {
+              if (parsed._itinRef) {
+                parsed._originalItinId = (typeof parsed._itinRef === 'string') ? parsed._itinRef : (parsed._itinRef.itin || null);
+              }
+              if (!parsed._originalItinId && parsed.baseItinerary) {
+                parsed._originalItinId = (typeof parsed.baseItinerary === 'string') ? parsed.baseItinerary : (parsed.baseItinerary.itin || null);
+              }
+            }
+            console.log('[AI-SUMMARY] LS FINAL _originalItinId:', parsed._originalItinId);
+            return parsed;
+          }
+        }
+      } catch(e) { console.log('[AI-SUMMARY] localStorage parse error:', e.message); }
+    }
+    return null;
+  }
+
+  function getCatalogId(st) {
+    if (!st) return null;
+    var id = st._originalItinId || st.itinId || st.originalItinId || null;
+    if (id) { console.log('[AI-SUMMARY] getCatalogId from state:', id); return id; }
+    var p = new URLSearchParams(location.search);
+    var itin = p.get('itin');
+    if (itin) { console.log('[AI-SUMMARY] getCatalogId from URL:', itin); return itin; }
+    var src = sessionStorage.getItem('ort_catalog_source') || '';
+    if (src && src.indexOf('catalog::') === 0) {
+      id = src.replace('catalog::', '');
+      console.log('[AI-SUMMARY] getCatalogId from session:', id);
+      return id;
+    }
+    var tid = st.tripId || '';
+    if (tid) {
+      try {
+        var stored = localStorage.getItem('ort_trip_' + tid);
+        if (stored) {
+          var parsed = JSON.parse(stored);
+          id = parsed._originalItinId || parsed.itinId || null;
+          if (!id && parsed.baseItinerary) {
+            id = (typeof parsed.baseItinerary === 'string') ? parsed.baseItinerary : (parsed.baseItinerary.itin || null);
+          }
+          if (!id && parsed._itinRef) {
+            id = (typeof parsed._itinRef === 'string') ? parsed._itinRef : (parsed._itinRef.itin || null);
+          }
+          if (id) { console.log('[AI-SUMMARY] getCatalogId from LS trip:', id); return id; }
+        }
+      } catch(e) {}
+    }
+    if (tid.indexOf('::') >= 0) { return tid; }
+    console.log('[AI-SUMMARY] getCatalogId → null. _originalItinId:', st._originalItinId, '| tripId:', tid);
+    return null;
+  }
+
+  function initAiLabels() {
+    var g = function(id) { return document.getElementById(id); };
+    if (g('aiSummaryTitleEl'))        g('aiSummaryTitleEl').textContent = tAi('aiSummaryTitle');
+    if (g('aiSummaryPlaceholder'))    g('aiSummaryPlaceholder').textContent = tAi('aiSummaryEmpty');
+    if (g('btnAiSummary'))            g('btnAiSummary').textContent = tAi('aiSummaryGenerate');
+    if (g('aiSummaryItineraryTitle')) g('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
+    if (g('btnCopyAiSummary'))        g('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
+    if (g('btnShareAiNativeLabel'))   g('btnShareAiNativeLabel').textContent = (tAi('aiSummaryShare') || '').replace(/\uD83D\uDCE4\s?/, '');
+    if (navigator.share && g('btnShareAiNative')) g('btnShareAiNative').style.display = 'inline-block';
+    console.log('[AI-SUMMARY] Labels init OK');
+  }
+
+  window.toggleAiSummary = function() {
+    var c = document.getElementById('aiSummaryContent');
+    var ch = document.getElementById('aiSummaryChevron');
+    if (!c) return;
+    var open = c.style.display !== 'none';
+    c.style.display = open ? 'none' : 'block';
+    if (ch) ch.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+
+  function getAiToken() {
+    if (window.firebase && window.firebase.auth) {
+      var u = firebase.auth().currentUser;
+      if (u) return u.getIdToken();
+    }
+    return Promise.resolve(null);
+  }
+
+  function showAiError(key) {
+    var p = document.getElementById('aiSummaryPlaceholder');
+    if (p) { p.textContent = tAi(key); p.style.color = '#dc2626'; p.style.display = 'block'; }
+  }
+
+  function renderAiSummary(review, steps, fromCache, alerts) {
+    var actions = document.getElementById('aiSummaryActions');
+    var result = document.getElementById('aiSummaryResult');
+    var placeholder = document.getElementById('aiSummaryPlaceholder');
+    var reviewBox = document.getElementById('aiReviewContainer');
+    var grid = document.getElementById('aiStepsGrid');
+    var cacheTag = document.getElementById('aiSummaryCacheTag');
+
+    if (actions) actions.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'none';
+    if (result) result.style.display = 'block';
+
+    // Panel stays collapsed
+
+    // Alerts
+    if (reviewBox) reviewBox.style.display = 'block';
+    if (reviewBox && Array.isArray(alerts) && alerts.length > 0) {
+      var alertsHtml = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:8px 12px;margin-bottom:10px;">' +
+        '<div style="font-weight:700;color:#92400e;margin-bottom:4px;font-size:12px;">' + (tAi('aiSummaryAlerts') || '\uD83D\uDD0D Points de vigilance') + '</div>' +
+        alerts.map(function(a) { return '<div style="color:#78350f;font-size:11px;margin:2px 0;">' + escH(a) + '</div>'; }).join('') +
+        '</div>';
+      reviewBox.innerHTML = alertsHtml;
+    } else if (reviewBox) {
+      reviewBox.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:6px 12px;margin-bottom:10px;color:#166534;font-size:12px;font-weight:600;">' + (tAi('aiSummaryNoAlerts') || '\u2705 Pas d\u0027alertes majeures sur cet itin\u00e9raire') + '</div>';
+    }
+
+    // Review
+    if (reviewBox && Array.isArray(review)) {
+      var icons = ['\uD83D\uDCAA', '\u26A0\uFE0F', '\uD83D\uDCA1'];
+      reviewBox.innerHTML += '<div style="font-weight:700;color:#166534;margin-bottom:6px;font-size:13px;">' + tAi('aiSummaryReview') + '</div>' +
+        review.slice(0, 3).map(function(line, i) { return '<div class="ai-review-line">' + (icons[i] || '') + ' ' + escH(line) + '</div>'; }).join('');
+    }
+    if (grid && Array.isArray(steps)) {
+      var dayLabel = tAi('day') || 'Jour';
+      grid.innerHTML = steps.map(function(s) {
+        return '<div class="ai-step-card">' +
+          '<div class="ai-step-day">' + dayLabel + ' ' + (s.day || '?') + '</div>' +
+          '<div class="ai-step-city">' + escH(s.city || '') + '</div>' +
+          '<div class="ai-step-highlights">' + escH(s.highlights || '') + '</div>' +
+          (s.next ? '<div class="ai-step-next">\u2192 ' + escH(s.next) + '</div>' : '') +
+        '</div>';
+      }).join('');
+    }
+    if (cacheTag && fromCache) { cacheTag.style.display = 'inline'; cacheTag.textContent = tAi('aiSummaryCached'); }
+    console.log('[AI-SUMMARY] Rendered! fromCache:', fromCache, 'alerts:', (alerts || []).length);
+  }
+
+  // ===== GENERATE =====
+  window.generateAiSummary = function() {
+    var btn = document.getElementById('btnAiSummary');
+    var placeholder = document.getElementById('aiSummaryPlaceholder');
+    var st = getMobileState();
+    if (!st) { showAiError('aiSummaryErrorGeneric'); return; }
+    var user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+    if (!user) { showAiError('aiSummaryErrorAuth'); return; }
+
+    var catalogId = getCatalogId(st);
+    var tripId = st.tripId || '';
+    console.log('[AI-SUMMARY] Generate — catalogId:', catalogId, '| tripId:', tripId);
+    if (!catalogId && (!tripId || tripId.indexOf('temp_') === 0)) { showAiError('aiSummaryErrorSave'); return; }
+    if (!st.steps || !st.steps.length) return;
+
+    btn.disabled = true; btn.textContent = tAi('aiSummaryLoading'); btn.style.opacity = '0.6';
+    if (placeholder) placeholder.style.display = 'none';
+
+    getAiToken().then(function(token) {
+      if (!token) throw new Error('auth_required');
+      var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+      var stepsPayload = st.steps.map(function(s) {
+        return {
+          name: s.name || s.place_id || '', nights: s.nights || 0,
+          visits: Array.isArray(s.visits) ? s.visits.map(function(v){ return typeof v==='string'?v:v.text; }).filter(Boolean) : [],
+          activities: Array.isArray(s.activities) ? s.activities.map(function(a){ return typeof a==='string'?a:a.text; }).filter(Boolean) : [],
+          description: s.description || ''
+        };
+      });
+      return fetch(AI_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: st.title || 'Road Trip', steps: stepsPayload, language: lang })
+      });
+    }).then(function(res) { return res.json(); })
+    .then(function(data) {
+      if (!data.success) {
+        if (data.error === 'monthly_quota') throw new Error('quota');
+        if (data.error === 'auth_required') throw new Error('auth');
+        if (data.error === 'ai_overloaded') throw new Error('overloaded');
+        throw new Error(data.error || 'unknown');
+      }
+      renderAiSummary(data.data.review, data.data.steps, data.data.fromCache, data.data.alerts);
+    }).catch(function(e) {
+      console.error('[AI-SUMMARY]', e);
+      if (e.message === 'quota') showAiError('aiSummaryErrorQuota');
+      else if (e.message === 'overloaded') showAiError('aiSummaryErrorOverloaded');
+      else if (e.message === 'auth' || e.message === 'auth_required') showAiError('aiSummaryErrorAuth');
+      else showAiError('aiSummaryErrorGeneric');
+    }).then(function() {
+      btn.disabled = false; btn.textContent = tAi('aiSummaryGenerate'); btn.style.opacity = '1';
+    });
+  };
+
+  window.copyAiSummary = function() {
+    var st = getMobileState() || {};
+    var r = document.getElementById('aiReviewContainer');
+    var g = document.getElementById('aiStepsGrid');
+    var txt = (st.title || 'Road Trip') + '\n\n' + (r ? r.innerText : '') + '\n\n' + (g ? g.innerText : '');
+    navigator.clipboard.writeText(txt).then(function() {
+      var btn = document.getElementById('btnCopyAiSummary');
+      if (btn) { var o = btn.textContent; btn.textContent = tAi('aiSummaryCopied'); setTimeout(function(){ btn.textContent = o; }, 1500); }
+    }).catch(function(){});
+  };
+
+  function getShareText() {
+    var st = getMobileState() || {};
+    var title = st.title || 'Road Trip';
+    var r = document.getElementById('aiReviewContainer');
+    var g = document.getElementById('aiStepsGrid');
+    return { title: title, text: title + '\n\n' + (r ? r.innerText : '') + '\n\n' + (g ? g.innerText : '') + '\n\n' + location.href, url: location.href };
+  }
+
+  window.shareAiSummary = function(mode) {
+    var d = getShareText();
+    var subject = tAi('aiSummaryShareSubject') || d.title;
+    var encoded = encodeURIComponent(d.text);
+    if (mode === 'whatsapp') { window.open('https://wa.me/?text=' + encoded, '_blank'); }
+    else if (mode === 'sms') { window.open('sms:?body=' + encoded, '_blank'); }
+    else if (mode === 'email') { window.open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encoded, '_blank'); }
+    else if (mode === 'native' && navigator.share) { navigator.share({ title: subject, text: d.text, url: d.url }).catch(function(){}); }
+  };
+
+  function waitAndInit() {
+    if (window.ORT_I18N && window.ORT_I18N.aiSummaryTitle) initAiLabels();
+    else setTimeout(waitAndInit, 300);
+  }
+  waitAndInit();
+
+  // ===== AUTO-LOAD CACHE (NO AUTH) =====
+  (function() {
+    var att = 0;
+    var ck = setInterval(function() {
+      att++;
+      if (att > 60) { clearInterval(ck); console.log('[AI-SUMMARY] Gave up after 60 attempts'); return; }
+      var st = getMobileState();
+      if (!st || !st.steps || !st.steps.length) {
+        if (att <= 3) console.log('[AI-SUMMARY] tick #' + att + ' — waiting for state...');
+        return;
+      }
+      var catalogId = getCatalogId(st);
+      var tripId = st.tripId || '';
+      if (!catalogId && !tripId) {
+        if (att <= 3) console.log('[AI-SUMMARY] tick #' + att + ' — no catalogId/tripId');
+        return;
+      }
+      clearInterval(ck);
+      console.log('[AI-SUMMARY] Auto-load — catalogId:', catalogId, '| tripId:', tripId);
+
+      fetch(AI_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', steps: [{ name: 'x', nights: 1 }], cacheOnly: true })
+      }).then(function(res) { return res.json(); })
+      .then(function(data) {
+        console.log('[AI-SUMMARY] Cache response:', JSON.stringify(data).substring(0, 200));
+        if (data.success && data.data && data.data.fromCache) {
+          console.log('[AI-SUMMARY] Cache loaded!');
+          renderAiSummary(data.data.review, data.data.steps, true, data.data.alerts);
+        } else {
+          console.log('[AI-SUMMARY] No cache found');
+        }
+      }).catch(function(e) {
+        console.log('[AI-SUMMARY] Cache error:', e.message);
+      });
+    }, 2000);
+  })();
+
+  console.log('[AI-SUMMARY] Script loaded OK');
+})();
 </script>
 
 </body>

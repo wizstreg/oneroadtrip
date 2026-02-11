@@ -3465,6 +3465,56 @@ hdr.appendChild(row);
 <!-- Réservations du voyage (non étapes) -->
 <div id="tripBookingsContainer" style="margin-bottom:24px"></div>
 
+<!-- ═══ RÉSUMÉ IA ═══ -->
+<style>
+#aiSummaryBox{margin-bottom:20px;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff}
+.ai-review-box{background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px}
+.ai-review-line{margin-bottom:5px;font-size:13px;line-height:1.6;color:#1a3d1a}
+.ai-steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.ai-step-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.ai-step-day{font-weight:800;font-size:12px;color:#6366f1;text-transform:uppercase;letter-spacing:.5px}
+.ai-step-city{font-weight:700;font-size:14px;color:#1e3a5f;margin-bottom:2px}
+.ai-step-highlights{font-size:12px;line-height:1.5;color:#475569;flex:1}
+.ai-step-next{font-size:11px;color:#6366f1;font-style:italic;margin-top:6px;padding-top:6px;border-top:1px dashed #e2e8f0}
+@media(max-width:900px){.ai-steps-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.ai-steps-grid{grid-template-columns:1fr}}
+@media print{
+  body *{visibility:hidden}
+  #aiSummaryPrintZone,#aiSummaryPrintZone *{visibility:visible}
+  #aiSummaryPrintZone{position:absolute;left:0;top:0;width:100%;padding:20px}
+  .ai-steps-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+  .ai-step-card{border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
+  .ai-review-box{break-inside:avoid}
+  #btnPrintAiSummary,#btnCopyAiSummary,#btnAiSummary,#aiSummaryActions{display:none!important}
+}
+</style>
+<div id="aiSummaryBox">
+  <div id="aiSummaryHeader" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#f0f4ff,#e8f0fe);cursor:pointer;user-select:none;" onclick="toggleAiSummary()">
+    <span id="aiSummaryTitleEl" style="font-weight:700;font-size:15px;color:#1e3a5f;">🤖 Résumé IA</span>
+    <span id="aiSummaryChevron" style="font-size:18px;transition:transform .2s;color:#64748b;">▸</span>
+  </div>
+  <div id="aiSummaryContent" style="display:none;padding:18px;">
+    <div id="aiSummaryPlaceholder" style="color:#64748b;font-size:13px;line-height:1.6;margin-bottom:14px;"></div>
+    <div id="aiSummaryActions" style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button id="btnAiSummary" type="button" onclick="generateAiSummary()" style="padding:10px 20px;border-radius:10px;border:2px solid #2563eb;background:#2563eb;color:#fff;font-weight:700;font-size:14px;cursor:pointer;">✨ Générer le résumé IA</button>
+    </div>
+    <div id="aiSummaryPrintZone">
+      <div id="aiSummaryResult" style="display:none;margin-top:16px;">
+        <div id="aiReviewContainer" class="ai-review-box" style="display:none"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span id="aiSummaryItineraryTitle" style="font-weight:700;color:#1e3a5f;font-size:14px;">🗺️ Résumé</span>
+          <span id="aiSummaryCacheTag" style="display:none;font-size:11px;color:#94a3b8;font-style:italic;"></span>
+        </div>
+        <div id="aiStepsGrid" class="ai-steps-grid"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;">
+          <button id="btnCopyAiSummary" type="button" onclick="copyAiSummary()" style="padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">📋 Copier</button>
+          <button id="btnPrintAiSummary" type="button" onclick="printAiSummary()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">🖨️ Imprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
       <div id="rows"></div>
       <div style="margin-top:12px;display:flex;gap:8px">
         <button class="btn" id="btnSave">💾 Sauvegarder</button>
@@ -6035,7 +6085,7 @@ function renderTripBookings() {
   });
   
   // Afficher
-  let html = '<div style="margin-bottom:16px"><h3 style="color:#113f7a;font-size:1.1rem;margin:0 0 12px 0">📋 Réservations du voyage</h3>';
+  let html = '<div style="margin-bottom:16px"><div onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\';this.querySelector(\'span.chev\').textContent=this.nextElementSibling.style.display===\'none\'?\'▸\':\'▾\'" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:10px 14px;background:linear-gradient(135deg,#f0f4ff,#e8f0fe);border-radius:10px;margin-bottom:8px;user-select:none"><h3 style="color:#113f7a;font-size:1.1rem;margin:0">📋 Réservations du voyage</h3><span class="chev" style="font-size:16px;color:#64748b">▾</span></div><div id="tripBookingsInner">';
   
   Object.entries(grouped).forEach(([cat, bookings]) => {
     const icon = getCategoryIconForCell(cat);
@@ -6070,7 +6120,7 @@ function renderTripBookings() {
     html += '</div>';
   });
   
-  html += '</div>';
+  html += '</div></div>';
   container.innerHTML = html;
 }
 
@@ -13323,6 +13373,218 @@ if ('serviceWorker' in navigator) {
     console.log('[SW] ✅ Enregistré, scope:', r.scope);
   }).catch(e => console.warn('[SW] Échec:', e));
 }
+</script>
+
+<!-- ═══ RÉSUMÉ IA - SCRIPT ═══ -->
+<script>
+(function(){
+  var AI_API = '/.netlify/functions/parse-summary';
+
+  function tAi(key) {
+    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['fr'] || '';
+    return '';
+  }
+  function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // The catalog key = state._originalItinId (e.g. "LK::sri-lanka::triangle-culturel-plages")
+  function getCatalogId() {
+    // 1. state._originalItinId (most reliable)
+    if (window.state && window.state._originalItinId) return window.state._originalItinId;
+    // 2. state._itinRef.itin (set from saved trips)
+    if (window.state && window.state._itinRef) {
+      var ref = window.state._itinRef;
+      var itin = (typeof ref === 'string') ? ref : (ref.itin || null);
+      if (itin) return itin;
+    }
+    // 3. ITIN_ID global (from URL param ?itin=...)
+    if (window.ITIN_ID) return window.ITIN_ID;
+    // 4. URL params
+    var p = new URLSearchParams(location.search);
+    var itin = p.get('itin');
+    if (itin) return itin;
+    return null;
+  }
+
+  function initAiLabels() {
+    var $ = function(id) { return document.getElementById(id); };
+    if ($('aiSummaryTitleEl'))        $('aiSummaryTitleEl').textContent = tAi('aiSummaryTitle');
+    if ($('aiSummaryPlaceholder'))    $('aiSummaryPlaceholder').textContent = tAi('aiSummaryEmpty');
+    if ($('btnAiSummary'))            $('btnAiSummary').textContent = tAi('aiSummaryGenerate');
+    if ($('aiSummaryItineraryTitle')) $('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
+    if ($('btnCopyAiSummary'))        $('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
+  }
+
+  window.toggleAiSummary = function() {
+    var c = document.getElementById('aiSummaryContent');
+    var ch = document.getElementById('aiSummaryChevron');
+    if (!c) return;
+    var open = c.style.display !== 'none';
+    c.style.display = open ? 'none' : 'block';
+    if (ch) ch.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+  };
+
+  function getAiToken() {
+    if (window.firebase && window.firebase.auth) {
+      var u = firebase.auth().currentUser;
+      if (u) return u.getIdToken();
+    }
+    return Promise.resolve(null);
+  }
+
+  function showAiError(key) {
+    var p = document.getElementById('aiSummaryPlaceholder');
+    if (p) { p.textContent = tAi(key); p.style.color = '#dc2626'; p.style.display = 'block'; }
+  }
+
+  // ===== GENERATE (requires auth) =====
+  window.generateAiSummary = async function() {
+    var btn = document.getElementById('btnAiSummary');
+    var placeholder = document.getElementById('aiSummaryPlaceholder');
+    var user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+    if (!user) { showAiError('aiSummaryErrorAuth'); return; }
+
+    var catalogId = getCatalogId();
+    var tripId = window.state && window.state.tripId;
+    console.log('[AI-SUMMARY] Generate — catalogId:', catalogId, '| tripId:', tripId, '| _originalItinId:', window.state && window.state._originalItinId);
+    if (!catalogId && (!tripId || tripId.indexOf('temp_') === 0)) { showAiError('aiSummaryErrorSave'); return; }
+    if (!window.state || !window.state.steps || !window.state.steps.length) return;
+
+    btn.disabled = true; btn.textContent = tAi('aiSummaryLoading'); btn.style.opacity = '0.6';
+    if (placeholder) placeholder.style.display = 'none';
+
+    try {
+      var token = await getAiToken();
+      if (!token) throw new Error('auth_required');
+      var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+      var stepsPayload = window.state.steps.map(function(s) {
+        return {
+          name: s.name || s.place_id || '', nights: s.nights || 0,
+          visits: Array.isArray(s.visits) ? s.visits.map(function(v){ return typeof v==='string'?v:v.text; }).filter(Boolean) : [],
+          activities: Array.isArray(s.activities) ? s.activities.map(function(a){ return typeof a==='string'?a:a.text; }).filter(Boolean) : [],
+          description: s.description || ''
+        };
+      });
+      var res = await fetch(AI_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: window.state.title || 'Road Trip', steps: stepsPayload, language: lang })
+      });
+      var data = await res.json();
+      if (!res.ok || !data.success) {
+        if (data.error === 'monthly_quota') throw new Error('quota');
+        if (data.error === 'auth_required') throw new Error('auth');
+        if (data.error === 'ai_overloaded') throw new Error('overloaded');
+        throw new Error(data.error || 'unknown');
+      }
+      console.log('[AI-SUMMARY] Generated! alerts:', JSON.stringify(data.data.alerts));
+      renderAiSummary(data.data.review, data.data.steps, data.data.fromCache, data.data.alerts);
+    } catch (e) {
+      console.error('[AI-SUMMARY]', e);
+      if (e.message === 'quota') showAiError('aiSummaryErrorQuota');
+      else if (e.message === 'overloaded') showAiError('aiSummaryErrorOverloaded');
+      else if (e.message === 'auth' || e.message === 'auth_required') showAiError('aiSummaryErrorAuth');
+      else showAiError('aiSummaryErrorGeneric');
+    } finally {
+      btn.disabled = false; btn.textContent = tAi('aiSummaryGenerate'); btn.style.opacity = '1';
+    }
+  };
+
+  // ===== RENDER =====
+  function renderAiSummary(review, steps, fromCache, alerts) {
+    var actions = document.getElementById('aiSummaryActions');
+    var result = document.getElementById('aiSummaryResult');
+    var placeholder = document.getElementById('aiSummaryPlaceholder');
+    var reviewBox = document.getElementById('aiReviewContainer');
+    var grid = document.getElementById('aiStepsGrid');
+    var cacheTag = document.getElementById('aiSummaryCacheTag');
+    var printBtn = document.getElementById('btnPrintAiSummary');
+
+    if (actions) actions.style.display = 'none';
+    if (placeholder) placeholder.style.display = 'none';
+    if (result) result.style.display = 'block';
+    if (printBtn) printBtn.style.display = 'inline-block';
+
+    // Panel stays collapsed — user clicks to expand
+
+    // Alerts (things to check)
+    if (reviewBox) reviewBox.style.display = 'block';
+    if (reviewBox && Array.isArray(alerts) && alerts.length > 0) {
+      var alertsHtml = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:10px 14px;margin-bottom:12px;">' +
+        '<div style="font-weight:700;color:#92400e;margin-bottom:6px;font-size:13px;">' + tAi('aiSummaryAlerts') + '</div>' +
+        alerts.map(function(a) { return '<div style="color:#78350f;font-size:12px;margin:3px 0;">' + escH(a) + '</div>'; }).join('') +
+        '</div>';
+      reviewBox.innerHTML = alertsHtml;
+    } else if (reviewBox) {
+      reviewBox.innerHTML = '<div style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:8px 14px;margin-bottom:12px;color:#166534;font-size:13px;font-weight:600;">' + (tAi('aiSummaryNoAlerts') || '\u2705 Pas d\'alertes majeures sur cet itin\u00e9raire') + '</div>';
+    }
+
+    // Review
+    if (reviewBox && Array.isArray(review)) {
+      var icons = ['\uD83D\uDCAA', '\u26A0\uFE0F', '\uD83D\uDCA1'];
+      reviewBox.innerHTML += '<div style="font-weight:700;color:#166534;margin-bottom:8px;font-size:14px;">' + tAi('aiSummaryReview') + '</div>' +
+        review.slice(0, 3).map(function(line, i) { return '<div class="ai-review-line">' + (icons[i] || '') + ' ' + escH(line) + '</div>'; }).join('');
+    }
+    if (grid && Array.isArray(steps)) {
+      var dayLabel = tAi('day') || 'Jour';
+      grid.innerHTML = steps.map(function(s) {
+        return '<div class="ai-step-card">' +
+          '<div class="ai-step-day">' + dayLabel + ' ' + (s.day || '?') + '</div>' +
+          '<div class="ai-step-city">' + escH(s.city || '') + '</div>' +
+          '<div class="ai-step-highlights">' + escH(s.highlights || '') + '</div>' +
+          (s.next ? '<div class="ai-step-next">\u2192 ' + escH(s.next) + '</div>' : '') +
+        '</div>';
+      }).join('');
+    }
+    if (cacheTag && fromCache) { cacheTag.style.display = 'inline'; cacheTag.textContent = tAi('aiSummaryCached'); }
+  }
+
+  window.copyAiSummary = function() {
+    var r = document.getElementById('aiReviewContainer');
+    var g = document.getElementById('aiStepsGrid');
+    var txt = (window.state && window.state.title || 'Road Trip') + '\n\n' + (r ? r.innerText : '') + '\n\n' + (g ? g.innerText : '');
+    navigator.clipboard.writeText(txt).then(function() {
+      var btn = document.getElementById('btnCopyAiSummary');
+      if (btn) { var o = btn.textContent; btn.textContent = tAi('aiSummaryCopied'); setTimeout(function(){ btn.textContent = o; }, 1500); }
+    }).catch(function(){});
+  };
+
+  window.printAiSummary = function() { window.print(); };
+
+  function waitAndInit() {
+    if (window.ORT_I18N && window.ORT_I18N.aiSummaryTitle) initAiLabels();
+    else setTimeout(waitAndInit, 300);
+  }
+  waitAndInit();
+
+  // ===== AUTO-LOAD CACHE (NO AUTH — public read) =====
+  (function() {
+    var att = 0;
+    var ck = setInterval(async function() {
+      att++; if (att > 50) { clearInterval(ck); return; }
+      // Wait for state to be ready (steps loaded)
+      if (!window.state || !window.state.steps || !window.state.steps.length) return;
+      var catalogId = getCatalogId();
+      var tripId = window.state.tripId;
+      if (!catalogId && !tripId) return;
+      clearInterval(ck);
+      console.log('[AI-SUMMARY] Cache check — catalogId:', catalogId, 'tripId:', tripId);
+      try {
+        // NO auth header → public cache read
+        var res = await fetch(AI_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', steps: [{ name: 'x', nights: 1 }], cacheOnly: true })
+        });
+        var data = await res.json();
+        if (data.success && data.data && data.data.fromCache) {
+          console.log('[AI-SUMMARY] ✅ Public cache loaded! alerts:', JSON.stringify(data.data.alerts), 'review:', data.data.review.length, 'steps:', data.data.steps.length);
+          renderAiSummary(data.data.review, data.data.steps, true, data.data.alerts);
+        }
+      } catch (e) { console.log('[AI-SUMMARY] Cache:', e.message); }
+    }, 2000);
+  })();
+})();
 </script>
 
 </body>

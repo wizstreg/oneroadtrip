@@ -2161,4 +2161,170 @@ window.ORT_I18N.importBookings = {
   ar: '➕ الحجوزات'
 };
 
+// ═══════════════════════════════════════════════════════════════
+// RÉSUMÉ IA (RT-DETAIL)
+// ═══════════════════════════════════════════════════════════════
+
+window.ORT_I18N.aiSummaryTitle = {
+  fr: '🤖 Résumé IA',
+  en: '🤖 AI Summary',
+  es: '🤖 Resumen IA',
+  it: '🤖 Riepilogo IA',
+  pt: '🤖 Resumo IA',
+  ar: '🤖 ملخص الذكاء الاصطناعي'
+};
+
+window.ORT_I18N.aiSummaryEmpty = {
+  fr: 'Vous devez avoir enregistré l\'itinéraire dans votre dashboard avant de lancer le résumé, qui sera ensuite enregistré à votre voyage. Maximum 1 résumé par mois.',
+  en: 'You must save the itinerary to your dashboard before generating a summary. The summary will be saved to your trip. Maximum 1 summary per month.',
+  es: 'Debe guardar el itinerario en su panel antes de generar el resumen, que se guardará en su viaje. Máximo 1 resumen por mes.',
+  it: 'Devi salvare l\'itinerario nella tua dashboard prima di generare il riepilogo, che verrà salvato nel tuo viaggio. Massimo 1 riepilogo al mese.',
+  pt: 'Deve guardar o itinerário no seu painel antes de gerar o resumo, que será guardado na sua viagem. Máximo 1 resumo por mês.',
+  ar: 'يجب حفظ المسار في لوحة التحكم قبل إنشاء الملخص، الذي سيُحفظ في رحلتك. بحد أقصى ملخص واحد شهرياً.'
+};
+
+window.ORT_I18N.aiSummaryGenerate = {
+  fr: '✨ Générer le résumé IA',
+  en: '✨ Generate AI summary',
+  es: '✨ Generar resumen IA',
+  it: '✨ Genera riepilogo IA',
+  pt: '✨ Gerar resumo IA',
+  ar: '✨ إنشاء ملخص الذكاء الاصطناعي'
+};
+
+window.ORT_I18N.aiSummaryLoading = {
+  fr: '⏳ Analyse en cours...',
+  en: '⏳ Analyzing...',
+  es: '⏳ Analizando...',
+  it: '⏳ Analisi in corso...',
+  pt: '⏳ A analisar...',
+  ar: '⏳ جار التحليل...'
+};
+
+window.ORT_I18N.aiSummaryReview = {
+  fr: '📋 Avis',
+  en: '📋 Review',
+  es: '📋 Opinión',
+  it: '📋 Parere',
+  pt: '📋 Opinião',
+  ar: '📋 الرأي'
+};
+
+window.ORT_I18N.aiSummaryItinerary = {
+  fr: '🗺️ Résumé de l\'itinéraire',
+  en: '🗺️ Itinerary summary',
+  es: '🗺️ Resumen del itinerario',
+  it: '🗺️ Riassunto dell\'itinerario',
+  pt: '🗺️ Resumo do itinerário',
+  ar: '🗺️ ملخص المسار'
+};
+
+window.ORT_I18N.aiSummaryErrorAuth = {
+  fr: '🔐 Connectez-vous pour générer un résumé IA.',
+  en: '🔐 Sign in to generate an AI summary.',
+  es: '🔐 Inicie sesión para generar un resumen IA.',
+  it: '🔐 Accedi per generare un riepilogo IA.',
+  pt: '🔐 Faça login para gerar um resumo IA.',
+  ar: '🔐 سجّل دخولك لإنشاء ملخص بالذكاء الاصطناعي.'
+};
+
+window.ORT_I18N.aiSummaryErrorSave = {
+  fr: '💾 Enregistrez d\'abord votre voyage dans le dashboard avant de générer le résumé.',
+  en: '💾 Save your trip to the dashboard first before generating the summary.',
+  es: '💾 Guarde primero su viaje en el panel antes de generar el resumen.',
+  it: '💾 Salva prima il viaggio nella dashboard prima di generare il riepilogo.',
+  pt: '💾 Guarde primeiro a viagem no painel antes de gerar o resumo.',
+  ar: '💾 احفظ رحلتك في لوحة التحكم أولاً قبل إنشاء الملخص.'
+};
+
+window.ORT_I18N.aiSummaryErrorQuota = {
+  fr: '⏳ Vous avez déjà utilisé votre résumé IA ce mois-ci. Revenez le mois prochain !',
+  en: '⏳ You already used your AI summary this month. Come back next month!',
+  es: '⏳ Ya usó su resumen IA este mes. ¡Vuelva el próximo mes!',
+  it: '⏳ Hai già usato il riepilogo IA questo mese. Torna il prossimo mese!',
+  pt: '⏳ Já usou o seu resumo IA este mês. Volte no próximo mês!',
+  ar: '⏳ لقد استخدمت ملخصك هذا الشهر. عد الشهر المقبل!'
+};
+
+window.ORT_I18N.aiSummaryErrorGeneric = {
+  fr: '😕 Oups, un petit souci technique. Réessayez dans quelques instants !',
+  en: '😕 Oops, a small technical hiccup. Try again in a moment!',
+  es: '😕 Ups, un pequeño problema técnico. ¡Inténtelo de nuevo en unos momentos!',
+  it: '😕 Ops, un piccolo problema tecnico. Riprova tra qualche istante!',
+  pt: '😕 Ops, um pequeno problema técnico. Tente novamente em alguns instantes!',
+  ar: '😕 عفواً، مشكلة تقنية بسيطة. حاول مرة أخرى بعد قليل!'
+};
+
+window.ORT_I18N.aiSummaryErrorOverloaded = {
+  fr: '🔄 Notre IA est très sollicitée en ce moment. Réessayez dans 1-2 minutes !',
+  en: '🔄 Our AI is very busy right now. Please try again in 1-2 minutes!',
+  es: '🔄 Nuestra IA está muy ocupada ahora. ¡Inténtelo de nuevo en 1-2 minutos!',
+  it: '🔄 La nostra IA è molto impegnata al momento. Riprova tra 1-2 minuti!',
+  pt: '🔄 Nossa IA está muito ocupada no momento. Tente novamente em 1-2 minutos!',
+  ar: '🔄 الذكاء الاصطناعي مشغول جداً حالياً. حاول مرة أخرى بعد دقيقة أو دقيقتين!'
+};
+
+window.ORT_I18N.aiSummaryCached = {
+  fr: '(résumé enregistré)',
+  en: '(saved summary)',
+  es: '(resumen guardado)',
+  it: '(riepilogo salvato)',
+  pt: '(resumo guardado)',
+  ar: '(ملخص محفوظ)'
+};
+
+window.ORT_I18N.aiSummaryCopy = {
+  fr: '📋 Copier',
+  en: '📋 Copy',
+  es: '📋 Copiar',
+  it: '📋 Copia',
+  pt: '📋 Copiar',
+  ar: '📋 نسخ'
+};
+
+window.ORT_I18N.aiSummaryCopied = {
+  fr: '✅ Copié !',
+  en: '✅ Copied!',
+  es: '✅ ¡Copiado!',
+  it: '✅ Copiato!',
+  pt: '✅ Copiado!',
+  ar: '✅ تم النسخ!'
+};
+
+window.ORT_I18N.aiSummaryAlerts = {
+  fr: '🔍 Points de vigilance',
+  en: '🔍 Things to check',
+  es: '🔍 Puntos a verificar',
+  it: '🔍 Punti da verificare',
+  pt: '🔍 Pontos a verificar',
+  ar: '🔍 نقاط للتحقق'
+};
+
+window.ORT_I18N.aiSummaryNoAlerts = {
+  fr: '✅ Pas d\'alertes majeures sur cet itinéraire',
+  en: '✅ No major alerts on this itinerary',
+  es: '✅ Sin alertas importantes en este itinerario',
+  it: '✅ Nessuna allerta importante su questo itinerario',
+  pt: '✅ Sem alertas importantes neste itinerário',
+  ar: '✅ لا تنبيهات رئيسية على هذا المسار'
+};
+
+window.ORT_I18N.aiSummaryShare = {
+  fr: '📤 Partager',
+  en: '📤 Share',
+  es: '📤 Compartir',
+  it: '📤 Condividi',
+  pt: '📤 Partilhar',
+  ar: '📤 مشاركة'
+};
+
+window.ORT_I18N.aiSummaryShareSubject = {
+  fr: 'Résumé de mon road trip',
+  en: 'My road trip summary',
+  es: 'Resumen de mi road trip',
+  it: 'Riassunto del mio road trip',
+  pt: 'Resumo da minha viagem',
+  ar: 'ملخص رحلتي'
+};
+
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');
