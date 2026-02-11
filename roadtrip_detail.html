@@ -3479,15 +3479,25 @@ hdr.appendChild(row);
 @media(max-width:900px){.ai-steps-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.ai-steps-grid{grid-template-columns:1fr}}
 @media print{
-  body *{visibility:hidden}
-  #aiSummaryPrintZone,#aiSummaryPrintZone *{visibility:visible}
-  #aiSummaryPrintZone{position:absolute;left:0;top:0;width:100%;padding:20px}
-  .ai-steps-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
-  .ai-step-card{border:1px solid #ccc;break-inside:avoid;page-break-inside:avoid}
-  .ai-review-box{break-inside:avoid}
-  #btnPrintAiSummary,#btnCopyAiSummary,#btnAiSummary,#aiSummaryActions{display:none!important}
+  body *{display:none!important;visibility:hidden!important}
+  #aiPrintOverlay,#aiPrintOverlay *{display:block!important;visibility:visible!important}
+  #aiPrintOverlay{position:fixed;left:0;top:0;width:100%;height:auto;z-index:999999;background:#fff;padding:24px 32px;box-sizing:border-box}
+  #aiPrintOverlay h1{font-size:20px;color:#1e3a5f;margin:0 0 4px;text-align:center}
+  #aiPrintOverlay .print-subtitle{font-size:12px;color:#64748b;text-align:center;margin-bottom:16px}
+  #aiPrintOverlay .print-alerts{margin-bottom:12px}
+  #aiPrintOverlay .print-review{margin-bottom:16px}
+  #aiPrintOverlay .print-review-line{font-size:12px;margin:4px 0;line-height:1.4}
+  #aiPrintOverlay .print-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  #aiPrintOverlay .print-card{border:1px solid #d1d5db;border-radius:6px;padding:8px 10px;break-inside:avoid;page-break-inside:avoid;font-size:11px}
+  #aiPrintOverlay .print-card-day{font-weight:700;color:#2563eb;font-size:10px;margin-bottom:2px}
+  #aiPrintOverlay .print-card-city{font-weight:700;font-size:12px;margin-bottom:3px}
+  #aiPrintOverlay .print-card-hl{color:#374151;line-height:1.3}
+  #aiPrintOverlay .print-card-next{color:#6b7280;font-size:10px;margin-top:3px;font-style:italic}
+  #aiPrintOverlay .print-footer{text-align:center;font-size:9px;color:#94a3b8;margin-top:12px}
+  @page{margin:12mm 10mm}
 }
 </style>
+<div id="aiPrintOverlay" style="display:none"></div>
 <div id="aiSummaryBox">
   <div id="aiSummaryHeader" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#f0f4ff,#e8f0fe);cursor:pointer;user-select:none;" onclick="toggleAiSummary()">
     <span id="aiSummaryTitleEl" style="font-weight:700;font-size:15px;color:#1e3a5f;">🤖 Résumé IA</span>
@@ -3506,9 +3516,10 @@ hdr.appendChild(row);
           <span id="aiSummaryCacheTag" style="display:none;font-size:11px;color:#94a3b8;font-style:italic;"></span>
         </div>
         <div id="aiStepsGrid" class="ai-steps-grid"></div>
-        <div style="margin-top:12px;display:flex;gap:8px;">
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
           <button id="btnCopyAiSummary" type="button" onclick="copyAiSummary()" style="padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">📋 Copier</button>
           <button id="btnPrintAiSummary" type="button" onclick="printAiSummary()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">🖨️ Imprimer</button>
+          <button id="btnEmailAiSummary" type="button" onclick="emailAiSummary()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">✉️ Envoyer par email</button>
         </div>
       </div>
     </div>
@@ -13504,6 +13515,8 @@ if ('serviceWorker' in navigator) {
     if (placeholder) placeholder.style.display = 'none';
     if (result) result.style.display = 'block';
     if (printBtn) printBtn.style.display = 'inline-block';
+    var emailBtn = document.getElementById('btnEmailAiSummary');
+    if (emailBtn) emailBtn.style.display = 'inline-block';
 
     // Panel stays collapsed — user clicks to expand
 
@@ -13549,7 +13562,70 @@ if ('serviceWorker' in navigator) {
     }).catch(function(){});
   };
 
-  window.printAiSummary = function() { window.print(); };
+  window.printAiSummary = function() {
+    var overlay = document.getElementById('aiPrintOverlay');
+    if (!overlay) return;
+    var title = (window.state && window.state.title) || 'Road Trip';
+    var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+    var date = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    var reviewBox = document.getElementById('aiReviewContainer');
+    var grid = document.getElementById('aiStepsGrid');
+    var reviewHtml = reviewBox ? reviewBox.innerHTML : '';
+    var stepsHtml = '';
+    if (grid) {
+      var cards = grid.querySelectorAll('.ai-step-card');
+      cards.forEach(function(c) {
+        var day = c.querySelector('.ai-step-day');
+        var city = c.querySelector('.ai-step-city');
+        var hl = c.querySelector('.ai-step-highlights');
+        var next = c.querySelector('.ai-step-next');
+        stepsHtml += '<div class="print-card">' +
+          (day ? '<div class="print-card-day">' + day.textContent + '</div>' : '') +
+          (city ? '<div class="print-card-city">' + city.textContent + '</div>' : '') +
+          (hl ? '<div class="print-card-hl">' + hl.textContent + '</div>' : '') +
+          (next ? '<div class="print-card-next">' + next.textContent + '</div>' : '') +
+          '</div>';
+      });
+    }
+    overlay.innerHTML = '<h1>' + escH(title) + '</h1>' +
+      '<div class="print-subtitle">OneRoadTrip — ' + date + '</div>' +
+      '<div class="print-alerts">' + reviewHtml + '</div>' +
+      '<div class="print-grid">' + stepsHtml + '</div>' +
+      '<div class="print-footer">oneroadtrip.com</div>';
+    overlay.style.display = 'block';
+    setTimeout(function() { window.print(); setTimeout(function() { overlay.style.display = 'none'; }, 500); }, 100);
+  };
+
+  window.emailAiSummary = function() {
+    var title = (window.state && window.state.title) || 'Road Trip';
+    var r = document.getElementById('aiReviewContainer');
+    var g = document.getElementById('aiStepsGrid');
+    var body = title + '\n\n';
+    if (r) {
+      var lines = r.querySelectorAll('.ai-review-line');
+      lines.forEach(function(l) { body += l.textContent + '\n'; });
+      // No alerts text
+      var noAlert = r.querySelector('div[style*="background:#f0fdf4"]');
+      if (noAlert) body += noAlert.textContent + '\n';
+      body += '\n';
+    }
+    if (g) {
+      var cards = g.querySelectorAll('.ai-step-card');
+      cards.forEach(function(c) {
+        var day = c.querySelector('.ai-step-day');
+        var city = c.querySelector('.ai-step-city');
+        var hl = c.querySelector('.ai-step-highlights');
+        var next = c.querySelector('.ai-step-next');
+        body += (day ? day.textContent + ' — ' : '') + (city ? city.textContent : '') + '\n';
+        if (hl) body += hl.textContent + '\n';
+        if (next) body += next.textContent + '\n';
+        body += '\n';
+      });
+    }
+    body += '---\noneroadtrip.com\n';
+    var subject = tAi('aiSummaryShareSubject').replace('{title}', title) || title;
+    window.open('mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body), '_self');
+  };
 
   function waitAndInit() {
     if (window.ORT_I18N && window.ORT_I18N.aiSummaryTitle) initAiLabels();
