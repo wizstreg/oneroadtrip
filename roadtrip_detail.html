@@ -3492,15 +3492,15 @@ hdr.appendChild(row);
   body.ai-printing #aiSummaryCacheTag,
   body.ai-printing #aiSummaryItineraryTitle,
   body.ai-printing #aiSummaryPlaceholder{display:none!important}
-  body.ai-printing #aiPrintTitle{display:block!important;font-size:22px;color:#1e3a5f;text-align:center;margin:0 0 6px;font-weight:700}
-  body.ai-printing #aiPrintSubtitle{display:block!important;font-size:13px;color:#64748b;text-align:center;margin-bottom:16px}
-  body.ai-printing .ai-review-box{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px!important;display:block!important}
-  body.ai-printing .ai-steps-grid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:10px!important}
-  body.ai-printing .ai-step-card{border:1px solid #d1d5db!important;border-radius:6px!important;break-inside:avoid;page-break-inside:avoid;padding:10px 12px!important;font-size:12px!important;background:#fff!important}
-  body.ai-printing .ai-step-day{font-size:11px!important}
-  body.ai-printing .ai-step-city{font-size:13px!important}
-  body.ai-printing .ai-step-highlights{font-size:12px!important;line-height:1.4!important}
-  body.ai-printing .ai-step-next{font-size:11px!important}
+  body.ai-printing #aiPrintTitle{display:block!important;font-size:24px;color:#1e3a5f;text-align:center;margin:0 0 6px;font-weight:700}
+  body.ai-printing #aiPrintSubtitle{display:block!important;font-size:15px;color:#64748b;text-align:center;margin-bottom:18px}
+  body.ai-printing .ai-review-box{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px!important;display:block!important;font-size:14px!important}
+  body.ai-printing .ai-steps-grid{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
+  body.ai-printing .ai-step-card{border:1px solid #d1d5db!important;border-radius:6px!important;break-inside:avoid;page-break-inside:avoid;padding:12px 14px!important;font-size:14px!important;background:#fff!important}
+  body.ai-printing .ai-step-day{font-size:13px!important}
+  body.ai-printing .ai-step-city{font-size:15px!important}
+  body.ai-printing .ai-step-highlights{font-size:14px!important;line-height:1.4!important}
+  body.ai-printing .ai-step-next{font-size:13px!important}
   body.ai-printing #aiPrintFooter{display:block!important;text-align:center;font-size:9px;color:#94a3b8;margin-top:14px}
   @page{margin:10mm}
 }
@@ -13572,7 +13572,10 @@ if ('serviceWorker' in navigator) {
     }).catch(function(){});
   };
 
+  var _aiPrinting = false;
   window.printAiSummary = function() {
+    if (_aiPrinting) return;
+    _aiPrinting = true;
     var title = (window.state && window.state.title) || 'Road Trip';
     var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
     var date = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -13587,9 +13590,10 @@ if ('serviceWorker' in navigator) {
     var cleanup = function() {
       document.body.classList.remove('ai-printing');
       window.removeEventListener('afterprint', cleanup);
+      _aiPrinting = false;
     };
     window.addEventListener('afterprint', cleanup);
-    setTimeout(function() { window.print(); }, 50);
+    setTimeout(function() { window.print(); }, 100);
   };
 
   window.emailAiSummary = function() {
