@@ -1,0 +1,808 @@
+/**
+ * ort-env-score.js — Module environnemental OneRoadTrip
+ * 
+ * Fichier UNIQUE à inclure dans toutes les pages (detail, simple, mobile, static, generator).
+ * S'auto-injecte à côté du titre de l'itinéraire.
+ * 
+ * Fonctionnalités :
+ * - Calcul CO2/jour via API route (/.netlify/functions/route) avec cache Firestore
+ * - Profil territorial (ville ↔ nature) depuis places master
+ * - Badge carbone coloré (A+ vert → E rouge) cliquable → panneau nearbies
+ * - Curseur ville/nature animé
+ * - Responsive (desktop, tablette, mobile)
+ * 
+ * Collections Firestore :
+ *   route_cache/{coords_key}     → { km, minutes, source, cached_at }
+ *   env_scores/{sanitized_itin}  → { grade, co2_per_day, km_total, ... }
+ * 
+ * Usage : <script src="js/ort-env-score.js"></script>
+ *         (aucune autre modification nécessaire)
+ * 
+ * Auteur: OneRoadTrip
+ */
+
+(function(window, document) {
+    'use strict';
+
+    // ══════════════════════════════════════════
+    // CONFIG
+    // ══════════════════════════════════════════
+    const ROUTE_API = '/.netlify/functions/route';
+    const CO2_CAR = 0.19;       // kg CO2/km voiture
+    const CO2_TRANSIT = 0.04;   // kg CO2/km transport en commun
+    const COORD_PRECISION = 3;  // Arrondi coords pour clé cache
+
+    // Seuils grade carbone (kg CO2 voiture PAR JOUR)
+    const GRADES = [
+        { max: 5,   grade: 'A+', color: '#059669', label: 'Excellent',   emoji: '🌿' },
+        { max: 10,  grade: 'A',  color: '#10b981', label: 'Très bon',    emoji: '🍃' },
+        { max: 20,  grade: 'B',  color: '#f59e0b', label: 'Bon',         emoji: '🌤️' },
+        { max: 35,  grade: 'C',  color: '#f97316', label: 'Moyen',       emoji: '🌥️' },
+        { max: 55,  grade: 'D',  color: '#ef4444', label: 'Élevé',       emoji: '🔥' },
+        { max: Infinity, grade: 'E', color: '#991b1b', label: 'Très élevé', emoji: '💨' }
+    ];
+
+    // place_type → catégorie
+    const URBAN_TYPES = ['capital', 'large_city', 'medium_city', 'suburb'];
+    const RURAL_TYPES = ['small_city', 'village', 'site', 'nature', 'beach', 'island'];
+
+    // ══════════════════════════════════════════
+    // HELPERS
+    // ══════════════════════════════════════════
+
+    /** Arrondir une coord à N décimales */
+    function roundCoord(n) {
+        return Math.round(n * Math.pow(10, COORD_PRECISION)) / Math.pow(10, COORD_PRECISION);
+    }
+
+    /** Clé cache route : "lat1,lon1__lat2,lon2" */
+    function routeCacheKey(lat1, lon1, lat2, lon2) {
+        return `${roundCoord(lat1)},${roundCoord(lon1)}__${roundCoord(lat2)},${roundCoord(lon2)}`;
+    }
+
+    /** sanitizeDocId identique au backend (:: → __) */
+    function sanitizeDocId(id) {
+        if (!id) return '';
+        return id.replace(/::/g, '__').replace(/[\/\\]/g, '_').substring(0, 200);
+    }
+
+    /** Récupérer le catalogId (itin_id d'origine) */
+    function getCatalogId() {
+        var st = window.state || {};
+        // Fallbacks dans l'ordre de priorité
+        var id = st._originalItinId || st.itinId || st.originalItinId || null;
+        if (!id) {
+            var params = new URLSearchParams(window.location.search);
+            id = params.get('itin') || params.get('itinId') || null;
+        }
+        if (!id && st._tripId && st._tripId.indexOf('::') > -1) id = st._tripId;
+        if (!id && st.tripId && st.tripId.indexOf('::') > -1) id = st.tripId;
+        if (!id) id = sessionStorage.getItem('ort_catalog_source') || null;
+        return id;
+    }
+
+    /** Récupérer le Firestore db */
+    function getDb() {
+        try {
+            return firebase.firestore();
+        } catch (e) {
+            console.warn('[ENV] Firestore non disponible');
+            return null;
+        }
+    }
+
+    /** Grade depuis CO2/jour */
+    function getGrade(co2PerDay) {
+        for (var g of GRADES) {
+            if (co2PerDay <= g.max) return g;
+        }
+        return GRADES[GRADES.length - 1];
+    }
+
+    // ══════════════════════════════════════════
+    // CACHE FIRESTORE : ROUTES
+    // ══════════════════════════════════════════
+
+    /** Chercher une route en cache Firestore */
+    async function getCachedRoute(key) {
+        var db = getDb();
+        if (!db) return null;
+        try {
+            var doc = await db.collection('route_cache').doc(key).get();
+            return doc.exists ? doc.data() : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /** Sauver une route en cache Firestore */
+    async function setCachedRoute(key, data) {
+        var db = getDb();
+        if (!db) return;
+        try {
+            await db.collection('route_cache').doc(key).set({
+                km: data.km,
+                minutes: data.minutes,
+                source: data.source || 'api',
+                cached_at: new Date().toISOString()
+            });
+        } catch (e) {
+            console.warn('[ENV] Cache route write error:', e.message);
+        }
+    }
+
+    // ══════════════════════════════════════════
+    // CACHE FIRESTORE : SCORES ENV
+    // ══════════════════════════════════════════
+
+    /** Charger score env depuis cache */
+    async function getCachedScore(itinId) {
+        var db = getDb();
+        if (!db) return null;
+        var key = sanitizeDocId(itinId);
+        if (!key) return null;
+        try {
+            var doc = await db.collection('env_scores').doc(key).get();
+            return doc.exists ? doc.data() : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    /** Sauver score env en cache */
+    async function setCachedScore(itinId, data) {
+        var db = getDb();
+        if (!db) return;
+        var key = sanitizeDocId(itinId);
+        if (!key) return;
+        try {
+            await db.collection('env_scores').doc(key).set(data);
+        } catch (e) {
+            console.warn('[ENV] Cache score write error:', e.message);
+        }
+    }
+
+    /** Charger score d'un nearby (pour le panneau) */
+    async function getNearbyScore(nearbyItinId) {
+        return getCachedScore(nearbyItinId);
+    }
+
+    // ══════════════════════════════════════════
+    // CALCUL DISTANCE VIA API ROUTE
+    // ══════════════════════════════════════════
+
+    /**
+     * Calcule la distance entre deux points GPS
+     * 1. Check cache Firestore
+     * 2. Sinon appel API route
+     * 3. Sauvegarde en cache
+     * @returns {Promise<{km: number, minutes: number}>}
+     */
+    async function getRouteDistance(lat1, lon1, lat2, lon2) {
+        var key = routeCacheKey(lat1, lon1, lat2, lon2);
+
+        // 1. Cache Firestore
+        var cached = await getCachedRoute(key);
+        if (cached && cached.km > 0) {
+            return { km: cached.km, minutes: cached.minutes, source: 'cache' };
+        }
+
+        // 2. API route (format: start=lon,lat&end=lon,lat)
+        try {
+            var url = ROUTE_API + '?mode=driving&start=' + lon1 + ',' + lat1 + '&end=' + lon2 + ',' + lat2;
+            var resp = await fetch(url);
+            if (resp.ok) {
+                var data = await resp.json();
+                if (data.ok && data.km > 0) {
+                    await setCachedRoute(key, { km: data.km, minutes: data.minutes, source: 'api' });
+                    return { km: data.km, minutes: data.minutes, source: 'api' };
+                }
+            }
+        } catch (e) {
+            console.warn('[ENV] Route API error:', e.message);
+        }
+
+        // 3. Fallback haversine × 1.3
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        var km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.3;
+        var minutes = (km / 65) * 60;
+        await setCachedRoute(key, { km: Math.round(km), minutes: Math.round(minutes), source: 'haversine' });
+        return { km: Math.round(km), minutes: Math.round(minutes), source: 'haversine' };
+    }
+
+    // ══════════════════════════════════════════
+    // CALCUL SCORE ENVIRONNEMENTAL
+    // ══════════════════════════════════════════
+
+    /**
+     * Calcule le score complet d'un itinéraire
+     * @param {Array} daysPlan - Le days_plan de l'itinéraire
+     * @param {Object} placesMap - Map place_id → {place_type, name}
+     * @returns {Promise<Object>} Score complet
+     */
+    async function calculateScore(daysPlan, placesMap) {
+        if (!daysPlan || daysPlan.length === 0) return null;
+
+        // ── Distance totale via API route ──
+        var totalKm = 0;
+        var legCount = 0;
+        var apiCalls = 0;
+        var cachHits = 0;
+
+        for (var i = 0; i < daysPlan.length - 1; i++) {
+            var c1 = daysPlan[i].night && daysPlan[i].night.coords;
+            var c2 = daysPlan[i + 1].night && daysPlan[i + 1].night.coords;
+            if (c1 && c2 && c1.length >= 2 && c2.length >= 2) {
+                // Skip si même coordonnées (même ville)
+                if (Math.abs(c1[0] - c2[0]) < 0.001 && Math.abs(c1[1] - c2[1]) < 0.001) continue;
+
+                var route = await getRouteDistance(c1[0], c1[1], c2[0], c2[1]);
+                totalKm += route.km;
+                legCount++;
+                if (route.source === 'cache') cachHits++;
+                else apiCalls++;
+            }
+        }
+
+        // ── Nombre de jours ──
+        var totalDays = 0;
+        for (var d of daysPlan) {
+            totalDays += (d.suggested_days || 1);
+        }
+        if (totalDays < 1) totalDays = daysPlan.length;
+
+        // ── CO2 par jour ──
+        var co2CarTotal = totalKm * CO2_CAR;
+        var co2TransitTotal = totalKm * CO2_TRANSIT;
+        var co2CarPerDay = co2CarTotal / totalDays;
+        var co2TransitPerDay = co2TransitTotal / totalDays;
+        var gradeInfo = getGrade(co2CarPerDay);
+
+        // ── Profil territorial ──
+        var urbanNights = 0;
+        var ruralNights = 0;
+        var unknownNights = 0;
+
+        for (var day of daysPlan) {
+            var pid = day.night && day.night.place_id || '';
+            var sd = day.suggested_days || 1;
+            var pType = null;
+
+            // Chercher dans placesMap
+            if (placesMap && placesMap[pid]) {
+                pType = placesMap[pid].place_type;
+            }
+            // Fallback dans le day
+            if (!pType) pType = day.place_type || day.city_size;
+
+            if (pType && URBAN_TYPES.indexOf(pType) > -1) {
+                urbanNights += sd;
+            } else if (pType && RURAL_TYPES.indexOf(pType) > -1) {
+                ruralNights += sd;
+            } else {
+                unknownNights += sd;
+            }
+        }
+
+        var totalNights = urbanNights + ruralNights + unknownNights;
+        var urbanRatio = totalNights > 0 ? Math.round((urbanNights / totalNights) * 100) : 50;
+
+        return {
+            km_total: Math.round(totalKm),
+            days_count: Math.round(totalDays * 10) / 10,
+            co2_car_total: Math.round(co2CarTotal * 10) / 10,
+            co2_transit_total: Math.round(co2TransitTotal * 10) / 10,
+            co2_car_per_day: Math.round(co2CarPerDay * 10) / 10,
+            co2_transit_per_day: Math.round(co2TransitPerDay * 10) / 10,
+            grade: gradeInfo.grade,
+            grade_color: gradeInfo.color,
+            grade_label: gradeInfo.label,
+            urban_nights: Math.round(urbanNights * 10) / 10,
+            rural_nights: Math.round(ruralNights * 10) / 10,
+            urban_ratio: urbanRatio,
+            legs: legCount,
+            api_calls: apiCalls,
+            cache_hits: cachHits,
+            calculated_at: new Date().toISOString()
+        };
+    }
+
+    // ══════════════════════════════════════════
+    // RENDU HTML + CSS
+    // ══════════════════════════════════════════
+
+    function injectStyles() {
+        if (document.getElementById('ort-env-styles')) return;
+        var style = document.createElement('style');
+        style.id = 'ort-env-styles';
+        style.textContent = `
+/* ═══ ENV SCORE BADGES ═══ */
+.ort-env-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 10px;
+    vertical-align: middle;
+    flex-wrap: wrap;
+}
+
+/* ── Badge carbone (cliquable) ── */
+.ort-env-carbon {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    user-select: none;
+    white-space: nowrap;
+}
+.ort-env-carbon:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.ort-env-carbon:active { transform: scale(0.97); }
+.ort-env-carbon .ort-env-grade { font-size: 15px; font-weight: 800; }
+
+/* ── Curseur ville/nature ── */
+.ort-env-nature {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+.ort-env-slider-track {
+    width: 60px;
+    height: 8px;
+    background: linear-gradient(90deg, #6366f1 0%, #22c55e 100%);
+    border-radius: 4px;
+    position: relative;
+}
+.ort-env-slider-thumb {
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border: 2px solid #334155;
+    border-radius: 50%;
+    position: absolute;
+    top: -2px;
+    transition: left 0.6s ease;
+}
+
+/* ── Tooltip info bulle carbone ── */
+.ort-env-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+    width: 240px;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+    pointer-events: none;
+}
+.ort-env-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #1e293b;
+}
+.ort-env-carbon:hover .ort-env-tooltip { display: block; }
+
+/* ── Panneau nearbies ── */
+.ort-env-nearby-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+.ort-env-nearby-overlay.open { display: flex; }
+.ort-env-nearby-panel {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    max-width: 420px;
+    width: 90vw;
+    max-height: 70vh;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    position: relative;
+}
+.ort-env-nearby-panel h3 {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #1e293b;
+}
+.ort-env-nearby-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #94a3b8;
+    line-height: 1;
+}
+.ort-env-nearby-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.ort-env-nearby-item:last-child { border-bottom: none; }
+.ort-env-nearby-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 24px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 12px;
+    color: #fff;
+    flex-shrink: 0;
+}
+.ort-env-nearby-name {
+    font-size: 13px;
+    color: #334155;
+    flex: 1;
+    line-height: 1.3;
+}
+.ort-env-nearby-name a {
+    color: inherit;
+    text-decoration: none;
+}
+.ort-env-nearby-name a:hover { text-decoration: underline; }
+.ort-env-nearby-km {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+}
+.ort-env-nearby-intro {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+.ort-env-loading {
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 4px 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .ort-env-wrap { gap: 5px; margin-left: 6px; }
+    .ort-env-carbon { font-size: 11px; padding: 2px 7px; }
+    .ort-env-carbon .ort-env-grade { font-size: 13px; }
+    .ort-env-nature { font-size: 11px; }
+    .ort-env-slider-track { width: 40px; height: 6px; }
+    .ort-env-slider-thumb { width: 10px; height: 10px; }
+    .ort-env-tooltip { width: 200px; font-size: 11px; }
+    .ort-env-nearby-panel { padding: 14px; }
+}
+`;
+        document.head.appendChild(style);
+    }
+
+    /** Construire le HTML des badges */
+    function buildBadgesHTML(score) {
+        var g = getGrade(score.co2_car_per_day);
+        var natureRatio = 100 - score.urban_ratio;
+        var thumbLeft = Math.max(2, Math.min(score.urban_ratio, 98));
+
+        return '<span class="ort-env-wrap" id="ort-env-wrap">' +
+            // Badge carbone
+            '<span class="ort-env-carbon" id="ort-env-carbon-btn" style="background:' + g.color + '">' +
+                '<span class="ort-env-grade">' + g.grade + '</span>' +
+                '<span>' + g.emoji + '</span>' +
+                // Tooltip
+                '<span class="ort-env-tooltip">' +
+                    '<b>Empreinte carbone</b><br>' +
+                    '📏 ' + score.km_total + ' km en ' + score.days_count + ' jours<br>' +
+                    '🚗 ' + score.co2_car_per_day + ' kg CO₂/jour (voiture)<br>' +
+                    '🚌 ' + score.co2_transit_per_day + ' kg CO₂/jour (TC)<br>' +
+                    '<br><b>Grade ' + g.grade + '</b> — ' + g.label +
+                '</span>' +
+            '</span>' +
+            // Curseur ville/nature
+            '<span class="ort-env-nature">' +
+                '<span>🏙️</span>' +
+                '<span class="ort-env-slider-track">' +
+                    '<span class="ort-env-slider-thumb" style="left:' + thumbLeft + '%"></span>' +
+                '</span>' +
+                '<span>🌿</span>' +
+            '</span>' +
+        '</span>';
+    }
+
+    /** Construire le panneau nearbies */
+    function buildNearbyOverlay() {
+        var overlay = document.createElement('div');
+        overlay.className = 'ort-env-nearby-overlay';
+        overlay.id = 'ort-env-nearby-overlay';
+        overlay.innerHTML =
+            '<div class="ort-env-nearby-panel">' +
+                '<button class="ort-env-nearby-close" id="ort-env-nearby-close">&times;</button>' +
+                '<h3>🌿 Alternatives moins carbonées</h3>' +
+                '<p class="ort-env-nearby-intro">Itinéraires proches avec leur impact carbone :</p>' +
+                '<div id="ort-env-nearby-list"><span class="ort-env-loading">Chargement...</span></div>' +
+            '</div>';
+        document.body.appendChild(overlay);
+
+        // Fermeture
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.classList.remove('open');
+        });
+        document.getElementById('ort-env-nearby-close').addEventListener('click', function() {
+            overlay.classList.remove('open');
+        });
+    }
+
+    /** Ouvrir le panneau nearbies et charger les scores */
+    async function openNearbyPanel(nearbyItins, currentGrade) {
+        var overlay = document.getElementById('ort-env-nearby-overlay');
+        if (!overlay) return;
+        overlay.classList.add('open');
+
+        var list = document.getElementById('ort-env-nearby-list');
+        list.innerHTML = '<span class="ort-env-loading">Chargement des scores...</span>';
+
+        if (!nearbyItins || nearbyItins.length === 0) {
+            list.innerHTML = '<span class="ort-env-loading">Aucun itinéraire proche trouvé.</span>';
+            return;
+        }
+
+        var html = '';
+        for (var nId of nearbyItins) {
+            var nScore = await getNearbyScore(nId);
+            var nGrade, nColor, nKm;
+            if (nScore && nScore.grade) {
+                var gi = GRADES.find(function(g) { return g.grade === nScore.grade; }) || GRADES[2];
+                nGrade = nScore.grade;
+                nColor = gi.color;
+                nKm = nScore.km_total ? nScore.km_total + ' km' : '';
+            } else {
+                nGrade = '?';
+                nColor = '#94a3b8';
+                nKm = 'pas encore calculé';
+            }
+
+            // Extraire un nom lisible depuis l'itin_id
+            var parts = nId.split('::');
+            var name = parts[parts.length - 1] || nId;
+            name = name.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+            var cc = parts[0] || '';
+
+            // Lien vers l'itinéraire
+            var lang = (localStorage.getItem('lang') || 'fr').slice(0, 2);
+            var href = 'roadtrip_detail.html?cc=' + cc + '&itin=' + encodeURIComponent(nId) + '&lang=' + lang;
+
+            html +=
+                '<div class="ort-env-nearby-item">' +
+                    '<span class="ort-env-nearby-badge" style="background:' + nColor + '">' + nGrade + '</span>' +
+                    '<span class="ort-env-nearby-name"><a href="' + href + '">' + name + '</a></span>' +
+                    '<span class="ort-env-nearby-km">' + nKm + '</span>' +
+                '</div>';
+        }
+
+        list.innerHTML = html;
+    }
+
+    // ══════════════════════════════════════════
+    // INJECTION DANS LA PAGE
+    // ══════════════════════════════════════════
+
+    /** Trouver le container titre dans la page */
+    function findTitleContainer() {
+        // Sélecteurs par priorité (couvre detail, simple, mobile, static)
+        var selectors = [
+            '#rtTitle',             // RT detail
+            '#tripTitle',           // RT detail alt
+            '#itinTitle',           // Autre variante
+            '.itin-title',          // RT simple/static
+            '.trip-title',          // Variante
+            '#stageHdr',            // RT mobile
+            '[data-env-insert]',    // Marqueur explicite
+            'h1'                    // Fallback ultime
+        ];
+        for (var sel of selectors) {
+            var el = document.querySelector(sel);
+            if (el) return el;
+        }
+        return null;
+    }
+
+    /** Extraire days_plan et nearby_itins depuis le state/window */
+    function extractItineraryData() {
+        var st = window.state || {};
+        var daysPlan = null;
+        var nearbyItins = null;
+        var placesMap = {};
+
+        // Format RT detail/simple/mobile : state.steps avec lat, lon, place_id, _suggestedDays
+        if (st.steps && Array.isArray(st.steps) && st.steps.length > 0) {
+            daysPlan = st.steps.map(function(s) {
+                return {
+                    night: {
+                        place_id: s.place_id || '',
+                        coords: [s.lat || 0, s.lon || 0]
+                    },
+                    suggested_days: s._suggestedDays || s.suggested_days || s.nights || 1,
+                    place_type: s.place_type || s.city_size || null
+                };
+            });
+        }
+
+        // Fallback : données raw si injectées par la page
+        if (!daysPlan && window._ortItinData) {
+            daysPlan = window._ortItinData.days_plan;
+        }
+
+        // nearby_itins — chercher dans tous les endroits possibles
+        nearbyItins = st._originalNearbyItins || st.nearby_itins || st.nearbyItins || null;
+        if (!nearbyItins && window._ortItinData) {
+            nearbyItins = window._ortItinData.nearby_itins;
+        }
+
+        // Construire placesMap depuis PLACES_INDEX (variable globale de RT detail)
+        if (window.PLACES_INDEX) {
+            for (var pid in window.PLACES_INDEX) {
+                if (window.PLACES_INDEX.hasOwnProperty(pid)) {
+                    var p = window.PLACES_INDEX[pid];
+                    placesMap[pid] = { place_type: p.place_type, name: p.name };
+                }
+            }
+        }
+        // Fallback : _ortPlaces
+        if (Object.keys(placesMap).length === 0 && window._ortPlaces) {
+            var places = window._ortPlaces.places || window._ortPlaces;
+            if (Array.isArray(places)) {
+                for (var p of places) {
+                    if (p.place_id) {
+                        placesMap[p.place_id] = { place_type: p.place_type, name: p.name };
+                    }
+                }
+            }
+        }
+
+        return { daysPlan: daysPlan, nearbyItins: nearbyItins, placesMap: placesMap };
+    }
+
+    // ══════════════════════════════════════════
+    // INIT PRINCIPAL
+    // ══════════════════════════════════════════
+
+    async function init() {
+        console.log('[ENV] Init ort-env-score.js');
+
+        var catalogId = getCatalogId();
+        if (!catalogId) {
+            console.log('[ENV] Pas de catalogId trouvé, abandon');
+            return;
+        }
+        console.log('[ENV] catalogId:', catalogId);
+
+        injectStyles();
+        buildNearbyOverlay();
+
+        // 1. Chercher score en cache Firestore
+        var score = await getCachedScore(catalogId);
+
+        if (score && score.grade) {
+            console.log('[ENV] Score trouvé en cache:', score.grade, score.co2_car_per_day, 'kg/j');
+        } else {
+            // 2. Calculer
+            console.log('[ENV] Pas de cache, calcul en cours...');
+
+            var data = extractItineraryData();
+            if (!data.daysPlan || data.daysPlan.length === 0) {
+                console.warn('[ENV] Pas de days_plan disponible');
+                return;
+            }
+
+            score = await calculateScore(data.daysPlan, data.placesMap);
+            if (!score) {
+                console.warn('[ENV] Calcul échoué');
+                return;
+            }
+
+            console.log('[ENV] Calculé:', score.grade, score.co2_car_per_day, 'kg/j,', score.km_total, 'km,', score.api_calls, 'API calls,', score.cache_hits, 'cache hits');
+
+            // 3. Sauver en cache
+            await setCachedScore(catalogId, score);
+        }
+
+        // 4. Injecter dans la page
+        var titleEl = findTitleContainer();
+        if (!titleEl) {
+            console.warn('[ENV] Pas de titre trouvé pour injection');
+            return;
+        }
+
+        // Insérer les badges après le titre
+        var wrapper = document.createElement('span');
+        wrapper.innerHTML = buildBadgesHTML(score);
+        titleEl.appendChild(wrapper.firstChild);
+
+        // 5. Brancher le clic → panneau nearbies
+        var carbonBtn = document.getElementById('ort-env-carbon-btn');
+        if (carbonBtn) {
+            var data = extractItineraryData();
+            carbonBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                openNearbyPanel(data.nearbyItins, score.grade);
+            });
+        }
+
+        console.log('[ENV] ✅ Badges injectés');
+    }
+
+    // ══════════════════════════════════════════
+    // AUTO-INIT
+    // ══════════════════════════════════════════
+
+    // Attendre que le state soit prêt (les pages ORT chargent les données après DOMContentLoaded)
+    function waitAndInit() {
+        var attempts = 0;
+        var maxAttempts = 30; // 15 secondes max
+
+        var timer = setInterval(function() {
+            attempts++;
+            var catalogId = getCatalogId();
+            var hasState = window.state && (window.state.steps || window.state.rawItinerary || window._ortItinData);
+
+            if (catalogId && hasState) {
+                clearInterval(timer);
+                init();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(timer);
+                // Tenter quand même avec ce qu'on a
+                if (catalogId) init();
+                else console.log('[ENV] Timeout — pas de données itinéraire détectées');
+            }
+        }, 500);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(waitAndInit, 1000); });
+    } else {
+        setTimeout(waitAndInit, 1000);
+    }
+
+    // API publique pour forcer l'init ou recalculer
+    window.ORT_ENV = {
+        init: init,
+        calculateScore: calculateScore,
+        getCachedScore: getCachedScore,
+        getGrade: getGrade,
+        GRADES: GRADES
+    };
+
+})(window, document);
