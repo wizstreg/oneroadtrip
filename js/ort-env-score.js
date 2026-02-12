@@ -247,12 +247,12 @@
             }
         }
 
-        // ── Nombre de jours ──
-        var totalDays = 0;
+        // ── Nombre de jours (basé sur les nuits réelles, pas suggested_days) ──
+        var totalNightsCount = 0;
         for (var d of daysPlan) {
-            totalDays += (d.suggested_days || 1);
+            totalNightsCount += (d.nights || 1);
         }
-        if (totalDays < 1) totalDays = daysPlan.length;
+        var totalDays = totalNightsCount > 0 ? totalNightsCount + 1 : daysPlan.length;
 
         // ── CO2 par jour ──
         var co2CarTotal = totalKm * CO2_CAR;
@@ -268,7 +268,7 @@
 
         for (var day of daysPlan) {
             var pid = day.night && day.night.place_id || '';
-            var sd = day.suggested_days || 1;
+            var nights = day.nights || 1;
             var pType = null;
 
             // Chercher dans placesMap
@@ -279,11 +279,11 @@
             if (!pType) pType = day.place_type || day.city_size;
 
             if (pType && URBAN_TYPES.indexOf(pType) > -1) {
-                urbanNights += sd;
+                urbanNights += nights;
             } else if (pType && RURAL_TYPES.indexOf(pType) > -1) {
-                ruralNights += sd;
+                ruralNights += nights;
             } else {
-                unknownNights += sd;
+                unknownNights += nights;
             }
         }
 
@@ -323,8 +323,8 @@
 .ort-env-wrap {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin-left: 10px;
+    gap: 10px;
+    margin-left: 12px;
     vertical-align: middle;
     flex-wrap: wrap;
 }
@@ -333,56 +333,94 @@
 .ort-env-carbon {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 10px;
-    border-radius: 16px;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 20px;
     font-weight: 700;
-    font-size: 13px;
+    font-size: 14px;
     color: #fff;
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
     position: relative;
     user-select: none;
     white-space: nowrap;
+    letter-spacing: 0.3px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
 }
 .ort-env-carbon:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
 }
 .ort-env-carbon:active { transform: scale(0.97); }
-.ort-env-carbon .ort-env-grade { font-size: 15px; font-weight: 800; }
+.ort-env-carbon .ort-env-grade { font-size: 16px; font-weight: 900; }
+.ort-env-carbon .ort-env-mode { font-size: 11px; font-weight: 500; opacity: 0.9; }
 
 /* ── Curseur ville/nature ── */
 .ort-env-nature {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12px;
+    gap: 5px;
+    font-size: 14px;
     white-space: nowrap;
-}
-.ort-env-slider-track {
-    width: 60px;
-    height: 8px;
-    background: linear-gradient(90deg, #6366f1 0%, #22c55e 100%);
-    border-radius: 4px;
     position: relative;
 }
+.ort-env-slider-track {
+    width: 70px;
+    height: 10px;
+    background: linear-gradient(90deg, #6366f1 0%, #22c55e 100%);
+    border-radius: 5px;
+    position: relative;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.15);
+}
 .ort-env-slider-thumb {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     background: #fff;
-    border: 2px solid #334155;
+    border: 2.5px solid #334155;
     border-radius: 50%;
     position: absolute;
     top: -2px;
     transition: left 0.6s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
 /* ── Tooltip info bulle carbone ── */
 .ort-env-tooltip {
     display: none;
     position: absolute;
-    top: calc(100% + 8px);
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.6;
+    width: 260px;
+    z-index: 9999;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    pointer-events: none;
+}
+.ort-env-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 7px solid #1e293b;
+}
+.ort-env-tooltip b { color: #fbbf24; }
+.ort-env-carbon:hover .ort-env-tooltip { display: block; }
+
+/* ── Tooltip nature ── */
+.ort-env-nature-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
     left: 50%;
     transform: translateX(-50%);
     background: #1e293b;
@@ -392,12 +430,13 @@
     font-size: 12px;
     font-weight: 400;
     line-height: 1.5;
-    width: 240px;
+    width: 180px;
     z-index: 9999;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     pointer-events: none;
+    white-space: normal;
 }
-.ort-env-tooltip::before {
+.ort-env-nature-tooltip::before {
     content: '';
     position: absolute;
     top: -6px;
@@ -407,7 +446,7 @@
     border-right: 6px solid transparent;
     border-bottom: 6px solid #1e293b;
 }
-.ort-env-carbon:hover .ort-env-tooltip { display: block; }
+.ort-env-nature:hover .ort-env-nature-tooltip { display: block; }
 
 /* ── Panneau nearbies ── */
 .ort-env-nearby-overlay {
@@ -498,13 +537,16 @@
 
 /* ── Responsive ── */
 @media (max-width: 600px) {
-    .ort-env-wrap { gap: 5px; margin-left: 6px; }
-    .ort-env-carbon { font-size: 11px; padding: 2px 7px; }
-    .ort-env-carbon .ort-env-grade { font-size: 13px; }
-    .ort-env-nature { font-size: 11px; }
-    .ort-env-slider-track { width: 40px; height: 6px; }
-    .ort-env-slider-thumb { width: 10px; height: 10px; }
-    .ort-env-tooltip { width: 200px; font-size: 11px; }
+    .ort-env-wrap { gap: 6px; margin-left: 6px; }
+    .ort-env-carbon { font-size: 12px; padding: 3px 8px; }
+    .ort-env-carbon .ort-env-grade { font-size: 14px; }
+    .ort-env-carbon .ort-env-mode { font-size: 10px; }
+    .ort-env-nature { font-size: 12px; }
+    .ort-env-slider-track { width: 50px; height: 8px; }
+    .ort-env-slider-thumb { width: 12px; height: 12px; }
+    .ort-env-tooltip { width: 220px; font-size: 12px; left: 0; transform: none; }
+    .ort-env-tooltip::before { left: 20px; }
+    .ort-env-nature-tooltip { width: 160px; font-size: 11px; }
     .ort-env-nearby-panel { padding: 14px; }
 }
 `;
@@ -513,31 +555,55 @@
 
     /** Construire le HTML des badges */
     function buildBadgesHTML(score) {
-        var g = getGrade(score.co2_car_per_day);
+        var gCar = getGrade(score.co2_car_per_day);
+        var gTransit = getGrade(score.co2_transit_per_day);
         var natureRatio = 100 - score.urban_ratio;
         var thumbLeft = Math.max(2, Math.min(score.urban_ratio, 98));
 
+        // Label nature
+        var natureLabel = score.urban_ratio > 65 ? 'Urbain' :
+                          score.urban_ratio > 35 ? 'Mixte' : 'Nature';
+
         return '<span class="ort-env-wrap" id="ort-env-wrap">' +
-            // Badge carbone
-            '<span class="ort-env-carbon" id="ort-env-carbon-btn" style="background:' + g.color + '">' +
-                '<span class="ort-env-grade">' + g.grade + '</span>' +
-                '<span>' + g.emoji + '</span>' +
-                // Tooltip
+            // Badge carbone VOITURE
+            '<span class="ort-env-carbon" id="ort-env-carbon-btn" style="background:' + gCar.color + '">' +
+                '<span class="ort-env-grade">' + gCar.grade + '</span>' +
+                '<span class="ort-env-mode">🚗</span>' +
+                // Tooltip voiture
                 '<span class="ort-env-tooltip">' +
-                    '<b>Empreinte carbone</b><br>' +
-                    '📏 ' + score.km_total + ' km en ' + score.days_count + ' jours<br>' +
-                    '🚗 ' + score.co2_car_per_day + ' kg CO₂/jour (voiture)<br>' +
-                    '🚌 ' + score.co2_transit_per_day + ' kg CO₂/jour (TC)<br>' +
-                    '<br><b>Grade ' + g.grade + '</b> — ' + g.label +
+                    '<b>🚗 Empreinte voiture</b><br>' +
+                    '📏 ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
+                    '💨 ' + score.co2_car_per_day + ' kg CO₂/jour<br>' +
+                    'Total : ' + score.co2_car_total + ' kg CO₂<br>' +
+                    '<br>Grade <b>' + gCar.grade + '</b> — ' + gCar.label +
+                    '<br><br><em>Cliquez pour voir les alternatives</em>' +
+                '</span>' +
+            '</span>' +
+            // Badge carbone TC
+            '<span class="ort-env-carbon" style="background:' + gTransit.color + '">' +
+                '<span class="ort-env-grade">' + gTransit.grade + '</span>' +
+                '<span class="ort-env-mode">🚌</span>' +
+                // Tooltip TC
+                '<span class="ort-env-tooltip">' +
+                    '<b>🚌 Empreinte transports en commun</b><br>' +
+                    '📏 ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
+                    '💨 ' + score.co2_transit_per_day + ' kg CO₂/jour<br>' +
+                    'Total : ' + score.co2_transit_total + ' kg CO₂<br>' +
+                    '<br>Grade <b>' + gTransit.grade + '</b> — ' + gTransit.label +
                 '</span>' +
             '</span>' +
             // Curseur ville/nature
             '<span class="ort-env-nature">' +
                 '<span>🏙️</span>' +
                 '<span class="ort-env-slider-track">' +
-                    '<span class="ort-env-slider-thumb" style="left:' + thumbLeft + '%"></span>' +
+                    '<span class="ort-env-slider-thumb" style="left:calc(' + thumbLeft + '% - 7px)"></span>' +
                 '</span>' +
                 '<span>🌿</span>' +
+                '<span class="ort-env-nature-tooltip">' +
+                    '<b>' + natureLabel + '</b><br>' +
+                    '🏙️ ' + score.urban_ratio + '% urbain<br>' +
+                    '🌿 ' + natureRatio + '% nature/rural' +
+                '</span>' +
             '</span>' +
         '</span>';
     }
@@ -654,6 +720,7 @@
                         place_id: s.place_id || '',
                         coords: [s.lat || 0, s.lon || 0]
                     },
+                    nights: s.nights || 1,
                     suggested_days: s._suggestedDays || s.suggested_days || s.nights || 1,
                     place_type: s.place_type || s.city_size || null
                 };

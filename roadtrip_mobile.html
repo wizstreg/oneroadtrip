@@ -6212,58 +6212,111 @@ function showBookingDetail(booking) {
   
   const content = $('bookingDetailContent');
   const title = $('bookingDetailTitle');
+  const b = booking;
   
-  const icon = getCategoryIcon(booking.category);
-  title.textContent = `${icon} ${booking.name || 'Réservation'}`;
+  const icon = getCategoryIcon(b.category);
+  title.textContent = `${icon} ${b.name || 'Réservation'}`;
   
-  // Construire le contenu détaillé
   let html = '<div style="background:#f8f9fa;border-radius:12px;padding:16px;">';
   
-  if (booking.category) {
+  // Category
+  if (b.category) {
     const categoryLabels = {
       flight: '✈️ Vol', car_rental: '🚗 Location voiture', insurance: '🛡️ Assurance',
       hotel: '🏨 Hébergement', activity: '🎯 Activité', restaurant: '🍽️ Restaurant',
       transport: '🚌 Transport', ferry: '⛴️ Ferry', train: '🚆 Train'
     };
-    html += `<div style="margin-bottom:12px;"><strong>Catégorie:</strong> ${categoryLabels[booking.category] || booking.category}</div>`;
+    html += `<div style="margin-bottom:12px;"><strong>Catégorie:</strong> ${categoryLabels[b.category] || b.category}</div>`;
   }
   
-  if (booking.provider) {
-    html += `<div style="margin-bottom:12px;"><strong>Prestataire:</strong> ${booking.provider}</div>`;
+  if (b.provider) html += `<div style="margin-bottom:12px;"><strong>Prestataire:</strong> ${b.provider}</div>`;
+  
+  // === FLIGHTS ===
+  if (b.category === 'flight' && b.flights && b.flights.length > 0) {
+    html += '<div style="margin-top:8px;border-top:1px solid #e5e7eb;padding-top:10px">';
+    b.flights.forEach(function(f) {
+      const typeLabel = f.type === 'outbound' ? '✈️ Aller' : f.type === 'return' ? '✈️ Retour' : '✈️ Vol';
+      const route = [f.departure_city, f.departure_airport ? '(' + f.departure_airport + ')' : ''].filter(Boolean).join(' ') +
+        ' → ' + [f.arrival_city, f.arrival_airport ? '(' + f.arrival_airport + ')' : ''].filter(Boolean).join(' ');
+      html += '<div style="margin-bottom:12px;padding:10px;background:#f0f9ff;border-radius:8px">';
+      html += '<div style="font-weight:700;color:#1e40af;margin-bottom:6px">' + typeLabel + '</div>';
+      if (route.replace(/[→ ]/g, '')) html += '<div style="font-size:0.9rem;margin-bottom:4px">🛫 ' + route + '</div>';
+      if (f.airline || f.flight_number) html += '<div style="font-size:0.85rem;color:#666">🔢 ' + [f.airline, f.flight_number].filter(Boolean).join(' • ') + '</div>';
+      if (f.departure_date || f.departure_time) html += '<div style="font-size:0.85rem;color:#666">🛫 Départ: ' + [f.departure_date ? formatDate(f.departure_date) : '', f.departure_time ? 'à ' + f.departure_time : ''].filter(Boolean).join(' ') + '</div>';
+      if (f.arrival_date || f.arrival_time) {
+        let arrStr = '🛬 Arrivée: ' + [f.arrival_date ? formatDate(f.arrival_date) : '', f.arrival_time ? 'à ' + f.arrival_time : ''].filter(Boolean).join(' ');
+        if (f.arrival_date && f.departure_date && f.arrival_date !== f.departure_date) arrStr += ' (+1j)';
+        html += '<div style="font-size:0.85rem;color:#666">' + arrStr + '</div>';
+      }
+      if (f.duration_minutes) html += '<div style="font-size:0.85rem;color:#666">⏱️ Durée: ' + Math.floor(f.duration_minutes / 60) + 'h' + (f.duration_minutes % 60 ? String(f.duration_minutes % 60).padStart(2, '0') : '') + '</div>';
+      if (f.terminal) html += '<div style="font-size:0.85rem;color:#666">🏢 Terminal: ' + f.terminal + '</div>';
+      if (f.gate) html += '<div style="font-size:0.85rem;color:#666">🚪 Porte: ' + f.gate + '</div>';
+      if (f.seat) html += '<div style="font-size:0.85rem;color:#666">💺 Siège: ' + f.seat + '</div>';
+      if (f.class_type) html += '<div style="font-size:0.85rem;color:#666">🎫 Classe: ' + f.class_type + '</div>';
+      if (f.baggage) html += '<div style="font-size:0.85rem;color:#666">🧳 Bagages: ' + f.baggage + '</div>';
+      if (f.stops !== undefined && f.stops !== null) html += '<div style="font-size:0.85rem;color:#666">🔄 Escales: ' + (f.stops === 0 ? 'Direct' : f.stops) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
   }
   
-  if (booking.date_start) {
-    html += `<div style="margin-bottom:12px;"><strong>Date début:</strong> ${formatDate(booking.date_start)}</div>`;
+  // === CAR RENTAL ===
+  if (b.category === 'car_rental' && b.car_rental) {
+    const car = b.car_rental;
+    html += '<div style="margin-top:8px;border-top:1px solid #e5e7eb;padding-top:10px">';
+    if (car.vehicle_model || car.vehicle_type) html += '<div style="font-size:0.9rem;margin-bottom:8px">🚗 ' + (car.vehicle_model || car.vehicle_type) + '</div>';
+    if (car.pickup_location || car.pickup_date || car.pickup_time) {
+      html += '<div style="margin-bottom:8px;padding:8px;background:#f0fdf4;border-radius:6px">';
+      html += '<div style="font-weight:600;color:#16a34a;margin-bottom:4px">📍 Prise en charge</div>';
+      if (car.pickup_location) html += '<div style="font-size:0.85rem">' + car.pickup_location + '</div>';
+      if (car.pickup_date || car.pickup_time) html += '<div style="font-size:0.85rem;color:#666">📅 ' + [car.pickup_date ? formatDate(car.pickup_date) : '', car.pickup_time ? 'à ' + car.pickup_time : ''].filter(Boolean).join(' ') + '</div>';
+      html += '</div>';
+    }
+    if (car.dropoff_location || car.dropoff_date || car.dropoff_time) {
+      html += '<div style="margin-bottom:8px;padding:8px;background:#fef2f2;border-radius:6px">';
+      html += '<div style="font-weight:600;color:#dc2626;margin-bottom:4px">📍 Restitution</div>';
+      if (car.dropoff_location) html += '<div style="font-size:0.85rem">' + car.dropoff_location + '</div>';
+      if (car.dropoff_date || car.dropoff_time) html += '<div style="font-size:0.85rem;color:#666">📅 ' + [car.dropoff_date ? formatDate(car.dropoff_date) : '', car.dropoff_time ? 'à ' + car.dropoff_time : ''].filter(Boolean).join(' ') + '</div>';
+      html += '</div>';
+    }
+    if (car.included_km) html += '<div style="font-size:0.85rem;color:#666">🛣️ Km inclus: ' + car.included_km + '</div>';
+    if (car.fuel_policy) html += '<div style="font-size:0.85rem;color:#666">⛽ Carburant: ' + car.fuel_policy + '</div>';
+    if (car.insurance) html += '<div style="font-size:0.85rem;color:#666">🛡️ Assurance: ' + car.insurance + '</div>';
+    html += '</div>';
   }
   
-  if (booking.date_end) {
-    html += `<div style="margin-bottom:12px;"><strong>Date fin:</strong> ${formatDate(booking.date_end)}</div>`;
+  // === HOTEL specific ===
+  if (b.category === 'hotel') {
+    if (b.check_in) html += `<div style="margin-bottom:12px;"><strong>Check-in:</strong> ${b.check_in}</div>`;
+    if (b.check_out) html += `<div style="margin-bottom:12px;"><strong>Check-out:</strong> ${b.check_out}</div>`;
+    if (b.room_type) html += `<div style="margin-bottom:12px;"><strong>Chambre:</strong> ${b.room_type}</div>`;
+    if (b.address) html += `<div style="margin-bottom:12px;">📍 ${b.address}</div>`;
+    if (b.phone) html += `<div style="margin-bottom:12px;">📞 <a href="tel:${b.phone}">${b.phone}</a></div>`;
   }
   
-  if (booking.nights) {
-    html += `<div style="margin-bottom:12px;"><strong>Nuits:</strong> ${booking.nights}</div>`;
+  // === GENERIC FIELDS ===
+  if (b.date_start) html += `<div style="margin-bottom:12px;"><strong>Date début:</strong> ${formatDate(b.date_start)}</div>`;
+  if (b.date_end) html += `<div style="margin-bottom:12px;"><strong>Date fin:</strong> ${formatDate(b.date_end)}</div>`;
+  if (b.nights) html += `<div style="margin-bottom:12px;"><strong>Nuits:</strong> ${b.nights}</div>`;
+  if (b.address && b.category !== 'hotel') html += `<div style="margin-bottom:12px;">📍 ${b.address}</div>`;
+  if (b.phone && b.category !== 'hotel') html += `<div style="margin-bottom:12px;">📞 <a href="tel:${b.phone}">${b.phone}</a></div>`;
+  
+  if (b.confirmation_number || b.reference) {
+    const ref = b.confirmation_number || b.reference;
+    html += `<div style="margin-bottom:12px;"><strong>N° confirmation:</strong> <span style="font-family:monospace;background:#e2e8f0;padding:2px 6px;border-radius:4px;">${ref}</span></div>`;
   }
   
-  if (booking.confirmation_number) {
-    html += `<div style="margin-bottom:12px;"><strong>N° confirmation:</strong> <span style="font-family:monospace;background:#e2e8f0;padding:2px 6px;border-radius:4px;">${booking.confirmation_number}</span></div>`;
-  }
-  
-  if (booking.price) {
-    const price = typeof booking.price === 'object' ? booking.price.amount : booking.price;
-    const currency = typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+  if (b.price) {
+    const price = typeof b.price === 'object' ? b.price.amount : b.price;
+    const currency = typeof b.price === 'object' ? (b.price.currency || '€') : '€';
     html += `<div style="margin-bottom:12px;"><strong>Prix:</strong> <span style="color:#059669;font-weight:600;">${parseFloat(price).toFixed(2)} ${currency}</span></div>`;
   }
   
-  if (booking.notes) {
-    html += `<div style="margin-bottom:12px;"><strong>Notes:</strong><br><span style="color:#666;">${booking.notes}</span></div>`;
-  }
+  if (b.notes) html += `<div style="margin-bottom:12px;"><strong>Notes:</strong><br><span style="color:#666;">${b.notes}</span></div>`;
   
-  if (booking.link) {
-    html += `<div style="margin-top:16px;"><a href="${booking.link}" target="_blank" style="display:inline-block;padding:10px 16px;background:#113f7a;color:white;border-radius:8px;text-decoration:none;font-weight:500;">🔗 Voir la réservation</a></div>`;
-  }
+  if (b.link) html += `<div style="margin-top:16px;"><a href="${b.link}" target="_blank" style="display:inline-block;padding:10px 16px;background:#113f7a;color:white;border-radius:8px;text-decoration:none;font-weight:500;">🔗 Voir la réservation</a></div>`;
   
   html += '</div>';
-  
   content.innerHTML = html;
   
   // Restaurer les boutons Modifier/Supprimer
@@ -6271,11 +6324,8 @@ function showBookingDetail(booking) {
   if ($('btnDeleteBooking')) $('btnDeleteBooking').style.display = '';
   
   // Ouvrir la sheet
-  // Si on vient d'une autre sheet (étape), attendre sa fermeture
   const wasSheetOpen = document.querySelector('.bottom-sheet.show') !== null;
   closeAllSheets();
-  
-  // Aussi fermer la bookingDetailSheet si déjà ouverte
   $('bookingDetailSheet').classList.remove('show');
   
   if (wasSheetOpen) {
