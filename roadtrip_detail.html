@@ -6909,6 +6909,10 @@ async function calculateDistance(fromStep, toStep) {
     return { km, minutes };
   };
 
+  // ═══ CACHE KEY ═══
+  const roundC = n => Math.round(n * 1000) / 1000;
+  const cacheKey = `${roundC(fromStep.lat)},${roundC(fromStep.lon)}__${roundC(toStep.lat)},${roundC(toStep.lon)}`;
+
   try {
     if (!Number.isFinite(fromStep?.lat) || !Number.isFinite(fromStep?.lon) ||
         !Number.isFinite(toStep?.lat)   || !Number.isFinite(toStep?.lon)) {
@@ -6919,8 +6923,34 @@ async function calculateDistance(fromStep, toStep) {
       return { km: 0, minutes: 0 };
     }
 
+    // ═══ CHECK CACHE FIRESTORE ═══
+    try {
+      if (typeof firebase !== 'undefined' && firebase.firestore) {
+        const doc = await firebase.firestore().collection('route_cache').doc(cacheKey).get();
+        if (doc.exists) {
+          const c = doc.data();
+          if (c.km > 0 && c.source !== 'haversine') {
+            console.log(`[DIST] ✅ Cache: ${c.km}km, ${c.minutes}min`);
+            return { km: c.km, minutes: c.minutes };
+          }
+        }
+      }
+    } catch (e) { /* cache miss, continue */ }
+
     const mode = getTransportMode();
     const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+    // ═══ HELPER: sauver en cache si résultat API valide ═══
+    const cacheAndReturn = async (km, minutes, source) => {
+      try {
+        if (typeof firebase !== 'undefined' && firebase.firestore && firebase.auth()?.currentUser) {
+          await firebase.firestore().collection('route_cache').doc(cacheKey).set({
+            km, minutes, source, cached_at: new Date().toISOString()
+          });
+        }
+      } catch (e) { /* silent */ }
+      return { km, minutes };
+    };
 
     // === LOCAL: OSRM DIRECT ===
     if (isLocal) {
@@ -6939,7 +6969,7 @@ async function calculateDistance(fromStep, toStep) {
             const km = Math.round(route.distance / 1000);
             const minutes = Math.round(route.duration / 60);
             console.log(`[DIST] ✅ OSRM: ${km}km, ${minutes}min`);
-            return { km, minutes };
+            return await cacheAndReturn(km, minutes, 'osrm');
           }
         }
       } catch (e) {
@@ -6961,7 +6991,7 @@ async function calculateDistance(fromStep, toStep) {
       if (res.ok) {
         const data = await res.json();
         if (data.ok && Number.isFinite(data.km) && Number.isFinite(data.minutes)) {
-          return { km: data.km, minutes: data.minutes };
+          return await cacheAndReturn(data.km, data.minutes, 'netlify');
         }
       }
     } catch (e) {
@@ -6981,7 +7011,7 @@ async function calculateDistance(fromStep, toStep) {
             const route = data.routes[0];
             const km = Math.round(route.distance / 1000);
             const minutes = Math.round(route.duration / 60);
-            return { km, minutes };
+            return await cacheAndReturn(km, minutes, 'mapbox');
           }
         }
       } catch (e) {
@@ -7006,7 +7036,7 @@ async function calculateDistance(fromStep, toStep) {
           const km = Math.round(route.distance / 1000);
           const minutes = Math.round(route.duration / 60);
           console.log(`[DIST] ✅ OSRM fallback: ${km}km, ${minutes}min`);
-          return { km, minutes };
+          return await cacheAndReturn(km, minutes, 'osrm');
         }
       }
     } catch (e) {
@@ -13356,7 +13386,6 @@ if (new URLSearchParams(location.search).get('share')) {
 
 <!-- SCRIPTS HÔTELS -->
 <script src="/js/ort-hotels.js"></script>
-<script src="js/ort-env-score.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
 
 <!-- Service Worker pour mode offline -->

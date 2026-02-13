@@ -202,14 +202,14 @@
             console.warn('[ENV] Route API error:', e.message);
         }
 
-        // 3. Fallback haversine × 1.3
+        // 3. Fallback haversine × 1.3 (PAS caché — pas fiable)
         var R = 6371;
         var dLat = (lat2 - lat1) * Math.PI / 180;
         var dLon = (lon2 - lon1) * Math.PI / 180;
         var a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
         var km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.3;
         var minutes = (km / 65) * 60;
-        await setCachedRoute(key, { km: Math.round(km), minutes: Math.round(minutes), source: 'haversine' });
+        // PAS de setCachedRoute ici — haversine est imprécis
         return { km: Math.round(km), minutes: Math.round(minutes), source: 'haversine' };
     }
 
@@ -399,7 +399,7 @@
     font-weight: 400;
     line-height: 1.6;
     width: 260px;
-    z-index: 9999;
+    z-index: 99999;
     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     pointer-events: none;
 }
@@ -431,7 +431,7 @@
     font-weight: 400;
     line-height: 1.5;
     width: 180px;
-    z-index: 9999;
+    z-index: 99999;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     pointer-events: none;
     white-space: normal;
@@ -568,12 +568,12 @@
             // Badge carbone VOITURE
             '<span class="ort-env-carbon" id="ort-env-carbon-btn" style="background:' + gCar.color + '">' +
                 '<span class="ort-env-grade">' + gCar.grade + '</span>' +
-                '<span class="ort-env-mode">🚗</span>' +
+                '<span class="ort-env-mode">CAR</span>' +
                 // Tooltip voiture
                 '<span class="ort-env-tooltip">' +
-                    '<b>🚗 Empreinte voiture</b><br>' +
-                    '📏 ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
-                    '💨 ' + score.co2_car_per_day + ' kg CO₂/jour<br>' +
+                    '<b>Empreinte voiture</b><br>' +
+                    'Distance : ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
+                    'CO₂ : ' + score.co2_car_per_day + ' kg/jour<br>' +
                     'Total : ' + score.co2_car_total + ' kg CO₂<br>' +
                     '<br>Grade <b>' + gCar.grade + '</b> — ' + gCar.label +
                     '<br><br><em>Cliquez pour voir les alternatives</em>' +
@@ -582,12 +582,12 @@
             // Badge carbone TC
             '<span class="ort-env-carbon" style="background:' + gTransit.color + '">' +
                 '<span class="ort-env-grade">' + gTransit.grade + '</span>' +
-                '<span class="ort-env-mode">🚌</span>' +
+                '<span class="ort-env-mode">TC</span>' +
                 // Tooltip TC
                 '<span class="ort-env-tooltip">' +
-                    '<b>🚌 Empreinte transports en commun</b><br>' +
-                    '📏 ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
-                    '💨 ' + score.co2_transit_per_day + ' kg CO₂/jour<br>' +
+                    '<b>Empreinte transports en commun</b><br>' +
+                    'Distance : ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
+                    'CO₂ : ' + score.co2_transit_per_day + ' kg/jour<br>' +
                     'Total : ' + score.co2_transit_total + ' kg CO₂<br>' +
                     '<br>Grade <b>' + gTransit.grade + '</b> — ' + gTransit.label +
                 '</span>' +
@@ -782,11 +782,12 @@
         // 1. Chercher score en cache Firestore
         var score = await getCachedScore(catalogId);
 
-        if (score && score.grade) {
-            console.log('[ENV] Score trouvé en cache:', score.grade, score.co2_car_per_day, 'kg/j');
+        if (score && score.grade && score.days_count) {
+            console.log('[ENV] Score trouvé en cache:', score.grade, score.co2_car_per_day, 'kg/j,', score.days_count, 'jours');
         } else {
-            // 2. Calculer
-            console.log('[ENV] Pas de cache, calcul en cours...');
+            // Cache absent ou ancien format → recalculer
+            if (score) console.log('[ENV] Cache ancien format, recalcul...');
+            else console.log('[ENV] Pas de cache, calcul en cours...');
 
             var data = extractItineraryData();
             if (!data.daysPlan || data.daysPlan.length === 0) {
@@ -838,21 +839,19 @@
     // Attendre que le state soit prêt (les pages ORT chargent les données après DOMContentLoaded)
     function waitAndInit() {
         var attempts = 0;
-        var maxAttempts = 30; // 15 secondes max
+        var maxAttempts = 60; // 30 secondes max
 
         var timer = setInterval(function() {
             attempts++;
             var catalogId = getCatalogId();
-            var hasState = window.state && (window.state.steps || window.state.rawItinerary || window._ortItinData);
+            var hasSteps = window.state && window.state.steps && window.state.steps.length > 0;
 
-            if (catalogId && hasState) {
+            if (catalogId && hasSteps) {
                 clearInterval(timer);
                 init();
             } else if (attempts >= maxAttempts) {
                 clearInterval(timer);
-                // Tenter quand même avec ce qu'on a
-                if (catalogId) init();
-                else console.log('[ENV] Timeout — pas de données itinéraire détectées');
+                console.log('[ENV] Timeout — catalogId:', catalogId, 'steps:', window.state?.steps?.length || 0);
             }
         }, 500);
     }
