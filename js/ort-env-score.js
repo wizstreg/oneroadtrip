@@ -782,7 +782,28 @@
             for (var pid in window.PLACES_INDEX) {
                 if (window.PLACES_INDEX.hasOwnProperty(pid)) {
                     var p = window.PLACES_INDEX[pid];
-                    placesMap[pid] = { place_type: p.place_type, name: p.name };
+                    placesMap[pid] = { place_type: p.place_type || p.city_size || p.type, name: p.name };
+                }
+            }
+        }
+        // Fallback : ORT_DATA_LOADER raw places (si data-loader stocke les places brutes)
+        if (window.ORT_DATA_LOADER && window.ORT_DATA_LOADER._rawPlaces) {
+            var rawPlaces = window.ORT_DATA_LOADER._rawPlaces;
+            for (var rp of rawPlaces) {
+                if (rp.place_id && rp.place_type && (!placesMap[rp.place_id] || !placesMap[rp.place_id].place_type)) {
+                    placesMap[rp.place_id] = placesMap[rp.place_id] || {};
+                    placesMap[rp.place_id].place_type = rp.place_type;
+                    placesMap[rp.place_id].name = rp.name;
+                }
+            }
+        }
+        // Fallback 2 : chercher dans window._ortPlacesRaw ou le master chargé
+        if (window._ortPlacesRaw) {
+            var raw2 = Array.isArray(window._ortPlacesRaw) ? window._ortPlacesRaw : window._ortPlacesRaw.places || [];
+            for (var rp2 of raw2) {
+                if (rp2.place_id && rp2.place_type && (!placesMap[rp2.place_id] || !placesMap[rp2.place_id].place_type)) {
+                    placesMap[rp2.place_id] = placesMap[rp2.place_id] || {};
+                    placesMap[rp2.place_id].place_type = rp2.place_type;
                 }
             }
         }
@@ -832,6 +853,37 @@
             if (!data.daysPlan || data.daysPlan.length === 0) {
                 console.warn('[ENV] Pas de days_plan disponible');
                 return;
+            }
+
+            // Vérifier si on a des place_type — sinon fetch le master JSON
+            var hasAnyType = Object.values(data.placesMap).some(function(v) { return !!v.place_type; });
+            if (!hasAnyType && data.daysPlan.length > 0) {
+                var firstPid = data.daysPlan[0].night && data.daysPlan[0].night.place_id || '';
+                var cc = firstPid.split('::')[0] || '';
+                if (cc) {
+                    try {
+                        var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
+                        var masterUrl = './data/Roadtripsprefabriques/countries/' + cc + '/' + cc.toLowerCase() + '.places.master-' + lang + '.json';
+                        console.log('[ENV] Fetch master places:', masterUrl);
+                        var resp = await fetch(masterUrl);
+                        if (resp.ok) {
+                            var masterJson = await resp.json();
+                            var masterPlaces = masterJson.places || masterJson;
+                            if (Array.isArray(masterPlaces)) {
+                                for (var mp of masterPlaces) {
+                                    if (mp.place_id && mp.place_type) {
+                                        data.placesMap[mp.place_id] = data.placesMap[mp.place_id] || {};
+                                        data.placesMap[mp.place_id].place_type = mp.place_type;
+                                        data.placesMap[mp.place_id].name = mp.name;
+                                    }
+                                }
+                                console.log('[ENV] Master places chargé:', Object.keys(data.placesMap).length, 'places avec types');
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[ENV] Fetch master places échoué:', e.message);
+                    }
+                }
             }
 
             score = await calculateScore(data.daysPlan, data.placesMap);
