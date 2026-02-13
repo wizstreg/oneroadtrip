@@ -104,7 +104,7 @@
 
     /** Récupérer le catalogId (itin_id d'origine) */
     function getCatalogId() {
-        var st = window.state || {};
+        var st = window.state || window._ortState || {};
         // Fallbacks dans l'ordre de priorité
         var id = st._originalItinId || st.itinId || st.originalItinId || null;
         if (!id) {
@@ -736,7 +736,7 @@
 
     /** Extraire days_plan et nearby_itins depuis le state/window */
     function extractItineraryData() {
-        var st = window.state || {};
+        var st = window.state || window._ortState || {};
         var daysPlan = null;
         var nearbyItins = null;
         var placesMap = {};
@@ -974,7 +974,8 @@
         var timer = setInterval(function() {
             attempts++;
             var catalogId = getCatalogId();
-            var hasSteps = window.state && window.state.steps && window.state.steps.length > 0;
+            var st = window.state || window._ortState || {};
+            var hasSteps = st.steps && st.steps.length > 0;
             var hasPlaces = window.PLACES_INDEX && Object.keys(window.PLACES_INDEX).length > 0;
 
             if (catalogId && hasSteps && hasPlaces) {
