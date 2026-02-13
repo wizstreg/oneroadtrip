@@ -308,6 +308,8 @@
             // Fallback dans le day
             if (!pType) pType = day.place_type || day.city_size;
 
+            console.log('[ENV] Place:', pid, '→ type:', pType, '(' + nights + ' nuits)');
+
             if (pType && URBAN_TYPES.indexOf(pType) > -1) {
                 urbanNights += nights;
             } else if (pType && RURAL_TYPES.indexOf(pType) > -1) {
@@ -357,6 +359,13 @@
     margin-left: 12px;
     vertical-align: middle;
     flex-wrap: wrap;
+    overflow: visible !important;
+}
+
+/* Force overflow visible sur les parents du bandeau */
+#rtTitle, #tripTitle, #itinTitle, .itin-title, .trip-title,
+#stageHdr, [data-env-insert] {
+    overflow: visible !important;
 }
 
 /* ── Badge carbone (cliquable) ── */
@@ -376,6 +385,7 @@
     white-space: nowrap;
     letter-spacing: 0.3px;
     box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    overflow: visible !important;
 }
 .ort-env-carbon:hover {
     transform: scale(1.08);
@@ -393,6 +403,7 @@
     font-size: 14px;
     white-space: nowrap;
     position: relative;
+    overflow: visible !important;
 }
 .ort-env-slider-track {
     width: 70px;
@@ -417,7 +428,10 @@
 /* ── Tooltip info bulle carbone ── */
 .ort-env-tooltip {
     display: none;
-    position: fixed;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
     background: #1e293b;
     color: #f1f5f9;
     padding: 12px 16px;
@@ -430,13 +444,26 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     pointer-events: none;
 }
+.ort-env-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 7px solid #1e293b;
+}
 .ort-env-tooltip b { color: #fbbf24; }
 .ort-env-carbon:hover .ort-env-tooltip { display: block; }
 
 /* ── Tooltip nature ── */
 .ort-env-nature-tooltip {
     display: none;
-    position: fixed;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
     background: #1e293b;
     color: #f1f5f9;
     padding: 10px 14px;
@@ -449,6 +476,16 @@
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     pointer-events: none;
     white-space: normal;
+}
+.ort-env-nature-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #1e293b;
 }
 .ort-env-nature:hover .ort-env-nature-tooltip { display: block; }
 
@@ -814,6 +851,13 @@
         if (!titleEl) {
             console.warn('[ENV] Pas de titre trouvé pour injection');
             return;
+        }
+
+        // Forcer overflow visible sur le titre et ses parents (sinon tooltips clippés)
+        var el = titleEl;
+        for (var depth = 0; depth < 5 && el; depth++) {
+            el.style.overflow = 'visible';
+            el = el.parentElement;
         }
 
         // Insérer les badges après le titre
