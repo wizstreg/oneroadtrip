@@ -50,6 +50,9 @@
         i18n.envAverage = { fr: 'Moyen', en: 'Average', es: 'Medio', it: 'Medio', pt: 'Médio', ar: 'متوسط' };
         i18n.envHigh = { fr: 'Élevé', en: 'High', es: 'Alto', it: 'Alto', pt: 'Alto', ar: 'مرتفع' };
         i18n.envVeryHigh = { fr: 'Très élevé', en: 'Very high', es: 'Muy alto', it: 'Molto alto', pt: 'Muito alto', ar: 'مرتفع جداً' };
+        i18n.envLoading = { fr: 'Chargement des scores...', en: 'Loading scores...', es: 'Cargando puntuaciones...', it: 'Caricamento punteggi...', pt: 'Carregando pontuações...', ar: 'تحميل النتائج...' };
+        i18n.envNoNearby = { fr: 'Aucun itinéraire proche trouvé.', en: 'No nearby itineraries found.', es: 'No se encontraron itinerarios cercanos.', it: 'Nessun itinerario vicino trovato.', pt: 'Nenhum itinerário próximo encontrado.', ar: 'لم يتم العثور على مسارات قريبة.' };
+        i18n.envNotCalculated = { fr: 'pas encore calculé', en: 'not yet calculated', es: 'aún no calculado', it: 'non ancora calcolato', pt: 'ainda não calculado', ar: 'لم يُحسب بعد' };
     }
     var t = window.t || function(k) { return k; };
 
@@ -614,18 +617,51 @@
     }
 
     /** Ouvrir le panneau nearbies et charger les scores */
+    /** Cache des titres d'itinéraires */
+    var _itinTitlesCache = {};
+
+    /** Charger les titres depuis le fichier modules d'un pays */
+    async function loadItinTitles(cc) {
+        if (_itinTitlesCache['_loaded_' + cc]) return;
+        try {
+            var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
+            var url = './data/Roadtripsprefabriques/countries/' + cc.toLowerCase() + '/' + cc.toLowerCase() + '.itins.modules-' + lang + '.json';
+            var resp = await fetch(url);
+            if (!resp.ok) return;
+            var data = await resp.json();
+            var itins = data.itins || data.itineraries || data || [];
+            if (Array.isArray(itins)) {
+                for (var it of itins) {
+                    var id = it.id || it.itin_id || '';
+                    if (id) _itinTitlesCache[id] = it.title || it.name || '';
+                }
+            }
+            _itinTitlesCache['_loaded_' + cc] = true;
+        } catch (e) {
+            console.warn('[ENV] Erreur chargement titres ' + cc + ':', e.message);
+        }
+    }
+
     async function openNearbyPanel(nearbyItins, currentGrade) {
         var overlay = document.getElementById('ort-env-nearby-overlay');
         if (!overlay) return;
         overlay.classList.add('open');
 
         var list = document.getElementById('ort-env-nearby-list');
-        list.innerHTML = '<span class="ort-env-loading">Chargement des scores...</span>';
+        list.innerHTML = '<span class="ort-env-loading">' + t('envLoading') + '</span>';
 
         if (!nearbyItins || nearbyItins.length === 0) {
-            list.innerHTML = '<span class="ort-env-loading">Aucun itinéraire proche trouvé.</span>';
+            list.innerHTML = '<span class="ort-env-loading">' + t('envNoNearby') + '</span>';
             return;
         }
+
+        // Charger les titres pour chaque pays concerné
+        var countries = {};
+        for (var nId of nearbyItins) {
+            var cc = nId.split('::')[0] || '';
+            if (cc) countries[cc] = true;
+        }
+        await Promise.all(Object.keys(countries).map(loadItinTitles));
 
         var html = '';
         for (var nId of nearbyItins) {
@@ -639,17 +675,20 @@
             } else {
                 nGrade = '?';
                 nColor = '#94a3b8';
-                nKm = 'pas encore calculé';
+                nKm = t('envNotCalculated');
             }
 
-            // Extraire un nom lisible depuis l'itin_id
-            var parts = nId.split('::');
-            var name = parts[parts.length - 1] || nId;
-            name = name.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
-            var cc = parts[0] || '';
+            // Titre réel depuis le cache, fallback humanisation du slug
+            var name = _itinTitlesCache[nId] || '';
+            if (!name) {
+                var parts = nId.split('::');
+                name = parts[parts.length - 1] || nId;
+                name = name.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+            }
+            var cc = nId.split('::')[0] || '';
 
-            // Lien vers l'itinéraire
-            var lang = (localStorage.getItem('lang') || 'fr').slice(0, 2);
+            // Lien vers l\'itinéraire
+            var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
             var href = 'roadtrip_detail.html?cc=' + cc + '&itin=' + encodeURIComponent(nId) + '&lang=' + lang;
 
             html +=
@@ -663,7 +702,6 @@
         list.innerHTML = html;
     }
 
-    // ══════════════════════════════════════════
     // INJECTION DANS LA PAGE
     // ══════════════════════════════════════════
 
