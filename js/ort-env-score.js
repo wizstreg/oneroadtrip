@@ -65,7 +65,7 @@
     const ROUTE_API = '/.netlify/functions/route';
     const CO2_CAR = 0.19;       // kg CO2/km voiture
     const CO2_TRANSIT = 0.04;   // kg CO2/km transport en commun
-    const CACHE_VERSION = 2; // Incrémenter pour invalider tous les caches
+    const CACHE_VERSION = 3; // v3: ajout 'city' dans URBAN_TYPES
     const COORD_PRECISION = 3;  // Arrondi coords pour clé cache
 
     // Seuils grade carbone (kg CO2 voiture PAR JOUR)
@@ -79,7 +79,7 @@
     ];
 
     // place_type → catégorie
-    const URBAN_TYPES = ['capital', 'large_city', 'medium_city', 'suburb'];
+    const URBAN_TYPES = ['capital', 'metropolis', 'large_city', 'medium_city', 'city', 'suburb'];
     const RURAL_TYPES = ['small_city', 'village', 'site', 'nature', 'beach', 'island'];
 
     // ══════════════════════════════════════════
@@ -831,7 +831,35 @@
         injectStyles();
         buildNearbyOverlay();
 
-        // 1. Chercher score en cache Firestore
+        // 1. Afficher le sablier immédiatement
+        var titleEl = findTitleContainer();
+        if (!titleEl) {
+            console.warn('[ENV] Pas de titre trouvé pour injection');
+            return;
+        }
+
+        // Supprimer d'éventuels anciens badges (recalcul)
+        var oldWrap = document.getElementById('ort-env-wrap');
+        if (oldWrap) oldWrap.remove();
+        var oldMobile = document.getElementById('ort-env-mobile-badge');
+        if (oldMobile) oldMobile.remove();
+
+        if (isMobileLayout()) {
+            var loadingEl = document.createElement('div');
+            loadingEl.id = 'ort-env-mobile-badge';
+            loadingEl.className = 'summary-stat';
+            loadingEl.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+            loadingEl.innerHTML = '<div style="font-size:16px;" class="ort-env-spinner">⏳</div><div class="label">CO₂</div>';
+            titleEl.appendChild(loadingEl);
+        } else {
+            var loadingEl = document.createElement('span');
+            loadingEl.id = 'ort-env-wrap';
+            loadingEl.className = 'ort-env-wrap';
+            loadingEl.innerHTML = ' <span class="ort-env-spinner" style="font-size:14px;">⏳</span>';
+            titleEl.appendChild(loadingEl);
+        }
+
+        // 2. Chercher score en cache Firestore
         var score = await getCachedScore(catalogId);
 
         if (score && score.grade && score.cache_version === CACHE_VERSION) {
@@ -844,6 +872,9 @@
             var data = extractItineraryData();
             if (!data.daysPlan || data.daysPlan.length === 0) {
                 console.warn('[ENV] Pas de days_plan disponible');
+                // Retirer le sablier
+                var spinner = document.querySelector('.ort-env-spinner');
+                if (spinner) spinner.parentElement.remove();
                 return;
             }
 
@@ -881,46 +912,39 @@
             score = await calculateScore(data.daysPlan, data.placesMap);
             if (!score) {
                 console.warn('[ENV] Calcul échoué');
+                var spinner = document.querySelector('.ort-env-spinner');
+                if (spinner) spinner.parentElement.remove();
                 return;
             }
 
             console.log('[ENV] Calculé:', score.grade, score.co2_car_per_day, 'kg/j,', score.km_total, 'km,', score.api_calls, 'API calls,', score.cache_hits, 'cache hits');
 
-            // 3. Sauver en cache
+            // Sauver en cache
             await setCachedScore(catalogId, score);
         }
 
-        // 4. Injecter dans la page
-        var titleEl = findTitleContainer();
-        if (!titleEl) {
-            console.warn('[ENV] Pas de titre trouvé pour injection');
-            return;
-        }
-
+        // 3. Remplacer le sablier par les vrais badges
         if (isMobileLayout()) {
-            // Mobile : ajouter comme colonne dans le bandeau stats
-            var mobileBadge = document.createElement('div');
-            mobileBadge.className = 'summary-stat';
-            mobileBadge.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
-            var gCar = getGrade(score.co2_car_per_day);
-            mobileBadge.innerHTML =
-                '<div style="display:flex;gap:4px;align-items:center;">' +
-                    '<span id="ort-env-carbon-btn" style="background:' + gCar.color + ';color:#fff;padding:2px 8px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;">' + gCar.grade + '</span>' +
-                '</div>' +
-                '<div class="label">CO₂</div>';
-            titleEl.appendChild(mobileBadge);
-        } else {
-            // Desktop : badges inline après le titre
-            // Forcer overflow visible sur le titre et ses parents (sinon tooltips clippés)
-            var el = titleEl;
-            for (var depth = 0; depth < 5 && el; depth++) {
-                el.style.overflow = 'visible';
-                el = el.parentElement;
+            var badge = document.getElementById('ort-env-mobile-badge');
+            if (badge) {
+                var gCar = getGrade(score.co2_car_per_day);
+                badge.innerHTML =
+                    '<div style="display:flex;gap:4px;align-items:center;">' +
+                        '<span id="ort-env-carbon-btn" style="background:' + gCar.color + ';color:#fff;padding:2px 8px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;">' + gCar.grade + '</span>' +
+                    '</div>' +
+                    '<div class="label">CO₂</div>';
             }
-
-            var wrapper = document.createElement('span');
-            wrapper.innerHTML = buildBadgesHTML(score);
-            titleEl.appendChild(wrapper.firstChild);
+        } else {
+            var wrap = document.getElementById('ort-env-wrap');
+            if (wrap) {
+                wrap.innerHTML = buildBadgesHTML(score).replace(/^<[^>]+>/, '').replace(/<\/[^>]+>$/, '');
+                // Forcer overflow visible sur le titre et ses parents
+                var el = titleEl;
+                for (var depth = 0; depth < 5 && el; depth++) {
+                    el.style.overflow = 'visible';
+                    el = el.parentElement;
+                }
+            }
         }
 
         // 5. Brancher le clic → panneau nearbies
@@ -1004,8 +1028,92 @@
         init: init,
         calculateScore: calculateScore,
         getCachedScore: getCachedScore,
-        getGrade: getGrade,
-        GRADES: GRADES
+        /** Recalculer le score (appelé après modif du trajet) */
+        recalculate: async function() {
+            console.log('[ENV] 🔄 Recalcul déclenché');
+            // Forcer recalcul en invalidant le cache local
+            var catalogId = getCatalogId();
+            if (!catalogId) return;
+
+            var data = extractItineraryData();
+            if (!data.daysPlan || data.daysPlan.length === 0) return;
+
+            // Vérifier place_types
+            var hasAnyType = Object.values(data.placesMap).some(function(v) { return !!v.place_type; });
+            if (!hasAnyType) {
+                var firstPid = data.daysPlan[0].night && data.daysPlan[0].night.place_id || '';
+                var cc = firstPid.split('::')[0] || '';
+                if (cc) {
+                    try {
+                        var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
+                        var masterUrl = './data/Roadtripsprefabriques/countries/' + cc + '/' + cc.toLowerCase() + '.places.master-' + lang + '.json';
+                        var resp = await fetch(masterUrl);
+                        if (resp.ok) {
+                            var masterJson = await resp.json();
+                            var masterPlaces = masterJson.places || masterJson;
+                            if (Array.isArray(masterPlaces)) {
+                                for (var mp of masterPlaces) {
+                                    if (mp.place_id && mp.place_type) {
+                                        data.placesMap[mp.place_id] = data.placesMap[mp.place_id] || {};
+                                        data.placesMap[mp.place_id].place_type = mp.place_type;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+            }
+
+            var score = await calculateScore(data.daysPlan, data.placesMap);
+            if (!score) return;
+
+            // Sauver le nouveau score (avec tripId pour différencier du catalogue)
+            var st = window.state || window._ortState || {};
+            var tripId = st.tripId || window.ORT_TRIPID?.get();
+            var cacheKey = tripId ? (catalogId + '__' + tripId) : catalogId;
+            await setCachedScore(cacheKey, score);
+
+            // Rafraîchir l'affichage
+            init();
+        }
     };
+
+    // Écouter les modifications du trajet (événement custom ORT)
+    ['ort:steps-changed', 'ort:nights-changed', 'ort:step-added', 'ort:step-removed', 'ort:step-reordered'].forEach(function(evt) {
+        document.addEventListener(evt, function() {
+            clearTimeout(window._ortEnvRecalcTimer);
+            window._ortEnvRecalcTimer = setTimeout(function() {
+                if (window.ORT_ENV && window.ORT_ENV.recalculate) {
+                    window.ORT_ENV.recalculate();
+                }
+            }, 2000);
+        });
+    });
+
+    // Polling léger : détecter les changements de steps (fallback si pas d'events custom)
+    (function watchStepsChanges() {
+        var st = window.state || window._ortState || {};
+        var lastHash = '';
+
+        function computeHash() {
+            var s = st.steps || [];
+            return s.length + ':' + s.map(function(x) { return (x.place_id || x.name || '') + '/' + (x.nights || 0); }).join(',');
+        }
+
+        setInterval(function() {
+            st = window.state || window._ortState || {};
+            var hash = computeHash();
+            if (lastHash && hash !== lastHash) {
+                console.log('[ENV] 🔄 Changement de steps détecté');
+                clearTimeout(window._ortEnvRecalcTimer);
+                window._ortEnvRecalcTimer = setTimeout(function() {
+                    if (window.ORT_ENV && window.ORT_ENV.recalculate) {
+                        window.ORT_ENV.recalculate();
+                    }
+                }, 3000);
+            }
+            lastHash = hash;
+        }, 5000); // Vérifier toutes les 5 secondes
+    })();
 
 })(window, document);
