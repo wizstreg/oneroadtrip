@@ -25,6 +25,35 @@
     'use strict';
 
     // ══════════════════════════════════════════
+    // I18N - Ajouter les clés au système existant
+    // ══════════════════════════════════════════
+    if (window.ORT_I18N) {
+        var i18n = window.ORT_I18N;
+        i18n.envCar = { fr: 'VOI', en: 'CAR', es: 'COC', it: 'AUT', pt: 'CAR', ar: 'سيارة' };
+        i18n.envTransit = { fr: 'TC', en: 'PT', es: 'TP', it: 'TP', pt: 'TP', ar: 'نقل' };
+        i18n.envCarTitle = { fr: 'Empreinte voiture', en: 'Car footprint', es: 'Huella coche', it: 'Impronta auto', pt: 'Pegada carro', ar: 'البصمة الكربونية للسيارة' };
+        i18n.envTransitTitle = { fr: 'Empreinte transports en commun', en: 'Public transport footprint', es: 'Huella transporte público', it: 'Impronta trasporto pubblico', pt: 'Pegada transporte público', ar: 'البصمة الكربونية للنقل العام' };
+        i18n.envDistance = { fr: 'Distance', en: 'Distance', es: 'Distancia', it: 'Distanza', pt: 'Distância', ar: 'المسافة' };
+        i18n.envDays = { fr: 'jours', en: 'days', es: 'días', it: 'giorni', pt: 'dias', ar: 'أيام' };
+        i18n.envCo2day = { fr: 'CO₂/jour', en: 'CO₂/day', es: 'CO₂/día', it: 'CO₂/giorno', pt: 'CO₂/dia', ar: 'CO₂/يوم' };
+        i18n.envTotal = { fr: 'Total', en: 'Total', es: 'Total', it: 'Totale', pt: 'Total', ar: 'المجموع' };
+        i18n.envGrade = { fr: 'Grade', en: 'Grade', es: 'Grado', it: 'Grado', pt: 'Grau', ar: 'الدرجة' };
+        i18n.envClickAlts = { fr: 'Cliquez pour voir les alternatives', en: 'Click to see alternatives', es: 'Haga clic para ver alternativas', it: 'Clicca per vedere le alternative', pt: 'Clique para ver alternativas', ar: 'انقر لرؤية البدائل' };
+        i18n.envUrban = { fr: 'Urbain', en: 'Urban', es: 'Urbano', it: 'Urbano', pt: 'Urbano', ar: 'حضري' };
+        i18n.envMixed = { fr: 'Mixte', en: 'Mixed', es: 'Mixto', it: 'Misto', pt: 'Misto', ar: 'مختلط' };
+        i18n.envNature = { fr: 'Nature', en: 'Nature', es: 'Naturaleza', it: 'Natura', pt: 'Natureza', ar: 'طبيعة' };
+        i18n.envUrbanPct = { fr: 'urbain', en: 'urban', es: 'urbano', it: 'urbano', pt: 'urbano', ar: 'حضري' };
+        i18n.envNaturePct = { fr: 'nature/rural', en: 'nature/rural', es: 'naturaleza/rural', it: 'natura/rurale', pt: 'natureza/rural', ar: 'طبيعة/ريفي' };
+        i18n.envExcellent = { fr: 'Excellent', en: 'Excellent', es: 'Excelente', it: 'Eccellente', pt: 'Excelente', ar: 'ممتاز' };
+        i18n.envVeryGood = { fr: 'Très bon', en: 'Very good', es: 'Muy bueno', it: 'Molto buono', pt: 'Muito bom', ar: 'جيد جداً' };
+        i18n.envGood = { fr: 'Bon', en: 'Good', es: 'Bueno', it: 'Buono', pt: 'Bom', ar: 'جيد' };
+        i18n.envAverage = { fr: 'Moyen', en: 'Average', es: 'Medio', it: 'Medio', pt: 'Médio', ar: 'متوسط' };
+        i18n.envHigh = { fr: 'Élevé', en: 'High', es: 'Alto', it: 'Alto', pt: 'Alto', ar: 'مرتفع' };
+        i18n.envVeryHigh = { fr: 'Très élevé', en: 'Very high', es: 'Muy alto', it: 'Molto alto', pt: 'Muito alto', ar: 'مرتفع جداً' };
+    }
+    var t = window.t || function(k) { return k; };
+
+    // ══════════════════════════════════════════
     // CONFIG
     // ══════════════════════════════════════════
     const ROUTE_API = '/.netlify/functions/route';
@@ -34,12 +63,12 @@
 
     // Seuils grade carbone (kg CO2 voiture PAR JOUR)
     const GRADES = [
-        { max: 5,   grade: 'A+', color: '#059669', label: 'Excellent',   emoji: '🌿' },
-        { max: 10,  grade: 'A',  color: '#10b981', label: 'Très bon',    emoji: '🍃' },
-        { max: 20,  grade: 'B',  color: '#f59e0b', label: 'Bon',         emoji: '🌤️' },
-        { max: 35,  grade: 'C',  color: '#f97316', label: 'Moyen',       emoji: '🌥️' },
-        { max: 55,  grade: 'D',  color: '#ef4444', label: 'Élevé',       emoji: '🔥' },
-        { max: Infinity, grade: 'E', color: '#991b1b', label: 'Très élevé', emoji: '💨' }
+        { max: 5,   grade: 'A+', color: '#059669', labelKey: 'envExcellent' },
+        { max: 10,  grade: 'A',  color: '#10b981', labelKey: 'envVeryGood' },
+        { max: 20,  grade: 'B',  color: '#f59e0b', labelKey: 'envGood' },
+        { max: 35,  grade: 'C',  color: '#f97316', labelKey: 'envAverage' },
+        { max: 55,  grade: 'D',  color: '#ef4444', labelKey: 'envHigh' },
+        { max: Infinity, grade: 'E', color: '#991b1b', labelKey: 'envVeryHigh' }
     ];
 
     // place_type → catégorie
@@ -94,9 +123,10 @@
     /** Grade depuis CO2/jour */
     function getGrade(co2PerDay) {
         for (var g of GRADES) {
-            if (co2PerDay <= g.max) return g;
+            if (co2PerDay <= g.max) return { grade: g.grade, color: g.color, label: t(g.labelKey) };
         }
-        return GRADES[GRADES.length - 1];
+        var last = GRADES[GRADES.length - 1];
+        return { grade: last.grade, color: last.color, label: t(last.labelKey) };
     }
 
     // ══════════════════════════════════════════
@@ -387,10 +417,7 @@
 /* ── Tooltip info bulle carbone ── */
 .ort-env-tooltip {
     display: none;
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #1e293b;
     color: #f1f5f9;
     padding: 12px 16px;
@@ -399,19 +426,9 @@
     font-weight: 400;
     line-height: 1.6;
     width: 260px;
-    z-index: 99999;
+    z-index: 999999;
     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     pointer-events: none;
-}
-.ort-env-tooltip::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 7px solid #1e293b;
 }
 .ort-env-tooltip b { color: #fbbf24; }
 .ort-env-carbon:hover .ort-env-tooltip { display: block; }
@@ -419,10 +436,7 @@
 /* ── Tooltip nature ── */
 .ort-env-nature-tooltip {
     display: none;
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #1e293b;
     color: #f1f5f9;
     padding: 10px 14px;
@@ -431,20 +445,10 @@
     font-weight: 400;
     line-height: 1.5;
     width: 180px;
-    z-index: 99999;
+    z-index: 999999;
     box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     pointer-events: none;
     white-space: normal;
-}
-.ort-env-nature-tooltip::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid #1e293b;
 }
 .ort-env-nature:hover .ort-env-nature-tooltip { display: block; }
 
@@ -561,35 +565,33 @@
         var thumbLeft = Math.max(2, Math.min(score.urban_ratio, 98));
 
         // Label nature
-        var natureLabel = score.urban_ratio > 65 ? 'Urbain' :
-                          score.urban_ratio > 35 ? 'Mixte' : 'Nature';
+        var natureLabel = score.urban_ratio > 65 ? t('envUrban') :
+                          score.urban_ratio > 35 ? t('envMixed') : t('envNature');
 
         return '<span class="ort-env-wrap" id="ort-env-wrap">' +
             // Badge carbone VOITURE
             '<span class="ort-env-carbon" id="ort-env-carbon-btn" style="background:' + gCar.color + '">' +
                 '<span class="ort-env-grade">' + gCar.grade + '</span>' +
-                '<span class="ort-env-mode">CAR</span>' +
-                // Tooltip voiture
+                '<span class="ort-env-mode">' + t('envCar') + '</span>' +
                 '<span class="ort-env-tooltip">' +
-                    '<b>Empreinte voiture</b><br>' +
-                    'Distance : ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
-                    'CO₂ : ' + score.co2_car_per_day + ' kg/jour<br>' +
-                    'Total : ' + score.co2_car_total + ' kg CO₂<br>' +
-                    '<br>Grade <b>' + gCar.grade + '</b> — ' + gCar.label +
-                    '<br><br><em>Cliquez pour voir les alternatives</em>' +
+                    '<b>' + t('envCarTitle') + '</b><br>' +
+                    t('envDistance') + ' : ' + score.km_total + ' km — ' + score.days_count + ' ' + t('envDays') + '<br>' +
+                    t('envCo2day') + ' : ' + score.co2_car_per_day + ' kg<br>' +
+                    t('envTotal') + ' : ' + score.co2_car_total + ' kg CO₂<br>' +
+                    '<br>' + t('envGrade') + ' <b>' + gCar.grade + '</b> — ' + gCar.label +
+                    '<br><br><em>' + t('envClickAlts') + '</em>' +
                 '</span>' +
             '</span>' +
             // Badge carbone TC
             '<span class="ort-env-carbon" style="background:' + gTransit.color + '">' +
                 '<span class="ort-env-grade">' + gTransit.grade + '</span>' +
-                '<span class="ort-env-mode">TC</span>' +
-                // Tooltip TC
+                '<span class="ort-env-mode">' + t('envTransit') + '</span>' +
                 '<span class="ort-env-tooltip">' +
-                    '<b>Empreinte transports en commun</b><br>' +
-                    'Distance : ' + score.km_total + ' km — ' + score.days_count + ' jours<br>' +
-                    'CO₂ : ' + score.co2_transit_per_day + ' kg/jour<br>' +
-                    'Total : ' + score.co2_transit_total + ' kg CO₂<br>' +
-                    '<br>Grade <b>' + gTransit.grade + '</b> — ' + gTransit.label +
+                    '<b>' + t('envTransitTitle') + '</b><br>' +
+                    t('envDistance') + ' : ' + score.km_total + ' km — ' + score.days_count + ' ' + t('envDays') + '<br>' +
+                    t('envCo2day') + ' : ' + score.co2_transit_per_day + ' kg<br>' +
+                    t('envTotal') + ' : ' + score.co2_transit_total + ' kg CO₂<br>' +
+                    '<br>' + t('envGrade') + ' <b>' + gTransit.grade + '</b> — ' + gTransit.label +
                 '</span>' +
             '</span>' +
             // Curseur ville/nature
@@ -601,8 +603,8 @@
                 '<span>🌿</span>' +
                 '<span class="ort-env-nature-tooltip">' +
                     '<b>' + natureLabel + '</b><br>' +
-                    '🏙️ ' + score.urban_ratio + '% urbain<br>' +
-                    '🌿 ' + natureRatio + '% nature/rural' +
+                    '🏙️ ' + score.urban_ratio + '% ' + t('envUrbanPct') + '<br>' +
+                    '🌿 ' + natureRatio + '% ' + t('envNaturePct') +
                 '</span>' +
             '</span>' +
         '</span>';
@@ -829,6 +831,18 @@
             });
         }
 
+        // 6. Positionner les tooltips fixed au hover
+        var allBadges = document.querySelectorAll('.ort-env-carbon, .ort-env-nature');
+        allBadges.forEach(function(badge) {
+            badge.addEventListener('mouseenter', function() {
+                var tip = badge.querySelector('.ort-env-tooltip, .ort-env-nature-tooltip');
+                if (!tip) return;
+                var rect = badge.getBoundingClientRect();
+                tip.style.top = (rect.bottom + 8) + 'px';
+                tip.style.left = Math.max(8, rect.left + rect.width / 2 - 130) + 'px';
+            });
+        });
+
         console.log('[ENV] ✅ Badges injectés');
     }
 
@@ -845,13 +859,19 @@
             attempts++;
             var catalogId = getCatalogId();
             var hasSteps = window.state && window.state.steps && window.state.steps.length > 0;
+            var hasPlaces = window.PLACES_INDEX && Object.keys(window.PLACES_INDEX).length > 0;
 
-            if (catalogId && hasSteps) {
+            if (catalogId && hasSteps && hasPlaces) {
                 clearInterval(timer);
+                init();
+            } else if (catalogId && hasSteps && attempts >= 40) {
+                // 20s passées, on lance sans PLACES_INDEX (fallback unknown)
+                clearInterval(timer);
+                console.log('[ENV] Init sans PLACES_INDEX (timeout)');
                 init();
             } else if (attempts >= maxAttempts) {
                 clearInterval(timer);
-                console.log('[ENV] Timeout — catalogId:', catalogId, 'steps:', window.state?.steps?.length || 0);
+                console.log('[ENV] Timeout — catalogId:', catalogId, 'steps:', window.state?.steps?.length || 0, 'places:', hasPlaces);
             }
         }, 500);
     }
