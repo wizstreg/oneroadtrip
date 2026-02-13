@@ -25,12 +25,14 @@
     'use strict';
 
     // ══════════════════════════════════════════
-    // I18N - Ajouter les clés au système existant
+    // I18N - clés ajoutées dans init() pour s'assurer que ORT_I18N est chargé
     // ══════════════════════════════════════════
-    if (window.ORT_I18N) {
+    function injectI18nKeys() {
+        if (!window.ORT_I18N) return;
         var i18n = window.ORT_I18N;
+        if (i18n._envKeysAdded) return;
         i18n.envCar = { fr: 'VOI', en: 'CAR', es: 'COC', it: 'AUT', pt: 'CAR', ar: 'سيارة' };
-        i18n.envTransit = { fr: 'TC', en: 'PT', es: 'TP', it: 'TP', pt: 'TP', ar: 'نقل' };
+        i18n.envTransit = { fr: 'TC', en: 'TC', es: 'TP', it: 'TP', pt: 'TP', ar: 'نقل' };
         i18n.envCarTitle = { fr: 'Empreinte voiture', en: 'Car footprint', es: 'Huella coche', it: 'Impronta auto', pt: 'Pegada carro', ar: 'البصمة الكربونية للسيارة' };
         i18n.envTransitTitle = { fr: 'Empreinte transports en commun', en: 'Public transport footprint', es: 'Huella transporte público', it: 'Impronta trasporto pubblico', pt: 'Pegada transporte público', ar: 'البصمة الكربونية للنقل العام' };
         i18n.envDistance = { fr: 'Distance', en: 'Distance', es: 'Distancia', it: 'Distanza', pt: 'Distância', ar: 'المسافة' };
@@ -53,6 +55,7 @@
         i18n.envLoading = { fr: 'Chargement des scores...', en: 'Loading scores...', es: 'Cargando puntuaciones...', it: 'Caricamento punteggi...', pt: 'Carregando pontuações...', ar: 'تحميل النتائج...' };
         i18n.envNoNearby = { fr: 'Aucun itinéraire proche trouvé.', en: 'No nearby itineraries found.', es: 'No se encontraron itinerarios cercanos.', it: 'Nessun itinerario vicino trovato.', pt: 'Nenhum itinerário próximo encontrado.', ar: 'لم يتم العثور على مسارات قريبة.' };
         i18n.envNotCalculated = { fr: 'pas encore calculé', en: 'not yet calculated', es: 'aún no calculado', it: 'non ancora calcolato', pt: 'ainda não calculado', ar: 'لم يُحسب بعد' };
+        i18n._envKeysAdded = true;
     }
     var t = window.t || function(k) { return k; };
 
@@ -715,6 +718,7 @@
             '.itin-title',          // RT simple/static
             '.trip-title',          // Variante
             '#stageHdr',            // RT mobile
+            '#summaryCard',         // RT mobile bandeau stats
             '[data-env-insert]',    // Marqueur explicite
             'h1'                    // Fallback ultime
         ];
@@ -723,6 +727,11 @@
             if (el) return el;
         }
         return null;
+    }
+
+    /** Vérifier si on est en mode mobile (summaryCard) */
+    function isMobileLayout() {
+        return !!document.getElementById('summaryCard') && !document.getElementById('rtTitle');
     }
 
     /** Extraire days_plan et nearby_itins depuis le state/window */
@@ -808,6 +817,8 @@
     // ══════════════════════════════════════════
 
     async function init() {
+        injectI18nKeys();
+        t = window.t || function(k) { return k; };
         console.log('[ENV] Init ort-env-score.js');
 
         var catalogId = getCatalogId();
@@ -886,17 +897,31 @@
             return;
         }
 
-        // Forcer overflow visible sur le titre et ses parents (sinon tooltips clippés)
-        var el = titleEl;
-        for (var depth = 0; depth < 5 && el; depth++) {
-            el.style.overflow = 'visible';
-            el = el.parentElement;
-        }
+        if (isMobileLayout()) {
+            // Mobile : ajouter comme colonne dans le bandeau stats
+            var mobileBadge = document.createElement('div');
+            mobileBadge.className = 'summary-stat';
+            mobileBadge.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;';
+            var gCar = getGrade(score.co2_car_per_day);
+            mobileBadge.innerHTML =
+                '<div style="display:flex;gap:4px;align-items:center;">' +
+                    '<span id="ort-env-carbon-btn" style="background:' + gCar.color + ';color:#fff;padding:2px 8px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;">' + gCar.grade + '</span>' +
+                '</div>' +
+                '<div class="label">CO₂</div>';
+            titleEl.appendChild(mobileBadge);
+        } else {
+            // Desktop : badges inline après le titre
+            // Forcer overflow visible sur le titre et ses parents (sinon tooltips clippés)
+            var el = titleEl;
+            for (var depth = 0; depth < 5 && el; depth++) {
+                el.style.overflow = 'visible';
+                el = el.parentElement;
+            }
 
-        // Insérer les badges après le titre
-        var wrapper = document.createElement('span');
-        wrapper.innerHTML = buildBadgesHTML(score);
-        titleEl.appendChild(wrapper.firstChild);
+            var wrapper = document.createElement('span');
+            wrapper.innerHTML = buildBadgesHTML(score);
+            titleEl.appendChild(wrapper.firstChild);
+        }
 
         // 5. Brancher le clic → panneau nearbies
         var carbonBtn = document.getElementById('ort-env-carbon-btn');
