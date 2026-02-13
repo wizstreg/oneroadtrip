@@ -59,6 +59,7 @@
     const ROUTE_API = '/.netlify/functions/route';
     const CO2_CAR = 0.19;       // kg CO2/km voiture
     const CO2_TRANSIT = 0.04;   // kg CO2/km transport en commun
+    const CACHE_VERSION = 2; // Incrémenter pour invalider tous les caches
     const COORD_PRECISION = 3;  // Arrondi coords pour clé cache
 
     // Seuils grade carbone (kg CO2 voiture PAR JOUR)
@@ -338,6 +339,7 @@
             legs: legCount,
             api_calls: apiCalls,
             cache_hits: cachHits,
+            cache_version: CACHE_VERSION,
             calculated_at: new Date().toISOString()
         };
     }
@@ -425,69 +427,10 @@
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
 
-/* ── Tooltip info bulle carbone ── */
-.ort-env-tooltip {
-    display: none;
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1e293b;
-    color: #f1f5f9;
-    padding: 12px 16px;
-    border-radius: 12px;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.6;
-    width: 260px;
-    z-index: 999999;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    pointer-events: none;
-}
-.ort-env-tooltip::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 7px solid #1e293b;
-}
-.ort-env-tooltip b { color: #fbbf24; }
-.ort-env-carbon:hover .ort-env-tooltip { display: block; }
+/* ── Tooltip : géré via JS (div flottant dans body) ── */
+.ort-env-tooltip, .ort-env-nature-tooltip { display: none !important; }
 
-/* ── Tooltip nature ── */
-.ort-env-nature-tooltip {
-    display: none;
-    position: absolute;
-    top: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: #1e293b;
-    color: #f1f5f9;
-    padding: 10px 14px;
-    border-radius: 10px;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.5;
-    width: 180px;
-    z-index: 999999;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-    pointer-events: none;
-    white-space: normal;
-}
-.ort-env-nature-tooltip::before {
-    content: '';
-    position: absolute;
-    top: -6px;
-    left: 50%;
-    transform: translateX(-50%);
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid #1e293b;
-}
-.ort-env-nature:hover .ort-env-nature-tooltip { display: block; }
+/* ── Tooltip nature : géré via JS ── */
 
 /* ── Panneau nearbies ── */
 .ort-env-nearby-overlay {
@@ -842,11 +785,11 @@
         // 1. Chercher score en cache Firestore
         var score = await getCachedScore(catalogId);
 
-        if (score && score.grade && score.days_count) {
-            console.log('[ENV] Score trouvé en cache:', score.grade, score.co2_car_per_day, 'kg/j,', score.days_count, 'jours');
+        if (score && score.grade && score.cache_version === CACHE_VERSION) {
+            console.log('[ENV] Score trouvé en cache v' + score.cache_version + ':', score.grade, score.co2_car_per_day, 'kg/j,', score.days_count, 'jours');
         } else {
-            // Cache absent ou ancien format → recalculer
-            if (score) console.log('[ENV] Cache ancien format, recalcul...');
+            // Cache absent, ancien format, ou ancienne version → recalculer
+            if (score) console.log('[ENV] Cache invalide (v' + (score.cache_version || 0) + ' vs v' + CACHE_VERSION + '), recalcul...');
             else console.log('[ENV] Pas de cache, calcul en cours...');
 
             var data = extractItineraryData();
@@ -927,15 +870,29 @@
             });
         }
 
-        // 6. Positionner les tooltips fixed au hover
+        // 6. Tooltip flottant (div unique dans body, contourne tous les overflow:hidden)
+        var floatingTip = document.createElement('div');
+        floatingTip.id = 'ort-env-floating-tip';
+        floatingTip.style.cssText = 'position:fixed;display:none;background:#1e293b;color:#f1f5f9;padding:12px 16px;border-radius:12px;font-size:13px;line-height:1.6;width:260px;z-index:999999;box-shadow:0 6px 20px rgba(0,0,0,0.3);pointer-events:none;';
+        document.body.appendChild(floatingTip);
+
         var allBadges = document.querySelectorAll('.ort-env-carbon, .ort-env-nature');
         allBadges.forEach(function(badge) {
             badge.addEventListener('mouseenter', function() {
                 var tip = badge.querySelector('.ort-env-tooltip, .ort-env-nature-tooltip');
                 if (!tip) return;
+                floatingTip.innerHTML = tip.innerHTML;
+                floatingTip.style.display = 'block';
                 var rect = badge.getBoundingClientRect();
-                tip.style.top = (rect.bottom + 8) + 'px';
-                tip.style.left = Math.max(8, rect.left + rect.width / 2 - 130) + 'px';
+                var tipW = 260;
+                var left = rect.left + rect.width / 2 - tipW / 2;
+                if (left < 8) left = 8;
+                if (left + tipW > window.innerWidth - 8) left = window.innerWidth - tipW - 8;
+                floatingTip.style.top = (rect.bottom + 8) + 'px';
+                floatingTip.style.left = left + 'px';
+            });
+            badge.addEventListener('mouseleave', function() {
+                floatingTip.style.display = 'none';
             });
         });
 
