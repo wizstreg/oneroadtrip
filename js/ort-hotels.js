@@ -12,7 +12,7 @@
     hotelsBaseUrl: '/hotels', // Base URL pour les fichiers JSON
     maxHotelsPerPlace: 5,     // Nombre max d'hôtels à afficher
     cacheTimeout: 3600000,    // 1 heure en ms
-    stay22AID: '1607597'      // AID Stay22 pour affiliation
+    stay22AID: 'oneroadtrip'  // AID Stay22 pour affiliation
   };
 
   // Cache en mémoire
@@ -133,8 +133,8 @@
     const hotelSlug = match[2];
     const langSuffix = getBookingLangSuffix();
     
-    // URL propre avec affiliation Stay22
-    return `https://www.booking.com/hotel/${hotelCountry}/${hotelSlug}.${langSuffix}.html?aid=${CONFIG.stay22AID}&label=v3.ort-static-${cc.toLowerCase()}`;
+    // Lien Booking direct avec TON AID - Le script LMA Stay22 va le tracker automatiquement
+    return `https://www.booking.com/hotel/${hotelCountry}/${hotelSlug}.${langSuffix}.html?aid=${CONFIG.stay22AID}`;
   }
 
   // === CHARGEMENT DES DONNÉES ===
@@ -237,7 +237,7 @@
     const imgUrl = hotel.imageUrl ? hotel.imageUrl.replace('square240', 'square600') : '';
     
     return `
-      <a href="${hotelLink}" target="_blank" rel="noopener sponsored" class="hotel-mini-card" data-lma="ignore">
+      <a href="${hotelLink}" target="_blank" rel="noopener sponsored" class="hotel-mini-card">
         <img src="${imgUrl}" alt="${hotel.name}" class="hotel-mini-img" loading="lazy">
         <div class="hotel-mini-info">
           <span class="hotel-mini-score">${hotel.score}</span>
@@ -328,7 +328,7 @@
         const imgUrl = h.imageUrl ? h.imageUrl.replace('square240', 'square600') : '';
         
         return `
-          <a href="${hotelLink}" target="_blank" rel="noopener sponsored" class="hotel-modal-card" data-lma="ignore">
+          <a href="${hotelLink}" target="_blank" rel="noopener sponsored" class="hotel-modal-card">
             <img src="${imgUrl}" alt="${h.name}" class="hotel-modal-img" loading="lazy">
             <div class="hotel-modal-info">
               <div class="hotel-modal-name">${h.name}</div>
