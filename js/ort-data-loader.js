@@ -517,6 +517,7 @@
               name: pl.name || pl.title || '',
               rating: Number(pl.rating) || 0,
               suggested_days: Number(pl.suggested_days) || 1,
+              place_type: pl.place_type || '',
               visits,
               activities,
               cc: cc
