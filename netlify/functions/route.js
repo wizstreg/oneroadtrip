@@ -35,15 +35,16 @@ const haversineKm = (lat1, lon1, lat2, lon2) => {
 const okResp = (km, minutes) => ({ ok: true, km: Math.round(km), minutes: Math.round(minutes) });
 const failResp = (msg) => ({ ok: false, error: msg });
 
-// ====== RESPONSE HELPER (Netlify v2 - utilise Response standard) ======
-const jsonResponse = (statusCode, data) => new Response(JSON.stringify(data), {
-  status: statusCode,
+// ====== RESPONSE HELPER (Netlify Functions v1 - returns object) ======
+const jsonResponse = (statusCode, data) => ({
+  statusCode,
   headers: {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Cache-Control': 'public, max-age=300'
-  }
+  },
+  body: JSON.stringify(data)
 });
 
 // ====== PROVIDERS ======
@@ -102,21 +103,20 @@ function routeEstimate(start, end) {
   return { km, minutes: (km / 65) * 60 };
 }
 
-// ====== MAIN HANDLER (Netlify Functions v2 - request/Response standard) ======
-export default async (request, context) => {
+// ====== MAIN HANDLER (Netlify Functions v1 - event/context) ======
+exports.handler = async (event, context) => {
   try {
     // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
+    if (event.httpMethod === 'OPTIONS') {
       return jsonResponse(200, { ok: true });
     }
 
-    // Parse query parameters from request.url (standard Web API)
-    const url = new URL(request.url);
-    const params = url.searchParams;
+    // Parse query parameters from event
+    const params = event.queryStringParameters || {};
     
-    const mode = params.get('mode') || 'driving';
-    const start = params.get('start');
-    const end = params.get('end');
+    const mode = params.mode || 'driving';
+    const start = params.start;
+    const end = params.end;
 
     console.log(`[ROUTE] mode=${mode} start=${start} end=${end}`);
 
@@ -210,7 +210,4 @@ export default async (request, context) => {
   }
 };
 
-// Export config for Netlify
-export const config = {
-  path: "/.netlify/functions/route"
-};
+// Netlify Functions v1 - no config export needed
