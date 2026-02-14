@@ -393,7 +393,8 @@
           suggested_days: suggestedDays,
           _suggestedDays: suggestedDays,
           _driveMinToNext: driveMin,
-          to_next_leg: day.to_next_leg || null
+          to_next_leg: day.to_next_leg || null,
+          _mapKeywords: Array.isArray(nightData.map_keywords) ? nightData.map_keywords : []
         });
       });
       
@@ -441,7 +442,8 @@
           placeId: s.placeId || s.place_id || null,
           place_id: s.place_id || s.placeId || null,
           visits,
-          activities
+          activities,
+          _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.map_keywords) ? s.map_keywords : [])
         };
       });
     },

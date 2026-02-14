@@ -820,6 +820,26 @@ html, body {
   padding: 0;
 }
 
+.mkb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  background: #f0f4ff;
+  border: 1px solid #c7d7f5;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #1e3a5f;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.mkb-chip:active {
+  background: #113f7a;
+  color: #fff;
+  border-color: #113f7a;
+}
+
 .gmap-filters {
   display: flex;
   gap: 8px;
@@ -1953,6 +1973,10 @@ html, body {
           <button class="gmap-filter-btn" data-filter="museums">🎨 Musées</button>
           <button class="gmap-filter-btn" data-filter="hotels">🏨 Hôtels</button>
           <button class="gmap-filter-btn" data-filter="supermarket">🛒 Courses</button>
+        </div>
+        <div id="mapKeywordsBanner" style="display:none;padding:8px 10px;background:#fff8f0;border:1px solid #f0d9c0;border-radius:10px;margin:0 8px 8px;">
+          <div style="font-size:0.8rem;font-weight:700;color:#113f7a;margin-bottom:6px;">📍 <span id="mkbTitle">Voir sur Google Maps</span></div>
+          <div id="mkbChips" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         </div>
         <div class="gmap-iframe-wrapper" id="gmapWrapper">
           <div class="gmap-placeholder">
@@ -6923,6 +6947,51 @@ window.deleteActivity = deleteActivity;
     }
     
     console.log('[VIZ] Google Map rendu pour étape', vizCurrentStep + 1, 'filtre:', currentMapFilter || 'aucun');
+    console.log('[VIZ] _mapKeywords pour cette étape:', JSON.stringify(step._mapKeywords || 'ABSENT'), 'night:', JSON.stringify(step.night?.map_keywords || 'ABSENT'));
+    
+    // Bandeau map_keywords
+    updateMapKeywordsBanner(step);
+  }
+  
+  function updateMapKeywordsBanner(step) {
+    const banner = document.getElementById('mapKeywordsBanner');
+    const chipsEl = document.getElementById('mkbChips');
+    const titleEl = document.getElementById('mkbTitle');
+    if (!banner || !chipsEl) return;
+    
+    // Chercher map_keywords dans toutes les sources possibles
+    let kws = step?._mapKeywords || [];
+    if (kws.length === 0 && step?.night?.map_keywords) kws = step.night.map_keywords;
+    if (kws.length === 0 && step?.map_keywords) kws = step.map_keywords;
+    
+    // Fallback: chercher dans PLACES_INDEX
+    if (kws.length === 0) {
+      const pid = step?.place_id || step?.placeId;
+      if (pid && window.PLACES_INDEX && PLACES_INDEX[pid]?.map_keywords) {
+        kws = PLACES_INDEX[pid].map_keywords;
+      }
+    }
+    
+    console.log('[VIZ] MapKeywords bandeau:', kws.length, 'trouvés pour', step?.name);
+    
+    if (kws.length === 0) {
+      banner.style.display = 'none';
+      return;
+    }
+    
+    const lang = state.lang || 'fr';
+    const labels = {
+      fr: 'Voir sur Google Maps', en: 'See on Google Maps', es: 'Ver en Google Maps',
+      it: 'Vedi su Google Maps', pt: 'Ver no Google Maps', ar: 'عرض على خرائط جوجل'
+    };
+    if (titleEl) titleEl.textContent = labels[lang] || labels.fr;
+    
+    chipsEl.innerHTML = kws.map(kw => {
+      const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(kw);
+      return `<a href="${url}" class="mkb-chip" target="_blank" rel="noopener">📌 ${kw}</a>`;
+    }).join('');
+    
+    banner.style.display = 'block';
   }
   
   // Rendre Stay22
