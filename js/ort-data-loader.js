@@ -394,8 +394,11 @@
           _suggestedDays: suggestedDays,
           _driveMinToNext: driveMin,
           to_next_leg: day.to_next_leg || null,
-          _mapKeywords: Array.isArray(nightData.map_keywords) ? nightData.map_keywords : []
+          night: nightData,
+          _mapKeywords: Array.isArray(nightData.map_keywords) ? nightData.map_keywords : (Array.isArray(day.map_keywords) ? day.map_keywords : [])
         });
+        // DEBUG
+        console.log('[ORT-DATA] Step', idx, name, '| night.map_keywords:', nightData.map_keywords, '| day.map_keywords:', day.map_keywords, '| nightData keys:', Object.keys(nightData));
       });
       
       return steps;
@@ -442,8 +445,7 @@
           placeId: s.placeId || s.place_id || null,
           place_id: s.place_id || s.placeId || null,
           visits,
-          activities,
-          _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.map_keywords) ? s.map_keywords : [])
+          activities
         };
       });
     },
