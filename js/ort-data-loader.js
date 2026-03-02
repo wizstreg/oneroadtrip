@@ -397,8 +397,6 @@
           night: nightData,
           _mapKeywords: Array.isArray(nightData.map_keywords) ? nightData.map_keywords : (Array.isArray(day.map_keywords) ? day.map_keywords : [])
         });
-        // DEBUG
-        console.log('[ORT-DATA] Step', idx, name, '| night.map_keywords:', nightData.map_keywords, '| day.map_keywords:', day.map_keywords, '| nightData keys:', Object.keys(nightData));
       });
       
       return steps;
