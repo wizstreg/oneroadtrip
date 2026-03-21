@@ -1280,7 +1280,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
                 <div class="lbl">${t.lbl_act}</div>
               </div>
               <div class="metric users" style="opacity:0.9">
-                <div class="num" id="nUsers" aria-label="Nombre de voyageurs" style="color:#fbbf24">0</div>
+                <div class="num" id="nUsers" aria-label="Nombre de voyageurs" style="color:#fbbf24">...</div>
                 <div class="lbl">${t.lbl_users}</div>
               </div>
             </div>
@@ -1368,42 +1368,37 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       const targets = [stats.itineraries, stats.countries, stats.places, stats.visits, stats.activities];
       animateCounters(nodes, targets, 4000);
 
-      // Compteur voyageurs via Firestore client-side
-      (async function loadVisitorCount() {
-        const BASE_COUNT = 18756;
-        const INCREMENT = 57;
-        const nUsers = document.getElementById('nUsers');
-        if (!nUsers) return;
+      // Compteur voyageurs : animation immédiate + Firestore en arrière-plan
+      const BASE_COUNT = 18756;
+      const nUsersEl = document.getElementById('nUsers');
+      if (nUsersEl) {
+        // Animer immédiatement avec le nombre de base
+        animateCounters([nUsersEl], [BASE_COUNT], 4000);
         
-        try {
-          // Attendre que Firebase soit disponible (chargé par ort-config.js)
-          let attempts = 0;
-          while ((!window.firebase || !window.firebase.firestore) && attempts < 30) {
-            await new Promise(r => setTimeout(r, 200));
-            attempts++;
-          }
-          if (!window.firebase || !window.firebase.firestore) throw new Error('Firebase not loaded');
-          
-          const db = firebase.firestore();
-          const docRef = db.collection('counters').doc('visitor_count');
-          
-          // Incrémenter si première visite de la session
-          if (!sessionStorage.getItem('ort_visitor_counted')) {
-            try {
-              await docRef.set({ count: firebase.firestore.FieldValue.increment(INCREMENT), updated_at: new Date().toISOString() }, { merge: true });
-              sessionStorage.setItem('ort_visitor_counted', '1');
-            } catch(e) { /* écriture échouée, on lit quand même */ }
-          }
-          
-          // Lire le compteur
-          const doc = await docRef.get();
-          const storedCount = (doc.exists && doc.data().count) ? doc.data().count : 0;
-          animateCounters([nUsers], [BASE_COUNT + storedCount], 4000);
-          
-        } catch(e) {
-          nUsers.textContent = BASE_COUNT.toLocaleString();
-        }
-      })();
+        // En arrière-plan : incrémenter + lire le vrai chiffre
+        (async function() {
+          try {
+            let attempts = 0;
+            while ((!window.firebase || !window.firebase.firestore) && attempts < 30) {
+              await new Promise(r => setTimeout(r, 200));
+              attempts++;
+            }
+            if (!window.firebase || !window.firebase.firestore) return;
+            const db = firebase.firestore();
+            const docRef = db.collection('counters').doc('visitor_count');
+            if (!sessionStorage.getItem('ort_visitor_counted')) {
+              try {
+                await docRef.set({ count: firebase.firestore.FieldValue.increment(57), updated_at: new Date().toISOString() }, { merge: true });
+                sessionStorage.setItem('ort_visitor_counted', '1');
+              } catch(e) {}
+            }
+            const doc = await docRef.get();
+            if (doc.exists && doc.data().count) {
+              nUsersEl.textContent = (BASE_COUNT + doc.data().count).toLocaleString();
+            }
+          } catch(e) {}
+        })();
+      }
 
       // Déplacer le footer dans le hero
       setTimeout(() => {
