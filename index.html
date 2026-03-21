@@ -1365,43 +1365,53 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       const targets = [stats.itineraries, stats.countries, stats.places, stats.visits, stats.activities];
       animateCounters(nodes, targets, 4000);
 
-      // Compteur voyageurs : animation immédiate + Firestore en arrière-plan
+      // Compteur voyageurs : animation immédiate + Firestore REST en arrière-plan
       const BASE_COUNT = 18756;
       const nUsersEl = document.getElementById('nUsers');
       if (nUsersEl) {
-        // Animer immédiatement avec le nombre de base
         animateCounters([nUsersEl], [BASE_COUNT], 4000);
         
-        // En arrière-plan : incrémenter + lire le vrai chiffre
         (async function() {
           try {
-            let attempts = 0;
-            while ((!window.firebase || !window.firebase.firestore) && attempts < 30) {
-              await new Promise(r => setTimeout(r, 200));
-              attempts++;
-            }
-            if (!window.firebase || !window.firebase.firestore) { console.log('[VISITORS] Firebase non disponible après 6s'); return; }
-            console.log('[VISITORS] Firebase OK, lecture compteur...');
-            const db = firebase.firestore();
-            const docRef = db.collection('counters').doc('visitor_count');
+            // Récupérer le projectId depuis l'endpoint env
+            const envRes = await fetch('/.netlify/functions/env');
+            if (!envRes.ok) return;
+            const env = await envRes.json();
+            const projectId = env.ORT_FB_PROJECTID;
+            if (!projectId) return;
+            
+            const docUrl = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/counters/visitor_count';
+            
+            // Incrémenter si première visite de la session
             if (!sessionStorage.getItem('ort_visitor_counted')) {
+              // Lire la valeur actuelle
+              let currentCount = 0;
               try {
-                await docRef.set({ count: firebase.firestore.FieldValue.increment(57), updated_at: new Date().toISOString() }, { merge: true });
-                sessionStorage.setItem('ort_visitor_counted', '1');
-                console.log('[VISITORS] Incrémenté de 57');
-              } catch(e) { console.log('[VISITORS] Erreur incrément:', e.message); }
-            } else {
-              console.log('[VISITORS] Déjà compté cette session');
+                const r = await fetch(docUrl);
+                if (r.ok) {
+                  const d = await r.json();
+                  currentCount = parseInt(d.fields?.count?.integerValue || '0', 10);
+                }
+              } catch(e) {}
+              
+              // Écrire la nouvelle valeur (+57)
+              const newCount = currentCount + 57;
+              await fetch(docUrl, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fields: { count: { integerValue: String(newCount) }, updated_at: { stringValue: new Date().toISOString() } } })
+              });
+              sessionStorage.setItem('ort_visitor_counted', '1');
             }
-            const doc = await docRef.get();
-            if (doc.exists && doc.data().count) {
-              const realCount = BASE_COUNT + doc.data().count;
-              console.log('[VISITORS] Firestore count:', doc.data().count, '→ total:', realCount);
-              nUsersEl.textContent = realCount.toLocaleString();
-            } else {
-              console.log('[VISITORS] Document pas trouvé ou count absent');
+            
+            // Lire et afficher le vrai total
+            const res = await fetch(docUrl);
+            if (res.ok) {
+              const data = await res.json();
+              const storedCount = parseInt(data.fields?.count?.integerValue || '0', 10);
+              nUsersEl.textContent = (BASE_COUNT + storedCount).toLocaleString();
             }
-          } catch(e) { console.log('[VISITORS] Erreur:', e.message); }
+          } catch(e) {}
         })();
       }
 
