@@ -1353,9 +1353,6 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
             <!-- Placeholder tops itins (à remplir plus tard) -->
             <div id="topItinsRow" style="margin-top:10px;text-align:center;"></div>
 
-            <!-- Footer remonté ici -->
-            <div id="footerSlot" style="margin-top:10px;"></div>
-
             <ul class="features" aria-label="Fonctionnalités" style="display:none"></ul>
           </div>
         </section>
@@ -1383,33 +1380,31 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
               await new Promise(r => setTimeout(r, 200));
               attempts++;
             }
-            if (!window.firebase || !window.firebase.firestore) return;
+            if (!window.firebase || !window.firebase.firestore) { console.log('[VISITORS] Firebase non disponible après 6s'); return; }
+            console.log('[VISITORS] Firebase OK, lecture compteur...');
             const db = firebase.firestore();
             const docRef = db.collection('counters').doc('visitor_count');
             if (!sessionStorage.getItem('ort_visitor_counted')) {
               try {
                 await docRef.set({ count: firebase.firestore.FieldValue.increment(57), updated_at: new Date().toISOString() }, { merge: true });
                 sessionStorage.setItem('ort_visitor_counted', '1');
-              } catch(e) {}
+                console.log('[VISITORS] Incrémenté de 57');
+              } catch(e) { console.log('[VISITORS] Erreur incrément:', e.message); }
+            } else {
+              console.log('[VISITORS] Déjà compté cette session');
             }
             const doc = await docRef.get();
             if (doc.exists && doc.data().count) {
-              nUsersEl.textContent = (BASE_COUNT + doc.data().count).toLocaleString();
+              const realCount = BASE_COUNT + doc.data().count;
+              console.log('[VISITORS] Firestore count:', doc.data().count, '→ total:', realCount);
+              nUsersEl.textContent = realCount.toLocaleString();
+            } else {
+              console.log('[VISITORS] Document pas trouvé ou count absent');
             }
-          } catch(e) {}
+          } catch(e) { console.log('[VISITORS] Erreur:', e.message); }
         })();
       }
 
-      // Déplacer le footer dans le hero
-      setTimeout(() => {
-        const footer = document.getElementById('footer-legal');
-        const slot = document.getElementById('footerSlot');
-        if (footer && slot) {
-          slot.appendChild(footer);
-          footer.style.fontSize = '12px';
-          footer.style.opacity = '0.9';
-        }
-      }, 100);
 
       // ============================================
       // CARROUSEL DES DERNIERS ITINÉRAIRES (EN HAUT)
