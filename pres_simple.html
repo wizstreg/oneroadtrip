@@ -292,6 +292,13 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
 <header id="site-header"></header>
 
 <main>
+  <!-- Selection panel -->
+  <div id="selectionPanel" class="selection-top" style="display:none;">
+    <h3 id="selectionTitle">Itinéraires sélectionnés :</h3>
+    <div id="selectedList"></div>
+    <button id="btnValidateSelection" class="btn-validate" disabled>Valider</button>
+  </div>
+
   <!-- Map section -->
   <div class="map-section">
     <div class="map-header">
@@ -451,7 +458,7 @@ const T = {
     legendSelected: "Sélectionné",
     visibleCount: "itinéraires visibles",
     sidebarTitle: "Filtres",
-    alertMaxSelection: "Maximum 1 itinéraire",
+    alertMaxSelection: "Maximum 3 itinéraires", warningReorder: "⚠️ Pensez à réorganiser les étapes sur la page suivante pour optimiser votre parcours.",
     modalTitle: "Configurez votre voyage",
     labelDepartDate: "Date de départ :",
     labelNbDays: "Nombre de jours souhaités :",
@@ -495,7 +502,7 @@ const T = {
     legendSelected: "Selected",
     visibleCount: "itineraries visible",
     sidebarTitle: "Filters",
-    alertMaxSelection: "Maximum 1 itinerary",
+    alertMaxSelection: "Maximum 3 itineraries", warningReorder: "⚠️ Remember to reorganize the stages on the next page to optimize your route.",
     modalTitle: "Configure your trip",
     labelDepartDate: "Departure date:",
     labelNbDays: "Number of days:",
@@ -539,7 +546,7 @@ const T = {
     legendSelected: "Selezionato",
     visibleCount: "itinerari visibili",
     sidebarTitle: "Filtri",
-    alertMaxSelection: "Massimo 1 itinerario",
+    alertMaxSelection: "Massimo 3 itinerari", warningReorder: "⚠️ Ricordati di riorganizzare le tappe nella pagina successiva per ottimizzare il percorso.",
     modalTitle: "Configura il tuo viaggio",
     labelDepartDate: "Data di partenza:",
     labelNbDays: "Numero di giorni:",
@@ -583,7 +590,7 @@ const T = {
     legendSelected: "Seleccionado",
     visibleCount: "itinerarios visibles",
     sidebarTitle: "Filtros",
-    alertMaxSelection: "Máximo 1 itinerario",
+    alertMaxSelection: "Máximo 3 itinerarios", warningReorder: "⚠️ Recuerda reorganizar las etapas en la página siguiente para optimizar tu ruta.",
     modalTitle: "Configura tu viaje",
     labelDepartDate: "Fecha de salida:",
     labelNbDays: "Número de días:",
@@ -627,7 +634,7 @@ const T = {
     legendSelected: "Selecionado",
     visibleCount: "itinerários visíveis",
     sidebarTitle: "Filtros",
-    alertMaxSelection: "Máximo 1 itinerário",
+    alertMaxSelection: "Máximo 3 itinerários", warningReorder: "⚠️ Lembre-se de reorganizar as etapas na página seguinte para otimizar o seu percurso.",
     modalTitle: "Configure sua viagem",
     labelDepartDate: "Data de partida:",
     labelNbDays: "Número de dias:",
@@ -671,7 +678,7 @@ const T = {
     legendSelected: "محدد",
     visibleCount: "مسارات مرئية",
     sidebarTitle: "التصفية",
-    alertMaxSelection: "الحد الأقصى 1 مسار",
+    alertMaxSelection: "الحد الأقصى 3 مسارات", warningReorder: "⚠️ تذكّر إعادة ترتيب المراحل في الصفحة التالية لتحسين مسارك.",
     modalTitle: "قم بتكوين رحلتك",
     labelDepartDate: "تاريخ المغادرة:",
     labelNbDays: "عدد الأيام:",
@@ -697,7 +704,8 @@ let map = null;
 let markersLayer = null;
 let polylinesLayer = null;
 let allItineraries = [];
-let selectedItinerary = null;
+let selectedItineraries = [];
+const MAX_SELECTION = 3;
 let THEMES_DATA = null;
 let itinLayers = new Map();
 let previewPinned = false;
@@ -1498,7 +1506,7 @@ function displayMarkers(itineraries) {
           if (!previewPinned) showPreview(itin);
         });
         polyline.on('mouseout', () => {
-          if (!selectedItinerary || selectedItinerary.itin_id !== itin.itin_id) {
+          if (!selectedItineraries.some(i => i.itin_id === itin.itin_id)) {
             polyline.setStyle({ opacity: 0, weight: 3 });
             cityMarkers.forEach(cm => cm.setStyle({ opacity: 0, fillOpacity: 0 }));
           }
@@ -1540,7 +1548,7 @@ function displayMarkers(itineraries) {
         if (preview && !preview.matches(':hover')) {
           closePreview();
         }
-        if (!selectedItinerary || selectedItinerary.itin_id !== itin.itin_id) {
+        if (!selectedItineraries.some(i => i.itin_id === itin.itin_id)) {
           if (polyline) polyline.setStyle({ opacity: 0 });
           cityMarkers.forEach(cm => cm.setStyle({ opacity: 0, fillOpacity: 0 }));
         }
@@ -1571,7 +1579,7 @@ function updateMarkersVisibility() {
   setTimeout(() => {
     itinLayers.forEach(({ mainMarker, starInfo }, id) => {
       if (!mainMarker) return;
-      const isSel = selectedItinerary && selectedItinerary.itin_id === id;
+      const isSel = selectedItineraries.some(i => i.itin_id === id);
       
       if (starInfo.isStar) {
         mainMarker.setIcon(createStarIcon(starInfo.color, 20, isSel));
@@ -1724,19 +1732,70 @@ function hidePreviewIfNotPinned() {
 }
 
 function selectItinerary(itin) {
-  selectedItinerary = itin;
+  // Vérifier si déjà sélectionné → le retirer
+  const idx = selectedItineraries.findIndex(i => i.itin_id === itin.itin_id);
+  if (idx >= 0) {
+    selectedItineraries.splice(idx, 1);
+  } else {
+    // Vérifier la limite
+    if (selectedItineraries.length >= MAX_SELECTION) {
+      alert(L_TEXT.alertMaxSelection);
+      return;
+    }
+    selectedItineraries.push(itin);
+  }
+  
   closePreview();
   previewPinned = false;
+  updateSelectionPanel();
+  updateSelectionStyles();
+}
+
+function updateSelectionPanel() {
+  const panel = document.getElementById('selectionPanel');
+  const list = document.getElementById('selectedList');
+  const btn = document.getElementById('btnValidateSelection');
+  if (!panel || !list || !btn) return;
   
-  // Ouvrir la modale de configuration
-  document.getElementById('inputNbDays').value = itin.estimatedDays || 7;
-  document.getElementById('configModal').classList.add('show');
+  if (selectedItineraries.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+  
+  panel.style.display = 'flex';
+  
+  // Warning si multi-sélection
+  const warningHtml = selectedItineraries.length >= 2 
+    ? `<div style="width:100%;padding:8px 12px;background:rgba(234,179,8,0.15);border-left:3px solid #eab308;border-radius:6px;font-size:12px;color:#fef3c7;margin-bottom:6px;">${L_TEXT.warningReorder || ''}</div>`
+    : '';
+  
+  list.innerHTML = warningHtml + selectedItineraries.map((itin, i) => 
+    `<div class="selected-item">
+      <span class="selected-item-title">${itin.title || itin.itin_id}</span>
+      <button class="selected-item-remove" data-index="${i}" aria-label="Remove">✕</button>
+    </div>`
+  ).join('');
+  
+  // Handlers pour supprimer
+  list.querySelectorAll('.selected-item-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const removeIdx = parseInt(btn.dataset.index);
+      selectedItineraries.splice(removeIdx, 1);
+      updateSelectionPanel();
+      updateSelectionStyles();
+    });
+  });
+  
+  btn.disabled = false;
+  const totalDays = selectedItineraries.reduce((sum, it) => sum + (it.estimatedDays || it.days || 7), 0);
+  btn.textContent = L_TEXT.modalConfirm + ` (${totalDays} ${L_TEXT.filterDays || 'jours'})`;
 }
 
 function updateSelectionStyles() {
-  const selId = selectedItinerary ? selectedItinerary.itin_id : null;
+  const selIds = new Set(selectedItineraries.map(i => i.itin_id));
   itinLayers.forEach(({ polyline, cityMarkers, mainMarker, starInfo }, id) => {
-    const isSel = id === selId;
+    const isSel = selIds.has(id);
     if (polyline) {
       polyline.setStyle({
         color: isSel ? '#e11d48' : '#00bfff',
@@ -1753,10 +1812,10 @@ function updateSelectionStyles() {
     });
     if (mainMarker && starInfo) {
       if (starInfo.isStar) {
-        const starSize = isSel ? 28 : 20; // Plus gros quand sélectionné
+        const starSize = isSel ? 28 : 20;
         mainMarker.setIcon(createStarIcon(starInfo.color, starSize, isSel));
       } else if (mainMarker.setStyle) {
-        const bonusSize = isMobile() ? 4 : 3; // Plus gros sur mobile
+        const bonusSize = isMobile() ? 4 : 3;
         mainMarker.setStyle({ 
           fillColor: isSel ? '#e11d48' : starInfo.color,
           radius: isSel ? starInfo.radius + bonusSize : starInfo.radius
@@ -1917,10 +1976,21 @@ function setupValidation() {
   const modal = document.getElementById('configModal');
   const btnCancel = document.getElementById('modalCancel');
   const btnConfirm = document.getElementById('modalConfirm');
+  const btnPanel = document.getElementById('btnValidateSelection');
 
   // Set default date to today
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('inputDepartDate').value = today;
+
+  // Le bouton du panel ouvre la modale
+  if (btnPanel) {
+    btnPanel.addEventListener('click', () => {
+      if (selectedItineraries.length === 0) return;
+      const totalDays = selectedItineraries.reduce((sum, it) => sum + (it.estimatedDays || it.days || 7), 0);
+      document.getElementById('inputNbDays').value = totalDays;
+      modal.classList.add('show');
+    });
+  }
 
   btnCancel.addEventListener('click', () => {
     modal.classList.remove('show');
@@ -1931,21 +2001,37 @@ function setupValidation() {
   });
 
   btnConfirm.addEventListener('click', () => {
-    if (!selectedItinerary) return;
+    if (selectedItineraries.length === 0) return;
     
     const departDate = document.getElementById('inputDepartDate').value;
     const nbDays = document.getElementById('inputNbDays').value;
 
-    const id = selectedItinerary.itin_id;
-    const cc = (id.split('::')[0] || '').toUpperCase();
+    const mode = 'expert';
+    let url;
 
-    const url = new URL('roadtrip_detail_simple.html', location.href);
-    url.searchParams.set('cc', cc);
-    url.searchParams.set('itin', id);
+    if (selectedItineraries.length === 1) {
+      // 1 seul itinéraire → envoi classique
+      const itin = selectedItineraries[0];
+      const id = itin._originalItinId || itin.itin_id;
+      const cc = (id.split('::')[0] || '').toUpperCase();
+      url = new URL('roadtrip_detail.html', location.href);
+      url.searchParams.set('cc', cc);
+      url.searchParams.set('itin', id);
+    } else {
+      // 2-3 itinéraires → ID composé avec préfixe COMPOSED::
+      const originalIds = selectedItineraries.map(itin => itin._originalItinId || itin.itin_id);
+      const composed = 'COMPOSED::' + originalIds.join('+');
+      const cc = selectedItineraries[0].country || (selectedItineraries[0].itin_id.split('::')[0] || 'MULTI').toUpperCase();
+      url = new URL('roadtrip_detail.html', location.href);
+      url.searchParams.set('cc', cc);
+      url.searchParams.set('itin', composed);
+    }
+
     url.searchParams.set('lang', lang);
-    url.searchParams.set('mode', 'simple');
+    url.searchParams.set('mode', mode);
     url.searchParams.set('departDate', departDate);
     url.searchParams.set('days', nbDays);
+    url.searchParams.set('skipMobileRedirect', '1');
 
     window.location.href = url.toString();
   });

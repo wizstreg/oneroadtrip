@@ -729,8 +729,8 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
   <!-- 4 CARRÉS + ROUTE BUILDER -->
   <div style="max-width:800px;margin:0 auto;padding:8px 16px;">
     
-    <!-- Grille 2x2 -->
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;">
+    <!-- Grille 3 colonnes -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
       
       <!-- Carré 1: Choisir sur carte -->
       <div class="ort-card" id="mapExplorerPreview" style="background:#113f7a;border-radius:10px;padding:16px;cursor:pointer;text-align:center;">
@@ -745,12 +745,6 @@ header{position:sticky;top:0;z-index:10000;background:url("/assets/image_index.w
       <!-- Carré 3: Trouver sur le web -->
       <div class="ort-card" id="importFromWeb" style="background:#113f7a;border-radius:10px;padding:16px;cursor:pointer;text-align:center;">
         <h3 id="importTitle" style="margin:0;font-size:15px;color:#fff;line-height:1.4;"></h3>
-      </div>
-      
-      <!-- Carré 4: Itinéraires créateurs -->
-      <div class="ort-card" id="creatorsSection" style="background:#113f7a;border-radius:10px;padding:16px;cursor:pointer;text-align:center;">
-        <h3 id="creatorsTitle2" style="margin:0;font-size:15px;color:#fff;line-height:1.4;"></h3>
-        <a id="becomeCreator" href="creator-terms.html" style="display:block;margin:6px 0 0;font-size:12px;color:rgba(255,255,255,0.8);text-decoration:underline;" onclick="event.stopPropagation();"></a>
       </div>
     </div>
     
@@ -4171,9 +4165,6 @@ if (typeof populateThemeSelect === 'function' && typeof THEMES_DATA !== 'undefin
 
 setTextById('leftTitle',L.left_title);
   setTextById('rightTitle',L.right_title);
-  setTextById('creatorsTitle2',L.creatorsTitle);
-  setTextById('becomeCreatorLink',L.become_creator);
-  setTextById('becomeCreator',L.becomeCreator);
   setTextById('buildTitle',L.buildTitle);
   setTextById('importTitle',L.importTitle);
   setTextById('routeBuilderTitle',L.routeBuilderTitle);
@@ -4602,40 +4593,6 @@ function initGridCards() {
     window.location.href = `import.html?lang=${lang}`;
   });
   
-  // Carré 4: Créateurs
-  // Carré 4: Itinéraires créateurs → ouvre la carte avec filtre creators
-  document.getElementById('creatorsSection')?.addEventListener('click', (e) => {
-    if (e.target.id === 'becomeCreator') return;
-    
-    document.getElementById('mapFullscreen').classList.add('active');
-    
-    if (!THEMES_DATA || Object.keys(THEMES_REG || {}).length === 0) {
-      loadThemes(); // Charger en arrière-plan
-    }
-    
-    if (!mapFull) {
-      setTimeout(() => {
-        initMapFull();
-        loadPhotosData();
-        loadPlacesPhotosIndex();
-        
-        // Charger les itinéraires en arrière-plan sans attendre
-        loadAllItineraries().then(() => {
-          const themeFilter = document.getElementById('filterThemeFull');
-          if (themeFilter) {
-            themeFilter.value = 'creators';
-            applyFilters();
-          }
-        });
-      }, 100);
-    } else {
-      const themeFilter = document.getElementById('filterThemeFull');
-      if (themeFilter) {
-        themeFilter.value = 'creators';
-        applyFilters();
-      }
-    }
-  });
 }
 
 // Mettre à jour les textes traduits du route builder
@@ -4657,12 +4614,10 @@ function updateRouteBuilderTranslations() {
   
   const setTextById = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
   
-  // Titres des 4 carrés (doivent être ici car l'IIFE utilise parfois la langue du navigateur)
+  // Titres des 3 carrés (doivent être ici car l'IIFE utilise parfois la langue du navigateur)
   setTextById('mapTitle', L.mapTitle);
   setTextById('buildTitle', L.buildTitle);
   setTextById('importTitle', L.importTitle);
-  setTextById('creatorsTitle2', L.creatorsTitle);
-  setTextById('becomeCreator', L.becomeCreator);
   setTextById('routeBuilderTitle', L.routeBuilderTitle);
   setTextById('labelStartCity', L.labelStartCity);
   setTextById('labelEndCity', L.labelEndCity);
@@ -4749,6 +4704,14 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Exposer pour la modale
   window.setCurrentItinForModal = (itin) => { currentItin = itin; };
+
+  // Auto-ouverture de la carte si ?openmap=1 dans l'URL (venant des pages statiques SEO)
+  if (new URLSearchParams(location.search).get('openmap') === '1') {
+    setTimeout(() => {
+      const mapExplorer = document.getElementById('mapExplorerPreview');
+      if (mapExplorer) mapExplorer.click();
+    }, 300);
+  }
 });
 
 // Re-traduire quand la langue change
