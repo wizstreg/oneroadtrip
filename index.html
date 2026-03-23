@@ -48,21 +48,16 @@
     .wrap{ max-width:var(--max); margin:0 auto; padding:16px }
     .hero > .content{ position:relative; z-index:1; padding:clamp(10px, 2.5vh, 35px) 24px 12px 16px; width:100%; max-width:1100px; margin:0 auto }
 
-    /* Titres + métriques - tailles remontées ~120% */
+    /* Titres + métriques */
     .headline{
-      font-size:clamp(24px, 3.5vw, 42px);
-      line-height:1.1; font-weight:800; letter-spacing:.2px; margin:0 0 6px 0;
-      white-space:nowrap;
+      font-size:clamp(20px, 2.8vw, 32px);
+      line-height:1.2; font-weight:800; letter-spacing:.2px; margin:0 0 4px 0;
+      text-align:center;
     }
-    .metrics{ display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; margin:4px 0 8px 0 }
+    .metrics{ display:flex; gap:24px; align-items:baseline; flex-wrap:wrap; justify-content:center; margin:10px 0 14px 0 }
     .metric{ display:flex; gap:8px; align-items:baseline }
-    .metric .num{ font-weight:900; line-height:1; min-width:3.5ch; text-align:right }
-    .metric.rt .num{ font-size:clamp(26px, 4.2vw, 38px) }
-    .metric.cty .num,
-    .metric.plc .num{ font-size:clamp(20px, 3.5vw, 32px) }
-    .metric.vis .num,
-    .metric.act .num{ font-size:clamp(18px, 3vw, 28px) }
-    .metric.users .num{ font-size:clamp(18px, 3vw, 28px) }
+    .metric .num{ font-weight:900; line-height:1; font-size:clamp(28px, 3.8vw, 42px) }
+
 
     /* Subtitle apparition */
     @keyframes subtitleFadeIn{
@@ -70,7 +65,7 @@
       to{ opacity:1; transform:translateY(0) }
     }
     .subtitle-line{ text-align:center }
-    .metric .lbl{ font-size:clamp(13px, 2vw, 17px); opacity:.95 }
+    .metric .lbl{ font-size:clamp(14px, 2vw, 18px); opacity:.95 }
 
     /* Footer dans le hero */
     #footer-legal{ position:relative; z-index:1; color:#fff }
@@ -491,19 +486,19 @@
     /* ===== RESPONSIVE MOBILE ===== */
     /* Tablettes et petits écrans */
     @media (max-width: 768px) {
-      .hero{ min-height:auto }
+      .hero{ min-height:100vh }
       .hero > .content{ padding:12px 16px; max-width:100%; text-align:center }
-      .headline{ font-size:clamp(18px, 5vw, 26px); margin-bottom:6px; white-space:normal }
+      .headline{ font-size:clamp(16px, 4.5vw, 22px); margin-bottom:4px; white-space:normal; text-align:center }
       .metrics{ 
-        display:grid !important;
-        grid-template-columns:repeat(3, auto);
+        display:flex !important;
+        flex-wrap:wrap;
         justify-content:center;
-        gap:2px 8px; 
-        margin:2px 0 4px;
+        gap:4px 16px; 
+        margin:6px 0 8px;
       }
-      .metric{ gap:3px; justify-content:center }
-      .metric .num{ font-size:clamp(14px, 3.5vw, 19px) !important; min-width:auto }
-      .metric .lbl{ font-size:clamp(9px, 2.2vw, 11px) }
+      .metric{ gap:4px; justify-content:center }
+      .metric .num{ font-size:clamp(18px, 5vw, 26px) !important; min-width:auto }
+      .metric .lbl{ font-size:clamp(10px, 2.5vw, 13px) }
       .features{ display:none }
     }
       .features li{ margin:8px 0 }
@@ -570,8 +565,8 @@
       .metrics{
         gap:2px 6px;
       }
-      .metric .num{ font-size:clamp(13px, 3.2vw, 17px) !important }
-      .metric .lbl{ font-size:clamp(8px, 2vw, 10px) }
+      .metric .num{ font-size:clamp(16px, 4.5vw, 22px) !important }
+      .metric .lbl{ font-size:clamp(9px, 2.2vw, 12px) }
     }
     /* Mode paysage sur mobile */
     @media (max-width: 768px) and (orientation: landscape) {
@@ -767,7 +762,7 @@
 </style>
 </head>
 <body>
-<main id="stage" role="main" aria-label="Accueil OneRoadTrip"></main>
+<main id="stage" role="main" aria-label="Accueil OneRoadTrip" style="min-height:100vh;background:var(--heroBase)"></main>
 
   <script>
 /**
@@ -1263,7 +1258,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         <section class="hero" role="banner" aria-label="Hero OneRoadTrip">
           <div class="content anim-rise">
             <h1 class="headline" style="--d:0ms">${t.title}</h1>
-            <p class="subtitle-line" style="font-size:clamp(11px,1.6vw,14px);margin:3px auto 6px;line-height:1.5;max-width:800px;color:#fef3c7;font-weight:500;animation:subtitleFadeIn 1.5s ease-out 0.5s both;">${t.subtitle}</p>
+            <p class="subtitle-line" style="font-size:clamp(13px,1.8vw,17px);margin:4px auto 10px;line-height:1.5;max-width:800px;color:#fef3c7;font-weight:500;animation:subtitleFadeIn 1.5s ease-out 0.5s both;">${t.subtitle}</p>
 
             <div class="metrics" aria-label="Chiffres clés" style="--d:120ms">
               <div class="metric rt">
@@ -1286,10 +1281,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
                 <div class="num" id="nActivities" aria-label="Nombre d'activités">0</div>
                 <div class="lbl">${t.lbl_act}</div>
               </div>
-              <div class="metric users" style="opacity:0.9">
-                <div class="num" id="nUsers" aria-label="Nombre de voyageurs" style="color:#fbbf24">...</div>
-                <div class="lbl">${t.lbl_users}</div>
-              </div>
+
             </div>
 
             <!-- 4 carrés d'action -->
@@ -1372,22 +1364,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       const targets = [stats.itineraries, stats.countries, stats.places, stats.visits, stats.activities];
       animateCounters(nodes, targets, 4000);
 
-      // Compteur voyageurs
-      const nUsersEl = document.getElementById('nUsers');
-      if (nUsersEl) {
-        animateCounters([nUsersEl], [3670], 4000);
-        (async function() {
-          try {
-            const already = sessionStorage.getItem('ort_vc');
-            const res = await fetch('/.netlify/functions/visitor-count' + (already ? '' : '?i=1'));
-            if (res.ok) {
-              const data = await res.json();
-              if (data.count) nUsersEl.textContent = data.count.toLocaleString();
-              if (!already) sessionStorage.setItem('ort_vc', '1');
-            }
-          } catch(e) {}
-        })();
-      }
+
 
 
       // ============================================
