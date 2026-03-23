@@ -423,6 +423,7 @@ html, body {
   white-space: nowrap;
 }
 .hotel-thumb-sm{width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:3px;flex-shrink:0}
+.step-card-hotel-icon{width:48px;height:48px;display:flex;align-items:center;justify-content:center;flex-shrink:0;align-self:center;margin-right:-4px;font-size:24px;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0}
 .step-card-hotel-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;align-self:center;margin-right:-4px;box-shadow:0 1px 4px rgba(0,0,0,0.12)}
 
 
@@ -5126,18 +5127,35 @@ function renderList() {
     }
     
     // Construire la vignette hôtel à droite de la carte (entre info et chevron)
-    let hotelThumbHtml = '';
+    // Règles: photo si dispo, rien si hôtel réservé, 🏨 si pas de photo ni réservé
+    let hasBookedHotel = false;
+    if (allStepBookings.length > 0 && allStepBookings.find(isHotelCat)) {
+      hasBookedHotel = true;
+    }
+    
     const hotelPhotoUrl = step.hotelPhoto || '';
     // Chercher aussi dans les bookings
     let bookingHotelPhoto = '';
     if (!hotelPhotoUrl) {
-      let bks = [];
-      if (window.ORT_TRIP_DATA) bks = ORT_TRIP_DATA.getStepBookings(idx) || [];
-      if (!bks.length && step.bookings && Array.isArray(step.bookings)) bks = step.bookings;
-      const hb = bks.find(isHotelCat);
+      const hb = allStepBookings.find(isHotelCat);
       if (hb) bookingHotelPhoto = hb.photo || hb.image || hb.photo_url || '';
     }
     const finalHotelPhoto = hotelPhotoUrl || bookingHotelPhoto;
+    
+    // Construire le HTML de la vignette hôtel
+    let hotelThumbPart = '';
+    if (step.nights > 0) {
+      if (hasBookedHotel) {
+        // Hôtel réservé → rien (on sait déjà via le bookingIndicator)
+        hotelThumbPart = '';
+      } else if (finalHotelPhoto) {
+        // Photo dispo → afficher la miniature cliquable
+        hotelThumbPart = `<img class="step-card-hotel-thumb" src="${finalHotelPhoto}" alt="" onerror="this.outerHTML='<span class=\\'step-card-hotel-icon\\'>🏨</span>'" data-step-hotel="${idx}" data-hotel-action="open">`;
+      } else {
+        // Pas de photo, pas réservé → icône 🏨 cliquable + slot pour async
+        hotelThumbPart = `<span class="step-card-hotel-icon" data-step-hotel="${idx}" data-hotel-action="open">🏨</span>`;
+      }
+    }
     
     card.innerHTML = `
       <div class="step-card-num">${idx + 1}</div>
@@ -5148,27 +5166,45 @@ function renderList() {
         ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
         ${bookingIndicator ? `<div style="margin-top:3px">${bookingIndicator}</div>` : ''}
       </div>
-      ${finalHotelPhoto ? `<img class="step-card-hotel-thumb" src="${finalHotelPhoto}" alt="" onerror="this.style.display='none'" data-step-hotel="${idx}">` : (step.nights > 0 ? `<div class="step-card-hotel-thumb-slot" data-step-hotel="${idx}" style="display:none"></div>` : '')}
+      ${hotelThumbPart}
       <div class="step-card-chevron">›</div>
     `;
     list.appendChild(card);
     
-    // Charger la photo hôtel du JSON scrapé (async) pour les étapes avec nuits sans photo
-    if (!finalHotelPhoto && step.nights > 0) {
+    // Handler clic sur la vignette hôtel → ouvrir modale hôtels (pas le sheet)
+    const hotelEl = card.querySelector('[data-hotel-action="open"]');
+    if (hotelEl) {
+      hotelEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (typeof openHotelsModal === 'function') {
+          openHotelsModal(step, idx);
+        }
+      });
+      hotelEl.style.cursor = 'pointer';
+    }
+    
+    // Charger la photo hôtel du JSON scrapé (async) pour les étapes sans photo et sans réservation
+    if (!finalHotelPhoto && !hasBookedHotel && step.nights > 0) {
       const pid = step.placeId || step.place_id;
-      const slot = card.querySelector(`[data-step-hotel="${idx}"]`);
-      if (pid && slot && window.ORT_HOTELS && ORT_HOTELS.loadHotelsForPlace) {
+      const iconEl = card.querySelector(`[data-step-hotel="${idx}"]`);
+      if (pid && iconEl && window.ORT_HOTELS && ORT_HOTELS.loadHotelsForPlace) {
         ORT_HOTELS.loadHotelsForPlace(pid).then(data => {
           if (!data || !data.hotels || !data.hotels.length) return;
           const imgUrl = data.hotels[0].imageUrl;
           if (!imgUrl) return;
-          // Remplacer le slot par une vraie image
+          // Remplacer l'icône par une vraie image
           const img = document.createElement('img');
           img.className = 'step-card-hotel-thumb';
           img.src = imgUrl;
           img.alt = '';
-          img.onerror = () => { img.style.display = 'none'; };
-          slot.replaceWith(img);
+          img.dataset.hotelAction = 'open';
+          img.style.cursor = 'pointer';
+          img.onerror = () => { img.outerHTML = '<span class="step-card-hotel-icon" data-hotel-action="open" style="cursor:pointer">🏨</span>'; };
+          img.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (typeof openHotelsModal === 'function') openHotelsModal(step, idx);
+          });
+          iconEl.replaceWith(img);
         }).catch(() => {});
       }
     }
@@ -5439,17 +5475,42 @@ function openStepSheet(idx) {
   // Hôtels - Ouvrir la modale au lieu de Stay22 direct
   const btnHotel = $('btnHotel');
   btnHotel.href = '#';
-  btnHotel.style.display = '';
-  btnHotel.onclick = (e) => {
-    e.preventDefault();
-    if (typeof openHotelsModal === 'function') {
-      openHotelsModal(step, idx);
-    } else {
-      // Fallback vers Stay22 si modale non disponible
-      const stay22Url = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
-      window.open(stay22Url, '_blank');
+  
+  // Vérifier s'il y a un hôtel réservé
+  let sheetHasBookedHotel = false;
+  const sheetIsHotelCat = (b) => b && (b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  let sheetBookings = [];
+  if (window.ORT_TRIP_DATA) sheetBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+  if (!sheetBookings.length && step.bookings && Array.isArray(step.bookings)) sheetBookings = step.bookings;
+  if (sheetBookings.find(sheetIsHotelCat)) sheetHasBookedHotel = true;
+  
+  if (sheetHasBookedHotel) {
+    // Hôtel réservé → cacher le bouton
+    btnHotel.style.display = 'none';
+  } else {
+    btnHotel.style.display = '';
+    // Mettre la photo hôtel si dispo, sinon 🏨
+    btnHotel.innerHTML = '🏨 Hôtel';
+    const sheetPid = step.placeId || step.place_id;
+    if (sheetPid && window.ORT_HOTELS && ORT_HOTELS.loadHotelsForPlace) {
+      ORT_HOTELS.loadHotelsForPlace(sheetPid).then(data => {
+        if (!data || !data.hotels || !data.hotels.length) return;
+        const imgUrl = data.hotels[0].imageUrl;
+        if (!imgUrl) return;
+        btnHotel.innerHTML = `<img src="${imgUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
+      }).catch(() => {});
     }
-  };
+    btnHotel.onclick = (e) => {
+      e.preventDefault();
+      if (typeof openHotelsModal === 'function') {
+        openHotelsModal(step, idx);
+      } else {
+        // Fallback vers Stay22 si modale non disponible
+        const stay22Url = AFFILIATE.hotel(step.lat, step.lng, cityName, Math.max(1, nights), checkIn, campaign);
+        window.open(stay22Url, '_blank');
+      }
+    };
+  }
   
   // Afficher les réservations de cette étape
   const bookingsSection = $('stepBookingsSection');
@@ -5719,17 +5780,41 @@ function adjustNights(delta) {
   // MAJ lien hôtel - Ouvrir modale au lieu de Stay22 direct
   const btnHotel = $('btnHotel');
   btnHotel.href = '#';
-  btnHotel.onclick = (e) => {
-    e.preventDefault();
-    if (typeof openHotelsModal === 'function') {
-      openHotelsModal(step, currentStepIndex);
-    } else {
-      const checkIn = new Date().toISOString().split('T')[0];
-      const campaign = `ort_mobile_step${currentStepIndex + 1}`;
-      const stay22Url = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
-      window.open(stay22Url, '_blank');
+  
+  // Vérifier s'il y a un hôtel réservé
+  let adjHasBookedHotel = false;
+  const adjIsHotelCat = (b) => b && (b.category === 'hotel' || b.category === 'lodging' || b.category === 'accommodation');
+  let adjBookings = [];
+  if (window.ORT_TRIP_DATA) adjBookings = ORT_TRIP_DATA.getStepBookings(currentStepIndex) || [];
+  if (!adjBookings.length && step.bookings && Array.isArray(step.bookings)) adjBookings = step.bookings;
+  if (adjBookings.find(adjIsHotelCat)) adjHasBookedHotel = true;
+  
+  if (adjHasBookedHotel || step.nights === 0) {
+    btnHotel.style.display = 'none';
+  } else {
+    btnHotel.style.display = '';
+    btnHotel.innerHTML = '🏨 Hôtel';
+    const adjPid = step.placeId || step.place_id;
+    if (adjPid && window.ORT_HOTELS && ORT_HOTELS.loadHotelsForPlace) {
+      ORT_HOTELS.loadHotelsForPlace(adjPid).then(data => {
+        if (!data || !data.hotels || !data.hotels.length) return;
+        const imgUrl = data.hotels[0].imageUrl;
+        if (!imgUrl) return;
+        btnHotel.innerHTML = `<img src="${imgUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
+      }).catch(() => {});
     }
-  };
+    btnHotel.onclick = (e) => {
+      e.preventDefault();
+      if (typeof openHotelsModal === 'function') {
+        openHotelsModal(step, currentStepIndex);
+      } else {
+        const checkIn = new Date().toISOString().split('T')[0];
+        const campaign = `ort_mobile_step${currentStepIndex + 1}`;
+        const stay22Url = AFFILIATE.hotel(step.lat, step.lng, step.name, Math.max(1, step.nights), checkIn, campaign);
+        window.open(stay22Url, '_blank');
+      }
+    };
+  }
   
   renderList();
   renderBookings();

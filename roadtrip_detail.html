@@ -383,7 +383,7 @@ body.layout-stack .main>section{order:1}
 .step-row[draggable="true"]{cursor:grab}
 .step-row.dragging{opacity:.6;border-style:dashed}
 .cell{padding:4px}
-.hotel-thumb{width:28px;height:28px;border-radius:6px;object-fit:cover;vertical-align:middle;margin-right:4px;flex-shrink:0}
+.hotel-thumb-lg{width:48px;height:48px;border-radius:8px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.12)}
 .step-num{
   display:inline-flex;align-items:center;justify-content:center;
   width:24px;height:24px;border-radius:50%;
@@ -6482,75 +6482,50 @@ dateCell.style.textAlign='left';
   
   const _esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   
-  // Fonction pour injecter la photo du premier hôtel scrapé dans un élément
-  function loadHotelThumb(targetEl, placeId) {
-    if (!placeId || !window.ORT_HOTELS || !ORT_HOTELS.loadHotelsForPlace) return;
-    ORT_HOTELS.loadHotelsForPlace(placeId).then(data => {
-      if (!data || !data.hotels || !data.hotels.length) return;
-      const imgUrl = data.hotels[0].imageUrl;
-      if (!imgUrl) return;
-      const img = document.createElement('img');
-      img.className = 'hotel-thumb';
-      img.src = imgUrl;
-      img.alt = '';
-      img.onerror = function() { this.remove(); };
-      // Insérer avant le premier enfant texte
-      const wrapper = targetEl.querySelector('.hotel-cell-content');
-      if (wrapper) wrapper.prepend(img);
-    }).catch(() => {});
-  }
-  
   if (Number(step.nights||0) > 0) {
     if (bookedHotel) {
       // ✅ Hôtel réservé → afficher son nom
       const hotelName = bookedHotel.name || bookedHotel.title || '🏨 Réservé';
       const shortName = hotelName.length > 25 ? hotelName.substring(0, 23) + '…' : hotelName;
       hotel.innerHTML = `
-        <div class="hotel-cell-content" style="font-size:0.8rem;line-height:1.3;color:#059669;font-weight:600;cursor:pointer;display:flex;align-items:center" title="${_esc(hotelName)}">
-          <span class="hotel-icon-fallback">🏨 </span>${_esc(shortName)}
+        <div style="font-size:0.8rem;line-height:1.3;color:#059669;font-weight:600;cursor:pointer;display:flex;align-items:center" title="${_esc(hotelName)}">
+          🏨 ${_esc(shortName)}
         </div>`;
-      // Clic → ouvrir la modale réservations de l'étape
       hotel.addEventListener('click', () => {
         if (typeof openStepBookingsModal === 'function') openStepBookingsModal(idx);
       });
-      // Charger la photo du JSON scrapé → remplace l'emoji
-      const pid = step.placeId || step.place_id;
-      if (pid) {
-        loadHotelThumb(hotel, pid);
-        // Quand la photo charge, cacher l'emoji fallback
-        const obs = new MutationObserver(() => {
-          const img = hotel.querySelector('.hotel-thumb');
-          const fb = hotel.querySelector('.hotel-icon-fallback');
-          if (img && fb) fb.style.display = 'none';
-          obs.disconnect();
-        });
-        obs.observe(hotel, { childList: true, subtree: true });
-      }
     } else if (step.lat && step.lon) {
+      // Pas de résa → photo hôtel cliquable ou bouton "Voir"
+      // D'abord afficher le bouton "Voir" par défaut
       hotel.innerHTML = `
-        <div class="hotel-cell-content" style="display:flex;align-items:center;gap:4px">
-          <span class="hotel-icon-fallback"></span>
-          <button class="btn-hotel-choose" data-step-idx="${idx}" 
-            title="${t('chooseHotel')}"
-            style="background:#113f7a;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:4px">
-            🏨 ${t('chooseHotel').split(' ')[0]}
-          </button>
-        </div>`;
+        <button class="btn-hotel-choose" data-step-idx="${idx}" 
+          title="${t('chooseHotel')}"
+          style="background:#113f7a;color:#fff;border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:0.85rem;display:flex;align-items:center;gap:4px">
+          🏨 ${t('chooseHotel').split(' ')[0]}
+        </button>`;
       
-      // Charger la photo du JSON scrapé
+      // Essayer de charger la photo hôtel du JSON → remplace le bouton
       const pid = step.placeId || step.place_id;
-      if (pid) {
-        loadHotelThumb(hotel, pid);
-        const obs = new MutationObserver(() => {
-          const img = hotel.querySelector('.hotel-thumb');
-          const fb = hotel.querySelector('.hotel-icon-fallback');
-          if (img && fb) fb.style.display = 'none';
-          obs.disconnect();
-        });
-        obs.observe(hotel, { childList: true, subtree: true });
+      if (pid && window.ORT_HOTELS && ORT_HOTELS.loadHotelsForPlace) {
+        ORT_HOTELS.loadHotelsForPlace(pid).then(data => {
+          if (!data || !data.hotels || !data.hotels.length) return;
+          const imgUrl = data.hotels[0].imageUrl;
+          if (!imgUrl) return;
+          hotel.innerHTML = `<img class="hotel-thumb-lg" src="${imgUrl}" alt="${_esc(data.hotels[0].name || '')}" title="${_esc(data.hotels[0].name || t('chooseHotel'))}" onerror="this.style.display='none'">`;
+          // Re-attacher le click sur l'image
+          const img = hotel.querySelector('.hotel-thumb-lg');
+          if (img) {
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (typeof openHotelsModal === 'function') openHotelsModal(step, idx);
+            });
+          }
+        }).catch(() => {});
       }
       
-      // Handler pour ouvrir la modale hôtels
+      // Handler sur le bouton "Voir" (visible tant que la photo n'a pas chargé)
       setTimeout(() => {
         const btn = hotel.querySelector('.btn-hotel-choose');
         if (btn) {
@@ -6559,8 +6534,6 @@ dateCell.style.textAlign='left';
             e.stopPropagation();
             if (typeof openHotelsModal === 'function') {
               openHotelsModal(step, idx);
-            } else {
-              console.warn('[HOTELS] openHotelsModal non disponible');
             }
           });
         }
