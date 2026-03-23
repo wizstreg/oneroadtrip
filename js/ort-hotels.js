@@ -107,8 +107,18 @@
     }
     
     // Fallback manuel - Carte interactive Stay22
-    const lat = coords[0];
-    const lng = coords[1];
+    const lat = parseFloat(coords[0]) || 0;
+    const lng = parseFloat(coords[1]) || 0;
+    if (!lat || !lng) {
+      // Pas de coords valides, utiliser l'adresse seule
+      const params = new URLSearchParams({
+        aid: CONFIG.stay22AID,
+        address: placeName,
+        maincolor: '113f7a',
+        markerimage: 'https://www.oneroadtrip.com/assets/marker-ort.png'
+      });
+      return 'https://www.stay22.com/embed/gm?' + params.toString();
+    }
     
     const params = new URLSearchParams({
       aid: CONFIG.stay22AID,
@@ -133,8 +143,8 @@
     const hotelSlug = match[2];
     const langSuffix = getBookingLangSuffix();
     
-    // Lien Booking direct avec TON AID - Le script LMA Stay22 va le tracker automatiquement
-    return `https://www.booking.com/hotel/${hotelCountry}/${hotelSlug}.${langSuffix}.html?aid=${CONFIG.stay22AID}`;
+    // Lien Booking PROPRE sans aid - Le script LMA Stay22 va ajouter le tracking automatiquement
+    return `https://www.booking.com/hotel/${hotelCountry}/${hotelSlug}.${langSuffix}.html`;
   }
 
   // === CHARGEMENT DES DONNÉES ===
@@ -290,7 +300,9 @@
     const placeName = step?.name || 'cette destination';
     const placeId = step?.place_id;
     // Gérer à la fois step.coords (hotels_scrape.json) et step.lat/lon (roadtrip)
-    const coords = step?.coords || (step?.lat && step?.lon ? [step.lat, step.lon] : [0, 0]);
+    const sLat = parseFloat(step?.lat || step?.latitude) || 0;
+    const sLng = parseFloat(step?.lng || step?.lon || step?.longitude) || 0;
+    const coords = step?.coords || (sLat && sLng ? [sLat, sLng] : [0, 0]);
     
     console.log('[ORT-HOTELS] openHotelsModal - step:', {
       name: step?.name,

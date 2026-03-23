@@ -56,13 +56,20 @@
     }
     .metrics{ display:flex; gap:16px; align-items:baseline; flex-wrap:wrap; margin:4px 0 8px 0 }
     .metric{ display:flex; gap:8px; align-items:baseline }
-    .metric .num{ font-weight:900; line-height:1; min-width:1ch }
+    .metric .num{ font-weight:900; line-height:1; min-width:3.5ch; text-align:right }
     .metric.rt .num{ font-size:clamp(26px, 4.2vw, 38px) }
     .metric.cty .num,
     .metric.plc .num{ font-size:clamp(20px, 3.5vw, 32px) }
     .metric.vis .num,
     .metric.act .num{ font-size:clamp(18px, 3vw, 28px) }
     .metric.users .num{ font-size:clamp(18px, 3vw, 28px) }
+
+    /* Subtitle apparition */
+    @keyframes subtitleFadeIn{
+      from{ opacity:0; transform:translateY(8px) }
+      to{ opacity:1; transform:translateY(0) }
+    }
+    .subtitle-line{ text-align:center }
     .metric .lbl{ font-size:clamp(13px, 2vw, 17px); opacity:.95 }
 
     /* Footer dans le hero */
@@ -488,13 +495,15 @@
       .hero > .content{ padding:12px 16px; max-width:100%; text-align:center }
       .headline{ font-size:clamp(18px, 5vw, 26px); margin-bottom:6px; white-space:normal }
       .metrics{ 
+        display:grid !important;
+        grid-template-columns:repeat(3, auto);
         justify-content:center;
-        gap:6px 14px; 
-        margin:4px 0 6px;
+        gap:2px 8px; 
+        margin:2px 0 4px;
       }
-      .metric{ gap:5px }
-      .metric .num{ font-size:clamp(18px, 4.5vw, 26px) !important }
-      .metric .lbl{ font-size:clamp(11px, 2.8vw, 14px) }
+      .metric{ gap:3px; justify-content:center }
+      .metric .num{ font-size:clamp(14px, 3.5vw, 19px) !important; min-width:auto }
+      .metric .lbl{ font-size:clamp(9px, 2.2vw, 11px) }
       .features{ display:none }
     }
       .features li{ margin:8px 0 }
@@ -559,13 +568,10 @@
       .hero > .content{ padding:8px 10px }
       .headline{ font-size:clamp(16px, 4.5vw, 22px) }
       .metrics{
-        display:grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap:4px 10px;
+        gap:2px 6px;
       }
-      .metric.rt{ grid-column: span 2; justify-self:center }
-      .metric .num{ font-size:clamp(16px, 4vw, 22px) !important }
-      .metric .lbl{ font-size:clamp(10px, 2.5vw, 12px) }
+      .metric .num{ font-size:clamp(13px, 3.2vw, 17px) !important }
+      .metric .lbl{ font-size:clamp(8px, 2vw, 10px) }
     }
     /* Mode paysage sur mobile */
     @media (max-width: 768px) and (orientation: landscape) {
@@ -852,7 +858,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"pays",
         lbl_plc:"étapes",
         lbl_vis:"visites",
-        lbl_act:"activités", lbl_users:"voyageurs",
+        lbl_act:"activités", lbl_users:"voyageurs", subtitle:"Consultez, modifiez, complétez, partagez nos itinéraires ou créez le vôtre de toutes pièces. Importez vos réservations, éditez votre carnet de voyage et consultez votre voyage hors ligne.",
         how_title:"Comment ça marche ?",
         how_wip:"🚧 <strong>Site en construction</strong> — OneRoadTrip est encore en développement actif. Certaines fonctionnalités peuvent présenter des bugs — vos retours à <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> sont précieux et nous aideront à améliorer l'outil.",
         how_mobile:"📱 <strong>Le mode mobile est considérablement allégé.</strong> Nous vous conseillons de préparer vos voyages sur ordinateur ou tablette, puis de consulter vos itinéraires sur mobile une fois sur place.",
@@ -916,7 +922,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"countries",
         lbl_plc:"stages",
         lbl_vis:"visits",
-        lbl_act:"activities", lbl_users:"travelers",
+        lbl_act:"activities", lbl_users:"travelers", subtitle:"Browse, edit, complete, share our itineraries or build yours from scratch. Import your bookings, create your travel journal and access your trip offline.",
         how_title:"How does it work?",
         how_wip:"🚧 <strong>Site under construction</strong> — OneRoadTrip is still in active development. Some features may have bugs — your feedback at <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> is valuable and will help us improve the tool.",
         how_mobile:"📱 <strong>The mobile version is significantly lighter.</strong> We recommend preparing your trips on a computer or tablet, then viewing your itineraries on mobile once you're there.",
@@ -980,7 +986,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"paesi",
         lbl_plc:"tappe",
         lbl_vis:"visite",
-        lbl_act:"attività", lbl_users:"viaggiatori",
+        lbl_act:"attività", lbl_users:"viaggiatori", subtitle:"Consulta, modifica, completa, condividi i nostri itinerari o crea il tuo da zero. Importa le tue prenotazioni, crea il tuo diario di viaggio e consulta il tuo viaggio offline.",
         how_title:"Come funziona?",
         how_wip:"🚧 <strong>Sito in costruzione</strong> — OneRoadTrip è ancora in sviluppo attivo. Alcune funzionalità potrebbero presentare bug — i vostri feedback a <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> sono preziosi e ci aiuteranno a migliorare lo strumento.",
         how_mobile:"📱 <strong>La versione mobile è notevolmente alleggerita.</strong> Vi consigliamo di preparare i vostri viaggi su computer o tablet, poi consultare gli itinerari su mobile una volta sul posto.",
@@ -1044,7 +1050,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"países",
         lbl_plc:"etapas",
         lbl_vis:"visitas",
-        lbl_act:"actividades", lbl_users:"viajeros",
+        lbl_act:"actividades", lbl_users:"viajeros", subtitle:"Consulta, modifica, completa, comparte nuestros itinerarios o crea el tuyo desde cero. Importa tus reservas, edita tu diario de viaje y consulta tu viaje sin conexión.",
         how_title:"¿Cómo funciona?",
         how_wip:"🚧 <strong>Sitio en construcción</strong> — OneRoadTrip está aún en desarrollo activo. Algunas funcionalidades pueden tener errores — vuestros comentarios a <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> son valiosos y nos ayudarán a mejorar la herramienta.",
         how_mobile:"📱 <strong>La versión móvil está considerablemente aligerada.</strong> Os recomendamos preparar vuestros viajes en ordenador o tablet, y luego consultar los itinerarios en móvil una vez allí.",
@@ -1108,7 +1114,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"países",
         lbl_plc:"etapas",
         lbl_vis:"visitas",
-        lbl_act:"atividades", lbl_users:"viajantes",
+        lbl_act:"atividades", lbl_users:"viajantes", subtitle:"Consulte, modifique, complete, partilhe os nossos itinerários ou crie o seu do zero. Importe as suas reservas, edite o seu diário de viagem e consulte a sua viagem offline.",
         how_title:"Como funciona?",
         how_wip:"🚧 <strong>Site em construção</strong> — OneRoadTrip ainda está em desenvolvimento ativo. Algumas funcionalidades podem ter bugs — os vossos comentários para <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> são valiosos e ajudar-nos-ão a melhorar a ferramenta.",
         how_mobile:"📱 <strong>A versão móvel está consideravelmente aliviada.</strong> Recomendamos preparar as vossas viagens no computador ou tablet, e depois consultar os itinerários no telemóvel uma vez no local.",
@@ -1170,7 +1176,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         lbl_cty:"بلدان",
         lbl_plc:"مراحل",
         lbl_vis:"زيارات",
-        lbl_act:"أنشطة", lbl_users:"مسافرون",
+        lbl_act:"أنشطة", lbl_users:"مسافرون", subtitle:"تصفّح، عدّل، أكمل، شارك مساراتنا أو أنشئ مسارك الخاص من الصفر. استورد حجوزاتك، أنشئ دفتر رحلتك واستعرض رحلتك بدون إنترنت.",
         how_title:"كيف يعمل؟",
         how_wip:"🚧 <strong>الموقع قيد الإنشاء</strong> — لا يزال OneRoadTrip قيد التطوير النشط. قد تحتوي بعض الميزات على أخطاء — ملاحظاتكم على <a href='mailto:contact@oneroadtrip.fr'>contact@oneroadtrip.fr</a> قيّمة وستساعدنا على تحسين الأداة.",
         how_mobile:"📱 <strong>نسخة الجوال مخففة بشكل كبير.</strong> ننصحكم بإعداد رحلاتكم على الكمبيوتر أو الجهاز اللوحي، ثم مشاهدة المسارات على الجوال عند الوصول.",
@@ -1257,6 +1263,7 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
         <section class="hero" role="banner" aria-label="Hero OneRoadTrip">
           <div class="content anim-rise">
             <h1 class="headline" style="--d:0ms">${t.title}</h1>
+            <p class="subtitle-line" style="font-size:clamp(11px,1.6vw,14px);margin:3px auto 6px;line-height:1.5;max-width:800px;color:#fef3c7;font-weight:500;animation:subtitleFadeIn 1.5s ease-out 0.5s both;">${t.subtitle}</p>
 
             <div class="metrics" aria-label="Chiffres clés" style="--d:120ms">
               <div class="metric rt">
@@ -1365,51 +1372,18 @@ console.log('[ORT-I18N-MODES] ✅ Chargé inline');
       const targets = [stats.itineraries, stats.countries, stats.places, stats.visits, stats.activities];
       animateCounters(nodes, targets, 4000);
 
-      // Compteur voyageurs : animation immédiate + Firestore REST en arrière-plan
-      const BASE_COUNT = 18756;
+      // Compteur voyageurs
       const nUsersEl = document.getElementById('nUsers');
       if (nUsersEl) {
-        animateCounters([nUsersEl], [BASE_COUNT], 4000);
-        
+        animateCounters([nUsersEl], [3670], 4000);
         (async function() {
           try {
-            // Récupérer le projectId depuis l'endpoint env
-            const envRes = await fetch('/.netlify/functions/env');
-            if (!envRes.ok) return;
-            const env = await envRes.json();
-            const projectId = env.ORT_FB_PROJECTID;
-            if (!projectId) return;
-            
-            const docUrl = 'https://firestore.googleapis.com/v1/projects/' + projectId + '/databases/(default)/documents/counters/visitor_count';
-            
-            // Incrémenter si première visite de la session
-            if (!sessionStorage.getItem('ort_visitor_counted')) {
-              // Lire la valeur actuelle
-              let currentCount = 0;
-              try {
-                const r = await fetch(docUrl);
-                if (r.ok) {
-                  const d = await r.json();
-                  currentCount = parseInt(d.fields?.count?.integerValue || '0', 10);
-                }
-              } catch(e) {}
-              
-              // Écrire la nouvelle valeur (+57)
-              const newCount = currentCount + 57;
-              await fetch(docUrl, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fields: { count: { integerValue: String(newCount) }, updated_at: { stringValue: new Date().toISOString() } } })
-              });
-              sessionStorage.setItem('ort_visitor_counted', '1');
-            }
-            
-            // Lire et afficher le vrai total
-            const res = await fetch(docUrl);
+            const already = sessionStorage.getItem('ort_vc');
+            const res = await fetch('/.netlify/functions/visitor-count' + (already ? '' : '?i=1'));
             if (res.ok) {
               const data = await res.json();
-              const storedCount = parseInt(data.fields?.count?.integerValue || '0', 10);
-              nUsersEl.textContent = (BASE_COUNT + storedCount).toLocaleString();
+              if (data.count) nUsersEl.textContent = data.count.toLocaleString();
+              if (!already) sessionStorage.setItem('ort_vc', '1');
             }
           } catch(e) {}
         })();
