@@ -5128,7 +5128,7 @@ function resetUsedPhotos() {
 }
 
 // Charger une image avec timeout et fallback
-function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
+function loadImageWithFallback(imgElement, urls, timeoutMs = 2500) {
   if (!urls || urls.length === 0) {
     imgElement.src = PLACEHOLDER_IMG;
     return;
@@ -5136,9 +5136,12 @@ function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
   
   let currentIndex = 0;
   let timeoutId = null;
+  let settled = false;
   
   function tryNext() {
+    if (settled) return;
     if (currentIndex >= urls.length) {
+      settled = true;
       imgElement.src = PLACEHOLDER_IMG;
       return;
     }
@@ -5149,17 +5152,26 @@ function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
     // Clear previous timeout
     if (timeoutId) clearTimeout(timeoutId);
     
-    // Set timeout pour passer à la suivante si trop lent
+    // Timeout plus court pour passer vite à la suivante
     timeoutId = setTimeout(() => {
       console.log(`[PHOTO] Timeout pour ${url.substring(0, 50)}..., essai suivant`);
       tryNext();
     }, timeoutMs);
     
     imgElement.onload = () => {
+      if (settled) return;
       if (timeoutId) clearTimeout(timeoutId);
+      // Vérifier que l'image n'est pas corrompue (0x0 ou trop petite)
+      if (imgElement.naturalWidth < 2 || imgElement.naturalHeight < 2) {
+        console.log(`[PHOTO] Image corrompue (${imgElement.naturalWidth}x${imgElement.naturalHeight}): ${url.substring(0, 50)}...`);
+        tryNext();
+        return;
+      }
+      settled = true;
     };
     
     imgElement.onerror = () => {
+      if (settled) return;
       if (timeoutId) clearTimeout(timeoutId);
       console.log(`[PHOTO] Erreur pour ${url.substring(0, 50)}..., essai suivant`);
       tryNext();

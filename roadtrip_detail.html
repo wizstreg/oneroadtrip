@@ -5342,6 +5342,64 @@ function carouselNavPopup(direction) {
 }
 window.carouselNavPopup = carouselNavPopup;
 
+// Retirer une slide cassée du carrousel et recalculer
+function removeCarouselSlide(imgEl) {
+  const slide = imgEl.closest('.carousel-slide');
+  if (!slide) return;
+  const carousel = slide.closest('[data-total]');
+  if (!carousel) { slide.remove(); return; }
+  
+  const wasActive = slide.classList.contains('active');
+  slide.remove();
+  
+  // Recalculer les slides restantes
+  const remaining = carousel.querySelectorAll('.carousel-slide');
+  const dots = carousel.querySelectorAll('.carousel-dot');
+  const counter = carousel.querySelector('.carousel-counter');
+  
+  if (remaining.length === 0) {
+    // Plus aucune image — afficher placeholder
+    carousel.innerHTML = '<div class="no-photo" style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;font-size:0.85rem">📷</div>';
+    return;
+  }
+  
+  // Mettre à jour le total
+  carousel.dataset.total = remaining.length;
+  
+  // Re-indexer les slides et dots
+  remaining.forEach((s, i) => s.dataset.index = i);
+  
+  // Si la slide active a été retirée, activer la première
+  if (wasActive) {
+    remaining[0].classList.add('active');
+    carousel.dataset.current = '0';
+  }
+  
+  // Supprimer le dernier dot (ou recréer les dots)
+  if (dots.length > remaining.length) {
+    const dotsContainer = carousel.querySelector('.carousel-dots');
+    if (dotsContainer) {
+      dotsContainer.innerHTML = remaining.length > 1 
+        ? Array.from({length: remaining.length}, (_, i) => `<div class="carousel-dot ${i === parseInt(carousel.dataset.current) ? 'active' : ''}" data-index="${i}"></div>`).join('')
+        : '';
+    }
+  }
+  
+  // Cacher les boutons nav si une seule image reste
+  if (remaining.length <= 1) {
+    carousel.querySelectorAll('.carousel-btn').forEach(b => b.style.display = 'none');
+    const dotsContainer = carousel.querySelector('.carousel-dots');
+    if (dotsContainer) dotsContainer.style.display = 'none';
+  }
+  
+  // Mettre à jour le compteur
+  const cur = parseInt(carousel.dataset.current) || 0;
+  if (counter) counter.textContent = `${cur + 1}/${remaining.length}`;
+  
+  console.log(`[PHOTO] Slide cassée retirée, ${remaining.length} restante(s)`);
+}
+window.removeCarouselSlide = removeCarouselSlide;
+
 // Navigation par clic sur les dots
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('carousel-dot')) {
@@ -7282,7 +7340,7 @@ function showStepPreview(step){
   if (imgs.length) {
     const carouselId = 'popup-carousel';
     const slides = imgs.map((url, i) => 
-      `<div class="carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}"><img src="${url}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>`
+      `<div class="carousel-slide ${i === 0 ? 'active' : ''}" data-index="${i}"><img src="${url}" alt="" loading="lazy" onerror="removeCarouselSlide(this)"></div>`
     ).join('');
     const dots = imgs.length > 1 ? imgs.map((_, i) => 
       `<div class="carousel-dot ${i === 0 ? 'active' : ''}" data-index="${i}"></div>`
