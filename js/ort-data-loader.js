@@ -149,6 +149,9 @@
         cc: cc.toUpperCase(),
         originalItinId: itinId,
         steps: steps,
+        notes: itin.notes || null,
+        practical_context: itin.practical_context || null,
+        nearby_itins: itin.nearby_itins || null,
         raw: itin
       };
     },
@@ -193,6 +196,9 @@
         cc: cc.toUpperCase(),
         originalItinId: composedId,
         steps: allSteps,
+        notes: null,
+        practical_context: null,
+        nearby_itins: null,
         raw: null
       };
     },
@@ -251,6 +257,9 @@
         cc: cc,
         originalItinId: rtKey,
         steps: steps,
+        notes: toUse.notes || null,
+        practical_context: toUse.practical_context || null,
+        nearby_itins: toUse.nearby_itins || null,
         raw: toUse
       };
     },
@@ -284,6 +293,9 @@
               cc: tripData.cc || tripData.country || '',
               originalItinId: tripData.originalItinId || tripId,
               steps: tripData.steps,
+              notes: tripData.notes || null,
+              practical_context: tripData.practical_context || null,
+              nearby_itins: tripData.nearby_itins || null,
               raw: tripData
             };
           }
@@ -333,6 +345,9 @@
         cc: tripData.cc || tripData.country || '',
         originalItinId: tripData.originalItinId || tripId,
         steps: steps,
+        notes: tripData.notes || null,
+        practical_context: tripData.practical_context || null,
+        nearby_itins: tripData.nearby_itins || null,
         raw: tripData
       };
     },

@@ -709,6 +709,7 @@ body.view-map-only {
 }
 body.view-map-only .main{display:block}
 body.view-map-only .main>section{display:none !important}
+body.view-map-only footer{display:none !important}
 body.view-map-only .main>aside{
   width:100% !important;
   position: fixed;
@@ -1937,6 +1938,18 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
   max-height: 500px;
   margin-top: 6px;
 }
+.pc-two-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.pc-note-text {
+  font-size: 0.85rem;
+  color: #334155;
+  line-height: 1.5;
+  display: block;
+  padding: 2px 0;
+}
 .pc-highlight-tag {
   background: #fff;
   border: 1px solid #7dd3fc;
@@ -1949,6 +1962,7 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
   .pc-grid { flex-direction: column; gap: 8px; }
   .pc-highlights-list { flex-direction: column; }
   .pc-highlight-tag { width: 100%; text-align: center; }
+  .pc-two-cols { grid-template-columns: 1fr; }
 }
 
 /* === PRACTICAL INFO (sous les activités) === */
@@ -2461,7 +2475,7 @@ if (typeof t !== 'function') {
 
 <header>
     <a class="brandlink" id="homeLink" href="#">
-    <img src="../assets/symbol.webp" alt="Logo"><div class="brand">OneRoadTrip</div>
+    <img src="../assets/symbol.webp" alt="Logo" width="80" height="80"><div class="brand">OneRoadTrip</div>
   </a>
   <div class="spacer"></div>
 
@@ -2660,6 +2674,33 @@ function noteClass(v){ if(v==null) return ''; if(v<4) return 'note-bad'; if(v<7)
 
 // I18N tooltips - Priorité: URL > localStorage > document.lang
 const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+
+// Traductions pour tous les textes UI hardcodés
+const _T = {
+  deleteStep: {fr:'Supprimer cette étape ?',en:'Delete this step?',es:'¿Eliminar esta etapa?',it:'Eliminare questa tappa?',pt:'Eliminar esta etapa?',ar:'حذف هذه المرحلة؟'},
+  loadingSharedTrip: {fr:'⏳ Chargement du voyage partagé...',en:'⏳ Loading shared trip...',es:'⏳ Cargando viaje compartido...',it:'⏳ Caricamento viaggio condiviso...',pt:'⏳ Carregando viagem partilhada...',ar:'⏳ جاري تحميل الرحلة المشتركة...'},
+  sharedTrip: {fr:'Voyage partagé',en:'Shared trip',es:'Viaje compartido',it:'Viaggio condiviso',pt:'Viagem partilhada',ar:'رحلة مشتركة'},
+  noDateBooking: {fr:'Pas de date pour cette réservation',en:'No date for this booking',es:'Sin fecha para esta reserva',it:'Nessuna data per questa prenotazione',pt:'Sem data para esta reserva',ar:'لا يوجد تاريخ لهذا الحجز'},
+  pdfNotLoaded: {fr:'Module PDF non chargé',en:'PDF module not loaded',es:'Módulo PDF no cargado',it:'Modulo PDF non caricato',pt:'Módulo PDF não carregado',ar:'وحدة PDF غير محملة'},
+  calendarNotAvailable: {fr:'Module calendrier non disponible',en:'Calendar module not available',es:'Módulo de calendario no disponible',it:'Modulo calendario non disponibile',pt:'Módulo de calendário não disponível',ar:'وحدة التقويم غير متاحة'},
+  itineraryNotFound: {fr:'Itinéraire introuvable',en:'Itinerary not found',es:'Itinerario no encontrado',it:'Itinerario non trovato',pt:'Itinerário não encontrado',ar:'مسار الرحلة غير موجود'},
+  loginToEditTitle: {fr:'Connectez-vous pour modifier le titre',en:'Sign in to edit the title',es:'Inicie sesión para editar el título',it:'Accedi per modificare il titolo',pt:'Inicie sessão para editar o título',ar:'سجّل الدخول لتعديل العنوان'},
+  noTripSelected: {fr:'Aucun roadtrip sélectionné',en:'No road trip selected',es:'Ningún road trip seleccionado',it:'Nessun road trip selezionato',pt:'Nenhum road trip selecionado',ar:'لم يتم اختيار رحلة'},
+  saving: {fr:'⏳ Sauvegarde...',en:'⏳ Saving...',es:'⏳ Guardando...',it:'⏳ Salvataggio...',pt:'⏳ Guardando...',ar:'⏳ جاري الحفظ...'},
+  deleting: {fr:'⏳ Suppression...',en:'⏳ Deleting...',es:'⏳ Eliminando...',it:'⏳ Eliminazione...',pt:'⏳ Eliminando...',ar:'⏳ جاري الحذف...'},
+  writeSource: {fr:'🔴 Écrire source',en:'🔴 Write source',es:'🔴 Escribir fuente',it:'🔴 Scrivi sorgente',pt:'🔴 Escrever fonte',ar:'🔴 كتابة المصدر'},
+  saveSource: {fr:'💾 Source',en:'💾 Source',es:'💾 Fuente',it:'💾 Sorgente',pt:'💾 Fonte',ar:'💾 المصدر'},
+  saveSourceTooltip: {fr:'Sauvegarder dans le fichier source (admin)',en:'Save to source file (admin)',es:'Guardar en archivo fuente (admin)',it:'Salva nel file sorgente (admin)',pt:'Guardar no ficheiro fonte (admin)',ar:'حفظ في الملف المصدر (مسؤول)'},
+  previewFirst: {fr:'Erreur : veuillez prévisualiser avant de valider',en:'Error: please preview before validating',es:'Error: previsualice antes de validar',it:'Errore: visualizza l\'anteprima prima di confermare',pt:'Erro: pré-visualize antes de validar',ar:'خطأ: يرجى المعاينة قبل التأكيد'},
+  invalidFormat: {fr:'❌ Format invalide. Utilisez: CC::region::slug',en:'❌ Invalid format. Use: CC::region::slug',es:'❌ Formato inválido. Use: CC::region::slug',it:'❌ Formato non valido. Usa: CC::region::slug',pt:'❌ Formato inválido. Use: CC::region::slug',ar:'❌ تنسيق غير صالح. استخدم: CC::region::slug'},
+  deleteDefinitive: {fr:'⚠️ SUPPRESSION DÉFINITIVE',en:'⚠️ PERMANENT DELETION',es:'⚠️ ELIMINACIÓN DEFINITIVA',it:'⚠️ ELIMINAZIONE DEFINITIVA',pt:'⚠️ ELIMINAÇÃO DEFINITIVA',ar:'⚠️ حذف نهائي'},
+  deleteConfirmMsg: {fr:'Cet itinéraire sera supprimé de TOUTES les langues.\n\nConfirmer ?',en:'This itinerary will be deleted from ALL languages.\n\nConfirm?',es:'Este itinerario se eliminará de TODOS los idiomas.\n\n¿Confirmar?',it:'Questo itinerario verrà eliminato da TUTTE le lingue.\n\nConfermare?',pt:'Este itinerário será eliminado de TODAS as línguas.\n\nConfirmar?',ar:'سيتم حذف هذا المسار من جميع اللغات.\n\nتأكيد؟'},
+  addToOrder: {fr:'Ajouter au nouvel ordre',en:'Add to new order',es:'Añadir al nuevo orden',it:'Aggiungi al nuovo ordine',pt:'Adicionar à nova ordem',ar:'إضافة إلى الترتيب الجديد'},
+  removeReintegrate: {fr:'Supprimer / Réintégrer',en:'Remove / Reintegrate',es:'Eliminar / Reintegrar',it:'Rimuovi / Reintegra',pt:'Remover / Reintegrar',ar:'حذف / إعادة دمج'},
+  unsavedChanges: {fr:'⚠️ Modifications non sauvegardées',en:'⚠️ Unsaved changes',es:'⚠️ Cambios no guardados',it:'⚠️ Modifiche non salvate',pt:'⚠️ Alterações não guardadas',ar:'⚠️ تغييرات غير محفوظة'}
+};
+function _t(key){ return (_T[key]||{})[LANG] || (_T[key]||{}).en || (_T[key]||{}).fr || key; }
+
 const TIP_SAVE = ({fr:'Sauvegarder ce road trip',en:'Save this road trip',it:'Salva questo road trip',es:'Guardar este road trip',pt:'Guardar este road trip',ar:'حفظ هذه الرحلة'})[LANG] || 'Save';
 const TIP_FLAG = ({
   fr:'Signaler un RT ou une erreur',
@@ -3101,7 +3142,7 @@ pdfBtnRow.addEventListener('click', () => {
     }
     ORT_PDF.export(state, lang);
   } else {
-    alert('Module PDF non chargé ou state non disponible');
+    alert(_t('pdfNotLoaded'));
   }
 });
 // Insérer AVANT Outils
@@ -3491,8 +3532,7 @@ hdr.appendChild(row);
 
   <div class="main">
     <section class="card">
-     <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-bottom:12px">
-  <div class="small" data-i18n="dragToReorder">Glissez pour réordonner</div>
+     <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-bottom:12px">
   <div style="display:flex;gap:6px;">
     <button id="btnListFull" class="iconbtn" type="button" data-i18n-title="fullscreenList" title="Plein écran liste (2 colonnes)" style="font-size:16px;padding:4px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;cursor:pointer;">⤢</button>
   </div>
@@ -4039,7 +4079,7 @@ function markUnsavedChanges() {
     const div = document.createElement('div');
     div.id = 'unsavedIndicator';
     div.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#f59e0b;color:#000;padding:8px 16px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.2);';
-    div.innerHTML = `${window.t ? window.t('unsavedChanges') : '⚠️ Modifications non sauvegardées'} <button onclick="document.getElementById('unsavedIndicator').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>`;
+    div.innerHTML = `${window.t ? window.t('unsavedChanges') : _t('unsavedChanges')} <button onclick="document.getElementById('unsavedIndicator').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:16px;padding:0 0 0 8px;">✕</button>`;
     document.body.appendChild(div);
   }
   
@@ -4307,7 +4347,7 @@ function addBookingToCalendar(bookingIdx) {
     const end = booking.date_end || start;
     
     if (!start) {
-      alert('Pas de date pour cette réservation');
+      alert(_t('noDateBooking'));
       return;
     }
     
@@ -4334,7 +4374,7 @@ function addAllBookingsToCalendar() {
       ORT_CALENDAR.downloadICS(result.ics, 'reservations.ics');
     }
   } else {
-    alert('Module calendrier non disponible');
+    alert(_t('calendarNotAvailable'));
   }
 }
 
@@ -4515,7 +4555,7 @@ function initApp(){
   const loadingBanner = document.createElement('div');
   loadingBanner.id = 'shareLoadingBanner';
   loadingBanner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#3b82f6;color:#fff;padding:10px;text-align:center;z-index:10001;font-weight:600';
-  loadingBanner.textContent = '⏳ Chargement du voyage partagé...';
+  loadingBanner.textContent = _t('loadingSharedTrip');
   document.body.appendChild(loadingBanner);
   
   try {
@@ -4540,7 +4580,7 @@ function initApp(){
         if (tripData.steps && tripData.steps.length > 0) {
           window.state = window.state || {};
           window.state.steps = tripData.steps;
-          window.state.title = tripData.title || 'Voyage partagé';
+          window.state.title = tripData.title || _t('sharedTrip');
           window.state.cc = tripData.country || 'XX';
           window.state.country = tripData.country || 'XX';
           window.state.tripId = tripData.tripId || tripData.id;
@@ -4685,6 +4725,21 @@ console.log('[LOG-CONTROLE][RT-DETAIL] RT_KEY:', RT_KEY);
 // PHOTOS_CACHE est géré par ort-data-loader.js (window.PHOTOS_CACHE)
 if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
 var PHOTOS_CACHE = window.PHOTOS_CACHE;
+
+// Optimiser les URLs de photos pour réduire la bande passante
+// Pexels: ajouter &w=600 pour limiter la taille (au lieu de l'original 3000+px)
+window.optimizePhotoUrl = function(url, maxWidth) {
+  if (!url || typeof url !== 'string') return url;
+  maxWidth = maxWidth || 600;
+  if (url.includes('images.pexels.com') && !url.includes('&w=')) {
+    return url + '&w=' + maxWidth + '&h=' + Math.round(maxWidth * 0.67) + '&fit=crop';
+  }
+  return url;
+};
+window.optimizePhotoUrls = function(urls, maxWidth) {
+  if (!Array.isArray(urls)) return urls;
+  return urls.map(u => window.optimizePhotoUrl(u, maxWidth));
+};
 
 const state={
   title:'Roadtrip', country:'XX', targetNights:0, steps:[],
@@ -5202,7 +5257,7 @@ window.applyListView = applyListView;
 
 async function loadPhotosJSON(){
   try{
-    const r=await fetch('./data/photos-json/photos_lieux.json',{cache:'no-store'});
+    const r=await fetch('./data/photos-json/photos_lieux.json');
     if(r.ok) {
       const data = await r.json() || {};
       Object.assign(window.PHOTOS_CACHE, data);
@@ -5220,7 +5275,7 @@ function getPhotosForStep(stepIndex, pid) {
     const userPhotos = ORT_TRIP_DATA.getStepPhotos(stepIndex);
     if (userPhotos && userPhotos.length > 0) {
       // Combiner: userPhotos d'abord, puis compléter avec photos catalogue
-      const catalogPhotos = getPhotosForPlace(pid) || [];
+      const catalogPhotos = optimizePhotoUrls(getPhotosForPlace(pid) || []);
       const combined = [...userPhotos];
       // Ajouter les photos catalogue qui ne sont pas déjà présentes
       catalogPhotos.forEach(p => {
@@ -5230,7 +5285,7 @@ function getPhotosForStep(stepIndex, pid) {
     }
   }
   // 2. Fallback: photos du catalogue
-  return getPhotosForPlace(pid) || [];
+  return optimizePhotoUrls(getPhotosForPlace(pid) || []);
 }
 
 // toSlug() → fourni par ort-utils.js
@@ -5487,7 +5542,7 @@ async function initFromItin(it){
         _distanceKmToNext: d.to_next_leg?.distance_km || 0,
         _roadType: d.to_next_leg?.road_type || null,
         _mapKeywords: Array.isArray(d.night?.map_keywords) ? d.night.map_keywords : [],
-        images:getPhotosForPlace(pid),
+        images:optimizePhotoUrls(getPhotosForPlace(pid)),
         description:visits.map(v=>v.text||v).join('. ')
       });
     }
@@ -5507,7 +5562,7 @@ async function initFromItin(it){
         _suggestedDays: suggestedDays,
         visits:p.visits||[],
         activities:p.activities||[],
-        images:getPhotosForPlace(pid),
+        images:optimizePhotoUrls(getPhotosForPlace(pid)),
         description:''
       };
     });
@@ -5658,15 +5713,19 @@ function renderPracticalContext() {
   if (!box) return;
   
   const pc = state._originalPracticalContext;
-  if (!pc) {
+  const notes = state._originalNotes;
+  
+  if (!pc && !notes) {
     box.classList.remove('show');
     return;
   }
   
   // Ne rien afficher si aucune info pertinente
-  const hasBestMonths = pc.best_months && pc.best_months.length;
-  const hasHighlights = pc.highlights && pc.highlights.length;
-  if (!hasBestMonths && !hasHighlights) {
+  const hasBestMonths = pc && pc.best_months && pc.best_months.length;
+  const hasHighlights = pc && pc.highlights && pc.highlights.length;
+  const hasNotes = notes && notes.trim().length > 0;
+  
+  if (!hasBestMonths && !hasHighlights && !hasNotes) {
     box.classList.remove('show');
     return;
   }
@@ -5677,27 +5736,56 @@ function renderPracticalContext() {
     return window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
   };
   
+  // I18N local pour "Notes"
+  const _lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
+  const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[_lang] || 'Notes';
+  
   let html = '';
   
-  // Best months (seule info "grid" conservée)
+  // Best months
   if (hasBestMonths) {
     const months = Array.isArray(pc.best_months) ? pc.best_months.join(', ') : pc.best_months;
     html += `<div class="pc-grid"><div class="pc-item"><span class="pc-icon">📅</span><span class="pc-label">${t('bestPeriod')}:</span><span class="pc-value">${months}</span></div></div>`;
   }
   
-  // Highlights
-  if (hasHighlights) {
+  // Notes + Highlights côte à côte si les deux existent, sinon pleine largeur
+  if (hasNotes && hasHighlights) {
+    html += `<div class="pc-two-cols">`;
+    // Notes
+    html += `<div class="pc-highlights${hasBestMonths ? '' : ' no-border'}">
+      <div class="pc-highlights-title" onclick="this.parentElement.classList.toggle('open')"><span class="pc-chevron">▶</span> 📝 ${notesLabel}</div>
+      <div class="pc-highlights-list"><span class="pc-note-text">${notes.replace(/\n/g,'<br>')}</span></div>
+    </div>`;
+    // Highlights
     html += `<div class="pc-highlights${hasBestMonths ? '' : ' no-border'}">
       <div class="pc-highlights-title" onclick="this.parentElement.classList.toggle('open')"><span class="pc-chevron">▶</span> ${t('highlights')}</div>
       <div class="pc-highlights-list">
         ${pc.highlights.map(h => `<span class="pc-highlight-tag">• ${h}</span>`).join('')}
       </div>
     </div>`;
+    html += `</div>`;
+  } else {
+    // Notes seules
+    if (hasNotes) {
+      html += `<div class="pc-highlights${hasBestMonths ? '' : ' no-border'}">
+        <div class="pc-highlights-title" onclick="this.parentElement.classList.toggle('open')"><span class="pc-chevron">▶</span> 📝 ${notesLabel}</div>
+        <div class="pc-highlights-list"><span class="pc-note-text">${notes.replace(/\n/g,'<br>')}</span></div>
+      </div>`;
+    }
+    // Highlights seuls
+    if (hasHighlights) {
+      html += `<div class="pc-highlights${hasBestMonths ? '' : ' no-border'}">
+        <div class="pc-highlights-title" onclick="this.parentElement.classList.toggle('open')"><span class="pc-chevron">▶</span> ${t('highlights')}</div>
+        <div class="pc-highlights-list">
+          ${pc.highlights.map(h => `<span class="pc-highlight-tag">• ${h}</span>`).join('')}
+        </div>
+      </div>`;
+    }
   }
   
   box.innerHTML = html;
   box.classList.add('show');
-  console.log('[PRACTICAL_CONTEXT] ✅ Affiché (best_months:', hasBestMonths, ', highlights:', hasHighlights, ')');
+  console.log('[PRACTICAL_CONTEXT] ✅ Affiché (notes:', hasNotes, ', best_months:', hasBestMonths, ', highlights:', hasHighlights, ')');
 }
 
 // === Alerte i18n : Nombre de nuits impossible à atteindre ===
@@ -6511,7 +6599,8 @@ dateCell.style.textAlign='left';
           if (!data || !data.hotels || !data.hotels.length) return;
           const imgUrl = data.hotels[0].imageUrl;
           if (!imgUrl) return;
-          hotel.innerHTML = `<img class="hotel-thumb-lg" src="${imgUrl}" alt="${_esc(data.hotels[0].name || '')}" title="${_esc(data.hotels[0].name || t('chooseHotel'))}" onerror="this.style.display='none'">`;
+          const thumbUrl = imgUrl.replace('square240', 'square60');
+          hotel.innerHTML = `<img class="hotel-thumb-lg" src="${thumbUrl}" alt="${_esc(data.hotels[0].name || '')}" title="${_esc(data.hotels[0].name || t('chooseHotel'))}" onerror="this.style.display='none'">`;
           // Re-attacher le click sur l'image
           const img = hotel.querySelector('.hotel-thumb-lg');
           if (img) {
@@ -6630,7 +6719,7 @@ dateCell.style.textAlign='left';
 
   row.appendChild(del);
   del.querySelector('button').addEventListener('click', () => {
-    if(confirm('Supprimer cette étape ?')) {
+    if(confirm(_t('deleteStep'))) {
       // Reindexer les bookings AVANT le splice
       if (typeof globalBookingManager !== 'undefined' && globalBookingManager && globalBookingManager.reindexAfterDelete) {
         globalBookingManager.reindexAfterDelete(idx);
@@ -6881,6 +6970,14 @@ function createStepDetailsPanel(step, idx) {
           step.activities.splice(itemIdx, 1);
         }
         renderRows();
+        // Ré-ouvrir le panneau après re-render
+        setTimeout(() => {
+          const wrapper = document.querySelector(`.step-wrapper[data-step-idx="${idx}"]`);
+          const newPanel = wrapper?.querySelector('.step-details-panel');
+          const toggle = wrapper?.querySelector('.step-expand-toggle');
+          if(newPanel) newPanel.classList.add('open');
+          if(toggle) toggle.classList.add('open');
+        }, 50);
         if(typeof scheduleAutosave === 'function') scheduleAutosave();
       });
     });
@@ -7426,7 +7523,7 @@ map=L.map('map', {
             nights: 1,
             visits: [],
             activities: [],
-            images: getPhotosForPlace(place.place_id)
+            images: optimizePhotoUrls(getPhotosForPlace(place.place_id))
           };
           // __sid unique dès la création (évite fusion/sélection double)
           newStep.__sid = (typeof ensureSid === 'function')
@@ -7851,7 +7948,7 @@ function openOtherPlaceDetails(p){
           nights: 1,
           visits: Array.isArray(p.visits)? p.visits : [],
           activities: Array.isArray(p.activities)? p.activities : [],
-          images: getPhotosForPlace(p.pid),
+          images: optimizePhotoUrls(getPhotosForPlace(p.pid)),
           description: (p.visits||[]).map(v=>v.text||v).join('. ')
         };
         // __sid unique dès la création
@@ -8179,7 +8276,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
             lon: place.lon,
             place_id: place.place_id,
             name: place.name,
-            images: getPhotosForPlace(place.place_id)
+            images: optimizePhotoUrls(getPhotosForPlace(place.place_id))
           });
           renderRows();
           toast(`✅ ${place.name}`);
@@ -8639,7 +8736,7 @@ const pid = `${item.countryCode}::${slugVar}`;
     nights: 1,
     visits: [],
     activities: [],
-    images: getPhotosForPlace(pid)
+    images: optimizePhotoUrls(getPhotosForPlace(pid))
   };
   newStep.__sid = (typeof ensureSid === 'function') ? ensureSid(newStep) : (crypto?.randomUUID?.() || ('S'+Date.now()+Math.random().toString(36).slice(2)));
   state.steps.push(newStep);
@@ -9260,7 +9357,7 @@ window.initSaveSourceButton = function(){
       
       // Valider le format
       if (!newId.includes('::')) {
-        toast('❌ Format invalide. Utilisez: CC::region::slug');
+        toast(_t('invalidFormat'));
         return;
       }
       
@@ -9373,7 +9470,7 @@ window.initSaveSourceButton = function(){
     try {
       clickedBtn.disabled = true;
       const origText = clickedBtn.textContent;
-      clickedBtn.textContent = '⏳ Sauvegarde...';
+      clickedBtn.textContent = _t('saving');
       
       const response = await fetch('/api/save-itinerary', {
         method: 'POST',
@@ -9402,7 +9499,7 @@ window.initSaveSourceButton = function(){
       toast(`❌ Erreur serveur: ${err.message}`);
       console.error('[SAVE SOURCE ERROR]', err);
       clickedBtn.disabled = false;
-      clickedBtn.textContent = '🔴 Écrire source';
+      clickedBtn.textContent = _t('writeSource');
     }
   }
   
@@ -9425,7 +9522,7 @@ window.initSaveSourceButton = function(){
     // Extraire le country code (premier segment)
     const parts = id.split('::');
     if(parts.length < 2) {
-      alert('❌ Format invalide. Utilisez: CC::region::slug');
+      alert(_t('invalidFormat'));
       return;
     }
     
@@ -9456,13 +9553,13 @@ window.initSaveSourceButton = function(){
       const cc = parts[0]?.toUpperCase();
       
       // Confirmation unique
-      if(!confirm(`⚠️ SUPPRESSION DÉFINITIVE\n\nItinéraire: ${itinId}\nPays: ${cc}\n\nCet itinéraire sera supprimé de TOUTES les langues.\n\nConfirmer ?`)) {
+      if(!confirm(`${_t('deleteDefinitive')}\n\nItinéraire: ${itinId}\nPays: ${cc}\n\n${_t('deleteConfirmMsg')}`)) {
         return;
       }
       
       btnDeleteItin.disabled = true;
       const origText = btnDeleteItin.textContent;
-      btnDeleteItin.textContent = '⏳ Suppression...';
+      btnDeleteItin.textContent = _t('deleting');
       
       try {
         const resp = await fetch('http://localhost:8030/api/delete-itinerary', {
@@ -9513,7 +9610,7 @@ window.initSaveSourceButton = function(){
       const id = itinId.trim();
       const parts = id.split('::');
       if(parts.length < 2) {
-        alert('❌ Format invalide. Utilisez: CC::region::slug');
+        alert(_t('invalidFormat'));
         return;
       }
       
@@ -9694,7 +9791,7 @@ await initFromItin(toUse);
     const isAdmin = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     
     if(!user && !isAdmin){
-      toast('Connectez-vous pour modifier le titre');
+      toast(_t('loginToEditTitle'));
       return;
     }
     
@@ -9729,8 +9826,8 @@ await initFromItin(toUse);
       const adminBtn = document.createElement('button');
       adminBtn.id = 'titleSaveSourceBtn';
       adminBtn.style.cssText = 'background:#f59e0b;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px';
-      adminBtn.textContent = '💾 Source';
-      adminBtn.title = 'Sauvegarder dans le fichier source (admin)';
+      adminBtn.textContent = _t('saveSource');
+      adminBtn.title = _t('saveSourceTooltip');
       btnWrap.appendChild(adminBtn);
       
       adminBtn.onclick = async () => {
@@ -9815,7 +9912,7 @@ await ensurePlacesIndex().catch(()=>{});
   }
   
   if(!CC||!ITIN_ID){
-state.title='Aucun roadtrip sélectionné';
+state.title=_t('noTripSelected');
 setTitleTranslated(state.title);
 return;
   }
@@ -9824,7 +9921,7 @@ return;
   if(!it){
     state.title='Roadtrip introuvable';
 setTitleTranslated(state.title);
-alert('Itinéraire introuvable');
+alert(_t('itineraryNotFound'));
 return;
 
   }
@@ -9978,7 +10075,56 @@ renderRows();
       "Unique Experiences":"Expériences uniques",
       unavailable:"Guide indisponible."
     },
-    en:{unavailable:"Guide unavailable."}
+    en:{
+      "Safety Warning":"Safety Warning",
+      "Best Time to Visit":"Best Time to Visit",
+      "Iconic Places to Visit":"Iconic Places",
+      "Best Transportation":"Transportation",
+      "Daily Budget for Two People":"Budget (2 ppl.)",
+      "Essential Tips":"Essential Tips",
+      "Unique Experiences":"Unique Experiences",
+      unavailable:"Guide unavailable."
+    },
+    es:{
+      "Safety Warning":"Advertencias de seguridad",
+      "Best Time to Visit":"Mejor época para visitar",
+      "Iconic Places to Visit":"Lugares emblemáticos",
+      "Best Transportation":"Transporte",
+      "Daily Budget for Two People":"Presupuesto (2 pers.)",
+      "Essential Tips":"Consejos esenciales",
+      "Unique Experiences":"Experiencias únicas",
+      unavailable:"Guía no disponible."
+    },
+    it:{
+      "Safety Warning":"Avvertenze di sicurezza",
+      "Best Time to Visit":"Periodo migliore",
+      "Iconic Places to Visit":"Luoghi emblematici",
+      "Best Transportation":"Trasporti",
+      "Daily Budget for Two People":"Budget (2 pers.)",
+      "Essential Tips":"Consigli essenziali",
+      "Unique Experiences":"Esperienze uniche",
+      unavailable:"Guida non disponibile."
+    },
+    pt:{
+      "Safety Warning":"Avisos de segurança",
+      "Best Time to Visit":"Melhor época para visitar",
+      "Iconic Places to Visit":"Lugares emblemáticos",
+      "Best Transportation":"Transportes",
+      "Daily Budget for Two People":"Orçamento (2 pes.)",
+      "Essential Tips":"Dicas essenciais",
+      "Unique Experiences":"Experiências únicas",
+      unavailable:"Guia indisponível."
+    },
+    ar:{
+      "Safety Warning":"تحذيرات أمنية",
+      "Best Time to Visit":"أفضل وقت للزيارة",
+      "Iconic Places to Visit":"أماكن بارزة",
+      "Best Transportation":"وسائل النقل",
+      "Daily Budget for Two People":"الميزانية (شخصان)",
+      "Essential Tips":"نصائح أساسية",
+      "Unique Experiences":"تجارب فريدة",
+      unavailable:"الدليل غير متاح."
+    }
   }[ui] || I18N_fallback();
   function I18N_fallback(){return {unavailable:"Guide unavailable."};}
 
@@ -11765,7 +11911,7 @@ newBtnCancel.addEventListener('click', () => {
       delete reorgState.previewSteps;
     } else {
       console.warn('[REORG-SAVE] ⚠️ Pas de previewSteps disponible');
-      alert('Erreur : veuillez prévisualiser avant de valider');
+      alert(_t('previewFirst'));
       return;
     }
 
@@ -12879,8 +13025,8 @@ setTimeout(function(){
       const adminBtn = document.createElement('button');
       adminBtn.id = 'titleSaveSourceBtn';
       adminBtn.style.cssText = 'background:#f59e0b;color:#fff;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px';
-      adminBtn.textContent = '💾 Source';
-      adminBtn.title = 'Sauvegarder dans le fichier source (admin)';
+      adminBtn.textContent = _t('saveSource');
+      adminBtn.title = _t('saveSourceTooltip');
       btnWrap.appendChild(adminBtn);
       
       adminBtn.onclick = async () => {

@@ -1846,7 +1846,7 @@ html, body {
   <button class="header-btn" id="btnLangHeader" aria-label="Langue" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">🌐</button>
   <button class="header-btn" id="btnSaveHeader" aria-label="Sauvegarder" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">💾</button>
   <button class="header-btn" id="btnShareHeader" aria-label="Partager" style="background:none;border:none;font-size:18px;cursor:pointer;padding:6px 10px;color:#fff;">🔗</button>
-  <button class="header-btn" id="btnUser" aria-label="Profil utilisateur" style="background:none;border:none;font-size:20px;cursor:pointer;padding:4px 8px;color:#fff;">👤</button>
+  <button class="header-btn" id="btnUser" aria-label="Profil utilisateur" style="background:none;border:none;cursor:pointer;padding:4px 8px;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
 </header>
 
 <!-- Main Content -->
@@ -1881,6 +1881,20 @@ html, body {
         <div class="label">Km</div>
       </div>
     </div>
+    <!-- Notes de l'itinéraire (remplies par JS si disponibles) -->
+    <div id="mobileNotesBox" style="display:none;margin:0 0 10px;background:#f0f9ff;border:1px solid #7dd3fc;border-radius:10px;overflow:hidden;">
+      <div id="mobileNotesToggle" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:0.85rem;font-weight:600;color:#0369a1;user-select:none;" onclick="this.parentElement.classList.toggle('open')">
+        <span style="font-size:0.7rem;transition:transform 0.2s;display:inline-block" class="notes-chevron">▶</span> 📝 <span id="mobileNotesLabel">Notes</span>
+      </div>
+      <div id="mobileNotesContent" style="overflow:hidden;transition:max-height 0.3s ease;padding:0 14px;">
+        <div id="mobileNotesText" style="font-size:0.85rem;color:#334155;line-height:1.5;padding-bottom:12px;"></div>
+      </div>
+    </div>
+    <style>
+    #mobileNotesContent{max-height:0}
+    #mobileNotesBox.open .notes-chevron{transform:rotate(90deg)}
+    #mobileNotesBox.open #mobileNotesContent{max-height:500px}
+    </style>
     <!-- ═══ RÉSUMÉ IA ═══ -->
     <style>
     #aiSummaryBox{margin:12px 0;border:2px solid #e2e8f0;border-radius:14px;overflow:hidden;background:#fff}
@@ -2788,6 +2802,41 @@ const PLACEHOLDER_IMG = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlna
 if (!window.PHOTOS_CACHE) window.PHOTOS_CACHE = {};
 var PHOTOS_CACHE = window.PHOTOS_CACHE;
 
+// Optimiser les URLs de photos pour réduire la bande passante
+window.optimizePhotoUrl = function(url, maxWidth) {
+  if (!url || typeof url !== 'string') return url;
+  maxWidth = maxWidth || 600;
+  if (url.includes('images.pexels.com') && !url.includes('&w=')) {
+    return url + '&w=' + maxWidth + '&h=' + Math.round(maxWidth * 0.67) + '&fit=crop';
+  }
+  return url;
+};
+window.optimizePhotoUrls = function(urls, maxWidth) {
+  if (!Array.isArray(urls)) return urls;
+  return urls.map(u => window.optimizePhotoUrl(u, maxWidth));
+};
+
+// Traductions pour textes UI hardcodés
+const _T = {
+  unsavedQuit: {fr:'Modifications non sauvegardées. Quitter ?',en:'Unsaved changes. Leave?',es:'Cambios no guardados. ¿Salir?',it:'Modifiche non salvate. Uscire?',pt:'Alterações não guardadas. Sair?',ar:'تغييرات غير محفوظة. مغادرة؟'},
+  confirmLogout: {fr:'Confirmer la déconnexion ?',en:'Confirm sign out?',es:'¿Confirmar cierre de sesión?',it:'Confermare la disconnessione?',pt:'Confirmar encerramento de sessão?',ar:'تأكيد تسجيل الخروج؟'},
+  deleteAccountWarn: {fr:'⚠️ Cette action est irréversible. Supprimer le compte ?',en:'⚠️ This action is irreversible. Delete account?',es:'⚠️ Esta acción es irreversible. ¿Eliminar la cuenta?',it:'⚠️ Questa azione è irreversibile. Eliminare l\'account?',pt:'⚠️ Esta ação é irreversível. Eliminar a conta?',ar:'⚠️ هذا الإجراء لا يمكن التراجع عنه. حذف الحساب؟'},
+  areYouSure: {fr:'Êtes-vous vraiment sûr ?',en:'Are you really sure?',es:'¿Está realmente seguro?',it:'Sei davvero sicuro?',pt:'Tem realmente a certeza?',ar:'هل أنت متأكد حقًا؟'},
+  deleteVisit: {fr:'Supprimer cette visite ?',en:'Delete this visit?',es:'¿Eliminar esta visita?',it:'Eliminare questa visita?',pt:'Eliminar esta visita?',ar:'حذف هذه الزيارة؟'},
+  deleteActivity: {fr:'Supprimer cette activité ?',en:'Delete this activity?',es:'¿Eliminar esta actividad?',it:'Eliminare questa attività?',pt:'Eliminar esta atividade?',ar:'حذف هذا النشاط؟'},
+  notConnected: {fr:'Non connecté',en:'Not signed in',es:'No conectado',it:'Non connesso',pt:'Não conectado',ar:'غير متصل'},
+  loginRequired: {fr:'Connexion requise',en:'Sign in required',es:'Inicio de sesión requerido',it:'Accesso richiesto',pt:'Início de sessão necessário',ar:'يجب تسجيل الدخول'},
+  redirectLogin: {fr:'Redirection vers la connexion...',en:'Redirecting to sign in...',es:'Redirigiendo al inicio de sesión...',it:'Reindirizzamento all\'accesso...',pt:'Redirecionando para início de sessão...',ar:'جاري التوجيه إلى تسجيل الدخول...'},
+  scanBooking: {fr:'📷 Scanner une réservation',en:'📷 Scan a booking',es:'📷 Escanear una reserva',it:'📷 Scansiona una prenotazione',pt:'📷 Digitalizar uma reserva',ar:'📷 مسح حجز'},
+  scanBookingSub: {fr:'Photo de confirmation, email, PDF...',en:'Confirmation photo, email, PDF...',es:'Foto de confirmación, email, PDF...',it:'Foto di conferma, email, PDF...',pt:'Foto de confirmação, email, PDF...',ar:'صورة تأكيد، بريد إلكتروني، PDF...'},
+  scanDocument: {fr:'🪪 Scanner un document',en:'🪪 Scan a document',es:'🪪 Escanear un documento',it:'🪪 Scansiona un documento',pt:'🪪 Digitalizar um documento',ar:'🪪 مسح وثيقة'},
+  scanDocumentSub: {fr:'Passeport, visa, permis...',en:'Passport, visa, permit...',es:'Pasaporte, visa, permiso...',it:'Passaporto, visto, permesso...',pt:'Passaporte, visto, licença...',ar:'جواز سفر، تأشيرة، رخصة...'},
+  noSteps: {fr:'Aucune étape',en:'No steps',es:'Sin etapas',it:'Nessuna tappa',pt:'Sem etapas',ar:'لا توجد مراحل'},
+  sharedTripBy: {fr:'Voyage partagé par',en:'Trip shared by',es:'Viaje compartido por',it:'Viaggio condiviso da',pt:'Viagem partilhada por',ar:'رحلة مشتركة من'},
+  readOnly: {fr:'Mode lecture seule',en:'Read-only mode',es:'Modo solo lectura',it:'Modalità di sola lettura',pt:'Modo somente leitura',ar:'وضع القراءة فقط'}
+};
+function _t(key){ const l = (state && state.lang) || 'fr'; return (_T[key]||{})[l] || (_T[key]||{}).en || (_T[key]||{}).fr || key; }
+
 // toSlug() → fourni par ort-utils.js
 // findPhotosForPlace(), getPhotosForPlace(), loadPhotosCache() → fournis par ort-data-loader.js
 
@@ -3582,7 +3631,7 @@ async function loadFromShare(shareToken, lang) {
       font-size: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     `;
     const ownerName = sharedData.ownerName || 'Un voyageur';
-    banner.innerHTML = `👁️ Voyage partagé par <strong>${ownerName}</strong> • Mode lecture seule`;
+    banner.innerHTML = `👁️ ${_t('sharedTripBy')} <strong>${ownerName}</strong> • ${_t('readOnly')}`;
     document.body.appendChild(banner);
     
     // Ajuster le contenu principal
@@ -3637,6 +3686,12 @@ async function loadFromTemp(rtKey) {
   state.title = toUse.title || toUse.name || 'Roadtrip';
   state.cc = toUse.itin_id ? toUse.itin_id.split('::')[0].toUpperCase() : (itinsObj.country || 'XX');
   state._originalItinId = rtKey;
+  if (toUse.notes) state._originalNotes = toUse.notes;
+  if (toUse.practical_context) state._originalPracticalContext = toUse.practical_context;
+  // Fallback: notes au niveau racine de itinsObj
+  if (!state._originalNotes && itinsObj.notes) state._originalNotes = itinsObj.notes;
+  if (!state._originalPracticalContext && itinsObj.practical_context) state._originalPracticalContext = itinsObj.practical_context;
+  console.log('[LOG-CONTROLE][MOBILE] notes:', !!state._originalNotes, '| practical_context:', !!state._originalPracticalContext, '| toUse keys:', Object.keys(toUse).filter(k => !['days_plan','places','steps'].includes(k)).join(','));
   
   state.steps = rawSteps.map((s, idx) => {
     let photos = [];
@@ -3722,6 +3777,19 @@ async function loadFromTemp(rtKey) {
   // Charger les visites et activités des places depuis le master
   if (state.cc) {
     await ensurePlacesIndex([state.cc]);
+  }
+  
+  // Afficher les notes directement (safety net)
+  if (state._originalNotes) {
+    const nb = document.getElementById('mobileNotesBox');
+    if (nb) {
+      const nl = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[state.lang] || 'Notes';
+      document.getElementById('mobileNotesLabel').textContent = nl;
+      document.getElementById('mobileNotesText').innerHTML = String(state._originalNotes).replace(/\n/g,'<br>');
+      nb.style.display = 'block';
+      nb.style.cssText = 'display:block;margin:0 0 10px;background:#f0f9ff;border:1px solid #7dd3fc;border-radius:10px;overflow:hidden;';
+      console.log('[LOG-CONTROLE][MOBILE] ✅ Notes affichées directement depuis loadFromTemp');
+    }
   }
 }
 
@@ -4025,6 +4093,8 @@ async function loadBuilderResult() {
   state.title = data.title || 'Roadtrip';
   state.cc = data.cc || 'XX';
   state._fromBuilder = true;
+  if (data.notes) state._originalNotes = data.notes;
+  if (data.practical_context) state._originalPracticalContext = data.practical_context;
   
   state.steps = data.steps.map((s, idx) => {
     // Récupérer photos
@@ -4301,12 +4371,17 @@ async function loadItinerary(cc, itinId, lang) {
   state.cc = result.cc;
   state._originalItinId = result.originalItinId;
   state.steps = result.steps;
+  if (result.notes) state._originalNotes = result.notes;
+  if (result.practical_context) state._originalPracticalContext = result.practical_context;
+  // Fallback: lire depuis result.raw (données brutes de l'itinéraire)
+  if (!state._originalNotes && result.raw && result.raw.notes) state._originalNotes = result.raw.notes;
+  if (!state._originalPracticalContext && result.raw && result.raw.practical_context) state._originalPracticalContext = result.raw.practical_context;
   
   // Récupérer nearby_itins — ORT_DATA_LOADER peut l'exposer directement
   state._originalNearbyItins = result.nearbyItins || result.nearby_itins || null;
   
   // Fallback : si pas dans result, lire le JSON source directement (même chemin que desktop)
-  if (!state._originalNearbyItins) {
+  if (!state._originalNearbyItins || !state._originalNotes) {
     try {
       const ccLower = cc.toLowerCase();
       const baseUrl = './data/Roadtripsprefabriques/countries';
@@ -4316,9 +4391,20 @@ async function loadItinerary(cc, itinId, lang) {
         const data = await resp.json();
         const itins = data.itins || data.itineraries || data || [];
         const itin = Array.isArray(itins) ? itins.find(i => (i.id || i.itin_id) === itinId) : null;
-        if (itin && itin.nearby_itins) {
+        if (itin && itin.nearby_itins && !state._originalNearbyItins) {
           state._originalNearbyItins = itin.nearby_itins;
           console.log('[LOG-CONTROLE][MOBILE] ✅ nearby_itins récupérés:', state._originalNearbyItins.length);
+        }
+        if (itin && itin.notes && !state._originalNotes) {
+          state._originalNotes = itin.notes;
+          console.log('[LOG-CONTROLE][MOBILE] ✅ notes récupérées');
+        }
+        if (itin && itin.practical_context && !state._originalPracticalContext) {
+          state._originalPracticalContext = itin.practical_context;
+        }
+        // Re-afficher les notes si elles viennent d'être récupérées
+        if (state._originalNotes && typeof updateSummary === 'function') {
+          updateSummary();
         }
       }
     } catch(e) {
@@ -4451,6 +4537,8 @@ async function loadItinerary_OLD(cc, itinId, lang) {
   state.title = itin.title || itin.name || 'Roadtrip';
   state._originalItinId = itinId;
   state.cc = cc;
+  if (itin.notes) state._originalNotes = itin.notes;
+  if (itin.practical_context) state._originalPracticalContext = itin.practical_context;
   
   const steps = [];
   const daysPlan = itin.days_plan || itin.steps || [];
@@ -4525,6 +4613,8 @@ async function loadFromFirebase(rtKey) {
   state.title = data.title || 'Roadtrip';
   state._originalItinId = rtKey;
   state.cc = data.cc || 'FR';
+  if (data.notes) state._originalNotes = data.notes;
+  if (data.practical_context) state._originalPracticalContext = data.practical_context;
   state.steps = (data.steps || []).map((s, idx) => {
     // Récupérer les photos avec plusieurs fallbacks
     let photos = [];
@@ -4826,7 +4916,7 @@ function setupTabs() {
 // === EVENTS ===
 function setupEvents() {
   $('btnBack').onclick = () => {
-    if (hasUnsavedChanges && !confirm('Modifications non sauvegardées. Quitter ?')) return;
+    if (hasUnsavedChanges && !confirm(_t('unsavedQuit'))) return;
     history.back();
   };
   
@@ -4901,8 +4991,8 @@ function updateUserUI() {
       passBtn.style.display = 'block';
       deleteBtn.style.display = 'block';
     } else {
-      emailEl.textContent = 'Non connecté';
-      statusEl.textContent = 'Connexion requise';
+      emailEl.textContent = _t('notConnected');
+      statusEl.textContent = _t('loginRequired');
       
       loginBtn.style.display = 'block';
       logoutBtn.style.display = 'none';
@@ -4922,11 +5012,11 @@ function updateUserUI() {
   $('btnUserLogin').onclick = () => {
     closeSheet($('userSheet'));
     if (window.openAuth) window.openAuth();
-    else alert('Redirection vers la connexion...');
+    else alert(_t('redirectLogin'));
   };
   
   $('btnUserLogout').onclick = () => {
-    if (confirm('Confirmer la déconnexion?')) {
+    if (confirm(_t('confirmLogout'))) {
       window.firebase?.auth?.().signOut().then(() => {
         closeSheet($('userSheet'));
         updateUserUI();
@@ -4957,8 +5047,8 @@ function updateUserUI() {
   };
   
   $('btnUserDelete').onclick = () => {
-    if (confirm('⚠️ Cette action est irréversible. Supprimer le compte?')) {
-      if (confirm('Êtes-vous vraiment sûr?')) {
+    if (confirm(_t('deleteAccountWarn'))) {
+      if (confirm(_t('areYouSure'))) {
         const user = window.firebase?.auth?.()?.currentUser;
         if (user) {
           user.delete().then(() => {
@@ -5002,7 +5092,7 @@ function getAllStepPhotos(step) {
   const found = findPhotosForPlace(step.name, state.cc);
   found.forEach(p => { if (!photos.includes(p)) photos.push(p); });
   
-  return photos;
+  return optimizePhotoUrls(photos);
 }
 
 // Choisir la meilleure photo pour une étape (évite les doublons)
@@ -5195,7 +5285,7 @@ function renderList() {
           // Remplacer l'icône par une vraie image
           const img = document.createElement('img');
           img.className = 'step-card-hotel-thumb';
-          img.src = imgUrl;
+          img.src = imgUrl.replace('square240', 'square60');
           img.alt = '';
           img.dataset.hotelAction = 'open';
           img.style.cursor = 'pointer';
@@ -5234,6 +5324,19 @@ function updateSummary() {
   $('statSteps').textContent = totalSteps;
   $('statNights').textContent = totalNights;
   $('statKm').textContent = Math.round(km);
+  
+  // Afficher les notes si disponibles
+  const notesBox = $('mobileNotesBox');
+  const notesStr = typeof state._originalNotes === 'string' ? state._originalNotes.trim() : '';
+  console.log('[LOG-CONTROLE][MOBILE] updateSummary notes check:', !!notesStr, '| notesBox:', !!notesBox, '| type:', typeof state._originalNotes);
+  if (notesBox && notesStr) {
+    const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[state.lang] || 'Notes';
+    $('mobileNotesLabel').textContent = notesLabel;
+    $('mobileNotesText').innerHTML = notesStr.replace(/\n/g,'<br>');
+    notesBox.style.display = 'block';
+  } else if (notesBox) {
+    notesBox.style.display = 'none';
+  }
 }
 
 // === MAP ===
@@ -5497,7 +5600,8 @@ function openStepSheet(idx) {
         if (!data || !data.hotels || !data.hotels.length) return;
         const imgUrl = data.hotels[0].imageUrl;
         if (!imgUrl) return;
-        btnHotel.innerHTML = `<img src="${imgUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
+        const thumbUrl = imgUrl.replace('square240', 'square60');
+        btnHotel.innerHTML = `<img src="${thumbUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
       }).catch(() => {});
     }
     btnHotel.onclick = (e) => {
@@ -5691,7 +5795,7 @@ function saveVisit(idx) {
 }
 
 function deleteVisit(idx) {
-  if (!confirm('Supprimer cette visite ?')) return;
+  if (!confirm(_t('deleteVisit'))) return;
   
   const step = state.steps[currentStepIndex];
   step.visits.splice(idx, 1);
@@ -5753,7 +5857,7 @@ function saveActivity(idx) {
 }
 
 function deleteActivity(idx) {
-  if (!confirm('Supprimer cette activité ?')) return;
+  if (!confirm(_t('deleteActivity'))) return;
   
   const step = state.steps[currentStepIndex];
   step.activities.splice(idx, 1);
@@ -5800,7 +5904,8 @@ function adjustNights(delta) {
         if (!data || !data.hotels || !data.hotels.length) return;
         const imgUrl = data.hotels[0].imageUrl;
         if (!imgUrl) return;
-        btnHotel.innerHTML = `<img src="${imgUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
+        const thumbUrl = imgUrl.replace('square240', 'square60');
+        btnHotel.innerHTML = `<img src="${thumbUrl}" alt="" style="width:20px;height:20px;border-radius:4px;object-fit:cover;vertical-align:middle;margin-right:4px" onerror="this.outerHTML='🏨 '"> Hôtel`;
       }).catch(() => {});
     }
     btnHotel.onclick = (e) => {
@@ -6211,11 +6316,11 @@ const SCANNER = {
     
     // Update titles
     if (mode === 'booking') {
-      $('scannerTitle').textContent = '📷 Scanner une réservation';
-      $('scannerSubtitle').textContent = 'Photo de confirmation, email, PDF...';
+      $('scannerTitle').textContent = _t('scanBooking');
+      $('scannerSubtitle').textContent = _t('scanBookingSub');
     } else {
-      $('scannerTitle').textContent = '🪪 Scanner un document';
-      $('scannerSubtitle').textContent = 'Passeport, visa, permis...';
+      $('scannerTitle').textContent = _t('scanDocument');
+      $('scannerSubtitle').textContent = _t('scanDocumentSub');
     }
     
     closeAllSheets();
@@ -6846,7 +6951,7 @@ window.deleteActivity = deleteActivity;
     
     if (!step || steps.length === 0) {
       document.querySelectorAll('.viz-step-counter').forEach(el => el.textContent = '');
-      document.querySelectorAll('.viz-step-name').forEach(el => el.textContent = 'Aucune étape');
+      document.querySelectorAll('.viz-step-name').forEach(el => el.textContent = _t('noSteps'));
       document.querySelectorAll('.viz-step-nights').forEach(el => el.textContent = '');
       document.querySelectorAll('.viz-nav-prev').forEach(btn => btn.disabled = true);
       document.querySelectorAll('.viz-nav-next').forEach(btn => btn.disabled = true);

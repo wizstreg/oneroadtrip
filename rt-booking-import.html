@@ -6,7 +6,7 @@
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OneRoadTrip - Importer une réservation</title>
+<title>OneRoadTrip - Import</title>
 <style>
 :root{--bg:#113f7a;--card:#fff;--ink:#113f7a;--bd:#c3d6b6;--mut:#6b7a99;--ok:#22c55e;--warn:#f59e0b}
 *{box-sizing:border-box}
@@ -789,8 +789,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       <input type="text" id="editFieldNotes" placeholder="Notes" style="width:100%;padding:8px 10px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
     </div>
     <div class="edit-modal-footer">
-      <button class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
-      <button class="btn btn-success" id="editModalSaveBtn" onclick="saveEditedBooking()">✅ Enregistrer</button>
+      <button class="btn btn-secondary" onclick="closeEditModal()" data-i18n="cancelAndReturn">Annuler</button>
+      <button class="btn btn-success" id="editModalSaveBtn" onclick="saveEditedBooking()">✅ <span data-i18n="saveChanges">Enregistrer</span></button>
     </div>
   </div>
 </div>
@@ -1020,7 +1020,13 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     vehicleType: { fr: 'Type véhicule', en: 'Vehicle type', es: 'Tipo vehículo', it: 'Tipo veicolo', pt: 'Tipo veículo', ar: 'نوع المركبة' },
     vehicleModel: { fr: 'Modèle', en: 'Model', es: 'Modelo', it: 'Modello', pt: 'Modelo', ar: 'الطراز' },
     mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' },
-    fuelPolicy: { fr: 'Carburant', en: 'Fuel policy', es: 'Política combustible', it: 'Politica carburante', pt: 'Política combustível', ar: 'سياسة الوقود' }
+    fuelPolicy: { fr: 'Carburant', en: 'Fuel policy', es: 'Política combustible', it: 'Politica carburante', pt: 'Política combustível', ar: 'سياسة الوقود' },
+    tripSaveRequired: { fr: 'Voyage non sauvegardé', en: 'Trip not saved', es: 'Viaje no guardado', it: 'Viaggio non salvato', pt: 'Viagem não guardada', ar: 'الرحلة غير محفوظة' },
+    tripSaveRequiredMsg: { fr: 'Vous devez d\'abord enregistrer ce voyage dans votre Dashboard pour pouvoir ajouter des photos et réservations.', en: 'You must first save this trip to your Dashboard to add photos and bookings.', es: 'Debe guardar primero este viaje en su Dashboard para añadir fotos y reservas.', it: 'Devi prima salvare questo viaggio nella tua Dashboard per aggiungere foto e prenotazioni.', pt: 'Deve primeiro guardar esta viagem no seu Dashboard para adicionar fotos e reservas.', ar: 'يجب أولاً حفظ هذه الرحلة في لوحة التحكم لإضافة الصور والحجوزات.' },
+    loginRequiredMsg: { fr: 'Vous devez être connecté pour accéder à cette page.', en: 'You must be signed in to access this page.', es: 'Debe iniciar sesión para acceder a esta página.', it: 'Devi accedere per accedere a questa pagina.', pt: 'Deve iniciar sessão para aceder a esta página.', ar: 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.' },
+    goBack: { fr: 'Retour', en: 'Back', es: 'Volver', it: 'Indietro', pt: 'Voltar', ar: 'رجوع' },
+    edit: { fr: 'Modifier', en: 'Edit', es: 'Editar', it: 'Modifica', pt: 'Editar', ar: 'تعديل' },
+    delete: { fr: 'Supprimer', en: 'Delete', es: 'Eliminar', it: 'Elimina', pt: 'Excluir', ar: 'حذف' }
   };
   
   let lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang')?.slice(0,2) || navigator.language?.slice(0,2) || 'fr';
@@ -1328,8 +1334,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
             </div>
           </div>
           ${displayPrice ? `<span class="price">${Math.round(displayPrice)} €${isShared ? `<span class="price-split">/${stepCount}</span>` : ''}</span>` : ''}
-          <button class="btn-edit" onclick="editBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('edit') || 'Modifier'}">✏️</button>
-          <button class="btn-delete" onclick="deleteBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('delete') || 'Supprimer'}">×</button>
+          <button class="btn-edit" onclick="editBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('edit')}">✏️</button>
+          <button class="btn-delete" onclick="deleteBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('delete')}">×</button>
         </div>
       `;
     }).join('');
@@ -2155,8 +2161,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   function showBlockingMessage(type) {
     loadingOverlay.style.display = 'none';
     const messages = {
-      login: { title: t('loginRequired') || 'Connexion requise', msg: t('loginRequiredMsg') || 'Vous devez être connecté.', btn: t('goBack') || 'Retour' },
-      tripNotSaved: { title: t('tripSaveRequired') || 'Voyage non sauvegardé', msg: t('tripSaveRequiredMsg') || 'Sauvegardez d\'abord le voyage.', btn: t('goBack') || 'Retour' }
+      login: { title: t('loginRequired'), msg: t('loginRequiredMsg'), btn: t('goBack') },
+      tripNotSaved: { title: t('tripSaveRequired'), msg: t('tripSaveRequiredMsg'), btn: t('goBack') }
     };
     const m = messages[type] || messages.login;
     
@@ -2259,7 +2265,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     if (!container) return;
     
     if (editSelectedSteps.length === 0) {
-      container.innerHTML = '<span style="color:#94a3b8;font-size:0.85rem">' + (t('noStepSelected') || 'Aucune étape sélectionnée') + '</span>';
+      container.innerHTML = '<span style="color:#94a3b8;font-size:0.85rem">' + (t('noStepSelected')) + '</span>';
       return;
     }
     
