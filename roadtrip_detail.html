@@ -515,6 +515,8 @@ body.view-map-only .map-popup{
 .popup-stars .star-empty{color:#e5e7eb}
 .popup-desc{font-size:.85rem;color:#475569;line-height:1.4;position:relative;z-index:1}
 .popup-desc p{margin:8px 0}
+/* Espacement entre chaque visite/activité */
+.popup-desc .visit-line{margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid #f1f5f9}
 
 footer{text-align:center;margin:18px 0 28px;font-size:14px;opacity:.9}
 
@@ -6210,8 +6212,9 @@ function renderRows(){
   
   enableDnD();
   drawMap();
-  // Rafraîchir les "autres lieux" (retire ceux ajoutés à l'itinéraire)
-  if(typeof L_OTHER !== 'undefined' && L_OTHER && map?.hasLayer(L_OTHER)){
+  // Rafraîchir les "autres lieux" seulement si le toggle est coché
+  const _togOther = document.getElementById('toggleOtherPlaces');
+  if((!_togOther || _togOther.checked) && typeof renderOtherPlaces === 'function' && typeof PLACES_INDEX !== 'undefined' && Object.keys(PLACES_INDEX||{}).length > 0){
     renderOtherPlaces();
   }
   /* AJOUT */
@@ -7439,8 +7442,8 @@ function showStepPreview(step){
 // === VISITES ===
   let visitsHTML = '';
   if (visitsArray.length) {
-    const v = visitsArray.slice(0,8).map(t=>`• ${safe(t)}`).join('<br>');
-    visitsHTML = `<p><strong>🏛️ ${visitsLbl}:</strong><br>${v}</p>`;
+    const v = visitsArray.slice(0,8).map(t=>`<div class="visit-line">• ${safe(t)}</div>`).join('');
+    visitsHTML = `<p><strong>🏛️ ${visitsLbl}:</strong></p>${v}`;
     
  setTimeout(async () => {
       const translated = [];
@@ -7449,9 +7452,9 @@ function showStepPreview(step){
         translated.push(result);
       }
 
-      const v = translated.map(t=>`• ${safe(t)}`).join('<br>');
+      const v = translated.map(t=>`<div class="visit-line">• ${safe(t)}</div>`).join('');
       const div = document.getElementById('descVisits');
-      if(div) div.innerHTML = `<p><strong>🏛️ ${visitsLbl}:</strong><br>${v}</p>`;
+      if(div) div.innerHTML = `<p><strong>🏛️ ${visitsLbl}:</strong></p>${v}`;
     }, 0);
   } else {
     visitsHTML = `<p><strong>🏛️ ${visitsLbl}:</strong><br>—</p>`;
@@ -7460,17 +7463,17 @@ function showStepPreview(step){
 // === ACTIVITÉS ===
   let actsHTML = '';
   if (actsArray.length) {
-    const a = actsArray.slice(0,8).map(t=>`• ${safe(t)}`).join('<br>');
-    actsHTML = `<p><strong>🎯 ${actsLbl}:</strong><br>${a}</p>`;
+    const a = actsArray.slice(0,8).map(t=>`<div class="visit-line">• ${safe(t)}</div>`).join('');
+    actsHTML = `<p><strong>🎯 ${actsLbl}:</strong></p>${a}`;
     
     setTimeout(async () => {
       const translated = [];
       for (const line of actsArray.slice(0,8)) {
         translated.push(await translateSingleLine(line, targetLang));
       }
-      const a = translated.map(t=>`• ${safe(t)}`).join('<br>');
+      const a = translated.map(t=>`<div class="visit-line">• ${safe(t)}</div>`).join('');
       const div = document.getElementById('descActivities');
-      if(div) div.innerHTML = `<p><strong>🎯 ${actsLbl}:</strong><br>${a}</p>`;
+      if(div) div.innerHTML = `<p><strong>🎯 ${actsLbl}:</strong></p>${a}`;
     }, 0);
   } else {
     actsHTML = `<p><strong>🎯 ${actsLbl}:</strong><br>—</p>`;
@@ -7876,8 +7879,28 @@ document.addEventListener('change', async (e) => {
 loadStaticPOIs();
 
 
-/* === [OTHER-PLACES] Affichage automatique (plus de checkbox) === */
+/* === [OTHER-PLACES] Affichage automatique + toggle cacher/montrer === */
 // L_OTHER sera initialisé au premier usage dans renderOtherPlaces()
+
+// Toggle i18n en haut-gauche de la carte (coché par défaut)
+const OtherCtl = L.control({position:'topleft'});
+OtherCtl.onAdd = function(){
+  const div = L.DomUtil.create('div','leaflet-control');
+  div.style.cssText = 'background:transparent;border:none;box-shadow:none';
+  const lang = (document.documentElement.lang||'fr').slice(0,2);
+  const label = {
+    fr:'Autres lieux', en:'Other places', es:'Otros lugares',
+    it:'Altri luoghi', pt:'Outros lugares', ar:'أماكن أخرى'
+  }[lang] || 'Other places';
+  div.innerHTML = `
+    <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;font:600 13px/1 system-ui;background:#fff;border:2px solid #cfd6e4;border-radius:8px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">
+      <input id="toggleOtherPlaces" type="checkbox" checked style="margin:0;cursor:pointer;width:16px;height:16px">
+      <span>${label}</span>
+    </label>`;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+OtherCtl.addTo(map);
 
 // Bouton "Centrer sur l'itinéraire"
 const CenterCtl = L.control({position:'topleft'});
@@ -7908,20 +7931,64 @@ document.getElementById('btnCenterItinerary')?.addEventListener('click', () => {
 // Appliquer les traductions aux nouveaux éléments
 if(typeof applyI18N === 'function') applyI18N();
 
+// === [OTHER-PLACES] Toggle cacher/montrer ===
+const $togOther = document.getElementById('toggleOtherPlaces');
+$togOther?.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    // Montrer : si les points sont déjà chargés, les réafficher
+    if (typeof PLACES_INDEX !== 'undefined' && Object.keys(PLACES_INDEX||{}).length > 0) {
+      renderOtherPlaces();
+    }
+  } else {
+    // Cacher
+    clearOtherPlaces();
+  }
+});
+
 // === [OTHER-PLACES] Chargement automatique après init carte ===
-(async function autoLoadOtherPlaces(){
-  // Collecter tous les pays des steps
-  const countriesFromSteps = [];
-  if (state.steps && state.steps.length > 0) {
-    state.steps.forEach(s => {
+// Attendre que les étapes soient chargées avant d'afficher les autres lieux
+(function autoLoadOtherPlaces(){
+  let attempts = 0;
+  const maxAttempts = 60; // 30 secondes max
+  
+  function tryLoad(){
+    attempts++;
+    // Attendre que state.steps existe et ait du contenu
+    if ((!state.steps || !state.steps.length) && (!window.state?.steps?.length)) {
+      if (attempts < maxAttempts) {
+        setTimeout(tryLoad, 500);
+      } else {
+        console.log('[OTHER] Auto-load: abandon après', maxAttempts, 'tentatives (pas de steps)');
+      }
+      return;
+    }
+    
+    const steps = window.state?.steps || state.steps || [];
+    
+    // Collecter tous les pays des steps
+    const countriesFromSteps = [];
+    steps.forEach(s => {
       if (s.cc) countriesFromSteps.push(s.cc.toUpperCase());
+    });
+    // Ajouter le CC principal
+    const mainCC = (window.state?.cc || state?.cc || CC || '').toUpperCase();
+    if (mainCC && mainCC !== 'XX' && !countriesFromSteps.includes(mainCC)) {
+      countriesFromSteps.push(mainCC);
+    }
+    
+    console.log('[OTHER] Auto-load: steps prêtes (' + steps.length + '), pays:', countriesFromSteps.join(','));
+    
+    // Charger le master puis afficher les points
+    ensurePlacesIndex(countriesFromSteps).then(() => {
+      console.log('[OTHER] Auto-load: places dans master =', Object.keys(PLACES_INDEX || {}).length);
+      renderOtherPlaces();
+    }).catch(e => {
+      console.warn('[OTHER] Auto-load erreur:', e);
     });
   }
   
-  // Charger le master puis afficher les points
-  await ensurePlacesIndex(countriesFromSteps);
-  console.log('[OTHER] Auto-load: places dans master =', Object.keys(PLACES_INDEX || {}).length);
-  renderOtherPlaces();
+  // Premier essai après 1s (laisser le temps au chargement de l'itinéraire)
+  setTimeout(tryLoad, 1000);
 })();
 
 
@@ -7967,8 +8034,8 @@ function openOtherPlaceDetails(p){
   // 2) Contenus + bouton
   const visitsLbl = trLabel(document.documentElement.lang,'visits');
   const actsLbl   = trLabel(document.documentElement.lang,'activities');
-  const v = (p.visits||[]).map(x=>safe(x.text||x)).slice(0,8).map(t=>'• '+t).join('<br>') || '—';
-  const a = (p.activities||[]).map(x=>safe(x.text||x)).slice(0,8).map(t=>'• '+t).join('<br>') || '—';
+  const v = (p.visits||[]).map(x=>safe(x.text||x)).slice(0,8).map(t=>'<div class="visit-line">• '+t+'</div>').join('') || '—';
+  const a = (p.activities||[]).map(x=>safe(x.text||x)).slice(0,8).map(t=>'<div class="visit-line">• '+t+'</div>').join('') || '—';
 
   if (desc) {
     // vider puis injecter → évite les handlers “fantômes”
