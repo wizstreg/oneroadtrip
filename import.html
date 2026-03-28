@@ -5,6 +5,8 @@
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","w1sbx0fb07");</script>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>OneRoadTrip – Importer & Générer JSON</title>
@@ -593,7 +595,7 @@
       </div>
       
       <!-- Aperçu rapide -->
-      <div id="adminRTPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;max-height:300px;overflow-y:auto;font-size:13px;margin-bottom:16px">
+      <div id="adminRTPreview" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;max-height:600px;overflow-y:auto;font-size:13px;margin-bottom:16px">
         <em style="color:#94a3b8">Aucun itinéraire chargé</em>
       </div>
       
@@ -861,17 +863,9 @@ Transform the SOURCE content into a JSON "itins" object (ONE single itinerary). 
 
 **specialties** = 2-4 specific themes in the output language, e.g. ["archéologie", "randonnée", "gastronomie"]
 
-**suggested_days** = estimated visit time for this stop, as a decimal number:
-- 1 = full day (major city, rich site, or a night stop with many visits)
-- 0.5 = half day (small town with a few sights, scenic stop)
-- 0.3 = quick stop (village within 15 km of a hub, viewpoint, single attraction)
-- Multiple nights at the same place_id = one entry per night, each with suggested_days: 1, covering DIFFERENT content per day
-- The SUM of all suggested_days must equal estimated_days_base
-- DO NOT put 1 everywhere by default — reflect actual visit time honestly
-- Examples: Paris 3 nights → 3 entries each suggested_days:1 | Small village near hub → suggested_days:0.3 | Half-day gorge → suggested_days:0.5
-- Value is a number (not a string): 0.5 not "0.5"
+**suggested_days** = integer 1 per day entry (NOT a float like 1.0)
 
-**estimated_days_base** = sum of all suggested_days values across the entire days_plan (NOT the count of entries)
+**estimated_days_base** = total number of days = number of entries in days_plan
 
 **best_months** = all lowercase, e.g. ["avril", "mai", "juin", "septembre", "octobre"]
 
@@ -1006,8 +1000,8 @@ ${isAdmin ? `
 ✅ FINAL CHECK BEFORE OUTPUT
 ═══════════════════════════════════════════════════════════
 ✅ ALL mandatory fields present: itin_id, id, notes, specialties, segments, variants, regions, nearby_itins, meta.audience, seo (all sub-fields: h1_title, intro_paragraph, seo_hook, featured_list, places_taglines), seo_keywords
-✅ estimated_days_base = SUM of all suggested_days (not count of entries)
-✅ suggested_days = decimal number reflecting real visit time (0.3 / 0.5 / 1) — NOT always 1
+✅ estimated_days_base = number of days in days_plan
+✅ suggested_days = integer 1 (not float 1.0) on every day entry
 ✅ best_months all lowercase
 ✅ dept_code = real code like "GR-M", "FR-06" — not "CC", "XX", "M"
 ✅ to_next_leg present on all days except last (last = omitted or {})
@@ -2610,14 +2604,16 @@ window.initAdminRTViewer = function() {
         const dayNum = day.day || (i + 1);
         const sugDays = day.suggested_days || day.nights || '?';
         
+        const firstVisit = (day.visits || [])[0];
+        const firstVisitText = firstVisit ? (firstVisit.text || firstVisit.name || '') : '';
+        const moreVisits = visitsCount > 1 ? `<span style="color:#94a3b8;font-style:italic"> (+${visitsCount - 1} autre(s))</span>` : '';
+
         previewHTML += `<div style="margin-bottom:8px;padding:8px;background:#fff;border-radius:6px;border-left:3px solid #113f7a">
           <strong>Jour/Étape ${dayNum}</strong> — ${nightPlace} (${sugDays}j)
-          <div style="font-size:12px;color:#64748b;margin-top:4px">
-            ${visitsCount} visite(s): ${(day.visits || []).slice(0,2).map(v => (v.text || v.name || '').slice(0,50) + '...').join(' | ') || '—'}
+          <div style="font-size:12px;color:#374151;margin-top:4px;line-height:1.5">
+            <span style="color:#113f7a;font-weight:600">${visitsCount} visite(s)</span>${moreVisits} : ${firstVisitText || '—'}
           </div>
-          <div style="font-size:12px;color:#64748b">
-            ${actsCount} activité(s): ${(day.activities || []).slice(0,2).map(a => (a.text || a.name || '').slice(0,50) + '...').join(' | ') || '—'}
-          </div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:2px">${actsCount} activité(s)</div>
         </div>`;
       });
     } else {
@@ -2995,14 +2991,7 @@ EVERY text must address the reader at least once (see MANDATORY rule above). A d
 \`\`\`
 best_months must be ALL LOWERCASE (e.g. "avril", "mai" — NOT "Avril", "Mai").
 
-**suggested_days** = estimated visit time for this stop, as a decimal number:
-- 1 = full day (major city, rich site, or multi-night stop)
-- 0.5 = half day (small town, scenic stop with limited sights)
-- 0.3 = quick stop (village near a hub, single viewpoint or attraction)
-- Multiple nights at the same place_id = one entry per night with suggested_days: 1, each covering DIFFERENT content
-- The SUM of all suggested_days in days_plan must equal estimated_days_base
-- DO NOT default to 1 everywhere — reflect actual visit time
-- Value is a number: 0.5 not "0.5"
+**suggested_days** = integer 1 on every day entry — NOT a float like 1.0.
 
 **rating** = always 0 on every day entry.
 
@@ -3071,8 +3060,7 @@ Before producing the final JSON, verify:
 ✅ meta.audience present
 ✅ specialties present
 ✅ notes present (even if empty string "")
-✅ suggested_days = decimal (0.3 / 0.5 / 1) reflecting real visit time — NOT always 1
-✅ estimated_days_base = sum of all suggested_days (not count of entries)
+✅ suggested_days = integer 1 (not float)
 ✅ best_months all lowercase
 ✅ rating = 0 on every day
 ✅ to_next_leg on all days except last; same-night days use distance_km:0

@@ -17,6 +17,8 @@
   gtag('js', new Date());
   gtag('config', 'G-JK3QGQGDDL');
 </script>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","w1sbx0fb07");</script>
 <!-- 🔴 CHECK CATALOGUE: redirection immédiate si c'est un catalogue -->
 <script>
 (function(){
@@ -5128,7 +5130,7 @@ function resetUsedPhotos() {
 }
 
 // Charger une image avec timeout et fallback
-function loadImageWithFallback(imgElement, urls, timeoutMs = 2500) {
+function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
   if (!urls || urls.length === 0) {
     imgElement.src = PLACEHOLDER_IMG;
     return;
@@ -5136,12 +5138,9 @@ function loadImageWithFallback(imgElement, urls, timeoutMs = 2500) {
   
   let currentIndex = 0;
   let timeoutId = null;
-  let settled = false;
   
   function tryNext() {
-    if (settled) return;
     if (currentIndex >= urls.length) {
-      settled = true;
       imgElement.src = PLACEHOLDER_IMG;
       return;
     }
@@ -5152,26 +5151,17 @@ function loadImageWithFallback(imgElement, urls, timeoutMs = 2500) {
     // Clear previous timeout
     if (timeoutId) clearTimeout(timeoutId);
     
-    // Timeout plus court pour passer vite à la suivante
+    // Set timeout pour passer à la suivante si trop lent
     timeoutId = setTimeout(() => {
       console.log(`[PHOTO] Timeout pour ${url.substring(0, 50)}..., essai suivant`);
       tryNext();
     }, timeoutMs);
     
     imgElement.onload = () => {
-      if (settled) return;
       if (timeoutId) clearTimeout(timeoutId);
-      // Vérifier que l'image n'est pas corrompue (0x0 ou trop petite)
-      if (imgElement.naturalWidth < 2 || imgElement.naturalHeight < 2) {
-        console.log(`[PHOTO] Image corrompue (${imgElement.naturalWidth}x${imgElement.naturalHeight}): ${url.substring(0, 50)}...`);
-        tryNext();
-        return;
-      }
-      settled = true;
     };
     
     imgElement.onerror = () => {
-      if (settled) return;
       if (timeoutId) clearTimeout(timeoutId);
       console.log(`[PHOTO] Erreur pour ${url.substring(0, 50)}..., essai suivant`);
       tryNext();

@@ -13,6 +13,8 @@
   gtag('js', new Date());
   gtag('config', 'G-JK3QGQGDDL');
 </script>
+<!-- Microsoft Clarity -->
+<script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","w1sbx0fb07");</script>
 <!-- 🔴 CHECK CATALOGUE: redirection immédiate si c'est un catalogue -->
 <script>
 (function(){
@@ -6208,6 +6210,10 @@ function renderRows(){
   
   enableDnD();
   drawMap();
+  // Rafraîchir les "autres lieux" (retire ceux ajoutés à l'itinéraire)
+  if(typeof L_OTHER !== 'undefined' && L_OTHER && map?.hasLayer(L_OTHER)){
+    renderOtherPlaces();
+  }
   /* AJOUT */
   if (window.map && window.map.invalidateSize) {
     setTimeout(()=>map.invalidateSize(), 60);
@@ -7870,24 +7876,8 @@ document.addEventListener('change', async (e) => {
 loadStaticPOIs();
 
 
-/* === [OTHER-PLACES] Calque + bouton à cocher (unique) === */
-// L_OTHER sera initialisé comme cluster au premier usage dans renderOtherPlaces()
-
-// ⇦ Passe en haut-GAUCHE pour ne plus recouvrir le layers-control
-const OtherCtl = L.control({position:'topleft'});
-OtherCtl.onAdd = function(){
-  const div = L.DomUtil.create('div','leaflet-control');
-  div.style.cssText = 'background:transparent;border:none;box-shadow:none';
-  div.innerHTML = `
-    <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;font:600 13px/1 system-ui;background:#fff;border:2px solid #cfd6e4;border-radius:8px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">
-      <input id="toggleOtherPlaces" type="checkbox" style="margin:0;cursor:pointer;width:16px;height:16px">
-      <span data-i18n="otherPlaces">Autres lieux</span>
-    </label>`;
-  L.DomEvent.disableClickPropagation(div);
-  return div;
-};
-
-OtherCtl.addTo(map);
+/* === [OTHER-PLACES] Affichage automatique (plus de checkbox) === */
+// L_OTHER sera initialisé au premier usage dans renderOtherPlaces()
 
 // Bouton "Centrer sur l'itinéraire"
 const CenterCtl = L.control({position:'topleft'});
@@ -7918,26 +7908,21 @@ document.getElementById('btnCenterItinerary')?.addEventListener('click', () => {
 // Appliquer les traductions aux nouveaux éléments
 if(typeof applyI18N === 'function') applyI18N();
 
-// Charge le master si nécessaire AVANT d'afficher les points
-const $togOther = document.getElementById('toggleOtherPlaces');
-$togOther?.addEventListener('change', async (e) => {
-  if (e.target.checked) {
-    // Collecter tous les pays des steps
-    const countriesFromSteps = [];
-    if (state.steps && state.steps.length > 0) {
-      state.steps.forEach(s => {
-        if (s.cc) countriesFromSteps.push(s.cc.toUpperCase());
-      });
-    }
-    
-    // Recharger les places avec tous les pays
-    await ensurePlacesIndex(countriesFromSteps);
-    console.log('[OTHER] places dans master =', Object.keys(PLACES_INDEX || {}).length);
-    renderOtherPlaces();
-  } else {
-    clearOtherPlaces();
+// === [OTHER-PLACES] Chargement automatique après init carte ===
+(async function autoLoadOtherPlaces(){
+  // Collecter tous les pays des steps
+  const countriesFromSteps = [];
+  if (state.steps && state.steps.length > 0) {
+    state.steps.forEach(s => {
+      if (s.cc) countriesFromSteps.push(s.cc.toUpperCase());
+    });
   }
-});
+  
+  // Charger le master puis afficher les points
+  await ensurePlacesIndex(countriesFromSteps);
+  console.log('[OTHER] Auto-load: places dans master =', Object.keys(PLACES_INDEX || {}).length);
+  renderOtherPlaces();
+})();
 
 
 /* === [OTHER-PLACES] Rendu / hover / click === */
@@ -8875,15 +8860,18 @@ $('#btnShowOtherPlaces')?.addEventListener('click', async ()=>{
   const toolsPop = document.getElementById('toolsPop');
   if(toolsPop) toolsPop.classList.remove('show');
   
-  // Ouvrir la carte en plein écran
+  // Ouvrir la carte en plein écran (les "autres lieux" sont déjà affichés)
   document.body.classList.add('view-map-only');
   
-  // Activer le toggle "Autres lieux" après un court délai
-  setTimeout(()=>{
-    const togOther = document.getElementById('toggleOtherPlaces');
-    if(togOther && !togOther.checked) {
-      togOther.checked = true;
-      togOther.dispatchEvent(new Event('change', { bubbles: true }));
+  // S'assurer que les points sont bien chargés (cas edge: master pas encore prêt)
+  setTimeout(async ()=>{
+    if(!OTHER_MARKERS || OTHER_MARKERS.length === 0){
+      const countriesFromSteps = [];
+      if (state.steps && state.steps.length > 0) {
+        state.steps.forEach(s => { if (s.cc) countriesFromSteps.push(s.cc.toUpperCase()); });
+      }
+      await ensurePlacesIndex(countriesFromSteps);
+      renderOtherPlaces();
     }
   }, 300);
 });
