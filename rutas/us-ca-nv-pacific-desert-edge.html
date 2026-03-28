@@ -108,6 +108,10 @@ document.addEventListener("DOMContentLoaded",function(){(function w(){if(typeof 
 function iM(){if(!MP.length)return;map=L.map('map',{scrollWheelZoom:true,zoomControl:true});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'\u00a9 OSM \u00a9 CARTO',maxZoom:19}).addTo(map);
 var bd=L.latLngBounds(MP.map(function(p){return[p.lat,p.lng];}));
+// Smart bounds : filtrer les outliers (ex: DOM-TOM pour la France)
+if(MP.length>=3){var mLat=MP.map(function(p){return p.lat;}).sort(function(a,b){return a-b;});var mLng=MP.map(function(p){return p.lng;}).sort(function(a,b){return a-b;});var mi=Math.floor(mLat.length/2);var medLat=mLat[mi];var medLng=mLng[mi];
+var mainPts=MP.filter(function(p){var dLat=Math.abs(p.lat-medLat);var dLng=Math.abs(p.lng-medLng);return(dLat<15&&dLng<20);});
+if(mainPts.length>=2&&mainPts.length<MP.length){bd=L.latLngBounds(mainPts.map(function(p){return[p.lat,p.lng];}));console.log('[MAP] Smart bounds: '+mainPts.length+'/'+MP.length+' points (outliers exclus)');}}
 function opColor(r){if(r>=8.8)return'#1565C0';if(r>=7.6)return'#43A047';if(r>=6.1)return'#7CB342';if(r>=3.1)return'#78909C';if(r>0)return'#B0BEC5';return'#CFD8DC';}
 function opRadius(r){if(r>=8.8)return 10;if(r>=7.6)return 8;if(r>=6.1)return 7;if(r>=3.1)return 6;return 5;}
 var DL='https://www.oneroadtrip.com/roadtrip_detail.html?cc=US&itin=US%3A%3Aca-nv%3A%3Apacific-desert-edge&lang=es&days=6';
@@ -115,7 +119,7 @@ var ADD_TXT='Añade este lugar a tu itinerario';
 OP.forEach(function(p){var c=opColor(p.rat),r=opRadius(p.rat);var m;
 if(p.rat>=8.8){var ic2=L.divIcon({html:'<svg width="20" height="20" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',className:'dm',iconSize:[20,20],iconAnchor:[10,10]});m=L.marker([p.lat,p.lng],{icon:ic2}).addTo(map);}
 else{m=L.circleMarker([p.lat,p.lng],{radius:r,fillColor:c,color:'#fff',weight:1.5,fillOpacity:.8}).addTo(map);}
-var tip='<strong>'+p.name+'</strong>';if(p.kw)tip+='<br><small style="color:#555">'+p.kw+'</small>';tip+='<br><a href="'+DL+'" style="color:#e11d48;font-weight:600;font-size:12px;text-decoration:none">\u2795 '+ADD_TXT+'</a>';m.bindPopup(tip,{maxWidth:280});bd.extend([p.lat,p.lng]);});
+var tip='<strong>'+p.name+'</strong>';if(p.kw)tip+='<br><small style="color:#555">'+p.kw+'</small>';tip+='<br><a href="'+DL+'" style="color:#e11d48;font-weight:600;font-size:12px;text-decoration:none">\u2795 '+ADD_TXT+'</a>';m.bindPopup(tip,{maxWidth:280});});
 var ll=MP.map(function(p){return[p.lat,p.lng];});pl=L.polyline(ll,{color:'#113f7a',weight:2,opacity:.3,dashArray:'5,10'}).addTo(map);
 (function(){if(typeof calculateOSRMRoute==='undefined'){console.log('[ROUTE] ort-routing.js absent, ligne droite conservee');pl.setStyle({weight:3,opacity:.7,dashArray:'8,6'});return;}
 var wps=MP.map(function(p){return[p.lat,p.lng];});if(wps.length<2)return;
