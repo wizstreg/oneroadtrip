@@ -84,8 +84,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 /* Stats bar with CTA buttons on sides */
 .stats-bar{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px 6%;background:#fff;border-bottom:1px solid var(--border)}
 .stats-group{display:flex;gap:30px;align-items:center}
-.stat{text-align:center}
-.stat-val{font-family:'Playfair Display',serif;font-size:2rem;color:var(--p);font-weight:700}
+.stat{text-align:center;width:80px}
+.stat-val{font-family:'Playfair Display',serif;font-size:2rem;color:var(--p);font-weight:700;font-variant-numeric:tabular-nums}
 .stat-lbl{font-size:.8rem;color:var(--gray);text-transform:uppercase}
 
 /* CTA buttons inside stats bar */
@@ -330,11 +330,21 @@ var THEMES_LIST = [];
 /* ========================================================
    DETECT LANG from ?lang= param (default: fr)
    ======================================================== */
-var currentLang = 'fr';
+var currentLang = 'en';
 (function(){
+  // 1. Paramètre URL ?lang=xx (priorité absolue)
   var params = new URLSearchParams(location.search);
   var p = params.get('lang');
-  if(p && LANG_FOLDERS[p]) currentLang = p;
+  if(p && LANG_FOLDERS[p]) { currentLang = p; return; }
+
+  // 2. Langue du navigateur (toutes les langues préférées)
+  var langs = navigator.languages || (navigator.language ? [navigator.language] : []);
+  for(var i=0;i<langs.length;i++){
+    var nav = langs[i].slice(0,2).toLowerCase();
+    if(LANG_FOLDERS[nav]) { currentLang = nav; return; }
+  }
+
+  // 3. Défaut : en (si langue non gérée)
 })();
 var t = LANG_META[currentLang];
 var langFolder = LANG_FOLDERS[currentLang];
@@ -716,22 +726,44 @@ function populateFilters(){
   document.getElementById('themeFilter').innerHTML = tHtml;
 }
 
+function animateCounters(nodes, targets, duration){
+  var easeOutCubic = function(t){ return 1 - Math.pow(1 - t, 3); };
+  var start = performance.now();
+  function frame(now){
+    var p = Math.min(1, (now - start) / duration);
+    var e = easeOutCubic(p);
+    nodes.forEach(function(el, i){
+      el.textContent = Math.floor(targets[i] * e).toLocaleString();
+    });
+    if(p < 1) requestAnimationFrame(frame);
+    else nodes.forEach(function(el, i){ el.textContent = targets[i].toLocaleString(); });
+  }
+  requestAnimationFrame(frame);
+}
+
 function updateStats(){
+  var nodes = [
+    document.getElementById('statItins'),
+    document.getElementById('statCountries'),
+    document.getElementById('statPlaces'),
+    document.getElementById('statVisits'),
+    document.getElementById('statActivities')
+  ];
   fetch('/data/stats.index.json')
     .then(function(r){if(!r.ok) throw new Error('HTTP ' + r.status);return r.json()})
     .then(function(s){
-      document.getElementById('statItins').textContent = (s.itineraries||0).toLocaleString();
-      document.getElementById('statCountries').textContent = (s.countries||0).toLocaleString();
-      document.getElementById('statPlaces').textContent = (s.places||0).toLocaleString();
-      document.getElementById('statVisits').textContent = (s.visits||0).toLocaleString();
-      document.getElementById('statActivities').textContent = (s.activities||0).toLocaleString();
+      animateCounters(nodes, [
+        s.itineraries||0,
+        s.countries||0,
+        s.places||0,
+        s.visits||0,
+        s.activities||0
+      ], 7000);
     })
     .catch(function(){
-      /* Fallback: count from loaded data */
       var countries = {};
       for(var i=0;i<allData.length;i++) countries[normalizeCC(allData[i].cc)] = 1;
-      document.getElementById('statItins').textContent = allData.length;
-      document.getElementById('statCountries').textContent = Object.keys(countries).length;
+      animateCounters([nodes[0], nodes[1]], [allData.length, Object.keys(countries).length], 7000);
     });
 }
 
