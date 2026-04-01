@@ -7,18 +7,19 @@
 class OrtAuthModal {
   constructor() {
     this.mode = 'login'; // 'login' ou 'signup'
-    this.lang = window.ORT_I18N_AUTH?.detectLang?.() || 'fr';
-    this.i18n = window.ORT_I18N_AUTH?.get?.(this.lang) || {};
+    const lang = window.ORT_AUTH_I18N?.getLang?.() || 'fr';
+    this.lang = lang;
+    this.i18n = window.ORT_AUTH_I18N?.[lang] || {};
     this.firebase = null;
   }
 
   // ===== INIT =====
   async init(firebaseConfig) {
-    // Attendre ORT_I18N_AUTH - 10 secondes max
+    // Attendre ORT_AUTH_I18N - 10 secondes max
     for (let i = 0; i < 100; i++) {
-      if (window.ORT_I18N_AUTH?.get) {
-        this.lang = window.ORT_I18N_AUTH.detectLang();
-        this.i18n = window.ORT_I18N_AUTH.get(this.lang);
+      if (window.ORT_AUTH_I18N?.getLang) {
+        this.lang = window.ORT_AUTH_I18N.getLang();
+        this.i18n = window.ORT_AUTH_I18N[this.lang] || window.ORT_AUTH_I18N['fr'] || {};
         console.log('[AUTH-MODAL] ✅ i18n chargé:', this.lang);
         break;
       }
@@ -59,7 +60,16 @@ class OrtAuthModal {
         msgVerificationSent: 'Email de vérification envoyé à {email}',
         msgLoginSuccess: 'Connexion réussie !',
         showPassword: 'Afficher',
-        hidePassword: 'Masquer'
+        hidePassword: 'Masquer',
+        contactBtn:     'Nous contacter',
+        contactDesc:    'Un souci pour vous connecter ? Écrivez-nous.',
+        contactName:    'Votre nom',
+        contactEmail:   'Votre email',
+        contactSubject: 'Sujet',
+        contactMessage: 'Message',
+        contactSend:    'Envoyer',
+        contactSuccess: 'Message envoyé ! Nous vous répondons rapidement.',
+        contactError:   'Erreur d\'envoi'
       };
     }
     
@@ -140,13 +150,31 @@ class OrtAuthModal {
             <div id="authError" style="display:none;background:#fee;color:#c33;padding:10px 12px;border-radius:6px;font-size:0.9rem;"></div>
             
             <!-- Submit button -->
-            <button type="submit" id="authSubmit" style="background:#2196f3;color:white;padding:12px;border:none;border-radius:6px;font-weight:600;cursor:pointer;font-size:1rem;margin-top:8px;"></button>
+            <button type="submit" id="authSubmit" style="padding:14px;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:1.05rem;margin-top:8px;width:100%;transition:transform 0.2s,box-shadow 0.2s;"></button>
           </form>
           
           <!-- Mode toggle -->
           <div style="text-align:center;margin-top:20px;font-size:0.9rem;color:#666;">
             <span id="modeToggleText"></span>
             <button id="authModeToggle" style="background:none;border:none;color:#2196f3;cursor:pointer;font-weight:600;text-decoration:underline;margin-left:4px;"></button>
+          </div>
+
+          <!-- Contact link -->
+          <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid #eee;">
+            <button id="authContactBtn" style="background:none;border:none;color:#9ca3af;font-size:0.82rem;cursor:pointer;padding:4px 8px;">
+              ✉️ <span id="authContactLabel">Nous contacter</span>
+            </button>
+          </div>
+
+          <!-- Contact form (caché par défaut) -->
+          <div id="authContactForm" style="display:none;margin-top:16px;padding-top:14px;border-top:1px solid #eee;">
+            <p id="authContactDesc" style="margin:0 0 12px;font-size:0.85rem;color:#555;text-align:center;"></p>
+            <input type="text"   id="authCName"    placeholder="" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;margin-bottom:8px;box-sizing:border-box;">
+            <input type="email"  id="authCEmail"   placeholder="" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;margin-bottom:8px;box-sizing:border-box;">
+            <input type="text"   id="authCSubject" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;margin-bottom:8px;box-sizing:border-box;">
+            <textarea            id="authCMessage" placeholder="" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.9rem;margin-bottom:8px;min-height:70px;resize:vertical;box-sizing:border-box;"></textarea>
+            <button id="authCSend" style="background:#14b8a6;color:#fff;border:none;padding:10px;border-radius:6px;font-weight:700;width:100%;font-size:0.9rem;cursor:pointer;"></button>
+            <div id="authCStatus" style="display:none;margin-top:8px;padding:8px 12px;border-radius:6px;font-size:0.85rem;text-align:center;"></div>
           </div>
           
         </div>
@@ -197,6 +225,51 @@ class OrtAuthModal {
       });
     }
 
+    // Bouton "Nous contacter" — affiche/cache le formulaire contact
+    const contactBtn = document.getElementById('authContactBtn');
+    const contactForm = document.getElementById('authContactForm');
+    if (contactBtn && contactForm) {
+      contactBtn.addEventListener('click', () => {
+        const isVisible = contactForm.style.display !== 'none';
+        contactForm.style.display = isVisible ? 'none' : 'block';
+      });
+    }
+
+    // Envoi du formulaire contact via EmailJS (mêmes IDs que index.html)
+    const sendBtn = document.getElementById('authCSend');
+    if (sendBtn) {
+      sendBtn.addEventListener('click', () => {
+        const t = this.i18n;
+        const name    = (document.getElementById('authCName')?.value    || '').trim();
+        const email   = (document.getElementById('authCEmail')?.value   || '').trim();
+        const subject = (document.getElementById('authCSubject')?.value || '').trim();
+        const message = (document.getElementById('authCMessage')?.value || '').trim();
+        if (!name || !email || !subject || !message) return;
+        sendBtn.disabled = true; sendBtn.textContent = '...';
+        fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: 'service_9bdqzog',
+            template_id: 'template_f1eynm7',
+            user_id: 'ofOAMANfqdxM-tQsH',
+            template_params: { name, email, title: subject, message }
+          })
+        }).then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          const st = document.getElementById('authCStatus');
+          st.style.display = 'block'; st.style.background = '#d4edda'; st.style.color = '#155724';
+          st.textContent = t.contactSuccess || 'Message envoyé !';
+          document.getElementById('authContactForm').querySelectorAll('input,textarea,button').forEach(el => el.style.display = 'none');
+        }).catch(err => {
+          const st = document.getElementById('authCStatus');
+          st.style.display = 'block'; st.style.background = '#f8d7da'; st.style.color = '#721c24';
+          st.textContent = (t.contactError || 'Erreur') + ' (' + err.message + ')';
+          sendBtn.disabled = false; sendBtn.textContent = t.contactSend || 'Envoyer';
+        });
+      });
+    }
+
     this.updateUI();
   }
 
@@ -223,12 +296,41 @@ class OrtAuthModal {
     // Confirm password
     document.getElementById('confirmPasswordDiv').style.display = isSignup ? 'block' : 'none';
 
-    // Submit button
-    document.getElementById('authSubmit').textContent = isSignup ? t.create : t.validate;
+    // Submit button - plus visible en mode signup
+    const submitBtn = document.getElementById('authSubmit');
+    if (isSignup) {
+      submitBtn.textContent = t.create;
+      submitBtn.style.background = 'linear-gradient(135deg, #16a34a, #15803d)';
+      submitBtn.style.color = 'white';
+      submitBtn.style.fontSize = '1.1rem';
+      submitBtn.style.boxShadow = '0 4px 14px rgba(22,163,74,0.4)';
+    } else {
+      submitBtn.textContent = t.validate;
+      submitBtn.style.background = '#2196f3';
+      submitBtn.style.color = 'white';
+      submitBtn.style.fontSize = '1.05rem';
+      submitBtn.style.boxShadow = 'none';
+    }
 
     // Mode toggle
     document.getElementById('modeToggleText').textContent = isSignup ? t.alreadyHaveAccount : t.noAccountYet;
     document.getElementById('authModeToggle').textContent = isSignup ? t.login : t.createAccount;
+
+    // Labels contact
+    const contactLabel = document.getElementById('authContactLabel');
+    if (contactLabel) contactLabel.textContent = t.contactBtn || 'Nous contacter';
+    const contactDesc = document.getElementById('authContactDesc');
+    if (contactDesc) contactDesc.textContent = t.contactDesc || 'Une question ? Écrivez-nous.';
+    const cName    = document.getElementById('authCName');
+    const cEmail   = document.getElementById('authCEmail');
+    const cSubject = document.getElementById('authCSubject');
+    const cMessage = document.getElementById('authCMessage');
+    const cSend    = document.getElementById('authCSend');
+    if (cName)    cName.placeholder    = t.contactName    || 'Votre nom';
+    if (cEmail)   cEmail.placeholder   = t.contactEmail   || 'Votre email';
+    if (cSubject) cSubject.placeholder = t.contactSubject || 'Sujet';
+    if (cMessage) cMessage.placeholder = t.contactMessage || 'Message';
+    if (cSend)    cSend.textContent    = t.contactSend    || 'Envoyer';
 
     // Clear form
     document.getElementById('authForm').reset();

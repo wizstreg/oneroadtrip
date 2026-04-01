@@ -3676,25 +3676,6 @@ hdr.appendChild(row);
 
 
 <!-- === Modale e-mail (même structure que presentation.html) === -->
-<div id="emailModal" role="dialog" aria-modal="true" aria-label="E-mail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000">
-  <div class="modal-card" style="width:min(440px,92vw);background:#fff;border-radius:14px;border:1px solid #c3d6b6;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.16);color:#113f7a">
-    <h3 id="emailTitle" style="margin:0 0 6px" data-i18n="emailLogin">Connexion par e-mail</h3>
-    <div id="alertContainer"></div>
-    <input id="emailInput" class="input" type="email" placeholder="Votre e-mail" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
-    <div class="input-wrap" style="position:relative">
-      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
-      <button type="button" id="togglePwd1" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
-    </div>
-    <div id="pwd2Group" class="input-wrap" style="display:none;position:relative">
-      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe" autocomplete="new-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
-      <button type="button" id="togglePwd2" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
-    </div>
-    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
-      <button id="emailCancel" class="btn" type="button" style="background:#fff;color:#113f7a;border-color:#113f7a" data-i18n="cancel">Annuler</button>
-      <button id="emailGo" class="btn" type="button" style="background:#113f7a;border-color:#113f7a" data-i18n="validate">Valider</button>
-    </div>
-  </div>
-</div>
 
 <script>
 /* Helpers header */
@@ -3768,50 +3749,33 @@ hdr.appendChild(row);
     });
   }
 
-  /* E-mail (modale simple alignée) */
-  const modal=$('emailModal');
-  if(btnEmail && modal){
-    const email=$('emailInput'), pwd=$('pwdInput'), pwd2=$('pwd2Input'), pwd2Group=$('pwd2Group'), btnValider=$('emailGo'), btnCancel=$('emailCancel'), title=$('emailTitle'), alertWrap=$('alertContainer');
-    const togglePwd1=$('togglePwd1'), togglePwd2=$('togglePwd2');
-    
-    // Toggle password visibility
-    if(togglePwd1){ togglePwd1.addEventListener('click', ()=>{ pwd.type = pwd.type==='password' ? 'text' : 'password'; togglePwd1.textContent = pwd.type==='password' ? '👁' : '🙈'; }); }
-    if(togglePwd2){ togglePwd2.addEventListener('click', ()=>{ pwd2.type = pwd2.type==='password' ? 'text' : 'password'; togglePwd2.textContent = pwd2.type==='password' ? '👁' : '🙈'; }); }
-    
-    function showMsg(text, ok){ alertWrap.innerHTML='<div class="'+(ok?'alert-success':'alert-error')+'" style="padding:10px;border:1px solid '+(ok?'#bbf7d0':'#fecaca')+';border-radius:8px;margin:6px 0">'+text+'</div>'; }
-    let isSignupMode = false;
-    function switchMode(signup){ isSignupMode = signup; title.textContent= signup ? t('createAccount') : t('emailLogin'); if(pwd2Group) pwd2Group.style.display= signup ? 'block' : 'none'; alertWrap.innerHTML=''; }
-    btnEmail.addEventListener('click', ()=>{ switchMode(false); modal.style.display='flex'; email?.focus(); });
-    btnCancel?.addEventListener('click', ()=>{ modal.style.display='none'; alertWrap.innerHTML=''; isSignupMode = false; });
-    btnValider?.addEventListener('click', async()=>{
-      try{
-        const fb=await ensureFirebase(); const a=fb.auth();
-        const mail=(email.value||'').trim().toLowerCase(); const pass=pwd.value||'';
-        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return showMsg("E-mail invalide", false);
-        if(!pass || pass.length<6) return showMsg("Mot de passe ≥ 6 caractères", false);
-        
-        // Mode création de compte
-        if(isSignupMode || pwd2Group.style.display !== 'none'){
-          const pass2 = pwd2.value||'';
-          if(pass !== pass2) return showMsg("Les mots de passe ne correspondent pas", false);
-          const r = await a.createUserWithEmailAndPassword(mail, pass);
-          if(r?.user){ 
-            await r.user.sendEmailVerification();
-            showMsg("Compte créé ! Vérifiez votre e-mail.", true); 
-            setHeaderLabel(r.user); 
-            setTimeout(()=>{ modal.style.display='none'; }, 1500); 
-          }
-          return;
-        }
-        
-        // Mode connexion
-        const r=await a.signInWithEmailAndPassword(mail,pass).catch(async(e)=>{
-          if(e.code==='auth/user-not-found'){ switchMode(true); showMsg("Aucun compte. Création ci-dessous.", false); return null; }
-          if(e.code==='auth/wrong-password'){ showMsg("Mot de passe incorrect", false); return null; }
-          throw e;
-        });
-        if(r?.user){ showMsg("Connexion réussie.", true); setHeaderLabel(r.user); setTimeout(()=>{ modal.style.display='none'; }, 500); }
-      }catch(e){ console.error('[AUTH]', e); showMsg("Erreur: " + (e.message || "Réessayez."), false); }
+  /* E-mail — délégué à OrtAuthModal */
+  let _ortAuthModal = null;
+  async function getOrtAuthModal() {
+    if (_ortAuthModal) return _ortAuthModal;
+    // Attendre que OrtAuthModal soit disponible (chargé en bas de page)
+    for (let i = 0; i < 100; i++) {
+      if (typeof OrtAuthModal !== 'undefined') break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+    if (typeof OrtAuthModal === 'undefined') {
+      console.error('[AUTH] OrtAuthModal non disponible');
+      return null;
+    }
+    _ortAuthModal = new OrtAuthModal();
+    const ok = await _ortAuthModal.init();
+    if (!ok) { console.error('[AUTH] OrtAuthModal init échoué'); _ortAuthModal = null; return null; }
+    return _ortAuthModal;
+  }
+
+  if (btnEmail) {
+    btnEmail.addEventListener('click', async () => {
+      if (pop) pop.style.display = 'none';
+      const m = await getOrtAuthModal();
+      if (!m) return;
+      m.mode = 'login';
+      m.updateUI();
+      m.show();
     });
   }
 
@@ -3824,7 +3788,7 @@ hdr.appendChild(row);
   }
 
   /* Sync session */
-  try{ ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(u=>setHeaderLabel(u))); }catch(_){}
+  try{ ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(u=>{ setHeaderLabel(u); if(u && pop) pop.style.display='none'; })); }catch(_){}
 
   /* Auto-lang + navigation cohérente */
   (function(){
