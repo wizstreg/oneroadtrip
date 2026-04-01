@@ -1602,7 +1602,7 @@ header{position:sticky;top:0;z-index:10;background:url("/assets/image_index.webp
 .btn:hover{background:#ffffff2b}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .auth{position:relative}
-.auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px}
+.auth-pop{position:absolute;right:0;top:44px;background:#fff;color:#113f7a;border:1px solid #c3d6b6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px;z-index:10001}
 .auth-pop .btn{display:block;width:100%;margin:6px 0;background:#113f7a;border:1px solid #113f7a;color:#fff}
 .auth-pop .btn.out{background:#fff;color:#113f7a}
 
@@ -3676,6 +3676,47 @@ hdr.appendChild(row);
 
 
 <!-- === Modale e-mail (même structure que presentation.html) === -->
+<style>#emailModal .modal-card{max-height:90vh!important;overflow-y:auto!important;}#emailModal{z-index:99999!important;}</style>
+<div id="emailModal" role="dialog" aria-modal="true" aria-label="E-mail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);align-items:center;justify-content:center;z-index:10000">
+  <div class="modal-card" style="width:min(440px,92vw);background:#fff;border-radius:14px;border:1px solid #c3d6b6;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.16);color:#113f7a;max-height:90vh;overflow-y:auto;">
+    <h3 id="emailTitle" style="margin:0 0 6px" data-i18n="emailLogin">Connexion par e-mail</h3>
+    <div id="alertContainer"></div>
+    <input id="emailInput" class="input" type="email" placeholder="Votre e-mail" autocomplete="email" style="width:100%;padding:10px 12px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+    <div class="input-wrap" style="position:relative">
+      <input id="pwdInput" class="input" type="password" placeholder="Mot de passe (min. 6 caractères)" autocomplete="current-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd1" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
+    </div>
+    <div id="pwd2Group" class="input-wrap" style="display:none;position:relative">
+      <input id="pwd2Input" class="input" type="password" placeholder="Confirmez le mot de passe" autocomplete="new-password" style="width:100%;padding:10px 12px;padding-right:40px;border:1px solid #113f7a;border-radius:10px;margin:8px 0">
+      <button type="button" id="togglePwd2" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;">👁</button>
+    </div>
+    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+      <button id="emailCancel" class="btn" type="button" style="background:#fff;color:#113f7a;border-color:#113f7a" data-i18n="cancel">Annuler</button>
+      <button id="emailGo" class="btn" type="button" style="background:#113f7a;border-color:#113f7a" data-i18n="validate">Valider</button>
+    </div>
+
+    <!-- Bascule login / signup -->
+    <div style="text-align:center;margin-top:16px;padding-top:14px;border-top:1px solid #e5e7eb;">
+      <span id="emailModeHint" style="font-size:0.85rem;color:#6b7280;"></span>
+      <button id="emailModeSwitch" style="background:none;border:none;color:#16a34a;font-weight:700;font-size:0.9rem;cursor:pointer;text-decoration:underline;margin-left:6px;padding:0;"></button>
+    </div>
+
+    <!-- Contact -->
+    <div style="text-align:center;margin-top:10px;">
+      <button id="emailContactToggle" style="background:none;border:none;color:#9ca3af;font-size:0.78rem;cursor:pointer;padding:2px 6px;"></button>
+    </div>
+    <div id="emailContactWrap" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #e5e7eb;">
+      <p id="eCDesc" style="margin:0 0 8px;font-size:0.82rem;color:#6b7280;text-align:center;"></p>
+      <input type="text"  id="eCName"    style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;margin-bottom:5px;box-sizing:border-box;">
+      <input type="email" id="eCEmail"   style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;margin-bottom:5px;box-sizing:border-box;">
+      <input type="text"  id="eCSubject" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;margin-bottom:5px;box-sizing:border-box;">
+      <textarea           id="eCMessage" style="width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:0.85rem;margin-bottom:8px;min-height:60px;resize:vertical;box-sizing:border-box;"></textarea>
+      <button id="eCsend" style="background:#14b8a6;color:#fff;border:none;padding:9px;border-radius:8px;font-weight:700;width:100%;font-size:0.85rem;cursor:pointer;"></button>
+      <div id="eCStatus" style="display:none;margin-top:6px;padding:7px 10px;border-radius:6px;font-size:0.82rem;text-align:center;"></div>
+    </div>
+
+  </div>
+</div>
 
 <script>
 /* Helpers header */
@@ -3749,33 +3790,126 @@ hdr.appendChild(row);
     });
   }
 
-  /* E-mail — délégué à OrtAuthModal */
-  let _ortAuthModal = null;
-  async function getOrtAuthModal() {
-    if (_ortAuthModal) return _ortAuthModal;
-    // Attendre que OrtAuthModal soit disponible (chargé en bas de page)
-    for (let i = 0; i < 100; i++) {
-      if (typeof OrtAuthModal !== 'undefined') break;
-      await new Promise(r => setTimeout(r, 100));
-    }
-    if (typeof OrtAuthModal === 'undefined') {
-      console.error('[AUTH] OrtAuthModal non disponible');
-      return null;
-    }
-    _ortAuthModal = new OrtAuthModal();
-    const ok = await _ortAuthModal.init();
-    if (!ok) { console.error('[AUTH] OrtAuthModal init échoué'); _ortAuthModal = null; return null; }
-    return _ortAuthModal;
-  }
+  /* E-mail (modale simple alignée) */
+  const modal=$('emailModal');
+  if(btnEmail && modal){
+    const email=$('emailInput'), pwd=$('pwdInput'), pwd2=$('pwd2Input'), pwd2Group=$('pwd2Group'), btnValider=$('emailGo'), btnCancel=$('emailCancel'), title=$('emailTitle'), alertWrap=$('alertContainer');
+    const togglePwd1=$('togglePwd1'), togglePwd2=$('togglePwd2');
+    
+    // Toggle password visibility
+    if(togglePwd1){ togglePwd1.addEventListener('click', ()=>{ pwd.type = pwd.type==='password' ? 'text' : 'password'; togglePwd1.textContent = pwd.type==='password' ? '👁' : '🙈'; }); }
+    if(togglePwd2){ togglePwd2.addEventListener('click', ()=>{ pwd2.type = pwd2.type==='password' ? 'text' : 'password'; togglePwd2.textContent = pwd2.type==='password' ? '👁' : '🙈'; }); }
+    
+    function showMsg(text, ok){ alertWrap.innerHTML='<div class="'+(ok?'alert-success':'alert-error')+'" style="padding:10px;border:1px solid '+(ok?'#bbf7d0':'#fecaca')+';border-radius:8px;margin:6px 0">'+text+'</div>'; }
+    let isSignupMode = false;
+    function switchMode(signup){ isSignupMode = signup; title.textContent= signup ? t('createAccount') : t('emailLogin'); if(pwd2Group) pwd2Group.style.display= signup ? 'block' : 'none'; alertWrap.innerHTML=''; }
+    btnEmail.addEventListener('click', ()=>{ switchMode(false); modal.style.display='flex'; email?.focus(); });
+    btnCancel?.addEventListener('click', ()=>{ modal.style.display='none'; alertWrap.innerHTML=''; isSignupMode = false; });
 
-  if (btnEmail) {
-    btnEmail.addEventListener('click', async () => {
-      if (pop) pop.style.display = 'none';
-      const m = await getOrtAuthModal();
-      if (!m) return;
-      m.mode = 'login';
-      m.updateUI();
-      m.show();
+    // Mise à jour du lien bascule login ↔ signup selon le mode courant
+    const modeHint   = $('emailModeHint');
+    const modeSwitch = $('emailModeSwitch');
+    const origSwitchMode = switchMode;
+    function updateModeLink(signup) {
+      const lang = document.documentElement.lang || 'fr';
+      const HINT    = { fr: 'Pas encore de compte ?',  en: 'No account yet?',       es: '¿Sin cuenta?',      it: 'Nessun account?',    pt: 'Sem conta?',          ar: 'ليس لديك حساب؟' };
+      const HINT2   = { fr: 'Déjà un compte ?',        en: 'Already have an account?', es: '¿Ya tienes cuenta?', it: 'Hai già un account?', pt: 'Já tem uma conta?', ar: 'لديك حساب بالفعل؟' };
+      const ACTION  = { fr: '✓ Créer mon compte gratuit', en: '✓ Create my free account', es: '✓ Crear mi cuenta gratuita', it: '✓ Crea il mio account', pt: '✓ Criar minha conta', ar: '✓ إنشاء حسابي المجاني' };
+      const ACTION2 = { fr: 'Se connecter',            en: 'Sign in',               es: 'Iniciar sesión',    it: 'Accedi',             pt: 'Iniciar sessão',     ar: 'تسجيل الدخول' };
+      if (modeHint)   modeHint.textContent   = signup ? (HINT2[lang]||HINT2.fr)   : (HINT[lang]||HINT.fr);
+      if (modeSwitch) modeSwitch.textContent = signup ? (ACTION2[lang]||ACTION2.fr) : (ACTION[lang]||ACTION.fr);
+      if (modeSwitch) modeSwitch.style.color = signup ? '#6b7280' : '#16a34a';
+    }
+
+    // Traductions contact
+    const C = {
+      btn:     { fr:'✉️ Nous contacter',                    en:'✉️ Contact us',                      es:'✉️ Contáctanos',              it:'✉️ Contattaci',              pt:'✉️ Fale conosco',              ar:'✉️ تواصل معنا' },
+      desc:    { fr:'Un souci pour vous connecter ? Écrivez-nous.', en:'Having trouble signing in? Write to us.', es:'¿Problemas para acceder? Escríbenos.', it:'Problemi ad accedere? Scrivici.', pt:'Dificuldades? Escreva-nos.', ar:'هل تواجه مشكلة؟ اكتب لنا.' },
+      name:    { fr:'Votre nom',    en:'Your name',    es:'Su nombre',    it:'Il tuo nome',    pt:'Seu nome',    ar:'اسمك' },
+      email:   { fr:'Votre email',  en:'Your email',   es:'Su email',     it:'La tua email',   pt:'Seu email',   ar:'بريدك' },
+      subject: { fr:'Sujet',        en:'Subject',      es:'Asunto',       it:'Oggetto',        pt:'Assunto',     ar:'الموضوع' },
+      message: { fr:'Message',      en:'Message',      es:'Mensaje',      it:'Messaggio',      pt:'Mensagem',    ar:'الرسالة' },
+      send:    { fr:'Envoyer',      en:'Send',         es:'Enviar',       it:'Invia',          pt:'Enviar',      ar:'إرسال' },
+      success: { fr:'Message envoyé ! Nous vous répondons rapidement.', en:'Message sent! We\'ll reply shortly.', es:'¡Mensaje enviado!', it:'Messaggio inviato!', pt:'Mensagem enviada!', ar:'تم الإرسال!' },
+      error:   { fr:'Erreur d\'envoi', en:'Send error', es:'Error de envío', it:'Errore di invio', pt:'Erro de envio', ar:'خطأ في الإرسال' }
+    };
+    function getLang(){ return document.documentElement.lang||'fr'; }
+    function ct(key){ return C[key][getLang()]||C[key].fr; }
+
+    // Initialiser les textes contact
+    const contactToggleBtn = $('emailContactToggle');
+    if (contactToggleBtn) contactToggleBtn.textContent = ct('btn');
+    const eCDesc = $('eCDesc'); if (eCDesc) eCDesc.textContent = ct('desc');
+    const eCName = $('eCName'); if (eCName) eCName.placeholder = ct('name');
+    const eCEmail2 = $('eCEmail'); if (eCEmail2) eCEmail2.placeholder = ct('email');
+    const eCSubject = $('eCSubject'); if (eCSubject) eCSubject.placeholder = ct('subject');
+    const eCMessage = $('eCMessage'); if (eCMessage) eCMessage.placeholder = ct('message');
+    const eCsendBtn = $('eCsend'); if (eCsendBtn) eCsendBtn.textContent = ct('send');
+
+    // Surcharger switchMode pour mettre à jour le lien à chaque changement
+    switchMode = function(signup) { origSwitchMode(signup); updateModeLink(signup); };
+    if (modeSwitch) modeSwitch.addEventListener('click', () => switchMode(!isSignupMode));
+
+    // Contact
+    const contactToggle = $('emailContactToggle');
+    const contactWrap   = $('emailContactWrap');
+    if (contactToggle && contactWrap) {
+      contactToggle.addEventListener('click', () => {
+        contactWrap.style.display = contactWrap.style.display === 'none' ? 'block' : 'none';
+      });
+    }
+    const cSendBtn = $('eCsend');
+    if (cSendBtn) {
+      cSendBtn.addEventListener('click', () => {
+        const n = ($('eCName')?.value||'').trim();
+        const e = ($('eCEmail')?.value||'').trim();
+        const s = ($('eCSubject')?.value||'').trim();
+        const m = ($('eCMessage')?.value||'').trim();
+        const st = $('eCStatus');
+        if (!n||!e||!s||!m) return;
+        cSendBtn.disabled=true; cSendBtn.textContent='...';
+        fetch('https://api.emailjs.com/api/v1.0/email/send',{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({service_id:'service_9bdqzog',template_id:'template_f1eynm7',user_id:'ofOAMANfqdxM-tQsH',template_params:{name:n,email:e,title:s,message:m}})
+        }).then(r=>{
+          if(!r.ok) throw new Error('HTTP '+r.status);
+          if(st){st.style.display='block';st.style.background='#d4edda';st.style.color='#155724';st.textContent=ct('success');}
+          contactWrap.querySelectorAll('input,textarea,button').forEach(el=>el.style.display='none');
+        }).catch(err=>{
+          if(st){st.style.display='block';st.style.background='#f8d7da';st.style.color='#721c24';st.textContent=ct('error')+' ('+err.message+')';}
+          cSendBtn.disabled=false; cSendBtn.textContent=ct('send');
+        });
+      });
+    }
+    btnValider?.addEventListener('click', async()=>{
+      try{
+        const fb=await ensureFirebase(); const a=fb.auth();
+        const mail=(email.value||'').trim().toLowerCase(); const pass=pwd.value||'';
+        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) return showMsg("E-mail invalide", false);
+        if(!pass || pass.length<6) return showMsg("Mot de passe ≥ 6 caractères", false);
+        
+        // Mode création de compte
+        if(isSignupMode || pwd2Group.style.display !== 'none'){
+          const pass2 = pwd2.value||'';
+          if(pass !== pass2) return showMsg("Les mots de passe ne correspondent pas", false);
+          const r = await a.createUserWithEmailAndPassword(mail, pass);
+          if(r?.user){ 
+            await r.user.sendEmailVerification();
+            showMsg("Compte créé ! Vérifiez votre e-mail.", true); 
+            setHeaderLabel(r.user); 
+            setTimeout(()=>{ modal.style.display='none'; }, 1500); 
+          }
+          return;
+        }
+        
+        // Mode connexion
+        const r=await a.signInWithEmailAndPassword(mail,pass).catch(async(e)=>{
+          if(e.code==='auth/user-not-found'){ switchMode(true); showMsg("Aucun compte. Création ci-dessous.", false); return null; }
+          if(e.code==='auth/wrong-password'){ showMsg("Mot de passe incorrect", false); return null; }
+          throw e;
+        });
+        if(r?.user){ showMsg("Connexion réussie.", true); setHeaderLabel(r.user); setTimeout(()=>{ modal.style.display='none'; }, 500); }
+      }catch(e){ console.error('[AUTH]', e); showMsg("Erreur: " + (e.message || "Réessayez."), false); }
     });
   }
 
@@ -3788,7 +3922,7 @@ hdr.appendChild(row);
   }
 
   /* Sync session */
-  try{ ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(u=>{ setHeaderLabel(u); if(u && pop) pop.style.display='none'; })); }catch(_){}
+  try{ ensureFirebase().then(fb=>fb.auth().onAuthStateChanged(u=>setHeaderLabel(u))); }catch(_){}
 
   /* Auto-lang + navigation cohérente */
   (function(){
