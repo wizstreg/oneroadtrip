@@ -668,7 +668,7 @@
 
     header.innerHTML = `
       <div class="header-row-1">
-        <a class="brandlink" id="homeLink" href="index.html">
+        <a class="brandlink" id="homeLink" href="/index.html">
           <img src="/assets/symbol.webp" alt="Logo">
           <div class="brand">OneRoadTrip</div>
         </a>

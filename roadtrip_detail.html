@@ -7590,6 +7590,7 @@ function showStepPreview(step){
 }
 
 let map,layer,markers=[],groupLabels=[],mapClickMode=false,popupLocked=false,popupCloseTimer=null;
+window.popupCloseTimer=popupCloseTimer;
 
 // Expose un getter stable vers "markers" sans changer sa gestion interne
 window.ORT = window.ORT || {};
@@ -8412,6 +8413,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
       if(popupCloseTimer) {
         clearTimeout(popupCloseTimer);
         popupCloseTimer = null;
+        window.popupCloseTimer = null;
       }
       
       // En mode plein écran carte : afficher le popup informatif (non verrouillé)
@@ -8435,7 +8437,9 @@ Object.entries(grouped).forEach(([key, indices]) => {
         popupCloseTimer = setTimeout(() => {
           document.getElementById('mapPopup')?.classList.remove('show');
           popupCloseTimer = null;
+          window.popupCloseTimer = null;
         }, 200); // 200ms de délai pour laisser le curseur atteindre la modale
+        window.popupCloseTimer = popupCloseTimer;
       }
     });
 
@@ -13719,21 +13723,23 @@ console.log('[PARTNER] ✅ Partner modal ready');
 
 // === Prevent popup from closing when cursor moves from marker to popup ===
 // Annuler le timer de fermeture si la souris entre sur la modale
+// Note: popupCloseTimer est déclaré en let dans un autre bloc script,
+// on passe par window.popupCloseTimer pour y accéder ici.
 const mapPopup = document.getElementById('mapPopup');
 if (mapPopup) {
   mapPopup.addEventListener('mouseenter', () => {
-    if (popupCloseTimer) {
-      clearTimeout(popupCloseTimer);
-      popupCloseTimer = null;
+    if (window.popupCloseTimer) {
+      clearTimeout(window.popupCloseTimer);
+      window.popupCloseTimer = null;
     }
   });
   
   // Relancer le timer si la souris quitte la modale
   mapPopup.addEventListener('mouseleave', () => {
     if (document.body.classList.contains('view-map-only') && !window.popupLocked) {
-      popupCloseTimer = setTimeout(() => {
+      window.popupCloseTimer = setTimeout(() => {
         mapPopup.classList.remove('show');
-        popupCloseTimer = null;
+        window.popupCloseTimer = null;
       }, 100);
     }
   });

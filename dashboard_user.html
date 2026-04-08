@@ -177,13 +177,14 @@
 <script>
 // ================= I18N minimal =================
 const I18N={
-  fr:{title:'Mon tableau de bord', new:'Nouveau voyage', import:'Importer', export:'Exporter tout',
+  fr:{title:'Mon tableau de bord', new:'Nouveau voyage', import:'Importer', export:'Exporter tout', deleteAll:'Tout supprimer',
       hint:'Conseil : vos voyages sont sauvegardés automatiquement dans votre espace.',
       empty:'Aucun voyage enregistré pour le moment.', start:'Démarrer avec le questionnaire',
       metas:(n,k)=>`${n} nuits · ${k} km`, needLogin:'Connectez-vous pour voir vos voyages.',
+      confirmDel:'Supprimer ce voyage ?', confirmDelAll:'Vous êtes sur le point de tout supprimer. Cette action est irréversible. Continuer ?', needLoginAction:'Vous devez être connecté.',
       share:'Lien copié dans le presse-papiers',
       count:(n)=> n>1 ? `${n} voyages enregistrés` : `${n} voyage enregistré`,
-      btn:{open:'↗ Ouvrir', rename:'✏️ Renommer', settings:'⚙️ Paramètres', del:'🗑 Supprimer',
+      btn:{open:'↗ Ouvrir', openEditor:'🛠️ Éditeur', openStatic:'🗺️ Visualiser', rename:'✏️ Renommer', settings:'⚙️ Paramètres', del:'🗑 Supprimer',
            link:'🔗 Lien', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Valider', cancel:'Annuler',
            addPhotoUrl:'Ajouter une photo (URL)', replaceWhich:'Quelle photo remplacer ?', add:'Ajouter', replace:'Remplacer'},
       toast:{deleted:'✅ Voyage supprimé', saved:'✅ Voyage enregistré', copied:'🔗 Lien copié', 
@@ -199,13 +200,14 @@ shareModal:{title:'📸 Votre image est prête !',
            download:'⬇️ Télécharger l\'image', close:'Fermer', generating:'🎨 Génération de votre image...'},
 shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très prochainement !'}
   },
-  en:{title:'My dashboard', new:'New trip', import:'Import', export:'Export all',
+  en:{title:'My dashboard', new:'New trip', import:'Import', export:'Export all', deleteAll:'Delete all',
       hint:'Tip: trips are auto-saved.',
       empty:'No saved trips yet.', start:'Start with the questionnaire',
       metas:(n,k)=>`${n} nights · ${k} km`, needLogin:'Sign in to see your trips.',
+      confirmDel:'Delete this trip?', confirmDelAll:'You are about to delete everything. This cannot be undone. Continue?', needLoginAction:'You must be signed in.',
       share:'Share link copied to clipboard',
       count:(n)=> n>1 ? `${n} trips saved` : `${n} trip saved`,
-      btn:{open:'↗ Open', rename:'✏️ Rename', settings:'⚙️ Settings', del:'🗑 Delete',
+      btn:{open:'↗ Open', openEditor:'🛠️ Editor', openStatic:'🗺️ View', rename:'✏️ Rename', settings:'⚙️ Settings', del:'🗑 Delete',
            link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Save', cancel:'Cancel',
            addPhotoUrl:'Add a photo (URL)', replaceWhich:'Which photo to replace?', add:'Add', replace:'Replace'},
       toast:{deleted:'✅ Trip deleted', saved:'✅ Trip saved', copied:'🔗 Link copied',
@@ -221,13 +223,14 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
                  download:'⬇️ Download image', close:'Close', generating:'🎨 Generating your image...'},
       shareImage:{intro:'And here is our next trip! More information coming soon!'}
   },
-  it:{title:'La mia dashboard', new:'Nuovo viaggio', import:'Importa', export:'Esporta tutto',
+  it:{title:'La mia dashboard', new:'Nuovo viaggio', import:'Importa', export:'Esporta tutto', deleteAll:'Elimina tutto',
       hint:'Suggerimento: i viaggi sono salvati automaticamente.',
       empty:'Nessun viaggio salvato.', start:'Inizia col questionario',
       metas:(n,k)=>`${n} notti · ${k} km`, needLogin:'Accedi per vedere i tuoi viaggi.',
+      confirmDel:'Eliminare questo viaggio?', confirmDelAll:'Stai per eliminare tutto. Questa azione è irreversibile. Continuare?', needLoginAction:'Devi essere connesso.',
       share:'Link copiato',
       count:(n)=> n>1 ? `${n} viaggi salvati` : `${n} viaggio salvato`,
-      btn:{open:'↗ Apri', rename:'✏️ Rinomina', settings:'⚙️ Impostazioni', del:'🗑 Elimina',
+      btn:{open:'↗ Apri', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizza', rename:'✏️ Rinomina', settings:'⚙️ Impostazioni', del:'🗑 Elimina',
            link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Foto', save:'Salva', cancel:'Annulla',
            addPhotoUrl:'Aggiungi una foto (URL)', replaceWhich:'Quale foto sostituire?', add:'Aggiungi', replace:'Sostituisci'},
       toast:{deleted:'✅ Viaggio eliminato', saved:'✅ Viaggio salvato', copied:'🔗 Link copiato',
@@ -243,13 +246,14 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
                  download:'⬇️ Scarica immagine', close:'Chiudi', generating:'🎨 Generazione della tua immagine...'},
       shareImage:{intro:'Ed ecco il nostro prossimo viaggio! Maggiori informazioni presto!'}
   },
-  es:{title:'Mi panel', new:'Nuevo viaje', import:'Importar', export:'Exportar todo',
+  es:{title:'Mi panel', new:'Nuevo viaje', import:'Importar', export:'Exportar todo', deleteAll:'Borrar todo',
       hint:'Truco: los viajes se guardan automáticamente.',
       empty:'Aún no hay viajes guardados.', start:'Empezar con el cuestionario',
       metas:(n,k)=>`${n} noches · ${k} km`, needLogin:'Inicie sesión para ver sus viajes.',
+      confirmDel:'¿Borrar este viaje?', confirmDelAll:'Está a punto de borrar todo. Esta acción es irreversible. ¿Continuar?', needLoginAction:'Debe haber iniciado sesión.',
       share:'Enlace copiado',
       count:(n)=> n>1 ? `${n} viajes guardados` : `${n} viaje guardado`,
-      btn:{open:'↗ Abrir', rename:'✏️ Renombrar', settings:'⚙️ Ajustes', del:'🗑 Borrar',
+      btn:{open:'↗ Abrir', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizar', rename:'✏️ Renombrar', settings:'⚙️ Ajustes', del:'🗑 Borrar',
            link:'🔗 Enlace', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Fotos', save:'Guardar', cancel:'Cancelar',
            addPhotoUrl:'Añadir una foto (URL)', replaceWhich:'¿Qué foto reemplazar?', add:'Añadir', replace:'Reemplazar'},
       toast:{deleted:'✅ Viaje eliminado', saved:'✅ Viaje guardado', copied:'🔗 Enlace copiado',
@@ -265,13 +269,14 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
                  download:'⬇️ Descargar imagen', close:'Cerrar', generating:'🎨 Generando tu imagen...'},
       shareImage:{intro:'¡Y aquí está nuestro próximo viaje! ¡Más información próximamente!'}
   },
-  pt:{title:'Meu painel', new:'Nova viagem', import:'Importar', export:'Exportar tudo',
+  pt:{title:'Meu painel', new:'Nova viagem', import:'Importar', export:'Exportar tudo', deleteAll:'Excluir tudo',
       hint:'Dica: as viagens são salvas automaticamente.',
       empty:'Nenhuma viagem salva.', start:'Comece com o questionário',
       metas:(n,k)=>`${n} noites · ${k} km`, needLogin:'Entre para ver suas viagens.',
+      confirmDel:'Excluir esta viagem?', confirmDelAll:'Você está prestes a excluir tudo. Esta ação é irreversível. Continuar?', needLoginAction:'Você precisa estar conectado.',
       share:'Link copiado',
       count:(n)=> n>1 ? `${n} viagens salvas` : `${n} viagem salva`,
-      btn:{open:'↗ Abrir', rename:'✏️ Renomear', settings:'⚙️ Definições', del:'🗑 Excluir',
+      btn:{open:'↗ Abrir', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizar', rename:'✏️ Renomear', settings:'⚙️ Definições', del:'🗑 Excluir',
            link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Fotos', save:'Guardar', cancel:'Cancelar',
            addPhotoUrl:'Adicionar uma foto (URL)', replaceWhich:'Qual foto substituir?', add:'Adicionar', replace:'Substituir'},
       toast:{deleted:'✅ Viagem excluída', saved:'✅ Viagem salva', copied:'🔗 Link copiado',
@@ -287,13 +292,14 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
                  download:'⬇️ Descarregar imagem', close:'Fechar', generating:'🎨 A gerar a sua imagem...'},
       shareImage:{intro:'E aqui está a nossa próxima viagem! Mais informações em breve!'}
   },
-  ar:{title:'لوحة التحكم الخاصة بي', new:'رحلة جديدة', import:'استيراد', export:'تصدير الكل',
+  ar:{title:'لوحة التحكم الخاصة بي', new:'رحلة جديدة', import:'استيراد', export:'تصدير الكل', deleteAll:'حذف الكل',
       hint:'تلميح: تُحفَظ الرحلات تلقائيًا.',
       empty:'لا رحلات محفوظة بعد.', start:'ابدأ بالاستبيان',
       metas:(n,k)=>`${n} ليالٍ · ${k} كم`, needLogin:'سجّل الدخول لعرض رحلاتك.',
+      confirmDel:'حذف هذه الرحلة؟', confirmDelAll:'أنت على وشك حذف كل شيء. هذا الإجراء لا يمكن التراجع عنه. متابعة؟', needLoginAction:'يجب أن تكون مسجلاً.',
       share:'تم نسخ الرابط',
       count:(n)=> n>1 ? `تم حفظ ${n} رحلات` : `تم حفظ رحلة واحدة`,
-      btn:{open:'↗ فتح', rename:'✏️ إعادة تسمية', settings:'⚙️ الإعدادات', del:'🗑 حذف',
+      btn:{open:'↗ فتح', openEditor:'🛠️ المحرر', openStatic:'🗺️ عرض', rename:'✏️ إعادة تسمية', settings:'⚙️ الإعدادات', del:'🗑 حذف',
            link:'🔗 رابط', mail:'✉️ بريد', x:'𝕏', fb:'f', photos:'الصور', save:'حفظ', cancel:'إلغاء',
            addPhotoUrl:'إضافة صورة (رابط URL)', replaceWhich:'أي صورة تريد استبدالها؟', add:'إضافة', replace:'استبدال'},
       toast:{deleted:'✅ تم الحذف', saved:'✅ تم الحفظ', copied:'🔗 تم النسخ',
@@ -330,14 +336,17 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
 
   // 4) dictionnaire pour UI dashboard
   const L = I18N[lang] || I18N.fr;
+  window._DASH_L = L; // accessible aux handlers de boutons
 
   // 5) UI labels (les éléments du header sont gérés par ort-header.js)
   document.getElementById('title').textContent    = L.title;
   document.getElementById('lblNew').textContent   = L.new;
   document.getElementById('lblImport').textContent= L.import;
   document.getElementById('lblExport').textContent= L.export;
+  document.getElementById('lblDeleteAll').textContent = L.deleteAll || 'Tout supprimer';
   document.getElementById('lblEmpty').textContent = L.empty;
   document.getElementById('btnStart').textContent = L.start;
+  document.title = 'OneRoadTrip — ' + L.title;
   const hint = document.getElementById('hint');
   hint.textContent = L.hint; hint.style.display='block';
 })();
@@ -679,8 +688,14 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
 
     const actions = document.createElement('div'); actions.className='actions'; c.appendChild(actions);
 
-    // ↗ Ouvrir / Modifier (redirige vers votre_roadtrip / roadtrip_detail selon votre flux)
- const openBtn = btn(L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
+    // ↗ Ouvrir dans l'éditeur (RT Detail)
+ const openBtn = btn(L.btn.openEditor || L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
+    // 🗺️ Voir l'itinéraire sur la page statique (si le voyage vient d'un itin statique)
+    const staticUrl = buildStaticUrl(rt);
+    if (staticUrl) {
+      const staticBtn = btn(L.btn.openStatic || '🗺️ Visualiser', ()=> { location.href = staticUrl; });
+      actions.appendChild(staticBtn);
+    }
 const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
 const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); actions.appendChild(photosBtn);
 // const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn); // TODO: réactiver
@@ -700,6 +715,30 @@ function openRT(rt){
     const lang = localStorage.getItem('lang') || 'fr';
     const url = `roadtrip_detail.html?tripId=${encodeURIComponent(rt.id)}&lang=${lang}`;
     location.href = url;
+  }
+
+  // Construit l'URL de la page statique si le voyage provient d'un itinéraire pré-fabriqué
+  function buildStaticUrl(rt) {
+    const lang = localStorage.getItem('lang') || 'fr';
+    // Le voyage doit avoir un _originalItinId (posé par l'éditeur statique) ou un sourceUrl pointant vers une page statique
+    var itinId = rt._originalItinId || '';
+    var sourceUrl = rt.sourceUrl || '';
+
+    // Si on a un sourceUrl qui pointe vers une page statique ORT, l'utiliser directement
+    if (sourceUrl && /\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//.test(sourceUrl)) {
+      return sourceUrl;
+    }
+
+    // Sinon, si on a un itinId, construire l'URL
+    if (itinId) {
+      // Slugifier l'itinId : "KH::phnom-penh-siem-reap-7j" → "phnom-penh-siem-reap-7j"
+      var slug = itinId.replace(/^[A-Z]{2}::/, '');
+      var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
+      var langSlug = LSLUG[lang] || 'itineraries';
+      return '/' + langSlug + '/' + slug + '.html';
+    }
+
+    return null; // pas d'itinéraire statique associé
   }
 
   async function renameRT(rt){
@@ -726,13 +765,7 @@ function openRT(rt){
   }
 
   async function delRT(rt){
-    const msg = (lang==='fr') ? 'Supprimer ce voyage ?' :
-                (lang==='en') ? 'Delete this trip?' :
-                (lang==='it') ? 'Eliminare questo viaggio?' :
-                (lang==='es') ? '¿Borrar este viaje?' :
-                (lang==='pt') ? 'Excluir esta viagem?' :
-                'حذف هذه الرحلة؟';
-    if(!confirm(msg)) return;
+    if(!confirm(L.confirmDel || 'Supprimer ce voyage ?')) return;
     
     // Utiliser le State Manager
     const deleted = await window.ORT_STATE.deleteTrip(rt.id);
@@ -2608,18 +2641,19 @@ document.getElementById('btnStart').addEventListener('click',()=>{
   });
   
   document.getElementById('btnDeleteAll')?.addEventListener('click',async()=>{
+    const DL = window._DASH_L || I18N.fr;
     if(!firebase.auth().currentUser) {
-      alert('Vous devez être connecté');
+      alert(DL.needLoginAction || 'Vous devez être connecté');
       return;
     }
     
     const trips = await window.ORT_STATE.getAllTrips();
     if(trips.length === 0) {
-      alert('Aucun voyage à supprimer');
+      alert(DL.empty || 'Aucun voyage');
       return;
     }
     
-    const conf = confirm(`⚠️ ATTENTION ⚠️\n\nVous êtes sur le point de supprimer ${trips.length} voyage(s).\n\nCette action est IRRÉVERSIBLE.\n\nVoulez-vous continuer ?`);
+    const conf = confirm(DL.confirmDelAll || 'Tout supprimer ? Cette action est irréversible.');
     if(!conf) return;
     
 
