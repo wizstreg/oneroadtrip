@@ -2416,7 +2416,8 @@
 
     var loginBtn = document.getElementById('ort-ed-btn-login');
     if (loginBtn) {
-      loginBtn.addEventListener('click', function () {
+      loginBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
         // Ouvrir la popup d'auth du header
         var authPop = document.getElementById('authPop');
         if (authPop) authPop.style.display = 'block';
