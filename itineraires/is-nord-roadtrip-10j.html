@@ -226,6 +226,28 @@ function addPlaceFromMap(pid){if(map)map.closePopup();if(!window.ORT_ITIN_EDITOR
   else document.addEventListener('DOMContentLoaded',function(){var t2=document.getElementById('site-header');if(t2)mo.observe(t2,{childList:true,subtree:true});});
 })();
 </script>
+<script>
+(function(){
+  var CC='IS';
+  var LANG='fr';
+  var currentName='IS';
+  if(currentName.length<=3){
+    fetch('/data/Roadtripsprefabriques/countries/countries.index.json').then(function(r){if(!r.ok)throw '';return r.json();}).then(function(data){
+      if(!data||!data.countries)return;
+      var entry=data.countries.find(function(c){return c.cc===CC;});
+      if(!entry||!entry.names)return;
+      var name=entry.names[LANG]||entry.names.en||entry.names.fr||currentName;
+      if(name===currentName)return;
+      console.log('[ORT-COUNTRY] '+CC+' -> '+name);
+      var pill=document.getElementById('pill-disc');
+      if(pill){var lbl=pill.querySelector('.ip-lbl');if(lbl)lbl.textContent=lbl.textContent.replace(currentName,name).replace(CC,name);}
+      var bc=document.querySelector('.bc');
+      if(bc){bc.querySelectorAll('a').forEach(function(a){if(a.textContent.trim()===CC||a.textContent.trim()===currentName)a.textContent=name;});}
+      if(document.title.indexOf(currentName)>=0||document.title.indexOf(CC)>=0){document.title=document.title.replace(currentName,name).replace(CC,name);}
+    }).catch(function(e){console.warn('[ORT-COUNTRY]',e);});
+  }
+})();
+</script>
 <div id="supportBox" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px"><div style="background:#fff;border-radius:16px;max-width:460px;width:100%;padding:24px 20px;box-shadow:0 8px 32px rgba(0,0,0,.25);position:relative;text-align:center"><button onclick="closeSupportBox()" style="position:absolute;top:10px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#999">×</button><div style="font-size:1.8rem;margin-bottom:10px">❤️</div><h3 style="font-family:Playfair Display,serif;color:#113f7a;font-size:1.05rem;margin-bottom:12px;line-height:1.3">Soutenez-nous en réservant vos hôtels via OneRoadTrip</h3><p style="font-size:.85rem;line-height:1.55;color:#444;margin-bottom:16px">ORT est totalement gratuit et souhaite le rester. En cliquant sur nos liens, même si vous ne prenez pas nos hôtels conseillés, deux à trois euros nous seront reversés sans que vous n’ayez à payer plus cher. Pensez-y avant de réserver.</p><a href="https://www.booking.com/searchresults.fr.html?ss=IS&latitude=64.1466&longitude=-21.9426&radius=50" target="_blank" rel="noopener sponsored" style="display:inline-block;background:#ff6b35;color:#fff;padding:10px 24px;border-radius:24px;font-size:.9rem;font-weight:600;text-decoration:none;margin-bottom:10px">Réserver un hôtel →</a><br><button onclick="closeSupportBox()" style="background:none;border:none;color:#888;font-size:.82rem;cursor:pointer;text-decoration:underline">Compris !</button></div></div>
 <div id="supportMini" onclick="openSupportBox()" style="display:none;position:fixed;bottom:20px;left:20px;z-index:900;background:#113f7a;color:#fff;border-radius:24px;padding:8px 14px;font-size:.78rem;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.2);align-items:center;gap:6px">❤️ ORT</div>
 <script src="/js/ort-config.js"></script>
@@ -280,12 +302,194 @@ function addPlaceFromMap(pid){if(map)map.closePopup();if(!window.ORT_ITIN_EDITOR
 (function(){
   var ITIN_ID='IS::nord::roadtrip-10j';
   var LANG='fr';
+  var urlParams=new URLSearchParams(window.location.search);
+  var urlTripId=urlParams.get('tripId');
+  function loadScript(src){return new Promise(function(ok,ko){if(document.querySelector('script[src="'+src+'"]')){ok();return;}var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s);});}
+  function ensureFirebase(){
+    if(window.firebase&&window.firebase.auth)return Promise.resolve();
+    return loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js').then(function(){
+      return loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
+    }).then(function(){
+      return loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js');
+    }).then(function(){
+      if(window.firebase.apps&&window.firebase.apps.length)return;
+      var host=location.hostname;
+      var isPre=/oneroadtrip-preprod|localhost|127\.0\.0\.1/.test(host);
+      var cfg=isPre?(window.ORT_CONFIG&&ORT_CONFIG.PREPROD||{}):(window.ORT_CONFIG&&ORT_CONFIG.PROD||{});
+      if(!cfg||!cfg.apiKey)cfg=(window.ORT_CONFIG&&ORT_CONFIG.PREPROD||{});
+      window.__FIREBASE_CONFIG__=cfg;
+      window.firebase.initializeApp(cfg);
+      return window.firebase.auth().setPersistence(window.firebase.auth.Auth.Persistence.LOCAL);
+    });
+  }
   function tryRestore(){
-    if(!window.firebase||!window.firebase.auth||!window.ORT_STATE)return;
+    if(!window.ORT_STATE){console.warn('[ORT-RESTORE] ORT_STATE absent');return;}
+    ensureFirebase().then(function(){
     var unsub=firebase.auth().onAuthStateChanged(function(user){
       unsub();
       if(!user)return;
       window.ORT_STATE.init({user:user}).then(function(){
+        if(urlTripId){
+          console.log('[ORT-RESTORE] tripId dans URL, chargement depuis Firestore:',urlTripId);
+          window.ORT_STATE.getTrip(urlTripId).then(function(trip){
+            if(!trip||!trip.steps||!trip.steps.length){console.warn('[ORT-RESTORE] Trip introuvable ou vide');return;}
+            console.log('[ORT-RESTORE] Trip chargé:',trip.steps.length,'étapes');
+            var _cc=(trip.cc||trip.country||'').toUpperCase();
+            if(!_cc){var b=document.body;_cc=(b.dataset.cc||'').toUpperCase();}
+            var _ccLow=_cc.toLowerCase();
+            var _places=[];
+            var _photos={};
+            var _fetchJSON=function(u){return fetch(u).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};
+            var _pPlaces=_cc?_fetchJSON('/data/Roadtripsprefabriques/countries/'+_cc+'/'+_ccLow+'.places.master-'+LANG+'.json').then(function(d){
+              if(!d)return _fetchJSON('/data/Roadtripsprefabriques/countries/'+_cc+'/'+_ccLow+'.places.master-en.json');
+              return d;
+            }).then(function(d){if(d)_places=d.places||d||[];console.log('[ORT-RESTORE] Places:',_places.length);}):Promise.resolve();
+            var _pPhotos=_fetchJSON('/data/photos-json/photos_lieux.json').then(function(d){if(d){_photos=d;console.log('[ORT-RESTORE] Photos:',Object.keys(d).length);}});
+            Promise.all([_pPlaces,_pPhotos]).then(function(){
+            var _UI={fr:{step:'Étape',activities:'Activités',driveToNext:'Vers l\'étape suivante'},en:{step:'Stop',activities:'Activities',driveToNext:'Drive to next stop'},es:{step:'Etapa',activities:'Actividades',driveToNext:'Trayecto siguiente'},pt:{step:'Etapa',activities:'Atividades',driveToNext:'Trajeto seguinte'},it:{step:'Tappa',activities:'Attività',driveToNext:'Tragitto successivo'},ar:{step:'محطة',activities:'أنشطة',driveToNext:'الطريق التالي'}};
+            var _t=_UI[LANG]||_UI.fr;
+            function _esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
+            function _stars(r){if(!r||r<=0)return'';var n=Math.round(r/2);if(n<1)n=1;if(n>5)n=5;return'★'.repeat(n)+'☆'.repeat(5-n);}
+            function _drvT(m){if(!m)return'';var h=Math.floor(m/60),mn=m%60;return h>0?(mn>0?h+'h'+String(mn).padStart(2,'0'):h+'h'):mn+'min';}
+            function _findPlace(pid){if(!pid)return null;for(var i=0;i<_places.length;i++){if(_places[i].place_id===pid)return _places[i];}return null;}
+            function _getPhoto(pid){if(!pid)return null;if(_photos[pid]&&_photos[pid].photos&&_photos[pid].photos[0])return _photos[pid].photos[0];var pl=_findPlace(pid);if(pl&&pl.images&&pl.images[0])return pl.images[0];return null;}
+            function _optImg(url,w){if(!url||url==='null')return null;if(url.startsWith('data:'))return url;w=w||600;return'https://wsrv.nl/?url='+encodeURIComponent(url)+'&w='+w+'&q=70&output=webp';}
+            function _getRating(pid){var pl=_findPlace(pid);return pl?(pl.rating||0):0;}
+            var stps=trip.steps;
+            var html='';
+            stps.forEach(function(step,idx){
+              var dayNum=idx+1;
+              var lat=step.lat||0;
+              var lng=step.lng||step.lon||0;
+              var pid=step.place_id||step.placeId||'';
+              var rating=step.rating||_getRating(pid);
+              var photoUrl=_optImg(_getPhoto(pid));
+              html+='<section class="ds" id="day-'+dayNum+'" data-day="'+dayNum+'"';
+              if(lat&&lng)html+=' data-lat="'+lat+'" data-lng="'+lng+'"';
+              html+='>';
+              html+='<div class="dh" onclick="sD('+dayNum+')">';
+              html+='<div class="db">'+_t.step+' '+dayNum+'</div>';
+              html+='<div class="di"><h3>'+_esc(step.name)+'</h3></div>';
+              if(rating)html+='<div class="dr">'+_stars(rating)+'</div>';
+              html+='</div>';
+              if(photoUrl){html+='<div class="dp-inline"><img src="'+photoUrl+'" alt="'+_esc(step.name)+'" loading="lazy" width="600" height="200" onerror="this.parentNode.style.display=\'none\'"></div>';}
+              var visits=step.visits||[];
+              var activities=step.activities||[];
+              if(visits.length||activities.length){
+                html+='<div class="dd">';
+                visits.forEach(function(v,vi){
+                  var txt=v.text||v;
+                  html+='<div class="vi"><div class="vm">'+(vi+1)+'</div><div class="vc"><p>'+_esc(txt)+'</p>';
+                  if(v.visit_duration_min)html+='<span class="vd">⏱ '+v.visit_duration_min+' min</span>';
+                  html+='</div></div>';
+                });
+                if(activities.length){
+                  html+='<div class="ab"><h4>'+_t.activities+'</h4>';
+                  activities.forEach(function(a){
+                    var txt=a.text||a;
+                    html+='<div class="ai"><p>'+_esc(txt)+'</p>';
+                    if(a.activity_duration_min)html+='<span class="vd">⏱ '+a.activity_duration_min+' min</span>';
+                    html+='</div>';
+                  });
+                  html+='</div>';
+                }
+                html+='</div>';
+              }
+              if(idx<stps.length-1&&step.to_next_leg&&step.to_next_leg.distance_km){
+                html+='<div class="nl"><span>🚗</span><span>'+_esc(_t.driveToNext)+': <b>'+Math.round(step.to_next_leg.distance_km)+' km</b>';
+                if(step.to_next_leg.drive_min)html+=' · <b>'+_drvT(step.to_next_leg.drive_min)+'</b>';
+                html+='</span></div>';
+              }
+              if(pid)html+='<div class="htl-ph" data-pid="'+_esc(pid)+'"></div>';
+              html+='</section>';
+            });
+            var textPanel=document.getElementById('textPanel');
+            if(textPanel)textPanel.innerHTML=html;
+            (function(){
+              var phs=document.querySelectorAll('.htl-ph[data-pid]');
+              if(!phs.length)return;
+              var pids=[];phs.forEach(function(el){pids.push(el.getAttribute('data-pid'));});
+              function loadScript(src){return new Promise(function(ok,ko){if(document.querySelector('script[src="'+src+'"]')){ok();return;}var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s);});}
+              var bkLang={fr:'fr',en:'en-gb',es:'es',pt:'pt-pt',it:'it',ar:'ar'};
+              var bkSuf=bkLang[LANG]||'en-gb';
+              function doLoad(){
+                if(!window.ORT_HOTELS||!window.ORT_HOTELS.loadHotelsForMultiplePlaces)return;
+                window.ORT_HOTELS.loadHotelsForMultiplePlaces(pids).then(function(results){
+                  if(!results)return;
+                  phs.forEach(function(el){
+                    var pid2=el.getAttribute('data-pid');
+                    var pd=results[pid2];
+                    if(!pd||!pd.hotels||!pd.hotels.length)return;
+                    var best=pd.hotels.slice().sort(function(a,b){return(b.score||0)-(a.score||0);})[0];
+                    if(!best)return;
+                    var hLink='#';
+                    if(best.bookingUrl){var bm=best.bookingUrl.match(/https:\/\/www\.booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/);if(bm)hLink='https://www.booking.com/hotel/'+bm[1]+'/'+bm[2]+'.'+bkSuf+'.html';}
+                    var hImg=best.imageUrl?best.imageUrl.replace('square240','square600'):'';
+                    el.innerHTML='<a class="htl-inline" href="'+hLink+'" target="_blank" rel="noopener sponsored">'+(hImg?'<img src="'+hImg+'" alt="'+_esc(best.name)+'" loading="lazy" width="70" height="70">':'')+'<div class="htl-info"><span class="htl-name">'+_esc(best.name)+'</span>'+(best.score?'<span class="htl-score">'+best.score+'</span>':'')+'</div></a>';
+                  });
+                  console.log('[ORT-RESTORE] Hôtels injectés');
+                });
+              }
+              if(window.ORT_HOTELS){doLoad();}else{loadScript('/js/ort-hotels.js').then(function(){setTimeout(doLoad,100);}).catch(function(){console.warn('[ORT-RESTORE] ort-hotels.js non disponible');});}
+            })();
+            var newMP=[];
+            stps.forEach(function(step,idx){
+              var lat=step.lat||0;
+              var lng=step.lng||step.lon||0;
+              var pid=step.place_id||step.placeId||'';
+              var photoUrl=_optImg(_getPhoto(pid));
+              if(lat&&lng)newMP.push({day:idx+1,name:step.name||'',lat:lat,lng:lng,tag:'',photo:photoUrl||'',photoAlts:[],htl:null});
+            });
+            if(typeof mk==='object'){Object.keys(mk).forEach(function(k){try{map.removeLayer(mk[k]);}catch(e){}});mk={};}
+            if(pl){try{map.removeLayer(pl);}catch(e){}pl=null;}
+            MP=newMP;
+            if(map&&MP.length>=2){
+              var ll=MP.map(function(p){return[p.lat,p.lng];});
+              pl=L.polyline(ll,{color:'#113f7a',weight:2,opacity:.3,dashArray:'5,10'}).addTo(map);
+              if(typeof calculateOSRMRoute==='function'){
+                calculateOSRMRoute(ll,'driving').then(function(result){
+                  try{map.removeLayer(pl);}catch(e){}
+                  if(result&&result.coordinates&&result.coordinates.length>1){pl=L.polyline(result.coordinates,{color:result.color||'#113f7a',weight:result.weight||3,opacity:.8,dashArray:result.dashArray||null}).addTo(map);}
+                  else{pl=L.polyline(ll,{color:'#113f7a',weight:3,opacity:.7,dashArray:'8,6'}).addTo(map);}
+                }).catch(function(){try{map.removeLayer(pl);}catch(e){}pl=L.polyline(ll,{color:'#113f7a',weight:3,opacity:.7,dashArray:'8,6'}).addTo(map);});
+              }
+            }
+            if(map&&MP.length){
+              var bd=L.latLngBounds(MP.map(function(p){return[p.lat,p.lng];}));
+              MP.forEach(function(p){
+                var m=L.marker([p.lat,p.lng],{icon:mkIcon(p.day,false),zIndexOffset:p.day}).addTo(map);
+                m.bindPopup('<strong>'+p.day+'. '+p.name+'</strong>');
+                m.on('click',function(){var el=document.getElementById('day-'+p.day);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});hD(p.day);}});
+                mk[p.day]=m;
+              });
+              map.fitBounds(bd.pad(0.1));
+              initBd=bd;
+            }
+            if(typeof obs!=='undefined'){
+              document.querySelectorAll('.ds').forEach(function(s){obs.observe(s);});
+            }
+            var _barMsgs={fr:'Votre itinéraire personnalisé',en:'Your customized itinerary',es:'Tu itinerario personalizado',pt:'Seu itinerário personalizado',it:'Il tuo itinerario personalizzato',ar:'مسارك المخصص'};
+            var _editMsgs={fr:'Modifier',en:'Edit',es:'Editar',pt:'Editar',it:'Modifica',ar:'تعديل'};
+            var _origMsgs={fr:'Voir l\'original',en:'See original',es:'Ver original',pt:'Ver original',it:'Vedi originale',ar:'عرض الأصلي'};
+            var bar=document.createElement('div');
+            bar.style.cssText='padding:8px 20px;background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border-bottom:2px solid #d0dff0;text-align:center;font-size:.85rem;position:sticky;top:0;z-index:11000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap';
+            bar.innerHTML='<span style="color:#113f7a;font-weight:600">✨ '+(_barMsgs[LANG]||_barMsgs.en)+'</span>'+
+              '<button id="ort-custom-edit" style="padding:5px 14px;border:none;border-radius:8px;background:#113f7a;color:#fff;cursor:pointer;font-weight:600;font-size:.82rem">✏️ '+(_editMsgs[LANG]||_editMsgs.en)+'</button>'+
+              '<button id="ort-custom-orig" style="padding:5px 14px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:.82rem;color:#555">'+(_origMsgs[LANG]||_origMsgs.en)+'</button>';
+            document.body.insertBefore(bar,document.body.firstChild);
+            document.getElementById('ort-custom-edit').addEventListener('click',function(){
+              bar.remove();
+              if(window.ORT_ITIN_EDITOR){window.ORT_ITIN_EDITOR._launch();}
+            });
+            document.getElementById('ort-custom-orig').addEventListener('click',function(){
+              var u=new URL(window.location.href);
+              u.searchParams.delete('tripId');
+              window.location.href=u.toString();
+            });
+          });  // fin Promise.all().then
+          }).catch(function(e){console.warn('[ORT-RESTORE] Erreur chargement trip:',e);});
+          return;
+        }
         return window.ORT_STATE.getAllTrips();
       }).then(function(trips){
         if(!trips||!trips.length)return;
@@ -313,14 +517,16 @@ function addPlaceFromMap(pid){if(map)map.closePopup();if(!window.ORT_ITIN_EDITOR
         bar.innerHTML=h2;
         document.body.insertBefore(bar,document.body.firstChild);
         document.getElementById('ort-restore-load').addEventListener('click',function(){
-          bar.remove();
-          if(window.ORT_ITIN_EDITOR){window.ORT_ITIN_EDITOR._launch();}
+          var u=new URL(window.location.href);
+          u.searchParams.set('tripId',match.id);
+          window.location.href=u.toString();
         });
         document.getElementById('ort-restore-dismiss').addEventListener('click',function(){
           bar.remove();
         });
       }).catch(function(e){console.warn('[ORT-RESTORE]',e);});
     });
+    }).catch(function(e){console.warn('[ORT-RESTORE] Firebase init error:',e);});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(tryRestore,2000);});
   else setTimeout(tryRestore,2000);

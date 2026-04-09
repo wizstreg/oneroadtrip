@@ -693,7 +693,9 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
     // 🗺️ Voir l'itinéraire sur la page statique (si le voyage vient d'un itin statique)
     const staticUrl = buildStaticUrl(rt);
     if (staticUrl) {
-      const staticBtn = btn(L.btn.openStatic || '🗺️ Visualiser', ()=> { location.href = staticUrl; });
+      // Ajouter tripId pour que la page statique charge directement la version modifiée
+      const staticUrlWithTrip = staticUrl + (staticUrl.indexOf('?') >= 0 ? '&' : '?') + 'tripId=' + encodeURIComponent(rt.id);
+      const staticBtn = btn(L.btn.openStatic || '🗺️ Visualiser', ()=> { location.href = staticUrlWithTrip; });
       actions.appendChild(staticBtn);
     }
 const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
@@ -731,8 +733,8 @@ function openRT(rt){
 
     // Sinon, si on a un itinId, construire l'URL
     if (itinId) {
-      // Slugifier l'itinId : "KH::phnom-penh-siem-reap-7j" → "phnom-penh-siem-reap-7j"
-      var slug = itinId.replace(/^[A-Z]{2}::/, '');
+      // Slugifier comme generate-v2.js : "84::vaucluse" → "84-vaucluse", "KH::phnom-penh" → "kh-phnom-penh"
+      var slug = itinId.toLowerCase().replace(/::/g, '-').replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
       var langSlug = LSLUG[lang] || 'itineraries';
       return '/' + langSlug + '/' + slug + '.html';
