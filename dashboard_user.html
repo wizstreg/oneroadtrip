@@ -726,9 +726,9 @@ function openRT(rt){
     var itinId = rt._originalItinId || '';
     var sourceUrl = rt.sourceUrl || '';
 
-    // Si on a un sourceUrl qui pointe vers une page statique ORT, l'utiliser directement
+    // Si on a un sourceUrl qui pointe vers une page statique ORT, utiliser le chemin uniquement
     if (sourceUrl && /\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//.test(sourceUrl)) {
-      return sourceUrl;
+      try { return new URL(sourceUrl, location.origin).pathname; } catch(e) { return sourceUrl.replace(/^https?:\/\/[^\/]+/, ''); }
     }
 
     // Sinon, si on a un itinId, construire l'URL
