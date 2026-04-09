@@ -326,8 +326,16 @@
       const trip = getTripFromLocalStorage(tripId);
       if (trip) {
         tripsCache[tripId] = trip;
+        return trip;
       }
-      return trip;
+      // Fallback Firestore : même sans premium, si l'user est connecté
+      // et que le trip n'est pas en local, essayer Firestore
+      // (utile pour les voyages sauvegardés depuis l'éditeur statique)
+      if (currentUser && firestoreDb) {
+        console.log('🔄 [STATE] Trip absent en local, fallback Firestore pour:', tripId);
+        return await getTripFromFirestore(tripId);
+      }
+      return null;
     }
   }
 
