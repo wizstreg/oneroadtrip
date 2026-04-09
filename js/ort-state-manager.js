@@ -285,8 +285,20 @@
    * @param {string} tripId - ID du voyage
    * @param {boolean} forceReload - Force le rechargement depuis la source
    */
+  // Normalise les coordonnées des steps pour garantir la présence de lat/lon ET lat/lng
+  function normalizeStepCoords(trip) {
+    if (!trip || !trip.steps || !Array.isArray(trip.steps)) return trip;
+    trip.steps.forEach(function(step) {
+      if (step.lng && !step.lon) step.lon = step.lng;
+      if (step.lon && !step.lng) step.lng = step.lon;
+    });
+    return trip;
+  }
+
   async function getTrip(tripId, forceReload = false) {
     console.log(`🔍 [STATE] Récupération voyage: ${tripId}`);
+
+    var result = null;
 
     // 🔴 SI c'est un NEW tripId depuis catalogue: chercher le catalogue original
     const catalogSource = sessionStorage.getItem('ort_catalog_source');
@@ -294,49 +306,52 @@
       // Vérifier si déjà en cache pour éviter les appels répétés
       if (tripsCache[tripId]) {
         console.log('💨 [STATE] NEW tripId depuis catalogue - déjà en cache');
-        return tripsCache[tripId];
-      }
-      
-      console.log('[STATE] 📚 NEW tripId depuis catalogue, cherche source:', catalogSource);
-      // Faire un appel récursif pour charger le catalogue
-      const catalogData = await getTrip(catalogSource, true);
-      if (catalogData) {
-        console.log('[STATE] ✅ Données catalogue chargées pour NEW tripId');
-        // Mettre à jour l'ID et cacher l'origine
-        catalogData.id = tripId;
-        catalogData.tripId = tripId;
-        // Mettre en cache pour éviter les appels répétés
-        tripsCache[tripId] = catalogData;
-        // Nettoyer sessionStorage maintenant qu'on a mis en cache
-        sessionStorage.removeItem('ort_catalog_source');
-        return catalogData;
+        result = tripsCache[tripId];
+      } else {
+        console.log('[STATE] 📚 NEW tripId depuis catalogue, cherche source:', catalogSource);
+        // Faire un appel récursif pour charger le catalogue
+        const catalogData = await getTrip(catalogSource, true);
+        if (catalogData) {
+          console.log('[STATE] ✅ Données catalogue chargées pour NEW tripId');
+          // Mettre à jour l'ID et cacher l'origine
+          catalogData.id = tripId;
+          catalogData.tripId = tripId;
+          // Mettre en cache pour éviter les appels répétés
+          tripsCache[tripId] = catalogData;
+          // Nettoyer sessionStorage maintenant qu'on a mis en cache
+          sessionStorage.removeItem('ort_catalog_source');
+          result = catalogData;
+        }
       }
     }
 
-    // Si en cache et pas de force reload
-    if (!forceReload && tripsCache[tripId]) {
-      console.log('💨 [STATE] Voyage trouvé en cache');
-      return tripsCache[tripId];
+    if (!result) {
+      // Si en cache et pas de force reload
+      if (!forceReload && tripsCache[tripId]) {
+        console.log('💨 [STATE] Voyage trouvé en cache');
+        result = tripsCache[tripId];
+      }
+      // Charge selon le mode
+      else if (isPremiumUser && currentUser) {
+        result = await getTripFromFirestore(tripId);
+      } else {
+        const trip = getTripFromLocalStorage(tripId);
+        if (trip) {
+          tripsCache[tripId] = trip;
+          result = trip;
+        }
+        // Fallback Firestore : même sans premium, si l'user est connecté
+        // et que le trip n'est pas en local, essayer Firestore
+        // (utile pour les voyages sauvegardés depuis l'éditeur statique)
+        else if (currentUser && firestoreDb) {
+          console.log('🔄 [STATE] Trip absent en local, fallback Firestore pour:', tripId);
+          result = await getTripFromFirestore(tripId);
+        }
+      }
     }
 
-    // Charge selon le mode
-    if (isPremiumUser && currentUser) {
-      return await getTripFromFirestore(tripId);
-    } else {
-      const trip = getTripFromLocalStorage(tripId);
-      if (trip) {
-        tripsCache[tripId] = trip;
-        return trip;
-      }
-      // Fallback Firestore : même sans premium, si l'user est connecté
-      // et que le trip n'est pas en local, essayer Firestore
-      // (utile pour les voyages sauvegardés depuis l'éditeur statique)
-      if (currentUser && firestoreDb) {
-        console.log('🔄 [STATE] Trip absent en local, fallback Firestore pour:', tripId);
-        return await getTripFromFirestore(tripId);
-      }
-      return null;
-    }
+    // Normaliser les coordonnées avant de retourner
+    return normalizeStepCoords(result);
   }
 
   /**
@@ -758,6 +773,14 @@
           restored[key] = value;
         }
       }
+    }
+    
+    // Normaliser lng → lon sur les steps (l'éditeur statique stocke lng, RT Detail attend lon)
+    if (restored.steps && Array.isArray(restored.steps)) {
+      restored.steps.forEach(function(step) {
+        if (step.lng && !step.lon) step.lon = step.lng;
+        if (step.lon && !step.lng) step.lng = step.lon;
+      });
     }
     
     return restored;

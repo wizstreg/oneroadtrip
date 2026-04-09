@@ -24,9 +24,13 @@
       deleteStep: 'Supprimer',
       confirmDelete: 'Supprimer {name} de l\'itinéraire ?',
       confirmCancel: 'Annuler les modifications ? Toutes les changements seront perdus.',
+      confirmSave: 'Sauvegarder cet itinéraire dans vos voyages ?',
+      keepEditing: 'Continuer sans sauvegarder',
+      saveNow: 'Sauvegarder',
       saved: 'Sauvegardé !',
       saving: 'Sauvegarde…',
-      loginRequired: 'Connectez-vous pour sauvegarder votre itinéraire personnalisé.',
+      loginRequired: 'Connectez-vous ou créez un compte pour sauvegarder vos modifications.',
+      loginBtn: 'Se connecter / S\u2019inscrire',
       unsaved: 'Modifications non sauvegardées',
       searchPlace: 'Rechercher un lieu…',
       alreadyIn: 'déjà dans l\'itinéraire',
@@ -34,6 +38,7 @@
       insertAfter: 'Insérer après',
       choosePosition: 'Où placer {name} ?',
       day: 'Jour',
+      step: 'Étape',
       visits: 'Visites',
       activities: 'Activités',
       noResults: 'Aucun lieu trouvé',
@@ -49,7 +54,8 @@
       reorgTitle: 'Réorganisation',
       reorgOnMap: 'Réorganiser sur la carte',
       reorgList: 'Mode liste',
-      reorgInst: 'Clic = prochaine étape · Double-clic = supprimer',
+      reorgInst: 'Cliquez sur une étape pour définir l\u2019ordre · ✕ pour supprimer · Cliquez sur un lieu gris pour l\u2019ajouter',
+      reorgInstMobile: 'Tapez les étapes dans l\u2019ordre souhaité. Ouvrez une étape pour la supprimer. Les lieux gris peuvent être ajoutés.',
       reorgInvert: 'Inverser le circuit',
       reorgReset: 'Réinitialiser',
       reorgPreview: 'Prévisualiser',
@@ -63,6 +69,11 @@
       reorgAdd: 'Ajouter',
       reorgNewOrder: 'Nouvel ordre',
       reorgPending: 'En attente',
+      saveQuestion: 'Sauvegarder dans vos voyages ?',
+      saveYes: 'Oui, sauvegarder',
+      saveNo: 'Non, juste prévisualiser',
+      saveLater: '💾 Sauvegarder',
+      saveLimit: 'Nombre de voyages limité.',
     },
     en: {
       editExplain: 'Rearrange stops, add or remove places. To edit visits and activities, use advanced features.',
@@ -73,9 +84,13 @@
       deleteStep: 'Delete',
       confirmDelete: 'Remove {name} from the itinerary?',
       confirmCancel: 'Cancel changes? All modifications will be lost.',
+      confirmSave: 'Save this itinerary to your trips?',
+      keepEditing: 'Continue without saving',
+      saveNow: 'Save',
       saved: 'Saved!',
       saving: 'Saving…',
-      loginRequired: 'Log in to save your customized itinerary.',
+      loginRequired: 'Sign in or create an account to save your changes.',
+      loginBtn: 'Sign in / Register',
       unsaved: 'Unsaved changes',
       searchPlace: 'Search a place…',
       alreadyIn: 'already in itinerary',
@@ -83,6 +98,7 @@
       insertAfter: 'Insert after',
       choosePosition: 'Where to place {name}?',
       day: 'Day',
+      step: 'Stop',
       visits: 'Visits',
       activities: 'Activities',
       noResults: 'No places found',
@@ -98,7 +114,8 @@
       reorgTitle: 'Reorganization',
       reorgOnMap: 'Reorder on map',
       reorgList: 'List mode',
-      reorgInst: 'Click = next stop · Double-click = delete',
+      reorgInst: 'Click a stop to set the order · ✕ to delete · Click a grey place to add it',
+      reorgInstMobile: 'Tap stops in your desired order. Open a stop to delete it. Grey places can be added.',
       reorgInvert: 'Reverse route',
       reorgReset: 'Reset',
       reorgPreview: 'Preview',
@@ -112,6 +129,11 @@
       reorgAdd: 'Add',
       reorgNewOrder: 'New order',
       reorgPending: 'Pending',
+      saveQuestion: 'Save to your trips?',
+      saveYes: 'Yes, save',
+      saveNo: 'No, just preview',
+      saveLater: '💾 Save',
+      saveLimit: 'Saved trips limit.',
     },
     es: {
       editExplain: 'Reorganiza las paradas, añade o elimina lugares. Para modificar visitas y actividades, usa las funciones avanzadas.',
@@ -122,9 +144,13 @@
       deleteStep: 'Eliminar',
       confirmDelete: '¿Eliminar {name} del itinerario?',
       confirmCancel: '¿Cancelar los cambios? Se perderán todas las modificaciones.',
+      confirmSave: '¿Guardar este itinerario en tus viajes?',
+      keepEditing: 'Continuar sin guardar',
+      saveNow: 'Guardar',
       saved: '¡Guardado!',
       saving: 'Guardando…',
-      loginRequired: 'Inicia sesión para guardar tu itinerario personalizado.',
+      loginRequired: 'Inicia sesión o crea una cuenta para guardar tus cambios.',
+      loginBtn: 'Iniciar sesión / Registrarse',
       unsaved: 'Cambios sin guardar',
       searchPlace: 'Buscar un lugar…',
       alreadyIn: 'ya en el itinerario',
@@ -132,6 +158,7 @@
       insertAfter: 'Insertar después',
       choosePosition: '¿Dónde colocar {name}?',
       day: 'Día',
+      step: 'Etapa',
       visits: 'Visitas',
       activities: 'Actividades',
       noResults: 'Ningún lugar encontrado',
@@ -147,7 +174,8 @@
       reorgTitle: 'Reorganización',
       reorgOnMap: 'Reorganizar en el mapa',
       reorgList: 'Modo lista',
-      reorgInst: 'Clic = siguiente parada · Doble clic = eliminar',
+      reorgInst: 'Haz clic en una parada para definir el orden · ✕ para eliminar · Haz clic en un lugar gris para añadirlo',
+      reorgInstMobile: 'Toca las paradas en el orden deseado. Abre una parada para eliminarla. Los lugares grises se pueden añadir.',
       reorgInvert: 'Invertir circuito',
       reorgReset: 'Reiniciar',
       reorgPreview: 'Previsualizar',
@@ -161,6 +189,11 @@
       reorgAdd: 'Añadir',
       reorgNewOrder: 'Nuevo orden',
       reorgPending: 'Pendiente',
+      saveQuestion: '¿Guardar en tus viajes?',
+      saveYes: 'Sí, guardar',
+      saveNo: 'No, solo previsualizar',
+      saveLater: '💾 Guardar',
+      saveLimit: 'Límite de viajes.',
     },
     pt: {
       editExplain: 'Reorganize as paragens, adicione ou remova lugares. Para editar visitas e atividades, use as funções avançadas.',
@@ -171,9 +204,13 @@
       deleteStep: 'Eliminar',
       confirmDelete: 'Remover {name} do itinerário?',
       confirmCancel: 'Cancelar as alterações? Todas as modificações serão perdidas.',
+      confirmSave: 'Salvar este itinerário nas suas viagens?',
+      keepEditing: 'Continuar sem salvar',
+      saveNow: 'Salvar',
       saved: 'Salvo!',
       saving: 'Salvando…',
-      loginRequired: 'Faça login para salvar seu itinerário personalizado.',
+      loginRequired: 'Faça login ou crie uma conta para salvar suas alterações.',
+      loginBtn: 'Entrar / Registar',
       unsaved: 'Alterações não salvas',
       searchPlace: 'Procurar um lugar…',
       alreadyIn: 'já no itinerário',
@@ -181,6 +218,7 @@
       insertAfter: 'Inserir depois',
       choosePosition: 'Onde colocar {name}?',
       day: 'Dia',
+      step: 'Etapa',
       visits: 'Visitas',
       activities: 'Atividades',
       noResults: 'Nenhum lugar encontrado',
@@ -196,7 +234,8 @@
       reorgTitle: 'Reorganização',
       reorgOnMap: 'Reorganizar no mapa',
       reorgList: 'Modo lista',
-      reorgInst: 'Clique = próxima paragem · Duplo clique = eliminar',
+      reorgInst: 'Clique numa paragem para definir a ordem · ✕ para eliminar · Clique num lugar cinza para o adicionar',
+      reorgInstMobile: 'Toque nas paragens na ordem desejada. Abra uma paragem para a eliminar. Os lugares cinzentos podem ser adicionados.',
       reorgInvert: 'Inverter circuito',
       reorgReset: 'Reiniciar',
       reorgPreview: 'Pré-visualizar',
@@ -210,6 +249,11 @@
       reorgAdd: 'Adicionar',
       reorgNewOrder: 'Nova ordem',
       reorgPending: 'Pendente',
+      saveQuestion: 'Salvar nas suas viagens?',
+      saveYes: 'Sim, salvar',
+      saveNo: 'Não, apenas pré-visualizar',
+      saveLater: '💾 Salvar',
+      saveLimit: 'Limite de viagens.',
     },
     it: {
       editExplain: 'Riorganizza le tappe, aggiungi o rimuovi luoghi. Per modificare visite e attività, usa le funzioni avanzate.',
@@ -220,9 +264,13 @@
       deleteStep: 'Elimina',
       confirmDelete: 'Rimuovere {name} dall\'itinerario?',
       confirmCancel: 'Annullare le modifiche? Tutte le modifiche saranno perse.',
+      confirmSave: 'Salvare questo itinerario nei tuoi viaggi?',
+      keepEditing: 'Continua senza salvare',
+      saveNow: 'Salva',
       saved: 'Salvato!',
       saving: 'Salvataggio…',
-      loginRequired: 'Accedi per salvare il tuo itinerario personalizzato.',
+      loginRequired: 'Accedi o crea un account per salvare le tue modifiche.',
+      loginBtn: 'Accedi / Registrati',
       unsaved: 'Modifiche non salvate',
       searchPlace: 'Cerca un luogo…',
       alreadyIn: 'già nell\'itinerario',
@@ -230,6 +278,7 @@
       insertAfter: 'Inserisci dopo',
       choosePosition: 'Dove posizionare {name}?',
       day: 'Giorno',
+      step: 'Tappa',
       visits: 'Visite',
       activities: 'Attività',
       noResults: 'Nessun luogo trovato',
@@ -245,7 +294,8 @@
       reorgTitle: 'Riorganizzazione',
       reorgOnMap: 'Riorganizza sulla mappa',
       reorgList: 'Modalità lista',
-      reorgInst: 'Clic = prossima tappa · Doppio clic = elimina',
+      reorgInst: 'Clicca su una tappa per definire l\u2019ordine · ✕ per eliminare · Clicca su un luogo grigio per aggiungerlo',
+      reorgInstMobile: 'Tocca le tappe nell\u2019ordine desiderato. Apri una tappa per eliminarla. I luoghi grigi possono essere aggiunti.',
       reorgInvert: 'Inverti percorso',
       reorgReset: 'Reimposta',
       reorgPreview: 'Anteprima',
@@ -259,6 +309,11 @@
       reorgAdd: 'Aggiungi',
       reorgNewOrder: 'Nuovo ordine',
       reorgPending: 'In attesa',
+      saveQuestion: 'Salvare nei tuoi viaggi?',
+      saveYes: 'Sì, salva',
+      saveNo: 'No, solo anteprima',
+      saveLater: '💾 Salva',
+      saveLimit: 'Limite viaggi raggiunto.',
     },
     ar: {
       editExplain: 'أعد ترتيب المحطات، أضف أو احذف أماكن. لتعديل الزيارات والأنشطة، استخدم الوظائف المتقدمة.',
@@ -269,9 +324,13 @@
       deleteStep: 'حذف',
       confirmDelete: 'حذف {name} من المسار؟',
       confirmCancel: 'إلغاء التغييرات؟ ستفقد جميع التعديلات.',
+      confirmSave: 'حفظ هذا المسار في رحلاتك؟',
+      keepEditing: 'متابعة بدون حفظ',
+      saveNow: 'حفظ',
       saved: 'تم الحفظ!',
       saving: 'جارٍ الحفظ…',
-      loginRequired: 'سجّل الدخول لحفظ مسارك المخصص.',
+      loginRequired: 'سجّل الدخول أو أنشئ حسابًا لحفظ تعديلاتك.',
+      loginBtn: 'تسجيل الدخول / إنشاء حساب',
       unsaved: 'تغييرات غير محفوظة',
       searchPlace: 'ابحث عن مكان…',
       alreadyIn: 'موجود في المسار',
@@ -279,6 +338,7 @@
       insertAfter: 'إدراج بعد',
       choosePosition: 'أين تضع {name}؟',
       day: 'يوم',
+      step: 'محطة',
       visits: 'زيارات',
       activities: 'أنشطة',
       noResults: 'لم يتم العثور على أماكن',
@@ -294,7 +354,8 @@
       reorgTitle: 'إعادة الترتيب',
       reorgOnMap: 'إعادة الترتيب على الخريطة',
       reorgList: 'وضع القائمة',
-      reorgInst: 'نقرة = المحطة التالية · نقرة مزدوجة = حذف',
+      reorgInst: 'انقر على محطة لتحديد الترتيب · ✕ للحذف · انقر على مكان رمادي لإضافته',
+      reorgInstMobile: 'اضغط على المحطات بالترتيب المطلوب. افتح محطة لحذفها. يمكن إضافة الأماكن الرمادية.',
       reorgInvert: 'عكس المسار',
       reorgReset: 'إعادة تعيين',
       reorgPreview: 'معاينة',
@@ -308,6 +369,11 @@
       reorgAdd: 'إضافة',
       reorgNewOrder: 'الترتيب الجديد',
       reorgPending: 'في الانتظار',
+      saveQuestion: 'حفظ في رحلاتك؟',
+      saveYes: 'نعم، حفظ',
+      saveNo: 'لا، معاينة فقط',
+      saveLater: '💾 حفظ',
+      saveLimit: 'تم الوصول إلى الحد الأقصى.',
     }
   };
 
@@ -528,7 +594,7 @@
       // 3. Activer le mode édition
       editorActive = true;
       isDirty = false;
-      savedTripId = null;
+      if (!savedTripId) savedTripId = null;  // conserver le tripId si chargé depuis Firestore
       editorMode = 'map';
 
       // Lancer directement le mode carte (principal)
@@ -547,6 +613,24 @@
   // CHARGEMENT DONNÉES
   // ─────────────────────────────────────────────
   async function loadItineraryData() {
+    // Chemin alternatif : si tripId est dans l'URL, charger depuis Firestore
+    var urlTripId = new URLSearchParams(window.location.search).get('tripId');
+    if (urlTripId && window.ORT_STATE) {
+      try {
+        var trip = await window.ORT_STATE.getTrip(urlTripId);
+        if (trip && trip.steps && trip.steps.length) {
+          console.log('[ORT-EDITOR] Chargement depuis Firestore pour tripId:', urlTripId);
+          itinTitle = trip.title || 'Roadtrip';
+          steps = normalizeSteps(trip.steps, config.cc);
+          savedTripId = urlTripId;
+          console.log('[ORT-EDITOR] ' + steps.length + ' étapes chargées depuis Firestore pour "' + itinTitle + '"');
+          return;
+        }
+      } catch (e) {
+        console.warn('[ORT-EDITOR] Firestore fallback échoué, chargement catalogue:', e);
+      }
+    }
+
     var cc = config.cc;
     var ccLow = cc.toLowerCase();
     var lang = config.lang;
@@ -966,7 +1050,7 @@
     var textPanel = document.getElementById('textPanel');
     if (!textPanel) return;
 
-    var uiDay = t.day || 'Jour';
+    var uiStep = t.step || t.day || 'Étape';
     var uiActivities = t.activities || 'Activités';
     var uiDrive = t.driveToNext || 'Vers l\'étape suivante';
 
@@ -982,7 +1066,7 @@
 
       // Header (.dh)
       html += '<div class="dh" onclick="sD(' + dayNum + ')">';
-      html += '<div class="db">' + uiDay + ' ' + dayNum + '</div>';
+      html += '<div class="db">' + uiStep + ' ' + dayNum + '</div>';
       html += '<div class="di"><h3>' + esc(step.name) + '</h3></div>';
       if (step.rating) html += '<div class="dr">' + stars(step.rating) + '</div>';
       html += '</div>';
@@ -1067,18 +1151,55 @@
     // Réutiliser le tripId si on a déjà sauvegardé une fois
     var tripId = savedTripId || global.ORT_STATE.generateTripId();
 
+    // Normaliser les steps pour RT Detail (qui attend step.lon, pas step.lng)
+    var normalizedSteps = deepClone(steps).map(function (step) {
+      if (step.lng && !step.lon) step.lon = step.lng;
+      if (step.lon && !step.lng) step.lng = step.lon;
+      // S'assurer que place_id est bien présent
+      if (!step.place_id && step.placeId) step.place_id = step.placeId;
+      if (!step.placeId && step.place_id) step.placeId = step.place_id;
+      return step;
+    });
+
+    // Convertir les steps internes en days_plan (format attendu par RT Detail)
+    var daysPlan = steps.map(function (step, idx) {
+      var sLat = step.lat || 0;
+      var sLon = step.lng || step.lon || 0;
+      return {
+        day: idx + 1,
+        slice: 1,
+        suggested_days: step.suggested_days || step._suggestedDays || 1,
+        rating: step.rating || 0,
+        name: step.name || '',
+        night: {
+          place_id: step.place_id || step.placeId || '',
+          coords: (sLat && sLon) ? [sLat, sLon] : [],
+          map_keywords: step._mapKeywords || []
+        },
+        visits: (step.visits || []).map(function (v) {
+          return typeof v === 'string' ? { text: v, place_id: '' } : { text: v.text || '', place_id: v.place_id || '', visit_duration_min: v.visit_duration_min || 0 };
+        }),
+        activities: (step.activities || []).map(function (a) {
+          return typeof a === 'string' ? { text: a, place_id: '' } : { text: a.text || '', place_id: a.place_id || '', activity_duration_min: a.activity_duration_min || 0 };
+        }),
+        to_next_leg: step.to_next_leg || (idx < steps.length - 1 ? { distance_km: 0, drive_min: 0, transport_mode: 'car', method: 'heuristic' } : {})
+      };
+    });
+
     var tripData = {
       id: tripId,
       title: itinTitle,
       country: config.cc,
       cc: config.cc,
-      steps: deepClone(steps),
+      steps: normalizedSteps,
+      days_plan: daysPlan,
+      estimated_days_base: steps.length,
       saved: true,
       source: 'static-editor',
       _originalItinId: config.itinId,
       sourceUrl: global.location.href,
       updatedAt: Date.now(),
-      createdAt: savedTripId ? undefined : Date.now(), // createdAt seulement à la première
+      createdAt: savedTripId ? undefined : Date.now(),
       nights: steps.reduce(function (sum, s) { return sum + (s.nights || 1); }, 0),
       kms: steps.reduce(function (sum, s) { return sum + (s.distance_km || 0); }, 0)
     };
@@ -1382,11 +1503,28 @@
       });
     }
 
-    // Mettre tous les marqueurs en mode "en attente" (gris)
+    // Mettre tous les marqueurs en mode "en attente" et ajouter popup avec bouton supprimer
     steps.forEach(function (step, idx) {
       var dayNum = idx + 1;
       if (global.mk[dayNum]) {
         global.mk[dayNum].setIcon(reorgIcon(dayNum, 'pending', dayNum));
+        // Popup avec nom + bouton supprimer (utile sur mobile où le double-clic ne marche pas)
+        var popHtml = '<div style="text-align:center;min-width:140px;font-family:Inter,system-ui,sans-serif">';
+        popHtml += '<strong>' + esc(step.name) + '</strong><br>';
+        popHtml += '<button data-reorg-del="' + step._idx + '" style="margin-top:6px;padding:6px 12px;background:#e11d48;color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">✕ ' + esc(t.deleteStep) + '</button>';
+        popHtml += '</div>';
+        global.mk[dayNum].bindPopup(popHtml, { maxWidth: 200 });
+        global.mk[dayNum].on('popupopen', function () {
+          setTimeout(function () {
+            var delBtn = document.querySelector('button[data-reorg-del="' + step._idx + '"]');
+            if (delBtn) {
+              delBtn.addEventListener('click', function () {
+                global.map.closePopup();
+                handleReorgDblClick(step._idx);
+              });
+            }
+          }, 50);
+        });
         // Attacher les listeners de clic
         global.mk[dayNum].off('click');
         global.mk[dayNum].on('click', function () { handleReorgClick(step._idx); });
@@ -1460,11 +1598,12 @@
   function reorgIcon(day, state, label) {
     var bg, sz, fs, txt, extra = '';
     if (state === 'ordered') {
-      bg = '#e11d48'; sz = 30; fs = 13; txt = label;
+      bg = '#e11d48'; sz = 32; fs = 13; txt = label;
     } else if (state === 'deleted') {
-      bg = '#cbd5e1'; sz = 22; fs = 11; txt = '✕'; extra = 'opacity:.4;';
+      bg = '#9ca3af'; sz = 22; fs = 11; txt = '✕'; extra = 'opacity:.5;';
     } else {
-      bg = '#94a3b8'; sz = 26; fs = 11; txt = label; extra = 'opacity:.7;';
+      // Pending : bleu moyen bien visible
+      bg = '#4b7ab5'; sz = 28; fs = 12; txt = label; extra = '';
     }
     return L.divIcon({
       html: '<div style="background:' + bg + ';color:#fff;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);' + extra + '">' + txt + '</div>',
@@ -1495,7 +1634,7 @@
 
     var idx = reorg.newOrder.indexOf(stepIdx);
     if (idx >= 0) {
-      // Déjà dans l'ordre → retirer (correction)
+      // Déjà dans l\u2019ordre → retirer (correction)
       reorg.newOrder.splice(idx, 1);
     } else {
       // Pas encore → ajouter à la fin
@@ -1572,7 +1711,7 @@
         }
       });
       if (origLL.length >= 2) {
-        reorgOriginalPl = L.polyline(origLL, { color: '#94a3b8', weight: 2, opacity: 0.4, dashArray: '6,8' }).addTo(map);
+        reorgOriginalPl = L.polyline(origLL, { color: '#4b7ab5', weight: 3, opacity: 0.6, dashArray: '8,8' }).addTo(map);
       }
     }
 
@@ -1638,9 +1777,10 @@
       reorg.newOrder.forEach(function (sIdx, i) {
         var step = steps.find(function (s) { return s._idx === sIdx; });
         var name = step ? step.name : (placesIndex[sIdx] ? placesIndex[sIdx].name : sIdx);
-        h += '<div class="ort-ed-rpanel-item ordered" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + sIdx + ')" ondblclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')">';
-        h += '<div class="ort-ed-rpanel-num ordered">' + (i + 1) + '</div>';
-        h += '<div class="ort-ed-rpanel-name">' + esc(name) + '</div>';
+        h += '<div class="ort-ed-rpanel-item ordered">';
+        h += '<div class="ort-ed-rpanel-num ordered" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + sIdx + ')" style="cursor:pointer">' + (i + 1) + '</div>';
+        h += '<div class="ort-ed-rpanel-name" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + sIdx + ')" style="cursor:pointer">' + esc(name) + '</div>';
+        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')" style="background:none;border:none;color:#e11d48;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0" title="' + esc(t.deleteStep) + '">✕</button>';
         h += '</div>';
       });
     }
@@ -1650,26 +1790,27 @@
       return reorg.newOrder.indexOf(s._idx) < 0 && reorg.deleted.indexOf(s._idx) < 0;
     });
     if (pending.length > 0) {
-      h += '<div style="padding:4px 16px;font-size:.7rem;color:#94a3b8;font-weight:600;text-transform:uppercase">' + esc(t.reorgPending) + '</div>';
+      h += '<div style="padding:4px 16px;font-size:.7rem;color:#4b7ab5;font-weight:600;text-transform:uppercase">' + esc(t.reorgPending) + '</div>';
       pending.forEach(function (step, i) {
         var origNum = steps.indexOf(step) + 1;
-        h += '<div class="ort-ed-rpanel-item" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + step._idx + ')" ondblclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + step._idx + ')">';
-        h += '<div class="ort-ed-rpanel-num pending">' + origNum + '</div>';
-        h += '<div class="ort-ed-rpanel-name">' + esc(step.name) + '</div>';
+        h += '<div class="ort-ed-rpanel-item">';
+        h += '<div class="ort-ed-rpanel-num pending" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + step._idx + ')" style="cursor:pointer">' + origNum + '</div>';
+        h += '<div class="ort-ed-rpanel-name" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + step._idx + ')" style="cursor:pointer">' + esc(step.name) + '</div>';
+        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + step._idx + ')" style="background:none;border:none;color:#9ca3af;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0" title="' + esc(t.deleteStep) + '">✕</button>';
         h += '</div>';
       });
     }
 
     // Étapes supprimées
     if (reorg.deleted.length > 0) {
-      h += '<div style="padding:4px 16px;font-size:.7rem;color:#cbd5e1;font-weight:600;text-transform:uppercase">✕ ' + esc(t.reorgDeleted) + '</div>';
+      h += '<div style="padding:4px 16px;font-size:.7rem;color:#9ca3af;font-weight:600;text-transform:uppercase">✕ ' + esc(t.reorgDeleted) + '</div>';
       reorg.deleted.forEach(function (sIdx) {
         var step = steps.find(function (s) { return s._idx === sIdx; });
         var name = step ? step.name : sIdx;
-        h += '<div class="ort-ed-rpanel-item deleted" ondblclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')">';
+        h += '<div class="ort-ed-rpanel-item deleted">';
         h += '<div class="ort-ed-rpanel-num deleted">✕</div>';
         h += '<div class="ort-ed-rpanel-name">' + esc(name) + '</div>';
-        h += '<div class="ort-ed-rpanel-badge">' + esc(t.reorgDeleted) + '</div>';
+        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')" style="background:none;border:none;color:#4b7ab5;font-size:.8rem;cursor:pointer;padding:2px 6px;flex-shrink:0;text-decoration:underline" title="Restaurer">↩</button>';
         h += '</div>';
       });
     }
@@ -1697,9 +1838,36 @@
     var btns = document.createElement('div');
     btns.id = 'ort-ed-reorg-mbtns';
     btns.className = 'ort-ed-reorg-mbtns';
-    btns.innerHTML = '<button style="background:#f0f0f0;color:#333" onclick="ORT_ITIN_EDITOR._stopReorg(false)">✕ ' + esc(t.reorgCancel) + '</button>' +
-      '<button style="background:#e11d48;color:#fff" onclick="ORT_ITIN_EDITOR._reorgPreview()">✓ ' + esc(t.reorgValidate) + '</button>';
+    btns.innerHTML = '<button style="background:#f0f0f0;color:#333" onclick="ORT_ITIN_EDITOR._stopReorg(false)">\u2715 ' + esc(t.reorgCancel) + '</button>' +
+      '<button style="background:#e11d48;color:#fff" onclick="ORT_ITIN_EDITOR._reorgPreview()">\u2713 ' + esc(t.reorgValidate) + '</button>';
     document.body.appendChild(btns);
+
+    // Modale explicative mobile (affichée une seule fois)
+    if (!sessionStorage.getItem('ort_reorg_help_seen')) {
+      var helpModal = document.createElement('div');
+      helpModal.id = 'ort-ed-help-modal';
+      helpModal.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px';
+      var helpContent = '<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.25)">';
+      helpContent += '<div style="font-size:1.5rem;margin-bottom:10px">\ud83d\uddfa\ufe0f</div>';
+      helpContent += '<h3 style="color:#113f7a;margin:0 0 12px;font-size:1rem">' + esc(t.reorgTitle) + '</h3>';
+      helpContent += '<div style="text-align:left;font-size:.88rem;color:#444;line-height:1.6;margin-bottom:16px">';
+      helpContent += '<p style="margin:0 0 8px"><b style="color:#e11d48">\u261d\ufe0f</b> ' + esc(t.reorgInstMobile || t.reorgInst) + '</p>';
+      helpContent += '</div>';
+      helpContent += '<button id="ort-ed-help-ok" style="padding:10px 28px;background:#113f7a;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer">OK</button>';
+      helpContent += '</div>';
+      helpModal.innerHTML = helpContent;
+      document.body.appendChild(helpModal);
+      document.getElementById('ort-ed-help-ok').addEventListener('click', function () {
+        helpModal.remove();
+        sessionStorage.setItem('ort_reorg_help_seen', '1');
+      });
+      helpModal.addEventListener('click', function (e) {
+        if (e.target === helpModal) {
+          helpModal.remove();
+          sessionStorage.setItem('ort_reorg_help_seen', '1');
+        }
+      });
+    }
   }
 
   function updateReorgBadge() {
@@ -2038,7 +2206,7 @@
         var pid = item.dataset.insertPid;
         var posInFinal = parseInt(item.dataset.insertAt);
 
-        // Construire le newOrder complet (toutes les étapes non supprimées dans l'ordre final)
+        // Construire le newOrder complet (toutes les étapes non supprimées dans l\u2019ordre final)
         // puis insérer le nouveau lieu à la position choisie
         var fullOrder = buildFinalOrder().map(function (s) { return s._idx; });
 
@@ -2069,7 +2237,7 @@
         steps.push(newStep);
         reorg.addedPlaces.push(newStep._idx);
 
-        // Insérer le _idx du nouveau step dans l'ordre complet
+        // Insérer le _idx du nouveau step dans l\u2019ordre complet
         fullOrder.splice(posInFinal, 0, newStep._idx);
         reorg.newOrder = fullOrder;
 
@@ -2168,7 +2336,7 @@
       var step = steps.find(function (s) { return s._idx === sIdx; });
       if (step) result.push(step);
     });
-    // Puis les étapes non cliquées et non supprimées, dans l'ordre original
+    // Puis les étapes non cliquées et non supprimées, dans l\u2019ordre original
     steps.forEach(function (step) {
       if (reorg.newOrder.indexOf(step._idx) < 0 && reorg.deleted.indexOf(step._idx) < 0) {
         result.push(step);
@@ -2189,95 +2357,138 @@
     // Appliquer le nouvel ordre
     steps = finalOrder;
     reindex();
+    recalcDistances();
     isDirty = true;
 
     // Quitter le mode carte
     stopMapReorg(false);
 
-    // Vérifier si connecté → sauvegarder directement
-    var user = null;
-    try { user = global.firebase && global.firebase.auth && global.firebase.auth().currentUser; } catch (e) { }
-
-    if (user) {
-      // Connecté → sauvegarder directement
-      showToast(t.saving, 'info');
-      save();
-    } else {
-      // Pas connecté → ouvrir la popup de connexion du header
-      showToast(t.loginRequired, 'info');
-      // Essayer d'ouvrir la popup d'auth du header
-      var authPop = document.getElementById('authPop');
-      if (authPop) authPop.style.display = 'block';
-
-      // Afficher un message dans le textPanel avec boutons
-      var textPanel = document.getElementById('textPanel');
-      if (textPanel) {
-        var h = '<div style="padding:30px 20px;text-align:center;max-width:400px;margin:0 auto">';
-        h += '<div style="font-size:2rem;margin-bottom:12px">🔐</div>';
-        h += '<div style="font-size:1.1rem;font-weight:600;color:#113f7a;margin-bottom:8px">✓ ' + steps.length + ' ' + esc(t.day).toLowerCase() + 's</div>';
-        h += '<p style="color:#555;margin-bottom:20px;line-height:1.5">' + esc(t.loginRequired) + '</p>';
-        h += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">';
-        h += '<button onclick="ORT_ITIN_EDITOR._startMapReorg()" style="padding:10px 20px;border:1px solid #d0dff0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600">🗺️ ' + esc(t.reorgOnMap) + '</button>';
-        h += '<button onclick="ORT_ITIN_EDITOR._cancel()" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:#f0f0f0;cursor:pointer">' + esc(t.cancel) + '</button>';
-        h += '</div></div>';
-        textPanel.innerHTML = h;
-      }
-
-      // Écouter le changement d'état auth — si l'utilisateur se connecte, sauvegarder automatiquement
-      if (global.firebase && global.firebase.auth) {
-        var unsubscribe = global.firebase.auth().onAuthStateChanged(function (newUser) {
-          if (newUser && isDirty) {
-            unsubscribe(); // Ne plus écouter
-            showToast(t.saving, 'info');
-            save();
-          }
-        });
-      }
-    }
+    // Afficher la vue post-réorg avec le choix de sauvegarder ou non
+    renderPostReorgChoice();
   }
 
-  // Vue après validation de la réorg — résumé + bouton sauvegarder
-  function renderPostReorgView() {
+  // Vue après validation — choix sauvegarder ou continuer sans sauvegarder
+  function renderPostReorgChoice() {
+    // Reconstruire les sections d'étapes avec le nouvel ordre
+    rebuildDaySections();
+    updateMap();
+
+    // Insérer un bandeau de choix en haut du textPanel
     var textPanel = document.getElementById('textPanel');
     if (!textPanel) return;
 
-    var h = '';
-    // Toolbar compacte
-    h += '<div class="ort-ed-toolbar" id="ort-ed-toolbar">';
-    h += '<span class="ort-ed-label">✓ ' + esc(t.reorgValidate) + '</span>';
-    h += '<span style="flex:1"></span>';
-    h += '<button class="ort-ed-save" onclick="ORT_ITIN_EDITOR._save()">💾 ' + esc(t.save) + '</button>';
-    h += '<button class="ort-ed-cancel" onclick="ORT_ITIN_EDITOR._cancel()">' + esc(t.cancel) + '</button>';
-    h += '<button class="ort-ed-cancel" onclick="ORT_ITIN_EDITOR._startMapReorg()">🗺️ ' + esc(t.reorgOnMap) + '</button>';
+    var user = null;
+    try { user = global.firebase && global.firebase.auth && global.firebase.auth().currentUser; } catch (e) { }
+
+    var bar = document.createElement('div');
+    bar.id = 'ort-ed-save-bar';
+    bar.style.cssText = 'padding:14px 20px;background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border:1px solid #d0dff0;border-radius:12px;margin-bottom:16px;text-align:center';
+
+    var h = '<div style="font-size:1rem;font-weight:600;color:#113f7a;margin-bottom:8px">';
+    h += '✓ ' + steps.length + ' ' + esc(t.step || t.day).toLowerCase() + 's';
+    h += '</div>';
+    h += '<p style="color:#555;margin-bottom:12px;font-size:.88rem;line-height:1.5">' + esc(t.confirmSave) + '</p>';
+    h += '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">';
+
+    if (user) {
+      // Connecté → bouton sauvegarder direct
+      h += '<button id="ort-ed-btn-save" style="padding:10px 20px;border:none;border-radius:8px;background:#113f7a;color:#fff;cursor:pointer;font-weight:600;font-size:.9rem">💾 ' + esc(t.saveNow || t.save) + '</button>';
+    } else {
+      // Pas connecté → bouton "Se connecter" qui ouvre l'auth
+      h += '<button id="ort-ed-btn-login" style="padding:10px 20px;border:none;border-radius:8px;background:#113f7a;color:#fff;cursor:pointer;font-weight:600;font-size:.9rem">🔑 ' + esc(t.loginBtn || 'Se connecter') + '</button>';
+    }
+    h += '<button id="ort-ed-btn-skip" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer;font-size:.85rem;color:#555">' + esc(t.keepEditing) + '</button>';
+    h += '<button id="ort-ed-btn-reorg" style="padding:10px 20px;border:1px solid #d0dff0;border-radius:8px;background:#fff;cursor:pointer;font-weight:600;font-size:.85rem;color:#113f7a">🗺️ ' + esc(t.reorgOnMap) + '</button>';
+    h += '<button id="ort-ed-btn-cancel" style="padding:10px 20px;border:1px solid #ddd;border-radius:8px;background:#f0f0f0;cursor:pointer;font-size:.85rem">' + esc(t.cancel) + '</button>';
     h += '</div>';
 
-    // Liste des étapes dans le nouvel ordre
-    steps.forEach(function (step, i) {
-      h += '<div class="ort-ed-step">';
-      h += '<div class="ort-ed-step-head">';
-      h += '<div class="ort-ed-daynum">' + (i + 1) + '</div>';
-      h += '<div class="ort-ed-stepname">' + esc(step.name);
-      if (step.nights > 1) h += ' <small>(' + step.nights + ' ' + t.day.toLowerCase() + 's)</small>';
-      h += '</div>';
-      if (step.rating) h += '<div class="ort-ed-rating">' + stars(step.rating) + '</div>';
-      h += '</div>';
-      var nV = (step.visits || []).length;
-      var nA = (step.activities || []).length;
-      if (nV || nA) {
-        h += '<div class="ort-ed-step-body">';
-        if (nV) h += '<span>📍 ' + t.nVisits.replace('{n}', nV) + '</span>';
-        if (nA) h += '<span>🎯 ' + t.nActivities.replace('{n}', nA) + '</span>';
-        h += '</div>';
-      }
-      // Leg
-      if (i < steps.length - 1 && step.to_next_leg && step.to_next_leg.distance_km) {
-        h += '<div class="ort-ed-leg">🚗 ' + Math.round(step.to_next_leg.distance_km) + ' km · ' + drvT(step._driveMinToNext) + '</div>';
-      }
-      h += '</div>';
+    bar.innerHTML = h;
+    textPanel.insertBefore(bar, textPanel.firstChild);
+
+    // Handlers
+    var saveBtn = document.getElementById('ort-ed-btn-save');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        showToast(t.saving, 'info');
+        save();
+      });
+    }
+
+    var loginBtn = document.getElementById('ort-ed-btn-login');
+    if (loginBtn) {
+      loginBtn.addEventListener('click', function () {
+        // Ouvrir la popup d'auth du header
+        var authPop = document.getElementById('authPop');
+        if (authPop) authPop.style.display = 'block';
+        // Quand l'utilisateur se connecte, remplacer le bandeau par la version connectée
+        if (global.firebase && global.firebase.auth) {
+          var unsub = global.firebase.auth().onAuthStateChanged(function (newUser) {
+            if (newUser) {
+              unsub();
+              // Re-render le bandeau avec le bouton Sauvegarder (pas sauvegarde auto)
+              var saveBar = document.getElementById('ort-ed-save-bar');
+              if (saveBar) saveBar.remove();
+              renderPostReorgChoice();
+            }
+          });
+        }
+      });
+    }
+
+    document.getElementById('ort-ed-btn-skip').addEventListener('click', function () {
+      // Retirer le bandeau, garder les étapes modifiées affichées
+      var saveBar = document.getElementById('ort-ed-save-bar');
+      if (saveBar) saveBar.remove();
+      isDirty = true; // Marquer comme modifié mais pas sauvegardé
+      editorActive = false;
+      // Réinjecter le bouton de lancement avec un bouton save en plus
+      injectLaunchButtonWithSave();
+      reinitDayObservers();
     });
 
-    textPanel.innerHTML = h;
-    updateMap();
+    document.getElementById('ort-ed-btn-reorg').addEventListener('click', function () {
+      startMapReorg();
+    });
+
+    document.getElementById('ort-ed-btn-cancel').addEventListener('click', function () {
+      cancel();
+    });
+  }
+
+  // Injecte le bouton de lancement + un bouton sauvegarder si modifications non sauvegardées
+  function injectLaunchButtonWithSave() {
+    var textPanel = document.getElementById('textPanel');
+    if (!textPanel) return;
+
+    // Retirer l'ancien launcher s'il existe
+    var old = document.getElementById('ort-ed-launcher');
+    if (old) old.remove();
+
+    var lang = document.documentElement.lang || 'fr';
+    var labels = I18N[lang] || I18N.fr;
+    var detailUrl = document.body.dataset.detailUrl || document.body.dataset.detailurl || '';
+    if (!detailUrl) {
+      var link = document.querySelector('a[href*="roadtrip_detail"]');
+      if (link) detailUrl = link.href || link.getAttribute('href') || '';
+    }
+
+    var div = document.createElement('div');
+    div.id = 'ort-ed-launcher';
+    div.className = 'ort-ed-launch';
+
+    var h = '';
+    // Bouton sauvegarder (bien visible si modifications non sauvées)
+    if (isDirty) {
+      h += '<button class="ort-ed-btn-steps" style="background:linear-gradient(135deg,#d4a039,#b8860b)" onclick="ORT_ITIN_EDITOR._save()">💾 ' + esc(labels.saveNow || labels.save) + '</button>';
+    }
+    h += '<button class="ort-ed-btn-steps" onclick="ORT_ITIN_EDITOR._launch()">✏️ ' + esc(labels.editBtn) + '</button>';
+    if (detailUrl) {
+      h += '<a href="' + esc(detailUrl) + '" class="ort-ed-btn-detail" style="text-decoration:none;display:inline-block;text-align:center">🚀 ' + esc(labels.advanced) + '</a>';
+    }
+    h += '<small>' + esc(labels.editBtnSub) + '</small>';
+
+    div.innerHTML = h;
+    textPanel.insertBefore(div, textPanel.firstChild);
   }
 
   function applyReorgResult() {
