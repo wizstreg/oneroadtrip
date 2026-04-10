@@ -732,7 +732,8 @@ function openRT(rt){
     }
 
     // Sinon, si on a un itinId, construire l'URL
-    if (itinId) {
+    // Mais ignorer les itinIds "custom" ou temporaires (générés par RT Detail, pas du catalogue)
+    if (itinId && !/custom|^temp|^\d{10,}/.test(itinId)) {
       // Slugifier comme generate-v2.js : "84::vaucluse" → "84-vaucluse", "KH::phnom-penh" → "kh-phnom-penh"
       var slug = itinId.toLowerCase().replace(/::/g, '-').replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
@@ -740,7 +741,15 @@ function openRT(rt){
       return '/' + langSlug + '/' + slug + '.html';
     }
 
-    return null; // pas d'itinéraire statique associé
+    // Pas d'itinéraire catalogue → page coquille custom.html
+    // Le voyage sera chargé depuis Firestore via tripId dans l'URL
+    if (rt.steps && rt.steps.length > 0) {
+      var LSLUG2 = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
+      var langSlug2 = LSLUG2[lang] || 'itineraries';
+      return '/' + langSlug2 + '/custom.html';
+    }
+
+    return null; // vraiment rien à afficher
   }
 
   async function renameRT(rt){
