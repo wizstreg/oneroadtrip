@@ -672,15 +672,14 @@
           <img src="/assets/symbol.webp" alt="Logo">
           <div class="brand">OneRoadTrip</div>
         </a>
-      </div>
-      <div class="header-row-2">
+        <div class="spacer"></div>
         <select id="langSel" class="langpick" aria-label="Langue">
-          <option value="fr">Français</option>
-          <option value="en">English</option>
-          <option value="it">Italiano</option>
-          <option value="es">Español</option>
-          <option value="pt">Português</option>
-          <option value="ar">العربية</option>
+          <option value="fr">FR</option>
+          <option value="en">EN</option>
+          <option value="it">IT</option>
+          <option value="es">ES</option>
+          <option value="pt">PT</option>
+          <option value="ar">AR</option>
         </select>
         <div class="auth">
           <button id="openAuth" class="btn" type="button">
