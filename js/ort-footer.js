@@ -70,6 +70,7 @@
       privacyPolicy: 'Confidentialité',
       cookiePolicy: 'Cookies',
       about: 'À propos',
+      blog: 'Blog',
       manageCookies: 'Gérer mes cookies'
     },
     
@@ -102,6 +103,7 @@
       privacyPolicy: 'Privacy',
       cookiePolicy: 'Cookies',
       about: 'About',
+      blog: 'Blog',
       manageCookies: 'Manage cookies'
     },
     
@@ -134,6 +136,7 @@
       privacyPolicy: 'Privacidad',
       cookiePolicy: 'Cookies',
       about: 'Acerca de',
+      blog: 'Blog',
       manageCookies: 'Gestionar cookies'
     },
     
@@ -166,6 +169,7 @@
       privacyPolicy: 'Privacy',
       cookiePolicy: 'Cookie',
       about: 'Chi siamo',
+      blog: 'Blog',
       manageCookies: 'Gestisci cookie'
     },
     
@@ -198,6 +202,7 @@
       privacyPolicy: 'Privacidade',
       cookiePolicy: 'Cookies',
       about: 'Sobre',
+      blog: 'Blog',
       manageCookies: 'Gerir cookies'
     },
     
@@ -230,6 +235,7 @@
       privacyPolicy: 'الخصوصية',
       cookiePolicy: 'ملفات تعريف الارتباط',
       about: 'حول',
+      blog: 'المدونة',
       manageCookies: 'إدارة ملفات تعريف الارتباط'
     }
   };
@@ -239,16 +245,20 @@
   // ============================================
   
   function getLang() {
-    // 1. Module i18n si disponible
+    // 1. Chemin URL — source la plus fiable sur les pages statiques
+    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
+    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
+    if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
+    // 2. Module i18n si disponible
     if (window.ORT_I18N_AUTH?.detectLang) {
       return window.ORT_I18N_AUTH.detectLang();
     }
-    // 2. Paramètre URL (prioritaire si module pas encore chargé)
+    // 3. Paramètre URL
     const urlLang = new URLSearchParams(window.location.search).get('lang');
     if (urlLang && COOKIE_I18N[urlLang]) {
       return urlLang;
     }
-    // 3. localStorage ou navigateur
+    // 4. localStorage ou navigateur
     return localStorage.getItem('lang') || 
            (navigator.language || 'fr').substring(0, 2).toLowerCase();
   }
@@ -305,6 +315,13 @@
     const lang = getLang();
     const rtl = isRTL();
 
+    // Masquer le footer sur les pages mobile avec header fixe (évite superposition)
+    const hasMobileHeader = !!document.querySelector('header.header') && window.innerWidth <= 1024;
+    if (hasMobileHeader) {
+      footer.style.display = 'none';
+      return;
+    }
+
     footer.style.cssText = `
       margin: 18px auto 20px;
       text-align: center;
@@ -315,6 +332,8 @@
       border: 1px solid rgba(195, 214, 182, 0.4);
       border-radius: 10px;
       backdrop-filter: blur(4px);
+      position: relative;
+      z-index: 1;
       direction: ${rtl ? 'rtl' : 'ltr'};
     `;
 
@@ -331,7 +350,8 @@
       { href: urls.cgu, label: T.legalNotice },
       { href: urls.privacy, label: T.privacyPolicy },
       { href: urls.cookies, label: T.cookiePolicy },
-      { href: urls.about, label: T.about }
+      { href: urls.about, label: T.about },
+      { href: 'https://www.oneroadtrip.com/blog/', label: T.blog }
     ];
 
     footer.innerHTML = links.map((link, i) => {

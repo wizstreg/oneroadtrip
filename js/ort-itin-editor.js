@@ -564,19 +564,19 @@
 
   // Déterminer la langue de façon fiable (évite le bug lang="en" sur pages FR)
   function detectLang() {
-    // 1. Préférence utilisateur en localStorage
+    // 1. Slug du dossier dans l'URL — source la plus fiable sur les pages statiques
+    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
+    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
+    if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
+    // 2. Préférence utilisateur en localStorage (pour les pages non-statiques)
     var stored = null;
     try { stored = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang'); } catch(e) {}
     if (stored && /^(fr|en|es|pt|it|ar)$/.test(stored)) return stored;
-    // 2. Paramètre ?lang= dans l'URL
+    // 3. Paramètre ?lang= dans l'URL
     try {
       var urlLang = new URLSearchParams(window.location.search).get('lang');
       if (urlLang && /^(fr|en|es|pt|it|ar)$/.test(urlLang)) return urlLang;
     } catch(e) {}
-    // 3. Slug du dossier dans l'URL (/itineraires/=fr, /itineraries/=en, etc.)
-    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
-    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
-    if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
     // 4. Fallback : attribut HTML lang
     return (document.documentElement.lang || 'fr').slice(0, 2);
   }

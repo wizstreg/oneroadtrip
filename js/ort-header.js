@@ -79,8 +79,13 @@
     return window.firebase;
   }
 
-  /** Récupère la langue courante */
+  /** Récupère la langue courante — priorise le chemin URL sur les pages statiques */
   function getLang() {
+    // 1. Détecter depuis le chemin URL (pages statiques)
+    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
+    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
+    if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
+    // 2. Fallback : detectLang de ORT_I18N_AUTH (lit localStorage, URL param, etc.)
     return window.ORT_I18N_AUTH?.detectLang?.() || 'fr';
   }
 
