@@ -2842,6 +2842,20 @@ function _t(key){ const l = (state && state.lang) || 'fr'; return (_T[key]||{})[
 // toSlug() → fourni par ort-utils.js
 // findPhotosForPlace(), getPhotosForPlace(), loadPhotosCache() → fournis par ort-data-loader.js
 
+// Helper local : normalise un tableau de photos (gere ancien et nouveau format R2)
+// Utilise window.normalizePhotos du loader, avec un fallback safe si le loader n'est pas encore charge
+function _normPhotos(raw) {
+  if (typeof window.normalizePhotos === 'function') return window.normalizePhotos(raw);
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (let i = 0; i < raw.length; i++) {
+    const p = raw[i];
+    if (typeof p === 'string' && p) out.push(p);
+    else if (p && typeof p === 'object' && typeof p.url === 'string' && p.url) out.push(p.url);
+  }
+  return out;
+}
+
 // === STATE ===
 let state = { title: 'Roadtrip', steps: [], cc: '', lang: 'fr', _originalItinId: null };
 window.state = state; // Exposer pour les modules externes (ort-env-score, etc.)
@@ -3697,11 +3711,11 @@ async function loadFromTemp(rtKey) {
   
   state.steps = rawSteps.map((s, idx) => {
     let photos = [];
-    if (Array.isArray(s.images) && s.images.length) photos = s.images;
-    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    if (Array.isArray(s.images) && s.images.length) photos = _normPhotos(s.images);
+    else if (Array.isArray(s.photos) && s.photos.length) photos = _normPhotos(s.photos);
     else if (s.image) photos = [s.image];
     else if (s.photo) photos = [s.photo];
-    else if (s.placeId && placesObj[s.placeId]?.photos) photos = placesObj[s.placeId].photos;
+    else if (s.placeId && placesObj[s.placeId]?.photos) photos = _normPhotos(placesObj[s.placeId].photos);
     
     // Récupérer visits et activities
     let visits = [];
@@ -4020,8 +4034,8 @@ async function applyTripDataToState(tripData) {
   state.steps = rawSteps.map((s, idx) => {
     // Photos
     let photos = [];
-    if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
-    else if (Array.isArray(s.images) && s.images.length) photos = s.images;
+    if (Array.isArray(s.photos) && s.photos.length) photos = _normPhotos(s.photos);
+    else if (Array.isArray(s.images) && s.images.length) photos = _normPhotos(s.images);
     else if (s.photo) photos = [s.photo];
     else if (s.image) photos = [s.image];
     
@@ -4099,8 +4113,8 @@ async function loadBuilderResult() {
   if (data.practical_context) state._originalPracticalContext = data.practical_context;
   
   state.steps = data.steps.map((s, idx) => {
-    // Récupérer photos
-    let photos = s.images || s.photos || [];
+    // Récupérer photos (normalise : string[] ancien ou objet[] R2)
+    let photos = _normPhotos(s.images || s.photos || []);
     if (!photos.length && s.name) {
       photos = findPhotosForPlace(s.name, s.cc || state.cc);
     }
@@ -4489,8 +4503,8 @@ async function loadItinerary_OLD(cc, itinId, lang) {
           const description = visits.map(v => v.text || v).filter(Boolean).join(' ');
           
           let photos = [];
-          if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
-          else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+          if (Array.isArray(day.photos) && day.photos.length) photos = _normPhotos(day.photos);
+          else if (Array.isArray(day.images) && day.images.length) photos = _normPhotos(day.images);
           else if (typeof day.image === 'string' && day.image) photos = [day.image];
           else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
           else if (typeof day.thumb === 'string' && day.thumb) photos = [day.thumb];
@@ -4568,8 +4582,8 @@ async function loadItinerary_OLD(cc, itinId, lang) {
     
     // Récupérer les photos avec plusieurs fallbacks
     let photos = [];
-    if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
-    else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+    if (Array.isArray(day.photos) && day.photos.length) photos = _normPhotos(day.photos);
+    else if (Array.isArray(day.images) && day.images.length) photos = _normPhotos(day.images);
     else if (typeof day.image === 'string' && day.image) photos = [day.image];
     else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
     else if (typeof day.thumb === 'string' && day.thumb) photos = [day.thumb];
@@ -4620,8 +4634,8 @@ async function loadFromFirebase(rtKey) {
   state.steps = (data.steps || []).map((s, idx) => {
     // Récupérer les photos avec plusieurs fallbacks
     let photos = [];
-    if (Array.isArray(s.images) && s.images.length) photos = s.images;
-    else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+    if (Array.isArray(s.images) && s.images.length) photos = _normPhotos(s.images);
+    else if (Array.isArray(s.photos) && s.photos.length) photos = _normPhotos(s.photos);
     else if (typeof s.image === 'string' && s.image) photos = [s.image];
     else if (typeof s.photo === 'string' && s.photo) photos = [s.photo];
     else if (typeof s.thumb === 'string' && s.thumb) photos = [s.thumb];
@@ -5074,11 +5088,10 @@ function getAllStepPhotos(step) {
   
   // 1. PRIORITÉ: Photos sauvegardées dans Firestore (step.photos ou step.images)
   if (step.photos?.length) {
-    photos.push(...step.photos.filter(p => p && typeof p === 'string'));
+    photos.push(..._normPhotos(step.photos));
   }
   if (step.images?.length) {
-    step.images.forEach(img => {
-      const url = typeof img === 'string' ? img : img?.url;
+    _normPhotos(step.images).forEach(url => {
       if (url && !photos.includes(url)) photos.push(url);
     });
   }

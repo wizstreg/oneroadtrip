@@ -2895,7 +2895,18 @@ if(!icoWrap){
 
   // actions
   // actions
-  bSave.addEventListener('click', ()=>{ document.getElementById('btnSave')?.click(); bSave.classList.add('saved'); });
+  bSave.addEventListener('click', ()=>{
+    document.getElementById('btnSave')?.click();
+    // Ne marquer comme "sauvegardé" que si l'utilisateur est connecté.
+    // Sinon, la modale de connexion s'affiche et rien n'est sauvegardé.
+    let isLogged = false;
+    try {
+      isLogged = !!(window.firebase && window.firebase.auth && window.firebase.auth().currentUser);
+    } catch(_) {}
+    if (isLogged) {
+      bSave.classList.add('saved');
+    }
+  });
 
   // ❗ Alerter → boîte de dialogue + envoi silencieux
   bFlag.addEventListener('click', ()=>{
@@ -6269,7 +6280,22 @@ window._groupsCalculating = false; // Mutex pour éviter les recalculs en cascad
 
 function renderRows(){
   
-  const box=$('#rows');box.innerHTML='';
+  // 🔒 Mémoriser quels panneaux étaient ouverts avant le re-render,
+  // pour éviter qu'un re-render (ex: post-bookings) referme une étape
+  // que l'utilisateur vient juste de déplier.
+  const box=$('#rows');
+  const openStepIdxs = new Set();
+  try {
+    box.querySelectorAll('.step-wrapper').forEach(w => {
+      const panel = w.querySelector('.step-details-panel');
+      if (panel && panel.classList.contains('open')) {
+        const i = parseInt(w.dataset.stepIdx);
+        if (!isNaN(i)) openStepIdxs.add(i);
+      }
+    });
+  } catch(_) {}
+
+  box.innerHTML='';
   const steps = (window.state?.steps && window.state.steps.length > 0) ? window.state.steps : state.steps;
   steps.forEach((s,idx)=>{
     // Créer un wrapper contenant la row + le panneau détails
@@ -6282,6 +6308,12 @@ function renderRows(){
     
     // Créer le panneau détails (activités, visites, etc.)
     const panel = createStepDetailsPanel(s, idx);
+    // Ré-ouvrir si cette étape était ouverte avant le re-render
+    if (openStepIdxs.has(idx)) {
+      panel.classList.add('open');
+      const toggle = row.querySelector('.step-expand-toggle');
+      if (toggle) toggle.classList.add('open');
+    }
     wrapper.appendChild(panel);
     
     box.appendChild(wrapper);
@@ -9181,7 +9213,10 @@ if (currentConfig && modeLabelEl) {
 }
 
 $('#btnSave').onclick = async ()=>{
-  const u = currentUser();
+  let u = null;
+  try {
+    u = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
+  } catch(_) {}
   if(!u){ showLoginModalForSave(); return; }
 
   // === AJOUTER TOUS LES CHAMPS UTILISATEUR À WINDOW.STATE AVANT SAUVEGARDE ===
@@ -10441,25 +10476,43 @@ if (typeof window.showSaveBeforeShareModal !== 'function') {
   };
 }
 
-if (typeof window.showLoginModalForSave !== 'function') {
-  window.showLoginModalForSave = function() {
-    // Essayer d'utiliser le système d'auth existant
-    if (typeof window.ORT_AUTH_GATE !== 'undefined' && window.ORT_AUTH_GATE.showLoginModal) {
-      window.ORT_AUTH_GATE.showLoginModal();
-      return;
-    }
+// showLoginModalForSave : modale i18n simple. Message + bouton Fermer. Rien d'autre.
+window.showLoginModalForSave = function() {
     const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-    const messages = {
-      fr: 'Veuillez vous connecter pour sauvegarder ou partager votre voyage.',
-      en: 'Please log in to save or share your trip.',
-      es: 'Por favor, inicia sesión para guardar o compartir tu viaje.',
-      it: 'Per favore accedi per salvare o condividere il tuo viaggio.',
-      pt: 'Por favor, faça login para salvar ou compartilhar sua viagem.',
-      ar: 'يرجى تسجيل الدخول لحفظ رحلتك أو مشاركتها.'
+    const i18n = {
+      fr: { msg: "Vous devez être inscrit pour sauvegarder ce voyage dans votre tableau de bord.", close: "Fermer" },
+      en: { msg: "You must be registered to save this trip to your dashboard.", close: "Close" },
+      es: { msg: "Debe estar registrado para guardar este viaje en su panel.", close: "Cerrar" },
+      it: { msg: "Devi essere registrato per salvare questo viaggio nella tua dashboard.", close: "Chiudi" },
+      pt: { msg: "Você precisa estar registrado para salvar esta viagem no seu painel.", close: "Fechar" },
+      ar: { msg: "يجب أن تكون مسجلاً لحفظ هذه الرحلة في لوحة التحكم.", close: "إغلاق" }
     };
-    alert(messages[lang] || messages.fr);
-  };
-}
+    const t = i18n[lang] || i18n.fr;
+    const isRTL = (lang === 'ar');
+
+    document.getElementById('loginRequiredModal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'loginRequiredModal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
+    modal.innerHTML = `
+      <div dir="${isRTL ? 'rtl' : 'ltr'}" style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <p style="margin:0 0 22px;color:#1e293b;font-size:.95rem;line-height:1.5">${t.msg}</p>
+        <button id="loginRequiredClose" style="padding:10px 24px;border:none;background:#2563eb;color:#fff;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem">${t.close}</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const closeModal = () => modal.remove();
+    modal.querySelector('#loginRequiredClose').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); }
+    });
+};
 </script>
 
 <script>
@@ -12452,6 +12505,29 @@ if (tripIdFromUrl && (!hasValidCc || !hasValidItin)) {
           window.state._isFromDashboard = true;
           console.log('[LOG-CONTROLE][INIT] 🔒 Recalcul auto des nuits BLOQUÉ (trip dashboard)');
           
+          // 📸 Réhydrater les photos catalogue (step.images) — Firestore ne les stocke pas
+          // Gère les 2 formats: ancien (string[]) et nouveau R2 ({url,caption,keyword}[])
+          // via getPhotosForPlace/normalizePhotos exposés par ort-data-loader.js
+          try {
+            if (Array.isArray(window.state.steps) && typeof getPhotosForPlace === 'function') {
+              let hydrated = 0;
+              window.state.steps.forEach(step => {
+                if (step && step.place_id) {
+                  const photos = getPhotosForPlace(step.place_id) || [];
+                  if (photos.length) {
+                    step.images = (typeof optimizePhotoUrls === 'function')
+                      ? optimizePhotoUrls(photos)
+                      : photos;
+                    hydrated++;
+                  }
+                }
+              });
+              console.log('[LOG-CONTROLE][INIT] 📸 Photos réhydratées pour', hydrated, '/', window.state.steps.length, 'étapes');
+            }
+          } catch (e) {
+            console.warn('[INIT] ⚠️ Erreur réhydratation photos:', e);
+          }
+          
           // Rafraîchir l'affichage
           window.renderRows();
           if (typeof setTitleTranslated === 'function') setTitleTranslated(window.state.title);
@@ -14118,6 +14194,57 @@ if ('serviceWorker' in navigator) {
       } catch (e) { console.log('[AI-SUMMARY] Cache:', e.message); }
     }, 2000);
   })();
+})();
+</script>
+
+<script>
+// === LOCK V5 showLoginModalForSave ===
+// Ce script s'exécute en dernier et verrouille la V5 simple pour empêcher toute réécriture en V2.
+(function lockLoginModalV5(){
+  function v5() {
+    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    const i18n = {
+      fr: { msg: "Vous devez être inscrit pour sauvegarder ce voyage dans votre tableau de bord.", close: "Fermer" },
+      en: { msg: "You must be registered to save this trip to your dashboard.", close: "Close" },
+      es: { msg: "Debe estar registrado para guardar este viaje en su panel.", close: "Cerrar" },
+      it: { msg: "Devi essere registrato per salvare questo viaggio nella tua dashboard.", close: "Chiudi" },
+      pt: { msg: "Você precisa estar registrado para salvar esta viagem no seu painel.", close: "Fechar" },
+      ar: { msg: "يجب أن تكون مسجلاً لحفظ هذه الرحلة في لوحة التحكم.", close: "إغلاق" }
+    };
+    const t = i18n[lang] || i18n.fr;
+    const isRTL = (lang === 'ar');
+    document.getElementById('loginRequiredModal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'loginRequiredModal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)';
+    modal.innerHTML = `
+      <div dir="${isRTL ? 'rtl' : 'ltr'}" style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;text-align:center">
+        <div style="font-size:40px;margin-bottom:12px">🔒</div>
+        <p style="margin:0 0 22px;color:#1e293b;font-size:.95rem;line-height:1.5">${t.msg}</p>
+        <button id="loginRequiredClose" style="padding:10px 24px;border:none;background:#2563eb;color:#fff;border-radius:8px;cursor:pointer;font-weight:600;font-size:.9rem">${t.close}</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    const closeModal = () => modal.remove();
+    modal.querySelector('#loginRequiredClose').addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', function onEsc(e) {
+      if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); }
+    });
+  }
+  try {
+    Object.defineProperty(window, 'showLoginModalForSave', {
+      value: v5,
+      writable: false,
+      configurable: false
+    });
+    console.log('[LOCK-V5] showLoginModalForSave verrouillée en V5');
+  } catch(e) {
+    window.showLoginModalForSave = v5;
+    console.warn('[LOCK-V5] fallback non verrouillé:', e.message);
+  }
 })();
 </script>
 

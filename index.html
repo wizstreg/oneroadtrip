@@ -942,7 +942,11 @@ function findPhoto(item, photosDb){
     var place = words.slice(0,len).join('-');
     var key = cc + '::' + place;
     if(photosDb[key] && photosDb[key].photos && photosDb[key].photos.length){
-      return photosDb[key].photos[0];
+      /* Accepte les 2 formats : string (ancien) ou objet {url,caption,keyword} (nouveau R2) */
+      var p0 = photosDb[key].photos[0];
+      if(typeof p0 === 'string') return p0;
+      if(p0 && p0.url) return p0.url;
+      return '';
     }
   }
   return '';

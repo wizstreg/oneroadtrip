@@ -383,7 +383,7 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
       await window.ORT_STATE.updateUser(u);
     }
     
-    // setUser appelle render() via loadRtCoversOnce().finally(render)
+    // setUser appelle render() directement
     Dashboard.setUser(u);
     
     // Afficher Export modules uniquement pour admin
@@ -407,17 +407,6 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
 
 // ================= Persistance des voyages (par utilisateur) =================
 
-// === Covers RT (photos_rt.json) pour fallback image ===
-let PHOTOS_RT = null;
-async function loadRtCoversOnce(){
-  if (PHOTOS_RT) return PHOTOS_RT;
-  try{
-    const r = await fetch('./data/photos-json/photos_rt.json', { cache: 'no-store' });
-    PHOTOS_RT = r.ok ? (await r.json()) : {};
-  }catch(_){ PHOTOS_RT = {}; }
-  return PHOTOS_RT;
-}
-
 // === Photos des lieux (photos_lieux.json) pour carrousel ===
 let PHOTOS_LIEUX = null;
 async function loadPhotosLieuxOnce(){
@@ -432,7 +421,15 @@ function getPhotosForPlace(pid){
   if (!PHOTOS_LIEUX) return [];
   const entry = PHOTOS_LIEUX[pid];
   if (!entry) return [];
-  return Array.isArray(entry.photos) ? entry.photos : [];
+  const raw = Array.isArray(entry.photos) ? entry.photos : [];
+  // Accepte les 2 formats : string (ancien) ou objet {url,caption,keyword} (nouveau R2)
+  const out = [];
+  for (let i = 0; i < raw.length; i++){
+    const p = raw[i];
+    if (typeof p === 'string') out.push(p);
+    else if (p && p.url) out.push(p.url);
+  }
+  return out;
 }
 
 // Collecter jusqu'à 4 photos du voyage (depuis tous les steps)
@@ -453,30 +450,6 @@ function getTripPhotos(rt, maxPhotos = 4){
   }
   
   return photos;
-}
-function coverKeyFromDetailUrl(rt){
-  try{
-    if(rt?.detailUrl){
-      const u = new URL(rt.detailUrl, location.href);
-      const cc = (u.searchParams.get('cc')||'').toUpperCase();
-      const itin = u.searchParams.get('itin')||'';
-      if(cc && itin) return `${cc}::${decodeURIComponent(itin)}`;
-    }
-    const cc2 = (rt.country||rt.cc||'').toUpperCase();
-    const rin = rt.region || rt.itin || '';
-    if (cc2 && rin) return `${cc2}::${rin}`;
-    return null;
-  }catch(_){ return null; }
-}
-function getRtCoverUrl(rt){
-  const k = coverKeyFromDetailUrl(rt);
-  if(!k || !PHOTOS_RT) return null;
-  const entry = PHOTOS_RT[k];
-  if (!entry) return null;
-  if (typeof entry === 'string') return entry;
-  if (entry && Array.isArray(entry.photos) && entry.photos.length) return entry.photos[0];
-  if (entry && typeof entry.url === 'string') return entry.url;
-  return null;
 }
 
 // -- helpers Leaflet (init tardive) --
@@ -657,20 +630,16 @@ if (photos.length > 0) {
     carouselWrap.addEventListener('mouseleave', () => {}); // Ne rien faire, le carrousel continue
   }
 } else {
-  // Pas de photos : afficher image de couverture ou placeholder
-  const chooseCover = ()=>{
-    const url = rt.coverUrl || getRtCoverUrl(rt);
-    if (url){
-      carouselWrap.style.backgroundImage = `url("${url}")`;
-      carouselWrap.style.backgroundSize = 'cover';
-      carouselWrap.style.backgroundPosition = 'center';
-      carouselWrap.style.backgroundColor = '#dfe7f7';
-    } else {
-      carouselWrap.style.background = '#e8ecf7';
-      carouselWrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6c7b87;font-size:48px;">📸</div>';
-    }
-  };
-  if (PHOTOS_RT) chooseCover(); else { loadRtCoversOnce().then(chooseCover).catch(()=>{ carouselWrap.style.background='#e8ecf7'; }); }
+  // Pas de photos : afficher image de couverture propre au voyage ou placeholder
+  if (rt.coverUrl){
+    carouselWrap.style.backgroundImage = `url("${rt.coverUrl}")`;
+    carouselWrap.style.backgroundSize = 'cover';
+    carouselWrap.style.backgroundPosition = 'center';
+    carouselWrap.style.backgroundColor = '#dfe7f7';
+  } else {
+    carouselWrap.style.background = '#e8ecf7';
+    carouselWrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#6c7b87;font-size:48px;">📸</div>';
+  }
 }
 
 
@@ -2357,7 +2326,7 @@ function ensureSeed(){
 }
   // API publique
   return {
-    setUser(u){ currentUser = u; if(u){ ensureSeed(); } loadRtCoversOnce().finally(render); },
+    setUser(u){ currentUser = u; if(u){ ensureSeed(); } render(); },
     render,  // Exposer render pour le rafraîchissement après connexion
 
     async import(data){ 
