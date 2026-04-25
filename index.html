@@ -11,10 +11,17 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <script>
+  console.log('[ORT-PWA] Snippet charge');
   if ('serviceWorker' in navigator) {
+    console.log('[ORT-PWA] serviceWorker disponible');
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+      console.log('[ORT-PWA] Tentative enregistrement...');
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('[ORT-PWA] OK', reg.scope))
+        .catch(err => console.error('[ORT-PWA] Erreur:', err));
     });
+  } else {
+    console.warn('[ORT-PWA] serviceWorker NON disponible');
   }
 </script>
 <script src="/pwa-install-button.js" defer></script>
