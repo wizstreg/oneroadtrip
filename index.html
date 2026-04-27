@@ -11,17 +11,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <script>
-  console.log('[ORT-PWA] Snippet charge');
   if ('serviceWorker' in navigator) {
-    console.log('[ORT-PWA] serviceWorker disponible');
     window.addEventListener('load', () => {
-      console.log('[ORT-PWA] Tentative enregistrement...');
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(reg => console.log('[ORT-PWA] OK', reg.scope))
-        .catch(err => console.error('[ORT-PWA] Erreur:', err));
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
     });
-  } else {
-    console.warn('[ORT-PWA] serviceWorker NON disponible');
   }
 </script>
 <script src="/pwa-install-button.js" defer></script>
@@ -99,8 +92,14 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 .mobile-cta-row .cta-trips-btn,.mobile-cta-row .cta-contact-btn{flex:1;justify-content:center;font-size:13px;padding:10px 12px}
 
 /* Validate buttons */
-.validate-btn,.mobile-validate-btn{width:100%;padding:10px 20px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:25px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;margin-top:6px}
-.validate-btn:hover,.mobile-validate-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(34,197,94,0.4)}
+.validate-btn,.mobile-validate-btn{width:100%;padding:10px 20px;background:linear-gradient(135deg,var(--s),var(--p));color:#fff;border:none;border-radius:25px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;margin-top:6px}
+.validate-btn:hover,.mobile-validate-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(17,63,122,0.4)}
+.quick-themes{display:flex;justify-content:space-around;gap:8px;margin-top:10px}
+.quick-theme{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.3);border-radius:12px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;font-size:11px;font-weight:600;text-align:center;line-height:1.1}
+.quick-theme:hover{background:#fff;border-color:var(--s);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.1)}
+.quick-theme.active{background:var(--s);color:#fff;border-color:var(--s)}
+.quick-theme .qt-ico{font-size:22px;line-height:1}
+.quick-theme .qt-lbl{font-size:11px}
 
 /* 3-column trio zone (desktop) */
 .trio-zone{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;max-width:1200px;margin:10px auto;padding:0 16px}
@@ -108,10 +107,10 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 
 /* Col 1: action cards stacked vertically */
 .trio-col-cards{display:flex;flex-direction:column;gap:10px}
-.action-card{position:relative;border-radius:10px;padding:20px 14px;text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;transition:transform .2s,box-shadow .2s;overflow:hidden;background:linear-gradient(135deg,rgba(17,63,122,0.85),rgba(10,42,87,0.9)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat}
+.action-card{position:relative;border-radius:10px;padding:20px 14px;text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;flex:1;min-height:150px;transition:transform .2s,box-shadow .2s;overflow:hidden;background-size:cover;background-position:center;background-repeat:no-repeat}
+.action-card::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(10,42,87,0.92) 0%,rgba(17,63,122,0.35) 55%,rgba(17,63,122,0.1) 100%);z-index:1}
 .action-card:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(17,63,122,0.3)}
-.action-card .icon{font-size:28px;margin-bottom:6px}
-.action-card .label{color:#fff;font-size:13px;font-weight:600;line-height:1.3}
+.action-card .label{position:relative;z-index:2;color:#fff;font-size:13px;font-weight:700;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 
 /* Col 2: filters */
 .trio-col-filters{background:linear-gradient(135deg,rgba(17,63,122,0.88),rgba(10,42,87,0.92)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat;border-radius:10px;padding:16px}
@@ -124,6 +123,7 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 .trio-filters-inner .filter-select{width:100%;padding:10px 15px;border:2px solid rgba(255,255,255,0.3);border-radius:25px;font-size:.9rem;background:rgba(255,255,255,0.92);cursor:pointer;transition:border-color .2s}
 .trio-filters-inner .filter-select:focus{outline:none;border-color:var(--s)}
 .trio-filters-inner .results-count{text-align:center;font-size:.85rem;color:rgba(255,255,255,0.8);margin-top:2px}
+.trio-filters-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 
 /* Col 3: route builder */
 .trio-col-rb .rb-box{height:100%;display:flex;flex-direction:column}
@@ -139,8 +139,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 .rb-field{position:relative}
 .rb-field label{display:block;color:rgba(255,255,255,0.85);font-size:12px;margin-bottom:3px}
 .rb-field input,.rb-field select{width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,0.92)}
-.rb-go{padding:8px 18px;background:#22c55e;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap}
-.rb-go:hover{background:#16a34a}
+.rb-go{padding:8px 18px;background:linear-gradient(135deg,var(--s),var(--p));color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;transition:all .2s}
+.rb-go:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(17,63,122,0.4)}
 .rb-loop{display:flex;align-items:center;gap:6px;margin-top:5px}
 .rb-loop input{width:14px;height:14px;cursor:pointer;accent-color:#3b82f6}
 .rb-loop label{color:rgba(255,255,255,0.85);font-size:12px;cursor:pointer}
@@ -149,8 +149,8 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 .rb-sug div:hover{background:#f0f4f8}
 
 /* Stats bar with CTA buttons on sides */
-.stats-bar{display:flex;align-items:center;justify-content:center;gap:20px;padding:20px 6%;background:#fff;border-bottom:1px solid var(--border)}
-.stats-group{display:flex;gap:30px;align-items:center}
+.stats-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;padding:20px 6%;background:#fff;border-bottom:1px solid var(--border)}
+.stats-group{display:flex;flex-wrap:wrap;gap:30px;align-items:center;justify-content:center}
 .stat{text-align:center;width:80px}
 .stat-val{font-family:'Playfair Display',serif;font-size:2rem;color:var(--p);font-weight:700;font-variant-numeric:tabular-nums}
 .stat-lbl{font-size:.8rem;color:var(--gray);text-transform:uppercase}
@@ -211,6 +211,10 @@ footer{background:var(--pd);color:#fff;padding:30px 6%;text-align:center}
 footer p{opacity:.5;font-size:.8rem}
 
 /* Responsive */
+@media(max-width:1100px){
+  /* Tablette / écran étroit : la grille 2x2 devient 1 colonne pour ne pas tronquer le contenu */
+  .trio-filters-grid{grid-template-columns:1fr}
+}
 @media(max-width:600px){
   .hero-banner{height:70px;padding:0 10px}
   .hero-banner p{font-size:11px}
@@ -262,8 +266,14 @@ footer p{opacity:.5;font-size:.8rem}
   </div>
   <select class="filter-select" id="countryFilterMobile"></select>
   <select class="filter-select" id="themeFilterMobile"></select>
+  <select class="filter-select" id="durationFilterMobile"></select>
   <div class="results-count" id="resultsCountMobile"></div>
   <button class="mobile-validate-btn" id="mobileValidateBtn">✓ Valider</button>
+  <div class="quick-themes" id="quickThemesMobile">
+    <a class="quick-theme" data-qtheme="best-seller"><span class="qt-ico">⭐</span><span class="qt-lbl" data-qt-lbl="best-seller">Bestseller</span></a>
+    <a class="quick-theme" data-qtheme="tested-ort"><span class="qt-ico">✅</span><span class="qt-lbl" data-qt-lbl="tested-ort">Testé ORT</span></a>
+    <a class="quick-theme" data-qtheme="creators"><span class="qt-ico">🎬</span><span class="qt-lbl" data-qt-lbl="creators">Créateurs</span></a>
+  </div>
 </div>
 
 <!-- ===== HERO ===== -->
@@ -301,13 +311,21 @@ footer p{opacity:.5;font-size:.8rem}
   <div class="trio-col trio-col-filters">
     <div class="trio-filters-inner">
       <div class="trio-filters-title" id="trioFiltersTitle">🔍 Trouvez votre itinéraire</div>
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Rechercher un itinéraire...">
+      <div class="trio-filters-grid">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Rechercher un itinéraire...">
+        </div>
+        <select class="filter-select" id="countryFilter"></select>
+        <select class="filter-select" id="themeFilter"></select>
+        <select class="filter-select" id="durationFilter"></select>
       </div>
-      <select class="filter-select" id="countryFilter"></select>
-      <select class="filter-select" id="themeFilter"></select>
       <div class="results-count" id="resultsCount"></div>
       <button class="validate-btn" id="desktopValidateBtn">✓ Valider</button>
+      <div class="quick-themes" id="quickThemesDesktop">
+        <a class="quick-theme" data-qtheme="best-seller"><span class="qt-ico">⭐</span><span class="qt-lbl" data-qt-lbl="best-seller">Bestseller</span></a>
+        <a class="quick-theme" data-qtheme="tested-ort"><span class="qt-ico">✅</span><span class="qt-lbl" data-qt-lbl="tested-ort">Testé ORT</span></a>
+        <a class="quick-theme" data-qtheme="creators"><span class="qt-ico">🎬</span><span class="qt-lbl" data-qt-lbl="creators">Créateurs</span></a>
+      </div>
     </div>
   </div>
 
@@ -392,12 +410,12 @@ footer p{opacity:.5;font-size:.8rem}
    ======================================================== */
 var LANG_FOLDERS = {fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
 var LANG_META = {
-  fr:{flag:'\u{1F1EB}\u{1F1F7}',name:'Fran\u00e7ais',heroTitle:'Tous les itin\u00e9raires',heroSub:'Consultez, modifiez, compl\u00e9tez, partagez nos itin\u00e9raires ou cr\u00e9ez le v\u00f4tre de toutes pi\u00e8ces. Importez vos r\u00e9servations, \u00e9ditez votre carnet de voyage et consultez votre voyage hors ligne.',homeLink:'Retour \u00e0 l\u2019accueil',searchPh:'Rechercher un itin\u00e9raire...',allCountries:'Tous les pays',allThemes:'Tous les th\u00e8mes',loading:'Chargement des itin\u00e9raires...',results:' r\u00e9sultats sur ',days:'Jours',km:'Km',stops:'\u00c9tapes',itins:'itin\u00e9raires',countries:'pays',placesLabel:'lieux',visitsLabel:'visites',activitiesLabel:'activit\u00e9s',rbTitle:'\u{1F680} Laissez-nous construire votre itin\u00e9raire',startCity:'Ville de d\u00e9part',endCity:'Ville d\u2019arriv\u00e9e',duration:'Dur\u00e9e',maxKmLabel:'Km/jour max',detour:'D\u00e9tour (km)',loop:'Circuit (retour au d\u00e9part)',generate:'\u{1F680} G\u00e9n\u00e9rer',sortCountry:'Tri par pays',sortRecent:'Plus r\u00e9cents',sortDaysAsc:'Dur\u00e9e \u2191',sortDaysDesc:'Dur\u00e9e \u2193',tripsBtn:'Vos voyages',contactBtn:'Nous contacter',contactTitle:'Nous contacter',contactDesc:'Une question ou un probl\u00e8me ? \u00c9crivez-nous.',contactName:'Votre nom',contactEmail:'Votre email',contactSubject:'Sujet',contactMessage:'Message',contactSend:'Envoyer',contactSuccess:'Message envoy\u00e9 !',contactError:'Erreur d\'envoi',latestTitle:'Derniers itinéraires ajoutés',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Choisir un itin\u00e9raire sur la carte',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construisez votre chemin \u00e0 partir des lieux',href:'carte_builder.html?mode=expert'}]},
-  en:{flag:'\u{1F1EC}\u{1F1E7}',name:'English',heroTitle:'All itineraries',heroSub:'Browse, edit, complete, share our itineraries or create your own from scratch. Import your bookings, edit your travel journal and access your trip offline.',homeLink:'Back to home',searchPh:'Search an itinerary...',allCountries:'All countries',allThemes:'All themes',loading:'Loading itineraries...',results:' results out of ',days:'Days',km:'Km',stops:'Stops',itins:'itineraries',countries:'countries',placesLabel:'places',visitsLabel:'visits',activitiesLabel:'activities',rbTitle:'\u{1F680} Let us build your itinerary',startCity:'Departure city',endCity:'Arrival city',duration:'Duration',maxKmLabel:'Km/day max',detour:'Detour (km)',loop:'Round trip (return to start)',generate:'\u{1F680} Generate',sortCountry:'Sort by country',sortRecent:'Most recent',sortDaysAsc:'Duration \u2191',sortDaysDesc:'Duration \u2193',tripsBtn:'Your trips',contactBtn:'Contact us',contactTitle:'Contact Us',contactDesc:'Have a question or issue? Write to us.',contactName:'Your name',contactEmail:'Your email',contactSubject:'Subject',contactMessage:'Message',contactSend:'Send',contactSuccess:'Message sent!',contactError:'Send error',latestTitle:'Latest itineraries added',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Choose an itinerary on the map',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Build your path from listed places',href:'carte_builder.html?mode=expert'}]},
-  es:{flag:'\u{1F1EA}\u{1F1F8}',name:'Espa\u00f1ol',heroTitle:'Todas las rutas',heroSub:'Consulta, modifica, completa, comparte nuestras rutas o crea la tuya desde cero.',homeLink:'Volver al inicio',searchPh:'Buscar una ruta...',allCountries:'Todos los pa\u00edses',allThemes:'Todos los temas',loading:'Cargando rutas...',results:' resultados de ',days:'D\u00edas',km:'Km',stops:'Paradas',itins:'rutas',countries:'pa\u00edses',placesLabel:'lugares',visitsLabel:'visitas',activitiesLabel:'actividades',rbTitle:'\u{1F680} D\u00e9jenos construir su ruta',startCity:'Ciudad de salida',endCity:'Ciudad de llegada',duration:'Duraci\u00f3n',maxKmLabel:'Km/d\u00eda m\u00e1x',detour:'Desv\u00edo (km)',loop:'Circuito (vuelta al inicio)',generate:'\u{1F680} Generar',sortCountry:'Ordenar por pa\u00eds',sortRecent:'M\u00e1s recientes',sortDaysAsc:'Duraci\u00f3n \u2191',sortDaysDesc:'Duraci\u00f3n \u2193',tripsBtn:'Tus viajes',contactBtn:'Cont\u00e1ctenos',contactTitle:'Cont\u00e1ctenos',contactDesc:'\u00bfTiene una pregunta? Escr\u00edbanos.',contactName:'Su nombre',contactEmail:'Su correo',contactSubject:'Asunto',contactMessage:'Mensaje',contactSend:'Enviar',contactSuccess:'\u00a1Mensaje enviado!',contactError:'Error de env\u00edo',latestTitle:'Últimas rutas añadidas',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Elegir una ruta en el mapa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construye tu camino desde los lugares',href:'carte_builder.html?mode=expert'}]},
-  it:{flag:'\u{1F1EE}\u{1F1F9}',name:'Italiano',heroTitle:'Tutti gli itinerari',heroSub:'Consulta, modifica, completa, condividi i nostri itinerari o creane uno da zero.',homeLink:'Torna alla home',searchPh:'Cerca un itinerario...',allCountries:'Tutti i paesi',allThemes:'Tutti i temi',loading:'Caricamento itinerari...',results:' risultati su ',days:'Giorni',km:'Km',stops:'Tappe',itins:'itinerari',countries:'paesi',placesLabel:'luoghi',visitsLabel:'visite',activitiesLabel:'attivit\u00e0',rbTitle:'\u{1F680} Lascia che costruiamo il tuo itinerario',startCity:'Citt\u00e0 di partenza',endCity:'Citt\u00e0 di arrivo',duration:'Durata',maxKmLabel:'Km/giorno max',detour:'Deviazione (km)',loop:'Circuito (ritorno alla partenza)',generate:'\u{1F680} Genera',sortCountry:'Ordina per paese',sortRecent:'Pi\u00f9 recenti',sortDaysAsc:'Durata \u2191',sortDaysDesc:'Durata \u2193',tripsBtn:'I tuoi viaggi',contactBtn:'Contattaci',contactTitle:'Contattaci',contactDesc:'Hai una domanda? Scrivici.',contactName:'Il tuo nome',contactEmail:'La tua email',contactSubject:'Oggetto',contactMessage:'Messaggio',contactSend:'Invia',contactSuccess:'Messaggio inviato!',contactError:'Errore di invio',latestTitle:'Ultimi itinerari aggiunti',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Scegli un itinerario sulla mappa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Costruisci il tuo percorso dai luoghi',href:'carte_builder.html?mode=expert'}]},
-  pt:{flag:'\u{1F1F5}\u{1F1F9}',name:'Portugu\u00eas',heroTitle:'Todos os roteiros',heroSub:'Consulte, modifique, complete, partilhe os nossos roteiros ou crie o seu de raiz.',homeLink:'Voltar ao in\u00edcio',searchPh:'Pesquisar um roteiro...',allCountries:'Todos os pa\u00edses',allThemes:'Todos os temas',loading:'A carregar roteiros...',results:' resultados em ',days:'Dias',km:'Km',stops:'Paragens',itins:'roteiros',countries:'pa\u00edses',placesLabel:'lugares',visitsLabel:'visitas',activitiesLabel:'atividades',rbTitle:'\u{1F680} Deixe-nos construir o seu roteiro',startCity:'Cidade de partida',endCity:'Cidade de chegada',duration:'Dura\u00e7\u00e3o',maxKmLabel:'Km/dia m\u00e1x',detour:'Desvio (km)',loop:'Circuito (regresso ao in\u00edcio)',generate:'\u{1F680} Gerar',sortCountry:'Ordenar por pa\u00eds',sortRecent:'Mais recentes',sortDaysAsc:'Dura\u00e7\u00e3o \u2191',sortDaysDesc:'Dura\u00e7\u00e3o \u2193',tripsBtn:'As tuas viagens',contactBtn:'Fale conosco',contactTitle:'Fale Conosco',contactDesc:'Tem uma pergunta? Escreva-nos.',contactName:'Seu nome',contactEmail:'Seu email',contactSubject:'Assunto',contactMessage:'Mensagem',contactSend:'Enviar',contactSuccess:'Mensagem enviada!',contactError:'Erro de envio',latestTitle:'Últimos roteiros adicionados',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Escolher um roteiro no mapa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construa o seu caminho a partir dos lugares',href:'carte_builder.html?mode=expert'}]},
-  ar:{flag:'\u{1F1F8}\u{1F1E6}',name:'\u0627\u0644\u0639\u0631\u0628\u064A\u0629',heroTitle:'\u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A',heroSub:'\u062A\u0635\u0641\u062D \u0648\u0639\u062F\u0651\u0644 \u0648\u0634\u0627\u0631\u0643 \u0645\u0633\u0627\u0631\u0627\u062A\u0646\u0627 \u0623\u0648 \u0623\u0646\u0634\u0626 \u0645\u0633\u0627\u0631\u0643 \u0627\u0644\u062E\u0627\u0635.',homeLink:'\u0627\u0644\u0639\u0648\u062F\u0629',searchPh:'\u0627\u0628\u062D\u062B \u0639\u0646 \u0645\u0633\u0627\u0631...',allCountries:'\u0643\u0644 \u0627\u0644\u062F\u0648\u0644',allThemes:'\u0643\u0644 \u0627\u0644\u0645\u0648\u0627\u0636\u064A\u0639',loading:'\u062C\u0627\u0631\u064D \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A...',results:' \u0646\u062A\u064A\u062C\u0629 \u0645\u0646 ',days:'\u0623\u064A\u0627\u0645',km:'\u0643\u0645',stops:'\u0645\u062D\u0637\u0627\u062A',itins:'\u0645\u0633\u0627\u0631',countries:'\u062F\u0648\u0644\u0629',placesLabel:'\u0623\u0645\u0627\u0643\u0646',visitsLabel:'\u0632\u064a\u0627\u0631\u0627\u062a',activitiesLabel:'\u0623\u0646\u0634\u0637\u0629',rbTitle:'\u{1F680} \u062F\u0639\u0646\u0627 \u0646\u0628\u0646\u064A \u0645\u0633\u0627\u0631\u0643',startCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0627\u0646\u0637\u0644\u0627\u0642',endCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0648\u0635\u0648\u0644',duration:'\u0627\u0644\u0645\u062F\u0629',detour:'\u0627\u0646\u062D\u0631\u0627\u0641 (\u0643\u0645)',loop:'\u062F\u0627\u0626\u0631\u064A (\u0627\u0644\u0639\u0648\u062F\u0629)',generate:'\u{1F680} \u0625\u0646\u0634\u0627\u0621',sortCountry:'\u062A\u0631\u062A\u064A\u0628 \u062D\u0633\u0628 \u0627\u0644\u062F\u0648\u0644\u0629',sortRecent:'\u0627\u0644\u0623\u062D\u062F\u062B',sortDaysAsc:'\u0627\u0644\u0645\u062F\u0629 \u2191',sortDaysDesc:'\u0627\u0644\u0645\u062F\u0629 \u2193',tripsBtn:'\u0631\u062d\u0644\u0627\u062a\u0643',contactBtn:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactTitle:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactDesc:'\u0647\u0644 \u0644\u062f\u064a\u0643 \u0633\u0624\u0627\u0644\u061f \u0627\u0643\u062a\u0628 \u0644\u0646\u0627.',contactName:'\u0627\u0633\u0645\u0643',contactEmail:'\u0628\u0631\u064a\u062f\u0643',contactSubject:'\u0627\u0644\u0645\u0648\u0636\u0648\u0639',contactMessage:'\u0627\u0644\u0631\u0633\u0627\u0644\u0629',contactSend:'\u0625\u0631\u0633\u0627\u0644',contactSuccess:'\u062a\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644!',contactError:'\u062e\u0637\u0623',latestTitle:'أحدث المسارات',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'\u0627\u062E\u062A\u0631 \u0645\u0633\u0627\u0631\u064B\u0627 \u0639\u0644\u0649 \u0627\u0644\u062E\u0631\u064A\u0637\u0629',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'\u0627\u0628\u0646\u0650 \u0645\u0633\u0627\u0631\u0643 \u0645\u0646 \u0627\u0644\u0623\u0645\u0627\u0643\u0646',href:'carte_builder.html?mode=expert'}]}
+  fr:{flag:'\u{1F1EB}\u{1F1F7}',name:'Fran\u00e7ais',heroTitle:'Tous les itin\u00e9raires',heroSub:'Consultez, modifiez, compl\u00e9tez, partagez nos itin\u00e9raires ou cr\u00e9ez le v\u00f4tre de toutes pi\u00e8ces. Importez vos r\u00e9servations, \u00e9ditez votre carnet de voyage et consultez votre voyage hors ligne.',homeLink:'Retour \u00e0 l\u2019accueil',searchPh:'Rechercher un itin\u00e9raire...',allCountries:'Tous les pays',allThemes:'Tous les th\u00e8mes',loading:'Chargement des itin\u00e9raires...',results:' r\u00e9sultats sur ',days:'Jours',km:'Km',stops:'\u00c9tapes',itins:'itin\u00e9raires',countries:'pays',placesLabel:'lieux',visitsLabel:'visites',activitiesLabel:'activit\u00e9s',rbTitle:'\u{1F680} Laissez-nous construire votre itin\u00e9raire',startCity:'Ville de d\u00e9part',endCity:'Ville d\u2019arriv\u00e9e',duration:'Dur\u00e9e',maxKmLabel:'Km/jour max',detour:'D\u00e9tour (km)',loop:'Circuit (retour au d\u00e9part)',generate:'\u{1F680} G\u00e9n\u00e9rer',sortCountry:'Tri par pays',sortRecent:'Plus r\u00e9cents',sortDaysAsc:'Dur\u00e9e \u2191',sortDaysDesc:'Dur\u00e9e \u2193',tripsBtn:'Vos voyages',contactBtn:'Nous contacter',contactTitle:'Nous contacter',contactDesc:'Une question ou un probl\u00e8me ? \u00c9crivez-nous.',contactName:'Votre nom',contactEmail:'Votre email',contactSubject:'Sujet',contactMessage:'Message',contactSend:'Envoyer',contactSuccess:'Message envoy\u00e9 !',contactError:'Erreur d\'envoi',latestTitle:'Derniers itinéraires ajoutés',allDurations:'Durée du voyage',durWeekend:'Week-end (1-3j)',durShort:'Court séjour (4-7j)',durMedium:'Séjour moyen (8-14j)',durLong:'Grand voyage (15-21j)',durEpic:'Périple (22j+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Choisir un itin\u00e9raire sur la carte',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construisez votre chemin \u00e0 partir des lieux',href:'carte_builder.html?mode=expert'}]},
+  en:{flag:'\u{1F1EC}\u{1F1E7}',name:'English',heroTitle:'All itineraries',heroSub:'Browse, edit, complete, share our itineraries or create your own from scratch. Import your bookings, edit your travel journal and access your trip offline.',homeLink:'Back to home',searchPh:'Search an itinerary...',allCountries:'All countries',allThemes:'All themes',loading:'Loading itineraries...',results:' results out of ',days:'Days',km:'Km',stops:'Stops',itins:'itineraries',countries:'countries',placesLabel:'places',visitsLabel:'visits',activitiesLabel:'activities',rbTitle:'\u{1F680} Let us build your itinerary',startCity:'Departure city',endCity:'Arrival city',duration:'Duration',maxKmLabel:'Km/day max',detour:'Detour (km)',loop:'Round trip (return to start)',generate:'\u{1F680} Generate',sortCountry:'Sort by country',sortRecent:'Most recent',sortDaysAsc:'Duration \u2191',sortDaysDesc:'Duration \u2193',tripsBtn:'Your trips',contactBtn:'Contact us',contactTitle:'Contact Us',contactDesc:'Have a question or issue? Write to us.',contactName:'Your name',contactEmail:'Your email',contactSubject:'Subject',contactMessage:'Message',contactSend:'Send',contactSuccess:'Message sent!',contactError:'Send error',latestTitle:'Latest itineraries added',allDurations:'Trip duration',durWeekend:'Weekend (1-3d)',durShort:'Short stay (4-7d)',durMedium:'Medium trip (8-14d)',durLong:'Long trip (15-21d)',durEpic:'Grand journey (22d+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Choose an itinerary on the map',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Build your path from listed places',href:'carte_builder.html?mode=expert'}]},
+  es:{flag:'\u{1F1EA}\u{1F1F8}',name:'Espa\u00f1ol',heroTitle:'Todas las rutas',heroSub:'Consulta, modifica, completa, comparte nuestras rutas o crea la tuya desde cero.',homeLink:'Volver al inicio',searchPh:'Buscar una ruta...',allCountries:'Todos los pa\u00edses',allThemes:'Todos los temas',loading:'Cargando rutas...',results:' resultados de ',days:'D\u00edas',km:'Km',stops:'Paradas',itins:'rutas',countries:'pa\u00edses',placesLabel:'lugares',visitsLabel:'visitas',activitiesLabel:'actividades',rbTitle:'\u{1F680} D\u00e9jenos construir su ruta',startCity:'Ciudad de salida',endCity:'Ciudad de llegada',duration:'Duraci\u00f3n',maxKmLabel:'Km/d\u00eda m\u00e1x',detour:'Desv\u00edo (km)',loop:'Circuito (vuelta al inicio)',generate:'\u{1F680} Generar',sortCountry:'Ordenar por pa\u00eds',sortRecent:'M\u00e1s recientes',sortDaysAsc:'Duraci\u00f3n \u2191',sortDaysDesc:'Duraci\u00f3n \u2193',tripsBtn:'Tus viajes',contactBtn:'Cont\u00e1ctenos',contactTitle:'Cont\u00e1ctenos',contactDesc:'\u00bfTiene una pregunta? Escr\u00edbanos.',contactName:'Su nombre',contactEmail:'Su correo',contactSubject:'Asunto',contactMessage:'Mensaje',contactSend:'Enviar',contactSuccess:'\u00a1Mensaje enviado!',contactError:'Error de env\u00edo',latestTitle:'Últimas rutas añadidas',allDurations:'Duración del viaje',durWeekend:'Fin de semana (1-3d)',durShort:'Estancia corta (4-7d)',durMedium:'Viaje medio (8-14d)',durLong:'Gran viaje (15-21d)',durEpic:'Travesía (22d+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Elegir una ruta en el mapa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construye tu camino desde los lugares',href:'carte_builder.html?mode=expert'}]},
+  it:{flag:'\u{1F1EE}\u{1F1F9}',name:'Italiano',heroTitle:'Tutti gli itinerari',heroSub:'Consulta, modifica, completa, condividi i nostri itinerari o creane uno da zero.',homeLink:'Torna alla home',searchPh:'Cerca un itinerario...',allCountries:'Tutti i paesi',allThemes:'Tutti i temi',loading:'Caricamento itinerari...',results:' risultati su ',days:'Giorni',km:'Km',stops:'Tappe',itins:'itinerari',countries:'paesi',placesLabel:'luoghi',visitsLabel:'visite',activitiesLabel:'attivit\u00e0',rbTitle:'\u{1F680} Lascia che costruiamo il tuo itinerario',startCity:'Citt\u00e0 di partenza',endCity:'Citt\u00e0 di arrivo',duration:'Durata',maxKmLabel:'Km/giorno max',detour:'Deviazione (km)',loop:'Circuito (ritorno alla partenza)',generate:'\u{1F680} Genera',sortCountry:'Ordina per paese',sortRecent:'Pi\u00f9 recenti',sortDaysAsc:'Durata \u2191',sortDaysDesc:'Durata \u2193',tripsBtn:'I tuoi viaggi',contactBtn:'Contattaci',contactTitle:'Contattaci',contactDesc:'Hai una domanda? Scrivici.',contactName:'Il tuo nome',contactEmail:'La tua email',contactSubject:'Oggetto',contactMessage:'Messaggio',contactSend:'Invia',contactSuccess:'Messaggio inviato!',contactError:'Errore di invio',latestTitle:'Ultimi itinerari aggiunti',allDurations:'Durata del viaggio',durWeekend:'Weekend (1-3g)',durShort:'Soggiorno breve (4-7g)',durMedium:'Viaggio medio (8-14g)',durLong:'Grande viaggio (15-21g)',durEpic:'Peripezia (22g+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Scegli un itinerario sulla mappa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Costruisci il tuo percorso dai luoghi',href:'carte_builder.html?mode=expert'}]},
+  pt:{flag:'\u{1F1F5}\u{1F1F9}',name:'Portugu\u00eas',heroTitle:'Todos os roteiros',heroSub:'Consulte, modifique, complete, partilhe os nossos roteiros ou crie o seu de raiz.',homeLink:'Voltar ao in\u00edcio',searchPh:'Pesquisar um roteiro...',allCountries:'Todos os pa\u00edses',allThemes:'Todos os temas',loading:'A carregar roteiros...',results:' resultados em ',days:'Dias',km:'Km',stops:'Paragens',itins:'roteiros',countries:'pa\u00edses',placesLabel:'lugares',visitsLabel:'visitas',activitiesLabel:'atividades',rbTitle:'\u{1F680} Deixe-nos construir o seu roteiro',startCity:'Cidade de partida',endCity:'Cidade de chegada',duration:'Dura\u00e7\u00e3o',maxKmLabel:'Km/dia m\u00e1x',detour:'Desvio (km)',loop:'Circuito (regresso ao in\u00edcio)',generate:'\u{1F680} Gerar',sortCountry:'Ordenar por pa\u00eds',sortRecent:'Mais recentes',sortDaysAsc:'Dura\u00e7\u00e3o \u2191',sortDaysDesc:'Dura\u00e7\u00e3o \u2193',tripsBtn:'As tuas viagens',contactBtn:'Fale conosco',contactTitle:'Fale Conosco',contactDesc:'Tem uma pergunta? Escreva-nos.',contactName:'Seu nome',contactEmail:'Seu email',contactSubject:'Assunto',contactMessage:'Mensagem',contactSend:'Enviar',contactSuccess:'Mensagem enviada!',contactError:'Erro de envio',latestTitle:'Últimos roteiros adicionados',allDurations:'Duração da viagem',durWeekend:'Fim de semana (1-3d)',durShort:'Estadia curta (4-7d)',durMedium:'Viagem média (8-14d)',durLong:'Grande viagem (15-21d)',durEpic:'Jornada (22d+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Escolher um roteiro no mapa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construa o seu caminho a partir dos lugares',href:'carte_builder.html?mode=expert'}]},
+  ar:{flag:'\u{1F1F8}\u{1F1E6}',name:'\u0627\u0644\u0639\u0631\u0628\u064A\u0629',heroTitle:'\u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A',heroSub:'\u062A\u0635\u0641\u062D \u0648\u0639\u062F\u0651\u0644 \u0648\u0634\u0627\u0631\u0643 \u0645\u0633\u0627\u0631\u0627\u062A\u0646\u0627 \u0623\u0648 \u0623\u0646\u0634\u0626 \u0645\u0633\u0627\u0631\u0643 \u0627\u0644\u062E\u0627\u0635.',homeLink:'\u0627\u0644\u0639\u0648\u062F\u0629',searchPh:'\u0627\u0628\u062D\u062B \u0639\u0646 \u0645\u0633\u0627\u0631...',allCountries:'\u0643\u0644 \u0627\u0644\u062F\u0648\u0644',allThemes:'\u0643\u0644 \u0627\u0644\u0645\u0648\u0627\u0636\u064A\u0639',loading:'\u062C\u0627\u0631\u064D \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A...',results:' \u0646\u062A\u064A\u062C\u0629 \u0645\u0646 ',days:'\u0623\u064A\u0627\u0645',km:'\u0643\u0645',stops:'\u0645\u062D\u0637\u0627\u062A',itins:'\u0645\u0633\u0627\u0631',countries:'\u062F\u0648\u0644\u0629',placesLabel:'\u0623\u0645\u0627\u0643\u0646',visitsLabel:'\u0632\u064a\u0627\u0631\u0627\u062a',activitiesLabel:'\u0623\u0646\u0634\u0637\u0629',rbTitle:'\u{1F680} \u062F\u0639\u0646\u0627 \u0646\u0628\u0646\u064A \u0645\u0633\u0627\u0631\u0643',startCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0627\u0646\u0637\u0644\u0627\u0642',endCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0648\u0635\u0648\u0644',duration:'\u0627\u0644\u0645\u062F\u0629',detour:'\u0627\u0646\u062D\u0631\u0627\u0641 (\u0643\u0645)',loop:'\u062F\u0627\u0626\u0631\u064A (\u0627\u0644\u0639\u0648\u062F\u0629)',generate:'\u{1F680} \u0625\u0646\u0634\u0627\u0621',sortCountry:'\u062A\u0631\u062A\u064A\u0628 \u062D\u0633\u0628 \u0627\u0644\u062F\u0648\u0644\u0629',sortRecent:'\u0627\u0644\u0623\u062D\u062F\u062B',sortDaysAsc:'\u0627\u0644\u0645\u062F\u0629 \u2191',sortDaysDesc:'\u0627\u0644\u0645\u062F\u0629 \u2193',tripsBtn:'\u0631\u062d\u0644\u0627\u062a\u0643',contactBtn:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactTitle:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactDesc:'\u0647\u0644 \u0644\u062f\u064a\u0643 \u0633\u0624\u0627\u0644\u061f \u0627\u0643\u062a\u0628 \u0644\u0646\u0627.',contactName:'\u0627\u0633\u0645\u0643',contactEmail:'\u0628\u0631\u064a\u062f\u0643',contactSubject:'\u0627\u0644\u0645\u0648\u0636\u0648\u0639',contactMessage:'\u0627\u0644\u0631\u0633\u0627\u0644\u0629',contactSend:'\u0625\u0631\u0633\u0627\u0644',contactSuccess:'\u062a\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644!',contactError:'\u062e\u0637\u0623',latestTitle:'أحدث المسارات',allDurations:'\u0645\u062F\u0629 \u0627\u0644\u0631\u062D\u0644\u0629',durWeekend:'\u0639\u0637\u0644\u0629 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0623\u0633\u0628\u0648\u0639 (1-3 \u0623\u064A\u0627\u0645)',durShort:'\u0625\u0642\u0627\u0645\u0629 \u0642\u0635\u064A\u0631\u0629 (4-7 \u0623\u064A\u0627\u0645)',durMedium:'\u0631\u062D\u0644\u0629 \u0645\u062A\u0648\u0633\u0637\u0629 (8-14 \u064A\u0648\u0645)',durLong:'\u0631\u062D\u0644\u0629 \u0637\u0648\u064A\u0644\u0629 (15-21 \u064A\u0648\u0645)',durEpic:'\u0631\u062D\u0644\u0629 \u0643\u0628\u0631\u0649 (22+ \u064A\u0648\u0645)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'\u0627\u062E\u062A\u0631 \u0645\u0633\u0627\u0631\u064B\u0627 \u0639\u0644\u0649 \u0627\u0644\u062E\u0631\u064A\u0637\u0629',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'\u0627\u0628\u0646\u0650 \u0645\u0633\u0627\u0631\u0643 \u0645\u0646 \u0627\u0644\u0623\u0645\u0627\u0643\u0646',href:'carte_builder.html?mode=expert'}]}
 };
 
 /* Country code -> flag emoji */
@@ -550,15 +568,23 @@ document.getElementById('cSend').addEventListener('click', function(e){
   dd.innerHTML = html;
 })();
 
-/* Action cards */
+/* Action cards - images de fond individuelles + ordre inversé (construire en premier) */
 (function(){
   var grid = document.getElementById('actionGrid');
   var cards = t.actionCards;
+  /* Mapping image par href : construire = ai-overwhelmed, carte = ltin (fléchettes) */
+  var cardImages = {
+    'carte_builder.html?mode=expert': 'assets/ai-overwhelmed.webp',
+    'pres_simple.html': 'assets/Itin.webp'
+  };
+  /* Ordre inversé : on affiche d'abord la carte "construire" (index 1), puis "carte" (index 0) */
+  var order = [1, 0];
   var html = '';
-  for(var i=0;i<cards.length;i++){
-    var c = cards[i];
-    html += '<a href="/' + c.href + '?lang=' + currentLang + '" class="action-card">';
-    html += '<div class="icon">' + c.icon + '</div>';
+  for(var k=0;k<order.length;k++){
+    var c = cards[order[k]];
+    var bgImg = cardImages[c.href] || '';
+    var bgStyle = bgImg ? ' style="background-image:url(\'' + bgImg + '\')"' : '';
+    html += '<a href="/' + c.href + '?lang=' + currentLang + '" class="action-card"' + bgStyle + '>';
     html += '<div class="label">' + c.label + '</div>';
     html += '</a>';
   }
@@ -738,6 +764,14 @@ function applyFilters(){
   var query = getSearchValue().toLowerCase().trim();
   var selCountry = getCountryValue();
   var selTheme = getThemeValue();
+  var selDuration = getDurationValue();
+  /* Parse la tranche "min-max" */
+  var durMin = 0, durMax = 9999;
+  if(selDuration){
+    var parts = selDuration.split('-');
+    durMin = parseInt(parts[0],10) || 0;
+    durMax = parseInt(parts[1],10) || 9999;
+  }
 
   /* URL filter param */
   var urlParams = new URLSearchParams(location.search);
@@ -752,6 +786,12 @@ function applyFilters(){
 
     /* Country filter */
     if(selCountry && countryName !== selCountry) continue;
+
+    /* Duration filter */
+    if(selDuration){
+      var dDays = parseInt(d.days, 10) || 0;
+      if(dDays < durMin || dDays > durMax) continue;
+    }
 
     /* Theme filter — match by key or synonyms from themes_i18n.json */
     if(selTheme){
@@ -787,7 +827,7 @@ function applyFilters(){
 
   /* Results count - update both desktop and mobile */
   var rcText = '';
-  if(query || selCountry || selTheme || allowedSlugs){
+  if(query || selCountry || selTheme || selDuration || allowedSlugs){
     rcText = filteredData.length + t.results + allData.length;
   }
   document.getElementById('resultsCount').textContent = rcText;
@@ -820,6 +860,18 @@ function populateFilters(){
   }
   document.getElementById('themeFilter').innerHTML = tHtml;
   document.getElementById('themeFilterMobile').innerHTML = tHtml;
+
+  /* Durées - 5 tranches */
+  var dHtml = '<option value="">' + t.allDurations + '</option>';
+  dHtml += '<option value="1-3">' + t.durWeekend + '</option>';
+  dHtml += '<option value="4-7">' + t.durShort + '</option>';
+  dHtml += '<option value="8-14">' + t.durMedium + '</option>';
+  dHtml += '<option value="15-21">' + t.durLong + '</option>';
+  dHtml += '<option value="22-999">' + t.durEpic + '</option>';
+  document.getElementById('durationFilter').innerHTML = dHtml;
+  document.getElementById('durationFilterMobile').innerHTML = dHtml;
+
+  if (typeof updateQuickThemeLabels === 'function') updateQuickThemeLabels();
 }
 
 function animateCounters(nodes, targets, duration){
@@ -876,6 +928,9 @@ function getCountryValue(){
 function getThemeValue(){
   return isMobile() ? document.getElementById('themeFilterMobile').value : document.getElementById('themeFilter').value;
 }
+function getDurationValue(){
+  return isMobile() ? document.getElementById('durationFilterMobile').value : document.getElementById('durationFilter').value;
+}
 
 /* Sync: when desktop filter changes, copy to mobile and vice versa */
 function syncFilters(source){
@@ -883,10 +938,12 @@ function syncFilters(source){
     document.getElementById('searchInputMobile').value = document.getElementById('searchInput').value;
     document.getElementById('countryFilterMobile').value = document.getElementById('countryFilter').value;
     document.getElementById('themeFilterMobile').value = document.getElementById('themeFilter').value;
+    document.getElementById('durationFilterMobile').value = document.getElementById('durationFilter').value;
   } else {
     document.getElementById('searchInput').value = document.getElementById('searchInputMobile').value;
     document.getElementById('countryFilter').value = document.getElementById('countryFilterMobile').value;
     document.getElementById('themeFilter').value = document.getElementById('themeFilterMobile').value;
+    document.getElementById('durationFilter').value = document.getElementById('durationFilterMobile').value;
   }
 }
 
@@ -894,13 +951,50 @@ function syncFilters(source){
 document.getElementById('searchInput').addEventListener('input', function(){syncFilters('desktop');applyFilters()});
 document.getElementById('countryFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
 document.getElementById('themeFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
+document.getElementById('durationFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
 
 /* Mobile filter listeners */
 document.getElementById('searchInputMobile').addEventListener('input', function(){syncFilters('mobile');applyFilters()});
 document.getElementById('countryFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
 document.getElementById('themeFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
+document.getElementById('durationFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
 
 document.getElementById('sortSelect').addEventListener('change', function(){render()});
+
+/* Quick themes (3 icônes sous le bouton Valider) */
+document.querySelectorAll('.quick-theme').forEach(function(el){
+  el.addEventListener('click', function(e){
+    e.preventDefault();
+    var key = el.getAttribute('data-qtheme');
+    var curDesk = document.getElementById('themeFilter').value;
+    // toggle : si déjà actif, on retire le filtre
+    var newVal = (curDesk === key) ? '' : key;
+    document.getElementById('themeFilter').value = newVal;
+    document.getElementById('themeFilterMobile').value = newVal;
+    // marque visuel actif
+    document.querySelectorAll('.quick-theme').forEach(function(q){
+      q.classList.toggle('active', newVal && q.getAttribute('data-qtheme') === newVal);
+    });
+    applyFilters();
+    // si on active un filtre, on scrolle vers les résultats
+    if (newVal) {
+      var grid = document.querySelector('.itins-grid') || document.getElementById('resultsCount');
+      if (grid) grid.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  });
+});
+
+/* Traduction des labels des 3 icônes selon la langue */
+function updateQuickThemeLabels(){
+  if (typeof THEMES_LIST === 'undefined') return;
+  document.querySelectorAll('[data-qt-lbl]').forEach(function(el){
+    var key = el.getAttribute('data-qt-lbl');
+    var th = THEMES_LIST.find(function(x){return x.key === key});
+    if (th){
+      el.textContent = (th.i18n && th.i18n[currentLang]) || th.label_fr;
+    }
+  });
+}
 
 /* Validate buttons — scroll to first itinerary found */
 function goToFirstItin(){
@@ -951,6 +1045,10 @@ function buildLatestCarousel(data, photosDb){
 /* CC fallback map for photos_lieux lookup */
 var CC_PHOTO_FALLBACK = {'EA':'KE','val-de-marne-10-jours':'FR'};
 
+/* Compteur global : combien de fois chaque clé (ex: "AE::abu-dhabi") a déjà été servie.
+   Permet de donner des photos différentes à des itins qui partagent le même 1er lieu. */
+var PHOTO_USAGE = {};
+
 function findPhoto(item, photosDb){
   if(!photosDb) return '';
   var cc = item.cc.toUpperCase();
@@ -968,10 +1066,14 @@ function findPhoto(item, photosDb){
     var place = words.slice(0,len).join('-');
     var key = cc + '::' + place;
     if(photosDb[key] && photosDb[key].photos && photosDb[key].photos.length){
-      /* Accepte les 2 formats : string (ancien) ou objet {url,caption,keyword} (nouveau R2) */
-      var p0 = photosDb[key].photos[0];
-      if(typeof p0 === 'string') return p0;
-      if(p0 && p0.url) return p0.url;
+      var photos = photosDb[key].photos;
+      /* Tourne sur les photos dispo : 1er itin → photos[0], 2e → photos[1], etc.
+         Si plus d'itins que de photos, on reboucle (modulo). */
+      var usedIdx = (PHOTO_USAGE[key] || 0) % photos.length;
+      PHOTO_USAGE[key] = (PHOTO_USAGE[key] || 0) + 1;
+      var p = photos[usedIdx];
+      if(typeof p === 'string') return p;
+      if(p && p.url) return p.url;
       return '';
     }
   }

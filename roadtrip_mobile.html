@@ -205,6 +205,19 @@ html, body {
   display: block;
 }
 
+/* L'onglet Google Map a besoin d'une colonne flex pour que l'iframe remplisse */
+#vizPanel.active {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#vizPanel #subPanelMap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* === MAP TAB === */
 #mapPanel { overflow: hidden; }
 #map { width: 100%; height: 100%; }
@@ -853,11 +866,17 @@ html, body {
   background: #f0f4ff;
   border: 1px solid #c7d7f5;
   border-radius: 20px;
+  font-family: inherit;
   font-size: 0.75rem;
   color: #1e3a5f;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
   transition: all 0.15s;
+}
+.mkb-chip:hover {
+  background: #e0eaff;
+  border-color: #113f7a;
 }
 .mkb-chip:active {
   background: #113f7a;
@@ -865,26 +884,71 @@ html, body {
   border-color: #113f7a;
 }
 
+/* Chip composite : texte (charge iframe) + bouton 🧭 (ouvre Google Maps) */
+.mkb-chip-group {
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid #c7d7f5;
+  background: #f0f4ff;
+  transition: border-color 0.15s;
+  flex-shrink: 0;
+}
+.mkb-chip-group:hover { border-color: #113f7a; }
+.mkb-chip-group .mkb-chip-main {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: #1e3a5f;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mkb-chip-group .mkb-chip-main:active {
+  background: #113f7a;
+  color: #fff;
+}
+.mkb-chip-group .mkb-chip-dir {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  background: #fff;
+  border-left: 1px solid #c7d7f5;
+  text-decoration: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mkb-chip-group .mkb-chip-dir:hover { background: #e0eaff; }
+.mkb-chip-group .mkb-chip-dir:active { background: #113f7a; }
+
 .gmap-filters {
   display: flex;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 8px 10px;
   background: #f8fafc;
   border-bottom: 1px solid var(--ort-border);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .gmap-filter-btn {
-  padding: 8px 14px;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 6px;
   border: 2px solid var(--ort-border);
-  border-radius: 20px;
+  border-radius: 16px;
   background: #fff;
-  font-size: 13px;
-  font-weight: 600;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
   color: #64748b;
   cursor: pointer;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: all 0.2s;
 }
 
@@ -1571,6 +1635,160 @@ html, body {
   flex-shrink: 0;
   background: #fff;
 }
+/* Sticky bar avec nuits + actions */
+.sheet-actions-sticky {
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+}
+.sheet-actions-sticky .nights-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 6px 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+.sheet-actions-sticky .nights-bar-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  font-weight: 600;
+}
+.sheet-actions-sticky .nights-bar .nights-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--ort-blue);
+  color: #fff;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sheet-actions-sticky .nights-bar .nights-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--ort-blue);
+  min-width: 28px;
+  text-align: center;
+}
+.sheet-actions-sticky .sheet-actions-row {
+  display: flex;
+  gap: 10px;
+}
+
+/* Sections inline (Visites / Activités dépliables) */
+.inline-section {
+  background: #fff;
+  border: 1px solid var(--ort-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.inline-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+  background: #f8fafc;
+  user-select: none;
+}
+.inline-section-title {
+  font-weight: 700;
+  color: var(--ort-blue);
+  font-size: 0.95rem;
+}
+.inline-section-count {
+  display: inline-block;
+  background: var(--ort-blue);
+  color: #fff;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin-left: 6px;
+  min-width: 22px;
+  text-align: center;
+}
+.inline-section-chevron {
+  transition: transform 0.2s ease;
+  color: #64748b;
+  font-size: 1.1rem;
+}
+.inline-section.collapsed .inline-section-chevron {
+  transform: rotate(-90deg);
+}
+.inline-section.collapsed .inline-section-body {
+  display: none;
+}
+.inline-section-body {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inline-item {
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-left: 3px solid var(--ort-blue);
+  border-radius: 8px;
+  /* clearfix pour le float interne */
+  overflow: hidden;
+}
+.inline-item-text {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #334155;
+}
+.inline-item-actions {
+  /* Float : seules les premieres lignes sont decalees, le reste reprend toute la largeur */
+  float: right;
+  margin: 0 0 6px 8px;
+  display: flex;
+  gap: 6px;
+}
+.inline-item-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.inline-item-btn.edit-btn {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.inline-item-btn.delete-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+.inline-empty {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  padding: 12px;
+}
+.inline-add-btn {
+  align-self: stretch;
+  padding: 10px;
+  background: #fff;
+  border: 2px dashed var(--ort-blue);
+  border-radius: 10px;
+  color: var(--ort-blue);
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.inline-add-btn:hover {
+  background: #eff6ff;
+}
 
 .sheet-btn {
   flex: 1;
@@ -1883,6 +2101,8 @@ html, body {
   <!-- Map Panel -->
   <div class="tab-panel" id="mapPanel">
     <div id="map"></div>
+    <button id="btnTogglePlaces" aria-label="Afficher les autres lieux" title="Afficher les autres lieux" style="position:absolute;bottom:128px;right:16px;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:18px;cursor:pointer;z-index:500;display:none;align-items:center;justify-content:center;">📍</button>
+    <button id="btnEditItin" aria-label="Modifier l'itinéraire" data-i18n-title="editItinTitle" title="Modifier l'itinéraire" style="position:absolute;bottom:74px;right:16px;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:18px;cursor:pointer;z-index:500;display:none;align-items:center;justify-content:center;">✏️</button>
     <button id="btnCenterMap" aria-label="Centrer la carte" style="position:absolute;bottom:20px;right:16px;width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #e2e8f0;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:20px;cursor:pointer;z-index:500;display:flex;align-items:center;justify-content:center;">🎯</button>
   </div>
   
@@ -1960,91 +2180,38 @@ html, body {
   
   <!-- Visualization Panel avec sous-onglets -->
   <div class="tab-panel" id="vizPanel">
-    <div class="sub-tabs-container">
-      <!-- Barre de sous-onglets -->
-      <div class="sub-tabs-bar">
-        <button class="sub-tab-btn active" data-subpanel="subPanelSteps">
-          <span class="sub-tab-icon">📍</span>
-          Étapes
-        </button>
-        <button class="sub-tab-btn" data-subpanel="subPanelMap">
-          <span class="sub-tab-icon">🗺️</span>
-          Google Map
-        </button>
-        <button class="sub-tab-btn" data-subpanel="subPanelHotels">
-          <span class="sub-tab-icon">🏨</span>
-          Hôtels
-        </button>
+    <!-- Onglet Google Map (anciennement Visualiser) -->
+    <!-- IDs subPanelMap / gmapWrapper / mkbChips conservés pour compatibilité JS -->
+    <div class="sub-panel active" id="subPanelMap">
+      <div class="viz-step-navigation">
+        <button class="viz-nav-btn viz-nav-prev">‹</button>
+        <div class="viz-step-header-info">
+          <div class="viz-step-counter">Étape 1 / 5</div>
+          <div class="viz-step-name">-</div>
+          <div class="viz-step-nights"></div>
+        </div>
+        <button class="viz-nav-btn viz-nav-next">›</button>
       </div>
-      
-      <!-- Sous-panel: Étapes avec visites et activités -->
-      <div class="sub-panel active" id="subPanelSteps">
-        <div class="viz-step-navigation">
-          <button class="viz-nav-btn viz-nav-prev">‹</button>
-          <div class="viz-step-header-info">
-            <div class="viz-step-counter">Étape 1 / 5</div>
-            <div class="viz-step-name">-</div>
-            <div class="viz-step-nights"></div>
-          </div>
-          <button class="viz-nav-btn viz-nav-next">›</button>
+      <!-- Chips de map_keywords (ligne scrollable) -->
+      <div id="mapKeywordsBanner" style="display:none;margin:0 8px 6px;">
+        <div id="mkbHeader" style="display:flex;align-items:center;gap:12px;padding:6px 10px;background:#fff8f0;border:1px solid #f0d9c0;border-radius:10px 10px 0 0;border-bottom:none;flex-wrap:wrap;font-size:0.7rem;color:#64748b;">
+          <span style="display:inline-flex;align-items:center;gap:4px;"><span style="font-size:0.85rem;">📍</span> <span data-i18n="legendShowOnMap" id="mkbLegendMap">Voir sur la carte</span></span>
+          <span style="display:inline-flex;align-items:center;gap:4px;"><span style="font-size:0.85rem;">🧭</span> <span data-i18n="legendDirections" id="mkbLegendDir">Voir l'itinéraire</span></span>
+          <span id="mkbCount" style="font-size:0.7rem;color:#888;margin-left:auto;"></span>
         </div>
-        <div class="viz-step-scroll" id="vizStepContent">
-          <!-- Contenu rempli dynamiquement -->
-        </div>
+        <div id="mkbChips" style="display:flex;flex-wrap:nowrap;gap:6px;padding:8px 10px;background:#fff8f0;border:1px solid #f0d9c0;border-top:none;border-radius:0 0 10px 10px;overflow-x:auto;-webkit-overflow-scrolling:touch;"></div>
       </div>
-      
-      <!-- Sous-panel: Google Map -->
-      <div class="sub-panel" id="subPanelMap">
-        <div class="viz-step-navigation">
-          <button class="viz-nav-btn viz-nav-prev">‹</button>
-          <div class="viz-step-header-info">
-            <div class="viz-step-counter">Étape 1 / 5</div>
-            <div class="viz-step-name">-</div>
-            <div class="viz-step-nights"></div>
-          </div>
-          <button class="viz-nav-btn viz-nav-next">›</button>
-        </div>
-        <div class="gmap-filters">
-          <button class="gmap-filter-btn active" data-filter="">📍 Lieu</button>
-          <button class="gmap-filter-btn" data-filter="visits">🗺️ Visites</button>
-          <button class="gmap-filter-btn" data-filter="restaurants">🍽️ Restos</button>
-          <button class="gmap-filter-btn" data-filter="monuments">🏛️ Monuments</button>
-          <button class="gmap-filter-btn" data-filter="museums">🎨 Musées</button>
-          <button class="gmap-filter-btn" data-filter="hotels">🏨 Hôtels</button>
-          <button class="gmap-filter-btn" data-filter="supermarket">🛒 Courses</button>
-        </div>
-        <div id="mapKeywordsBanner" style="display:none;margin:0 8px 6px;">
-          <div id="mkbHeader" style="display:flex;align-items:center;gap:6px;padding:6px 10px;background:#fff8f0;border:1px solid #f0d9c0;border-radius:10px;cursor:pointer;">
-            <span style="font-size:0.78rem;font-weight:700;color:#113f7a;">📍 <span id="mkbTitle">Voir sur Google Maps</span></span>
-            <span id="mkbCount" style="font-size:0.7rem;color:#888;margin-left:auto;"></span>
-            <span id="mkbArrow" style="font-size:0.7rem;color:#999;transition:transform 0.2s;">▼</span>
-          </div>
-          <div id="mkbChips" style="display:none;flex-wrap:wrap;gap:6px;padding:6px 10px 8px;"></div>
-        </div>
-        <div class="gmap-iframe-wrapper" id="gmapWrapper">
-          <div class="gmap-placeholder">
-            <div class="gmap-placeholder-icon">🗺️</div>
-            <div>Chargement de la carte...</div>
-          </div>
-        </div>
+      <!-- Filtres carte (sans Lieu/Visites/Hôtels) -->
+      <div class="gmap-filters">
+        <button class="gmap-filter-btn active" data-filter="restaurants" data-i18n="filterRestos">🍽️ Restos</button>
+        <button class="gmap-filter-btn" data-filter="monuments" data-i18n="filterMonuments">🏛️ Monuments</button>
+        <button class="gmap-filter-btn" data-filter="museums" data-i18n="filterMuseums">🎨 Musées</button>
+        <button class="gmap-filter-btn" data-filter="supermarket" data-i18n="filterCourses">🛒 Courses</button>
       </div>
-      
-      <!-- Sous-panel: Hôtels (Stay22) -->
-      <div class="sub-panel" id="subPanelHotels">
-        <div class="viz-step-navigation">
-          <button class="viz-nav-btn viz-nav-prev">‹</button>
-          <div class="viz-step-header-info">
-            <div class="viz-step-counter">Étape 1 / 5</div>
-            <div class="viz-step-name">-</div>
-            <div class="viz-step-nights"></div>
-          </div>
-          <button class="viz-nav-btn viz-nav-next">›</button>
-        </div>
-        <div class="hotels-widget-wrapper" id="hotelsWrapper">
-          <div class="hotels-placeholder">
-            <div class="hotels-placeholder-icon">🏨</div>
-            <div>Chargement des hôtels...</div>
-          </div>
+      <div class="gmap-iframe-wrapper" id="gmapWrapper">
+        <div class="gmap-placeholder">
+          <div class="gmap-placeholder-icon">🗺️</div>
+          <div>Chargement de la carte...</div>
         </div>
       </div>
     </div>
@@ -2058,8 +2225,8 @@ html, body {
     <span data-i18n="itinerary">Itinéraire</span>
   </button>
   <button class="tab-btn" id="tabViz" data-panel="vizPanel">
-    <span class="tab-icon">👁️</span>
-    <span data-i18n="visualization">Visualiser</span>
+    <span class="tab-icon">🅖</span>
+    <span data-i18n="googleMap">Google Map</span>
   </button>
   <button class="tab-btn" id="tabMap" data-panel="mapPanel">
     <span class="tab-icon">🗺️</span>
@@ -2090,7 +2257,7 @@ html, body {
     <button class="step-nav-btn" id="btnNextStep" onclick="navigateStep(1)">›</button>
   </div>
   <div class="sheet-body">
-    <img class="sheet-photo" id="sheetStepPhoto" src="" alt="">
+    <img class="sheet-photo" id="sheetStepPhoto" src="" alt="" style="cursor:zoom-in" onclick="openStepPhotoGrid()" title="Voir toutes les photos">
     
     <!-- Liens affiliés EN HAUT -->
     <div class="affiliate-buttons">
@@ -2105,30 +2272,21 @@ html, body {
       </a>
     </div>
     
-    <!-- Boutons vers modales Visites et Activités -->
+    <!-- Sections Visites & Activités (inline, dépliées par défaut) -->
     <div class="sheet-section">
-      <div class="content-buttons">
-        <button class="content-btn" id="btnOpenVisits" onclick="openVisitsModal()">
-          📍 <span data-i18n="seeVisits">Voir les visites</span>
-          <span class="content-count" id="visitsCount">0</span>
-        </button>
-        <button class="content-btn" id="btnOpenActivities" onclick="openActivitiesModal()">
-          🎯 <span data-i18n="seeActivities">Voir les activités</span>
-          <span class="content-count" id="activitiesCount">0</span>
-        </button>
-      </div>
-    </div>
-    
-    <!-- Contrôle des nuits -->
-    <div class="sheet-section">
-      <div class="sheet-section-title" data-i18n="numberOfNights">Nombre de nuits</div>
-      <div class="nights-control">
-        <button class="nights-btn" id="btnNightsMinus">−</button>
-        <div>
-          <div class="nights-value" id="nightsValue">0</div>
-          <div class="nights-label" data-i18n="nightPlural">nuits</div>
+      <div class="inline-section" id="visitsInlineSection">
+        <div class="inline-section-header" onclick="toggleInlineSection('visits')">
+          <span class="inline-section-title">📍 <span data-i18n="plannedVisits">Visites prévues</span> <span class="inline-section-count" id="visitsInlineCount"></span></span>
+          <span class="inline-section-chevron">▾</span>
         </div>
-        <button class="nights-btn" id="btnNightsPlus">+</button>
+        <div class="inline-section-body" id="visitsInlineBody"><!-- rempli par JS --></div>
+      </div>
+      <div class="inline-section" id="activitiesInlineSection" style="margin-top:12px;">
+        <div class="inline-section-header" onclick="toggleInlineSection('activities')">
+          <span class="inline-section-title">🎯 <span data-i18n="activities">Activités</span> <span class="inline-section-count" id="activitiesInlineCount"></span></span>
+          <span class="inline-section-chevron">▾</span>
+        </div>
+        <div class="inline-section-body" id="activitiesInlineBody"><!-- rempli par JS --></div>
       </div>
     </div>
     
@@ -2138,9 +2296,17 @@ html, body {
       <div class="step-bookings-list" id="stepBookingsList"></div>
     </div>
   </div>
-  <div class="sheet-actions">
-    <button class="sheet-btn sheet-btn-danger" id="btnDeleteStep">🗑️</button>
-    <button class="sheet-btn sheet-btn-primary" id="btnCloseSheet" data-i18n="close">Fermer</button>
+  <div class="sheet-actions sheet-actions-sticky">
+    <div class="nights-bar">
+      <span class="nights-bar-label" data-i18n="nightPlural">nuits</span>
+      <button class="nights-btn" id="btnNightsMinus">−</button>
+      <span class="nights-value" id="nightsValue">0</span>
+      <button class="nights-btn" id="btnNightsPlus">+</button>
+    </div>
+    <div class="sheet-actions-row">
+      <button class="sheet-btn sheet-btn-danger" id="btnDeleteStep">🗑️</button>
+      <button class="sheet-btn sheet-btn-primary" id="btnCloseSheet" data-i18n="close">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -2245,11 +2411,21 @@ html, body {
 <div class="bottom-sheet" id="servicesSheet">
   <div class="sheet-handle"></div>
   <div class="sheet-header">
-    <div class="sheet-title">🛎️ Services voyage</div>
-    <div class="sheet-subtitle">Réservez tout pour votre roadtrip</div>
+    <div class="sheet-title" data-i18n="organizeTitle">🛎️ Organiser mon voyage</div>
+    <div class="sheet-subtitle" data-i18n="organizeSubtitle">Hôtels, activités, services</div>
   </div>
   <div class="sheet-body">
     <div class="service-grid">
+      <div class="service-card" id="btnOrganizeHotels" style="cursor:pointer;">
+        <span class="service-icon">🏨</span>
+        <span class="service-name" data-i18n="hotels">Hôtels</span>
+        <span class="service-desc" data-i18n="hotelsDesc">Carte interactive</span>
+      </div>
+      <div class="service-card" id="btnOrganizeActivities" style="cursor:pointer;">
+        <span class="service-icon">🎫</span>
+        <span class="service-name" data-i18n="activities">Activités</span>
+        <span class="service-desc" data-i18n="activitiesDesc">Visites & expériences</span>
+      </div>
       <a class="service-card" href="https://ektatraveling.tpo.li/KrBrIrRc" target="_blank" rel="noopener">
         <span class="service-icon">🛡️</span>
         <span class="service-name">Assurance</span>
@@ -2451,6 +2627,7 @@ window.debugLog = function(msg) {
 <script src="/js/ort-trip-data.js"></script>
 <script src="./js/ort-share.js"></script>
 <script src="/js/ort-state-manager.js"></script>
+<script src="/js/ort-itin-editor-mobile-bridge.js"></script>
 <script src="/js/ort-i18n.js"></script>
 
 <!-- ========== MODALE AUTH LÉGÈRE POUR MOBILE ========== -->
@@ -2861,19 +3038,52 @@ function _t(key){ const l = (state && state.lang) || 'fr'; return (_T[key]||{})[
 // toSlug() → fourni par ort-utils.js
 // findPhotosForPlace(), getPhotosForPlace(), loadPhotosCache() → fournis par ort-data-loader.js
 
-// Helper local : normalise un tableau de photos (gere ancien et nouveau format R2)
-// Utilise window.normalizePhotos du loader, avec un fallback safe si le loader n'est pas encore charge
+// Helper local : normalise un tableau de photos (gere ancien ET nouveau format R2)
+// Ancien format : ["url1", "url2", ...]
+// Nouveau format : [{url, caption, author, source, keyword}, ...]
+// On normalise TOUJOURS nous-memes (meme si le loader existe) pour garantir le support des 2 formats.
 function _normPhotos(raw) {
-  if (typeof window.normalizePhotos === 'function') return window.normalizePhotos(raw);
   if (!Array.isArray(raw)) return [];
   const out = [];
   for (let i = 0; i < raw.length; i++) {
     const p = raw[i];
-    if (typeof p === 'string' && p) out.push(p);
-    else if (p && typeof p === 'object' && typeof p.url === 'string' && p.url) out.push(p.url);
+    if (typeof p === 'string' && p) {
+      out.push(p);
+    } else if (p && typeof p === 'object') {
+      // Nouveau format R2 : objet avec .url
+      if (typeof p.url === 'string' && p.url) out.push(p.url);
+      // Variantes eventuelles : .src, .href
+      else if (typeof p.src === 'string' && p.src) out.push(p.src);
+      else if (typeof p.href === 'string' && p.href) out.push(p.href);
+    }
   }
   return out;
 }
+
+// Wrap les fonctions du loader externe pour qu'elles renvoient TOUJOURS un tableau de strings,
+// quel que soit le format renvoye par PHOTOS_CACHE (ancien strings[] ou nouveau objet[] R2).
+(function wrapPhotoLoaders(){
+  function _wrap(fnName) {
+    const original = window[fnName];
+    if (typeof original !== 'function' || original.__ortWrapped) return;
+    const wrapped = function() {
+      const res = original.apply(this, arguments);
+      return _normPhotos(res);
+    };
+    wrapped.__ortWrapped = true;
+    window[fnName] = wrapped;
+  }
+  // Tenter immediatement (si le loader est deja charge)
+  _wrap('findPhotosForPlace');
+  _wrap('getPhotosForPlace');
+  // Et re-tenter apres que tout soit charge (au cas ou le loader arrive plus tard)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){
+      _wrap('findPhotosForPlace');
+      _wrap('getPhotosForPlace');
+    });
+  }
+})();
 
 // === STATE ===
 let state = { title: 'Roadtrip', steps: [], cc: '', lang: 'fr', _originalItinId: null };
@@ -2901,7 +3111,21 @@ const I18N_MOBILE = {
     itinerary: 'Itinéraire',
     map: 'Carte',
     bookings: 'Réservations',
-    services: 'Services',
+    services: 'Organiser',
+    googleMap: 'Google Map',
+    filterRestos: '🍽️ Restos',
+    filterMonuments: '🏛️ Monuments',
+    filterMuseums: '🎨 Musées',
+    filterCourses: '🛒 Courses',
+    legendShowOnMap: 'Voir sur la carte',
+    legendDirections: "Voir l'itinéraire",
+    organizeTitle: '🛎️ Organiser mon voyage',
+    organizeSubtitle: 'Hôtels, activités, services',
+    pickStep: 'Choisissez une étape',
+    hotels: 'Hôtels',
+    hotelsDesc: 'Carte interactive',
+    activities: 'Activités',
+    activitiesDesc: 'Visites & expériences',
     noBookings: 'Aucune réservation',
     // Step sheet
     stepOf: 'Étape {0} sur {1}',
@@ -2961,7 +3185,21 @@ const I18N_MOBILE = {
     itinerary: 'Itinerary',
     map: 'Map',
     bookings: 'Bookings',
-    services: 'Services',
+    services: 'Organize',
+    googleMap: 'Google Map',
+    filterRestos: '🍽️ Food',
+    filterMonuments: '🏛️ Monuments',
+    filterMuseums: '🎨 Museums',
+    filterCourses: '🛒 Groceries',
+    legendShowOnMap: 'Show on map',
+    legendDirections: 'Show directions',
+    organizeTitle: '🛎️ Organize my trip',
+    organizeSubtitle: 'Hotels, activities, services',
+    pickStep: 'Choose a stop',
+    hotels: 'Hotels',
+    hotelsDesc: 'Interactive map',
+    activities: 'Activities',
+    activitiesDesc: 'Tours & experiences',
     noBookings: 'No bookings',
     stepOf: 'Step {0} of {1}',
     numberOfNights: 'Number of nights',
@@ -3015,7 +3253,21 @@ const I18N_MOBILE = {
     itinerary: 'Itinerario',
     map: 'Mapa',
     bookings: 'Reservas',
-    services: 'Servicios',
+    services: 'Organizar',
+    googleMap: 'Google Map',
+    filterRestos: '🍽️ Restaurantes',
+    filterMonuments: '🏛️ Monumentos',
+    filterMuseums: '🎨 Museos',
+    filterCourses: '🛒 Compras',
+    legendShowOnMap: 'Ver en el mapa',
+    legendDirections: 'Ver itinerario',
+    organizeTitle: '🛎️ Organiza mi viaje',
+    organizeSubtitle: 'Hoteles, actividades, servicios',
+    pickStep: 'Elige una etapa',
+    hotels: 'Hoteles',
+    hotelsDesc: 'Mapa interactivo',
+    activities: 'Actividades',
+    activitiesDesc: 'Visitas y experiencias',
     noBookings: 'Sin reservas',
     stepOf: 'Etapa {0} de {1}',
     numberOfNights: 'Número de noches',
@@ -3069,7 +3321,21 @@ const I18N_MOBILE = {
     itinerary: 'Itinerario',
     map: 'Mappa',
     bookings: 'Prenotazioni',
-    services: 'Servizi',
+    services: 'Organizza',
+    googleMap: 'Google Map',
+    filterRestos: '🍽️ Ristoranti',
+    filterMonuments: '🏛️ Monumenti',
+    filterMuseums: '🎨 Musei',
+    filterCourses: '🛒 Spesa',
+    legendShowOnMap: 'Mostra sulla mappa',
+    legendDirections: "Vedi l'itinerario",
+    organizeTitle: '🛎️ Organizza il viaggio',
+    organizeSubtitle: 'Hotel, attività, servizi',
+    pickStep: 'Scegli una tappa',
+    hotels: 'Hotel',
+    hotelsDesc: 'Mappa interattiva',
+    activities: 'Attività',
+    activitiesDesc: 'Visite ed esperienze',
     noBookings: 'Nessuna prenotazione',
     stepOf: 'Tappa {0} di {1}',
     numberOfNights: 'Numero di notti',
@@ -3123,7 +3389,21 @@ const I18N_MOBILE = {
     itinerary: 'Itinerário',
     map: 'Mapa',
     bookings: 'Reservas',
-    services: 'Serviços',
+    services: 'Organizar',
+    googleMap: 'Google Map',
+    filterRestos: '🍽️ Restaurantes',
+    filterMonuments: '🏛️ Monumentos',
+    filterMuseums: '🎨 Museus',
+    filterCourses: '🛒 Compras',
+    legendShowOnMap: 'Ver no mapa',
+    legendDirections: 'Ver itinerário',
+    organizeTitle: '🛎️ Organizar minha viagem',
+    organizeSubtitle: 'Hotéis, atividades, serviços',
+    pickStep: 'Escolha uma etapa',
+    hotels: 'Hotéis',
+    hotelsDesc: 'Mapa interativo',
+    activities: 'Atividades',
+    activitiesDesc: 'Visitas e experiências',
     noBookings: 'Sem reservas',
     stepOf: 'Etapa {0} de {1}',
     numberOfNights: 'Número de noites',
@@ -3177,7 +3457,21 @@ const I18N_MOBILE = {
     itinerary: 'خط السير',
     map: 'الخريطة',
     bookings: 'الحجوزات',
-    services: 'الخدمات',
+    services: 'تنظيم',
+    googleMap: 'خرائط جوجل',
+    filterRestos: '🍽️ مطاعم',
+    filterMonuments: '🏛️ معالم',
+    filterMuseums: '🎨 متاحف',
+    filterCourses: '🛒 تسوق',
+    legendShowOnMap: 'عرض على الخريطة',
+    legendDirections: 'عرض المسار',
+    organizeTitle: '🛎️ تنظيم رحلتي',
+    organizeSubtitle: 'الفنادق والأنشطة والخدمات',
+    pickStep: 'اختر محطة',
+    hotels: 'الفنادق',
+    hotelsDesc: 'خريطة تفاعلية',
+    activities: 'الأنشطة',
+    activitiesDesc: 'جولات وتجارب',
     noBookings: 'لا توجد حجوزات',
     stepOf: 'مرحلة {0} من {1}',
     numberOfNights: 'عدد الليالي',
@@ -4237,8 +4531,9 @@ async function loadPlacesForRoute(config, routeData) {
           const slug = toSlug(p.name);
           const id = p.place_id || `${cc}::${slug}`;
           
-          // Récupérer photos du cache
-          let photos = p.photos || (p.photo ? [p.photo] : []);
+          // Récupérer photos du cache (normalise les 2 formats)
+          let photos = _normPhotos(p.photos);
+          if (!photos.length && p.photo) photos = [p.photo];
           if (!photos.length) {
             photos = findPhotosForPlace(p.name, cc);
           }
@@ -4319,7 +4614,7 @@ function selectStepsAlongRoute(config, routeData, places) {
     if (best) {
       // Récupérer photos du cache
       const placeId = best.placeId || best.place_id || `${best.cc}::${toSlug(best.name)}`;
-      let photos = best.photos || [];
+      let photos = _normPhotos(best.photos);
       
       // Chercher dans PHOTOS_CACHE si pas de photos
       if (!photos.length) {
@@ -4961,6 +5256,32 @@ function setupEvents() {
   $('btnShareHeader').onclick = openShareModal;
   $('btnCenterMap').onclick = centerMap;
   
+  // === BOUTON MODIFIER ITINÉRAIRE (mobile edit) ===
+  var __btnEditItin = $('btnEditItin');
+  if (__btnEditItin) {
+    __btnEditItin.onclick = function () {
+      if (window.ORT_MOBILE_EDIT && typeof window.ORT_MOBILE_EDIT.launch === 'function') {
+        window.ORT_MOBILE_EDIT.launch();
+      } else {
+        console.warn('[MOBILE-EDIT] Bridge non chargé');
+      }
+    };
+  }
+
+  // === BOUTON TOGGLE AUTRES PLACES ===
+  var __btnTogglePlaces = $('btnTogglePlaces');
+  if (__btnTogglePlaces) {
+    __btnTogglePlaces.onclick = function () {
+      if (window.ORT_MOBILE_EDIT && typeof window.ORT_MOBILE_EDIT.toggleOtherPlaces === 'function') {
+        var visible = window.ORT_MOBILE_EDIT.toggleOtherPlaces();
+        // Feedback visuel : bouton plus opaque / plus transparent
+        __btnTogglePlaces.style.background = visible ? '#113f7a' : '#fff';
+        __btnTogglePlaces.style.color = visible ? '#fff' : 'inherit';
+        __btnTogglePlaces.style.filter = visible ? 'none' : 'grayscale(0.5)';
+      }
+    };
+  }
+  
   // === USER PROFILE BUTTON ===
   $('btnUser').onclick = () => {
     updateUserUI();
@@ -5102,6 +5423,22 @@ function updateUserUI() {
 const usedPhotos = new Set();
 
 // Récupérer toutes les photos disponibles pour une étape (ordre de priorité)
+// Kaleidoscope : ouvre toutes les photos de l'etape courante en grille
+window.openStepPhotoGrid = function() {
+  if (typeof currentStepIndex === 'undefined' || !state || !state.steps) return;
+  var step = state.steps[currentStepIndex];
+  if (!step) return;
+  var photos = (typeof getAllStepPhotos === 'function') ? getAllStepPhotos(step) : [];
+  if (!photos.length) { console.log('[KALEIDOSCOPE] Aucune photo'); return; }
+  if (photos.length === 1) {
+    if (typeof ortLightboxOpen === 'function') ortLightboxOpen(photos, 0);
+    return;
+  }
+  var name = (typeof getCityDisplayName === 'function') ? (getCityDisplayName(step, state.lang) || step.name) : (step.name || '');
+  var title = '📸 ' + name + ' (' + photos.length + ')';
+  if (typeof ortPhotoGridOpen === 'function') ortPhotoGridOpen(photos, title);
+};
+
 function getAllStepPhotos(step) {
   const photos = [];
   
@@ -5159,6 +5496,35 @@ function getStepPhoto(step, stepIdx = -1) {
 // Reset les photos utilisées (appelé au chargement d'un nouveau trip)
 function resetUsedPhotos() {
   usedPhotos.clear();
+}
+
+// Compte combien de fois ce lieu apparaît AVANT cette étape (dans state.steps).
+// Permet de varier la photo affichée quand un lieu se répète (ex: aller-retour).
+// Renvoie 0 pour la 1ère occurrence, 1 pour la 2ème, etc.
+function getStepOccurrenceIndex(step, idx) {
+  if (!step || !state || !Array.isArray(state.steps)) return 0;
+  const key = step.placeId || step.place_id || (step.name || '').trim().toLowerCase();
+  if (!key) return 0;
+  let count = 0;
+  for (let i = 0; i < idx; i++) {
+    const s = state.steps[i];
+    const k = s.placeId || s.place_id || (s.name || '').trim().toLowerCase();
+    if (k === key) count++;
+  }
+  return count;
+}
+
+// Renvoie le tableau de photos d'une étape, ré-ordonné pour que l'occurrence N
+// commence par la photo N (si dispo). Les autres photos restent dans l'ordre
+// d'origine et servent de fallback à loadImageWithFallback.
+function getStepPhotosForOccurrence(step, idx) {
+  const all = getAllStepPhotos(step);
+  if (all.length <= 1) return all;
+  const occ = getStepOccurrenceIndex(step, idx);
+  if (occ === 0) return all;
+  const start = occ % all.length;
+  // Réordonner : on commence à start, puis on revient au début
+  return all.slice(start).concat(all.slice(0, start));
 }
 
 // Charger une image avec timeout et fallback
@@ -5379,6 +5745,7 @@ function initMap() {
   if (map) return;
   
   map = L.map('map', { zoomControl: true, attributionControl: false });
+  window.map = map; // exposé pour ort-itin-editor (bridge)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19, subdomains: 'abcd'
   }).addTo(map);
@@ -5390,6 +5757,14 @@ function initMap() {
 
 function renderMarkers() {
   if (!map) return;
+  // Afficher boutons Modifier + Toggle places dès qu'on a au moins une étape
+  try {
+    var __hasSteps = (state.steps && state.steps.length > 0);
+    var __btnEdit = document.getElementById('btnEditItin');
+    if (__btnEdit) __btnEdit.style.display = __hasSteps ? 'flex' : 'none';
+    var __btnTogglePl = document.getElementById('btnTogglePlaces');
+    if (__btnTogglePl) __btnTogglePl.style.display = __hasSteps ? 'flex' : 'none';
+  } catch (e) {}
   markers.forEach(m => map.removeLayer(m));
   markers = [];
   
@@ -5579,21 +5954,14 @@ function openStepSheet(idx) {
     }
   }
   
-  // Mettre à jour les compteurs
-  const visitsCount = currentStepVisits.length;
-  const activitiesCount = currentStepActivities.length;
-  $('visitsCount').textContent = visitsCount || '';
-  $('visitsCount').dataset.count = visitsCount;
-  $('activitiesCount').textContent = activitiesCount || '';
-  $('activitiesCount').dataset.count = activitiesCount;
-  
-  // Toujours afficher les boutons (même si vides - on montre un message dans la modale)
-  $('btnOpenVisits').style.display = '';
-  $('btnOpenActivities').style.display = '';
+  // Rendu inline des sections Visites & Activités
+  renderVisitsInline();
+  renderActivitiesInline();
   
   // Charger la photo avec fallback et timeout
+  // Si le lieu se répète (ex: London en début et fin), on commence par une photo différente
   const photoEl = $('sheetStepPhoto');
-  const allPhotos = getAllStepPhotos(step);
+  const allPhotos = getStepPhotosForOccurrence(step, idx);
   if (allPhotos.length > 0) {
     loadImageWithFallback(photoEl, allPhotos, 3000);
   } else {
@@ -5707,76 +6075,82 @@ function navigateStep(delta) {
 // === MODALES VISITES / ACTIVITÉS ===
 
 function openVisitsModal() {
-  const step = state.steps[currentStepIndex];
-  const stepName = getCityDisplayName(step, state.lang) || step.name;
-  
-  // i18n pour "Étape X sur Y"
-  const stepOfText = i18n('stepOf').replace('{0}', currentStepIndex + 1).replace('{1}', state.steps.length);
-  $('visitsModalStep').textContent = `${stepName} - ${stepOfText}`;
-  
-  const body = $('visitsModalBody');
-  if (currentStepVisits.length === 0) {
-    body.innerHTML = `<div class="content-empty">${i18n('noVisits')}</div>
-      <button class="content-add-bottom" onclick="addVisit()">＋ Ajouter une visite</button>`;
-  } else {
-    body.innerHTML = currentStepVisits.map((v, idx) => {
-      const text = typeof v === 'string' ? v : (v.text || v.description || v.name || '');
-      return `
-        <div class="content-item" id="visit-item-${idx}">
-          <div class="content-item-text">${text}</div>
-          <div class="content-item-actions">
-            <button class="content-item-btn edit-btn" onclick="editVisit(${idx})" title="Modifier">✏️</button>
-            <button class="content-item-btn delete-btn" onclick="deleteVisit(${idx})" title="Supprimer">🗑️</button>
-          </div>
-        </div>
-      `;
-    }).join('') + `<button class="content-add-bottom" onclick="addVisit()">＋ Ajouter une visite</button>`;
+  // Désormais inline : on ne fait que (re)rendre la section visites de l'étape courante.
+  // Le nom est conservé car de nombreuses fonctions (addVisit/editVisit/deleteVisit)
+  // l'appellent après chaque modif pour rafraîchir.
+  renderVisitsInline();
+}
+
+function renderVisitsInline() {
+  const body = $('visitsInlineBody');
+  const countEl = $('visitsInlineCount');
+  if (!body) return;
+  const list = currentStepVisits || [];
+  if (countEl) countEl.textContent = list.length || '';
+  if (list.length === 0) {
+    body.innerHTML = `<div class="inline-empty">${i18n('noVisits')}</div>
+      <button class="inline-add-btn" onclick="addVisit()">＋ ${i18n('addVisit') || 'Ajouter une visite'}</button>`;
+    return;
   }
-  
-  $('visitsModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  body.innerHTML = list.map((v, idx) => {
+    const text = typeof v === 'string' ? v : (v.text || v.description || v.name || '');
+    return `
+      <div class="inline-item" id="visit-item-${idx}">
+        <div class="inline-item-actions">
+          <button class="inline-item-btn edit-btn" onclick="editVisit(${idx})" title="Modifier">✏️</button>
+          <button class="inline-item-btn delete-btn" onclick="deleteVisit(${idx})" title="Supprimer">🗑️</button>
+        </div>
+        <div class="inline-item-text">${text}</div>
+      </div>
+    `;
+  }).join('') + `<button class="inline-add-btn" onclick="addVisit()">＋ ${i18n('addVisit') || 'Ajouter une visite'}</button>`;
 }
 
 function closeVisitsModal() {
-  $('visitsModal').classList.remove('open');
-  document.body.style.overflow = '';
+  // No-op : il n'y a plus de modale à fermer (rendu inline)
 }
 
 function openActivitiesModal() {
-  const step = state.steps[currentStepIndex];
-  const stepName = getCityDisplayName(step, state.lang) || step.name;
-  
-  // i18n pour "Étape X sur Y"
-  const stepOfText = i18n('stepOf').replace('{0}', currentStepIndex + 1).replace('{1}', state.steps.length);
-  $('activitiesModalStep').textContent = `${stepName} - ${stepOfText}`;
-  
-  const body = $('activitiesModalBody');
-  if (currentStepActivities.length === 0) {
-    body.innerHTML = `<div class="content-empty">${i18n('noActivities')}</div>
-      <button class="content-add-bottom" onclick="addActivity()">＋ Ajouter une activité</button>`;
-  } else {
-    body.innerHTML = currentStepActivities.map((a, idx) => {
-      const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
-      return `
-        <div class="content-item" id="activity-item-${idx}">
-          <div class="content-item-text">${text}</div>
-          <div class="content-item-actions">
-            <button class="content-item-btn edit-btn" onclick="editActivity(${idx})" title="Modifier">✏️</button>
-            <button class="content-item-btn delete-btn" onclick="deleteActivity(${idx})" title="Supprimer">🗑️</button>
-          </div>
-        </div>
-      `;
-    }).join('') + `<button class="content-add-bottom" onclick="addActivity()">＋ Ajouter une activité</button>`;
+  // Idem : rendu inline
+  renderActivitiesInline();
+}
+
+function renderActivitiesInline() {
+  const body = $('activitiesInlineBody');
+  const countEl = $('activitiesInlineCount');
+  if (!body) return;
+  const list = currentStepActivities || [];
+  if (countEl) countEl.textContent = list.length || '';
+  if (list.length === 0) {
+    body.innerHTML = `<div class="inline-empty">${i18n('noActivities')}</div>
+      <button class="inline-add-btn" onclick="addActivity()">＋ ${i18n('addActivity') || 'Ajouter une activité'}</button>`;
+    return;
   }
-  
-  $('activitiesModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
+  body.innerHTML = list.map((a, idx) => {
+    const text = typeof a === 'string' ? a : (a.text || a.description || a.name || '');
+    return `
+      <div class="inline-item" id="activity-item-${idx}">
+        <div class="inline-item-actions">
+          <button class="inline-item-btn edit-btn" onclick="editActivity(${idx})" title="Modifier">✏️</button>
+          <button class="inline-item-btn delete-btn" onclick="deleteActivity(${idx})" title="Supprimer">🗑️</button>
+        </div>
+        <div class="inline-item-text">${text}</div>
+      </div>
+    `;
+  }).join('') + `<button class="inline-add-btn" onclick="addActivity()">＋ ${i18n('addActivity') || 'Ajouter une activité'}</button>`;
 }
 
 function closeActivitiesModal() {
-  $('activitiesModal').classList.remove('open');
-  document.body.style.overflow = '';
+  // No-op
 }
+
+// Toggle déplier/replier section inline
+function toggleInlineSection(which) {
+  const id = which === 'visits' ? 'visitsInlineSection' : 'activitiesInlineSection';
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('collapsed');
+}
+window.toggleInlineSection = toggleInlineSection;
 
 // === FONCTIONS D'ÉDITION DES VISITES ===
 function addVisit() {
@@ -5903,8 +6277,9 @@ function deleteActivity(idx) {
 }
 
 function updateVisitsActivitiesCounts() {
-  $('visitsCount').textContent = currentStepVisits.length;
-  $('activitiesCount').textContent = currentStepActivities.length;
+  // Rafraîchit les sections inline (qui mettent à jour leur propre compteur)
+  if (typeof renderVisitsInline === 'function') renderVisitsInline();
+  if (typeof renderActivitiesInline === 'function') renderActivitiesInline();
 }
 
 // === ACTIONS ===
@@ -6922,7 +7297,7 @@ window.deleteActivity = deleteActivity;
   let vizCurrentStep = 0;
   
   // Filtre POI actuel pour Google Maps
-  let currentMapFilter = '';
+  let currentMapFilter = 'restaurants';
   
   // Gestion des sous-onglets
   document.querySelectorAll('.sub-tab-btn').forEach(btn => {
@@ -7203,20 +7578,26 @@ window.deleteActivity = deleteActivity;
     let mapUrl = '';
     
     if (currentMapFilter === 'visits') {
-      // Afficher les lieux à visiter depuis map_keywords
+      // (Conservé pour compat, mais ce filtre n'est plus dans l'UI mobile)
       const kws = step._mapKeywords || [];
       if (kws.length > 0) {
         const searchQuery = encodeURIComponent(kws.join(' | '));
         mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
       } else if (lat && lng) {
-        // Fallback: attractions near step
         const searchQuery = encodeURIComponent(`tourist attractions near ${step.name || ''}`);
         mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
       }
     } else if (currentMapFilter) {
-      // Recherche par catégorie de POI près du lieu
-      const searchQuery = encodeURIComponent(`${currentMapFilter} near ${step.name || ''}`);
-      mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
+      // Recherche par catégorie de POI : on centre sur les coordonnées de l'étape
+      // pour que les résultats soient bien autour, pas pertinents-globalement.
+      // Zoom 15 = bon compromis pour voir un quartier
+      if (lat && lng) {
+        // q=type@lat,lng centre la recherche autour des coordonnées exactes
+        mapUrl = `https://maps.google.com/maps?q=${currentMapFilter}+near+${lat},${lng}&ll=${lat},${lng}&z=15&output=embed`;
+      } else {
+        const searchQuery = encodeURIComponent(`${currentMapFilter} near ${step.name || ''}`);
+        mapUrl = `https://maps.google.com/maps?q=${searchQuery}&output=embed`;
+      }
     } else {
       // Affichage du lieu simple
       if (lat && lng) {
@@ -7247,7 +7628,8 @@ window.deleteActivity = deleteActivity;
   function updateMapKeywordsBanner(step) {
     const banner = document.getElementById('mapKeywordsBanner');
     const chipsEl = document.getElementById('mkbChips');
-    const titleEl = document.getElementById('mkbTitle');
+    const legendMapEl = document.getElementById('mkbLegendMap');
+    const legendDirEl = document.getElementById('mkbLegendDir');
     const countEl = document.getElementById('mkbCount');
     if (!banner || !chipsEl) return;
     
@@ -7270,37 +7652,57 @@ window.deleteActivity = deleteActivity;
     }
     
     const lang = state.lang || 'fr';
-    const labels = {
-      fr: 'Voir sur Google Maps', en: 'See on Google Maps', es: 'Ver en Google Maps',
-      it: 'Vedi su Google Maps', pt: 'Ver no Google Maps', ar: 'عرض على خرائط جوجل'
+    // Légendes : 📍 = "Voir sur la carte" (charge dans iframe), 🧭 = "Voir l'itinéraire" (Google Maps directions)
+    const mapLegends = {
+      fr: 'Voir sur la carte', en: 'Show on map', es: 'Ver en el mapa',
+      it: 'Mostra sulla mappa', pt: 'Ver no mapa', ar: 'عرض على الخريطة'
     };
-    if (titleEl) titleEl.textContent = labels[lang] || labels.fr;
+    const dirLegends = {
+      fr: "Voir l'itinéraire", en: 'Show directions', es: 'Ver itinerario',
+      it: "Vedi l'itinerario", pt: 'Ver itinerário', ar: 'عرض المسار'
+    };
+    const directionsLabels = {
+      fr: 'Itinéraire Google Maps', en: 'Google Maps directions', es: 'Cómo llegar (Google Maps)',
+      it: 'Indicazioni Google Maps', pt: 'Direções Google Maps', ar: 'الاتجاهات على خرائط جوجل'
+    };
+    if (legendMapEl) legendMapEl.textContent = mapLegends[lang] || mapLegends.fr;
+    if (legendDirEl) legendDirEl.textContent = dirLegends[lang] || dirLegends.fr;
     if (countEl) countEl.textContent = `(${kws.length})`;
     
     chipsEl.innerHTML = kws.map(kw => {
-      const url = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(kw);
-      return `<a href="${url}" class="mkb-chip" target="_blank" rel="noopener">📌 ${kw}</a>`;
+      const safeKw = String(kw).replace(/"/g, '&quot;');
+      const dirUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(kw) + '&travelmode=driving';
+      const dirTitle = directionsLabels[lang] || directionsLabels.fr;
+      // Chip composite : partie gauche cliquable (charge dans iframe) + bouton 🧭 à droite (ouvre Google Maps)
+      return `<div class="mkb-chip-group">
+        <button type="button" class="mkb-chip mkb-chip-main" data-kw="${safeKw}">📍 ${kw}</button>
+        <a href="${dirUrl}" class="mkb-chip-dir" target="_blank" rel="noopener" title="${dirTitle}" aria-label="${dirTitle}">🧭</a>
+      </div>`;
     }).join('');
     
-    // Replier à chaque changement d'étape
-    chipsEl.style.display = 'none';
-    const arrow = document.getElementById('mkbArrow');
-    if (arrow) arrow.style.transform = 'rotate(0deg)';
+    // Délégation : clic sur la partie principale = chargement iframe
+    chipsEl.querySelectorAll('.mkb-chip-main').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const kw = btn.getAttribute('data-kw');
+        if (kw) loadKeywordInIframe(kw);
+      });
+    });
     
+    chipsEl.style.display = 'flex';
     banner.style.display = 'block';
   }
   
-  // Toggle bandeau map keywords
-  document.addEventListener('click', function(e) {
-    const header = e.target.closest('#mkbHeader');
-    if (!header) return;
-    const chips = document.getElementById('mkbChips');
-    const arrow = document.getElementById('mkbArrow');
-    if (!chips) return;
-    const open = chips.style.display === 'none';
-    chips.style.display = open ? 'flex' : 'none';
-    if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-  });
+  // Charge un keyword précis dans l'iframe Google Maps de l'onglet courant
+  function loadKeywordInIframe(kw) {
+    const wrapper = document.getElementById('gmapWrapper');
+    if (!wrapper) return;
+    const url = 'https://maps.google.com/maps?q=' + encodeURIComponent(kw) + '&output=embed';
+    wrapper.innerHTML = '<iframe src="' + url + '" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>';
+    // Désélectionner le filtre actif (puisqu'on affiche un keyword spécifique)
+    document.querySelectorAll('.gmap-filter-btn').forEach(b => b.classList.remove('active'));
+  }
+  
+  // (Le toggle des chips a été supprimé : elles sont désormais toujours visibles)
   
   // Rendre Stay22
   function renderStay22() {
@@ -7805,8 +8207,365 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
-<footer id="footer-legal"></footer>
-<script src="/js/ort-footer.js"></script>
+<!-- footer mobile désactivé : il s'affichait au mauvais endroit avec le bridge édition -->
+<!-- <footer id="footer-legal"></footer>
+<script src="/js/ort-footer.js"></script> -->
+
+<!-- === MODALE GETYOURGUIDE (utilisée par ort-widgets.js → openGygModal) === -->
+<style>
+#gygModal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(17,63,122,0.85);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#gygModal.show { display: flex; }
+.gyg-modal-content {
+  background: #fff;
+  border-radius: 16px;
+  max-width: 900px;
+  width: 95%;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.gyg-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ff5533 0%, #ff7744 100%);
+  color: #fff;
+}
+.gyg-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.gyg-modal-close {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: #fff;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+}
+.gyg-modal-close:hover { background: rgba(255,255,255,0.3); }
+.gyg-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 300px;
+}
+.gyg-step-info {
+  text-align: center;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+.gyg-step-info strong { color: #113f7a; font-size: 1.1rem; }
+</style>
+
+<div id="gygModal">
+  <div class="gyg-modal-content">
+    <div class="gyg-modal-header">
+      <h3>🎫 Activités & Expériences</h3>
+      <button class="gyg-modal-close" onclick="closeGygModal()">✕</button>
+    </div>
+    <div class="gyg-modal-body">
+      <div class="gyg-step-info">
+        <span id="gygStepName"></span>
+      </div>
+      <div id="gygWidgetContainer"></div>
+      <div id="gygMoreLink" style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- === MODALE CHOIX D'ETAPE (Hotels Stay22 / Activites GYG) === -->
+<style>
+.ort-step-picker{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99998;display:none;align-items:flex-end;justify-content:center}
+.ort-step-picker.open{display:flex}
+.ort-step-picker-card{background:#fff;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px 22px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,0.2);animation:ortSpUp 0.22s ease}
+@keyframes ortSpUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ort-step-picker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ort-step-picker-title{font-size:1.05rem;font-weight:700;color:#113f7a}
+.ort-step-picker-close{background:#f1f5f9;border:none;width:34px;height:34px;border-radius:50%;font-size:1.1rem;cursor:pointer;color:#64748b}
+.ort-step-picker-list{overflow-y:auto;display:flex;flex-direction:column;gap:8px;flex:0 0 auto;max-height:40vh;margin-bottom:12px}
+.ort-step-picker-item{display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:2px solid #e2e8f0;border-radius:12px;cursor:pointer;transition:all 0.15s;text-align:left}
+.ort-step-picker-item:hover,.ort-step-picker-item:active{background:#e0f2fe;border-color:#113f7a}
+.ort-step-picker-num{flex:0 0 32px;height:32px;border-radius:50%;background:#113f7a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem}
+.ort-step-picker-name{font-weight:600;color:#113f7a;flex:1}
+.ort-step-picker-iframe-wrap{height:65vh;width:100%;border-radius:12px;overflow:hidden;background:#f1f5f9;display:none}
+.ort-step-picker-iframe-wrap.show{display:block}
+.ort-step-picker-iframe-wrap iframe{display:block;width:100%;height:100%;border:0}
+.ort-step-picker-back{display:none;background:#f1f5f9;border:none;padding:8px 14px;border-radius:8px;font-weight:600;color:#113f7a;cursor:pointer;margin-bottom:10px;align-self:flex-start}
+.ort-step-picker-back.show{display:block}
+</style>
+<div class="ort-step-picker" id="ortStepPicker">
+  <div class="ort-step-picker-card" onclick="event.stopPropagation()">
+    <div class="ort-step-picker-header">
+      <div class="ort-step-picker-title" id="ortSpTitle"></div>
+      <button class="ort-step-picker-close" onclick="ortStepPickerClose()">✕</button>
+    </div>
+    <button class="ort-step-picker-back" id="ortSpBack" onclick="ortStepPickerShowList()">← <span data-i18n="pickStep">Choisissez une étape</span></button>
+    <div class="ort-step-picker-list" id="ortSpList"></div>
+    <div class="ort-step-picker-iframe-wrap" id="ortSpIframeWrap"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var mode = null; // 'hotels' ou 'activities'
+
+  function openPicker(m) {
+    mode = m;
+    var steps = (window.state && window.state.steps) || [];
+    if (!steps.length) {
+      alert('Aucune étape à afficher');
+      return;
+    }
+    var titles = {
+      hotels: '🏨 ' + (window.i18n ? window.i18n('hotels') : 'Hôtels'),
+      activities: '🎫 ' + (window.i18n ? window.i18n('activities') : 'Activités')
+    };
+    document.getElementById('ortSpTitle').textContent = titles[m] || '';
+    var list = document.getElementById('ortSpList');
+    list.innerHTML = steps.map(function(s, i){
+      var name = s.name || s.place_name || ('Étape ' + (i+1));
+      return '<button class="ort-step-picker-item" data-idx="' + i + '">' +
+             '<span class="ort-step-picker-num">' + (i+1) + '</span>' +
+             '<span class="ort-step-picker-name">' + name + '</span>' +
+             '</button>';
+    }).join('');
+    list.querySelectorAll('.ort-step-picker-item').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var idx = parseInt(btn.getAttribute('data-idx'), 10);
+        pickStep(idx);
+      });
+    });
+    // afficher liste, cacher iframe
+    list.style.display = '';
+    document.getElementById('ortSpIframeWrap').classList.remove('show');
+    document.getElementById('ortSpBack').classList.remove('show');
+    document.getElementById('ortStepPicker').classList.add('open');
+  }
+
+  function pickStep(idx) {
+    var steps = (window.state && window.state.steps) || [];
+    var step = steps[idx];
+    if (!step) return;
+
+    if (mode === 'activities') {
+      // GYG : on reutilise la modale existante du loader, donc on ferme la notre
+      if (typeof window.openGygModal === 'function') {
+        // DIAGNOSTIC : voir ce qu'on envoie a GYG
+        console.log('[ORGANIZE-GYG] step envoyé:', {
+          name: step.name,
+          place_name: step.place_name,
+          lat: step.lat,
+          latitude: step.latitude,
+          lng: step.lng,
+          lon: step.lon,
+          longitude: step.longitude,
+          cc: step.cc,
+          country: step.country,
+          place_id: step.place_id,
+          idx: idx,
+          full: step
+        });
+        ortStepPickerClose();
+        window.openGygModal(step, idx);
+      } else {
+        // Fallback : lien d'affiliation
+        var url = (window.AFFILIATE && window.AFFILIATE.gyg)
+          ? window.AFFILIATE.gyg(step.name)
+          : 'https://www.getyourguide.com/s/?q=' + encodeURIComponent(step.name || '');
+        window.open(url, '_blank');
+        ortStepPickerClose();
+      }
+      return;
+    }
+
+    if (mode === 'hotels') {
+      // Stay22 : on affiche dans l'iframe de notre modale
+      var lat = step.lat || step.latitude;
+      var lng = step.lng || step.lon || step.longitude;
+      var name = encodeURIComponent(step.name || 'Lieu');
+      var url = (lat && lng)
+        ? 'https://www.stay22.com/embed/gm?lat=' + lat + '&lng=' + lng + '&title=' + name + '&aid=oneroadtrip'
+        : 'https://www.stay22.com/embed/gm?address=' + name + '&aid=oneroadtrip';
+      console.log('[ORGANIZE] Stay22 URL:', url);
+      var wrap = document.getElementById('ortSpIframeWrap');
+      // Placeholder pendant le chargement de l'iframe
+      wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#64748b;font-size:0.9rem;">⏳ Chargement de la carte des hôtels...</div>';
+      // Insertion de l'iframe apres un tick pour que le placeholder s'affiche d'abord
+      setTimeout(function(){
+        var iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('loading', 'eager');
+        iframe.onload = function(){ console.log('[ORGANIZE] ✅ Stay22 iframe chargée'); };
+        iframe.onerror = function(){ console.warn('[ORGANIZE] ❌ Erreur chargement Stay22'); };
+        wrap.innerHTML = '';
+        wrap.appendChild(iframe);
+      }, 50);
+      // basculer affichage
+      document.getElementById('ortSpList').style.display = 'none';
+      wrap.classList.add('show');
+      document.getElementById('ortSpBack').classList.add('show');
+      document.getElementById('ortSpTitle').textContent = '🏨 ' + (step.name || '');
+    }
+  }
+
+  window.ortStepPickerOpen = openPicker;
+  window.ortStepPickerClose = function() {
+    document.getElementById('ortStepPicker').classList.remove('open');
+    document.getElementById('ortSpIframeWrap').innerHTML = '';
+  };
+  window.ortStepPickerShowList = function() {
+    document.getElementById('ortSpList').style.display = '';
+    document.getElementById('ortSpIframeWrap').classList.remove('show');
+    document.getElementById('ortSpBack').classList.remove('show');
+    document.getElementById('ortSpIframeWrap').innerHTML = '';
+    var titles = {
+      hotels: '🏨 ' + (window.i18n ? window.i18n('hotels') : 'Hôtels'),
+      activities: '🎫 ' + (window.i18n ? window.i18n('activities') : 'Activités')
+    };
+    document.getElementById('ortSpTitle').textContent = titles[mode] || '';
+  };
+
+  // Fermeture en cliquant sur le fond
+  document.getElementById('ortStepPicker').addEventListener('click', function(e){
+    if (e.target.id === 'ortStepPicker') ortStepPickerClose();
+  });
+
+  // Branchement des deux tuiles
+  function bindTiles() {
+    var btnH = document.getElementById('btnOrganizeHotels');
+    var btnA = document.getElementById('btnOrganizeActivities');
+    if (btnH) btnH.addEventListener('click', function(){ openPicker('hotels'); });
+    if (btnA) btnA.addEventListener('click', function(){ openPicker('activities'); });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bindTiles);
+  } else {
+    bindTiles();
+  }
+  console.log('[ORGANIZE] ✅ Tuiles Hôtels & Activités prêtes');
+})();
+</script>
+
+<!-- === LIGHTBOX PHOTOS (kaléidoscope étape) === -->
+<style>
+.ort-lightbox{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:100001;display:none;align-items:center;justify-content:center;touch-action:none;animation:ortLbFade 0.2s ease}
+.ort-lightbox.open{display:flex}
+@keyframes ortLbFade{from{opacity:0}to{opacity:1}}
+.ort-lightbox-img{max-width:95vw;max-height:88vh;object-fit:contain;user-select:none;-webkit-user-drag:none;box-shadow:0 4px 30px rgba(0,0,0,0.5)}
+.ort-lightbox-close{position:absolute;top:14px;right:14px;width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:1.5rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ort-lightbox-btn{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.ort-lightbox-btn.prev{left:6px}
+.ort-lightbox-btn.next{right:6px}
+.ort-lightbox-counter{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:#fff;background:rgba(0,0,0,0.5);padding:6px 14px;border-radius:14px;font-size:0.85rem;font-weight:600}
+/* Grille kaleidoscope */
+.ort-photo-grid-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;display:none;flex-direction:column;animation:ortLbFade 0.2s ease}
+.ort-photo-grid-modal.open{display:flex}
+.ort-photo-grid-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+.ort-photo-grid-title{font-weight:700;font-size:1rem}
+.ort-photo-grid-close{background:rgba(255,255,255,0.15);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+.ort-photo-grid-body{flex:1;overflow-y:auto;padding:0 12px 20px}
+.ort-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.ort-photo-grid img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:10px;cursor:zoom-in;background:#1f2937}
+</style>
+<div class="ort-photo-grid-modal" id="ortPhotoGridModal">
+  <div class="ort-photo-grid-header">
+    <div class="ort-photo-grid-title" id="ortPhotoGridTitle"></div>
+    <button class="ort-photo-grid-close" onclick="ortPhotoGridClose()">✕</button>
+  </div>
+  <div class="ort-photo-grid-body">
+    <div class="ort-photo-grid" id="ortPhotoGridList"></div>
+  </div>
+</div>
+<div class="ort-lightbox" id="ortLightbox" onclick="ortLightboxClickBg(event)">
+  <button class="ort-lightbox-close" onclick="ortLightboxClose()">✕</button>
+  <button class="ort-lightbox-btn prev" onclick="event.stopPropagation();ortLightboxNav(-1)">❮</button>
+  <img class="ort-lightbox-img" id="ortLightboxImg" src="" alt="" onclick="event.stopPropagation()">
+  <button class="ort-lightbox-btn next" onclick="event.stopPropagation();ortLightboxNav(1)">❯</button>
+  <div class="ort-lightbox-counter" id="ortLightboxCounter"></div>
+</div>
+<script>
+(function(){
+  var lb = { imgs: [], idx: 0 };
+  window.ortLightboxOpen = function(imgs, startIdx){
+    if (!Array.isArray(imgs) || !imgs.length) return;
+    lb.imgs = imgs.slice();
+    lb.idx = Math.max(0, Math.min(startIdx|0, imgs.length-1));
+    renderLb();
+    document.getElementById('ortLightbox').classList.add('open');
+  };
+  window.ortLightboxClose = function(){ document.getElementById('ortLightbox').classList.remove('open'); };
+  window.ortLightboxNav = function(dir){
+    if (!lb.imgs.length) return;
+    lb.idx = (lb.idx + dir + lb.imgs.length) % lb.imgs.length;
+    renderLb();
+  };
+  window.ortLightboxClickBg = function(e){ if (e.target.id === 'ortLightbox') ortLightboxClose(); };
+  function renderLb(){
+    document.getElementById('ortLightboxImg').src = lb.imgs[lb.idx];
+    var c = document.getElementById('ortLightboxCounter');
+    if (lb.imgs.length > 1) { c.textContent = (lb.idx+1)+' / '+lb.imgs.length; c.style.display=''; }
+    else c.style.display='none';
+    var prev = document.querySelector('#ortLightbox .ort-lightbox-btn.prev');
+    var next = document.querySelector('#ortLightbox .ort-lightbox-btn.next');
+    if (prev) prev.style.display = lb.imgs.length>1 ? '' : 'none';
+    if (next) next.style.display = lb.imgs.length>1 ? '' : 'none';
+  }
+  document.addEventListener('keydown', function(e){
+    var open = document.getElementById('ortLightbox');
+    if (!open || !open.classList.contains('open')) return;
+    if (e.key==='Escape') ortLightboxClose();
+    else if (e.key==='ArrowLeft') ortLightboxNav(-1);
+    else if (e.key==='ArrowRight') ortLightboxNav(1);
+  });
+  // Swipe mobile
+  var tx = null;
+  document.getElementById('ortLightbox').addEventListener('touchstart', function(e){
+    if (e.touches.length===1) tx = e.touches[0].clientX;
+  }, {passive:true});
+  document.getElementById('ortLightbox').addEventListener('touchend', function(e){
+    if (tx===null) return;
+    var dx = ((e.changedTouches[0]||{}).clientX || tx) - tx;
+    if (Math.abs(dx) > 50) ortLightboxNav(dx<0 ? 1 : -1);
+    tx = null;
+  }, {passive:true});
+
+  // Grille (kaleidoscope)
+  window.ortPhotoGridOpen = function(imgs, title){
+    if (!Array.isArray(imgs) || !imgs.length) return;
+    document.getElementById('ortPhotoGridTitle').textContent = title || '';
+    var list = document.getElementById('ortPhotoGridList');
+    list.innerHTML = imgs.map(function(url, i){
+      return '<img src="'+url+'" alt="" data-idx="'+i+'" loading="lazy">';
+    }).join('');
+    list.querySelectorAll('img').forEach(function(img){
+      img.addEventListener('click', function(){
+        var idx = parseInt(img.getAttribute('data-idx'),10) || 0;
+        ortLightboxOpen(imgs, idx);
+      });
+    });
+    document.getElementById('ortPhotoGridModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  window.ortPhotoGridClose = function(){
+    document.getElementById('ortPhotoGridModal').classList.remove('open');
+    document.body.style.overflow = '';
+  };
+  console.log('[ORT-LIGHTBOX] ✅ Initialisé');
+})();
+</script>
 
 </body>
 </html>
