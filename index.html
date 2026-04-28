@@ -674,7 +674,7 @@ function normalizeCC(cc){
 function buildCard(item){
   var cc = normalizeCC(item.cc);
   var href = '/' + langFolder + '/' + item.slug + '.html';
-  var themes = item.themes || [];
+  var themes = (item.themes || []).concat((item.meta && item.meta.themes) || []);
   var photoUrl = item._photo || '';
   var bgStyle = '';
   if(photoUrl){
@@ -805,7 +805,8 @@ function applyFilters(){
         /* Also add all i18n labels as matchable */
         var i18nVals = themeDef.i18n || {};
         for(var lk in i18nVals) syns.push(i18nVals[lk].toLowerCase());
-        var itinThemes = (d.themes || []).join('|').toLowerCase();
+        var allThemes = (d.themes || []).concat((d.meta && d.meta.themes) || []);
+        var itinThemes = allThemes.join('|').toLowerCase();
         for(var si=0;si<syns.length;si++){
           if(itinThemes.indexOf(syns[si].toLowerCase()) !== -1){matched=true;break}
         }
