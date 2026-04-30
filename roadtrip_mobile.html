@@ -2627,7 +2627,8 @@ window.debugLog = function(msg) {
 <script src="/js/ort-trip-data.js"></script>
 <script src="./js/ort-share.js"></script>
 <script src="/js/ort-state-manager.js"></script>
-<script src="/js/ort-itin-editor-mobile-bridge.js"></script>
+<!-- ancien bridge désactivé : <script src="/js/ort-itin-editor-mobile-bridge.js"></script> -->
+<script src="/js/ort-itin-editor-mobile.js"></script>
 <script src="/js/ort-i18n.js"></script>
 
 <!-- ========== MODALE AUTH LÉGÈRE POUR MOBILE ========== -->
@@ -5571,6 +5572,23 @@ function loadImageWithFallback(imgElement, urls, timeoutMs = 3000) {
   tryNext();
 }
 
+// Rond coloré avec la note d'une place arrondie sur 5.
+// Échelle couleurs :
+//   note/5  ≤ 2  → gris
+//           = 3  → vert
+//           = 4  → bleu
+//           = 5  → or
+function ratingBadge(rating10) {
+  if (rating10 == null || isNaN(rating10) || rating10 <= 0) return '';
+  const r5 = Math.min(5, Math.ceil(rating10 / 2)); // 0–10 → 1–5
+  let bg;
+  if (r5 <= 2) bg = '#94a3b8';      // gris
+  else if (r5 === 3) bg = '#22c55e'; // vert
+  else if (r5 === 4) bg = '#3b82f6'; // bleu
+  else bg = '#f4a623';                // or
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:${bg};color:#fff;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle;line-height:1">${r5}</span>`;
+}
+
 function renderList() {
   const list = $('stepsList');
   list.innerHTML = '';
@@ -5651,7 +5669,7 @@ function renderList() {
       <div class="step-card-num">${idx + 1}</div>
       <img class="step-card-photo" data-step-idx="${idx}" src="${PLACEHOLDER_IMG}" alt="" loading="lazy">
       <div class="step-card-info">
-        <div class="step-card-name">${stepDisplayName}</div>
+        <div class="step-card-name">${stepDisplayName}${ratingBadge(step.rating)}</div>
         <div class="step-card-meta">${distText}</div>
         ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
         ${bookingIndicator ? `<div style="margin-top:3px">${bookingIndicator}</div>` : ''}

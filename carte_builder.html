@@ -741,7 +741,7 @@ body.fullscreen-mode .place-preview {
 /* Légende couleurs */
 .color-legend {
   position: absolute;
-  bottom: 12px;
+  top: 60px;
   left: 12px;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 10px;
@@ -766,6 +766,32 @@ body.fullscreen-mode .place-preview {
   margin: 5px 0;
   font-size: 12px;
   color: #333;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 4px;
+  border-radius: 6px;
+  transition: opacity 0.2s;
+}
+.legend-item:hover { background: #f1f5f9; }
+.legend-item.disabled { opacity: 0.35; }
+.legend-item.disabled span { text-decoration: line-through; }
+
+.legend-checkbox {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--acc);
+  border-radius: 3px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--acc);
+  background: #fff;
+}
+.legend-item.disabled .legend-checkbox {
+  background: #e5e7eb;
+  color: transparent;
 }
 
 .legend-dot {
@@ -1243,12 +1269,12 @@ body.fullscreen-mode .place-preview {
   </div>
   
   <!-- Légende couleurs -->
-  <div class="color-legend">
+  <div class="color-legend" id="colorLegend">
     <div class="legend-title" id="legendTitle">Lieux</div>
-    <div class="legend-item"><svg class="legend-star" width="16" height="16" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span data-i18n="mustSee">Incontournable</span></div>
-    <div class="legend-item"><div class="legend-dot recommended"></div> <span data-i18n="recommended">Recommandé</span></div>
-    <div class="legend-item"><div class="legend-dot discover"></div> <span data-i18n="discover">À découvrir</span></div>
-    <div class="legend-item"><div class="legend-dot selected-dot"></div> <span data-i18n="selected">Sélectionné</span></div>
+    <div class="legend-item" data-filter="mustsee" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><svg class="legend-star" width="16" height="16" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span data-i18n="mustSee">Incontournable</span></div>
+    <div class="legend-item" data-filter="recommended" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot recommended"></div> <span data-i18n="recommended">Recommandé</span></div>
+    <div class="legend-item" data-filter="discover" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot discover"></div> <span data-i18n="discover">À découvrir</span></div>
+    <div class="legend-item" data-filter="selected" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot selected-dot"></div> <span data-i18n="selected">Sélectionné</span></div>
   </div>
 </div>
 
@@ -1280,6 +1306,17 @@ body.fullscreen-mode .place-preview {
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
+// ===============================
+// DÉTECTION MOBILE/TACTILE
+// ===============================
+// Détecte les VRAIS appareils mobiles/tablettes (écran étroit + tactile)
+// Exclut les PC tactiles (Surface, laptops tactiles) qui ont un grand écran
+function isMobileTouch() {
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const isSmallScreen = window.innerWidth <= 1024;
+  return isTouch && isSmallScreen;
+}
+
 // ===============================
 // TRADUCTIONS I18N
 // ===============================
@@ -1624,16 +1661,7 @@ async function loadPhotosJSON() {
 }
 
 function getPhotosForPlace(pid) {
-  // Accepte les 2 formats : ancien (strings) et nouveau R2 (objets {url,caption,keyword})
-  // Renvoie toujours un tableau d'URLs strings
-  var raw = (PHOTOS_CACHE[pid] || {}).photos || [];
-  var out = [];
-  for (var i = 0; i < raw.length; i++) {
-    var p = raw[i];
-    if (typeof p === 'string') out.push(p);
-    else if (p && p.url) out.push(p.url);
-  }
-  return out;
+  return (PHOTOS_CACHE[pid] || {}).photos || [];
 }
 
 // Optimiser les URLs d'images pour compression et performance
@@ -2016,6 +2044,25 @@ function createMarkerElement(place) {
     });
   }
 
+  // Sur mobile/tablette : ajouter un cercle invisible plus grand pour faciliter le tap au doigt
+  if (isMobileTouch()) {
+    const hitArea = L.circleMarker([place.lat, place.lon], {
+      radius: 22,
+      fillColor: 'transparent',
+      color: 'transparent',
+      weight: 0,
+      fillOpacity: 0,
+      interactive: true
+    });
+    hitArea.placeData = place;
+    hitArea.on('click', () => {
+      isPreviewPinned = true;
+      showPlacePreview(place);
+    });
+    // On ajoute la zone de tap au même layer que les marqueurs
+    markersLayer.addLayer(hitArea);
+  }
+
   marker.placeData = place;
   marker.isTopRated = isTopRated;
   marker.starInfo = starInfo;
@@ -2052,9 +2099,17 @@ function createMarkerElement(place) {
   });
   
   marker.on('click', () => {
-    togglePlaceSelection(place);
-    isPreviewPinned = true;
-    showPlacePreview(place);
+    if (isMobileTouch()) {
+      // Sur tactile : le tap ouvre la preview pour voir les détails
+      // L'ajout se fait via le bouton "Ajouter" dans la popup
+      isPreviewPinned = true;
+      showPlacePreview(place);
+    } else {
+      // Sur desktop : clic toggle la sélection et ouvre la preview
+      togglePlaceSelection(place);
+      isPreviewPinned = true;
+      showPlacePreview(place);
+    }
   });
 
   return marker;
@@ -2135,15 +2190,70 @@ function loadMarkersInViewport() {
   }
   
   markerLoadingInProgress = false;
+  
+  // Réappliquer les filtres de la légende (sinon les points décochés réapparaissent)
+  applyLegendFilters();
+}
+
+// ===============================
+// FILTRE PAR CATÉGORIE (LÉGENDE)
+// ===============================
+// Garde en mémoire quelles catégories sont visibles
+let legendFilters = { mustsee: true, recommended: true, discover: true, selected: true };
+
+function toggleLegendFilter(el) {
+  const filter = el.dataset.filter;
+  legendFilters[filter] = !legendFilters[filter];
+  
+  // Mettre à jour le style visuel de la légende
+  el.classList.toggle('disabled');
+  el.querySelector('.legend-checkbox').textContent = legendFilters[filter] ? '✓' : '';
+  
+  // Appliquer le filtre sur tous les marqueurs
+  applyLegendFilters();
+}
+
+function getMarkerCategory(marker) {
+  const stars = marker.starInfo.stars;
+  const isSelected = selectedPlaces.some(p => p.place_id === marker.placeData.place_id);
+  
+  if (isSelected) return 'selected';
+  if (stars >= 5) return 'mustsee';
+  if (stars >= 4) return 'recommended';
+  return 'discover';
+}
+
+function applyLegendFilters() {
+  allMarkers.forEach(marker => {
+    const category = getMarkerCategory(marker);
+    
+    // Un marqueur sélectionné est visible si "selected" OU sa catégorie d'origine est cochée
+    let visible;
+    if (selectedPlaces.some(p => p.place_id === marker.placeData.place_id)) {
+      visible = legendFilters.selected;
+    } else {
+      visible = legendFilters[category];
+    }
+    
+    if (visible) {
+      if (!markersLayer.hasLayer(marker)) {
+        markersLayer.addLayer(marker);
+      }
+    } else {
+      if (markersLayer.hasLayer(marker)) {
+        markersLayer.removeLayer(marker);
+      }
+    }
+  });
 }
 
 function ratingToStars(rating) {
-  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 12, isStar: true };  // Bleu foncé - INCONTOURNABLE
-  if (rating >= 7.6) return { stars: 4, color: '#43A047', textColor: '#fff', radius: 9, isStar: false }; // Vert - Très bon
-  if (rating >= 6.1) return { stars: 3, color: '#7CB342', textColor: '#fff', radius: 8, isStar: false }; // Vert clair - Bon
-  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: 6, isStar: false }; // Gris-bleu - Moyen
-  if (rating > 0) return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: 5, isStar: false };    // Gris clair - Faible
-  return { stars: 0, color: '#CFD8DC', textColor: '#fff', radius: 5, isStar: false }; // Gris très clair - Non noté
+  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 14, isStar: true };
+  if (rating >= 7.6) return { stars: 4, color: '#43A047', textColor: '#fff', radius: 9, isStar: false };
+  if (rating >= 6.1) return { stars: 3, color: '#7CB342', textColor: '#fff', radius: 8, isStar: false };
+  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: 6, isStar: false };
+  if (rating > 0) return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: 5, isStar: false };
+  return { stars: 0, color: '#CFD8DC', textColor: '#fff', radius: 5, isStar: false };
 }
 
 // Compatibilité ancienne fonction
@@ -2206,6 +2316,9 @@ function updateMarkerStyles() {
       });
     }
   });
+  
+  // Réappliquer les filtres de la légende
+  applyLegendFilters();
 }
 
 function updateAddPlaceButton() {
@@ -2772,7 +2885,8 @@ function submitItinerary() {
         visits: place.visits || [],
         activities: place.activities || [],
         rating: place.rating || 0,
-        suggested_days: place.suggested_days || 1
+        suggested_days: place.suggested_days || 1,
+        map_keywords: place.map_keywords || []
       }))
     }]
   };
@@ -2791,7 +2905,8 @@ function submitItinerary() {
       hotels: place.hotels || [],
       images: getPhotosForPlace(place.place_id),
       rating: place.rating || 0,
-      suggested_days: place.suggested_days || 1
+      suggested_days: place.suggested_days || 1,
+      map_keywords: place.map_keywords || []
     }))
   };
 

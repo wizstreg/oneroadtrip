@@ -63,6 +63,12 @@
       loading: 'Chargement de l\u2019éditeur\u2026',
       noData: 'Aucun itinéraire chargé. Ouvrez d\u2019abord un voyage.',
       warnSave: 'Mode édition activé. Les modifications seront sauvegardées sur votre tableau de bord.',
+      saveFirstTitle: 'Enregistrez d\u2019abord ce voyage',
+      saveFirstSub: 'Cet itinéraire n\u2019a pas encore été sauvegardé sur votre tableau de bord. Pour pouvoir le modifier, il faut d\u2019abord l\u2019enregistrer.',
+      saveFirstBtn: '💾 Enregistrer maintenant',
+      saving: 'Enregistrement\u2026',
+      saveOk: 'Voyage enregistré',
+      saveKo: 'Erreur d\u2019enregistrement',
     },
     en: {
       loginRequired: 'Sign in to edit your itinerary',
@@ -72,6 +78,12 @@
       loading: 'Loading editor\u2026',
       noData: 'No itinerary loaded. Open a trip first.',
       warnSave: 'Edit mode enabled. Changes will be saved to your dashboard.',
+      saveFirstTitle: 'Save this trip first',
+      saveFirstSub: 'This itinerary hasn\u2019t been saved to your dashboard yet. To edit it, please save it first.',
+      saveFirstBtn: '💾 Save now',
+      saving: 'Saving\u2026',
+      saveOk: 'Trip saved',
+      saveKo: 'Save error',
     },
     es: {
       loginRequired: 'Inicia sesión para editar tu itinerario',
@@ -81,6 +93,12 @@
       loading: 'Cargando editor\u2026',
       noData: 'No hay itinerario cargado. Abre primero un viaje.',
       warnSave: 'Modo edición activado. Los cambios se guardarán en tu panel.',
+      saveFirstTitle: 'Guarda primero este viaje',
+      saveFirstSub: 'Este itinerario aún no se ha guardado en tu panel. Para editarlo, guárdalo primero.',
+      saveFirstBtn: '💾 Guardar ahora',
+      saving: 'Guardando\u2026',
+      saveOk: 'Viaje guardado',
+      saveKo: 'Error al guardar',
     },
     pt: {
       loginRequired: 'Entre para editar seu itinerário',
@@ -90,6 +108,12 @@
       loading: 'Carregando editor\u2026',
       noData: 'Nenhum itinerário carregado. Abra uma viagem primeiro.',
       warnSave: 'Modo de edição ativado. As alterações serão salvas no seu painel.',
+      saveFirstTitle: 'Salve esta viagem primeiro',
+      saveFirstSub: 'Este itinerário ainda não foi salvo no seu painel. Para editá-lo, salve-o primeiro.',
+      saveFirstBtn: '💾 Salvar agora',
+      saving: 'Salvando\u2026',
+      saveOk: 'Viagem salva',
+      saveKo: 'Erro ao salvar',
     },
     it: {
       loginRequired: 'Accedi per modificare il tuo itinerario',
@@ -99,6 +123,12 @@
       loading: 'Caricamento editor\u2026',
       noData: 'Nessun itinerario caricato. Apri prima un viaggio.',
       warnSave: 'Modalità modifica attiva. Le modifiche verranno salvate nella tua dashboard.',
+      saveFirstTitle: 'Salva prima questo viaggio',
+      saveFirstSub: 'Questo itinerario non è stato ancora salvato nella tua dashboard. Per modificarlo, salvalo prima.',
+      saveFirstBtn: '💾 Salva ora',
+      saving: 'Salvataggio\u2026',
+      saveOk: 'Viaggio salvato',
+      saveKo: 'Errore di salvataggio',
     },
     ar: {
       loginRequired: 'سجل الدخول لتعديل خط سيرك',
@@ -108,6 +138,12 @@
       loading: 'جارٍ تحميل المحرر\u2026',
       noData: 'لم يتم تحميل أي خط سير. افتح رحلة أولاً.',
       warnSave: 'تم تفعيل وضع التعديل. سيتم حفظ التغييرات في لوحة التحكم.',
+      saveFirstTitle: 'احفظ هذه الرحلة أولاً',
+      saveFirstSub: 'لم يتم حفظ خط السير هذا في لوحة التحكم بعد. لتعديله، احفظه أولاً.',
+      saveFirstBtn: '💾 احفظ الآن',
+      saving: 'جارٍ الحفظ\u2026',
+      saveOk: 'تم حفظ الرحلة',
+      saveKo: 'خطأ في الحفظ',
     },
   };
 
@@ -158,8 +194,107 @@
   }
 
   // ─────────────────────────────────────────────
-  // Préparation du contexte pour l'éditeur
+  // Vérification / sauvegarde du trip avant édition
   // ─────────────────────────────────────────────
+  // L'éditeur charge ses steps depuis Firestore via le tripId. Si le trip n'existe
+  // pas en Firestore (cas "from scratch", non sauvegardé), l'édition ne pourrait
+  // pas se persister. On bloque donc l'édition et on propose à l'utilisateur de
+  // sauvegarder d'abord son voyage dans le dashboard.
+  async function ensureTripSaved() {
+    var lang = t();
+    var tripId = null;
+    try { tripId = new URLSearchParams(global.location.search).get('tripId'); } catch (e) {}
+    if (!tripId && global.ORT_TRIPID && global.ORT_TRIPID.get) {
+      try { tripId = global.ORT_TRIPID.get(); } catch (e) {}
+    }
+    if (!tripId) {
+      // Pas de tripId du tout — on ne sait pas comment identifier le voyage,
+      // on demande quand même une sauvegarde.
+      return await promptSaveAndSave(lang);
+    }
+    // Vérifier si le trip existe vraiment en Firestore
+    var exists = false;
+    try {
+      if (global.ORT_STATE && typeof global.ORT_STATE.getTrip === 'function') {
+        var trip = await global.ORT_STATE.getTrip(tripId);
+        exists = !!(trip && trip.steps && trip.steps.length);
+      }
+    } catch (e) {
+      console.warn('[ORT-MOBILE-EDIT] Vérif trip Firestore échouée:', e);
+    }
+    if (exists) {
+      console.log('[ORT-MOBILE-EDIT] Trip déjà en Firestore, édition autorisée');
+      return true;
+    }
+    // Trip inconnu en Firestore → on demande la sauvegarde
+    return await promptSaveAndSave(lang);
+  }
+
+  // Affiche un prompt "il faut d'abord sauvegarder", et si l'utilisateur accepte,
+  // appelle window.saveTrip() (fonction globale du mobile) puis vérifie que c'est OK.
+  function promptSaveAndSave(lang) {
+    return new Promise(function (resolve) {
+      var existing = document.getElementById('ort-mobile-edit-saveprompt');
+      if (existing) existing.remove();
+
+      var ov = document.createElement('div');
+      ov.id = 'ort-mobile-edit-saveprompt';
+      ov.style.cssText = 'position:fixed;inset:0;z-index:10005;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px;';
+      ov.innerHTML =
+        '<div style="background:#fff;border-radius:16px;max-width:380px;width:100%;padding:24px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);">' +
+          '<div style="font-size:42px;margin-bottom:12px;">💾</div>' +
+          '<h3 style="margin:0 0 8px;color:#113f7a;font-size:1.05rem;">' + lang.saveFirstTitle + '</h3>' +
+          '<p style="margin:0 0 18px;color:#64748b;font-size:.88rem;line-height:1.45;">' + lang.saveFirstSub + '</p>' +
+          '<button id="ort-mes-save" style="width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#113f7a,#0a2a57);color:#fff;font-weight:600;font-size:.9rem;cursor:pointer;margin-bottom:8px;">' + lang.saveFirstBtn + '</button>' +
+          '<button id="ort-mes-cancel" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff;color:#64748b;font-weight:500;font-size:.85rem;cursor:pointer;">' + lang.cancelBtn + '</button>' +
+        '</div>';
+      document.body.appendChild(ov);
+
+      var cleanup = function () { if (ov && ov.parentNode) ov.parentNode.removeChild(ov); };
+
+      document.getElementById('ort-mes-cancel').onclick = function () {
+        cleanup();
+        resolve(false);
+      };
+      ov.onclick = function (e) {
+        if (e.target === ov) { cleanup(); resolve(false); }
+      };
+      document.getElementById('ort-mes-save').onclick = async function () {
+        cleanup();
+        if (typeof global.saveTrip === 'function') {
+          toast(lang.saving, 2000);
+          try {
+            await global.saveTrip();
+            toast(lang.saveOk, 2000);
+            // Petit délai pour laisser Firestore confirmer, puis on vérifie
+            await new Promise(function (r) { setTimeout(r, 500); });
+            // Re-vérifier que c'est bien là maintenant
+            var ok = false;
+            try {
+              var tripId = null;
+              try { tripId = new URLSearchParams(global.location.search).get('tripId'); } catch (e) {}
+              if (!tripId && global.ORT_TRIPID && global.ORT_TRIPID.get) tripId = global.ORT_TRIPID.get();
+              if (tripId && global.ORT_STATE && global.ORT_STATE.getTrip) {
+                var trip = await global.ORT_STATE.getTrip(tripId);
+                ok = !!(trip && trip.steps && trip.steps.length);
+              }
+            } catch (e) {}
+            resolve(ok);
+          } catch (e) {
+            console.error('[ORT-MOBILE-EDIT] saveTrip échec :', e);
+            toast(lang.saveKo, 3000);
+            resolve(false);
+          }
+        } else {
+          console.error('[ORT-MOBILE-EDIT] window.saveTrip introuvable');
+          toast(lang.saveKo, 3000);
+          resolve(false);
+        }
+      };
+    });
+  }
+
+
   function ensureFakeTextPanel() {
     // L'éditeur cherche #textPanel pour stocker l'HTML "original" et le reconstruire.
     // Sur mobile c'est inutile, on lui en donne un caché et vide qu'il pourra manipuler sans effet visible.
@@ -309,75 +444,139 @@
   }
 
   // ─────────────────────────────────────────────
-  // Hook de retour : quand l'éditeur valide / sauvegarde, on resync state.steps
-  // et on redessine la carte mobile.
+  // Hook de retour : on intercepte _reorgValidate pour court-circuiter la modale
+  // post-réorg (qui dépend de #textPanel, caché en mobile) et déclencher
+  // direct la séquence : apply → save → exit → sync mobile.
   // ─────────────────────────────────────────────
   function installReturnHook() {
-    // L'éditeur sauvegarde via window.ORT_STATE.saveTrip() — on écoute juste après.
-    // Le plus fiable : observer ORT_ITIN_EDITOR pour ses étapes finales et resync.
     if (global.__ORT_RETURN_HOOK_INSTALLED__) return;
+    if (!global.ORT_ITIN_EDITOR) return; // installé après le chargement de l'éditeur
     global.__ORT_RETURN_HOOK_INSTALLED__ = true;
 
-    // L'éditeur, à la fin d'un reorgValidate, met à jour ses steps et appelle rebuildDaySections.
-    // On ne peut pas hook rebuildDaySections (privé), mais on peut écouter le moment où
-    // l'éditeur quitte le mode plein écran (la classe ort-ed-map-fs disparaît du body).
-    var observer = new MutationObserver(function () {
-      var inEdit = document.body.classList.contains('ort-ed-map-fs');
-      if (!inEdit && global.__ORT_WAS_EDITING__) {
-        global.__ORT_WAS_EDITING__ = false;
-        // Sortie de mode édition : resync mobile
-        syncStateFromEditor();
-      } else if (inEdit) {
-        global.__ORT_WAS_EDITING__ = true;
-      }
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    var api = global.ORT_ITIN_EDITOR;
+
+    // Patch _reorgValidate : on shortcut tout le flow post-réorg.
+    var origReorgValidate = api._reorgValidate;
+    if (typeof origReorgValidate === 'function') {
+      api._reorgValidate = async function () {
+        try {
+          // 1. Fermer la modale de preview
+          if (typeof api._closeModal === 'function') api._closeModal();
+
+          // 2. Récupérer les steps finalisées via la fonction privée buildFinalOrder.
+          //    Elle n'est pas exposée. Fallback : on appelle origReorgValidate
+          //    qui applique l'ordre dans `steps` interne, fait stopMapReorg(false),
+          //    puis tente renderPostReorgChoice (qui va échouer silencieusement
+          //    parce que textPanel est caché). Peu importe, l'état interne est OK.
+          origReorgValidate.call(api);
+
+          // 3. À ce stade, l'éditeur a :
+          //    - mis à jour son `steps` interne avec le nouvel ordre
+          //    - retiré la classe ort-ed-map-fs (mode carte fermé)
+          //    - tenté d'insérer la modale post-réorg dans #textPanel (invisible).
+          //    On vire ce bandeau orphelin :
+          var saveBar = document.getElementById('ort-ed-save-bar');
+          if (saveBar) saveBar.remove();
+
+          // 4. Sauvegarder direct (sans passer par la modale post-réorg).
+          if (typeof api.save === 'function') {
+            await api.save();
+          }
+
+          // 5. Sortir de l'éditeur proprement.
+          if (typeof api._exitEditor === 'function') api._exitEditor();
+          else if (typeof api.exitEditor === 'function') api.exitEditor();
+          // exitEditor n'est probablement pas exposé non plus, on retire à la main :
+          document.body.classList.remove('ort-ed-map-fs', 'ort-ed-has-panel');
+
+          // 6. Resync de la carte mobile depuis l'état sauvegardé.
+          await syncStateFromEditor();
+        } catch (e) {
+          console.error('[ORT-MOBILE-EDIT] Erreur dans le validate patché :', e);
+          // Fallback : sortir au moins le mode édition pour ne pas bloquer l'utilisateur
+          document.body.classList.remove('ort-ed-map-fs', 'ort-ed-has-panel');
+          await syncStateFromEditor();
+        }
+      };
+      console.log('[ORT-MOBILE-EDIT] _reorgValidate patché (flow Option A : valider = save direct)');
+    }
   }
 
   // Lit les steps finalisées dans l'éditeur (via l'API qu'on lui demande d'exposer)
   // et les pousse dans state.steps. Si l'éditeur n'expose rien de public, on fait
   // un best effort en relisant Firestore (déjà sauvegardé par l'éditeur).
+  // Hook ORT_STATE.saveTrip pour capturer le tripId réel utilisé par l'éditeur.
+  // Comme l'éditeur stocke savedTripId dans une closure privée, on l'attrape
+  // au passage : à chaque appel saveTrip, on note le tripId du tripData passé
+  // et le tripId de retour. On l'utilisera ensuite pour relire les steps à jour.
+  var __lastSavedTripId = null;
+  function hookOrtStateSave() {
+    if (!global.ORT_STATE || global.__ORT_STATE_HOOKED__) return;
+    if (typeof global.ORT_STATE.saveTrip !== 'function') return;
+    global.__ORT_STATE_HOOKED__ = true;
+    var orig = global.ORT_STATE.saveTrip.bind(global.ORT_STATE);
+    global.ORT_STATE.saveTrip = async function (tripData) {
+      var result = await orig(tripData);
+      try {
+        var tid = (result && typeof result === 'object' && result.tripId)
+          ? result.tripId
+          : (tripData && tripData.id) || null;
+        if (tid) {
+          __lastSavedTripId = tid;
+          console.log('[ORT-MOBILE-EDIT] saveTrip intercepté, tripId =', tid);
+        }
+      } catch (e) {}
+      return result;
+    };
+  }
+
   async function syncStateFromEditor() {
-    // L'éditeur a déjà sauvegardé via ORT_STATE.saveTrip si l'utilisateur a validé.
-    // Le tripId est exposé via ORT_ITIN_EDITOR (variable savedTripId, pas accessible).
-    // Solution : on relit le dernier trip via getLastSavedTrip si dispo, sinon on
-    // fait confiance au state.steps que le mobile a déjà.
-    //
-    // Le plus simple et fiable : forcer un refresh depuis Firestore avec l'ID courant.
     try {
       var st = global.state;
       if (!st) return;
 
-      // L'éditeur stocke dans Firestore — on relit via ORT_STATE
-      if (global.ORT_STATE && st._originalItinId) {
-        // On essaie de retrouver le tripId — il est dans l'URL si on est dans un trip sauvegardé,
-        // sinon dans une variable globale exposée par l'éditeur.
-        var tripId = null;
-        try { tripId = new URLSearchParams(global.location.search).get('tripId'); } catch (e) {}
-        if (!tripId && global.ORT_ITIN_EDITOR && global.ORT_ITIN_EDITOR.savedTripId) {
-          tripId = global.ORT_ITIN_EDITOR.savedTripId;
+      if (global.ORT_STATE && typeof global.ORT_STATE.getTrip === 'function') {
+        // Priorité 1 : tripId capturé par notre hook saveTrip (l'éditeur vient de sauver)
+        // Priorité 2 : tripId dans l'URL
+        // Priorité 3 : ORT_TRIPID si disponible
+        var tripId = __lastSavedTripId;
+        if (!tripId) {
+          try { tripId = new URLSearchParams(global.location.search).get('tripId'); } catch (e) {}
+        }
+        if (!tripId && global.ORT_TRIPID && typeof global.ORT_TRIPID.get === 'function') {
+          try { tripId = global.ORT_TRIPID.get(); } catch (e) {}
         }
         if (tripId) {
           var trip = await global.ORT_STATE.getTrip(tripId);
           if (trip && trip.steps && trip.steps.length) {
+            console.log('[ORT-MOBILE-EDIT] sync OK, ' + trip.steps.length + ' étapes rechargées depuis ' + tripId);
             global.state.steps = trip.steps;
             global.state.title = trip.title || global.state.title;
+            // Recalcul des nuits (sinon les badges restent figés)
+            if (global.ORT_TRIP_CALC && typeof global.ORT_TRIP_CALC.autoCalculateNights === 'function') {
+              try { global.ORT_TRIP_CALC.autoCalculateNights(global.state.targetNights || trip.steps.length); } catch (e) {}
+            }
+          } else {
+            console.warn('[ORT-MOBILE-EDIT] sync : trip vide ou non trouvé pour ' + tripId);
           }
+        } else {
+          console.warn('[ORT-MOBILE-EDIT] sync : pas de tripId disponible');
         }
       }
     } catch (e) {
       console.warn('[ORT-MOBILE-EDIT] sync échec:', e);
     }
 
-    // Redessiner la carte mobile
+    // Redessiner toute l'UI mobile à partir du nouveau state.steps
     if (typeof global.renderMarkers === 'function') global.renderMarkers();
     if (typeof global.fetchAndDrawRoute === 'function') global.fetchAndDrawRoute();
     if (typeof global.fitMapBounds === 'function') global.fitMapBounds();
+    if (typeof global.renderList === 'function') global.renderList();
     if (typeof global.renderListView === 'function') global.renderListView();
+    if (typeof global.updateSummary === 'function') global.updateSummary();
 
     // Si l'utilisateur avait activé l'affichage des "autres places" avant l'édition,
     // on le restaure (les markers ont été nettoyés par buildEditorMarkersFromState).
-    // On invalide aussi le cache parce que des étapes ont pu être ajoutées/supprimées.
     normalOpData = null;
     if (normalOpVisible) {
       var places = await getOrLoadPlacesArray();
@@ -697,10 +896,16 @@
       return;
     }
 
+    // 2b. Vérifier que le trip est sauvegardable :
+    //     soit c'est un trip catalogue (ouvert via ?cc=&itin=), soit c'est un trip
+    //     déjà persisté dans Firestore. Sinon (trip "from scratch" jamais sauvegardé),
+    //     on bloque et on propose à l'utilisateur de sauvegarder d'abord.
+    var savedOk = await ensureTripSaved();
+    if (!savedOk) return;
+
     // 3. Setup
     ensureFakeTextPanel();
     hookFetch();
-    installReturnHook();
 
     // 4. Charger l'éditeur si pas déjà
     try {
@@ -716,6 +921,11 @@
       toast('❌ Éditeur non disponible');
       return;
     }
+
+    // 4b. Maintenant qu'ORT_ITIN_EDITOR existe, on peut patcher _reorgValidate
+    installReturnHook();
+    // Hook sur ORT_STATE.saveTrip pour capturer le tripId que l'éditeur va utiliser
+    hookOrtStateSave();
 
     // 5. Init de l'éditeur avec les params du voyage courant
     var st = global.state;
