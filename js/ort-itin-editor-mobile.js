@@ -31,7 +31,8 @@
     badges: [],
     snapshotSteps: null,
     routeDirty: false,
-    routeTimer: null
+    routeTimer: null,
+    pendingPopupPid: null  // pour ré-ouvrir une popup après lancement édition
   };
 
   // ---------- i18n ----------
@@ -62,7 +63,13 @@
     oem_op_at_start: 'Au début',
     oem_op_after: 'Après {name}',
     oem_op_visits: 'Visites',
-    oem_op_activities: 'Activités'
+    oem_op_activities: 'Activités',
+    oem_legend_title: 'Légende',
+    oem_legend_mustsee: 'Incontournable',
+    oem_legend_recommended: 'Recommandé',
+    oem_legend_discover: 'À découvrir',
+    oem_op_add_btn: '✏️ Ajouter à mon itinéraire',
+    oem_op_close_btn: 'Fermer'
   };
   function T(key, params) {
     var s = null;
@@ -375,6 +382,18 @@
   }
 
   // ---------- Couche "autres places" (cercles cliquables) ----------
+  // Catégorisation alignée sur carte_builder.html (ratingToStars)
+  // Retourne { tier, color, isStar, radius }
+  function tierFromRating(rating) {
+    var r = Number(rating) || 0;
+    if (r >= 8.8) return { tier: 'mustsee',     color: '#1565C0', isStar: true,  radius: 14 };
+    if (r >= 7.6) return { tier: 'recommended', color: '#43A047', isStar: false, radius: 9  };
+    if (r >= 6.1) return { tier: 'recommended', color: '#7CB342', isStar: false, radius: 8  };
+    if (r >= 3.1) return { tier: 'discover',    color: '#78909C', isStar: false, radius: 6  };
+    if (r >  0)   return { tier: 'discover',    color: '#B0BEC5', isStar: false, radius: 5  };
+    return        { tier: 'discover', color: '#CFD8DC', isStar: false, radius: 5 };
+  }
+
   function buildOtherPlacesLayer() {
     if (st.opLayer) { try { window.map.removeLayer(st.opLayer); } catch(e){} st.opLayer = null; }
     if (!window.PLACES_INDEX) return;
@@ -394,26 +413,36 @@
     Object.keys(window.PLACES_INDEX).forEach(function (pid) {
       if (alreadyIn[pid]) return;
       var p = window.PLACES_INDEX[pid];
-      if (!p || !p.lat) return;
-      var lng = p.lon || p.lng;
-      if (!lng) return;
+      if (!p || p.lat == null) return;
+      var lng = (p.lon != null) ? p.lon : p.lng;
+      if (lng == null) return;
 
-      var rating = p.rating || 0;
-      var bg = rating >= 9 ? '#f59e0b' : rating >= 8 ? '#3b82f6' : rating >= 7 ? '#10b981' : '#94a3b8';
-
-      var html = '<div style="background:' + bg + ';color:#fff;' +
-                 'width:24px;height:24px;border-radius:50%;display:flex;' +
-                 'align-items:center;justify-content:center;font-size:11px;font-weight:700;' +
-                 'border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,0.3);opacity:0.9">+</div>';
-      var icon = L.divIcon({
-        className: 'oem-op',
-        html: html,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-      });
-      var m = L.marker([p.lat, lng], { icon: icon });
-      m.on('click', function () { openOpPopup(pid); });
-      layer.addLayer(m);
+      var t = tierFromRating(p.rating);
+      var marker;
+      if (t.isStar) {
+        // Étoile SVG (incontournable) — comme carte_builder
+        var starSvg =
+          '<svg width="22" height="22" viewBox="0 0 24 24" fill="' + t.color + '" stroke="#fff" stroke-width="2" style="filter:drop-shadow(0 1px 3px rgba(0,0,0,0.4))">' +
+          '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+        var icon = L.divIcon({
+          className: 'oem-op-star',
+          html: starSvg,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+        marker = L.marker([p.lat, lng], { icon: icon });
+      } else {
+        marker = L.circleMarker([p.lat, lng], {
+          radius: t.radius,
+          fillColor: t.color,
+          color: '#fff',
+          weight: 1.5,
+          opacity: 1,
+          fillOpacity: 0.85
+        });
+      }
+      marker.on('click', function () { openOpPopup(pid); });
+      layer.addLayer(marker);
     });
     layer.addTo(window.map);
     st.opLayer = layer;
@@ -421,68 +450,206 @@
   function clearOtherPlacesLayer() {
     if (st.opLayer) { try { window.map.removeLayer(st.opLayer); } catch(e){} st.opLayer = null; }
   }
-  function toggleOtherPlaces() {
+
+  // ---------- Légende des couleurs (alignée carte_builder) ----------
+  function showLegend() {
+    var b = $('oem-legend');
+    if (b) { b.style.display = 'flex'; return; }
+    b = document.createElement('div');
+    b.id = 'oem-legend';
+    Object.assign(b.style, {
+      position:'fixed', bottom:'78px', left:'10px',
+      background:'rgba(255,255,255,0.96)', borderRadius:'10px',
+      padding:'8px 10px', boxShadow:'0 2px 8px rgba(0,0,0,0.15)',
+      zIndex: 12500, fontSize:'11px', color:'#374151',
+      display:'flex', flexDirection:'column', gap:'5px',
+      border:'1px solid #e5e7eb', maxWidth:'160px'
+    });
+    b.innerHTML =
+      '<div style="font-weight:700;color:#113f7a;margin-bottom:2px;font-size:11px">' + escapeHtml(T('oem_legend_title')) + '</div>' +
+      legendRow('star',    '#1565C0', T('oem_legend_mustsee')) +
+      legendRow('dot-lg',  '#43A047', T('oem_legend_recommended')) +
+      legendRow('dot-sm',  '#78909C', T('oem_legend_discover'));
+    document.body.appendChild(b);
+  }
+  function hideLegend() {
+    var b = $('oem-legend');
+    if (b) b.style.display = 'none';
+  }
+  function legendRow(kind, color, label) {
+    var dot;
+    if (kind === 'star') {
+      dot = '<svg width="14" height="14" viewBox="0 0 24 24" fill="' + color + '" stroke="#fff" stroke-width="2" style="flex:none">' +
+            '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>';
+    } else {
+      var size = kind === 'dot-lg' ? 13 : 10;
+      dot = '<span style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;background:' + color +
+            ';border:1.5px solid #fff;box-shadow:0 1px 2px rgba(0,0,0,0.2);flex:none;display:inline-block"></span>';
+    }
+    return '<div style="display:flex;align-items:center;gap:7px"><div style="width:14px;display:flex;justify-content:center">' + dot + '</div><span>' + escapeHtml(label) + '</span></div>';
+  }
+  // Si PLACES_INDEX est vide, on va chercher le JSON master du pays.
+  // Comportement copié de l'ancien bridge mobile (plus robuste que de dépendre
+  // d'ensurePlacesIndex qui peut ne pas avoir tourné selon le contexte).
+  function getLang() {
+    try {
+      return new URLSearchParams(location.search).get('lang')
+        || localStorage.getItem('lang')
+        || localStorage.getItem('ort_lang')
+        || 'fr';
+    } catch (e) { return 'fr'; }
+  }
+  async function tryFetchJSON(url) {
+    try {
+      var resp = await fetch(url, { cache: 'force-cache' });
+      if (!resp.ok) return null;
+      return await resp.json();
+    } catch (e) { return null; }
+  }
+  async function loadPlacesIfNeeded() {
+    if (window.PLACES_INDEX && Object.keys(window.PLACES_INDEX).length > 0) return;
+    var stt = window.state;
+    if (!stt || !stt.cc) {
+      console.warn('[OEM] state.cc indisponible, impossible de charger les places');
+      return;
+    }
+    var cc = stt.cc.toUpperCase();
+    var ccLow = cc.toLowerCase();
+    var lang = getLang();
+    var langOrder = [lang, 'en', 'fr'].filter(function (v, i, a) { return a.indexOf(v) === i; });
+
+    var data = null;
+    for (var i = 0; i < langOrder.length; i++) {
+      var L = langOrder[i];
+      var url1 = '/data/Roadtripsprefabriques/countries/' + cc + '/' + ccLow + '.places.master-' + L + '.json';
+      data = await tryFetchJSON(url1);
+      if (data) break;
+      var url2 = '/data/Roadtripsprefabriques/countries/' + cc + '/' + cc + '.places.master-' + L + '.json';
+      data = await tryFetchJSON(url2);
+      if (data) break;
+    }
+    if (!data) {
+      console.warn('[OEM] JSON places master introuvable pour', cc);
+      return;
+    }
+
+    var arr = Array.isArray(data) ? data : (data.places || []);
+    if (!window.PLACES_INDEX) window.PLACES_INDEX = {};
+    arr.forEach(function (p) {
+      var pid = p.place_id || p.id;
+      if (!pid) return;
+      var lat = (p.lat != null) ? Number(p.lat) : (p.coords && p.coords[0]);
+      var lng = (p.lon != null) ? Number(p.lon) : ((p.lng != null) ? Number(p.lng) : (p.coords && p.coords[1]));
+      if (lat == null || lng == null) return;
+      window.PLACES_INDEX[pid] = Object.assign({}, p, { lat: lat, lon: lng, lng: lng });
+    });
+    console.log('[OEM] PLACES_INDEX rempli :', Object.keys(window.PLACES_INDEX).length, 'lieux');
+  }
+
+  async function toggleOtherPlaces() {
     st.opVisible = !st.opVisible;
-    if (st.opVisible) buildOtherPlacesLayer();
-    else clearOtherPlacesLayer();
+    console.log('[OEM] toggleOtherPlaces -> opVisible=', st.opVisible);
+    if (st.opVisible) {
+      await loadPlacesIfNeeded();
+      buildOtherPlacesLayer();
+      showLegend();
+      console.log('[OEM] opLayer built, count =', st.opLayer ? st.opLayer.getLayers().length : 0);
+    } else {
+      clearOtherPlacesLayer();
+      hideLegend();
+    }
     return st.opVisible;
   }
 
   // ---------- Popup d'ajout (autres places) ----------
-  // Layout : positions en haut (scrollable, ~4 visibles), puis détails (photos, visites, activités)
+  // Mode édition : sélecteur de position en haut + détails en dessous
+  // Mode hors-édition : détails + bouton "Ajouter à mon itinéraire"
   function openOpPopup(pid) {
     var p = window.PLACES_INDEX && window.PLACES_INDEX[pid];
     if (!p) return;
     var existing = $('oem-op-popup');
     if (existing) try { existing.remove(); } catch(e){}
 
+    var inEdit = !!st.active;
     var photos = (p.photos || p.images || []).slice(0, 3);
     var visits = (p.visits || []).slice(0, 8);
     var activities = (p.activities || []).slice(0, 8);
-    var currentOrder = buildCurrentSteps();
 
-    // --- bloc positions (en haut, scrollable, 4 visibles) ---
-    var positionsHtml = '<div style="padding:14px 16px 10px;border-bottom:1px solid #e5e7eb">' +
-      '<p style="margin:0 0 10px;font-weight:700;color:#113f7a;font-size:.95rem">📍 ' +
-      escapeHtml(T('oem_op_insert_title', { name: p.name })) + '</p>' +
-      '<div style="max-height:184px;overflow-y:auto;padding-right:4px">'; // ~4 boutons de 44px
-
-    positionsHtml += posBtnHtml(0, '↑', '#e11d48', T('oem_op_at_start'), true);
-    currentOrder.forEach(function (step, idx) {
-      positionsHtml += posBtnHtml(idx + 1, String(idx + 1), '#113f7a',
-        T('oem_op_after', { name: '<strong>' + escapeHtml(step.name) + '</strong>' }), false);
-    });
-
-    positionsHtml += '</div></div>';
-
-    // --- détails du lieu (en bas) ---
-    var photosHtml = '';
-    if (photos.length) {
-      photosHtml = '<div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px">' +
-        photos.map(function (u) {
-          return '<img src="' + escapeAttr(u) + '" style="height:90px;border-radius:8px;flex:none;object-fit:cover" loading="lazy" onerror="this.style.display=\'none\'">';
-        }).join('') + '</div>';
+    // ===== Bloc TOP =====
+    var topHtml = '';
+    if (inEdit) {
+      // Mode édition : sélecteur de position
+      var currentOrder = buildCurrentSteps();
+      var listInner = posBtnHtml(0, '↑', '#e11d48', T('oem_op_at_start'), true);
+      currentOrder.forEach(function (step, idx) {
+        listInner += posBtnHtml(idx + 1, String(idx + 1), '#113f7a',
+          T('oem_op_after', { name: '<strong>' + escapeHtml(step.name) + '</strong>' }), false);
+      });
+      topHtml =
+        '<div style="padding:18px 18px 14px;border-bottom:1px solid #e5e7eb">' +
+          '<p style="margin:0 0 12px;font-weight:700;color:#113f7a;font-size:1rem">📍 ' +
+            escapeHtml(T('oem_op_insert_title', { name: p.name })) +
+          '</p>' +
+          '<div style="max-height:184px;overflow-y:auto;padding-right:4px">' + listInner + '</div>' +
+        '</div>';
+    } else {
+      // Mode hors-édition : juste un sous-titre discret
+      var rt = tierFromRating(p.rating);
+      var ratingLabel = rt.tier === 'mustsee' ? T('oem_legend_mustsee')
+                      : rt.tier === 'recommended' ? T('oem_legend_recommended')
+                      : T('oem_legend_discover');
+      topHtml =
+        '<div style="padding:6px 18px 14px;border-bottom:1px solid #e5e7eb">' +
+          '<span style="display:inline-block;padding:3px 10px;border-radius:12px;background:' + rt.color + ';color:#fff;font-size:.78rem;font-weight:700">' +
+            escapeHtml(ratingLabel) +
+          '</span>' +
+        '</div>';
     }
 
+    // ===== Bloc DÉTAILS (aéré) =====
+    var photosHtml = '';
+    if (photos.length) {
+      photosHtml =
+        '<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:18px;padding-bottom:4px">' +
+          photos.map(function (u) {
+            return '<img src="' + escapeAttr(u) + '" style="height:100px;border-radius:10px;flex:none;object-fit:cover" loading="lazy" onerror="this.style.display=\'none\'">';
+          }).join('') +
+        '</div>';
+    }
     var visitsHtml = '';
     if (visits.length) {
-      visitsHtml = '<p style="margin:0 0 6px;font-weight:700;color:#374151;font-size:.88rem">🏛️ ' + escapeHtml(T('oem_op_visits')) + '</p>' +
-        '<ul style="margin:0 0 14px;padding-left:20px;color:#475569;font-size:.85rem;line-height:1.6">' +
-        visits.map(function (v) { return '<li>' + escapeHtml(v.text || v) + '</li>'; }).join('') +
-        '</ul>';
+      visitsHtml =
+        '<div style="margin-bottom:18px">' +
+          '<p style="margin:0 0 8px;font-weight:700;color:#113f7a;font-size:.92rem">🏛️ ' + escapeHtml(T('oem_op_visits')) + '</p>' +
+          '<ul style="margin:0;padding-left:22px;color:#475569;font-size:.88rem;line-height:1.65">' +
+            visits.map(function (v) { return '<li style="margin-bottom:4px">' + escapeHtml(v.text || v) + '</li>'; }).join('') +
+          '</ul>' +
+        '</div>';
     }
     var actsHtml = '';
     if (activities.length) {
-      actsHtml = '<p style="margin:0 0 6px;font-weight:700;color:#374151;font-size:.88rem">🎯 ' + escapeHtml(T('oem_op_activities')) + '</p>' +
-        '<ul style="margin:0;padding-left:20px;color:#475569;font-size:.85rem;line-height:1.6">' +
-        activities.map(function (a) { return '<li>' + escapeHtml(a.text || a) + '</li>'; }).join('') +
-        '</ul>';
+      actsHtml =
+        '<div style="margin-bottom:8px">' +
+          '<p style="margin:0 0 8px;font-weight:700;color:#113f7a;font-size:.92rem">🎯 ' + escapeHtml(T('oem_op_activities')) + '</p>' +
+          '<ul style="margin:0;padding-left:22px;color:#475569;font-size:.88rem;line-height:1.65">' +
+            activities.map(function (a) { return '<li style="margin-bottom:4px">' + escapeHtml(a.text || a) + '</li>'; }).join('') +
+          '</ul>' +
+        '</div>';
+    }
+    var detailsHtml = '<div style="padding:18px;overflow-y:auto;flex:1">' + photosHtml + visitsHtml + actsHtml + '</div>';
+
+    // ===== Bloc FOOTER (hors édition seulement) =====
+    var footerHtml = '';
+    if (!inEdit) {
+      footerHtml =
+        '<div style="padding:14px 18px;border-top:1px solid #e5e7eb;background:#f9fafb">' +
+          '<button id="oem-op-launch-edit" style="width:100%;padding:13px;border-radius:10px;border:none;background:#113f7a;color:#fff;font-weight:700;font-size:.95rem;cursor:pointer">' +
+            escapeHtml(T('oem_op_add_btn')) +
+          '</button>' +
+        '</div>';
     }
 
-    var detailsHtml = '<div style="padding:14px 16px 18px;overflow-y:auto;flex:1">' +
-      photosHtml + visitsHtml + actsHtml + '</div>';
-
-    // --- assemblage ---
+    // ===== Assemblage =====
     var bg = document.createElement('div');
     bg.id = 'oem-op-popup';
     Object.assign(bg.style, {
@@ -491,19 +658,19 @@
     });
     var box = document.createElement('div');
     Object.assign(box.style, {
-      background:'#fff', borderRadius:'14px 14px 0 0',
+      background:'#fff', borderRadius:'16px 16px 0 0',
       width:'100%', maxWidth:'500px', maxHeight:'85vh',
       display:'flex', flexDirection:'column',
-      boxShadow:'0 -4px 16px rgba(0,0,0,0.3)'
+      boxShadow:'0 -4px 20px rgba(0,0,0,0.3)'
     });
 
     var headerHtml =
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:14px 16px 0">' +
-      '  <h3 style="margin:0;color:#113f7a;font-size:1.1rem">' + escapeHtml(p.name) + '</h3>' +
-      '  <button id="oem-op-close" style="background:none;border:none;font-size:24px;cursor:pointer;color:#94a3b8;padding:0;line-height:1">×</button>' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:18px 18px 6px">' +
+        '<h3 style="margin:0;color:#113f7a;font-size:1.15rem;line-height:1.3">' + escapeHtml(p.name) + '</h3>' +
+        '<button id="oem-op-close" style="background:none;border:none;font-size:26px;cursor:pointer;color:#94a3b8;padding:0;line-height:1;margin-left:10px">×</button>' +
       '</div>';
 
-    box.innerHTML = headerHtml + positionsHtml + detailsHtml;
+    box.innerHTML = headerHtml + topHtml + detailsHtml + footerHtml;
     bg.appendChild(box);
     document.body.appendChild(bg);
 
@@ -511,19 +678,30 @@
     bg.addEventListener('click', function (e) { if (e.target === bg) close(); });
     $('oem-op-close').onclick = close;
 
-    box.querySelectorAll('.oem-pos-btn').forEach(function (btn) {
-      btn.onclick = function () {
-        var pos = parseInt(btn.dataset.pos, 10);
-        addPlaceAt(pid, pos);
+    if (inEdit) {
+      box.querySelectorAll('.oem-pos-btn').forEach(function (btn) {
+        btn.onclick = function () {
+          var pos = parseInt(btn.dataset.pos, 10);
+          addPlaceAt(pid, pos);
+          close();
+        };
+      });
+    } else {
+      // Hors édition : le bouton lance le mode édition puis ré-ouvre la popup
+      var lb = $('oem-op-launch-edit');
+      if (lb) lb.onclick = function () {
         close();
+        // Marqueur pour ré-ouvrir la popup une fois l'édition lancée
+        st.pendingPopupPid = pid;
+        launch();
       };
-    });
+    }
   }
 
   function posBtnHtml(pos, label, bg, text, isFirst) {
-    return '<button class="oem-pos-btn" data-pos="' + pos + '" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:9px;background:#fff;cursor:pointer;text-align:left;margin-bottom:6px;font-family:inherit">' +
-      '<span style="background:' + bg + ';color:#fff;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex:none">' + label + '</span>' +
-      '<span style="font-size:.88rem;color:#374151' + (isFirst ? ';font-weight:600' : '') + '">' + text + '</span></button>';
+    return '<button class="oem-pos-btn" data-pos="' + pos + '" style="display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;text-align:left;margin-bottom:8px;font-family:inherit">' +
+      '<span style="background:' + bg + ';color:#fff;width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex:none">' + label + '</span>' +
+      '<span style="font-size:.92rem;color:#374151' + (isFirst ? ';font-weight:600' : '') + '">' + text + '</span></button>';
   }
 
   // ---------- Ajout d'un lieu master à une position ----------
@@ -606,9 +784,18 @@
       refreshBadges();
       showActionBar();
 
-      // Afficher la couche OP par défaut
+      // Afficher la couche OP par défaut, charge le master si besoin
       st.opVisible = true;
-      buildOtherPlacesLayer();
+      loadPlacesIfNeeded().then(function () {
+        buildOtherPlacesLayer();
+        showLegend();
+        // Si on a été lancés depuis un clic "Ajouter" hors édition, ré-ouvrir la popup
+        if (st.pendingPopupPid) {
+          var pid = st.pendingPopupPid;
+          st.pendingPopupPid = null;
+          setTimeout(function () { openOpPopup(pid); }, 200);
+        }
+      });
     });
   }
 
@@ -680,6 +867,7 @@
     if (st.routeTimer) { clearTimeout(st.routeTimer); st.routeTimer = null; }
     clearBadges();
     clearOtherPlacesLayer();
+    hideLegend();
     st.opVisible = false;
     hideActionBar();
     document.body.classList.remove('oem-active');

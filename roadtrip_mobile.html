@@ -416,9 +416,12 @@ html, body {
   font-weight: 700;
   font-size: 15px;
   color: var(--ort-blue);
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .step-card-meta {
@@ -5605,7 +5608,19 @@ function renderList() {
     // Utiliser getStepPhoto avec l'index pour éviter les doublons
     const photoUrl = getStepPhoto(step, idx);
     const nightsText = step.nights > 0 ? `${step.nights} nuit${step.nights > 1 ? 's' : ''}` : '';
-    const distText = step.distance_km ? `${Math.round(step.distance_km)} km` : '';
+
+    // Distance vers l'étape suivante : on utilise step.distance_km si dispo,
+    // sinon Haversine (vol d'oiseau) entre cette étape et la suivante.
+    let kmToNext = Number(step.distance_km) || 0;
+    if (!kmToNext && idx < state.steps.length - 1) {
+      const next = state.steps[idx + 1];
+      const lng1 = step.lng || step.lon;
+      const lng2 = next.lng || next.lon;
+      if (step.lat && lng1 && next.lat && lng2 && typeof haversineDistance === 'function') {
+        kmToNext = Math.round(haversineDistance(step.lat, lng1, next.lat, lng2));
+      }
+    }
+    const distText = kmToNext ? `${Math.round(kmToNext)} km` : '';
     const stepDisplayName = getCityDisplayName(step, lang) || step.name;
     
     // Vérifier si l'étape a des réservations (chercher dans TOUTES les sources)
@@ -5665,13 +5680,18 @@ function renderList() {
       }
     }
     
+    // Fusion km + nuits sur une seule ligne meta
+    let metaParts = [];
+    if (distText) metaParts.push(distText);
+    if (step.nights > 0) metaParts.push(`🌙 ${nightsText}`);
+    const metaLine = metaParts.join(' · ');
+
     card.innerHTML = `
       <div class="step-card-num">${idx + 1}</div>
       <img class="step-card-photo" data-step-idx="${idx}" src="${PLACEHOLDER_IMG}" alt="" loading="lazy">
       <div class="step-card-info">
         <div class="step-card-name">${stepDisplayName}${ratingBadge(step.rating)}</div>
-        <div class="step-card-meta">${distText}</div>
-        ${step.nights > 0 ? `<div class="step-card-nights">🌙 ${nightsText}</div>` : ''}
+        ${metaLine ? `<div class="step-card-meta">${metaLine}</div>` : ''}
         ${bookingIndicator ? `<div style="margin-top:3px">${bookingIndicator}</div>` : ''}
       </div>
       ${hotelThumbPart}
