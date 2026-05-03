@@ -5968,10 +5968,10 @@ async function initFromItin(it){
   state._nightsCalculatedByInit = true;
   
   // Utiliser REQUESTED_DAYS si disponible (depuis URL), sinon le calcul par défaut
-  // IMPORTANT: nuits = jours - 1 (ex: 7 jours = 6 nuits)
+  // V3 : 4 jours = 4 nuits (cohérent avec mobile, et avec ce que l'utilisateur paie en hôtels).
   if (REQUESTED_DAYS > 0) {
-    state.targetNights = Math.max(1, REQUESTED_DAYS - 1);
-    console.log(`[LOG-CONTROLE][INIT] 🛏️ Target nuits: ${state.targetNights} (${REQUESTED_DAYS} jours - 1, depuis URL)`);
+    state.targetNights = REQUESTED_DAYS;
+    console.log(`[LOG-CONTROLE][INIT] 🛏️ Target nuits: ${state.targetNights} (${REQUESTED_DAYS} jours, depuis URL)`);
   } else {
     state.targetNights = finalTotal;
     console.log(`[LOG-CONTROLE][INIT] 🛏️ Target nuits: ${state.targetNights} (calculé depuis JSON)`);
