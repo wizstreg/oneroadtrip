@@ -343,8 +343,6 @@
 
       modalContainer.innerHTML =
         '<div class="ohv3-mwrap">' +
-          '<button class="ohv3-arrow ohv3-prev" type="button" aria-label="' + esc(t('prev')) + '">‹</button>' +
-          '<button class="ohv3-arrow ohv3-next" type="button" aria-label="' + esc(t('next')) + '">›</button>' +
           '<div class="ohv3-mtrack" style="background:' + fbColor + '">' +
             '<div class="ohv3-img-fallback"><span>' + esc(initial) + '</span></div>' +
             '<img class="ohv3-mimg" src="' + esc(img1) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">' +
@@ -359,6 +357,8 @@
                 '</div>' +
               '</div>' +
             '</div>' +
+            '<button class="ohv3-arrow ohv3-prev" type="button" aria-label="' + esc(t('prev')) + '">‹</button>' +
+            '<button class="ohv3-arrow ohv3-next" type="button" aria-label="' + esc(t('next')) + '">›</button>' +
           '</div>' +
           '<div class="ohv3-dots">' + dotsH + '</div>' +
           (desc ? '<p class="ohv3-mobile-desc">' + esc(desc) + '</p>' : '') +
@@ -567,16 +567,19 @@
       '.ohv3-mwrap{position:relative;padding:12px}',
       '.ohv3-mtrack{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden}',
       '.ohv3-mimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}',
-      '.ohv3-moverlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.3) 50%,rgba(0,0,0,0) 100%);z-index:2}',
+      '.ohv3-moverlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 14px 14px 14px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.3) 50%,rgba(0,0,0,0) 100%);z-index:2}',
       '.ohv3-mprice{position:absolute;top:10px;right:10px;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:1rem;padding:4px 12px;border-radius:8px}',
       '.ohv3-badge-m{top:10px;left:10px}',
       '.ohv3-minfo{color:#fff;display:flex;flex-direction:column;gap:6px}',
       '.ohv3-mname{font-weight:600;font-size:1.05rem;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.4)}',
       '.ohv3-mmeta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
       '.ohv3-mlevel{font-size:0.72rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px}',
-      '.ohv3-arrow{position:absolute;top:calc(50% - 30px);transform:translateY(-50%);z-index:5;width:38px;height:38px;border-radius:50%;border:none;background:rgba(255,255,255,0.92);color:#0f172a;font-size:1.6rem;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);display:flex;align-items:center;justify-content:center;padding:0}',
-      '.ohv3-prev{left:18px}',
-      '.ohv3-next{right:18px}',
+      // Flèches : maintenant DANS .ohv3-mtrack, donc centrées verticalement sur la photo.
+      // 44px, fond blanc opaque, ombre marquée pour bien ressortir sur n\'importe quelle photo.
+      '.ohv3-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;width:44px;height:44px;border-radius:50%;border:2px solid #fff;background:#fff;color:#0f172a;font-size:1.8rem;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;padding:0;-webkit-tap-highlight-color:transparent}',
+      '.ohv3-arrow:active{transform:translateY(-50%) scale(0.92)}',
+      '.ohv3-prev{left:10px}',
+      '.ohv3-next{right:10px}',
       '.ohv3-dots{display:flex;justify-content:center;gap:8px;margin-top:12px}',
       '.ohv3-dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;cursor:pointer;transition:background .2s ease,transform .2s ease}',
       '.ohv3-dot-on{background:#f59e0b;transform:scale(1.25)}',
