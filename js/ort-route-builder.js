@@ -458,6 +458,14 @@ async function selectStepsAlongRoute(config, routeData, places) {
       // Doit être dans le rayon de détour
       if (distToTarget > searchRadius) continue;
       
+      // Exclure si même ville qu'une étape déjà sélectionnée
+      const pNameNorm = p.name.toLowerCase().replace(/[^a-z]/g, '');
+      const tooClose = steps.some(s => {
+        const sNameNorm = s.name.toLowerCase().replace(/[^a-z]/g, '');
+        return pNameNorm.startsWith(sNameNorm) || sNameNorm.startsWith(pNameNorm);
+      });
+      if (tooClose) continue;
+      
       const score = calculatePlaceScore(p, distToTarget, searchRadius);
       if (score > bestScore) {
         bestScore = score;
@@ -514,10 +522,15 @@ async function selectStepsAlongRoute(config, routeData, places) {
     }
   }
   
-  // Ajouter l'arrivée — sauf si elle est à moins de 15km de la dernière étape intermédiaire
+  // Ajouter l'arrivée — sauf si trop proche ou même ville qu'une étape déjà choisie
   const lastIntermediate = steps[steps.length - 1];
   const distToEnd = _haversine(lastIntermediate.lat, lastIntermediate.lon || lastIntermediate.lng, endForSteps.lat, endForSteps.lon || endForSteps.lng);
-  if (distToEnd < 15 && !lastIntermediate.isStart) {
+  const endNameNorm = endForSteps.name.toLowerCase().replace(/[^a-z]/g, '');
+  const endIsDupe = steps.some(s => {
+    const sNameNorm = s.name.toLowerCase().replace(/[^a-z]/g, '');
+    return endNameNorm.startsWith(sNameNorm) || sNameNorm.startsWith(endNameNorm);
+  });
+  if ((distToEnd < 15 || endIsDupe) && !lastIntermediate.isStart) {
     // Trop proche : on fusionne en donnant les nuits à la dernière étape et on marque isEnd
     console.log(`[ROUTE-BUILDER] ⚠️ Arrivée "${endForSteps.name}" trop proche de "${lastIntermediate.name}" (${distToEnd.toFixed(0)}km) → fusion`);
     lastIntermediate.isEnd = true;
