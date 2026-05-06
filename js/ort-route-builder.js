@@ -391,7 +391,9 @@ async function selectStepsAlongRoute(config, routeData, places) {
   // Nombre d'étapes max
   const minStepsNeeded = Math.ceil(totalDist / maxKm);
   const maxStepsPossible = Math.max(2, days - 1);
-  const targetSteps = Math.min(minStepsNeeded, maxStepsPossible);
+  // On vise autant d'étapes que de jours demandés (moins l'arrivée)
+  // pour avoir assez d'étapes à distribuer, sans dépasser la contrainte km
+  const targetSteps = Math.max(minStepsNeeded, Math.min(days - 1, maxStepsPossible));
   
   console.log(`[ROUTE-BUILDER] 🎯 Étapes visées: ${targetSteps} (min=${minStepsNeeded}, max=${maxStepsPossible})`);
   console.log(`[ROUTE-BUILDER] 🔍 Rayon de recherche: ${searchRadius}km`);
@@ -512,8 +514,17 @@ async function selectStepsAlongRoute(config, routeData, places) {
     }
   }
   
-  // Ajouter l'arrivée
-  steps.push(endForSteps);
+  // Ajouter l'arrivée — sauf si elle est à moins de 15km de la dernière étape intermédiaire
+  const lastIntermediate = steps[steps.length - 1];
+  const distToEnd = _haversine(lastIntermediate.lat, lastIntermediate.lon || lastIntermediate.lng, endForSteps.lat, endForSteps.lon || endForSteps.lng);
+  if (distToEnd < 15 && !lastIntermediate.isStart) {
+    // Trop proche : on fusionne en donnant les nuits à la dernière étape et on marque isEnd
+    console.log(`[ROUTE-BUILDER] ⚠️ Arrivée "${endForSteps.name}" trop proche de "${lastIntermediate.name}" (${distToEnd.toFixed(0)}km) → fusion`);
+    lastIntermediate.isEnd = true;
+    lastIntermediate.nights = 0;
+  } else {
+    steps.push(endForSteps);
+  }
   
   console.log(`[ROUTE-BUILDER] ✅ ${steps.length} étapes finales`);
   
@@ -712,12 +723,20 @@ function generateBuilderItinerary(steps, config, lang) {
   
   console.log(`[ROUTE-BUILDER] Étapes avec nuits: ${stepsWithNights.length}, Nuits extra: ${totalNightsToDistribute}`);
   
-  if (totalNightsToDistribute > 0) {
-    // Ajouter les nuits extra au premier et dernier point intermédiaire
-    intermediateSteps[0].nights += Math.ceil(totalNightsToDistribute / 2);
-    if (intermediateSteps.length > 1) {
-      intermediateSteps[intermediateSteps.length - 1].nights += Math.floor(totalNightsToDistribute / 2);
+  if (totalNightsToDistribute > 0 && stepsWithNights.length > 0) {
+    // Distribuer équitablement sur toutes les étapes avec nuits (round-robin)
+    let remaining = totalNightsToDistribute;
+    let idx = 0;
+    while (remaining > 0) {
+      stepsWithNights[idx % stepsWithNights.length].nights++;
+      remaining--;
+      idx++;
     }
+  } else if (totalNightsToDistribute > 0) {
+    // Pas d'étape intermédiaire : trajet trop court → message lisible
+    hideBuilderLoader();
+    showBuilderError(lang, window.ORT_I18N?.builderTooShort?.[lang] || window.ORT_I18N?.builderTooShort?.fr || 'Le trajet est trop court pour générer des étapes.');
+    return;
   }
   
   console.log(`[ROUTE-BUILDER] Distribution nuits: ${steps.map(s => `${s.name}(${s.nights})`).join(' + ')}`);
@@ -1671,7 +1690,8 @@ function showSeaCrossingModal(config, lang, validation) {
         seaCrossingTip1: { fr: '• Choisissez des villes sur le même continent', en: '• Choose cities on the same continent', es: '• Elija ciudades en el mismo continente' },
         seaCrossingTip2: { fr: '• Pour traverser la Manche, partez de Calais ou Dunkerque', en: '• To cross the Channel, start from Calais or Dunkirk', es: '• Para cruzar el Canal, salga de Calais o Dunkerque' },
         seaCrossingTip3: { fr: '• Pour les îles, créez un itinéraire séparé', en: '• For islands, create a separate itinerary', es: '• Para las islas, cree un itinerario separado' },
-        builderBack: { fr: 'Retour', en: 'Back', es: 'Volver' }
+        builderBack: { fr: 'Retour', en: 'Back', es: 'Volver', pt: 'Voltar', it: 'Indietro', de: 'Zurück' },
+        builderTooShort: { fr: 'Le trajet est trop court pour générer des étapes. Essayez avec une distance plus grande.', en: 'The route is too short to generate stops. Try with a longer distance.', es: 'El trayecto es demasiado corto para generar etapas. Prueba con una distancia mayor.', pt: 'O percurso é curto demais para gerar etapas. Tente com uma distância maior.', it: 'Il percorso è troppo breve per generare tappe. Prova con una distanza maggiore.', de: 'Die Strecke ist zu kurz, um Etappen zu erstellen. Versuche es mit einer größeren Distanz.' }
       }[key]?.[lang] || key;
       
       if (params) {
