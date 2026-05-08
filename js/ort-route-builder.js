@@ -386,17 +386,36 @@ async function selectStepsAlongRoute(config, routeData, places) {
     return [{ ...start, nights: 1, isStart: true }, { ...end, nights: 0, isEnd: true }];
   }
   
-  const searchRadius = Math.max(detour, 20);
-  
-  // Nombre d'étapes max
+  // ---------------------------------------------------------------
+  // RÉPARTITION RÉGULIÈRE
+  // Au lieu d'avancer de maxKm à chaque fois (ce qui empilait les
+  // étapes sur la fin), on calcule un espacement régulier basé sur
+  // la distance totale et le nombre d'étapes visées.
+  // ---------------------------------------------------------------
+
+  // Nombre d'étapes max : on respecte la contrainte maxKm comme un
+  // PLAFOND (jamais plus de maxKm entre 2 étapes), mais on ne s'en
+  // sert plus comme cible de marche.
   const minStepsNeeded = Math.ceil(totalDist / maxKm);
   const maxStepsPossible = Math.max(2, days - 1);
-  // On vise autant d'étapes que de jours demandés (moins l'arrivée)
-  // pour avoir assez d'étapes à distribuer, sans dépasser la contrainte km
   const targetSteps = Math.max(minStepsNeeded, Math.min(days - 1, maxStepsPossible));
-  
+
+  // Espacement moyen visé entre 2 étapes consécutives.
+  // Exemple : 500 km, 6 tronçons → moyenne ≈ 83 km par étape.
+  const avgSpacing = totalDist / (targetSteps + 1);
+
+  // Fenêtre de sélection (en distance "précédente → candidate") :
+  //   - mini = 0.6 × moyenne   → empêche les étapes collées
+  //   - maxi = 1.3 × moyenne   → empêche les étapes trop éloignées
+  // Cette même borne mini s'applique aussi vis-à-vis du départ et
+  // de l'arrivée pour éviter les étapes "satellites" en début/fin
+  // de route (ex: Trévoux à 38 km de Lyon).
+  const minSpacing       = avgSpacing * 0.6;
+  const maxSpacingNormal = avgSpacing * 1.3;
+  const maxSpacingFb     = avgSpacing * 2.0; // fallback si rien trouvé
+
   console.log(`[ROUTE-BUILDER] 🎯 Étapes visées: ${targetSteps} (min=${minStepsNeeded}, max=${maxStepsPossible})`);
-  console.log(`[ROUTE-BUILDER] 🔍 Rayon de recherche: ${searchRadius}km`);
+  console.log(`[ROUTE-BUILDER] 📏 Moyenne ${avgSpacing.toFixed(0)}km — fenêtre [${minSpacing.toFixed(0)}-${maxSpacingNormal.toFixed(0)}km], fallback ${maxSpacingFb.toFixed(0)}km`);
   
   const steps = [{ ...start, nights: 1, isStart: true }];
   const usedPlaces = new Set();
@@ -427,52 +446,113 @@ async function selectStepsAlongRoute(config, routeData, places) {
     usedPlaces.add(endPlace.pid);
   }
   
+  // Types de places considérés comme "villes" (= étapes valides).
+  // On exclut tout ce qui est POI / site / nature / etc. pour éviter
+  // que le builder empile "Louvre / Pompidou / Orsay" en fin de route.
+  const CITY_TYPES = new Set([
+    'capital','metropolis','large_city','city',
+    'medium_city','small_city','village'
+  ]);
+
   // Boucle pour ajouter les étapes
+  // Logique : on raisonne sur la PROGRESSION le long de la route.
+  //   - prev   = progression km de la dernière étape choisie
+  //   - end    = progression km de l'arrivée
+  //   - target = on cherche une étape entre prev+min et prev+max (en suivant la route)
+  //   - on vérifie aussi qu'on laisse au moins min km jusqu'à l'arrivée
+  const startProgress = getProgressOnRoute(steps[0].lat, steps[0].lon || steps[0].lng, routeData);
+  const endProgress   = totalDist; // l'arrivée est en bout de route
+  let prevProgress    = startProgress;
+
   for (let stepIdx = 1; stepIdx <= targetSteps; stepIdx++) {
     console.log(`[ROUTE-BUILDER] --- Étape ${stepIdx}/${targetSteps} ---`);
-    
-    const lastStep = steps[steps.length - 1];
-    
-    // 1. Calculer le point cible à maxKm depuis la dernière étape
-    const lastProgress = getProgressOnRoute(lastStep.lat, lastStep.lon || lastStep.lng, routeData);
-    const targetProgress = Math.min(lastProgress + maxKm, totalDist);
-    const targetPoint = getPointAtDistance(routeData, targetProgress);
-    
+
+    // Reste de route à couvrir et reste d'étapes à placer
+    const stepsLeft = targetSteps - stepIdx + 1; // nb d'étapes intermédiaires restantes (incluant celle-ci)
+    const distLeft  = endProgress - prevProgress;
+
+    // Si la distance restante est trop courte pour caser une étape de plus
+    // sans tomber dans la zone d'arrivée, on arrête.
+    if (distLeft < 2 * minSpacing) {
+      console.log(`[ROUTE-BUILDER] ⏹️ Reste ${distLeft.toFixed(0)}km vers arrivée, < ${(2*minSpacing).toFixed(0)}km : arrêt`);
+      break;
+    }
+
+    // Point cible = progression précédente + (distance restante / étapes restantes)
+    // → ça redistribue dynamiquement si on a sauté une étape juste avant
+    const targetProgress = prevProgress + (distLeft / stepsLeft);
+    const targetPoint    = getPointAtDistance(routeData, targetProgress);
+
     if (!targetPoint) {
       console.log(`[ROUTE-BUILDER] ❌ Pas de point à ${targetProgress}km`);
       break;
     }
-    
-    console.log(`[ROUTE-BUILDER] Point cible: ${targetProgress.toFixed(0)}km (rayon ${searchRadius}km)`);
-    
-    // 2. Chercher les places autour du point cible
-    let bestPlace = null;
-    let bestScore = -Infinity;
-    
-    for (const pid in places) {
-      if (usedPlaces.has(pid)) continue;
-      
-      const p = places[pid];
-      const distToTarget = _haversine(targetPoint.lat, targetPoint.lon, p.lat, p.lon);
-      
-      // Doit être dans le rayon de détour
-      if (distToTarget > searchRadius) continue;
-      
-      // Exclure si même ville qu'une étape déjà sélectionnée
-      const pNameNorm = p.name.toLowerCase().replace(/[^a-z]/g, '');
-      const tooClose = steps.some(s => {
-        const sNameNorm = s.name.toLowerCase().replace(/[^a-z]/g, '');
-        return pNameNorm.startsWith(sNameNorm) || sNameNorm.startsWith(pNameNorm);
-      });
-      if (tooClose) continue;
-      
-      const score = calculatePlaceScore(p, distToTarget, searchRadius);
-      if (score > bestScore) {
-        bestScore = score;
-        bestPlace = { ...p, pid, distToTarget };
+
+    console.log(`[ROUTE-BUILDER] Point cible: ${targetProgress.toFixed(0)}km (prev=${prevProgress.toFixed(0)}, distLeft=${distLeft.toFixed(0)})`);
+
+    // Fonction interne : chercher la meilleure ville dans une fenêtre [min, max]
+    // basée sur la progression sur la route, pas la distance à vol d'oiseau.
+    // ⚠️ On exige aussi qu'il reste au moins minSpacing jusqu'à l'arrivée.
+    const findBest = (maxWindow) => {
+      let best = null;
+      let bestScore = -Infinity;
+      for (const pid in places) {
+        if (usedPlaces.has(pid)) continue;
+        const p = places[pid];
+
+        // Filtre 1 : on ne garde que les villes (pas POI/sites/parcs/plages)
+        if (p.place_type && !CITY_TYPES.has(p.place_type)) continue;
+
+        // Position de la place sur la route
+        const pProgress = getProgressOnRoute(p.lat, p.lon, routeData);
+        const distFromPrev = pProgress - prevProgress;
+        const distToEndR   = endProgress - pProgress;
+
+        // Filtre 2 : doit être devant nous (et pas après l'arrivée)
+        if (distFromPrev <= 0) continue;
+        if (distToEndR  <= 0) continue;
+
+        // Filtre 3 : fenêtre [min, max] depuis la précédente
+        if (distFromPrev < minSpacing) continue;
+        if (distFromPrev > maxWindow)  continue;
+
+        // Filtre 4 : doit laisser au moins minSpacing avant l'arrivée
+        if (distToEndR < minSpacing) continue;
+
+        // Filtre 5 : on prend en compte l'écart à vol d'oiseau pour le scoring
+        // (pour pas piocher une place très excentrée)
+        const distToTarget = _haversine(targetPoint.lat, targetPoint.lon, p.lat, p.lon);
+
+        // Filtre 6 : exclure si même ville qu'une étape déjà choisie
+        const pNameNorm = p.name.toLowerCase().replace(/[^a-z]/g, '');
+        const tooClose = steps.some(s => {
+          const sNameNorm = s.name.toLowerCase().replace(/[^a-z]/g, '');
+          return pNameNorm.startsWith(sNameNorm) || sNameNorm.startsWith(pNameNorm);
+        });
+        if (tooClose) continue;
+
+        // Filtre 7 : ne pas reprendre l'arrivée
+        const endNameNorm = endForSteps.name.toLowerCase().replace(/[^a-z]/g, '');
+        if (pNameNorm.startsWith(endNameNorm) || endNameNorm.startsWith(pNameNorm)) continue;
+
+        const score = calculatePlaceScore(p, distToTarget, avgSpacing);
+        if (score > bestScore) {
+          bestScore = score;
+          best = { ...p, pid, distToTarget, distFromPrev, pProgress, _score: score };
+        }
       }
+      return best;
+    };
+
+    // Tentative 1 : fenêtre normale [min, 1.3 × moyenne]
+    let bestPlace = findBest(maxSpacingNormal);
+
+    // Tentative 2 : on élargit à 2.0 × moyenne si rien trouvé
+    if (!bestPlace) {
+      console.log(`[ROUTE-BUILDER]    Rien dans [${minSpacing.toFixed(0)}-${maxSpacingNormal.toFixed(0)}km], élargissement à ${maxSpacingFb.toFixed(0)}km`);
+      bestPlace = findBest(maxSpacingFb);
     }
-    
+
     if (bestPlace) {
       steps.push({
         name: bestPlace.name,
@@ -488,37 +568,12 @@ async function selectStepsAlongRoute(config, routeData, places) {
         _suggestedDays: 1
       });
       usedPlaces.add(bestPlace.pid);
-      
-      const distFromLast = _haversine(lastStep.lat, lastStep.lon || lastStep.lng, bestPlace.lat, bestPlace.lon || bestPlace.lng);
-      console.log(`[ROUTE-BUILDER] ✅ "${bestPlace.name}" (${distFromLast.toFixed(0)}km, score=${bestScore.toFixed(1)})`);
+      prevProgress = bestPlace.pProgress; // avance le curseur
+      console.log(`[ROUTE-BUILDER] ✅ "${bestPlace.name}" (à ${bestPlace.distFromPrev.toFixed(0)}km de la précédente, écart cible ${bestPlace.distToTarget.toFixed(0)}km)`);
     } else {
-      // Fallback: Nominatim si aucune place ORT trouvée
-      console.log(`[ROUTE-BUILDER] ⚠️ Aucune place ORT → fallback Nominatim`);
-      
-      const fallbackCity = await findCityFromNominatim(targetPoint.lat, targetPoint.lon);
-      
-      if (fallbackCity) {
-        steps.push({
-          name: fallbackCity.name,
-          lat: fallbackCity.lat,
-          lon: fallbackCity.lon,
-          lng: fallbackCity.lon,
-          place_id: `nominatim-${fallbackCity.name.toLowerCase().replace(/\s+/g, '-')}`,
-          rating: 5,
-          visits: [],
-          activities: [],
-          cc: fallbackCity.cc || '',
-          nights: 1,
-          _suggestedDays: 1,
-          _fromNominatim: true
-        });
-        
-        const distFromLast = _haversine(lastStep.lat, lastStep.lon || lastStep.lng, fallbackCity.lat, fallbackCity.lon);
-        console.log(`[ROUTE-BUILDER] ✅ Nominatim: "${fallbackCity.name}" (${distFromLast.toFixed(0)}km)`);
-      } else {
-        console.log(`[ROUTE-BUILDER] ❌ Nominatim n'a rien trouvé - arrêt`);
-        break;
-      }
+      console.log(`[ROUTE-BUILDER] ⏭️ Aucune ville dans la fenêtre, étape sautée`);
+      // On n'avance pas prevProgress : la prochaine itération va recalculer
+      // un nouveau point cible avec stepsLeft décrémenté.
     }
   }
   

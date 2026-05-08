@@ -804,13 +804,19 @@ body.fullscreen-mode .place-preview {
 }
 
 .legend-dot.recommended {
-  background: #43A047;
+  background: #2196F3;
   width: 16px;
   height: 16px;
 }
 
 .legend-dot.discover {
-  background: #78909C;
+  background: #43A047;
+  width: 14px;
+  height: 14px;
+}
+
+.legend-dot.standard {
+  background: #9E9E9E;
   width: 14px;
   height: 14px;
 }
@@ -1297,6 +1303,7 @@ body.fullscreen-mode .place-preview {
     <div class="legend-item" data-filter="mustsee" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><svg class="legend-star" width="16" height="16" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span data-i18n="mustSee">Incontournable</span></div>
     <div class="legend-item" data-filter="recommended" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot recommended"></div> <span data-i18n="recommended">Recommandé</span></div>
     <div class="legend-item" data-filter="discover" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot discover"></div> <span data-i18n="discover">À découvrir</span></div>
+    <div class="legend-item" data-filter="standard" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot standard"></div> <span data-i18n="standard">Standard</span></div>
     <div class="legend-item" data-filter="selected" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot selected-dot"></div> <span data-i18n="selected">Sélectionné</span></div>
   </div>
 </div>
@@ -1368,6 +1375,7 @@ const T = {
     mustSee: "Incontournable",
     recommended: "Recommandé",
     discover: "À découvrir",
+    standard: "Standard",
     selected: "Sélectionné",
     noVisits: "Aucune visite définie",
     noActivities: "Aucune activité définie",
@@ -1406,6 +1414,7 @@ const T = {
     mustSee: "Must-see",
     recommended: "Recommended",
     discover: "Discover",
+    standard: "Standard",
     selected: "Selected",
     noVisits: "No visits defined",
     noActivities: "No activities defined",
@@ -1444,6 +1453,7 @@ const T = {
     mustSee: "Imperdibile",
     recommended: "Consigliato",
     discover: "Da scoprire",
+    standard: "Standard",
     selected: "Selezionato",
     noVisits: "Nessuna visita definita",
     noActivities: "Nessuna attività definita",
@@ -1482,6 +1492,7 @@ const T = {
     mustSee: "Imprescindible",
     recommended: "Recomendado",
     discover: "Por descubrir",
+    standard: "Estándar",
     selected: "Seleccionado",
     noVisits: "Sin visitas definidas",
     noActivities: "Sin actividades definidas",
@@ -1520,6 +1531,7 @@ const T = {
     mustSee: "Imperdível",
     recommended: "Recomendado",
     discover: "Para descobrir",
+    standard: "Padrão",
     selected: "Selecionado",
     noVisits: "Nenhuma visita definida",
     noActivities: "Nenhuma atividade definida",
@@ -1558,6 +1570,7 @@ const T = {
     mustSee: "لا يفوتك",
     recommended: "موصى به",
     discover: "للاكتشاف",
+    standard: "عادي",
     selected: "محدد",
     noVisits: "لا توجد زيارات محددة",
     noActivities: "لا توجد أنشطة محددة",
@@ -1740,6 +1753,8 @@ function applyTranslations() {
   document.querySelector('[data-i18n="mustSee"]').textContent = TXT.mustSee;
   document.querySelector('[data-i18n="recommended"]').textContent = TXT.recommended;
   document.querySelector('[data-i18n="discover"]').textContent = TXT.discover;
+  const stdEl = document.querySelector('[data-i18n="standard"]');
+  if (stdEl) stdEl.textContent = TXT.standard;
   document.querySelector('[data-i18n="selected"]').textContent = TXT.selected;
   
   // Modal configuration
@@ -2203,7 +2218,7 @@ function loadMarkersInViewport() {
 // FILTRE PAR CATÉGORIE (LÉGENDE)
 // ===============================
 // Garde en mémoire quelles catégories sont visibles
-let legendFilters = { mustsee: true, recommended: true, discover: true, selected: true };
+let legendFilters = { mustsee: true, recommended: true, discover: true, standard: true, selected: true };
 
 function toggleLegendFilter(el) {
   const filter = el.dataset.filter;
@@ -2224,7 +2239,8 @@ function getMarkerCategory(marker) {
   if (isSelected) return 'selected';
   if (stars >= 5) return 'mustsee';
   if (stars >= 4) return 'recommended';
-  return 'discover';
+  if (stars >= 3) return 'discover';
+  return 'standard';
 }
 
 function applyLegendFilters() {
@@ -2254,13 +2270,16 @@ function applyLegendFilters() {
 function ratingToStars(rating) {
   // Sur mobile/tablette : rayon minimum de 10px pour que les points soient tappables
   const minRadius = isMobileTouch() ? 10 : 0;
-  
-  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 10, isStar: true };
-  if (rating >= 7.6) return { stars: 4, color: '#43A047', textColor: '#fff', radius: Math.max(7, minRadius), isStar: false };
-  if (rating >= 6.1) return { stars: 3, color: '#7CB342', textColor: '#fff', radius: Math.max(6, minRadius), isStar: false };
-  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: Math.max(5, minRadius), isStar: false };
-  if (rating > 0) return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: Math.max(4, minRadius), isStar: false };
-  return { stars: 0, color: '#CFD8DC', textColor: '#fff', radius: Math.max(4, minRadius), isStar: false };
+
+  // 4 catégories alignées sur la légende :
+  //   Incontournable (étoile bleue)  : ≥ 8.6
+  //   Recommandé     (rond bleu)     : ≥ 7.0
+  //   À découvrir    (rond vert)     : ≥ 4.5
+  //   Standard       (rond gris)     : < 4.5
+  if (rating >= 8.6) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 10, isStar: true,  tier: 'mustsee'      };
+  if (rating >= 7.0) return { stars: 4, color: '#2196F3', textColor: '#fff', radius: Math.max(7, minRadius), isStar: false, tier: 'recommended'  };
+  if (rating >= 4.5) return { stars: 3, color: '#43A047', textColor: '#fff', radius: Math.max(6, minRadius), isStar: false, tier: 'discover'     };
+  return                       { stars: 2, color: '#9E9E9E', textColor: '#fff', radius: Math.max(5, minRadius), isStar: false, tier: 'standard' };
 }
 
 // Compatibilité ancienne fonction

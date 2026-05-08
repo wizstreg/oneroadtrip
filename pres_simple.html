@@ -349,9 +349,9 @@ main{max-width:1400px;margin:18px auto 40px;padding:0 16px}
             </svg>
             <span id="legendMustSee">Incontournable</span>
           </div>
-          <div class="legend-item"><span class="legend-dot" style="background:#43A047"></span> <span id="legendRecommended">Recommandé</span></div>
-          <div class="legend-item"><span class="legend-dot" style="background:#7CB342"></span> <span id="legendDiscover">À découvrir</span></div>
-          <div class="legend-item"><span class="legend-dot" style="background:#78909C"></span> <span id="legendStandard">Standard</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#1E88E5"></span> <span id="legendRecommended">Recommandé</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#43A047"></span> <span id="legendDiscover">À découvrir</span></div>
+          <div class="legend-item"><span class="legend-dot" style="background:#9E9E9E"></span> <span id="legendStandard">Standard</span></div>
           <div class="legend-item"><span class="legend-dot" style="background:#e11d48"></span> <span id="legendSelected">Sélectionné</span></div>
           <div class="legend-count" id="visibleCount">0 itinéraires visibles</div>
         </div>
@@ -1364,16 +1364,25 @@ async function loadPlacesPhotosIndex() {
 }
 
 function calculateAvgRating(itin, cc) {
+  // Moyenne pondérée :
+  //  - place >= 7,8/10  => poids 3 (les très bonnes tirent la moyenne vers le haut)
+  //  - place 6 a 7,8    => poids 2
+  //  - place < 6        => poids 1
   if (!itin.days_plan || !placesDataByCountry[cc]) return 5;
-  const ratings = [];
+  let sum = 0;
+  let weights = 0;
   itin.days_plan.forEach(day => {
     if (day.night && day.night.place_id) {
-      const rating = placesDataByCountry[cc][day.night.place_id];
-      if (rating !== undefined) ratings.push(rating);
+      const r = placesDataByCountry[cc][day.night.place_id];
+      if (r !== undefined) {
+        const w = r >= 7.8 ? 3 : (r >= 6 ? 2 : 1);
+        sum += r * w;
+        weights += w;
+      }
     }
   });
-  if (ratings.length === 0) return 5;
-  return ratings.reduce((a, b) => a + b, 0) / ratings.length;
+  if (weights === 0) return 5;
+  return sum / weights;
 }
 
 function getPlaceKeysFromItin(itin) {
@@ -1447,14 +1456,18 @@ function extractCities(itin) {
 }
 
 function ratingToStars(rating) {
-  // Multiplicateur de taille : x2 sur mobile, x1.5 sur desktop
+  // Multiplicateur de taille : x2.5 sur mobile, x1.8 sur desktop
   const sizeMultiplier = isMobile() ? 2.5 : 1.8;
-  
-  if (rating >= 8.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 8 * sizeMultiplier, isStar: true };  // Étoile bleue
-  if (rating >= 7.6) return { stars: 4, color: '#43A047', textColor: '#fff', radius: 6 * sizeMultiplier, isStar: false }; // Vert
-  if (rating >= 6.1) return { stars: 3, color: '#7CB342', textColor: '#fff', radius: 5 * sizeMultiplier, isStar: false }; // Vert clair
-  if (rating >= 3.1) return { stars: 2, color: '#78909C', textColor: '#fff', radius: 4 * sizeMultiplier, isStar: false }; // Gris-bleu
-  return { stars: 1, color: '#B0BEC5', textColor: '#333', radius: 3 * sizeMultiplier, isStar: false }; // Gris clair
+
+  // 4 paliers nets, plus de doublons de vert :
+  //  >= 7,8  => etoile bleue (rouge si selectionnee, gere par createStarIcon)
+  //  6,5 a 7,8 => rond bleu
+  //  4 a 6,5 => rond vert
+  //  < 4     => rond gris
+  if (rating >= 7.8) return { stars: 5, color: '#1565C0', textColor: '#fff', radius: 8 * sizeMultiplier, isStar: true };  // Etoile bleue (top)
+  if (rating >= 6.5) return { stars: 4, color: '#1E88E5', textColor: '#fff', radius: 6 * sizeMultiplier, isStar: false }; // Rond bleu
+  if (rating >= 4)   return { stars: 3, color: '#43A047', textColor: '#fff', radius: 5 * sizeMultiplier, isStar: false }; // Rond vert
+  return { stars: 2, color: '#9E9E9E', textColor: '#fff', radius: 4 * sizeMultiplier, isStar: false };                     // Rond gris
 }
 
 function createStarIcon(color, size, isSelected = false) {

@@ -62,6 +62,30 @@
     },
 
     /**
+     * Normalise un tableau de photos vers un tableau d'URLs strings.
+     * Accepte les 2 formats de photos_lieux.json :
+     *  - Ancien : ["https://...", "https://..."]
+     *  - Nouveau R2 : [{url:"https://...", caption:"...", keyword:"..."}, ...]
+     * Cette fonction est LE point central de normalisation.
+     * @param {Array} raw - Tableau brut de photos (strings ou objets)
+     * @returns {string[]} Tableau d'URLs strings
+     * @private
+     */
+    _normalizePhotos: function(raw) {
+      if (!Array.isArray(raw)) return [];
+      const out = [];
+      for (let i = 0; i < raw.length; i++) {
+        const p = raw[i];
+        if (typeof p === 'string') {
+          if (p) out.push(p);
+        } else if (p && typeof p === 'object' && typeof p.url === 'string' && p.url) {
+          out.push(p.url);
+        }
+      }
+      return out;
+    },
+
+    /**
      * Charge un fichier JSON avec fallback de langue
      * Essaie dans l'ordre : langue demandée → EN → FR → ancien format sans suffixe
      * @param {string} baseUrl - URL de base du fichier (ex: ./data/file.json)
@@ -384,10 +408,10 @@
         const visits = Array.isArray(day.visits) ? day.visits.map(v => typeof v === 'string' ? {text: v} : v) : [];
         const activities = Array.isArray(day.activities) ? day.activities.map(a => typeof a === 'string' ? {text: a} : a) : [];
         
-        // Photos
+        // Photos : gere tous les formats (string[], objet[] R2, string unique)
         let photos = [];
-        if (Array.isArray(day.photos) && day.photos.length) photos = day.photos;
-        else if (Array.isArray(day.images) && day.images.length) photos = day.images;
+        if (Array.isArray(day.photos) && day.photos.length) photos = this._normalizePhotos(day.photos);
+        else if (Array.isArray(day.images) && day.images.length) photos = this._normalizePhotos(day.images);
         else if (typeof day.image === 'string' && day.image) photos = [day.image];
         else if (typeof day.photo === 'string' && day.photo) photos = [day.photo];
         
@@ -423,12 +447,13 @@
      */
     _normalizeStepsFromTemp: function(rawSteps, placesObj = {}) {
       return rawSteps.map((s, idx) => {
+        // Photos : gere tous les formats
         let photos = [];
-        if (Array.isArray(s.images) && s.images.length) photos = s.images;
-        else if (Array.isArray(s.photos) && s.photos.length) photos = s.photos;
+        if (Array.isArray(s.images) && s.images.length) photos = this._normalizePhotos(s.images);
+        else if (Array.isArray(s.photos) && s.photos.length) photos = this._normalizePhotos(s.photos);
         else if (s.image) photos = [s.image];
         else if (s.photo) photos = [s.photo];
-        else if (s.placeId && placesObj[s.placeId]?.photos) photos = placesObj[s.placeId].photos;
+        else if (s.placeId && placesObj[s.placeId]?.photos) photos = this._normalizePhotos(placesObj[s.placeId].photos);
         
         let visits = [];
         let activities = [];
@@ -603,7 +628,9 @@
     getPhotosForPlace: function(pid) {
       if (!pid || !window.PHOTOS_CACHE) return [];
       const entry = window.PHOTOS_CACHE[pid];
-      return entry?.photos || entry?.images || [];
+      if (!entry) return [];
+      // Normalise : accepte string[] (ancien) ou {url,caption,keyword}[] (nouveau R2)
+      return this._normalizePhotos(entry.photos || entry.images || []);
     },
 
     /**
@@ -630,7 +657,7 @@
       
       for (const key of keys) {
         if (window.PHOTOS_CACHE[key]?.photos?.length) {
-          return window.PHOTOS_CACHE[key].photos;
+          return this._normalizePhotos(window.PHOTOS_CACHE[key].photos);
         }
       }
       
@@ -641,7 +668,7 @@
       });
       
       if (found && window.PHOTOS_CACHE[found]?.photos?.length) {
-        return window.PHOTOS_CACHE[found].photos;
+        return this._normalizePhotos(window.PHOTOS_CACHE[found].photos);
       }
       
       return [];
@@ -705,6 +732,8 @@
   global.getPhotosForPlace = global.getPhotosForPlace || ORT_DATA_LOADER.getPhotosForPlace.bind(ORT_DATA_LOADER);
   global.findPhotosForPlace = global.findPhotosForPlace || ORT_DATA_LOADER.findPhotosForPlace.bind(ORT_DATA_LOADER);
   global.loadPhotosCache = global.loadPhotosCache || ORT_DATA_LOADER.loadPhotosCache.bind(ORT_DATA_LOADER);
+  // Utilitaire de normalisation photos (gere les 2 formats : strings anciens et objets R2)
+  global.normalizePhotos = global.normalizePhotos || ORT_DATA_LOADER._normalizePhotos.bind(ORT_DATA_LOADER);
   
   // Initialiser PHOTOS_CACHE si pas déjà fait
   if (!global.PHOTOS_CACHE) global.PHOTOS_CACHE = {};
