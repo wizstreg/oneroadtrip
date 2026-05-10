@@ -201,6 +201,18 @@ main{padding:40px 6%;max-width:1400px;margin:auto;background:rgba(255,255,255,0.
 .itin-themes{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
 .theme-tag{display:inline-block;background:#e8f4fc;color:var(--p);padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:500}
 
+/* Toggle flottant photo / carte */
+#viewToggle{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:none;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:0 4px 14px rgba(17,63,122,.2);padding:4px;gap:0;font-family:inherit}
+#viewToggle.show{display:inline-flex}
+#viewToggle button{background:transparent;border:0;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--gray);transition:all .15s;display:flex;align-items:center;gap:6px}
+#viewToggle button.active{background:var(--p);color:#fff}
+#viewToggle button:hover:not(.active){background:#f0f4f8;color:var(--p)}
+.itin-card-photo.is-map{background-color:#eaf2f8;background-size:cover}
+@media(max-width:768px){
+  #viewToggle{top:8px;padding:3px}
+  #viewToggle button{padding:6px 12px;font-size:.75rem}
+}
+
 /* Loading */
 .loading{text-align:center;padding:60px 20px;color:var(--gray)}
 .loading-spinner{display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--s);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:15px}
@@ -674,7 +686,7 @@ function normalizeCC(cc){
 function buildCard(item){
   var cc = normalizeCC(item.cc);
   var href = '/' + langFolder + '/' + item.slug + '.html';
-  var themes = item.themes || [];
+  var themes = (item.themes || []).concat((item.meta && item.meta.themes) || []);
   var photoUrl = item._photo || '';
   var bgStyle = '';
   if(photoUrl){
@@ -683,8 +695,20 @@ function buildCard(item){
     bgStyle = 'background-image:url(\'' + proxied + '\')';
   }
 
+  /* URL carte : reconstruite depuis cc + slug, pas d'index a charger */
+  /* Le slug front a le prefixe cc en minuscules (ex: 'za-western-cape...'), */
+  /* le fichier carte sur R2 ne l'a pas. On retire ce prefixe si present. */
+  var ccLower = (item.cc || '').toLowerCase();
+  var mapSlug = item.slug;
+  if(ccLower && mapSlug.indexOf(ccLower + '-') === 0){
+    mapSlug = mapSlug.substring(ccLower.length + 1);
+  }
+  /* Translittération ASCII : aligne avec le nommage du script Python (ö->o, ü->u, etc.) */
+  mapSlug = mapSlug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var mapUrl = 'https://photos.oneroadtrip.com/' + (item.cc || '').toUpperCase() + '/maps/' + mapSlug + '.webp';
+
   var html = '<a href="' + href + '" class="itin-card">';
-  html += '<div class="itin-card-photo" style="' + bgStyle + '">';
+  html += '<div class="itin-card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
   html += '<div class="itin-cc-badge">' + cc + '</div>';
   html += '</div>';
   html += '<div class="itin-card-body">';
@@ -758,6 +782,8 @@ function render(){
     html += '</div>';
     main.innerHTML = html;
   }
+  /* Re-evaluer le toggle apres re-render */
+  if(typeof window.__checkScrollToggle === 'function'){ window.__checkScrollToggle(); }
 }
 
 function applyFilters(){
@@ -805,7 +831,8 @@ function applyFilters(){
         /* Also add all i18n labels as matchable */
         var i18nVals = themeDef.i18n || {};
         for(var lk in i18nVals) syns.push(i18nVals[lk].toLowerCase());
-        var itinThemes = (d.themes || []).join('|').toLowerCase();
+        var allThemes = (d.themes || []).concat((d.meta && d.meta.themes) || []);
+        var itinThemes = allThemes.join('|').toLowerCase();
         for(var si=0;si<syns.length;si++){
           if(itinThemes.indexOf(syns[si].toLowerCase()) !== -1){matched=true;break}
         }
@@ -1131,6 +1158,77 @@ Promise.all([
   .catch(function(err){
     document.getElementById('mainContent').innerHTML = '<div class="loading"><p style="color:#c00">Erreur de chargement: ' + err.message + '</p><p style="margin-top:10px"><a href="javascript:location.reload()" style="color:var(--s)">R\u00e9essayer</a></p></div>';
   });
+</script>
+
+<div id="viewToggle" role="group" aria-label="Vue photo ou carte">
+  <button type="button" id="vtPhoto" class="active" aria-pressed="true">📷 Photos</button>
+  <button type="button" id="vtMap" aria-pressed="false">🗺️ Cartes</button>
+</div>
+
+<script>
+/* ========================================================
+   Toggle photo / carte sur les cards itineraires
+   ======================================================== */
+(function(){
+  var toggle = document.getElementById('viewToggle');
+  var btnPhoto = document.getElementById('vtPhoto');
+  var btnMap = document.getElementById('vtMap');
+  if(!toggle || !btnPhoto || !btnMap) return;
+
+  function setMode(mode){
+    btnPhoto.classList.toggle('active', mode === 'photo');
+    btnMap.classList.toggle('active', mode === 'map');
+    btnPhoto.setAttribute('aria-pressed', mode === 'photo');
+    btnMap.setAttribute('aria-pressed', mode === 'map');
+
+    var cards = document.querySelectorAll('.itin-card-photo');
+    for(var i=0;i<cards.length;i++){
+      var c = cards[i];
+      if(mode === 'map'){
+        var mu = c.getAttribute('data-map-url');
+        if(mu){
+          c.style.backgroundImage = 'url(\'' + mu + '\')';
+          c.classList.add('is-map');
+        }
+      } else {
+        var ph = c.getAttribute('data-photo-bg') || '';
+        var match = ph.match(/url\(['"]?(.*?)['"]?\)/);
+        c.style.backgroundImage = match ? 'url(\'' + match[1] + '\')' : '';
+        c.classList.remove('is-map');
+      }
+    }
+  }
+
+  btnPhoto.addEventListener('click', function(){ setMode('photo'); });
+  btnMap.addEventListener('click', function(){ setMode('map'); });
+
+  /* Affichage du toggle :
+     - Apparait quand le premier titre pays atteint le haut de l'ecran
+     - Reste visible tant qu'on est dans la zone resultats (mainContent)
+     - Disparait quand on remonte au-dessus du premier titre, ou en bas */
+  function checkScroll(){
+    var main = document.getElementById('mainContent');
+    if(!main){ toggle.classList.remove('show'); return; }
+    var mainRect = main.getBoundingClientRect();
+    /* En bas de page : on cache */
+    if(mainRect.bottom < 100){ toggle.classList.remove('show'); return; }
+    /* On affiche le toggle des qu'on est arrive a la zone resultats.
+       Seuil souple : top du main < 100px = on a depasse le hero/filters,
+       les cards sont visibles. Marche aussi quand la page filtree est courte
+       et qu'on ne peut pas scroller jusqu'aux titres pays. */
+    if(mainRect.top < 100){
+      toggle.classList.add('show');
+    } else {
+      toggle.classList.remove('show');
+    }
+  }
+  /* Expose pour que render() puisse rappeler */
+  window.__checkScrollToggle = checkScroll;
+  window.addEventListener('scroll', checkScroll, { passive: true });
+  window.addEventListener('resize', checkScroll);
+  setTimeout(checkScroll, 500);
+  setTimeout(checkScroll, 2000);
+})();
 </script>
 
 <!-- Google Analytics -->

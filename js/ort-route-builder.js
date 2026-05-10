@@ -353,20 +353,30 @@ function getMinDistanceToRoute(lat, lon, routeData) {
   return minDist;
 }
 
-// Chercher une place ORT correspondant à une ville (par proximité géographique)
+// Chercher une place ORT correspondant à une ville (par proximité géographique).
+// On ne retourne JAMAIS un POI (site, nature, beach, island, suburb) comme étape :
+// les POI sont des lieux à visiter, pas des étapes.
 function findPlaceByCoords(lat, lon, places, maxDist = 5) {
+  const CITY_TYPES = new Set([
+    'capital','metropolis','large_city','city',
+    'medium_city','small_city','village'
+  ]);
+
   let bestPlace = null;
   let bestDist = maxDist;
-  
+
   for (const pid in places) {
     const p = places[pid];
+    // Filtre dur : on n'accepte que les villes
+    if (!p.place_type || !CITY_TYPES.has(p.place_type)) continue;
+
     const dist = _haversine(lat, lon, p.lat, p.lon || p.lng);
     if (dist < bestDist) {
       bestDist = dist;
       bestPlace = { ...p, pid, _distance: dist };
     }
   }
-  
+
   return bestPlace;
 }
 
@@ -500,8 +510,9 @@ async function selectStepsAlongRoute(config, routeData, places) {
         if (usedPlaces.has(pid)) continue;
         const p = places[pid];
 
-        // Filtre 1 : on ne garde que les villes (pas POI/sites/parcs/plages)
-        if (p.place_type && !CITY_TYPES.has(p.place_type)) continue;
+        // Filtre 1 : on ne garde QUE les villes. Si pas de place_type, on rejette.
+        // Les POI (musées, châteaux, parcs...) ne peuvent jamais être étapes.
+        if (!p.place_type || !CITY_TYPES.has(p.place_type)) continue;
 
         // Position de la place sur la route
         const pProgress = getProgressOnRoute(p.lat, p.lon, routeData);
@@ -551,6 +562,42 @@ async function selectStepsAlongRoute(config, routeData, places) {
     if (!bestPlace) {
       console.log(`[ROUTE-BUILDER]    Rien dans [${minSpacing.toFixed(0)}-${maxSpacingNormal.toFixed(0)}km], élargissement à ${maxSpacingFb.toFixed(0)}km`);
       bestPlace = findBest(maxSpacingFb);
+    }
+
+    // Tentative 3 : fallback Nominatim (reverse geocoding sur le point cible)
+    // Quand le master ORT n'a aucune ville taguée dans la zone, on demande
+    // à OpenStreetMap quelle ville se trouve aux coords du point cible.
+    if (!bestPlace) {
+      console.log(`[ROUTE-BUILDER]    Aucune ville ORT, fallback Nominatim sur ${targetPoint.lat.toFixed(3)},${targetPoint.lon.toFixed(3)}`);
+      const fallbackCity = await findCityFromNominatim(targetPoint.lat, targetPoint.lon);
+      if (fallbackCity) {
+        // Vérifier qu'on respecte quand même la borne mini depuis la précédente
+        // ET vis-à-vis de l'arrivée, pour ne pas casser la régularité.
+        const fbProgress = getProgressOnRoute(fallbackCity.lat, fallbackCity.lon, routeData);
+        const fbFromPrev = fbProgress - prevProgress;
+        const fbToEnd    = endProgress - fbProgress;
+        if (fbFromPrev >= minSpacing && fbToEnd >= minSpacing) {
+          steps.push({
+            name: fallbackCity.name,
+            lat: fallbackCity.lat,
+            lon: fallbackCity.lon,
+            lng: fallbackCity.lon,
+            place_id: `nominatim-${fallbackCity.name.toLowerCase().replace(/\s+/g, '-')}`,
+            rating: 5,
+            visits: [],
+            activities: [],
+            cc: fallbackCity.cc || '',
+            nights: 1,
+            _suggestedDays: 1,
+            _fromNominatim: true
+          });
+          prevProgress = fbProgress;
+          console.log(`[ROUTE-BUILDER] ✅ Nominatim: "${fallbackCity.name}" (à ${fbFromPrev.toFixed(0)}km de la précédente)`);
+          continue; // étape ajoutée, on passe à la suivante
+        } else {
+          console.log(`[ROUTE-BUILDER]    Nominatim "${fallbackCity.name}" hors fenêtre (prev=${fbFromPrev.toFixed(0)}km, end=${fbToEnd.toFixed(0)}km), ignoré`);
+        }
+      }
     }
 
     if (bestPlace) {

@@ -400,17 +400,6 @@
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.08);
             overflow: hidden;
-            position: relative;
-        }
-        /* Séparateur visible entre pages à l'écran (pas à l'impression).
-           On utilise une grosse bordure noire en bas, plus une marge généreuse,
-           pour que la séparation soit vraiment visible. */
-        .page:not(:last-child) {
-            border-bottom: 4px solid #000;
-            margin-bottom: 50px;
-        }
-        @media print {
-            .page { border-bottom: none !important; margin-bottom: 0 !important; }
         }
 
         /* Page de couverture */
@@ -684,222 +673,25 @@
         /* Pages étapes */
         .step-page {
             display: flex;
-            min-height: min(820px, 70vh);
+            min-height: 500px;
         }
+        /* Alternance gauche/droite (sur les étapes paires) */
         .step-page.flip {
             flex-direction: row-reverse;
         }
-        .step-page.layout-top {
-            flex-direction: column;
-        }
 
-        /* Bloc photo : largeur fixe raisonnable, hauteur plafonnée */
         .step-photo {
-            width: 38%;
-            max-width: 440px;
-            min-height: 280px;
-            max-height: 380px;
+            width: 42%;
+            min-height: 500px;
             position: relative;
             overflow: hidden;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding: 12px;
-            box-sizing: border-box;
-            align-self: flex-start;
+            background: #eee;
         }
 
         .step-photo img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            display: block;
-            border-radius: 4px;
-            max-height: 360px;
-        }
-
-        /* === PATTERNS MULTI-PHOTOS (toujours plafonnés à 380px de hauteur totale) === */
-        .step-photo.layout-stack-2 {
-            display: grid;
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
-        }
-        .step-photo.layout-stack-2 img {
-            max-height: 175px;
-        }
-        
-        .step-photo.layout-grid-3 {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
-        }
-        .step-photo.layout-grid-3 img:first-child {
-            grid-row: 1 / span 2;
-            max-height: 360px;
-        }
-        .step-photo.layout-grid-3 img {
-            max-height: 175px;
-        }
-        
-        .step-photo.layout-grid-4 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
-        }
-        .step-photo.layout-grid-4 img {
-            max-height: 175px;
-        }
-        
-        /* Bandeau horizontal : pleine largeur mais petite hauteur */
-        .step-photo.layout-top-strip {
-            width: 100%;
-            max-width: none;
-            min-height: 0;
-            max-height: 220px;
-            height: 220px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 10px;
-            padding: 12px 16px;
-        }
-        .step-photo.layout-top-strip img {
-            max-height: 196px;
-        }
-        .step-photo.layout-top-strip:has(img:nth-child(3):last-child) {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-        .step-photo.layout-top-strip:has(img:nth-child(2):last-child) {
-            grid-template-columns: 1fr 1fr;
-        }
-
-        /* ============================================================
-           PATTERNS MAGAZINE — photo intégrée DANS LE FLUX du texte.
-           La page n'utilise PLUS le split flex 38/58 quand un pattern
-           magazine est actif. Voir .step-page.layout-mag.
-           ============================================================ */
-
-        /* Page magazine : un seul bloc plein largeur, texte continu */
-        .step-page.layout-mag {
-            flex-direction: column;
-            padding: 32px 56px 28px 56px;
-            box-sizing: border-box;
-            display: block; /* écrase le display:flex parent pour que les floats fonctionnent */
-        }
-        .step-page.layout-mag .step-content {
-            width: 100%;
-            padding: 0;
-            display: block; /* PAS de flex : sinon les floats sont ignorés */
-            overflow: visible;
-        }
-        .step-page.layout-mag .step-title {
-            margin-top: 6px;
-        }
-
-        /* Photos intégrées : conteneur figure */
-        .mag-figure {
-            margin: 6px 0 14px 0;
-            box-sizing: border-box;
-            page-break-inside: avoid;
-            break-inside: avoid;
-        }
-        .mag-figure img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 4px;
-        }
-        .mag-figure figcaption {
-            font-size: 0.78rem;
-            color: #6b7280;
-            margin-top: 6px;
-            font-style: italic;
-            line-height: 1.3;
-        }
-
-        /* Pattern A : photo flottée à GAUCHE, texte coule à droite */
-        .mag-figure.mag-inset-left {
-            float: left;
-            width: 46%;
-            margin: 4px 22px 10px 0;
-            aspect-ratio: 4 / 3;
-        }
-        .mag-figure.mag-inset-left img { aspect-ratio: 4 / 3; }
-
-        /* Pattern B : photo flottée à DROITE */
-        .mag-figure.mag-inset-right {
-            float: right;
-            width: 46%;
-            margin: 4px 0 10px 22px;
-            aspect-ratio: 4 / 3;
-        }
-        .mag-figure.mag-inset-right img { aspect-ratio: 4 / 3; }
-
-        /* Pattern C : photo HÉROS pleine largeur, ratio panoramique */
-        .mag-figure.mag-hero {
-            width: 100%;
-            aspect-ratio: 16 / 7;
-            margin: 4px 0 16px 0;
-        }
-        .mag-figure.mag-hero img { aspect-ratio: 16 / 7; }
-
-        /* Pattern D : DUO de photos côte à côte intégrées dans le texte */
-        .mag-figure.mag-duo {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 10px 0 16px 0;
-        }
-        .mag-figure.mag-duo .mag-photo {
-            aspect-ratio: 4 / 3;
-            overflow: hidden;
-            border-radius: 4px;
-        }
-        .mag-figure.mag-duo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            aspect-ratio: 4 / 3;
-        }
-
-        /* Pattern E : TRIO — 1 grande à gauche + 2 petites empilées à droite */
-        .mag-figure.mag-trio {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 10px;
-            aspect-ratio: 16 / 7;
-            margin: 10px 0 16px 0;
-        }
-        .mag-figure.mag-trio .mag-photo:first-child {
-            grid-row: 1 / span 2;
-        }
-        .mag-figure.mag-trio .mag-photo {
-            overflow: hidden;
-            border-radius: 4px;
-        }
-        .mag-figure.mag-trio img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Clearfix après les flottants pour que les blocs suivants
-           (next-step-info, hotels, bookings) ne se collent pas à la photo. */
-        .step-page.layout-mag .step-content::after {
-            content: '';
-            display: block;
-            clear: both;
-        }
-        .mag-clear {
-            clear: both;
-            display: block;
-            height: 0;
         }
 
         .step-no-photo {
@@ -918,19 +710,6 @@
             padding: 28px 32px;
             display: flex;
             flex-direction: column;
-            min-width: 0; /* permet aux enfants flex/grid de respecter la largeur */
-            overflow: hidden;
-        }
-        /* Le bloc hôtels (rendu par ORT_HOTELS) peut être plus large que la zone.
-           On l'autorise à scroller horizontalement plutôt qu'à déborder. */
-        .step-content .hotels-section-editor {
-            max-width: 100%;
-            overflow-x: auto;
-            overflow-y: visible;
-        }
-        /* En layout colonne (photo en haut), step-content prend toute la largeur */
-        .step-page.layout-top .step-content {
-            width: 100%;
         }
         
         /* Bandeau de mini-photos additionnelles en bas du contenu */
@@ -1050,23 +829,8 @@
         
         .continuation-page .step-photo {
             width: 100%;
-            height: 200px;
-            min-height: 200px;
-            max-height: 200px;
-            padding: 14px 18px;
-        }
-        .continuation-page .step-photo img {
-            object-position: center 35%;
-            max-height: 172px;
-        }
-        /* Bandeau de plusieurs photos sur page de continuation */
-        .continuation-page .step-photo.layout-cont-strip {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr 1.2fr;
-            gap: 14px;
-        }
-        .continuation-page .step-photo.layout-cont-strip:has(img:nth-child(2):last-child) {
-            grid-template-columns: 1.4fr 1fr;
+            height: 80px;
+            min-height: 80px;
         }
         
         .continuation-page .step-content {
@@ -1298,65 +1062,22 @@
             margin: 0 0 18px 0;
             border-bottom: 2px solid #113f7a;
             padding-bottom: 8px;
-            text-align: center;
         }
         .map-container {
             flex: 1;
             background: #f1f5f9;
             border-radius: 8px;
             overflow: hidden;
-            padding: 0;
-            max-width: 1100px;
-            width: 100%;
-            margin: 0 auto;
-            min-height: 480px;
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
         }
-        .ort-leaflet-map {
+        .map-container svg {
             width: 100%;
-            height: 480px;
-            border-radius: 8px;
-        }
-        /* Image WebP statique R2 (carte préfabriquée 800×500) */
-        .map-static-img {
-            display: block;
-            width: 100%;
-            max-width: 100%;
             height: auto;
-            aspect-ratio: 8 / 5;
-            object-fit: contain;
-            border-radius: 8px;
-            background: #f1f5f9;
-        }
-        .ort-map-fallback {
-            display: none;
-            flex-direction: column;
-            gap: 6px;
-            padding: 16px;
-            min-height: 480px;
-            justify-content: center;
-        }
-        /* Réaffiché si JS dit "Leaflet a échoué" */
-        .ort-map-fallback.show {
-            display: flex;
-        }
-        .ort-fallback-pt {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 0.95em;
-        }
-        .ort-fallback-num {
-            background: #113f7a;
-            color: #fff;
-            border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.85em;
+            max-height: 100%;
+            display: block;
         }
         .map-legend {
             text-align: center;
@@ -1364,19 +1085,6 @@
             font-size: 0.85em;
             margin-top: 12px;
             font-style: italic;
-        }
-        /* Tooltip Leaflet : style propre cohérent */
-        .leaflet-tooltip.ort-tt {
-            background: #fff;
-            color: #1e293b;
-            border: 1px solid #e5e9ee;
-            border-radius: 6px;
-            padding: 6px 10px;
-            font-size: 0.85em;
-            box-shadow: 0 2px 8px rgba(0,0,0,.15);
-        }
-        .leaflet-tooltip.ort-tt strong {
-            color: #113f7a;
         }
 
         /* ===========================================
@@ -1670,141 +1378,27 @@
             }
 
             .step-photo {
-                width: 110mm !important;
-                max-width: 110mm !important;
-                height: auto !important;
-                max-height: 130mm !important;
-                min-height: 90mm !important;
+                width: 148.5mm !important;
+                height: 210mm !important;
                 flex: none !important;
-                align-self: flex-start !important;
                 overflow: hidden !important;
-                padding: 4mm !important;
             }
 
             .step-photo img {
-                width: 100% !important;
-                height: 100% !important;
-                max-height: 122mm !important;
+                width: 148.5mm !important;
+                height: 210mm !important;
                 object-fit: cover !important;
-            }
-            
-            /* Multi-photos en impression : grilles plafonnées aussi */
-            .step-photo.layout-stack-2 img,
-            .step-photo.layout-grid-3 img:not(:first-child),
-            .step-photo.layout-grid-4 img {
-                max-height: 60mm !important;
-            }
-            .step-photo.layout-top-strip {
-                width: 100% !important;
-                max-width: none !important;
-                height: 60mm !important;
-                max-height: 60mm !important;
-                min-height: 60mm !important;
-            }
-            .step-photo.layout-top-strip img {
-                max-height: 56mm !important;
-            }
-
-            /* ============================================================
-               PATTERNS MAGAZINE en impression A4 paysage (297×210mm)
-               ============================================================ */
-            .step-page.layout-mag {
-                flex-direction: column !important;
-                padding: 12mm 18mm 10mm 18mm !important;
-                display: block !important;
-            }
-            .step-page.layout-mag .step-content {
-                width: 100% !important;
-                height: auto !important;
-                flex: 1 !important;
-                padding: 0 !important;
-                display: block !important;
-                overflow: visible !important;
-            }
-            .mag-figure {
-                margin: 2mm 0 4mm 0 !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-            .mag-figure img {
-                width: 100% !important;
-                height: 100% !important;
-                object-fit: cover !important;
-                border-radius: 1.5mm !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .mag-figure figcaption {
-                font-size: 7.5pt !important;
-                color: #6b7280 !important;
-                margin-top: 1.5mm !important;
-                font-style: italic !important;
-            }
-            .mag-figure.mag-inset-left {
-                float: left !important;
-                width: 46% !important;
-                margin: 1mm 6mm 3mm 0 !important;
-                aspect-ratio: 4 / 3 !important;
-            }
-            .mag-figure.mag-inset-right {
-                float: right !important;
-                width: 46% !important;
-                margin: 1mm 0 3mm 6mm !important;
-                aspect-ratio: 4 / 3 !important;
-            }
-            .mag-figure.mag-hero {
-                width: 100% !important;
-                aspect-ratio: 16 / 7 !important;
-                margin: 2mm 0 5mm 0 !important;
-            }
-            .mag-figure.mag-duo {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                gap: 4mm !important;
-                margin: 3mm 0 5mm 0 !important;
-            }
-            .mag-figure.mag-duo .mag-photo {
-                aspect-ratio: 4 / 3 !important;
-                overflow: hidden !important;
-                border-radius: 1.5mm !important;
-            }
-            .mag-figure.mag-trio {
-                width: 100% !important;
-                display: grid !important;
-                grid-template-columns: 1.6fr 1fr !important;
-                grid-template-rows: 1fr 1fr !important;
-                gap: 3mm !important;
-                aspect-ratio: 16 / 7 !important;
-                margin: 3mm 0 5mm 0 !important;
-            }
-            .mag-figure.mag-trio .mag-photo:first-child {
-                grid-row: 1 / span 2 !important;
-            }
-            .mag-figure.mag-trio .mag-photo {
-                overflow: hidden !important;
-                border-radius: 1.5mm !important;
-            }
-            .step-page.layout-mag .step-content::after {
-                content: '' !important;
-                display: block !important;
-                clear: both !important;
-            }
-            .mag-clear {
-                clear: both !important;
-                display: block !important;
-                height: 0 !important;
             }
 
             .step-no-photo {
-                width: 110mm !important;
-                height: 130mm !important;
+                width: 148.5mm !important;
+                height: 210mm !important;
             }
 
             .step-content {
-                width: auto !important;
-                flex: 1 !important;
+                width: 148.5mm !important;
                 height: 210mm !important;
+                flex: none !important;
                 padding: 12mm 15mm !important;
                 display: flex !important;
                 flex-direction: column !important;
@@ -2158,41 +1752,9 @@
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
-            /* À l'impression, on bascule sur la liste textuelle des étapes
-               (Leaflet ne s'imprime pas bien : les tuiles asynchrones sont rarement chargées) */
-            .ort-leaflet-map {
-                display: none !important;
-            }
-            /* Image WebP statique R2 : impeccable en print */
-            .map-static-img {
-                display: block !important;
+            .map-container svg {
                 width: 100% !important;
-                max-width: 240mm !important;
-                height: auto !important;
-                aspect-ratio: 8 / 5 !important;
-                object-fit: contain !important;
-                border-radius: 2pt !important;
-                margin: 0 auto !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .ort-map-fallback {
-                display: flex !important;
-                flex-direction: column !important;
-                gap: 4mm !important;
-                padding: 8mm !important;
-                min-height: auto !important;
-            }
-            .ort-fallback-pt {
-                font-size: 11pt !important;
-                gap: 5mm !important;
-            }
-            .ort-fallback-num {
-                width: 22pt !important;
-                height: 22pt !important;
-                font-size: 10pt !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                height: 100% !important;
             }
             .map-legend {
                 font-size: 9pt !important;
@@ -2810,24 +2372,12 @@
         async function loadCountryPhotos(cc) {
             try {
                 const url = `./data/Roadtripsprefabriques/countries/${cc.toLowerCase()}/${cc.toLowerCase()}.photos.cache.json`;
-                console.log(`[CARNET-BOLD-DEBUG] Tentative chargement countryPhotos: ${url}`);
                 const res = await fetch(url);
-                console.log(`[CARNET-BOLD-DEBUG] HTTP status: ${res.status}`);
                 if (res.ok) {
                     countryPhotosCache = await res.json() || {};
-                    const keys = Object.keys(countryPhotosCache);
-                    console.log(`[CARNET-BOLD-DEBUG] Photos pays chargées: ${keys.length} lieux`);
-                    console.log(`[CARNET-BOLD-DEBUG] Premiers lieux:`, keys.slice(0, 5));
-                    if (keys.length > 0) {
-                        const first = countryPhotosCache[keys[0]];
-                        console.log(`[CARNET-BOLD-DEBUG] Échantillon premier lieu:`, first);
-                    }
-                } else {
-                    console.warn(`[CARNET-BOLD-DEBUG] Échec chargement countryPhotos (HTTP ${res.status})`);
+                    console.log(`[CARNET] Photos pays chargées: ${Object.keys(countryPhotosCache).length} lieux`);
                 }
-            } catch(e) {
-                console.error(`[CARNET-BOLD-DEBUG] Erreur chargement countryPhotos:`, e);
-            }
+            } catch(e) {}
         }
         
         // Master des places (rating, place_type, etc.) — par pays + langue
@@ -2985,10 +2535,7 @@
                 const needsSubtitle = !tripData.subtitle;
                 const needsThemes = !Array.isArray(tripData.themes) || tripData.themes.length === 0;
                 const needsNotes = !tripData.notes;
-                // On déclenche TOUJOURS l'enrichissement pour récupérer aussi les
-                // map_keywords par étape (utilisés pour le matching gras).
-                const needsKeywords = !tripData.steps.some(s => Array.isArray(s._mapKeywords) && s._mapKeywords.length > 0);
-                if (needsSubtitle || needsThemes || needsNotes || needsKeywords) {
+                if (needsSubtitle || needsThemes || needsNotes) {
                     // Identifier l'itin avec un ordre de priorité robuste
                     const originalItinId = tripData._originalItinId
                         || (tripData._itinRef && tripData._itinRef.itin)
@@ -3034,29 +2581,6 @@
                                             tripData.notes = it.notes;
                                             console.log('[CARNET] Notes enrichies');
                                         }
-                                        // Récupérer les map_keywords depuis days_plan[i].night
-                                        // Structure réelle : it.days_plan = [{day, night: {place_id, map_keywords}}, ...]
-                                        const itinDays = it.days_plan || it.nights || it.days || [];
-                                        if (Array.isArray(itinDays) && itinDays.length > 0) {
-                                            const kwByPlace = {};
-                                            itinDays.forEach(d => {
-                                                const night = d?.night || d;
-                                                const pid = night?.place_id || d?.place_id;
-                                                const kws = night?.map_keywords || d?.map_keywords;
-                                                if (pid && Array.isArray(kws) && kws.length > 0) {
-                                                    if (!kwByPlace[pid]) kwByPlace[pid] = [];
-                                                    kws.forEach(k => { if (k && !kwByPlace[pid].includes(k)) kwByPlace[pid].push(k); });
-                                                }
-                                            });
-                                            let attached = 0;
-                                            tripData.steps.forEach(s => {
-                                                if (s.place_id && kwByPlace[s.place_id]) {
-                                                    s._mapKeywords = kwByPlace[s.place_id];
-                                                    attached++;
-                                                }
-                                            });
-                                            console.log(`[CARNET] map_keywords attachés à ${attached}/${tripData.steps.length} étapes (${Object.keys(kwByPlace).length} lieux dans days_plan)`);
-                                        }
                                         break;
                                     } else {
                                         console.log('[CARNET] Itin non trouvé. id cherché:', originalItinId, '| titre cherché:', refTitle);
@@ -3070,26 +2594,12 @@
                 }
                 
                 // Charger le master des places pour les ratings (fallback si step.rating manque)
-                // cc : prendre la même logique que pour l'enrichissement plus haut
-                const ccForLoad = (tripData.country)
-                    || (tripData._itinRef && tripData._itinRef.country)
-                    || (typeof tripData._originalItinId === 'string' && tripData._originalItinId.includes('::')
-                        ? tripData._originalItinId.split('::')[0]
-                        : '')
-                    || urlParams.get('cc')
-                    || '';
-                console.log(`[CARNET-BOLD-DEBUG] ccForLoad calculé: "${ccForLoad}", _originalItinId: "${tripData._originalItinId}", country: "${tripData.country}"`);
-                if (ccForLoad) {
+                if (tripData.country) {
                     const lang = urlParams.get('lang') || localStorage.getItem('lang') || 'fr';
-                    await loadPlacesMaster(ccForLoad, lang);
+                    await loadPlacesMaster(tripData.country, lang);
                     if (Object.keys(placesMasterCache).length === 0 && lang !== 'fr') {
-                        await loadPlacesMaster(ccForLoad, 'fr');
+                        await loadPlacesMaster(tripData.country, 'fr');
                     }
-                    // Charger aussi le cache photos pays — contient les keywords/captions
-                    // nécessaires pour le matching gras + le choix des photos par visite.
-                    await loadCountryPhotos(ccForLoad);
-                } else {
-                    console.warn(`[CARNET-BOLD-DEBUG] PAS DE ccForLoad ! Pas de chargement photos pays.`);
                 }
             }
             
@@ -3224,40 +2734,6 @@
             }
         }
         
-        // Détecteur de photo d'hôtel/booking (URL + mots-clés caption).
-        // Renvoie true si la photo doit être EXCLUE du carnet.
-        function isHotelPhoto(entry) {
-            if (!entry) return false;
-            let url = '';
-            let caption = '';
-            let keyword = '';
-            if (typeof entry === 'string') {
-                url = entry;
-            } else if (typeof entry === 'object') {
-                url = entry.url || entry.src || entry.photo || '';
-                caption = (entry.caption || '').toLowerCase();
-                keyword = (entry.keyword || '').toLowerCase();
-            }
-            if (typeof url !== 'string') return false;
-            const u = url.toLowerCase();
-            // Domaines / chemins typiques de plateformes hôtelières
-            const hotelHosts = [
-                'cf.bstatic.com', 'q-xx.bstatic.com', 'r-xx.bstatic.com',
-                'aff.bstatic.com', 'bstatic.com',
-                'booking.com', 'expedia.com', 'expedia.fr', 'media.expedia',
-                'agoda.net', 'agoda.com',
-                'hotels.com', 'mediaim.expedia',
-                'trivago', 'kayak', 'hostelworld', 'airbnb',
-                'mr.booking.com'
-            ];
-            if (hotelHosts.some(h => u.includes(h))) return true;
-            if (u.includes('/hotel/') || u.includes('/hotels/') || u.includes('/property/') ||
-                u.includes('/lodging/') || u.includes('hotel-photos') || u.includes('hotelimages')) return true;
-            const text = caption + ' ' + keyword;
-            if (/\b(hotel|h[oô]tel|chambre|bedroom|guestroom|suite|lobby|reception|r[eé]ception|breakfast room|salle de bain|bathroom|hostel|auberge de jeunesse|resort room)\b/.test(text)) return true;
-            return false;
-        }
-
         function getPhotos(step) {
             const seen = new Set();
             const photos = [];
@@ -3266,11 +2742,6 @@
             const addPhoto = (url) => {
                 if (url && typeof url === 'string' && !seen.has(url) && 
                     !url.includes('default-roadtrip')) {
-                    // FILTRE HOTEL : rejet des chambres/booking
-                    if (isHotelPhoto(url)) {
-                        console.log('[CARNET-FILTER] Photo hôtel rejetée:', url.slice(0, 80));
-                        return;
-                    }
                     // Accepter: http(s), data:image (base64), wikimedia, unsplash, googleusercontent
                     const isValid = url.startsWith('http') || 
                                     url.startsWith('data:image') || 
@@ -3308,66 +2779,7 @@
             
             return photos;
         }
-
-        /**
-         * Retourne les photos d'une étape sous forme RICHE (objets avec
-         * url/caption/keyword/author), ou avec juste {url} pour les sources
-         * simples (Pexels au format string). Préserve les keywords pour
-         * permettre le matching avec le texte des visites.
-         */
-        function getRichPhotos(step) {
-            const seen = new Set();
-            const out = [];
-            const isValidUrl = (url) => {
-                if (!url || typeof url !== 'string') return false;
-                if (url.includes('default-roadtrip')) return false;
-                return url.startsWith('http') ||
-                       url.startsWith('data:image') ||
-                       url.includes('wikimedia') ||
-                       url.includes('unsplash') ||
-                       url.includes('googleusercontent');
-            };
-            const addRich = (entry, source) => {
-                if (!entry) return;
-                // FILTRE HOTEL en amont (utilise URL + caption + keyword)
-                if (isHotelPhoto(entry)) {
-                    const dbgUrl = typeof entry === 'string' ? entry : (entry.url || entry.src || '');
-                    console.log('[CARNET-FILTER] Rich photo hôtel rejetée:', String(dbgUrl).slice(0, 80));
-                    return;
-                }
-                let url = null, keyword = null, caption = null, author = null;
-                if (typeof entry === 'string') {
-                    url = entry;
-                } else if (typeof entry === 'object') {
-                    url = entry.url || entry.src || entry.photo;
-                    keyword = entry.keyword || null;
-                    caption = entry.caption || null;
-                    author = entry.author || null;
-                }
-                if (!isValidUrl(url) || seen.has(url)) return;
-                seen.add(url);
-                out.push({ url, keyword, caption, author, _source: source });
-            };
-
-            // 1. Photos utilisateur (priorité max, pas de keywords)
-            if (step.userPhotos?.length) step.userPhotos.forEach(p => addRich(p, 'user'));
-            addRich(step.photo, 'step');
-            if (step.photos?.length) step.photos.forEach(p => addRich(p, 'step'));
-            if (step.images?.length) step.images.forEach(p => addRich(p, 'step'));
-
-            // 2. Photos du catalogue — on cherche dans photosCache ET countryPhotosCache
-            //    qui peuvent contenir des objets riches.
-            const placeId = step.place_id;
-            if (placeId && photosCache[placeId]?.photos) {
-                photosCache[placeId].photos.forEach(p => addRich(p, 'cache'));
-            }
-            if (placeId && countryPhotosCache[placeId]?.photos) {
-                countryPhotosCache[placeId].photos.forEach(p => addRich(p, 'country'));
-            }
-
-            return out;
-        }
-
+        
         // ===== GÉNÉRATION PAGE RÉSERVATIONS =====
         function generateBookingsPage(tripData, steps, t) {
             const travelBookings = tripData.travelBookings || [];
@@ -3659,328 +3071,82 @@
         }
         
         /**
-         * Met en gras dans un texte les expressions correspondant à une liste
-         * de termes connus (noms de lieux, monuments, places). Approche simple :
-         *   - On reçoit une liste de termes (strings) extraits des keywords des
-         *     photos de l'étape + nom de l'étape.
-         *   - On normalise (sans accents, sans casse, sans ponctuation parasite).
-         *   - On cherche chaque terme dans le texte ; s'il match, on entoure
-         *     l'occurrence ORIGINALE de <strong>...</strong>.
-         *   - Pas d'heuristique majuscule. Pas de keyword → rien en gras.
-         *
-         * Prend un texte DÉJÀ esc-encodé. Renvoie du HTML avec <strong>.
+         * Génère une page carte SVG avec les étapes positionnées
+         * sur leurs coordonnées GPS, reliées par un tracé.
+         * Renvoie '' si aucune étape n'a de coordonnées valides.
          */
-        function normalizeForMatch(s) {
-            if (!s) return '';
-            return s
-                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // sans accents
-                .toLowerCase()
-                .replace(/[''`]/g, "'")
-                .replace(/[^a-z0-9'\s-]/g, ' ')                    // ponctuation → espace
-                .replace(/\s+/g, ' ')
-                .trim();
-        }
-
-        /**
-         * Extrait les termes "boldifiables" depuis les photos riches d'une étape
-         * + le nom de l'étape lui-même. Filtre les termes parasites.
-         */
-        function extractBoldTerms(step, richPhotos) {
-            const terms = new Set();
-            // 1. Nom de l'étape
-            if (step && step.name) terms.add(String(step.name).trim());
-
-            // 2. PRIORITÉ : map_keywords du JSON itin (propres, sans emoji)
-            //    attachés à chaque step lors de l'enrichissement.
-            if (step && Array.isArray(step._mapKeywords)) {
-                step._mapKeywords.forEach(kw => {
-                    if (!kw || typeof kw !== 'string') return;
-                    const clean = kw.trim();
-                    if (clean.length >= 3) terms.add(clean);
-                });
-            }
-
-            // 3. Fallback : keywords des photos (si pas de map_keywords)
-            if (Array.isArray(richPhotos)) {
-                richPhotos.forEach(p => {
-                    if (!p || typeof p !== 'object') return;
-                    let kw = p.keyword;
-                    if (!kw || typeof kw !== 'string') return;
-                    // Retirer tout ce qui n'est ni lettre ni chiffre en début (emoji,
-                    // variation selectors, "?", espaces, ponctuation)
-                    kw = kw.replace(/^[^\p{L}\p{N}]+/u, '').trim();
-                    // Retirer les suffixes parasites genre " (BO)", " (GPS)"
-                    kw = kw.replace(/\s*\([^)]*\)\s*$/, '').trim();
-                    // Filtrer les keywords poubelle
-                    const low = kw.toLowerCase();
-                    if (!kw || low.includes('autour du lieu') || low.includes('gps')) return;
-                    if (kw.length < 3) return;
-                    terms.add(kw);
-                });
-            }
-
-            // Trier par longueur décroissante : on matche d'abord les expressions
-            // longues pour ne pas que "Copacabana" mange "Notre-Dame de Copacabana"
-            return Array.from(terms).sort((a, b) => b.length - a.length);
-        }
-
-        /**
-         * Met en gras les termes connus dans un texte échappé.
-         * @param {string} escapedText - texte HTML-échappé
-         * @param {string[]} terms - termes à boldifier (ordre déjà trié desc par longueur)
-         */
-        function boldifyByKeywords(escapedText, terms) {
-            if (!escapedText || typeof escapedText !== 'string') return escapedText;
-            if (!Array.isArray(terms) || terms.length === 0) return escapedText;
-
-            // On travaille avec une représentation "normalisée + index" pour
-            // localiser les matches, puis on découpe le texte original.
-            const orig = escapedText;
-            const normFull = normalizeForMatch(orig);
-            // On a besoin de la correspondance position normalisée → position originale.
-            // Pour simplifier : on fait un mapping caractère-par-caractère pendant la
-            // normalisation (en parallèle).
-            // Implémentation : on construit en parallèle de la normalisation un
-            // tableau positions[i] = position originale du i-ème char normalisé.
-            const norm = [];
-            const positions = [];
-            // On reproduit la logique de normalizeForMatch caractère par caractère
-            for (let i = 0; i < orig.length; i++) {
-                const ch = orig[i];
-                const decomp = ch.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-                if (!decomp) continue;
-                for (let k = 0; k < decomp.length; k++) {
-                    let c = decomp[k].toLowerCase();
-                    if (c === '\u2019' || c === '`') c = "'";
-                    // ponctuation → espace
-                    if (!/[a-z0-9'\s-]/.test(c)) c = ' ';
-                    norm.push(c);
-                    positions.push(i); // position dans `orig`
-                }
-            }
-            // Collapse espaces multiples (en gardant la position d'origine du 1er espace)
-            const norm2 = [];
-            const pos2 = [];
-            for (let i = 0; i < norm.length; i++) {
-                if (norm[i] === ' ' && (norm2.length === 0 || norm2[norm2.length - 1] === ' ')) continue;
-                norm2.push(norm[i]);
-                pos2.push(positions[i]);
-            }
-            const normStr = norm2.join('');
-
-            // Tableau de "ranges déjà boldifiés" pour ne pas re-matcher dedans
-            const taken = []; // chaque entrée : [origStart, origEndExclusive]
-            const overlaps = (a, b) => taken.some(([s, e]) => !(b <= s || a >= e));
-
-            // Pour chaque terme, on cherche toutes les occurrences dans normStr.
-            // On utilise des limites de mots (espace ou bord) pour éviter de matcher
-            // "paz" dans "lapaz" si jamais.
-            const matches = []; // {origStart, origEnd, term}
-            terms.forEach(term => {
-                const tn = normalizeForMatch(term);
-                if (!tn) return;
-                // recherche toutes occurrences
-                let from = 0;
-                while (from <= normStr.length - tn.length) {
-                    const idx = normStr.indexOf(tn, from);
-                    if (idx === -1) break;
-                    // word boundary : char avant + char après
-                    const before = idx === 0 ? ' ' : normStr[idx - 1];
-                    const after = idx + tn.length >= normStr.length ? ' ' : normStr[idx + tn.length];
-                    const isBoundary = (c) => !/[a-z0-9]/.test(c);
-                    if (isBoundary(before) && isBoundary(after)) {
-                        // Convertir en positions dans `orig`
-                        const origStart = pos2[idx];
-                        // origEnd = position du dernier char +1
-                        const lastNormIdx = idx + tn.length - 1;
-                        const origEndExclusive = pos2[lastNormIdx] + 1;
-                        if (!overlaps(origStart, origEndExclusive)) {
-                            matches.push({ origStart, origEnd: origEndExclusive, term });
-                            taken.push([origStart, origEndExclusive]);
-                        }
-                    }
-                    from = idx + 1;
-                }
+        function generateMapPage(steps, t) {
+            // Filtrer les étapes avec des coordonnées valides
+            // (et dédupliquer les places identiques pour éviter les pastilles superposées)
+            const seen = new Set();
+            const points = [];
+            steps.forEach((s, i) => {
+                const lat = parseFloat(s.lat);
+                const lon = parseFloat(s.lon);
+                if (!isFinite(lat) || !isFinite(lon)) return;
+                const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                points.push({ idx: i, name: s.name || `Étape ${i+1}`, lat, lon, num: points.length + 1 });
             });
-
-            if (matches.length === 0) return orig;
-
-            // Trier les matches par origStart croissant
-            matches.sort((a, b) => a.origStart - b.origStart);
-
-            // Reconstruire le texte avec <strong>
-            let out = '';
-            let cursor = 0;
-            for (const m of matches) {
-                if (m.origStart < cursor) continue; // sécurité
-                out += orig.slice(cursor, m.origStart);
-                out += '<strong>' + orig.slice(m.origStart, m.origEnd) + '</strong>';
-                cursor = m.origEnd;
-            }
-            out += orig.slice(cursor);
-            return out;
-        }
-
-        /**
-         * Wrapper de compatibilité : remplace l'ancien boldifyProperNouns.
-         * Si on n'a pas de termes connus pour cette étape, ne fait rien.
-         */
-        function boldifyProperNouns(escapedText, terms) {
-            // Bold automatique désactivé — on retourne le texte tel quel.
-            return escapedText;
-        }
-        /**
-         * Génère une vraie page carte Leaflet (tuiles CartoCDN Voyager).
-         * Identique aux pages statiques (template-v3.js).
-         * Renvoie '' si moins de 2 étapes avec coords valides.
-         */
-        /**
-         * Construit l'URL R2 d'une carte WebP préfabriquée à partir d'un itin_id.
-         * Reproduit strictement la fonction slug() de generate-v3.js.
-         */
-        function buildMapUrlFromItinId(itinId) {
-            if (!itinId || typeof itinId !== 'string') return null;
-            // 1. Slug naïf : lowercase + non-alphanum -> tiret + collapse
-            let s = itinId.toLowerCase()
-                .replace(/::/g, '-')
-                .replace(/[^a-z0-9-]/g, '-')
-                .replace(/-+/g, '-')
-                .replace(/^-|-$/g, '');
-            // 2. Retirer le préfixe code pays
-            const cc = itinId.split('::')[0].toLowerCase();
-            if (s.startsWith(cc + '-')) s = s.slice(cc.length + 1);
-            if (!cc || !s) return null;
-            return `https://photos.oneroadtrip.com/${cc.toUpperCase()}/maps/${s}.webp`;
-        }
-
-        function generateMapPage(steps, t, tripData) {
-            // On affiche la carte UNIQUEMENT si une carte préfabriquée existe sur R2.
-            // Sinon, pas de page carte du tout (pas de Leaflet, pas de fallback liste).
-            const itinId = tripData && tripData._originalItinId;
-            const mapUrl = buildMapUrlFromItinId(itinId);
-            if (!mapUrl) {
-                console.log('[CARNET-MAP] Pas de _originalItinId, pas de page carte');
-                return '';
-            }
-            console.log('[CARNET-MAP] Tentative chargement carte R2:', mapUrl);
+            if (points.length < 2) return '';
+            
+            // Calcul de la bbox avec une marge
+            const lats = points.map(p => p.lat);
+            const lons = points.map(p => p.lon);
+            const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+            const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+            const padLat = Math.max(0.5, (maxLat - minLat) * 0.15);
+            const padLon = Math.max(0.5, (maxLon - minLon) * 0.15);
+            const bbox = {
+                minLat: minLat - padLat,
+                maxLat: maxLat + padLat,
+                minLon: minLon - padLon,
+                maxLon: maxLon + padLon
+            };
+            
+            // Conversion lat/lon → coordonnées SVG (W=900, H=520)
+            const W = 900, H = 520;
+            const project = (lat, lon) => {
+                const x = ((lon - bbox.minLon) / (bbox.maxLon - bbox.minLon)) * W;
+                // SVG y est inversé : le sud va en bas
+                const y = H - ((lat - bbox.minLat) / (bbox.maxLat - bbox.minLat)) * H;
+                return { x, y };
+            };
+            
+            const projected = points.map(p => ({ ...p, ...project(p.lat, p.lon) }));
+            
+            // Tracé entre les points (ligne en pointillés douce)
+            const pathD = projected.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+            
+            // Pastilles numérotées + labels
+            const markers = projected.map(p => {
+                // Décalage vertical du label pour ne pas écraser la pastille
+                const labelY = p.y - 18;
+                return `
+                    <g>
+                        <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="14" fill="#113f7a" stroke="white" stroke-width="2"/>
+                        <text x="${p.x.toFixed(1)}" y="${(p.y + 4).toFixed(1)}" text-anchor="middle" fill="white" font-size="13" font-weight="700" font-family="system-ui,sans-serif">${p.num}</text>
+                        <text x="${p.x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="#1e293b" font-size="11" font-weight="600" font-family="system-ui,sans-serif" stroke="white" stroke-width="3" paint-order="stroke">${esc(p.name)}</text>
+                    </g>
+                `;
+            }).join('');
             
             const title = t('itineraryMap') || '🗺️ Carte du voyage';
-            // L'image se masque elle-même via onerror si le 404 R2 tombe.
-            // Le bloc page entier est masqué via onerror sur l'<img>.
+            
             return `
-                <div class="page map-page" id="mapPageWrap">
+                <div class="page map-page">
                     <h2 class="summary-title">${title}</h2>
                     <div class="map-container">
-                        <img class="map-static-img"
-                             src="${mapUrl}"
-                             alt="${esc(title)}"
-                             onerror="(function(el){console.warn('[CARNET-MAP] Carte R2 introuvable, page masquée'); var p=el.closest('.map-page'); if(p) p.style.display='none';})(this)">
+                        <svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+                            <rect width="${W}" height="${H}" fill="#f1f5f9"/>
+                            <path d="${pathD}" stroke="#113f7a" stroke-width="2.5" stroke-dasharray="6 4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            ${markers}
+                        </svg>
                     </div>
+                    <p class="map-legend">${points.length} ${t('steps').toLowerCase()} · ${t('approxRoute') || 'tracé indicatif'}</p>
                 </div>
             `;
-        }
-        
-        /**
-         * Charge Leaflet (CSS + JS) une seule fois.
-         */
-        function ensureLeaflet() {
-            return new Promise((resolve, reject) => {
-                if (window.L) return resolve();
-                // CSS
-                if (!document.getElementById('leaflet-css')) {
-                    const link = document.createElement('link');
-                    link.id = 'leaflet-css';
-                    link.rel = 'stylesheet';
-                    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                    document.head.appendChild(link);
-                }
-                // JS
-                if (!document.getElementById('leaflet-js')) {
-                    const sc = document.createElement('script');
-                    sc.id = 'leaflet-js';
-                    sc.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                    sc.onload = () => resolve();
-                    sc.onerror = () => reject(new Error('Échec chargement Leaflet'));
-                    document.head.appendChild(sc);
-                } else {
-                    // Le script est en cours de chargement, attendre
-                    const wait = () => {
-                        if (window.L) resolve();
-                        else setTimeout(wait, 80);
-                    };
-                    wait();
-                }
-            });
-        }
-        
-        /**
-         * Initialise la carte Leaflet sur #ortMap avec les points stockés.
-         * Idem template-v3.js : tuiles CartoCDN Voyager + polyline + marqueurs ronds.
-         */
-        async function initLeafletMap() {
-            const div = document.getElementById('ortMap');
-            if (!div) return;
-            const points = window._ortMapPoints || [];
-            if (points.length < 2) return;
-            
-            try {
-                await ensureLeaflet();
-            } catch(e) {
-                console.warn('[CARNET] Leaflet indisponible, fallback liste:', e);
-                const fb = document.getElementById('ortMapFallback');
-                if (fb) fb.classList.add('show');
-                div.style.display = 'none';
-                return;
-            }
-            
-            const map = L.map('ortMap', { scrollWheelZoom: false, zoomControl: true });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                attribution: '© OSM © CARTO',
-                maxZoom: 19
-            }).addTo(map);
-            
-            const latLngs = points.map(p => [p.lat, p.lon]);
-            
-            // Smart bounds (filtrer outliers si >= 3 points)
-            let bounds = L.latLngBounds(latLngs);
-            if (points.length >= 3) {
-                const sortedLat = points.map(p => p.lat).slice().sort((a,b) => a-b);
-                const sortedLon = points.map(p => p.lon).slice().sort((a,b) => a-b);
-                const mi = Math.floor(sortedLat.length / 2);
-                const medLat = sortedLat[mi];
-                const medLon = sortedLon[mi];
-                const main = points.filter(p => Math.abs(p.lat - medLat) < 15 && Math.abs(p.lon - medLon) < 20);
-                if (main.length >= 2 && main.length < points.length) {
-                    bounds = L.latLngBounds(main.map(p => [p.lat, p.lon]));
-                }
-            }
-            
-            // Polyline en pointillés bleu marine entre les étapes
-            L.polyline(latLngs, {
-                color: '#113f7a',
-                weight: 3,
-                opacity: .7,
-                dashArray: '8,6'
-            }).addTo(map);
-            
-            // Marqueurs numérotés
-            points.forEach(p => {
-                const html = `<div style="background:#113f7a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);">${p.num}</div>`;
-                const icon = L.divIcon({ html, className: 'ort-day-marker', iconSize: [28,28], iconAnchor: [14,14] });
-                L.marker([p.lat, p.lon], { icon })
-                    .addTo(map)
-                    .bindTooltip(`<strong>${p.num}. ${p.name.replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))}</strong>`, {
-                        direction: 'top',
-                        offset: [0, -10],
-                        opacity: .95,
-                        className: 'ort-tt'
-                    });
-            });
-            
-            map.fitBounds(bounds.pad(0.1));
-            
-            // Re-render lorsque la carte devient visible (sinon Leaflet calcule mal la taille)
-            setTimeout(() => map.invalidateSize(), 200);
         }
         
         // ===== RENDER =====
@@ -4060,7 +3226,7 @@
                 ` : ''}
             </div>
             
-            ${generateMapPage(steps, t, tripData)}
+            ${generateMapPage(steps, t)}
             
             <!-- PAGE RÉSUMÉ -->
             <div class="page summary-page">
@@ -4112,11 +3278,6 @@
             // Pages étapes - AVEC PAGINATION AUTOMATIQUE SI CONTENU TROP LONG
             // Tracker combien de fois on a vu chaque lieu pour varier les photos
             const placeOccurrences = {};
-            // Tracker GLOBAL des URLs photos déjà utilisées (entre étapes répétées)
-            // pour ne jamais montrer 2 fois la même photo dans le carnet.
-            const usedPhotoUrls = new Set();
-            // Reset du tracker de pattern (pour éviter répétitions consécutives)
-            window.__lastPattern = undefined;
             
             // Configuration pagination - basée sur les CARACTÈRES, pas juste le nombre d'items
             const MAX_CHARS_PAGE1 = 1200;      // Caractères max sur page principale (photo + texte)
@@ -4156,12 +3317,6 @@
             steps.forEach((step, idx) => {
                 // D'abord les photos spécifiques à cette étape (incluant photos utilisateur Firestore)
                 let stepPhotos = getPhotos(step);
-                // Photos riches (avec keyword/caption/author) pour matching gras
-                const richPhotos = getRichPhotos(step);
-                // Termes à mettre en gras (extraits des keywords + nom étape)
-                const boldTerms = extractBoldTerms(step, richPhotos);
-                console.log(`[CARNET-BOLD] Étape ${idx} (${step.name}) place_id=${step.place_id}: ${richPhotos.length} richPhotos, ${boldTerms.length} termes`, 
-                    { keywords: richPhotos.map(p => p.keyword).filter(Boolean), terms: boldTerms });
                 
                 // Compter les occurrences de ce lieu pour varier les photos
                 const placeKey = step.place_id || step.name || idx;
@@ -4172,39 +3327,19 @@
                 // DEBUG: Voir les photos de chaque étape
                 console.log(`[CARNET] Étape ${idx} (${step.name}): ${stepPhotos.length} photos, occurrence ${occurrence}`, stepPhotos.slice(0, 3));
                 
-                // Photo principale = première photo non encore utilisée dans le voyage.
-                // Si toutes ont été utilisées (lieu qui revient + peu de photos),
-                // on autorise la répétition à partir d'un offset différent.
+                // Photo principale = varier selon l'occurrence du lieu
                 let photo;
                 let photoIndex = 0;
                 if (stepPhotos.length > 0) {
-                    // STRICT : on ne garde QUE les photos jamais utilisées dans le carnet.
-                    // Si toutes les photos de l'étape ont déjà été placées ailleurs, tant pis :
-                    // l'étape n'aura pas de photo (mieux que des doublons).
-                    const fresh = stepPhotos.filter(u => !usedPhotoUrls.has(u));
-                    stepPhotos = fresh;
-                    photoIndex = 0;
-                    photo = stepPhotos[0] || null;
-                    if (!photo) {
-                        console.log(`[CARNET] Étape ${idx}: aucune photo unique disponible (toutes déjà utilisées ailleurs)`);
-                    }
+                    // Si même lieu apparaît plusieurs fois, prendre une photo différente
+                    photoIndex = occurrence % stepPhotos.length;
+                    photo = stepPhotos[photoIndex];
                 } else {
-                    // Pas de photo spécifique : on essaie un fallback global, MAIS uniquement
-                    // si la photo du pool global n'a pas déjà été utilisée non plus.
-                    const fallback = allPhotos.find(u => u && !usedPhotoUrls.has(u));
-                    if (fallback) {
-                        photo = fallback;
-                        stepPhotos = [fallback];
-                        console.log(`[CARNET] Étape ${idx}: pas de photo spécifique, fallback global utilisé`);
-                    } else {
-                        photo = null;
-                        stepPhotos = [];
-                        console.log(`[CARNET] Étape ${idx}: pas de photo (toutes utilisées)`);
-                    }
+                    // Fallback: photo du pool global (réparti par index)
+                    photo = allPhotos[idx % allPhotos.length];
+                    stepPhotos = [photo];
+                    console.log(`[CARNET] Étape ${idx}: pas de photo spécifique, fallback utilisé`);
                 }
-                // NB : on ne marque PAS encore les photos comme utilisées ici.
-                // Le marquage se fait dans la logique de patterns plus bas, qui sait
-                // exactement combien de photos sont effectivement consommées (1, 2 ou 3).
                 
                 const visits = step.visits || step.pois || [];
                 const activities = step.activities || [];
@@ -4255,118 +3390,20 @@
                 
                 const pageNumberBadge = totalPages > 1 ? `<div class="page-number-badge">1/${totalPages}</div>` : '';
                 
-                // === PATTERNS DE MISE EN PAGE MAGAZINE ===
-                // La photo est intégrée DANS le flux du texte (style éditorial),
-                // pas dans une colonne séparée. 5 patterns alternent :
-                //   'mag-inset-left'  : 1 photo flottée à gauche, texte coule à droite
-                //   'mag-inset-right' : 1 photo flottée à droite, texte coule à gauche
-                //   'mag-hero'        : 1 photo héros pleine largeur en haut
-                //   'mag-duo'         : 2 photos côte à côte
-                //   'mag-trio'        : 3 photos (1 grande + 2 empilées)
-                
-                // Patterns variés. Choix par hash stable, anti-répétition consécutive.
-                //  - 'inset-2'    : 1 photo gauche avant visites, 1 droite avant activités
-                //  - 'inset-left' : 1 photo flottée gauche (grande)
-                //  - 'inset-right': 1 photo flottée droite (grande)
-                //  - 'top-duo'    : 2 photos côte à côte en haut, texte dessous pleine largeur
-                //  - 'top-trio'   : 1 grande gauche + 2 petites droite en haut, texte dessous
-                const nPhotos = stepPhotos.length;
-                
-                // Hash stable étape
-                const seedStr = `${idx}::${step.name || ''}::${step.place_id || ''}`;
-                let _h = 5381;
-                for (let _i = 0; _i < seedStr.length; _i++) _h = ((_h << 5) + _h + seedStr.charCodeAt(_i)) & 0xffffffff;
-                _h = Math.abs(_h);
-                
-                let candidates;
-                if (nPhotos >= 3) {
-                    candidates = ['inset-2', 'top-duo', 'top-trio', 'inset-left', 'inset-right'];
-                } else if (nPhotos === 2) {
-                    candidates = ['inset-2', 'top-duo', 'inset-left', 'inset-right'];
-                } else {
-                    candidates = ['inset-left', 'inset-right'];
-                }
-                
-                let pickIdx = _h % candidates.length;
-                let pattern = candidates[pickIdx];
-                if (window.__lastPattern && pattern === window.__lastPattern && candidates.length > 1) {
-                    pickIdx = (pickIdx + 1) % candidates.length;
-                    pattern = candidates[pickIdx];
-                }
-                window.__lastPattern = pattern;
-                
-                // Combien de photos consomme le pattern
-                const photosNeeded = (() => {
-                    if (pattern === 'top-trio') return 3;
-                    if (pattern === 'top-duo' || pattern === 'inset-2') return 2;
-                    return 1;
-                })();
-                const photosToShow = stepPhotos.slice(0, Math.min(photosNeeded, nPhotos));
-                
-                // Marquer comme utilisées AVANT rendu
-                photosToShow.forEach(u => {
-                    if (u) {
-                        usedPhotoUrls.add(u);
-                        console.log(`[CARNET-USED] Étape ${idx} pattern ${pattern}:`, u.slice(0, 70));
-                    }
-                });
-                
-                const captionFor = (url) => {
-                    const r = richPhotos.find(rp => rp.url === url);
-                    return r?.caption || '';
-                };
-                
-                // Helper figure flottée (1 photo)
-                const makeFig = (url, side) => {
-                    if (!url) return '';
-                    const cap = captionFor(url);
-                    const capHtml = cap ? `<figcaption>${esc(cap)}</figcaption>` : '';
-                    const cls = side === 'left' ? 'mag-inset-left' : 'mag-inset-right';
-                    return `<figure class="mag-figure ${cls}">
-                        <img src="${window.optimizeImg(url)}" alt="${esc(step.name)}" onerror="this.parentElement.style.display='none'">
-                        ${capHtml}
-                    </figure>`;
-                };
-                
-                // Construction des blocs photo selon le pattern
-                let figTopFullWidth = ''; // figure pleine largeur en haut (top-duo, top-trio)
-                let figBeforeVisits = '';
-                let figBeforeActivities = '';
-                
-                if (pattern === 'inset-2' && photosToShow.length >= 2) {
-                    figBeforeVisits = makeFig(photosToShow[0], 'left');
-                    figBeforeActivities = makeFig(photosToShow[1], 'right');
-                } else if (pattern === 'inset-left') {
-                    figBeforeVisits = makeFig(photosToShow[0], 'left');
-                } else if (pattern === 'inset-right') {
-                    figBeforeVisits = makeFig(photosToShow[0], 'right');
-                } else if (pattern === 'top-duo' && photosToShow.length >= 2) {
-                    const imgs = photosToShow.slice(0, 2).map(url =>
-                        `<div class="mag-photo"><img src="${window.optimizeImg(url)}" alt="${esc(step.name)}" onerror="this.parentElement.style.display='none'"></div>`
-                    ).join('');
-                    figTopFullWidth = `<figure class="mag-figure mag-duo">${imgs}</figure>`;
-                } else if (pattern === 'top-trio' && photosToShow.length >= 3) {
-                    const imgs = photosToShow.slice(0, 3).map(url =>
-                        `<div class="mag-photo"><img src="${window.optimizeImg(url)}" alt="${esc(step.name)}" onerror="this.parentElement.style.display='none'"></div>`
-                    ).join('');
-                    figTopFullWidth = `<figure class="mag-figure mag-trio">${imgs}</figure>`;
-                } else if (photosToShow.length === 1) {
-                    // Cas 1 photo qui n'a pas matché plus haut
-                    const side = (idx % 2 === 0) ? 'left' : 'right';
-                    figBeforeVisits = makeFig(photosToShow[0], side);
-                }
-                
-                // Variables conservées pour compat
-                const stepPhotoHtml = '';
-                const showThumbs = false;
-                const thumbPhotos = [];
-                const photoOnRight = false;
-                const photoOnTop = pattern === 'top-duo' || pattern === 'top-trio';
-                
                 html += `
-                <div class="page step-page layout-mag" data-step="${idx}" data-page="1">
-                    <div class="step-content">
+                <div class="page step-page${idx % 2 === 1 ? ' flip' : ''}" data-step="${idx}" data-page="1">
+                    <div class="step-photo">
+                        ${photo ? `
+                            <img src="${window.optimizeImg(photo)}" alt="${esc(step.name)}" id="stepImg${idx}" data-photos='${JSON.stringify(stepPhotos)}' data-current-idx="0" onerror="handleImageError(this, ${idx})">
+                            ${stepPhotos.length > 1 ? `
+                                <button class="carousel-btn prev no-print" onclick="changePhoto(${idx},-1)">‹</button>
+                                <button class="carousel-btn next no-print" onclick="changePhoto(${idx},1)">›</button>
+                                <div class="photo-counter no-print" id="stepCounter${idx}">1/${stepPhotos.length}</div>
+                            ` : ''}
+                        ` : '<div class="step-no-photo">📷</div>'}
                         ${pageNumberBadge}
+                    </div>
+                    <div class="step-content">
                         <span class="day-badge">${t('day')} ${idx + 1}</span>
                         <h2 class="step-title" contenteditable="true" data-step="${idx}" data-field="name">${esc(step.name)}</h2>
                         ${(() => {
@@ -4378,9 +3415,13 @@
                             return stars ? `<div class="step-rating" title="${r}/10">${stars}</div>` : '';
                         })()}
                         
-                        ${figTopFullWidth}
-                        
-                        ${figBeforeVisits}
+                        <!-- Carousel hôtels (chargé post-render) -->
+                        <div id="hotels-step-${idx}" class="hotels-section-editor"
+                             data-hotel-place-id="${esc(step.place_id || '')}"
+                             data-hotel-name="${esc(step.name || '')}"
+                             data-hotel-lat="${step.lat || ''}"
+                             data-hotel-lon="${step.lon || ''}"
+                             data-hotel-coords='${JSON.stringify(step.coords || null)}'></div>
                         
                         ${visitsPage1.length > 0 ? `
                             <div class="section-block visits-block">
@@ -4392,15 +3433,12 @@
                                         const durHtml = (typeof dur === 'number' && dur > 0)
                                             ? `<span class="visit-duration" contenteditable="false"> · ${dur} min</span>`
                                             : '';
-                                        return `<li contenteditable="true" data-step="${idx}" data-field="visits" data-idx="${vi}">${boldifyProperNouns(esc(visitText), boldTerms)}${durHtml}</li>`;
+                                        return `<li contenteditable="true" data-step="${idx}" data-field="visits" data-idx="${vi}">${esc(visitText)}${durHtml}</li>`;
                                     }).join('')}
                                 </ul>
                                 ${!needsMultiplePages ? `<button class="add-item-btn no-print" onclick="addItem(${idx},'visits')">${t('addPlace')}</button>` : ''}
                             </div>
                         ` : ''}
-                        
-                        <div class="mag-clear"></div>
-                        ${figBeforeActivities}
                         
                         ${activitiesPage1.length > 0 ? `
                             <div class="section-block activities-block">
@@ -4410,7 +3448,7 @@
                                         const actText = typeof a === 'string' ? a : (a.name || a.text || '');
                                         const piHtml = generateActivityPracticalInfoHtml(a, t);
                                         return `
-                                        <li contenteditable="true" data-step="${idx}" data-field="activities" data-idx="${ai}">${boldifyProperNouns(esc(actText), boldTerms)}</li>
+                                        <li contenteditable="true" data-step="${idx}" data-field="activities" data-idx="${ai}">${esc(actText)}</li>
                                         ${piHtml}
                                         `;
                                     }).join('')}
@@ -4419,15 +3457,20 @@
                             </div>
                         ` : ''}
                         
-                        <!-- Hôtels réservés par l'utilisateur (uniquement) -->
-                        <div class="mag-clear"></div>
-                        ${!needsMultiplePages ? generateStepBookingsHtml(tripData.stepBookingsMap, idx, t) : ''}
+                        ${(() => {
+                            // Mini bandeau de photos additionnelles (2-3 vignettes)
+                            // pour donner du rythme. On prend les photos suivant la principale.
+                            if (!Array.isArray(stepPhotos) || stepPhotos.length < 3) return '';
+                            const extras = stepPhotos.slice(1, 4); // 2-3 photos après la principale
+                            if (extras.length < 2) return '';
+                            return `
+                                <div class="step-thumbs">
+                                    ${extras.map(p => `<div class="thumb" style="background-image:url('${window.optimizeImg(p)}')"></div>`).join('')}
+                                </div>
+                            `;
+                        })()}
                         
-                        ${showThumbs ? `
-                            <div class="step-thumbs">
-                                ${thumbPhotos.map(p => `<div class="thumb" style="background-image:url('${window.optimizeImg(p)}')"></div>`).join('')}
-                            </div>
-                        ` : ''}
+                        ${!needsMultiplePages ? generateStepBookingsHtml(tripData.stepBookingsMap, idx, t) : ''}
                         
                         ${nextStep && !needsMultiplePages ? `
                             <div class="next-step-info">
@@ -4463,50 +3506,20 @@
                         
                         const isLastPage = remainingVisits.length === 0 && remainingActivities.length === 0;
                         
-                        // PHOTOS DE CONTINUATION : uniquement les photos JAMAIS utilisées
-                        // dans tout le carnet jusqu'ici. Si rien de neuf, pas de photo.
-                        const contFresh = stepPhotos.filter(u => !usedPhotoUrls.has(u));
-                        const contPhotos = contFresh.slice(0, 3);
-                        // Marquer comme utilisées avant rendu
-                        contPhotos.forEach(u => {
-                            if (u) {
-                                usedPhotoUrls.add(u);
-                                console.log(`[CARNET-USED] Étape ${idx} continuation p${currentPage}:`, u.slice(0, 70));
-                            }
-                        });
-                        
-                        // Choix du pattern magazine pour la continuation selon nb photos dispos
-                        let contPattern = '';
-                        if (contPhotos.length === 3) contPattern = 'mag-trio';
-                        else if (contPhotos.length === 2) contPattern = 'mag-duo';
-                        else if (contPhotos.length === 1) {
-                            // Alternance gauche/droite selon page
-                            contPattern = (currentPage % 2 === 0) ? 'mag-inset-right' : 'mag-inset-left';
-                        }
-                        
-                        const contFigureHtml = (() => {
-                            if (contPhotos.length === 0) return '';
-                            if (contPattern === 'mag-duo' || contPattern === 'mag-trio') {
-                                const imgs = contPhotos.map((url, i) =>
-                                    `<div class="mag-photo"><img src="${window.optimizeImg(url)}" alt="${esc(step.name)} ${i+1}" onerror="this.parentElement.style.display='none'"></div>`
-                                ).join('');
-                                return `<figure class="mag-figure ${contPattern}">${imgs}</figure>`;
-                            }
-                            return `<figure class="mag-figure ${contPattern}">
-                                <img src="${window.optimizeImg(contPhotos[0])}" alt="${esc(step.name)}" onerror="this.parentElement.style.display='none'">
-                            </figure>`;
-                        })();
+                        // Photo secondaire pour la page de continuation
+                        const contPhoto = stepPhotos[(photoIndex + currentPage - 1) % stepPhotos.length] || photo;
                         
                         html += `
-                        <div class="page step-page continuation-page layout-mag" data-step="${idx}" data-page="${currentPage}">
-                            <div class="step-content">
+                        <div class="page step-page continuation-page${idx % 2 === 1 ? ' flip' : ''}" data-step="${idx}" data-page="${currentPage}">
+                            <div class="step-photo">
+                                <img src="${window.optimizeImg(contPhoto)}" alt="${esc(step.name)}" onerror="handleImageError(this, ${idx})">
                                 <div class="page-number-badge">${currentPage}/${totalPages}</div>
+                            </div>
+                            <div class="step-content">
                                 <div class="continuation-header">
                                     <span class="day-badge">${t('day')} ${idx + 1}</span>
                                     <h2 class="step-title">${esc(step.name)} <span style="font-weight:400;font-size:0.7em;opacity:0.7">(${t('continued')})</span></h2>
                                 </div>
-                                
-                                ${contFigureHtml}
                                 
                                 <div class="sections-grid${(visitsThisPage.length > 0 && activitiesThisPage.length > 0) ? '' : ' single-col'}">
                                     ${visitsThisPage.length > 0 ? `
@@ -4519,7 +3532,7 @@
                                                     const durHtml = (typeof dur === 'number' && dur > 0)
                                                         ? `<span class="visit-duration"> · ${dur} min</span>`
                                                         : '';
-                                                    return `<li>${boldifyProperNouns(esc(visitText), boldTerms)}${durHtml}</li>`;
+                                                    return `<li>${esc(visitText)}${durHtml}</li>`;
                                                 }).join('')}
                                             </ul>
                                         </div>
@@ -4532,7 +3545,7 @@
                                                 ${activitiesThisPage.map((a, ai) => {
                                                     const actText = typeof a === 'string' ? a : (a.name || a.text || '');
                                                     const piHtml = generateActivityPracticalInfoHtml(a, t);
-                                                    return `<li>${boldifyProperNouns(esc(actText), boldTerms)}</li>${piHtml}`;
+                                                    return `<li>${esc(actText)}</li>${piHtml}`;
                                                 }).join('')}
                                             </ul>
                                         </div>
@@ -4567,11 +3580,6 @@
             });
             
             container.innerHTML = html;
-            
-            // === CARTE LEAFLET POST-RENDER ===
-            if (document.getElementById('ortMap')) {
-                initLeafletMap().catch(e => console.warn('[CARNET] Erreur carte:', e));
-            }
             
             // === CHARGEMENT HÔTELS POST-RENDER ===
             if (typeof ORT_HOTELS !== 'undefined') {
