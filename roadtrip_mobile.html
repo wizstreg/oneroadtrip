@@ -4497,7 +4497,7 @@ async function loadBuilderResult() {
     // Afficher le bouton "Autres suggestions" après le rendu
     setTimeout(showMobileRecalculateButton, 1500);
     // Bandeau si la zone choisie a dû être élargie
-    if (data._zoneInfo && data._zoneInfo.outCount > 0) {
+    if (data._zoneInfo && (data._zoneInfo.outCount > 0 || data._zoneInfo.bufferKm > 0)) {
       window._mobileZoneFallback = data._zoneInfo;
       setTimeout(showZoneFallbackBanner, 1600);
     }
@@ -4528,6 +4528,7 @@ function showMobileRecalculateButton() {
   const btn = document.createElement('button');
   btn.id = 'btnMobileRecalcLoop';
   btn.textContent = label;
+  btn.dataset.originalLabel = label;
   btn.style.cssText = `
     position: fixed;
     bottom: 80px;
@@ -4543,6 +4544,15 @@ function showMobileRecalculateButton() {
     box-shadow: 0 4px 14px rgba(102,126,234,0.45);
     z-index: 1000;
   `;
+  
+  // Réinitialiser le bouton si l'utilisateur revient en arrière (cache navigateur)
+  window.addEventListener('pageshow', function(e){
+    const b = document.getElementById('btnMobileRecalcLoop');
+    if (b) {
+      b.disabled = false;
+      b.textContent = b.dataset.originalLabel || label;
+    }
+  });
   
   btn.addEventListener('click', () => {
     const cfg = window._mobileLoopConfig;
@@ -4601,14 +4611,27 @@ function showZoneFallbackBanner() {
   const info = window._mobileZoneFallback;
   
   const lang = localStorage.getItem('lang') || 'fr';
-  const messages = {
-    fr: `ℹ️ Pas assez de lieux dans la zone dessinée. ${info.outCount} étape(s) ajoutée(s) hors zone pour compléter le circuit.`,
-    en: `ℹ️ Not enough places in the drawn area. ${info.outCount} step(s) added outside the area to complete the circuit.`,
-    es: `ℹ️ No hay suficientes lugares en la zona dibujada. ${info.outCount} etapa(s) añadida(s) fuera de zona para completar el circuito.`,
-    it: `ℹ️ Non ci sono abbastanza luoghi nella zona disegnata. ${info.outCount} tappa(e) aggiunta(e) fuori zona per completare il circuito.`,
-    pt: `ℹ️ Não há lugares suficientes na zona desenhada. ${info.outCount} etapa(s) adicionada(s) fora da zona para completar o circuito.`
-  };
-  const text = messages[lang] || messages.fr;
+  let text;
+  if (info.bufferKm > 0) {
+    // Zone élargie automatiquement
+    const messages = {
+      fr: `ℹ️ La zone dessinée contenait trop peu de lieux. Elle a été élargie de ${info.bufferKm} km pour vous proposer un circuit complet.`,
+      en: `ℹ️ The drawn area had too few places. It was widened by ${info.bufferKm} km to offer a full circuit.`,
+      es: `ℹ️ La zona dibujada tenía pocos lugares. Se amplió ${info.bufferKm} km para proponer un circuito completo.`,
+      it: `ℹ️ La zona disegnata aveva pochi luoghi. È stata ampliata di ${info.bufferKm} km per un circuito completo.`,
+      pt: `ℹ️ A zona desenhada tinha poucos lugares. Foi ampliada em ${info.bufferKm} km para um circuito completo.`
+    };
+    text = messages[lang] || messages.fr;
+  } else {
+    const messages = {
+      fr: `ℹ️ Pas assez de lieux dans la zone dessinée. ${info.outCount} étape(s) ajoutée(s) hors zone pour compléter le circuit.`,
+      en: `ℹ️ Not enough places in the drawn area. ${info.outCount} step(s) added outside the area to complete the circuit.`,
+      es: `ℹ️ No hay suficientes lugares en la zona dibujada. ${info.outCount} etapa(s) añadida(s) fuera de zona para completar el circuito.`,
+      it: `ℹ️ Non ci sono abbastanza luoghi nella zona disegnata. ${info.outCount} tappa(e) aggiunta(e) fuori zona per completare il circuito.`,
+      pt: `ℹ️ Não há lugares suficientes na zona desenhada. ${info.outCount} etapa(s) adicionada(s) fora da zona para completar o circuito.`
+    };
+    text = messages[lang] || messages.fr;
+  }
   
   const banner = document.createElement('div');
   banner.id = 'mobileZoneFallbackBanner';

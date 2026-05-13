@@ -1302,6 +1302,16 @@ function selectStepsForLoop(config, places, searchRadius) {
       }
       return inside;
     }
+    // Distance min d'un point au polygone (en km, approximative — distance au sommet le plus proche)
+    function distToPoly(lat, lon){
+      let minD = Infinity;
+      for (const v of poly) {
+        const d = _haversine(lat, lon, v[0], v[1]);
+        if (d < minD) minD = d;
+      }
+      return minD;
+    }
+    
     inZone = [];
     outZone = [];
     for (const p of placeArray) {
@@ -1309,7 +1319,28 @@ function selectStepsForLoop(config, places, searchRadius) {
       else outZone.push(p);
     }
     console.log(`[ROUTE-BUILDER] 🎯 Polygone (${poly.length} sommets) → ${inZone.length} dans / ${outZone.length} hors`);
-    zoneInfo = { inCount: inZone.length, outCount: 0, polygonPoints: poly.length };
+    
+    // Si la zone est trop pauvre (< 3 places utilisables), on élargit
+    // en ajoutant les places à moins de 30 km du polygone, puis 60 km, etc.
+    const minPlacesWanted = Math.max(3, Math.ceil(days / 2));
+    let bufferKm = 0;
+    while (inZone.length < minPlacesWanted && bufferKm < 200) {
+      bufferKm += 30;
+      const stillOut = [];
+      for (const p of outZone) {
+        if (distToPoly(p.lat, p.lon) <= bufferKm) inZone.push(p);
+        else stillOut.push(p);
+      }
+      outZone = stillOut;
+      console.log(`[ROUTE-BUILDER] 🔄 Zone trop pauvre, élargissement +${bufferKm}km → ${inZone.length} dans`);
+    }
+    
+    zoneInfo = {
+      inCount: inZone.length,
+      outCount: 0,
+      polygonPoints: poly.length,
+      bufferKm: bufferKm // 0 si la zone d'origine suffisait
+    };
   }
   
   // === SÉLECTION AVEC CONTRAINTE D'ESPACEMENT ===
