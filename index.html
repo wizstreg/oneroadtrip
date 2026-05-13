@@ -354,6 +354,15 @@ footer p{opacity:.5;font-size:.8rem}
           <input type="text" id="rbStart" autocomplete="off" placeholder="Ex: Paris">
           <div class="rb-sug" id="rbStartSug"></div>
         </div>
+        <div class="rb-loop">
+          <input type="checkbox" id="rbLoopMode">
+          <label for="rbLoopMode" id="rbLoopLabel">Circuit (retour au départ)</label>
+        </div>
+        <!-- Statut de la zone (visible uniquement si une zone est dessinée) -->
+        <div class="rb-zone" id="rbZoneWrap" style="display:none;margin-top:6px;text-align:center">
+          <div id="rbZoneStatus" style="font-size:12px;color:rgba(255,255,255,0.9);background:rgba(16,185,129,0.25);border:1px solid rgba(16,185,129,0.5);border-radius:14px;padding:6px 10px;display:inline-block"></div>
+          <div style="margin-top:4px"><a href="#" id="rbZoneEdit" style="font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline">Modifier / effacer</a></div>
+        </div>
         <div class="rb-field" id="rbEndContainer">
           <label id="rbEndLabel">Ville d'arrivée</label>
           <input type="text" id="rbEnd" autocomplete="off" placeholder="Ex: Barcelone">
@@ -372,15 +381,6 @@ footer p{opacity:.5;font-size:.8rem}
             <label id="rbDetourLabel">Détour (km)</label>
             <input type="number" id="rbDetour" value="50" min="0" max="200" step="10">
           </div>
-        </div>
-        <div class="rb-loop">
-          <input type="checkbox" id="rbLoopMode">
-          <label for="rbLoopMode" id="rbLoopLabel">Circuit (retour au départ)</label>
-        </div>
-        <!-- Statut de la zone (visible uniquement si une zone est dessinée) -->
-        <div class="rb-zone" id="rbZoneWrap" style="display:none;margin-top:6px;text-align:center">
-          <div id="rbZoneStatus" style="font-size:12px;color:rgba(255,255,255,0.9);background:rgba(16,185,129,0.25);border:1px solid rgba(16,185,129,0.5);border-radius:14px;padding:6px 10px;display:inline-block"></div>
-          <div style="margin-top:4px"><a href="#" id="rbZoneEdit" style="font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline">Modifier / effacer</a></div>
         </div>
         <button class="rb-go" id="rbGo">🚀 Générer</button>
       </div>
@@ -662,6 +662,15 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
     this.textContent='\u23F3';this.disabled=true;
     setTimeout(function(){location.href='/roadtrip_detail.html?'+p},400);
   });
+  // Restaurer le bouton "Générer" si on revient en arrière (cache navigateur)
+  var rbGoBtn = document.getElementById('rbGo');
+  if (rbGoBtn) {
+    var rbGoOriginalLabel = rbGoBtn.textContent;
+    window.addEventListener('pageshow', function(){
+      rbGoBtn.disabled = false;
+      rbGoBtn.textContent = rbGoOriginalLabel;
+    });
+  }
   document.addEventListener('click',function(ev){
     if(!ev.target.closest('.rb-field')){sSug.style.display='none';eSug.style.display='none'}
   });
@@ -1258,29 +1267,49 @@ gtag('config', 'GT-WF83FMCX');
 
 
 <!-- ===== MODALE SÉLECTEUR DE ZONE - DESSIN À MAIN LEVÉE ===== -->
-<div id="rbZoneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;padding:12px">
-  <div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
-    <div style="padding:14px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
-      <strong id="rbZoneTitle" style="font-size:15px">🗺️ Dessinez votre zone</strong>
-      <button type="button" id="rbZoneClose" style="background:none;border:none;font-size:24px;cursor:pointer;line-height:1" title="Nous laisser décider">&times;</button>
+<style>
+  #rbZoneModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;padding:0}
+  #rbZoneModal .rbz-card{background:#fff;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%;max-width:560px;max-height:100vh;border-radius:0}
+  #rbZoneModal .rbz-head{padding:10px 14px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+  #rbZoneModal .rbz-title{font-size:15px;font-weight:700}
+  #rbZoneModal .rbz-close{background:none;border:none;font-size:26px;cursor:pointer;line-height:1;padding:0 6px}
+  #rbZoneModal .rbz-help{padding:6px 14px;font-size:12px;color:#555;background:#f7f9fc;flex-shrink:0;line-height:1.35}
+  #rbZoneModal .rbz-mapwrap{position:relative;width:100%;flex:1 1 auto;min-height:200px;background:#eef;overflow:hidden}
+  #rbZoneModal .rbz-actions{padding:8px 12px;border-top:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+  #rbZoneModal .rbz-actions button{border-radius:8px;padding:10px 8px;cursor:pointer;font-size:13px;border:none}
+  #rbZoneModal .rbz-actions .rbz-reset{flex:1 1 30%;background:#f0f0f0;color:#333;min-width:90px}
+  #rbZoneModal .rbz-actions .rbz-skip{flex:1 1 30%;background:#fff;color:#555;border:1px solid #ccc;min-width:90px;font-size:12px}
+  #rbZoneModal .rbz-actions .rbz-validate{flex:2 1 40%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-weight:600;font-size:14px;min-width:120px}
+  #rbZoneModal .rbz-actions .rbz-validate:disabled{opacity:0.45;cursor:not-allowed}
+  /* Desktop : carte plus large, modale centrée avec radius */
+  @media (min-width:600px){
+    #rbZoneModal{padding:12px}
+    #rbZoneModal .rbz-card{height:auto;max-height:92vh;border-radius:12px}
+  }
+</style>
+<div id="rbZoneModal">
+  <div class="rbz-card">
+    <div class="rbz-head">
+      <strong id="rbZoneTitle" class="rbz-title">🗺️ Dessinez votre zone</strong>
+      <button type="button" id="rbZoneClose" class="rbz-close" title="Nous laisser décider">&times;</button>
     </div>
-    <div id="rbZoneHelp" style="padding:8px 18px;font-size:13px;color:#555;background:#f7f9fc">
-      Tracez avec le doigt (ou la souris) la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.
+    <div id="rbZoneHelp" class="rbz-help">
+      Tracez avec le doigt la zone que vous voulez visiter.
     </div>
     <!-- Conteneur carte + canvas de dessin -->
-    <div style="position:relative;width:100%;height:380px;background:#eef;overflow:hidden">
+    <div class="rbz-mapwrap">
       <div id="rbZoneMap" style="position:absolute;inset:0;z-index:1"></div>
       <canvas id="rbZoneCanvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:10"></canvas>
-      <!-- Boutons zoom +/- (au-dessus du canvas pour ne pas être bloqués) -->
+      <!-- Boutons zoom +/- -->
       <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:20">
-        <button type="button" id="rbZoneZoomIn" style="width:34px;height:34px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2)">+</button>
-        <button type="button" id="rbZoneZoomOut" style="width:34px;height:34px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2)">−</button>
+        <button type="button" id="rbZoneZoomIn" style="width:36px;height:36px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);padding:0">+</button>
+        <button type="button" id="rbZoneZoomOut" style="width:36px;height:36px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:20px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);padding:0">−</button>
       </div>
     </div>
-    <div style="padding:12px 18px;border-top:1px solid #eee;display:flex;gap:8px">
-      <button type="button" id="rbZoneReset" style="flex:1;background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:13px">↺ Effacer</button>
-      <button type="button" id="rbZoneSkip" style="flex:1;background:#fff;color:#555;border:1px solid #ccc;border-radius:8px;padding:10px;cursor:pointer;font-size:13px">Nous laisser décider</button>
-      <button type="button" id="rbZoneValidate" style="flex:2;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;font-weight:600" disabled>✓ Valider</button>
+    <div class="rbz-actions">
+      <button type="button" id="rbZoneReset" class="rbz-reset">↺ Effacer</button>
+      <button type="button" id="rbZoneSkip" class="rbz-skip">Nous laisser décider</button>
+      <button type="button" id="rbZoneValidate" class="rbz-validate" disabled>✓ Valider</button>
     </div>
   </div>
 </div>
@@ -1305,6 +1334,7 @@ gtag('config', 'GT-WF83FMCX');
     skip:     { fr:'Nous laisser décider', en:'Let us decide', es:'Déjenos decidir', it:'Lasciaci decidere', pt:'Deixe-nos decidir' },
     validate: { fr:'✓ Valider', en:'✓ Confirm', es:'✓ Confirmar', it:'✓ Conferma', pt:'✓ Confirmar' },
     status:   { fr:'Zone dessinée ({n} points)', en:'Area drawn ({n} points)', es:'Zona dibujada ({n} puntos)', it:'Zona disegnata ({n} punti)', pt:'Zona desenhada ({n} pontos)' },
+    edit:     { fr:'Modifier / effacer', en:'Edit / clear', es:'Modificar / borrar', it:'Modifica / cancella', pt:'Modificar / limpar' },
     needStart:{ fr:'Choisissez d\u2019abord une ville de départ (sélectionnez-la dans la liste).', en:'Please choose a departure city first (select from the list).', es:'Elija primero una ciudad de salida (seleccione de la lista).', it:'Scegli prima una città di partenza (seleziona dall\u2019elenco).', pt:'Escolha primeiro uma cidade de partida (selecione na lista).' }
   };
   function tZ(k){ var lg = window.currentLang || localStorage.getItem('lang') || 'fr'; return (Z_I18N[k] && (Z_I18N[k][lg] || Z_I18N[k].fr)) || k; }
@@ -1328,6 +1358,7 @@ gtag('config', 'GT-WF83FMCX');
     resetBtn.textContent = tZ('reset');
     skipBtn.textContent = tZ('skip');
     validateBtn.textContent = tZ('validate');
+    if (zoneEditLink) zoneEditLink.textContent = tZ('edit');
   }
   applyLabels();
   var langSel = document.getElementById('langSel') || document.getElementById('langSelector');
