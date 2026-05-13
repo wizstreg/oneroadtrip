@@ -641,8 +641,8 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
   }
   var s=document.getElementById('rbStart'),e=document.getElementById('rbEnd');
   var sSug=document.getElementById('rbStartSug'),eSug=document.getElementById('rbEndSug');
-  if(s)s.addEventListener('input',debounce(function(){startCity=null;search(s.value,function(items){showSug(sSug,items,function(c){startCity=c;s.value=c.name})})},300));
-  if(e)e.addEventListener('input',debounce(function(){endCity=null;search(e.value,function(items){showSug(eSug,items,function(c){endCity=c;e.value=c.name})})},300));
+  if(s)s.addEventListener('input',debounce(function(){startCity=null;window.startCity=null;search(s.value,function(items){showSug(sSug,items,function(c){startCity=c;window.startCity=c;s.value=c.name})})},300));
+  if(e)e.addEventListener('input',debounce(function(){endCity=null;window.endCity=null;search(e.value,function(items){showSug(eSug,items,function(c){endCity=c;window.endCity=c;e.value=c.name})})},300));
   var loopCb=document.getElementById('rbLoopMode'),endCont=document.getElementById('rbEndContainer');
   if(loopCb&&endCont){loopCb.addEventListener('change',function(){endCont.style.display=loopCb.checked?'none':'block'})}
   document.getElementById('rbGo').addEventListener('click',function(){
@@ -1268,9 +1268,14 @@ gtag('config', 'GT-WF83FMCX');
       Tracez avec le doigt (ou la souris) la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.
     </div>
     <!-- Conteneur carte + canvas de dessin -->
-    <div style="position:relative;width:100%;height:380px;background:#eef">
-      <div id="rbZoneMap" style="position:absolute;inset:0"></div>
-      <canvas id="rbZoneCanvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair"></canvas>
+    <div style="position:relative;width:100%;height:380px;background:#eef;overflow:hidden">
+      <div id="rbZoneMap" style="position:absolute;inset:0;z-index:1"></div>
+      <canvas id="rbZoneCanvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;z-index:10"></canvas>
+      <!-- Boutons zoom +/- (au-dessus du canvas pour ne pas être bloqués) -->
+      <div style="position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;z-index:20">
+        <button type="button" id="rbZoneZoomIn" style="width:34px;height:34px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2)">+</button>
+        <button type="button" id="rbZoneZoomOut" style="width:34px;height:34px;border-radius:6px;border:1px solid #ccc;background:#fff;font-size:18px;font-weight:700;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2)">−</button>
+      </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid #eee;display:flex;gap:8px">
       <button type="button" id="rbZoneReset" style="flex:1;background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:13px">↺ Effacer</button>
@@ -1294,14 +1299,16 @@ gtag('config', 'GT-WF83FMCX');
 (function(){
   var Z_I18N = {
     title:    { fr:'🗺️ Dessinez votre zone', en:'🗺️ Draw your area', es:'🗺️ Dibuje su zona', it:'🗺️ Disegna la tua zona', pt:'🗺️ Desenhe a sua zona' },
-    help:     { fr:'Tracez avec le doigt (ou la souris) la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.', en:'Draw the area you want to visit with your finger (or mouse). Close to let us decide.', es:'Dibuje con el dedo (o el ratón) la zona que quiere visitar. Cierre para que decidamos nosotros.', it:'Disegna con il dito (o il mouse) la zona da visitare. Chiudi per lasciarci decidere.', pt:'Desenhe com o dedo (ou rato) a zona que quer visitar. Feche para nos deixar decidir.' },
+    helpTouch:{ fr:'Tracez avec le doigt la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.', en:'Draw the area you want to visit with your finger. Close to let us decide.', es:'Dibuje con el dedo la zona que quiere visitar. Cierre para que decidamos nosotros.', it:'Disegna con il dito la zona da visitare. Chiudi per lasciarci decidere.', pt:'Desenhe com o dedo a zona que quer visitar. Feche para nos deixar decidir.' },
+    helpMouse:{ fr:'Tracez avec la souris la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.', en:'Draw the area you want to visit with your mouse. Close to let us decide.', es:'Dibuje con el ratón la zona que quiere visitar. Cierre para que decidamos nosotros.', it:'Disegna con il mouse la zona da visitare. Chiudi per lasciarci decidere.', pt:'Desenhe com o rato a zona que quer visitar. Feche para nos deixar decidir.' },
     reset:    { fr:'↺ Effacer', en:'↺ Clear', es:'↺ Borrar', it:'↺ Cancella', pt:'↺ Limpar' },
     skip:     { fr:'Nous laisser décider', en:'Let us decide', es:'Déjenos decidir', it:'Lasciaci decidere', pt:'Deixe-nos decidir' },
     validate: { fr:'✓ Valider', en:'✓ Confirm', es:'✓ Confirmar', it:'✓ Conferma', pt:'✓ Confirmar' },
     status:   { fr:'Zone dessinée ({n} points)', en:'Area drawn ({n} points)', es:'Zona dibujada ({n} puntos)', it:'Zona disegnata ({n} punti)', pt:'Zona desenhada ({n} pontos)' },
-    needStart:{ fr:'Choisissez d\u2019abord une ville de départ.', en:'Please choose a departure city first.', es:'Elija primero una ciudad de salida.', it:'Scegli prima una città di partenza.', pt:'Escolha primeiro uma cidade de partida.' }
+    needStart:{ fr:'Choisissez d\u2019abord une ville de départ (sélectionnez-la dans la liste).', en:'Please choose a departure city first (select from the list).', es:'Elija primero una ciudad de salida (seleccione de la lista).', it:'Scegli prima una città di partenza (seleziona dall\u2019elenco).', pt:'Escolha primeiro uma cidade de partida (selecione na lista).' }
   };
   function tZ(k){ var lg = window.currentLang || localStorage.getItem('lang') || 'fr'; return (Z_I18N[k] && (Z_I18N[k][lg] || Z_I18N[k].fr)) || k; }
+  function isTouch(){ return ('ontouchstart' in window) || (navigator.maxTouchPoints > 0); }
   
   var loopCb = document.getElementById('rbLoopMode');
   var zoneWrap = document.getElementById('rbZoneWrap');
@@ -1317,7 +1324,7 @@ gtag('config', 'GT-WF83FMCX');
   // Libellés i18n
   function applyLabels(){
     document.getElementById('rbZoneTitle').textContent = tZ('title');
-    document.getElementById('rbZoneHelp').textContent = tZ('help');
+    document.getElementById('rbZoneHelp').textContent = isTouch() ? tZ('helpTouch') : tZ('helpMouse');
     resetBtn.textContent = tZ('reset');
     skipBtn.textContent = tZ('skip');
     validateBtn.textContent = tZ('validate');
@@ -1355,13 +1362,40 @@ gtag('config', 'GT-WF83FMCX');
   function openZoneModal(){
     var startObj = window.startCity || null;
     var startInput = document.getElementById('rbStart');
-    if (!startObj && (!startInput || !startInput.value.trim())) {
+    var txt = startInput && startInput.value ? startInput.value.trim() : '';
+    
+    if (!startObj && !txt) {
       alert(tZ('needStart'));
       loopCb.checked = false;
       return;
     }
-    var centerLat = startObj && startObj.lat ? startObj.lat : 46.5;
-    var centerLon = startObj && (startObj.lon || startObj.lng) ? (startObj.lon || startObj.lng) : 2.5;
+    
+    // Si on a un texte mais pas d'objet → géocoder à la volée
+    if (!startObj && txt) {
+      var lang = window.currentLang || localStorage.getItem('lang') || 'fr';
+      fetch(API + '/citysearch?q=' + encodeURIComponent(txt) + '&lang=' + lang + '&limit=1')
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var item = d.items && d.items[0];
+          if (item && item.lat) {
+            window.startCity = item;
+            startInput.value = item.name;
+            openZoneModal(); // relance maintenant qu'on a les coords
+          } else {
+            alert(tZ('needStart'));
+            loopCb.checked = false;
+          }
+        })
+        .catch(function(){
+          alert(tZ('needStart'));
+          loopCb.checked = false;
+        });
+      return;
+    }
+    
+    var centerLat = startObj.lat;
+    var centerLon = startObj.lon || startObj.lng;
+    console.log('[ZONE] Ouverture modale, centre:', startObj.name, centerLat, centerLon);
     
     modal.style.display = 'flex';
     
@@ -1371,7 +1405,6 @@ gtag('config', 'GT-WF83FMCX');
       var w = mapDiv.clientWidth || 400;
       var zoom = zoomForRadius(centerLat, getRadiusKm(), w);
       
-      // Détruire la carte précédente si elle existe (sinon réutiliser)
       if (leafletMap) {
         leafletMap.remove();
         leafletMap = null;
@@ -1395,25 +1428,44 @@ gtag('config', 'GT-WF83FMCX');
       // Marqueur ville de départ
       L.circleMarker([centerLat, centerLon], {
         radius: 7, color:'#1d4ed8', fillColor:'#3b82f6', fillOpacity:1, weight:2
-      }).addTo(leafletMap).bindTooltip(startObj ? startObj.name : '', { permanent:true, direction:'top' });
+      }).addTo(leafletMap).bindTooltip(startObj.name, { permanent:true, direction:'top' });
+      
+      // Mémoriser le centre pour les +/- (interdit le drift)
+      window._rbZoneCenter = [centerLat, centerLon];
       
       setTimeout(function(){
         leafletMap.invalidateSize();
         setupCanvas();
-      }, 200);
+      }, 250);
     }
     initMap();
   }
   
+  // Boutons zoom +/- : on garde le centre fixe
+  var zoomInBtn = document.getElementById('rbZoneZoomIn');
+  var zoomOutBtn = document.getElementById('rbZoneZoomOut');
+  function reZoom(delta){
+    if (!leafletMap) return;
+    var z = Math.max(3, Math.min(15, leafletMap.getZoom() + delta));
+    var c = window._rbZoneCenter || leafletMap.getCenter();
+    leafletMap.setView(c, z, { animate: false });
+    // Re-dessiner le polygone validé si présent (les coords px changent)
+    setTimeout(function(){ leafletMap.invalidateSize(); setupCanvas(); }, 50);
+  }
+  if (zoomInBtn) zoomInBtn.addEventListener('click', function(e){ e.preventDefault(); reZoom(1); });
+  if (zoomOutBtn) zoomOutBtn.addEventListener('click', function(e){ e.preventDefault(); reZoom(-1); });
+  
   // Préparer le canvas (taille + handlers)
   function setupCanvas(){
-    // Tailles physiques (HD ratio pour clarté du trait)
     var rect = canvas.getBoundingClientRect();
     var dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
+    // Reset width/height (en attribut) → pixels physiques
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
     var ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0); // reset éventuelle transformation précédente
     ctx.scale(dpr, dpr);
+    console.log('[ZONE] Canvas configuré:', rect.width, 'x', rect.height, 'dpr=', dpr);
     
     // Reset état dessin
     pathLatLon = [];
@@ -1426,11 +1478,39 @@ gtag('config', 'GT-WF83FMCX');
   function clearCanvas(){
     var rect = canvas.getBoundingClientRect();
     var ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, rect.width, rect.height);
+    var dpr = window.devicePixelRatio || 1;
+    // setTransform identité → on efface en pixels physiques
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
+  }
+  
+  function drawCanvasPath(){
+    var ctx = canvas.getContext('2d');
+    clearCanvas();
+    if (pathPxCanvas.length < 2) return;
+    
+    // Remplissage léger (en cours de tracé)
+    ctx.beginPath();
+    ctx.moveTo(pathPxCanvas[0].x, pathPxCanvas[0].y);
+    for (var i = 1; i < pathPxCanvas.length; i++) ctx.lineTo(pathPxCanvas[i].x, pathPxCanvas[i].y);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(16,185,129,0.25)';
+    ctx.fill();
+    
+    // Contour vert épais
+    ctx.beginPath();
+    ctx.moveTo(pathPxCanvas[0].x, pathPxCanvas[0].y);
+    for (var j = 1; j < pathPxCanvas.length; j++) ctx.lineTo(pathPxCanvas[j].x, pathPxCanvas[j].y);
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#10b981';
+    ctx.stroke();
   }
   
   function pxToLatLon(x, y){
-    // Coordonnées px relatives à la carte → latlng Leaflet
     var pt = L.point(x, y);
     var latlng = leafletMap.containerPointToLatLng(pt);
     return [latlng.lat, latlng.lng];
@@ -1458,26 +1538,11 @@ gtag('config', 'GT-WF83FMCX');
     if (!isDrawing) return;
     e.preventDefault();
     var p = getEventXY(e);
-    // Filtre : ignorer points trop proches (<3 px) pour éviter le bruit
     var last = pathPxCanvas[pathPxCanvas.length - 1];
-    if (Math.abs(p.x - last.x) < 3 && Math.abs(p.y - last.y) < 3) return;
+    if (Math.abs(p.x - last.x) < 2 && Math.abs(p.y - last.y) < 2) return;
     pathPxCanvas.push(p);
     pathLatLon.push(pxToLatLon(p.x, p.y));
     drawCanvasPath();
-  }
-  
-  function drawCanvasPath(){
-    var ctx = canvas.getContext('2d');
-    clearCanvas();
-    ctx.beginPath();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = '#10b981';
-    ctx.fillStyle = 'rgba(16,185,129,0.18)';
-    if (pathPxCanvas.length < 2) return;
-    ctx.moveTo(pathPxCanvas[0].x, pathPxCanvas[0].y);
-    for (var i = 1; i < pathPxCanvas.length; i++) ctx.lineTo(pathPxCanvas[i].x, pathPxCanvas[i].y);
-    ctx.fill();
-    ctx.stroke();
   }
   
   function endDraw(e){
