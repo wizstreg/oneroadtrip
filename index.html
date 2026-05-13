@@ -1268,22 +1268,47 @@ gtag('config', 'GT-WF83FMCX');
 
 <!-- ===== MODALE SÉLECTEUR DE ZONE - DESSIN À MAIN LEVÉE ===== -->
 <style>
-  #rbZoneModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:99999;align-items:center;justify-content:center;padding:0}
-  #rbZoneModal .rbz-card{background:#fff;display:flex;flex-direction:column;overflow:hidden;width:100%;height:100%;max-width:560px;max-height:100vh;border-radius:0}
+  /* Overlay : remplit l'écran visible, autorise le scroll si débord */
+  #rbZoneModal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    z-index:99999;
+    align-items:flex-start;
+    justify-content:center;
+    padding:0;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  /* Carte : prend toute la hauteur visible (dvh = exclut la barre d'adresse mobile) */
+  #rbZoneModal .rbz-card{
+    background:#fff;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    width:100%;
+    max-width:560px;
+    /* hauteur = ce qui est réellement visible sur l'écran */
+    height:100vh;
+    height:100dvh;
+    border-radius:0;
+  }
   #rbZoneModal .rbz-head{padding:10px 14px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
   #rbZoneModal .rbz-title{font-size:15px;font-weight:700}
   #rbZoneModal .rbz-close{background:none;border:none;font-size:26px;cursor:pointer;line-height:1;padding:0 6px}
   #rbZoneModal .rbz-help{padding:6px 14px;font-size:12px;color:#555;background:#f7f9fc;flex-shrink:0;line-height:1.35}
-  #rbZoneModal .rbz-mapwrap{position:relative;width:100%;flex:1 1 auto;min-height:200px;background:#eef;overflow:hidden}
-  #rbZoneModal .rbz-actions{padding:8px 12px;border-top:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0}
+  /* Carte : prend l'espace restant entre l'en-tête et les boutons */
+  #rbZoneModal .rbz-mapwrap{position:relative;width:100%;flex:1 1 0;min-height:180px;background:#eef;overflow:hidden}
+  #rbZoneModal .rbz-actions{padding:8px 12px;border-top:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;background:#fff}
   #rbZoneModal .rbz-actions button{border-radius:8px;padding:10px 8px;cursor:pointer;font-size:13px;border:none}
   #rbZoneModal .rbz-actions .rbz-reset{flex:1 1 30%;background:#f0f0f0;color:#333;min-width:90px}
   #rbZoneModal .rbz-actions .rbz-skip{flex:1 1 30%;background:#fff;color:#555;border:1px solid #ccc;min-width:90px;font-size:12px}
   #rbZoneModal .rbz-actions .rbz-validate{flex:2 1 40%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;font-weight:600;font-size:14px;min-width:120px}
   #rbZoneModal .rbz-actions .rbz-validate:disabled{opacity:0.45;cursor:not-allowed}
-  /* Desktop : carte plus large, modale centrée avec radius */
+  /* Desktop : modale centrée avec radius et hauteur auto */
   @media (min-width:600px){
-    #rbZoneModal{padding:12px}
+    #rbZoneModal{padding:12px;align-items:center}
     #rbZoneModal .rbz-card{height:auto;max-height:92vh;border-radius:12px}
   }
 </style>
@@ -1429,6 +1454,7 @@ gtag('config', 'GT-WF83FMCX');
     console.log('[ZONE] Ouverture modale, centre:', startObj.name, centerLat, centerLon);
     
     modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
     
     function initMap(){
       if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
@@ -1618,6 +1644,7 @@ gtag('config', 'GT-WF83FMCX');
     window._rbZone = null;
     zoneWrap.style.display = 'none';
     modal.style.display = 'none';
+    document.body.style.overflow = '';
   }
   closeBtn.addEventListener('click', dismissWithoutZone);
   skipBtn.addEventListener('click', dismissWithoutZone);
@@ -1632,6 +1659,7 @@ gtag('config', 'GT-WF83FMCX');
     zoneStatus.textContent = tZ('status').replace('{n}', pathLatLon.length);
     zoneWrap.style.display = 'block';
     modal.style.display = 'none';
+    document.body.style.overflow = '';
   });
   
   // Lien "Modifier / effacer" sous le champ Circuit
