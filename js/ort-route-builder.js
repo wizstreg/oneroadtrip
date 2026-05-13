@@ -1002,9 +1002,23 @@ async function executeLoopBuilder(config, lang) {
   showBuilderLoader(lang);
   
   try {
-    // 1. Calculer le rayon de recherche basé sur maxKm
-    const searchRadius = Math.min(config.maxKm * 1.5, 400);
-    console.log(`[ROUTE-BUILDER] 📍 Rayon de recherche: ${searchRadius}km (basé sur maxKm=${config.maxKm})`);
+    // 1. Calculer le rayon de recherche
+    //    - basé sur maxKm × jours (portée réelle du circuit)
+    //    - élargi si une zone polygonale est dessinée (pour couvrir tout son contenu)
+    //    - plafonné à 600 km pour ne pas charger toute l'Europe
+    let searchRadius = Math.max(config.maxKm * 1.5, (config.maxKm * config.days) / 2 + 50);
+    if (config.zonePolygon && config.zonePolygon.length >= 3) {
+      // Distance max entre le départ et un sommet du polygone
+      let zoneFar = 0;
+      for (const pt of config.zonePolygon) {
+        const d = _haversine(config.start.lat, config.start.lon, pt[0], pt[1]);
+        if (d > zoneFar) zoneFar = d;
+      }
+      // On veut couvrir tout le polygone avec un peu de marge
+      searchRadius = Math.max(searchRadius, zoneFar + 30);
+    }
+    searchRadius = Math.min(searchRadius, 600);
+    console.log(`[ROUTE-BUILDER] 📍 Rayon de recherche: ${searchRadius.toFixed(0)}km (maxKm=${config.maxKm}, jours=${config.days}${config.zonePolygon ? ', zone définie' : ''})`);
     
     // 2. Charger les places autour du point de départ
     const places = await loadPlacesForLoop(config, searchRadius);
@@ -1415,6 +1429,45 @@ function selectStepsForLoop(config, places, searchRadius) {
     }
   }
   
+  // === RÉPARTITION VERS LE HAUT si on n'a pas assez de nuits ===
+  // Cas typique : zone restreinte avec peu de lieux disponibles.
+  // On ajoute des nuits sur les meilleurs lieux en respectant à la fois :
+  //  - le rating (qualité du lieu)
+  //  - les suggested_days (durée conseillée par le master place)
+  //  - pas dépasser 2× suggested_days pour ne pas saturer un petit lieu
+  let safetyCounter = 0;
+  let startNightsAdjusted = startNights;
+  const startSuggested = startSuggestedDays;
+  
+  while (totalNightsAssigned < days && safetyCounter < days * 5) {
+    safetyCounter++;
+    // Construire la liste des candidats avec un score d'attribution
+    // Score = rating + bonus suggested_days - pénalité si déjà saturé
+    function buildCand(name, rating, suggested, nights, isStart, ref) {
+      const saturation = nights / Math.max(0.5, suggested); // 1.0 = juste ce qu'il faut, >1 = au-dessus
+      // Pénalité forte si on dépasse déjà 2× les jours conseillés
+      const penalty = saturation > 2 ? 50 : (saturation > 1.5 ? 15 : 0);
+      const bonus = Math.min(suggested, 3) * 3; // priorité aux lieux qui méritent du temps
+      return { name, rating, suggested, nights, isStart, ref,
+        score: (rating || 5) * 5 + bonus - penalty - saturation * 2 };
+    }
+    const candidates = [
+      buildCand(start.name, start.rating || 8, startSuggested, startNightsAdjusted, true, null),
+      ...selected.map(s => buildCand(s.name, s.rating || 5, s.suggested_days || 1, s.nights, false, s))
+    ];
+    // Meilleur score = celui qui mérite la prochaine nuit
+    candidates.sort((a, b) => b.score - a.score);
+    const winner = candidates[0];
+    if (winner.isStart) {
+      startNightsAdjusted++;
+    } else if (winner.ref) {
+      winner.ref.nights++;
+    }
+    totalNightsAssigned++;
+    console.log(`[ROUTE-BUILDER] ⬆️ +1 nuit → ${winner.name} (rating=${winner.rating}, sd=${winner.suggested}, nuits=${winner.nights + 1}, score=${winner.score.toFixed(1)})`);
+  }
+  const finalStartNights = startNightsAdjusted;
+  
   console.log(`[ROUTE-BUILDER] Total nuits: ${totalNightsAssigned}/${days}`);
   
   // === ORDONNANCEMENT NEAREST-NEIGHBOR ===
@@ -1514,7 +1567,7 @@ function selectStepsForLoop(config, places, searchRadius) {
   // Construire les étapes finales
   const steps = [{ 
     ...start, 
-    nights: startNights,
+    nights: finalStartNights,
     isStart: true,
     _suggestedDays: startSuggestedDays,
     suggested_days: startSuggestedDays
