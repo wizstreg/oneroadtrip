@@ -141,6 +141,12 @@ async function initRouteBuilder(params) {
       if (routeValidation.reason === 'sea_crossing') {
         await showSeaCrossingModal(config, lang, routeValidation);
         return;
+      } else if (routeValidation.reason === 'transcontinental') {
+        showTranscontinentalModal(config, lang, routeValidation);
+        return;
+      } else if (routeValidation.reason === 'invalid_route') {
+        showBuilderError(lang, 'Itinéraire invalide retourné par le serveur. Réessayez ou choisissez d\'autres villes.');
+        return;
       } else {
         showBuilderError(lang, routeValidation.message || 'Route non praticable');
         return;
@@ -336,6 +342,7 @@ async function loadPlacesForRoute(config, routeData) {
             pid, name: p.name || pid, lat, lon: lng, lng,
             rating: p.rating || p.score || 0,
             suggested_days: p.suggested_days || 1,
+            place_type: p.place_type,
             visits: Array.isArray(p.visits) ? p.visits.map(v => typeof v === 'string' ? {text:v} : v) : [],
             activities: Array.isArray(p.activities) ? p.activities.map(a => typeof a === 'string' ? {text:a} : a) : [],
             cc: cc.toUpperCase(),
@@ -924,6 +931,37 @@ function generateBuilderItinerary(steps, config, lang) {
     window.state.steps = steps;
     window.state.title = itinerary.title;
     window.state.cc = config.start.cc || config.end.cc || 'XX';
+    // Forcer le nombre de nuits demandé par l'utilisateur (sinon autoCalculateNights écrase)
+    window.state.targetNights = config.days;
+    window.state.requestedDays = config.days;
+    console.log('[ROUTE-BUILDER] ✅ targetNights forcé à', config.days);
+    
+    // 📸 Réhydrater les photos catalogue depuis ort-data-loader.js
+    (async function rehydratePhotosAB() {
+      const maxAttempts = 6;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (typeof getPhotosForPlace === 'function') {
+          let hydrated = 0;
+          window.state.steps.forEach(step => {
+            if (step && step.place_id) {
+              const photos = getPhotosForPlace(step.place_id) || [];
+              if (photos.length) {
+                step.images = (typeof optimizePhotoUrls === 'function')
+                  ? optimizePhotoUrls(photos)
+                  : photos;
+                step.photos = step.images;
+                hydrated++;
+              }
+            }
+          });
+          console.log(`[ROUTE-BUILDER] 📸 Photos réhydratées: ${hydrated}/${window.state.steps.length} étapes`);
+          if (typeof window.renderRows === 'function') window.renderRows();
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+      console.warn('[ROUTE-BUILDER] ⚠️ getPhotosForPlace indisponible après 3s');
+    })();
     
     // === TRIPID: Récupérer depuis URL ou ORT_TRIPID ===
     const urlParams = new URLSearchParams(window.location.search);
@@ -954,6 +992,9 @@ function generateBuilderItinerary(steps, config, lang) {
       console.log('[ROUTE-BUILDER] Appel renderRows()');
       renderRows();
     }
+    
+    // Modale de compromis (s'il y en a)
+    showCompromisesModalIfAny(steps, config, null, lang);
   } else {
     console.error('[ROUTE-BUILDER] ❌ Impossible d\'injecter l\'itinéraire: pas de loadItineraryFromBuilder ni state');
   }
@@ -972,8 +1013,8 @@ function generateBuilderItinerary(steps, config, lang) {
         lon: s.lng || s.lon,
         nights: s.nights || 0,
         description: s.description || '',
-        images: s.images || [],
-        photos: s.images || [],
+        images: s.photos || s.images || [],
+        photos: s.photos || s.images || [],
         visits: s.visits || [],
         activities: s.activities || [],
         place_id: s.place_id || null,
@@ -1085,33 +1126,58 @@ async function findStartCityInPlaces(start, lang) {
       const data = await res.json();
       const arr = Array.isArray(data) ? data : (data.places || Object.entries(data).map(([k,v]) => ({...v, place_id: v.place_id || k})));
       
-      // Chercher par proximité (< 5km) ou par nom
+      // Stratégie de matching :
+      //  - On cherche la place la PLUS PROCHE des coords envoyées (jusqu'à 10 km)
+      //    → couvre les cas Cologne/Köln, Munich/München, Florence/Firenze...
+      //  - Si rien à < 10 km, on accepte un match par NOM mais seulement si < 50 km
+      //    → évite les homonymes lointains type Toul/Toulouse
+      let bestByDist = null;
+      let bestByDistKm = Infinity;
+      let nameMatchFar = null;
+      
       for (const p of arr) {
         const lat = p.lat, lng = p.lng || p.lon;
         if (!lat || !lng) continue;
         
         const dist = _haversine(start.lat, start.lon, lat, lng);
-        const nameMatch = p.name?.toLowerCase().includes(start.name?.toLowerCase()) ||
-                          start.name?.toLowerCase().includes(p.name?.toLowerCase());
         
-        if (dist < 5 || nameMatch) {
-          console.log(`[ROUTE-BUILDER] 🔍 Trouvé: ${p.name} (dist=${dist.toFixed(1)}km, nameMatch=${nameMatch})`);
-          return {
-            place_id: p.place_id || p.id,
-            name: p.name,
-            lat: p.lat,
-            lon: p.lng || p.lon,
-            lng: p.lng || p.lon,
-            rating: p.rating || p.score || 7,
-            suggested_days: p.suggested_days || 2,
-            _suggestedDays: p.suggested_days || 2,
-            visits: p.visits || [],
-            activities: p.activities || [],
-            photos: p.photos || [],
-            description: p.description || p.summary || '',
-            cc: cc
-          };
+        // Meilleure place par distance (limite 10 km)
+        if (dist < 10 && dist < bestByDistKm) {
+          bestByDist = p;
+          bestByDistKm = dist;
         }
+        
+        // Fallback par nom si pas de proche : on garde la plus proche par nom < 50 km
+        if (!bestByDist && dist < 50) {
+          const nameMatch = p.name?.toLowerCase().includes(start.name?.toLowerCase()) ||
+                            start.name?.toLowerCase().includes(p.name?.toLowerCase());
+          if (nameMatch && (!nameMatchFar || dist < _haversine(start.lat, start.lon, nameMatchFar.lat, nameMatchFar.lng || nameMatchFar.lon))) {
+            nameMatchFar = p;
+          }
+        }
+      }
+      
+      const found = bestByDist || nameMatchFar;
+      if (found) {
+        const fLat = found.lat, fLng = found.lng || found.lon;
+        const fDist = _haversine(start.lat, start.lon, fLat, fLng);
+        const matchType = bestByDist ? 'proximité' : 'nom';
+        console.log(`[ROUTE-BUILDER] 🔍 Trouvé: ${found.name} (dist=${fDist.toFixed(1)}km, match=${matchType})`);
+        return {
+          place_id: found.place_id || found.id,
+          name: found.name,
+          lat: found.lat,
+          lon: found.lng || found.lon,
+          lng: found.lng || found.lon,
+          rating: found.rating || found.score || 7,
+          suggested_days: found.suggested_days || 2,
+          _suggestedDays: found.suggested_days || 2,
+          visits: found.visits || [],
+          activities: found.activities || [],
+          photos: found.photos || [],
+          description: found.description || found.summary || '',
+          cc: cc
+        };
       }
       break;
     } catch (e) {
@@ -1173,8 +1239,12 @@ async function loadPlacesForLoop(config, searchRadius) {
   const countries = new Set();
   if (start.cc) countries.add(start.cc.toUpperCase());
   
-  // Ajouter les pays voisins si le rayon est grand
-  if (searchRadius > 100) {
+  // Mode "Autres suggestions" : on reste strictement dans le pays du départ
+  // pour éviter les sauts aberrants (Londres → Paris/Amsterdam).
+  if (config.preferStartCountry && start.cc) {
+    console.log(`[ROUTE-BUILDER] 🏠 Restriction pays départ: ${start.cc.toUpperCase()} uniquement`);
+  } else if (searchRadius > 100) {
+    // Mode normal : ajouter les pays voisins si le rayon est grand
     for (const [cc, bbox] of Object.entries(COUNTRY_BBOX)) {
       const inRange = start.lat >= bbox.minLat - searchRadius/111 &&
                       start.lat <= bbox.maxLat + searchRadius/111 &&
@@ -1218,9 +1288,11 @@ async function loadPlacesForLoop(config, searchRadius) {
           // Distance au point de départ
           const distFromStart = _haversine(start.lat, start.lon, lat, lng);
           
-          // IMPORTANT: Filtrer par maxKm (distance max par étape)
-          // Une étape doit être accessible en une journée
-          if (distFromStart > maxKm) continue;
+          // IMPORTANT: Filtrer par portée du circuit (pas par maxKm seul)
+          // maxKm = distance entre 2 étapes consécutives
+          // Portée max depuis le départ = maxKm × jours / 2 (on revient au point de départ)
+          // On garde une marge généreuse via le searchRadius déjà calculé.
+          if (distFromStart > searchRadius) continue;
           if (distFromStart < 15) continue; // Trop proche du départ (min 15km)
           
           places[pid] = {
@@ -1232,6 +1304,7 @@ async function loadPlacesForLoop(config, searchRadius) {
             rating: p.rating || p.score || 5,
             suggested_days: p.suggested_days || 1,
             _suggestedDays: p.suggested_days || 1,
+            place_type: p.place_type,
             // Charger TOUTES les données pour éviter un enrichissement séparé
             visits: p.visits || [],
             activities: p.activities || [],
@@ -1581,18 +1654,28 @@ function selectStepsForLoop(config, places, searchRadius) {
     posLog = { lat: p.lat, lon: p.lon };
   }
   
-  // Vérifier que les étapes consécutives sont accessibles (< maxKm × 1.5)
+  // Garder toutes les étapes (le filtre maxKm × 1.5 cassait les boucles longues).
+  // On marque juste les sauts longs pour info, sans rien jeter.
   const validCircuit = [];
   currentPos = { lat: start.lat, lon: start.lon };
+  let longHopsCount = 0;
+  let longHopsMaxKm = 0;
   
   for (const place of selected) {
     const dist = _haversine(currentPos.lat, currentPos.lon, place.lat, place.lon);
-    if (dist <= maxKm * 1.5) {
-      validCircuit.push(place);
-      currentPos = { lat: place.lat, lon: place.lon };
-    } else {
-      console.log(`[ROUTE-BUILDER] ⏭️ ${place.name} trop loin (${dist.toFixed(0)}km > ${maxKm * 1.5}km)`);
+    if (dist > maxKm * 1.5) {
+      longHopsCount++;
+      if (dist > longHopsMaxKm) longHopsMaxKm = dist;
+      place._tooFar = true;
+      console.log(`[ROUTE-BUILDER] ⚠️ ${place.name} : saut long ${dist.toFixed(0)}km (> ${(maxKm * 1.5).toFixed(0)}km) — gardée quand même`);
     }
+    validCircuit.push(place);
+    currentPos = { lat: place.lat, lon: place.lon };
+  }
+  
+  if (longHopsCount > 0 && zoneInfo) {
+    zoneInfo.longHopsCount = longHopsCount;
+    zoneInfo.longHopsMaxKm = Math.round(longHopsMaxKm);
   }
   
   // Construire les étapes finales
@@ -1716,12 +1799,14 @@ function generateLoopItinerary(steps, config, lang) {
     _fromBuilder: true,
     _isLoop: true,
     _builderConfig: config,
-    _usedPlaces: steps.filter(s => s.place_id && !s.isStart && !s.isEnd).map(s => s.place_id)
+    _usedPlaces: steps.filter(s => s.place_id && !s.isStart && !s.isEnd).map(s => s.place_id),
+    _usedPlacesWithRating: steps.filter(s => s.place_id && !s.isStart && !s.isEnd).map(s => ({ pid: s.place_id, rating: s.rating || 0 }))
   };
   
   // Sauvegarder la config pour le recalcul
   window._loopBuilderConfig = config;
   window._loopUsedPlaces = itinerary._usedPlaces;
+  window._loopUsedPlacesWithRating = itinerary._usedPlacesWithRating;
   
   console.log(`[ROUTE-BUILDER] 📋 Itinéraire généré: "${title}", ${totalNights} nuits, ${steps.length} étapes`);
   
@@ -1738,6 +1823,39 @@ function generateLoopItinerary(steps, config, lang) {
     window.state.title = title;
     window.state.cc = config.start.cc || 'XX';
     window.state._isLoop = true;
+    // Forcer le nombre de nuits demandé par l'utilisateur (sinon autoCalculateNights écrase)
+    window.state.targetNights = config.days;
+    window.state.requestedDays = config.days;
+    console.log('[ROUTE-BUILDER] ✅ targetNights forcé à', config.days, '(loop)');
+    
+    // 📸 Réhydrater les photos catalogue depuis ort-data-loader.js
+    // (les masters JSON n'ont pas de champ photos — elles sont chargées séparément)
+    // On retry pendant 3 secondes au cas où getPhotosForPlace ne soit pas encore prêt.
+    (async function rehydratePhotosLoop() {
+      const maxAttempts = 6; // 6 × 500ms = 3s max
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (typeof getPhotosForPlace === 'function') {
+          let hydrated = 0;
+          window.state.steps.forEach(step => {
+            if (step && step.place_id) {
+              const photos = getPhotosForPlace(step.place_id) || [];
+              if (photos.length) {
+                step.images = (typeof optimizePhotoUrls === 'function')
+                  ? optimizePhotoUrls(photos)
+                  : photos;
+                step.photos = step.images;
+                hydrated++;
+              }
+            }
+          });
+          console.log(`[ROUTE-BUILDER] 📸 Photos réhydratées (loop): ${hydrated}/${window.state.steps.length} étapes`);
+          if (typeof window.renderRows === 'function') window.renderRows();
+          return;
+        }
+        await new Promise(r => setTimeout(r, 500));
+      }
+      console.warn('[ROUTE-BUILDER] ⚠️ getPhotosForPlace indisponible après 3s, photos non réhydratées');
+    })();
     
     // === TRIPID: Récupérer depuis URL ou ORT_TRIPID ===
     const urlParams = new URLSearchParams(window.location.search);
@@ -1761,6 +1879,9 @@ function generateLoopItinerary(steps, config, lang) {
     if (typeof recalcAllLegs === 'function') recalcAllLegs();
     if (typeof renderRows === 'function') renderRows();
   }
+  
+  // Modale de compromis (s'il y en a)
+  showCompromisesModalIfAny(steps, config, window._loopZoneInfo || null, lang);
   
   // Afficher le bouton recalculer si mode circuit
   showRecalculateButton(config, lang);
@@ -1791,8 +1912,8 @@ function generateLoopItinerary(steps, config, lang) {
         lon: s.lng || s.lon,
         nights: s.nights || 0,
         description: s.description || '',
-        images: s.images || [],
-        photos: s.images || [],
+        images: s.photos || s.images || [],
+        photos: s.photos || s.images || [],
         visits: s.visits || [],
         activities: s.activities || [],
         place_id: s.place_id || null,
@@ -1863,11 +1984,33 @@ function showRecalculateButton(config, lang) {
 async function recalculateLoop(config, lang) {
   console.log('[ROUTE-BUILDER] 🔄 Recalcul du circuit...');
   
-  // Ajouter les places utilisées à la liste d'exclusion
-  const usedPlaces = window._loopUsedPlaces || [];
-  config.excludePlaces = [...(config.excludePlaces || []), ...usedPlaces];
+  // N'exclure que la moitié la moins bien notée des places précédentes :
+  // on libère les 50% les mieux notées pour qu'elles puissent être réutilisées,
+  // ce qui évite les replis hors-zone aberrants (Paris/Amsterdam depuis Londres).
+  const usedWithRating = window._loopUsedPlacesWithRating || [];
+  let toExclude;
+  if (usedWithRating.length > 0) {
+    const sorted = [...usedWithRating].sort((a, b) => (a.rating || 0) - (b.rating || 0));
+    const halfCount = Math.ceil(sorted.length / 2);
+    toExclude = sorted.slice(0, halfCount).map(p => p.pid);
+    console.log(`[ROUTE-BUILDER] 50% exclusion: ${toExclude.length}/${sorted.length} places exclues (les moins bien notées)`);
+    console.log(`[ROUTE-BUILDER] Exclues:`, sorted.slice(0, halfCount).map(p => `${p.pid}(${p.rating})`).join(', '));
+    console.log(`[ROUTE-BUILDER] Réutilisables:`, sorted.slice(halfCount).map(p => `${p.pid}(${p.rating})`).join(', '));
+  } else {
+    toExclude = window._loopUsedPlaces || [];
+  }
   
-  console.log(`[ROUTE-BUILDER] Exclusions: ${config.excludePlaces.join(', ')}`);
+  config.excludePlaces = [...(config.excludePlaces || []), ...toExclude];
+  
+  console.log(`[ROUTE-BUILDER] Exclusions totales: ${config.excludePlaces.length}`);
+  
+  // Mode "Autres suggestions" : préférer rester dans le pays du départ
+  // (évite les sauts vers Paris/Amsterdam depuis Londres par exemple).
+  // On signale cette préférence via config — loadPlacesForLoop l'utilise.
+  config.preferStartCountry = true;
+  if (config.start && config.start.cc) {
+    console.log(`[ROUTE-BUILDER] 🏠 Préférence pays départ activée: ${config.start.cc}`);
+  }
   
   // Supprimer le bouton pendant le recalcul
   document.getElementById('btnRecalculateLoop')?.remove();
@@ -2070,7 +2213,82 @@ function showBuilderError(lang, message) {
   }
 }
 
-// === VALIDATION ROUTE: Détection passage par mer/ferry ===
+// === MODAL TRAJET TRANSCONTINENTAL ===
+// Affichée quand la distance directe entre start et end dépasse 3000 km,
+// ce qui rend tout trajet routier impossible (continents séparés).
+function showTranscontinentalModal(config, lang, validation) {
+  const TR_I18N = {
+    title: {
+      fr: '🌍 Trajet routier impossible',
+      en: '🌍 Road trip not possible',
+      it: '🌍 Viaggio in auto impossibile',
+      es: '🌍 Viaje por carretera imposible',
+      pt: '🌍 Viagem de carro impossível',
+      ar: '🌍 الرحلة البرية مستحيلة'
+    },
+    intro: {
+      fr: 'La distance à vol d\'oiseau entre {start} et {end} est de {km} km. Aucune route ne relie ces deux villes — elles sont séparées par un océan ou un autre continent.',
+      en: 'The straight-line distance between {start} and {end} is {km} km. No road connects these two cities — they are separated by an ocean or different continents.',
+      it: 'La distanza in linea d\'aria tra {start} e {end} è di {km} km. Nessuna strada collega queste due città — sono separate da un oceano o da continenti diversi.',
+      es: 'La distancia en línea recta entre {start} y {end} es de {km} km. Ninguna carretera conecta estas dos ciudades — están separadas por un océano o continentes diferentes.',
+      pt: 'A distância em linha reta entre {start} e {end} é de {km} km. Nenhuma estrada liga estas duas cidades — estão separadas por um oceano ou continentes diferentes.',
+      ar: 'المسافة المباشرة بين {start} و {end} هي {km} كم. لا يوجد طريق يربط بين هاتين المدينتين — فهما مفصولتان بمحيط أو قارات مختلفة.'
+    },
+    suggestion: {
+      fr: 'Pour un roadtrip, choisissez deux villes sur le même continent.',
+      en: 'For a road trip, choose two cities on the same continent.',
+      it: 'Per un viaggio in auto, scegli due città sullo stesso continente.',
+      es: 'Para un viaje por carretera, elige dos ciudades en el mismo continente.',
+      pt: 'Para uma viagem de carro, escolha duas cidades no mesmo continente.',
+      ar: 'لرحلة برية، اختر مدينتين في نفس القارة.'
+    },
+    btn: {
+      fr: 'Modifier mes villes',
+      en: 'Change my cities',
+      it: 'Modifica le mie città',
+      es: 'Cambiar mis ciudades',
+      pt: 'Alterar as minhas cidades',
+      ar: 'تغيير المدن'
+    }
+  };
+  const l = TR_I18N.title[lang] ? lang : 'fr';
+  const isRTL = (l === 'ar');
+  const tr = (key, params) => {
+    let text = TR_I18N[key]?.[l] || TR_I18N[key]?.fr || key;
+    if (params) Object.keys(params).forEach(k => {
+      text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+    });
+    return text;
+  };
+  
+  const modal = document.createElement('div');
+  modal.id = 'transcontinentalModal';
+  modal.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px" dir="${isRTL ? 'rtl' : 'ltr'}">
+      <div style="background:#fff;padding:28px;border-radius:16px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:${isRTL ? 'right' : 'left'}">
+        <div style="font-size:20px;font-weight:700;color:#b91c1c;margin-bottom:14px">${tr('title')}</div>
+        <p style="font-size:15px;color:#475569;line-height:1.6;margin-bottom:14px">
+          ${tr('intro', { start: config.start.name, end: config.end.name, km: Math.round(validation.directDistance) })}
+        </p>
+        <p style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:22px;font-style:italic">
+          ${tr('suggestion')}
+        </p>
+        <div style="display:flex;justify-content:flex-end">
+          <button id="transContBack" style="padding:14px 22px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px">
+            ${tr('btn')}
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  modal.querySelector('#transContBack').addEventListener('click', () => {
+    history.back();
+  });
+}
+
+
 function validateRouteIsDrivable(routeData, directDistance) {
   const ratio = routeData.distance / directDistance;
   
@@ -2078,8 +2296,35 @@ function validateRouteIsDrivable(routeData, directDistance) {
   console.log(`[ROUTE-BUILDER]    - Route: ${routeData.distance}km, Direct: ${directDistance.toFixed(0)}km`);
   console.log(`[ROUTE-BUILDER]    - Ratio: ${ratio.toFixed(2)}, isReal: ${routeData.isReal}`);
   
-  // CAS 1: Route OSRM réussie - on fait confiance au résultat
+  // CAS 0: Distance directe absurde pour de la voiture (> 3000km à vol d'oiseau)
+  // Ex: New York → Paris (5837km direct) = transatlantique, impossible en voiture
+  if (directDistance > 3000) {
+    console.warn(`[ROUTE-BUILDER] 🚫 Distance directe ${directDistance.toFixed(0)}km > 3000km : trajet routier impossible (continents séparés)`);
+    return {
+      valid: false,
+      reason: 'transcontinental',
+      message: 'Distance trop importante pour un trajet routier (continents séparés)',
+      ratio: ratio,
+      routeDistance: routeData.distance,
+      directDistance: directDistance
+    };
+  }
+  
+  // CAS 1: Route OSRM réussie - on fait confiance au résultat, mais on sanity-check
   if (routeData.isReal) {
+    // Ratio < 0.9 = route plus courte que la ligne droite = IMPOSSIBLE
+    // Signe qu'OSRM a renvoyé une route incohérente (ex: portion locale au lieu du trajet complet)
+    if (ratio < 0.9) {
+      console.warn(`[ROUTE-BUILDER] 🚫 Ratio aberrant (${ratio.toFixed(2)}) : route OSRM plus courte que la ligne droite, donnée corrompue`);
+      return {
+        valid: false,
+        reason: 'invalid_route',
+        message: 'Route incohérente renvoyée par le serveur (ratio aberrant)',
+        ratio: ratio,
+        routeDistance: routeData.distance,
+        directDistance: directDistance
+      };
+    }
     // Ratio > 5.0 = détour énorme, probablement contournement d'une mer
     if (ratio > 5.0) {
       console.warn(`[ROUTE-BUILDER] ⚠️ Ratio très élevé (${ratio.toFixed(2)}) → probable contournement maritime`);
@@ -2185,6 +2430,196 @@ function showSeaCrossingModal(config, lang, validation) {
     };
     document.addEventListener('keydown', escHandler);
   });
+}
+
+// ====================================================================
+// MODALE DE COMPROMIS — affichée après génération si certains critères
+// n'ont pas pu être respectés à la lettre.
+// ====================================================================
+
+// Textes traduits (fr, en, it, es, pt, ar)
+const COMPROMISES_I18N = {
+  title: {
+    fr: 'Itinéraire généré avec quelques compromis',
+    en: 'Itinerary generated with some compromises',
+    it: 'Itinerario generato con alcuni compromessi',
+    es: 'Itinerario generado con algunos compromisos',
+    pt: 'Itinerário gerado com alguns compromissos',
+    ar: 'تم إنشاء المسار مع بعض التنازلات'
+  },
+  intro: {
+    fr: 'Voici les points où nous avons dû nous adapter :',
+    en: 'Here are the points where we had to adapt:',
+    it: 'Ecco i punti in cui abbiamo dovuto adattarci:',
+    es: 'Estos son los puntos donde hemos tenido que adaptarnos:',
+    pt: 'Estes são os pontos onde tivemos de nos adaptar:',
+    ar: 'فيما يلي النقاط التي اضطررنا فيها إلى التكيف:'
+  },
+  distance: {
+    fr: '{n} trajet(s) dépasse(nt) {max} km (jusqu\'à {worst} km)',
+    en: '{n} leg(s) exceed {max} km (up to {worst} km)',
+    it: '{n} tratta(e) supera(no) {max} km (fino a {worst} km)',
+    es: '{n} tramo(s) supera(n) {max} km (hasta {worst} km)',
+    pt: '{n} trecho(s) excede(m) {max} km (até {worst} km)',
+    ar: '{n} مسار(ات) تتجاوز {max} كم (حتى {worst} كم)'
+  },
+  stepsCap: {
+    fr: 'Zone trop grande pour {max} km/étape : il en faudrait {needed} au lieu de {got}',
+    en: 'Area too large for {max} km/leg: would need {needed} stops instead of {got}',
+    it: 'Zona troppo grande per {max} km/tappa: ne servirebbero {needed} invece di {got}',
+    es: 'Zona demasiado grande para {max} km/etapa: harían falta {needed} en vez de {got}',
+    pt: 'Zona demasiado grande para {max} km/etapa: seriam necessárias {needed} em vez de {got}',
+    ar: 'المنطقة كبيرة جدًا لـ {max} كم/مرحلة: نحتاج {needed} بدلاً من {got}'
+  },
+  outOfZone: {
+    fr: '{n} étape(s) placée(s) hors de la zone que vous avez dessinée',
+    en: '{n} stop(s) placed outside the area you drew',
+    it: '{n} tappa(e) posizionata(e) fuori dalla zona disegnata',
+    es: '{n} parada(s) colocada(s) fuera de la zona dibujada',
+    pt: '{n} paragem(ns) colocada(s) fora da zona desenhada',
+    ar: '{n} محطة(ات) موضوعة خارج المنطقة التي رسمتها'
+  },
+  btnKeep: {
+    fr: 'Garder cet itinéraire',
+    en: 'Keep this itinerary',
+    it: 'Mantieni questo itinerario',
+    es: 'Mantener este itinerario',
+    pt: 'Manter este itinerário',
+    ar: 'الاحتفاظ بهذا المسار'
+  },
+  btnModify: {
+    fr: 'Modifier mes critères',
+    en: 'Adjust my criteria',
+    it: 'Modifica i miei criteri',
+    es: 'Modificar mis criterios',
+    pt: 'Alterar os meus critérios',
+    ar: 'تعديل المعايير'
+  }
+};
+
+// Collecte les compromis depuis steps + config + zoneInfo
+function collectBuilderCompromises(steps, config, zoneInfo) {
+  const compromises = [];
+  const maxKm = config.maxKm;
+  
+  // 1) Sauts dépassant maxKm × 1.5
+  let longCount = 0;
+  let worstKm = 0;
+  for (let i = 1; i < steps.length; i++) {
+    const a = steps[i - 1];
+    const b = steps[i];
+    if (a.isEnd && b.isReturn) continue; // ignorer la fermeture symbolique
+    const d = _haversine(a.lat, a.lon || a.lng, b.lat, b.lon || b.lng);
+    if (d > maxKm * 1.5) {
+      longCount++;
+      if (d > worstKm) worstKm = d;
+    }
+  }
+  if (longCount > 0) {
+    compromises.push({ type: 'distance', n: longCount, max: maxKm, worst: Math.round(worstKm) });
+  }
+  
+  // 2) Étapes plafonnées : on calcule combien il aurait fallu pour respecter maxKm
+  // Total distance / maxKm = nombre théorique d'étapes nécessaires
+  let totalDist = 0;
+  for (let i = 1; i < steps.length; i++) {
+    const a = steps[i - 1], b = steps[i];
+    totalDist += _haversine(a.lat, a.lon || a.lng, b.lat, b.lon || b.lng);
+  }
+  const intermediateStops = steps.filter(s => !s.isStart && !s.isEnd && !s.isReturn).length;
+  const stopsNeeded = Math.ceil(totalDist / maxKm) - 1; // -1 car le départ ne compte pas comme étape
+  if (longCount > 0 && stopsNeeded > intermediateStops + 1) {
+    compromises.push({ type: 'stepsCap', max: maxKm, needed: stopsNeeded, got: intermediateStops });
+  }
+  
+  // 3) Étapes hors zone (mode boucle avec polygone)
+  if (zoneInfo && zoneInfo.outCount > 0) {
+    compromises.push({ type: 'outOfZone', n: zoneInfo.outCount });
+  }
+  
+  return compromises;
+}
+
+// Affiche la modale (uniquement s'il y a des compromis)
+function showCompromisesModalIfAny(steps, config, zoneInfo, lang) {
+  const compromises = collectBuilderCompromises(steps, config, zoneInfo);
+  if (compromises.length === 0) {
+    console.log('[ROUTE-BUILDER] ✅ Aucun compromis, pas de modale');
+    return;
+  }
+  
+  console.log('[ROUTE-BUILDER] ℹ️ Compromis détectés:', compromises);
+  
+  const l = (COMPROMISES_I18N.title[lang] ? lang : 'fr');
+  const isRTL = (l === 'ar');
+  
+  const tr = (key, params) => {
+    let text = COMPROMISES_I18N[key]?.[l] || COMPROMISES_I18N[key]?.fr || key;
+    if (params) {
+      Object.keys(params).forEach(k => {
+        text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
+      });
+    }
+    return text;
+  };
+  
+  // Construire les lignes
+  const lines = compromises.map(c => {
+    if (c.type === 'distance') return tr('distance', { n: c.n, max: c.max, worst: c.worst });
+    if (c.type === 'stepsCap') return tr('stepsCap', { max: c.max, needed: c.needed, got: c.got });
+    if (c.type === 'outOfZone') return tr('outOfZone', { n: c.n });
+    return '';
+  }).filter(Boolean);
+  
+  // Construire l'URL retour avec params préremplis
+  const urlParams = new URLSearchParams(window.location.search);
+  const hasZone = urlParams.has('zonePolygon');
+  const backUrl = hasZone ? 'carte_builder.html?mode=expert' : 'index.html';
+  
+  // Délai léger pour que l'itinéraire s'affiche d'abord
+  setTimeout(() => {
+    const modal = document.createElement('div');
+    modal.id = 'builderCompromisesModal';
+    modal.setAttribute('dir', isRTL ? 'rtl' : 'ltr');
+    modal.innerHTML = `
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px" dir="${isRTL ? 'rtl' : 'ltr'}">
+        <div style="background:#fff;padding:28px;border-radius:16px;max-width:500px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:${isRTL ? 'right' : 'left'}">
+          <div style="font-size:20px;font-weight:700;color:#b45309;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:24px">⚠️</span> ${tr('title')}
+          </div>
+          <p style="font-size:15px;color:#475569;line-height:1.6;margin-bottom:16px">
+            ${tr('intro')}
+          </p>
+          <ul style="background:#fef3c7;border:1px solid #fde68a;border-radius:10px;padding:14px 20px;margin-bottom:22px;font-size:14px;color:#78350f;line-height:1.7;list-style:disc;${isRTL ? 'padding-right:28px' : 'padding-left:28px'}">
+            ${lines.map(l => `<li>${l}</li>`).join('')}
+          </ul>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button id="compModify" style="flex:1;min-width:120px;padding:14px 18px;background:#fff;color:#64748b;border:1px solid #cbd5e1;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px">
+              ${tr('btnModify')}
+            </button>
+            <button id="compKeep" style="flex:1;min-width:120px;padding:14px 18px;background:#113f7a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:14px">
+              ${tr('btnKeep')}
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    
+    modal.querySelector('#compKeep').addEventListener('click', () => modal.remove());
+    modal.querySelector('#compModify').addEventListener('click', () => {
+      window.location.href = backUrl;
+    });
+    
+    // ESC = fermer (garder l'itinéraire)
+    const escHandler = (e) => {
+      if (e.key === 'Escape') {
+        modal.remove();
+        document.removeEventListener('keydown', escHandler);
+      }
+    };
+    document.addEventListener('keydown', escHandler);
+  }, 800);
 }
 
 // Export pour utilisation externe

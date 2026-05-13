@@ -5442,6 +5442,13 @@ function setupTabs() {
 function setupEvents() {
   $('btnBack').onclick = () => {
     if (hasUnsavedChanges && !confirm(_t('unsavedQuit'))) return;
+    // Si on vient du builder (URL avec ?fromBuilder=1), retourner à l'accueil
+    // car history.back() renverrait sur RT detail (intermédiaire de la chaîne de redirections)
+    var params = new URLSearchParams(location.search);
+    if (params.get('fromBuilder') === '1') {
+      location.href = '/index.html';
+      return;
+    }
     history.back();
   };
   
