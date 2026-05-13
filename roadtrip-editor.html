@@ -2294,6 +2294,7 @@
                 itinerary: "Itinéraire",
                 night: "nuit",
                 nights: "nuits",
+                passage: "passage",
                 day: "Jour",
                 toDiscover: "À découvrir",
                 activities: "Activités",
@@ -2355,6 +2356,7 @@
                 itinerary: "Itinerary",
                 night: "night",
                 nights: "nights",
+                passage: "passing through",
                 day: "Day",
                 toDiscover: "To discover",
                 activities: "Activities",
@@ -2415,6 +2417,7 @@
                 itinerary: "Itinerario",
                 night: "noche",
                 nights: "noches",
+                passage: "de paso",
                 day: "Día",
                 toDiscover: "Por descubrir",
                 activities: "Actividades",
@@ -2475,6 +2478,7 @@
                 itinerary: "Itinerario",
                 night: "notte",
                 nights: "notti",
+                passage: "di passaggio",
                 day: "Giorno",
                 toDiscover: "Da scoprire",
                 activities: "Attività",
@@ -2535,6 +2539,7 @@
                 itinerary: "Itinerário",
                 night: "noite",
                 nights: "noites",
+                passage: "de passagem",
                 day: "Dia",
                 toDiscover: "Para descobrir",
                 activities: "Atividades",
@@ -2595,6 +2600,7 @@
                 itinerary: "خط السير",
                 night: "ليلة",
                 nights: "ليالي",
+                passage: "عبور",
                 day: "اليوم",
                 toDiscover: "للاكتشاف",
                 activities: "الأنشطة",
@@ -4067,16 +4073,19 @@
                 <h2 class="summary-title">📍 ${t('itinerary')}</h2>
                 <ol class="steps-list">
                     ${steps.map((st, i) => {
-                        const nights = st.nights || 1;
+                        const nights = Number(st.nights) || 0;
                         const dist = st.to_next_leg?.distance_km || st.distanceKm || 0;
                         const nightLabel = nights > 1 ? t('nights') : t('night');
+                        const nightsHtml = nights === 0
+                            ? `<div class="step-nights">${t('passage') || 'passage'}</div>`
+                            : `<div class="step-nights">${nights} ${nightLabel}</div>`;
                         return `
                         <li>
                             <div class="step-summary">
                                 <div class="step-marker">${i + 1}</div>
                                 <div class="step-summary-content">
                                     <div class="step-name">${esc(st.name)}</div>
-                                    <div class="step-nights">${nights} ${nightLabel}</div>
+                                    ${nightsHtml}
                                     ${dist ? `<div class="step-distance">→ ${Math.round(dist)} ${t('km')}</div>` : ''}
                                 </div>
                             </div>
@@ -4767,7 +4776,21 @@
                     return;
                 }
 
-                const shareUrl = result.shareUrl;
+                // Le module renvoie une URL pointant sur roadtrip_detail.html par défaut.
+                // On veut que le lien ouvre directement le CARNET (roadtrip-editor.html).
+                let shareUrl = result.shareUrl;
+                try {
+                    const u = new URL(shareUrl);
+                    if (u.pathname.includes('roadtrip_detail.html') ||
+                        u.pathname.includes('roadtrip-detail.html') ||
+                        u.pathname === '/' || u.pathname === '') {
+                        u.pathname = '/roadtrip-editor.html';
+                        shareUrl = u.toString();
+                    }
+                } catch (e) {
+                    console.warn('[CARNET-SHARE] URL non parsable, on garde l\'originale', e);
+                }
+                console.log('[CARNET-SHARE] Lien final:', shareUrl);
 
                 // Créer la modal de partage
                 const overlay = document.createElement('div');

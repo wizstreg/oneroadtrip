@@ -57,7 +57,18 @@ async function initRouteBuilder(params) {
     detour: parseInt(params.get('detour')) || 30,
     days: parseInt(params.get('days')) || 7,
     loop: isLoopMode,
-    excludePlaces: (params.get('exclude') || '').split(',').filter(Boolean)
+    excludePlaces: ((params.get('excludePlaces') || params.get('exclude') || '').split(',').filter(Boolean)),
+    // Zone optionnelle (mode Circuit) : polygone dessiné à main levée
+    // Format URL : zonePolygon=lat1,lon1;lat2,lon2;...
+    zonePolygon: (function(){
+      var raw = params.get('zonePolygon');
+      if (!raw) return null;
+      var pts = raw.split(';').map(function(s){
+        var p = s.split(',');
+        return [parseFloat(p[0]), parseFloat(p[1])];
+      }).filter(function(p){ return !isNaN(p[0]) && !isNaN(p[1]); });
+      return pts.length >= 3 ? pts : null;
+    })()
   };
   
   // Mode circuit : end = start
@@ -1256,18 +1267,112 @@ function selectStepsForLoop(config, places, searchRadius) {
     console.log(`  ${i+1}. ${p.name} - score=${p.score.toFixed(0)}, rating=${p.rating}, days=${p.suggested_days}, dist=${p.distFromStart.toFixed(0)}km`);
   });
   
-  // Sélectionner les places jusqu'à avoir assez de contenu pour remplir les jours
-  const selected = [];
-  let totalSuggestedDays = startSuggestedDays; // Inclure le départ
+  // === FILTRE PAR ZONE OPTIONNELLE (polygone dessiné) ===
+  // Si un polygone est défini, on prépare une liste de candidats dedans
+  // puis hors zone (pour le repli si pas assez).
+  let inZone = placeArray;
+  let outZone = [];
+  let zoneInfo = null;
   
-  for (const place of placeArray) {
-    // On prend des places tant qu'on n'a pas assez de jours suggérés
-    // (mais on limite le nombre d'étapes à days pour éviter trop de micro-étapes)
-    if (selected.length >= days) break;
-    if (totalSuggestedDays >= days * 2) break; // Assez de contenu
+  if (config.zonePolygon && config.zonePolygon.length >= 3) {
+    const poly = config.zonePolygon;
+    // Algorithme point-in-polygon (ray casting)
+    function pointInPoly(lat, lon){
+      let inside = false;
+      for (let i = 0, j = poly.length - 1; i < poly.length; j = i++){
+        const yi = poly[i][0], xi = poly[i][1];
+        const yj = poly[j][0], xj = poly[j][1];
+        const intersect = ((yi > lat) !== (yj > lat))
+          && (lon < (xj - xi) * (lat - yi) / (yj - yi + 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+    inZone = [];
+    outZone = [];
+    for (const p of placeArray) {
+      if (pointInPoly(p.lat, p.lon)) inZone.push(p);
+      else outZone.push(p);
+    }
+    console.log(`[ROUTE-BUILDER] 🎯 Polygone (${poly.length} sommets) → ${inZone.length} dans / ${outZone.length} hors`);
+    zoneInfo = { inCount: inZone.length, outCount: 0, polygonPoints: poly.length };
+  }
+  
+  // === SÉLECTION AVEC CONTRAINTE D'ESPACEMENT ===
+  // Périmètre cible du circuit : maxKm × jours.
+  // Nombre d'étapes visé : days (1 étape par jour environ).
+  // Distance moyenne entre 2 étapes consécutives = périmètre / étapes.
+  // On accepte une fenêtre [0.5x, 1.5x] de cette moyenne pour respirer.
+  const targetPerimeter = maxKm * days;
+  const targetSteps = Math.max(3, Math.min(days, 10));
+  const avgSpacing = targetPerimeter / (targetSteps + 1); // +1 car le départ compte
+  const minSpacing = avgSpacing * 0.5;
+  const maxSpacing = avgSpacing * 1.5;
+  
+  console.log(`[ROUTE-BUILDER] 📏 Périmètre cible: ${targetPerimeter}km, étapes visées: ${targetSteps}`);
+  console.log(`[ROUTE-BUILDER] 📏 Espacement moyen: ${avgSpacing.toFixed(0)}km, fenêtre [${minSpacing.toFixed(0)}-${maxSpacing.toFixed(0)}km]`);
+  
+  // Helper : distance min entre une place et toutes les places déjà retenues (+ départ)
+  function minDistToSelected(place, selectedList) {
+    let minDist = _haversine(start.lat, start.lon, place.lat, place.lon);
+    for (const s of selectedList) {
+      const d = _haversine(s.lat, s.lon, place.lat, place.lon);
+      if (d < minDist) minDist = d;
+    }
+    return minDist;
+  }
+  
+  // Fonction utilitaire : exécute une passe de sélection sur une liste donnée
+  function runPass(list, minSp, maxSp, label) {
+    for (const place of list) {
+      if (selected.length >= targetSteps) break;
+      if (selected.includes(place)) continue;
+      const distMin = minDistToSelected(place, selected);
+      if (distMin < minSp) continue;
+      if (distMin > maxSp) continue;
+      selected.push(place);
+      totalSuggestedDays += (place.suggested_days || 1);
+      console.log(`[ROUTE-BUILDER]   ✅ ${place.name} retenue (${label}, distMin=${distMin.toFixed(0)}km)`);
+    }
+  }
+  
+  const selected = [];
+  let totalSuggestedDays = startSuggestedDays;
+  
+  // PASSES 1-2-3 : sur la zone (ou sur tout si pas de zone)
+  // Passe 1 : fenêtre stricte
+  console.log(`[ROUTE-BUILDER] Passe 1 (zone) [${minSpacing.toFixed(0)}-${maxSpacing.toFixed(0)}km]`);
+  runPass(inZone, minSpacing, maxSpacing, 'passe 1');
+  
+  // Passe 2 : fenêtre élargie sur la zone
+  if (selected.length < targetSteps && inZone.length) {
+    const minSp2 = minSpacing * 0.5;
+    const maxSp2 = avgSpacing * 2.0;
+    console.log(`[ROUTE-BUILDER] Passe 2 (zone élargie) [${minSp2.toFixed(0)}-${maxSp2.toFixed(0)}km]`);
+    runPass(inZone, minSp2, maxSp2, 'passe 2');
+  }
+  
+  // Passe 3 : on prend ce qui reste dans la zone, juste min 15km
+  if (selected.length < targetSteps && inZone.length) {
+    console.log(`[ROUTE-BUILDER] Passe 3 (zone, min 15km)`);
+    runPass(inZone, 15, Infinity, 'passe 3');
+  }
+  
+  // === REPLI HORS ZONE si on n'a pas assez d'étapes ===
+  const zoneOnlyCount = selected.length;
+  if (selected.length < Math.max(3, targetSteps - 1) && outZone.length) {
+    console.log(`[ROUTE-BUILDER] ⚠️ Pas assez dans la zone (${selected.length}/${targetSteps}), repli sur hors-zone`);
+    // Passe 4 : hors zone, fenêtre élargie
+    const minSp4 = minSpacing * 0.5;
+    const maxSp4 = avgSpacing * 2.0;
+    runPass(outZone, minSp4, maxSp4, 'repli hors-zone');
     
-    selected.push(place);
-    totalSuggestedDays += (place.suggested_days || 1);
+    // Passe 5 : dernier recours, hors zone, juste min 15km
+    if (selected.length < Math.max(3, targetSteps - 2)) {
+      runPass(outZone, 15, Infinity, 'repli hors-zone, min 15km');
+    }
+    
+    if (zoneInfo) zoneInfo.outCount = selected.length - zoneOnlyCount;
   }
   
   console.log(`[ROUTE-BUILDER] ${selected.length} places sélectionnées, ${totalSuggestedDays.toFixed(1)} jours conseillés total (avec départ)`);
@@ -1312,12 +1417,89 @@ function selectStepsForLoop(config, places, searchRadius) {
   
   console.log(`[ROUTE-BUILDER] Total nuits: ${totalNightsAssigned}/${days}`);
   
-  // Trier les étapes sélectionnées par angle pour un circuit cohérent
-  selected.sort((a, b) => a.angle - b.angle);
-  
-  // Vérifier que les étapes consécutives sont accessibles (< maxKm)
-  const validCircuit = [];
+  // === ORDONNANCEMENT NEAREST-NEIGHBOR ===
+  // On part du départ et à chaque étape on prend la ville restante la plus proche.
+  // Ça donne un ordre quasi-optimal (proche du voyageur de commerce) sans forcer
+  // un tour circulaire géométrique. Bien plus régulier que le tri par angle.
+  const ordered = [];
   let currentPos = { lat: start.lat, lon: start.lon };
+  const remaining = [...selected];
+  
+  while (remaining.length > 0) {
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < remaining.length; i++) {
+      const d = _haversine(currentPos.lat, currentPos.lon, remaining[i].lat, remaining[i].lon);
+      if (d < bestDist) {
+        bestDist = d;
+        bestIdx = i;
+      }
+    }
+    const next = remaining.splice(bestIdx, 1)[0];
+    ordered.push(next);
+    currentPos = { lat: next.lat, lon: next.lon };
+    console.log(`[ROUTE-BUILDER]   → ${next.name} (${bestDist.toFixed(0)}km de la précédente)`);
+  }
+  // Distance finale vers le retour au départ (info pour log)
+  const distBack = _haversine(currentPos.lat, currentPos.lon, start.lat, start.lon);
+  console.log(`[ROUTE-BUILDER]   → retour ${start.name} (${distBack.toFixed(0)}km)`);
+  
+  // Remplacer selected par l'ordre optimisé
+  selected.length = 0;
+  selected.push(...ordered);
+  
+  // === 2-OPT : amélioration de l'ordre pour éviter les zigzags ===
+  // Le nearest-neighbor est local et peut produire des croisements (ex: 9-10 zigzag).
+  // Le 2-opt teste l'inversion de chaque sous-séquence et garde si la distance totale baisse.
+  // On inclut le départ et le retour pour mesurer le circuit complet.
+  function tourDistance(tour, startPt) {
+    let total = _haversine(startPt.lat, startPt.lon, tour[0].lat, tour[0].lon);
+    for (let i = 0; i < tour.length - 1; i++) {
+      total += _haversine(tour[i].lat, tour[i].lon, tour[i+1].lat, tour[i+1].lon);
+    }
+    total += _haversine(tour[tour.length-1].lat, tour[tour.length-1].lon, startPt.lat, startPt.lon);
+    return total;
+  }
+  
+  let tour = [...selected];
+  let improved = true;
+  let iterations = 0;
+  const initialDist = tourDistance(tour, start);
+  console.log(`[ROUTE-BUILDER] 🔁 2-opt: distance initiale ${initialDist.toFixed(0)}km`);
+  
+  while (improved && iterations < 50) {
+    improved = false;
+    iterations++;
+    for (let i = 0; i < tour.length - 1; i++) {
+      for (let j = i + 1; j < tour.length; j++) {
+        // Inverser le segment [i..j]
+        const newTour = [...tour.slice(0, i), ...tour.slice(i, j+1).reverse(), ...tour.slice(j+1)];
+        const newDist = tourDistance(newTour, start);
+        if (newDist < tourDistance(tour, start) - 0.5) { // seuil 0.5km pour éviter le bruit
+          tour = newTour;
+          improved = true;
+        }
+      }
+    }
+  }
+  const finalDist = tourDistance(tour, start);
+  console.log(`[ROUTE-BUILDER] 🔁 2-opt: distance finale ${finalDist.toFixed(0)}km (${iterations} itérations, gain ${(initialDist-finalDist).toFixed(0)}km)`);
+  
+  // Reporter l'ordre optimisé
+  selected.length = 0;
+  selected.push(...tour);
+  
+  // Re-logger l'ordre final
+  let posLog = { lat: start.lat, lon: start.lon };
+  for (const p of selected) {
+    const d = _haversine(posLog.lat, posLog.lon, p.lat, p.lon);
+    console.log(`[ROUTE-BUILDER]   ✓ ${p.name} (${d.toFixed(0)}km)`);
+    posLog = { lat: p.lat, lon: p.lon };
+  }
+  
+  // Vérifier que les étapes consécutives sont accessibles (< maxKm × 1.5)
+  const validCircuit = [];
+  currentPos = { lat: start.lat, lon: start.lon };
   
   for (const place of selected) {
     const dist = _haversine(currentPos.lat, currentPos.lon, place.lat, place.lon);
@@ -1373,6 +1555,9 @@ function selectStepsForLoop(config, places, searchRadius) {
   const totalNights = steps.reduce((sum, s) => sum + (s.nights || 0), 0);
   console.log(`[ROUTE-BUILDER] Circuit final: ${steps.length} étapes, ${totalNights} nuits`);
   steps.forEach((s, i) => console.log(`  ${i+1}. ${s.name} (${s.nights} nuits)`));
+  
+  // Stocker l'info zone pour transmission au mobile (bandeau de repli)
+  window._loopZoneInfo = zoneInfo;
   
   return steps;
 }
@@ -1495,6 +1680,50 @@ function generateLoopItinerary(steps, config, lang) {
   
   // Afficher le bouton recalculer si mode circuit
   showRecalculateButton(config, lang);
+  
+  // === GESTION RETOUR VERS RT MOBILE (mode loop) ===
+  const returnToLoop = new URLSearchParams(location.search).get('returnTo');
+  if (returnToLoop === 'mobile') {
+    console.log('[ROUTE-BUILDER] 🔄 returnTo=mobile détecté en mode loop → préparation retour mobile');
+    const builderResult = {
+      title: title,
+      cc: config.start.cc || config.end.cc || 'XX',
+      // === Données pour permettre le recalcul côté mobile ===
+      _isLoop: true,
+      _loopConfig: {
+        start: config.start,
+        days: config.days,
+        maxKm: config.maxKm,
+        detour: config.detour,
+        excludePlaces: [...(config.excludePlaces || []), ...(window._loopUsedPlaces || [])],
+        zonePolygon: config.zonePolygon || null
+      },
+      _loopUsedPlaces: window._loopUsedPlaces || [],
+      _zoneInfo: window._loopZoneInfo || null,
+      steps: steps.map(s => ({
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng || s.lon,
+        lon: s.lng || s.lon,
+        nights: s.nights || 0,
+        description: s.description || '',
+        images: s.images || [],
+        photos: s.images || [],
+        visits: s.visits || [],
+        activities: s.activities || [],
+        place_id: s.place_id || null,
+        cc: s.cc || config.start.cc,
+        to_next_leg: s.to_next_leg || null
+      }))
+    };
+    
+    localStorage.setItem('ORT_BUILDER_RESULT', JSON.stringify(builderResult));
+    console.log('[ROUTE-BUILDER] ✅ ORT_BUILDER_RESULT sauvegardé (avec config recalcul), redirection mobile dans 1s');
+    
+    setTimeout(() => {
+      window.location.href = `roadtrip_mobile.html?fromBuilder=1&lang=${lang}`;
+    }, 1000);
+  }
 }
 
 // Afficher le bouton "Recalculer" pour le mode circuit

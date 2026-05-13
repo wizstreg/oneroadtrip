@@ -4489,8 +4489,157 @@ async function loadBuilderResult() {
   
   console.log(`[LOG-CONTROLE][MOBILE] Builder result: ${state.steps.length} étapes`);
   
+  // === MODE CIRCUIT : récupérer config pour permettre le recalcul ===
+  if (data._isLoop && data._loopConfig) {
+    window._mobileLoopConfig = data._loopConfig;
+    window._mobileLoopUsedPlaces = data._loopUsedPlaces || [];
+    console.log('[LOG-CONTROLE][MOBILE] 🔄 Mode circuit détecté, config sauvée pour recalcul');
+    // Afficher le bouton "Autres suggestions" après le rendu
+    setTimeout(showMobileRecalculateButton, 1500);
+    // Bandeau si la zone choisie a dû être élargie
+    if (data._zoneInfo && data._zoneInfo.outCount > 0) {
+      window._mobileZoneFallback = data._zoneInfo;
+      setTimeout(showZoneFallbackBanner, 1600);
+    }
+  }
+  
   // Nettoyer localStorage
   localStorage.removeItem('ORT_BUILDER_RESULT');
+}
+
+// === BOUTON RECALCULER (mode circuit, mobile) ===
+function showMobileRecalculateButton() {
+  if (document.getElementById('btnMobileRecalcLoop')) return;
+  if (!window._mobileLoopConfig) return;
+  
+  const lang = localStorage.getItem('lang') || 'fr';
+  const fallback = {
+    fr: '🔄 Autres suggestions',
+    en: '🔄 Other suggestions',
+    es: '🔄 Otras sugerencias',
+    it: '🔄 Altri suggerimenti',
+    pt: '🔄 Outras sugestões'
+  };
+  const label = window.ORT_I18N?.recalculateLoop?.[lang]
+             || window.ORT_I18N?.recalculateLoop?.fr
+             || fallback[lang]
+             || fallback.fr;
+  
+  const btn = document.createElement('button');
+  btn.id = 'btnMobileRecalcLoop';
+  btn.textContent = label;
+  btn.style.cssText = `
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 24px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(102,126,234,0.45);
+    z-index: 1000;
+  `;
+  
+  btn.addEventListener('click', () => {
+    const cfg = window._mobileLoopConfig;
+    const usedNow = (window._mobileLoopUsedPlaces || []);
+    const stepsPids = (state.steps || []).map(s => s.placeId).filter(Boolean);
+    // On garde les exclusions historiques (déjà bannies), mais sur les places ACTUELLES
+    // on n'en exclut que 50% (tirées au hasard) pour garder ~50% de continuité.
+    const historicalExclusions = [...(cfg.excludePlaces || [])];
+    const currentPlaces = [...new Set([...usedNow, ...stepsPids])];
+    // Mélanger et prendre la moitié
+    const shuffled = currentPlaces.slice().sort(() => Math.random() - 0.5);
+    const halfToExclude = shuffled.slice(0, Math.ceil(shuffled.length / 2));
+    const allExcluded = [...new Set([...historicalExclusions, ...halfToExclude])];
+    console.log('[MOBILE-RECALC] Renouvellement 50% :', halfToExclude.length, 'exclues sur', currentPlaces.length, 'actuelles + ', historicalExclusions.length, 'historiques');
+    
+    btn.disabled = true;
+    btn.textContent = '⏳ ...';
+    
+    // Construire l'URL vers RT detail avec returnTo=mobile et les exclusions
+    const params = new URLSearchParams();
+    params.set('from', 'builder');
+    params.set('startName', cfg.start.name || '');
+    params.set('startLat', cfg.start.lat || '');
+    params.set('startLon', cfg.start.lon || cfg.start.lng || '');
+    params.set('startCC', cfg.start.cc || '');
+    params.set('endName', cfg.start.name || '');
+    params.set('endLat', cfg.start.lat || '');
+    params.set('endLon', cfg.start.lon || cfg.start.lng || '');
+    params.set('endCC', cfg.start.cc || '');
+    params.set('maxKm', cfg.maxKm || 200);
+    params.set('detour', cfg.detour || 50);
+    params.set('days', cfg.days || 7);
+    params.set('loop', '1');
+    params.set('lang', lang);
+    params.set('returnTo', 'mobile');
+    // Liste des places à exclure, séparées par des virgules
+    if (allExcluded.length) params.set('excludePlaces', allExcluded.join(','));
+    // Conserver le polygone de zone si défini
+    if (cfg.zonePolygon && cfg.zonePolygon.length >= 3) {
+      const polyStr = cfg.zonePolygon.map(pt => pt[0].toFixed(4) + ',' + pt[1].toFixed(4)).join(';');
+      params.set('zonePolygon', polyStr);
+    }
+    
+    console.log('[MOBILE-RECALC] Redirection vers RT detail pour recalcul avec', allExcluded.length, 'exclusions');
+    window.location.href = `roadtrip_detail.html?${params.toString()}`;
+  });
+  
+  document.body.appendChild(btn);
+  console.log('[LOG-CONTROLE][MOBILE] ✅ Bouton recalculer affiché');
+}
+
+// === BANDEAU REPLI ZONE (si la zone choisie n'avait pas assez de places) ===
+function showZoneFallbackBanner() {
+  if (document.getElementById('mobileZoneFallbackBanner')) return;
+  if (!window._mobileZoneFallback) return;
+  const info = window._mobileZoneFallback;
+  
+  const lang = localStorage.getItem('lang') || 'fr';
+  const messages = {
+    fr: `ℹ️ Pas assez de lieux dans la zone dessinée. ${info.outCount} étape(s) ajoutée(s) hors zone pour compléter le circuit.`,
+    en: `ℹ️ Not enough places in the drawn area. ${info.outCount} step(s) added outside the area to complete the circuit.`,
+    es: `ℹ️ No hay suficientes lugares en la zona dibujada. ${info.outCount} etapa(s) añadida(s) fuera de zona para completar el circuito.`,
+    it: `ℹ️ Non ci sono abbastanza luoghi nella zona disegnata. ${info.outCount} tappa(e) aggiunta(e) fuori zona per completare il circuito.`,
+    pt: `ℹ️ Não há lugares suficientes na zona desenhada. ${info.outCount} etapa(s) adicionada(s) fora da zona para completar o circuito.`
+  };
+  const text = messages[lang] || messages.fr;
+  
+  const banner = document.createElement('div');
+  banner.id = 'mobileZoneFallbackBanner';
+  banner.style.cssText = `
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    background: #fff3cd;
+    color: #664d03;
+    border: 1px solid #ffecb5;
+    border-radius: 8px;
+    padding: 10px 36px 10px 12px;
+    font-size: 13px;
+    line-height: 1.35;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1001;
+  `;
+  banner.textContent = text;
+  
+  // Bouton fermer
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '×';
+  closeBtn.style.cssText = 'position:absolute;top:4px;right:6px;background:none;border:none;font-size:20px;cursor:pointer;color:#664d03;line-height:1';
+  closeBtn.addEventListener('click', () => banner.remove());
+  banner.appendChild(closeBtn);
+  
+  document.body.appendChild(banner);
+  // Auto-disparition après 12 s
+  setTimeout(() => { if (banner.parentNode) banner.remove(); }, 12000);
+  console.log('[LOG-CONTROLE][MOBILE] ℹ️ Bandeau de repli zone affiché');
 }
 
 // calculateOSRMRoute() → fourni par ort-routing.js

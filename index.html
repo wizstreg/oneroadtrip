@@ -22,6 +22,9 @@
 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Leaflet (utilisé pour le sélecteur de zone optionnel) -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <!-- Microsoft Clarity -->
 <script type="text/javascript">(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window,document,"clarity","script","w1sbx0fb07");</script>
 <!-- Favicon -->
@@ -358,9 +361,7 @@ footer p{opacity:.5;font-size:.8rem}
         </div>
         <div class="rb-field">
           <label id="rbDaysLabel">Durée</label>
-          <select id="rbDays">
-            <option value="3">3</option><option value="5">5</option><option value="7" selected>7</option><option value="10">10</option><option value="14">14</option><option value="21">21</option>
-          </select>
+          <input type="number" id="rbDays" value="7" min="2" max="30" step="1">
         </div>
         <div class="rb-mini-row">
           <div class="rb-field">
@@ -375,6 +376,11 @@ footer p{opacity:.5;font-size:.8rem}
         <div class="rb-loop">
           <input type="checkbox" id="rbLoopMode">
           <label for="rbLoopMode" id="rbLoopLabel">Circuit (retour au départ)</label>
+        </div>
+        <!-- Statut de la zone (visible uniquement si une zone est dessinée) -->
+        <div class="rb-zone" id="rbZoneWrap" style="display:none;margin-top:6px;text-align:center">
+          <div id="rbZoneStatus" style="font-size:12px;color:rgba(255,255,255,0.9);background:rgba(16,185,129,0.25);border:1px solid rgba(16,185,129,0.5);border-radius:14px;padding:6px 10px;display:inline-block"></div>
+          <div style="margin-top:4px"><a href="#" id="rbZoneEdit" style="font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline">Modifier / effacer</a></div>
         </div>
         <button class="rb-go" id="rbGo">🚀 Générer</button>
       </div>
@@ -645,6 +651,14 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
     var fs=startCity||{name:sv},fe=isLoop?fs:(endCity||{name:ev});
     var p='from=builder&startName='+encodeURIComponent(fs.name)+'&startLat='+(fs.lat||'')+'&startLon='+(fs.lon||'')+'&startCC='+(fs.countryCode||'')+'&endName='+encodeURIComponent(fe.name)+'&endLat='+(fe.lat||'')+'&endLon='+(fe.lon||'')+'&endCC='+(fe.countryCode||'')+'&maxKm='+(document.getElementById('rbMaxKm').value||200)+'&detour='+(document.getElementById('rbDetour').value||50)+'&days='+document.getElementById('rbDays').value+'&lang='+currentLang;
     if(isLoop)p+='&loop=1';
+    // Ajouter la zone dessinée si définie (mode Circuit uniquement)
+    if(isLoop && window._rbZone && window._rbZone.polygon){
+      // Encode le polygone en lat1,lon1;lat2,lon2;... (4 décimales pour rester court)
+      var polyStr = window._rbZone.polygon.map(function(pt){
+        return pt[0].toFixed(4) + ',' + pt[1].toFixed(4);
+      }).join(';');
+      p+='&zonePolygon=' + encodeURIComponent(polyStr);
+    }
     this.textContent='\u23F3';this.disabled=true;
     setTimeout(function(){location.href='/roadtrip_detail.html?'+p},400);
   });
@@ -1241,5 +1255,309 @@ gtag('config', 'G-JK3QGQGDDL');
 gtag('config', 'GT-WF83FMCX');
 </script>
 <script src="/js/ort-footer.js"></script>
+
+
+<!-- ===== MODALE SÉLECTEUR DE ZONE - DESSIN À MAIN LEVÉE ===== -->
+<div id="rbZoneModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;padding:12px">
+  <div style="background:#fff;border-radius:12px;max-width:560px;width:100%;max-height:92vh;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center">
+      <strong id="rbZoneTitle" style="font-size:15px">🗺️ Dessinez votre zone</strong>
+      <button type="button" id="rbZoneClose" style="background:none;border:none;font-size:24px;cursor:pointer;line-height:1" title="Nous laisser décider">&times;</button>
+    </div>
+    <div id="rbZoneHelp" style="padding:8px 18px;font-size:13px;color:#555;background:#f7f9fc">
+      Tracez avec le doigt (ou la souris) la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.
+    </div>
+    <!-- Conteneur carte + canvas de dessin -->
+    <div style="position:relative;width:100%;height:380px;background:#eef">
+      <div id="rbZoneMap" style="position:absolute;inset:0"></div>
+      <canvas id="rbZoneCanvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair"></canvas>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid #eee;display:flex;gap:8px">
+      <button type="button" id="rbZoneReset" style="flex:1;background:#f0f0f0;color:#333;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:13px">↺ Effacer</button>
+      <button type="button" id="rbZoneSkip" style="flex:1;background:#fff;color:#555;border:1px solid #ccc;border-radius:8px;padding:10px;cursor:pointer;font-size:13px">Nous laisser décider</button>
+      <button type="button" id="rbZoneValidate" style="flex:2;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:8px;padding:10px;cursor:pointer;font-size:14px;font-weight:600" disabled>✓ Valider</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SÉLECTEUR DE ZONE - DESSIN À MAIN LEVÉE
+   Comportement :
+   - S'ouvre AUTOMATIQUEMENT au clic sur la case "Circuit"
+   - Carte centrée sur la ville de départ, FIGÉE (pas de zoom/déplacement)
+   - Zoom calculé pour cadrer un rayon = (maxKm × jours / 2)
+   - Dessin libre au doigt/souris → polygone fermé
+   - Bouton "Nous laisser décider" / fermer = pas de zone (comportement normal)
+   - Stocke window._rbZone = { polygon: [[lat,lon], ...] }
+   ============================================================ */
+(function(){
+  var Z_I18N = {
+    title:    { fr:'🗺️ Dessinez votre zone', en:'🗺️ Draw your area', es:'🗺️ Dibuje su zona', it:'🗺️ Disegna la tua zona', pt:'🗺️ Desenhe a sua zona' },
+    help:     { fr:'Tracez avec le doigt (ou la souris) la zone que vous voulez visiter. Fermez la fenêtre pour nous laisser choisir.', en:'Draw the area you want to visit with your finger (or mouse). Close to let us decide.', es:'Dibuje con el dedo (o el ratón) la zona que quiere visitar. Cierre para que decidamos nosotros.', it:'Disegna con il dito (o il mouse) la zona da visitare. Chiudi per lasciarci decidere.', pt:'Desenhe com o dedo (ou rato) a zona que quer visitar. Feche para nos deixar decidir.' },
+    reset:    { fr:'↺ Effacer', en:'↺ Clear', es:'↺ Borrar', it:'↺ Cancella', pt:'↺ Limpar' },
+    skip:     { fr:'Nous laisser décider', en:'Let us decide', es:'Déjenos decidir', it:'Lasciaci decidere', pt:'Deixe-nos decidir' },
+    validate: { fr:'✓ Valider', en:'✓ Confirm', es:'✓ Confirmar', it:'✓ Conferma', pt:'✓ Confirmar' },
+    status:   { fr:'Zone dessinée ({n} points)', en:'Area drawn ({n} points)', es:'Zona dibujada ({n} puntos)', it:'Zona disegnata ({n} punti)', pt:'Zona desenhada ({n} pontos)' },
+    needStart:{ fr:'Choisissez d\u2019abord une ville de départ.', en:'Please choose a departure city first.', es:'Elija primero una ciudad de salida.', it:'Scegli prima una città di partenza.', pt:'Escolha primeiro uma cidade de partida.' }
+  };
+  function tZ(k){ var lg = window.currentLang || localStorage.getItem('lang') || 'fr'; return (Z_I18N[k] && (Z_I18N[k][lg] || Z_I18N[k].fr)) || k; }
+  
+  var loopCb = document.getElementById('rbLoopMode');
+  var zoneWrap = document.getElementById('rbZoneWrap');
+  var zoneStatus = document.getElementById('rbZoneStatus');
+  var zoneEditLink = document.getElementById('rbZoneEdit');
+  var modal = document.getElementById('rbZoneModal');
+  var closeBtn = document.getElementById('rbZoneClose');
+  var resetBtn = document.getElementById('rbZoneReset');
+  var skipBtn = document.getElementById('rbZoneSkip');
+  var validateBtn = document.getElementById('rbZoneValidate');
+  var canvas = document.getElementById('rbZoneCanvas');
+  
+  // Libellés i18n
+  function applyLabels(){
+    document.getElementById('rbZoneTitle').textContent = tZ('title');
+    document.getElementById('rbZoneHelp').textContent = tZ('help');
+    resetBtn.textContent = tZ('reset');
+    skipBtn.textContent = tZ('skip');
+    validateBtn.textContent = tZ('validate');
+  }
+  applyLabels();
+  var langSel = document.getElementById('langSel') || document.getElementById('langSelector');
+  if (langSel) langSel.addEventListener('change', function(){ setTimeout(applyLabels, 50); });
+  
+  // État dessin
+  var leafletMap = null;
+  var drawnPolygon = null; // L.polygon affiché sur la carte
+  var pathLatLon = []; // [[lat,lon], ...] tracé en cours
+  var pathPxCanvas = []; // [{x,y}] pour dessin canvas pendant le tracé
+  var isDrawing = false;
+  
+  function getRadiusKm(){
+    // rayon = (maxKm × jours / 2) — divisé par 2 car on revient au départ
+    var maxKm = parseInt(document.getElementById('rbMaxKm').value) || 200;
+    var days = parseInt(document.getElementById('rbDays').value) || 7;
+    return (maxKm * days) / 2;
+  }
+  
+  // Calculer le niveau de zoom Leaflet pour cadrer un rayon donné (en km)
+  // Approximation classique : zoom = log2(40075 * cos(lat) / (radius_px_target))
+  function zoomForRadius(lat, radiusKm, mapWidthPx){
+    // On veut que radiusKm tienne dans ~40% de la largeur de carte
+    var targetPx = mapWidthPx * 0.4;
+    // À zoom z : pixels/km à la latitude lat = (256 * 2^z * cos(lat_rad)) / 40075
+    // Donc z = log2( (targetPx / radiusKm) * 40075 / (256 * cos(lat_rad)) )
+    var latRad = lat * Math.PI / 180;
+    var z = Math.log2((targetPx / radiusKm) * 40075 / (256 * Math.cos(latRad)));
+    return Math.max(3, Math.min(12, Math.round(z)));
+  }
+  
+  function openZoneModal(){
+    var startObj = window.startCity || null;
+    var startInput = document.getElementById('rbStart');
+    if (!startObj && (!startInput || !startInput.value.trim())) {
+      alert(tZ('needStart'));
+      loopCb.checked = false;
+      return;
+    }
+    var centerLat = startObj && startObj.lat ? startObj.lat : 46.5;
+    var centerLon = startObj && (startObj.lon || startObj.lng) ? (startObj.lon || startObj.lng) : 2.5;
+    
+    modal.style.display = 'flex';
+    
+    function initMap(){
+      if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
+      var mapDiv = document.getElementById('rbZoneMap');
+      var w = mapDiv.clientWidth || 400;
+      var zoom = zoomForRadius(centerLat, getRadiusKm(), w);
+      
+      // Détruire la carte précédente si elle existe (sinon réutiliser)
+      if (leafletMap) {
+        leafletMap.remove();
+        leafletMap = null;
+      }
+      leafletMap = L.map('rbZoneMap', {
+        center: [centerLat, centerLon],
+        zoom: zoom,
+        zoomControl: false,
+        dragging: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        touchZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        tap: false
+      });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '© OpenStreetMap'
+      }).addTo(leafletMap);
+      
+      // Marqueur ville de départ
+      L.circleMarker([centerLat, centerLon], {
+        radius: 7, color:'#1d4ed8', fillColor:'#3b82f6', fillOpacity:1, weight:2
+      }).addTo(leafletMap).bindTooltip(startObj ? startObj.name : '', { permanent:true, direction:'top' });
+      
+      setTimeout(function(){
+        leafletMap.invalidateSize();
+        setupCanvas();
+      }, 200);
+    }
+    initMap();
+  }
+  
+  // Préparer le canvas (taille + handlers)
+  function setupCanvas(){
+    // Tailles physiques (HD ratio pour clarté du trait)
+    var rect = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    
+    // Reset état dessin
+    pathLatLon = [];
+    pathPxCanvas = [];
+    if (drawnPolygon) { leafletMap.removeLayer(drawnPolygon); drawnPolygon = null; }
+    validateBtn.disabled = true;
+    clearCanvas();
+  }
+  
+  function clearCanvas(){
+    var rect = canvas.getBoundingClientRect();
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, rect.width, rect.height);
+  }
+  
+  function pxToLatLon(x, y){
+    // Coordonnées px relatives à la carte → latlng Leaflet
+    var pt = L.point(x, y);
+    var latlng = leafletMap.containerPointToLatLng(pt);
+    return [latlng.lat, latlng.lng];
+  }
+  
+  function getEventXY(e){
+    var rect = canvas.getBoundingClientRect();
+    var t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]) || e;
+    return { x: t.clientX - rect.left, y: t.clientY - rect.top };
+  }
+  
+  function startDraw(e){
+    e.preventDefault();
+    isDrawing = true;
+    pathLatLon = [];
+    pathPxCanvas = [];
+    if (drawnPolygon) { leafletMap.removeLayer(drawnPolygon); drawnPolygon = null; }
+    clearCanvas();
+    var p = getEventXY(e);
+    pathPxCanvas.push(p);
+    pathLatLon.push(pxToLatLon(p.x, p.y));
+  }
+  
+  function continueDraw(e){
+    if (!isDrawing) return;
+    e.preventDefault();
+    var p = getEventXY(e);
+    // Filtre : ignorer points trop proches (<3 px) pour éviter le bruit
+    var last = pathPxCanvas[pathPxCanvas.length - 1];
+    if (Math.abs(p.x - last.x) < 3 && Math.abs(p.y - last.y) < 3) return;
+    pathPxCanvas.push(p);
+    pathLatLon.push(pxToLatLon(p.x, p.y));
+    drawCanvasPath();
+  }
+  
+  function drawCanvasPath(){
+    var ctx = canvas.getContext('2d');
+    clearCanvas();
+    ctx.beginPath();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#10b981';
+    ctx.fillStyle = 'rgba(16,185,129,0.18)';
+    if (pathPxCanvas.length < 2) return;
+    ctx.moveTo(pathPxCanvas[0].x, pathPxCanvas[0].y);
+    for (var i = 1; i < pathPxCanvas.length; i++) ctx.lineTo(pathPxCanvas[i].x, pathPxCanvas[i].y);
+    ctx.fill();
+    ctx.stroke();
+  }
+  
+  function endDraw(e){
+    if (!isDrawing) return;
+    isDrawing = false;
+    e.preventDefault();
+    if (pathLatLon.length < 4) {
+      // Trop court : on annule
+      pathLatLon = [];
+      clearCanvas();
+      validateBtn.disabled = true;
+      return;
+    }
+    // Tracer le polygone fermé sur la carte Leaflet (pour le rendu propre)
+    drawnPolygon = L.polygon(pathLatLon, {
+      color:'#10b981', fillColor:'#10b981', fillOpacity:0.2, weight:2
+    }).addTo(leafletMap);
+    clearCanvas(); // on efface le canvas, le polygone Leaflet prend le relais
+    validateBtn.disabled = false;
+  }
+  
+  // Évènements souris + tactile
+  canvas.addEventListener('mousedown', startDraw);
+  canvas.addEventListener('mousemove', continueDraw);
+  canvas.addEventListener('mouseup', endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, { passive: false });
+  canvas.addEventListener('touchmove', continueDraw, { passive: false });
+  canvas.addEventListener('touchend', endDraw, { passive: false });
+  
+  // Bouton effacer
+  resetBtn.addEventListener('click', function(){
+    pathLatLon = [];
+    pathPxCanvas = [];
+    if (drawnPolygon) { leafletMap.removeLayer(drawnPolygon); drawnPolygon = null; }
+    clearCanvas();
+    validateBtn.disabled = true;
+  });
+  
+  // Bouton "Nous laisser décider" et croix : ferme et oublie la zone
+  function dismissWithoutZone(){
+    window._rbZone = null;
+    zoneWrap.style.display = 'none';
+    modal.style.display = 'none';
+  }
+  closeBtn.addEventListener('click', dismissWithoutZone);
+  skipBtn.addEventListener('click', dismissWithoutZone);
+  modal.addEventListener('click', function(e){
+    if (e.target === modal) dismissWithoutZone();
+  });
+  
+  // Valider : enregistre le polygone
+  validateBtn.addEventListener('click', function(){
+    if (pathLatLon.length < 4) return;
+    window._rbZone = { polygon: pathLatLon.slice() };
+    zoneStatus.textContent = tZ('status').replace('{n}', pathLatLon.length);
+    zoneWrap.style.display = 'block';
+    modal.style.display = 'none';
+  });
+  
+  // Lien "Modifier / effacer" sous le champ Circuit
+  if (zoneEditLink) zoneEditLink.addEventListener('click', function(e){
+    e.preventDefault();
+    if (loopCb.checked) openZoneModal();
+  });
+  
+  // Ouverture AUTO au clic sur Circuit
+  if (loopCb) {
+    loopCb.addEventListener('change', function(){
+      if (loopCb.checked) {
+        openZoneModal();
+      } else {
+        // Décoché → on oublie tout
+        window._rbZone = null;
+        zoneWrap.style.display = 'none';
+      }
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
