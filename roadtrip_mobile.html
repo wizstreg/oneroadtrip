@@ -1141,6 +1141,36 @@ html, body {
   margin-top: 2px;
 }
 
+.ort-speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  vertical-align: middle;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.ort-speak-btn:hover { background: #f0f7ff; border-color: var(--ort-blue); }
+.ort-speak-btn.ort-speak-playing {
+  background: var(--ort-blue);
+  color: #fff;
+  border-color: var(--ort-blue);
+  animation: ortSpeakPulse 1.5s ease-in-out infinite;
+}
+@keyframes ortSpeakPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
 .sheet-body {
   flex: 1;
   overflow-y: auto;
@@ -4349,7 +4379,16 @@ async function applyTripDataToState(tripData) {
   }
   
   state.title = tripData.title || tripData.name || 'Roadtrip';
-  state.cc = tripData.country || tripData.cc || 'XX';
+  state.cc = tripData.country || tripData.cc || '';
+  
+  // Fallback : déduire le cc depuis les steps (ex: place_id = "IT::barolo" → "IT")
+  if (!state.cc && rawSteps.length) {
+    for (const s of rawSteps) {
+      const pid = s.place_id || s.placeId || '';
+      if (pid && pid.includes('::')) { state.cc = pid.split('::')[0].toUpperCase(); break; }
+      if (s.cc) { state.cc = s.cc.toUpperCase(); break; }
+    }
+  }
   state.tripId = tripData.id || tripData.tripId;
   state._originalItinId = tripData.itinId || tripData._originalItinId;
   state.startDateStr = tripData.startDateStr || tripData.startDate || '';
@@ -4376,6 +4415,9 @@ async function applyTripDataToState(tripData) {
       distance_km: s.distance_km || s.to_next_leg?.distance_km || s._distanceKmToNext || 0,
       drive_min: s.drive_min || s.to_next_leg?.drive_min || s._driveMinToNext || 0,
       placeId: s.placeId || s.place_id || null,
+      place_id: s.place_id || s.placeId || null,
+      cc: s.cc || '',
+      rating: s.rating || 0,
       visits: s.visits || s.pois || [],
       activities: s.activities || [],
       _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : [])
@@ -4384,23 +4426,31 @@ async function applyTripDataToState(tripData) {
   
   debugLog('✅ state.steps = ' + state.steps.length);
   
-  // Charger les visites et activités des places depuis le master si vides
-  if (state.cc) {
-    debugLog('🔄 Chargement PLACES_INDEX pour ' + state.cc);
-    await ensurePlacesIndex([state.cc]);
+  // Collecter tous les pays présents dans les steps (trip multi-pays)
+  const _allCCs = new Set();
+  if (state.cc) _allCCs.add(state.cc.toUpperCase());
+  state.steps.forEach(step => {
+    const pid = step.place_id || '';
+    if (pid.includes('::')) _allCCs.add(pid.split('::')[0].toUpperCase());
+    if (step.cc) _allCCs.add(step.cc.toUpperCase());
+  });
+
+  if (_allCCs.size > 0) {
+    const _ccList = Array.from(_allCCs);
+    debugLog('🔄 Chargement PLACES_INDEX pour ' + _ccList.join(', '));
+    await ensurePlacesIndex(_ccList);
     debugLog('✅ PLACES_INDEX chargé: ' + Object.keys(PLACES_INDEX || {}).length + ' places');
 
-    // V3 fix : injecter les ratings dans state.steps depuis PLACES_INDEX
     if (state.steps && state.steps.length > 0 && PLACES_INDEX) {
       state.steps.forEach(step => {
         if (step.place_id && PLACES_INDEX[step.place_id]) {
           step.rating = PLACES_INDEX[step.place_id].rating || step.rating || 0;
         }
       });
-      debugLog('✅ Ratings injectés dans state.steps');
+      debugLog('✅ Ratings injectés dans state.steps (' + _ccList.join('+') + ')');
     }
   }
-  
+
   // Budget si présent
   if (tripData.totalBudget) {
     state.totalBudget = tripData.totalBudget;
@@ -4531,7 +4581,7 @@ function showMobileRecalculateButton() {
   btn.dataset.originalLabel = label;
   btn.style.cssText = `
     position: fixed;
-    bottom: 80px;
+    bottom: 160px;
     right: 16px;
     padding: 12px 18px;
     background: linear-gradient(135deg, #667eea, #764ba2);
@@ -4542,7 +4592,7 @@ function showMobileRecalculateButton() {
     font-size: 14px;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(102,126,234,0.45);
-    z-index: 1000;
+    z-index: 9999;
   `;
   
   // Réinitialiser le bouton si l'utilisateur revient en arrière (cache navigateur)
@@ -6160,7 +6210,21 @@ function openStepSheet(idx) {
   const step = state.steps[idx];
   const lang = state.lang || 'fr';
   
-  $('sheetStepName').textContent = getCityDisplayName(step, lang) || step.name;
+  const _sheetName = getCityDisplayName(step, lang) || step.name;
+  const _speechLangMap = {fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-PT',it:'it-IT',ar:'ar-SA'};
+  const _speechLang = _speechLangMap[lang] || 'en-US';
+  // Construire le texte à lire : nom + visites + activités
+  let _speakText = _sheetName;
+  const _vis = (step.visits || []).map(v => typeof v === 'string' ? v : (v && v.text) || '').filter(Boolean);
+  const _act = (step.activities || []).map(a => typeof a === 'string' ? a : (a && a.text) || '').filter(Boolean);
+  if (_vis.length) _speakText += '. ' + _vis.join(', ');
+  if (_act.length) _speakText += '. ' + _act.join(', ');
+  const _speakBtnId = 'ort-speak-sheet';
+  const _speakEsc = _speakText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+  const _speakBtn = ('speechSynthesis' in window)
+    ? `<button type="button" id="${_speakBtnId}" class="ort-speak-btn" onclick="event.stopPropagation();ortSpeak('${_speakBtnId}','${_speakEsc}','${_speechLang}')" aria-label="🔊">🔊</button>`
+    : '';
+  $('sheetStepName').innerHTML = _sheetName + ratingBadge(step.rating || 0) + _speakBtn;
   
   // i18n pour "Étape X sur Y"
   const stepOfText = i18n('stepOf').replace('{0}', idx + 1).replace('{1}', state.steps.length);
@@ -7503,6 +7567,39 @@ $('btnScanRetake').onclick = () => SCANNER.retake();
 $('btnScanAnalyze').onclick = () => SCANNER.analyze();
 $('btnScanNew').onclick = () => SCANNER.newScan();
 $('btnScanSave').onclick = () => SCANNER.save();
+
+// ===== Lecture vocale (TTS) =====
+var _ortCurrentBtnId = null;
+function _ortSetPlaying(id) {
+  var el = document.getElementById(id);
+  if (el) { el.textContent = '⏹'; el.setAttribute('aria-label', '⏹'); el.classList.add('ort-speak-playing'); }
+}
+function _ortResetBtn(id) {
+  var el = document.getElementById(id);
+  if (el) { el.textContent = '🔊'; el.setAttribute('aria-label', '🔊'); el.classList.remove('ort-speak-playing'); }
+}
+window.ortSpeak = function(btnId, textToRead, langCode) {
+  if (!('speechSynthesis' in window)) return;
+  if (_ortCurrentBtnId === btnId) {
+    window.speechSynthesis.cancel();
+    _ortResetBtn(btnId);
+    _ortCurrentBtnId = null;
+    return;
+  }
+  window.speechSynthesis.cancel();
+  if (_ortCurrentBtnId) _ortResetBtn(_ortCurrentBtnId);
+  try {
+    var u = new SpeechSynthesisUtterance(textToRead);
+    u.lang = langCode;
+    u.onend  = function() { _ortResetBtn(btnId); if (_ortCurrentBtnId === btnId) _ortCurrentBtnId = null; };
+    u.onerror = function() { _ortResetBtn(btnId); if (_ortCurrentBtnId === btnId) _ortCurrentBtnId = null; };
+    window.speechSynthesis.speak(u);
+    _ortCurrentBtnId = btnId;
+    _ortSetPlaying(btnId);
+  } catch(e) { _ortResetBtn(btnId); _ortCurrentBtnId = null; }
+};
+window.addEventListener('beforeunload', function() { try { window.speechSynthesis.cancel(); } catch(e) {} });
+// ===== Fin TTS =====
 
 // Expose
 window.openStepSheet = openStepSheet;
