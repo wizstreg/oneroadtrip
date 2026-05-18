@@ -748,7 +748,7 @@ ${userRequest}
 
 📋 RÈGLES DE CONCEPTION (à respecter absolument) :
 
-1. **1 LIEU VISITÉ = 1 ÉTAPE.** Si on dort à Nice et qu'on visite Cagnes-sur-Mer dans la journée, Cagnes est une étape à part entière (durée courte 0.2 ou 0.3 jour). Pas de "retour à Nice" en étape distincte. Si on reste 3 jours à Nice, créer 3 entrées Nice (avec visites différentes chaque jour).
+1. **1 LIEU NOMMÉ = 1 ÉTAPE.** Si on dort à Nice et qu'on visite Cagnes-sur-Mer dans la journée, Cagnes est une étape à part entière (durée courte 0.2 ou 0.3 jour). Pas de "retour à Nice" en étape distincte. Si on reste 3 jours à Nice, créer 3 entrées Nice (avec visites différentes chaque jour). **TOUT lieu d'intérêt avec un nom géographique distinct = entrée séparée**, même si ce n'est pas une ville où on dort : cascade nommée (Devil's Bridge, Salto de la Novia), grotte (San José), site archéologique (Pentre Ifan), col, lac. Le critère : un nom propre + des coordonnées GPS spécifiques différentes de l'étape précédente.
 
 2. **ORDRE LOGIQUE DE ROUTE.** Pas de zigzag, pas de retour en arrière inutile. Trajet cohérent géographiquement.
 
@@ -822,9 +822,11 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 - Tout place_id qui n'existe pas comme municipalité sur Wikipedia/Google Maps.
 
 **3. Cohérence de durée**
-- Formule attendue : N = round(SUM(suggested_days) + transport_days).
-- N doit apparaître identique dans : title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keywords, segments[last].to_day, variants[0].to_day, label "Var Nj", days_plan[last].day.
-- Note : COUNT_DAYS (nombre d'entrées dans days_plan) peut être > N, c'est normal quand plusieurs lieux sont visités le même jour. Le champ **day** peut se répéter sur plusieurs entrées (Day 7 visite A + Day 7 visite B).
+- Formule attendue : **N = round(SUM(suggested_days) + transport_days)**.
+- Barème transport_days : 0 (tous trajets < 1h30), 0.5 (1-2 trajets 2-4h ou vols courts), 1 (long-haul ou très long drive), 1.5-2 (cas exceptionnels multi-leg). Si tu doutes du transport_days appliqué par le concepteur, recalcule depuis les drive_min cumulés dans le JSON.
+- **DOIS signaler** : si SUM(suggested_days) + transport_days estimé ne donne PAS N une fois arrondi. Exemple : SUM = 5.1, transport_days = 0, donc N devrait être 5, mais title affiche "6 j" → INCOHÉRENT, à signaler.
+- **DOIS signaler** : si N n'apparaît PAS identiquement dans title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keywords, segments[last].to_day, variants[0].to_day, label "Var Nj". Une seule discordance → INVALIDE.
+- **NE PAS signaler** : la discordance entre days_plan[last].day et N. Le champ **day** dans chaque entrée est un index séquentiel d'étape (1, 2, 3... jusqu'au nombre d'entrées), pas un jour calendaire. days_plan[last].day peut être > N, c'est normal (le front transforme les étapes en jours calendaires via suggested_days).
 
 **4. Inventions de faits (les plus pénibles à débusquer)**
 - Chiffres ronds suspects sans source : "30% des légumes exportés", "200 000 palmiers", "1,2 million de visiteurs". Signaler si pas vérifiable.
@@ -853,12 +855,42 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 - Textes manquant de détail pratique (horaire, prix, warning, tuyau local).
 - Textes > 100 mots / 4 lignes à l'écran.
 
+**Méthode de comptage** : le concepteur produit normalement en tête de son output un DRAFT TALLY chiffré (pourcentages par pattern). Tu vérifies par **échantillonnage pondéré vers la fin du JSON** :
+
+- Prends 10 textes au total, répartis ainsi : **3 au début (premier tiers), 3 au milieu (deuxième tiers), 4 à la fin (dernier tiers)**. Le LLM tient ses bonnes intentions au début et se relâche à la fin — l'échantillon doit refléter cette fatigue.
+- Identifie le pattern d'ouverture de chaque texte (Place-first / Sensory / Opinion / FactualPivot / Conditional / LocalVoice / Contradiction / VousVerbe).
+- **Si DRAFT TALLY présent** : compare aux pourcentages annoncés. S'ils divergent (DRAFT dit 0% Place-first mais ton échantillon en montre 4-5 sur 10, surtout dans la fin), le concepteur a triché — signale-le.
+- **Si DRAFT TALLY absent** (le concepteur l'a oublié) : signale-le comme faute distincte ET fais l'échantillonnage quand même. Si > 5 textes Place-first sur 10, ou si > 3 sur les 4 derniers, déséquilibre flagrant — à signaler.
+
+Pas besoin de tout recompter sur 30+ textes, mais la fin du JSON doit être inspectée systématiquement — c'est là que les défauts se concentrent.
+
 **8. Clichés interdits (compter zéro)**
 "iconique", "incontournable", "must-see", "joyau caché", "hidden gem", "inoubliable", "magique", "véritable", "où l'histoire rencontre la modernité", "testament to", "vous garderez toute votre vie". Compte même les usages méta-ironiques entre guillemets ("le terme 'inoubliable' est presque justifié" = échec).
 "plongez dans..." max 1×. "ne manquez pas..." max 2×. "spectaculaire" max 2×.
 
 **9. Hôtels nommés dans les visits/activities**
 Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans un texte de visit/activity crée un doublon. À reformuler en "quartier où dormir" ou à supprimer.
+
+**10. Sources web manquantes (source_url)**
+- Le champ **source_url** doit contenir une liste d'URLs séparées par virgule, minimum 5.
+- Si **source_url** est vide ou contient moins de 5 URLs : recherche web insuffisante. Le JSON est à rejeter.
+- Si les URLs paraissent inventées (domaines fantaisistes, structure d'URL bizarre) : à signaler.
+- Sources crédibles : Wikipedia (fr/en/es/local), sites officiels des attractions, offices de tourisme, UNESCO. À éviter : TripAdvisor reviews, blogs anonymes.
+
+**11. road_type — texte libre interdit**
+- **road_type** doit être VIDE par défaut, ou contenir une des valeurs fermées suivantes en anglais : "flight", "ferry", "boat", "train", "scenic_road", "mountain_pass", "gravel", "seasonal".
+- Tout texte libre comme "nationale", "autoroute", "route côtière", "même nuit à X", "métro ligne X", "departmental", "highway" : à rejeter. Doit être réécrit en chaîne vide.
+- Exception : pour vol/ferry/train longue distance, **road_type** ECHOIT le **transport_mode**.
+
+**12. map_keywords — mauvaise langue**
+- Pays à alphabet latin ou anglais (Espagne, Italie, France, UK, US, Allemagne, etc.) → **map_keywords** en langue locale du pays. Pas en français pour l'Italie. Pas en anglais pour la France.
+- Pays à alphabet non-Latin (Pologne, Grèce, Russie, Chine, Japon, Thaïlande, Arabe, etc.) → **map_keywords** en ANGLAIS. Exemple Pologne : "Wawel Castle Krakow" ✅ et non "Zamek Królewski na Wawelu" ❌.
+- **Pays bilingues — règle de tranchage** :
+  - Irlande, Pays de Galles, Écosse, Bretagne : **ANGLAIS** (Google Maps reconnaît mieux, le gaélique / gallois / breton sont locaux mais peu indexés).
+  - Catalogne, Pays Basque espagnol, Galice : **ESPAGNOL** (pas catalan, pas basque, pas galicien — l'espagnol est la langue dominante touristique et le mieux indexé sur Google Maps).
+  - Corse : **FRANÇAIS**.
+  - Quebec : **FRANÇAIS**.
+- Format : "Exact Place Name + City". 1 à 3 entrées par jour.
 
 🟢 À IGNORER :
 - Dates approximatives mineures (XIVe vs XVe siècle si la source est ambiguë).
@@ -867,11 +899,27 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
 - Choix éditoriaux de tournure quand le hook tient.
 
 📤 FORMAT DE RETOUR D'AUDIT :
-- Section par catégorie (1 à 9 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
+- Section par catégorie (1 à 12 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
 - Pour chaque faute : citation exacte du JSON + correction proposée + raison brève.
 - Si une catégorie est propre, ne l'évoque pas.
 - Si rien à signaler du tout : "RAS, le JSON est propre" et tu t'arrêtes là.
 - Pas de couches de politesse, pas de récap général. Direct.
+
+🔴 **À LA FIN DE L'AUDIT, OBLIGATOIRE : une box récapitulative listant uniquement les changements à faire.** Une ligne par changement, format télégraphique, sans détail. L'utilisateur lit 50 lignes d'audit, il a besoin d'une vue d'ensemble à la fin pour cocher ses corrections. Format :
+
+    ╔══════════════════════════════════════════════════════╗
+    ║ CHANGEMENTS À FAIRE                                   ║
+    ╠══════════════════════════════════════════════════════╣
+    ║ 1. Day 9 : créer entrée Aledo séparée                ║
+    ║ 2. Day 10 : retirer "30% des légumes exportés"       ║
+    ║ 3. Réécrire 15 ouvertures Place-first                ║
+    ║ 4. Day 12 : supprimer "inoubliable"                  ║
+    ║ 5. source_url : ajouter URLs (vide actuellement)     ║
+    ║ 6. road_type Day 3 et 7 : vider                      ║
+    ║ 7. Day 5 : map_keywords en espagnol                  ║
+    ╚══════════════════════════════════════════════════════╝
+
+Si aucun changement à faire : la box affiche simplement "RAS — JSON propre". La box est OBLIGATOIRE même si tu écris RAS, c'est elle qui clôt l'audit.
 
 Exemple de retour bien formé :
 
@@ -894,6 +942,31 @@ Exemple de retour bien formé :
     8. Clichés
     - Day 12 : "l'un des rares moments où le terme 'inoubliable' est presque justifié".
       → Supprimer toute occurrence de "inoubliable" même en méta-commentaire.
+    
+    10. Sources web manquantes
+    - source_url est vide. Aucune URL citée.
+      → Le concepteur n'a pas fait de recherche web ou n'a pas reporté les URLs. JSON à rejeter, demander de refaire avec sources.
+    
+    11. road_type texte libre
+    - Day 3 : road_type = "nationale RM-F50". Day 7 : road_type = "même nuit à Murcia".
+      → Remplacer par chaîne vide "". L'enum n'autorise que flight/ferry/boat/train/scenic_road/mountain_pass/gravel/seasonal.
+    
+    12. map_keywords mauvaise langue
+    - Day 5 (Espagne) : ["Grottes de San José Vall d'Uixó"].
+      → Doit être en espagnol : ["Cuevas de San José Vall d'Uixó"].
+    
+    ╔══════════════════════════════════════════════════════╗
+    ║ CHANGEMENTS À FAIRE                                   ║
+    ╠══════════════════════════════════════════════════════╣
+    ║ 1. Day 9 : créer entrée Aledo séparée                ║
+    ║ 2. Day 10 : retirer "30% des légumes exportés"       ║
+    ║ 3. Day 2 : nommer la source ou retirer               ║
+    ║ 4. Réécrire 15 ouvertures Place-first                ║
+    ║ 5. Day 12 : supprimer "inoubliable"                  ║
+    ║ 6. source_url vide : à remplir                       ║
+    ║ 7. road_type Day 3 et 7 : vider                      ║
+    ║ 8. Day 5 : map_keywords en espagnol                  ║
+    ╚══════════════════════════════════════════════════════╝
 
 ═══════════════════════════════════════════════════════════
 🎯 ACTION IMMÉDIATE
@@ -910,11 +983,66 @@ Quand l'utilisateur reviendra avec un JSON, passe en mission 2 (audit).`;
   _universal: ({lang}) => {
     const targetLang = lang || 'fr';
     
-    return `You are a travel itinerary expert. You output THREE things in this EXACT order: (1) a DRAFT block with pattern labels for every text, (2) the valid JSON inside an ARTIFACT/CANVAS, (3) AFTER the JSON, an audit report in a code block. Nothing else. No prose explanation before, no Markdown fences around the JSON, no commentary after the audit.
+    return `You are a travel itinerary expert running in Claude.ai. You output FOUR things in this EXACT order: (1) a RESEARCH block listing the URLs you actually consulted, (2) a DRAFT block with pattern labels for every text, (3) the valid JSON **inside an ARTIFACT** (the dedicated Claude artifact window, NOT a chat code block), (4) AFTER the JSON, an audit report in a code block. Nothing else. No prose explanation before, no Markdown fences around the JSON, no commentary after the audit.
+
+🚨 **ARTIFACT IS MANDATORY FOR THE JSON. NON-NEGOTIABLE.**
+
+The JSON MUST be delivered via Claude's artifact feature (the dedicated panel that lets the user edit and copy cleanly). NOT as inline chat code (\`\`\`json ... \`\`\`). The reason: the user edits the JSON afterwards, and editing inline chat code is painful, while artifacts are made for that.
+
+This instruction has been ignored in previous attempts. Your default reflex of "long JSON → inline code block" is WRONG here. Resist it. Use the artifact tool.
+
+If you output the JSON as inline chat code instead of an artifact:
+- The output is considered INVALID
+- The user has to ask again, wasting time
+- This is the most common failure mode of long prompts — beat it
+
+Concretely: when you reach phase 3 (the JSON), call the artifact creation function. Do not just type \`\`\`json. Use the artifact.
+
+═══════════════════════════════════════════════════════════
+🔴 STEP -1 — MANDATORY WEB RESEARCH (BEFORE ANYTHING)
+═══════════════════════════════════════════════════════════
+
+⚠️ **CRITICAL OBSERVATION**: AI assistants consistently SKIP web research and rely on training memory, producing plausible but factually wrong content (invented dates, inflated numbers, fake superlatives). This is the n°1 cause of bad JSON output. This rule fixes it.
+
+**Before writing the DRAFT, you MUST perform web searches for every location in the itinerary.**
+
+Minimum requirements:
+- 1 web search PER unique night.place_id (so 14 places = 14+ searches minimum)
+- Additional searches for major attractions (museums, castles, natural sites) that you'll write about
+- Total: typically 15-30 searches for a 10-15 day itinerary
+
+You output a RESEARCH block at the very start, in this format:
+
+    === RESEARCH — WEB SOURCES CONSULTED ===
+    Total searches performed: [N]
+    
+    Per-location sources (URL or "no source found"):
+    - Morella: https://es.wikipedia.org/wiki/Morella , https://www.morellaturistica.com/
+    - Culla: https://es.wikipedia.org/wiki/Culla
+    - Peñíscola: https://en.wikipedia.org/wiki/Peñíscola , https://peniscolaturismo.com/
+    - Grottes de San José: https://www.riosubterraneo.com/
+    - ... (one line per night.place_id)
+    
+    Additional sources for specific claims:
+    - "350 000 m² Cité des Arts": https://www.cac.es/
+    - "Lonja UNESCO 1996": https://whc.unesco.org/en/list/782
+    - ... (URLs backing every precise number, date or superlative)
+    
+    === END RESEARCH ===
+
+**RULES**:
+1. If you have NOT done a real web search for a location, write "no source found — facts about this place will be SOFTENED" — and then in the JSON, soften every claim about that place (no precise dates, no chiffres, no superlatives).
+2. The source_url field in the JSON MUST contain ALL URLs from this RESEARCH block, comma-separated.
+3. Never invent URLs. If you cite "https://www.example.com/morella" and it doesn't exist, the entire JSON is invalid.
+4. Wikipedia counts. Official tourism sites count. Blog posts count if specific. Generic travel aggregators (TripAdvisor reviews) don't count as primary sources.
+
+**If you cannot or did not perform web searches, STOP. Output a single sentence: "Cannot proceed without web research access" and exit. Do NOT generate a JSON based on memory — that's the failure mode we're preventing.**
+
+═══════════════════════════════════════════════════════════
 
 🚫 NO PREAMBLE. NO REFORMULATION. NO QUESTIONS. NO CONFIRMATION REQUESTS.
 
-Your FIRST character of output must be the opening "=== DRAFT" of the pattern-labeling block. Forbidden openers, the user will reject the output if they see any of these:
+Your FIRST character of output must be the opening "=== RESEARCH" of the web-sources block. Forbidden openers, the user will reject the output if they see any of these:
 - "Je reformule : tu veux que je..." / "Let me rephrase..."
 - "Avant de lancer, deux points..." / "Before I start..."
 - "Ça te convient ?" / "Does that work for you?"
@@ -923,13 +1051,14 @@ Your FIRST character of output must be the opening "=== DRAFT" of the pattern-la
 - "C'est un JSON lourd, je travaille étape par étape..."
 - Any sentence describing what you're ABOUT to do
 - Any request for the user to validate an assumption before output
+- Outputting the JSON as a chat code block (\`\`\`json ... \`\`\`) instead of using the artifact tool — this is an INVALID delivery, the user will reject it
 
-If you must make an assumption (departure airport, transport mode, source_url empty), record it in the audit report under "ASSUMPTIONS MADE" — never in a pre-output message. The user reads assumptions AFTER seeing the JSON, not before.
+If you must make an assumption (departure airport, transport mode), record it in the audit report under "ASSUMPTIONS MADE" — never in a pre-output message.
 
 🚫 DO NOT ASK CLARIFYING QUESTIONS. Apply these defaults silently:
 - Transport not specified → assume "car" (roadtrip default).
 - Departure/arrival airport not specified → use the closest major airport/station to the first/last stop. If the first stop has no airport, the itinerary starts there anyway.
-- source_url not provided → leave as "" empty string.
+- source_url → MUST be filled with the URLs from the RESEARCH block (see STEP -1). Empty is INVALID.
 - Theme/audience not specified → infer from content, pick from the allowed French lists.
 - Language not specified → "${targetLang}".
 - Anything else ambiguous → most reasonable assumption, proceed silently.
@@ -1046,7 +1175,7 @@ JSON skeleton (every field mandatory):
 - **dept_code**: real regional code ("FR-06", "IT-RM", "US-AL"). Never "CC", "XX".
 - **specialties**: 2-4 themes in "${targetLang}".
 - **suggested_days**: real time at this stop. Decimals expected: 0.2 (drive-through), 0.3 (quick stop, e.g. Cagnes-sur-Mer visited from Nice), 0.5 (half-day), 1 (full day), 1.5, 2 (rich city).
-- **estimated_days_base** = ceil(sum of ALL suggested_days). N must appear identically in: title, subtitle (if duration shown), h1_title, intro_paragraph, seo_hook (if duration), seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj", days_plan[last].day. ANY mismatch → INVALID.
+- **estimated_days_base** = round(SUM(suggested_days) + transport_days). N must appear identically in: title (if duration shown), subtitle (if duration), h1_title, intro_paragraph, seo_hook (if duration), seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), unrelated to N. COUNT_DAYS can be > N.
 - **best_months**: lowercase in "${targetLang}".
 - **meta.themes** = ALWAYS FRENCH, EXACTLY 2 from: "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente". No invention, no translation.
 - **meta.audience** = ALWAYS FRENCH, 2-4 from: "couples", "solo", "familles", "seniors", "culture", "nature", "histoire", "aventure", "gastronomie".
@@ -1058,13 +1187,22 @@ JSON skeleton (every field mandatory):
 🗺️ DAYS_PLAN — THE CRITICAL STRUCTURE RULE
 ═══════════════════════════════════════════════════════════
 
-**EVERY VISITED PLACE = ONE ENTRY IN days_plan, with its OWN night.place_id**
+**EVERY NAMED PLACE OF INTEREST = ONE ENTRY IN days_plan, with its OWN night.place_id**
+
+This applies to cities AND to standalone POIs with distinct names and coordinates: named waterfalls (Devil's Bridge, Salto de la Novia), caves (San José), archaeological sites (Pentre Ifan), mountain passes, lakes. If it has a proper name and GPS coords different from the previous entry, it gets its own entry.
 
 ✅ CORRECT example: trip based in Nice for 3 nights, with a day-trip to Cagnes-sur-Mer.
 → days_plan must contain:
   - Day 1: night.place_id = "FR::nice", suggested_days = 1
   - Day 2: night.place_id = "FR::cagnes-sur-mer", suggested_days = 0.3 (the day-trip)
   - Day 3: night.place_id = "FR::nice", suggested_days = 1 (back in Nice, different visits)
+
+✅ CORRECT example with a non-city POI: trip in Wales, visiting Aberystwyth and Devil's Bridge waterfall (11 km away).
+→ days_plan must contain:
+  - Day N: night.place_id = "GB::aberystwyth", suggested_days = 0.5
+  - Day N+1: night.place_id = "GB::devils-bridge", suggested_days = 0.3 (the waterfall is named and has its own coords — it deserves an entry)
+
+❌ WRONG example: putting Devil's Bridge inside an Aberystwyth activity text without its own entry. It won't appear on the map.
 
 ❌ WRONG example (real failure observed): trip based in Murcia, with a day-trip to Aledo.
 → Day setting night.place_id = "ES::murcia" while describing Aledo visits is BROKEN.
@@ -1106,15 +1244,38 @@ The slug = the place's REAL name on a map. If the place doesn't exist on Wikiped
 
 5. **to_next_leg**: mandatory except last day. Same place_id on two consecutive nights → {"distance_km": 0, "drive_min": 0, "transport_mode": "car"}. Last day → omit or {}.
 
-6. **transport_mode**: STRICTLY one of "car", "train", "flight", "ferry", "boat", "walk". NEVER "plane", "airplane", "avion", "voiture". When transport_mode = "flight"/"ferry"/"train", road_type must echo it.
+6. **transport_mode**: STRICTLY one of "car", "train", "flight", "ferry", "boat", "walk". NEVER "plane", "airplane", "avion", "voiture".
 
-7. **map_keywords**: JSON array (not string). "Exact Place Name + City" format. Example: ["Villa d'Este Tivoli", "Villa Adriana Tivoli"].
+7. **road_type**: USE ONLY when transit is REMARKABLE. Default = empty string "". CLOSED ENUM list (English values, the front translates):
+   - "" (empty — default for ALL normal driving on tarmac, urban transit, metro inside same city, same place on consecutive nights)
+   - "flight" (when transport_mode = flight)
+   - "ferry" (when transport_mode = ferry)
+   - "boat" (when transport_mode = boat, non-ferry crossings like a river boat)
+   - "train" (only for LONG-distance trains: TGV, AVE, intercity. NOT for metro/tram/suburban)
+   - "scenic_road" (named panoramic route: passes, dunes, coast road, etc.)
+   - "mountain_pass" (col de montagne)
+   - "gravel" (unpaved track, piste, off-road)
+   - "seasonal" (route closed part of the year, e.g. alpine summer-only)
+   
+   ⚠️ NEVER write: "nationale", "autoroute", "route côtière", "même nuit à X", "métro ligne X", "departmental", "highway", "urban", or any free text. These get rejected on translation. If the transit is not in the enum list above, leave road_type as "".
+   
+   Examples:
+   - Drive Nice→Cannes on N7 → road_type: "" (normal tarmac, even if it's "nationale")
+   - Same place_id two consecutive nights → road_type: "" (no actual leg)
+   - Flight Paris→Rome → road_type: "flight"
+   - Drive over Col du Galibier → road_type: "mountain_pass"
+   - Ferry to Tabarca → road_type: "ferry"
+   - Inside Rome on metro → road_type: "" (not remarkable)
+   - Stelvio Pass in winter → road_type: "seasonal" (closed Nov-May)
+   - Sahara off-road → road_type: "gravel"
 
-8. **coords** = [lat, lon] of city center. Never invent precise POI coordinates.
+8. **map_keywords**: JSON array (not string). 1-3 keywords per day, in the LOCAL LANGUAGE of the country if Latin or English alphabet (Spanish in Spain, Italian in Italy, English in UK/US, French in France). For NON-Latin scripts (Poland, Greece, Russia, China, Japan, Thailand, Arab world, etc.) → use ENGLISH. **Bilingual regions — explicit rules**: Ireland, Wales, Scotland, Brittany → ENGLISH (not Gaelic/Welsh/Breton). Catalonia, Basque Country, Galicia (Spain) → SPANISH (not Catalan/Basque/Galician). Corsica → FRENCH. Quebec → FRENCH. Reason: Google Maps indexes the dominant tourist language best. Format: "Exact Place Name + City". Examples: Spain ["Castillo de Morella", "Murallas de Morella"]. Italy ["Villa d'Este Tivoli", "Villa Adriana Tivoli"]. Poland ["Wawel Castle Krakow", "Main Market Square Krakow"] (English, NOT "Zamek Wawelski Kraków"). Wales ["Conwy Castle Conwy", "Pentre Ifan Newport"] (English, NOT "Castell Conwy"). Catalonia ["Sagrada Familia Barcelona", "Park Güell Barcelona"] (Spanish, NOT "Família Sagrada").
 
-9. **slice** = always 1.
+9. **coords** = [lat, lon] of city center. Never invent precise POI coordinates.
 
-10. **Route logic**: start AND end at city with airport or train station. No backtracking, no zigzags.
+10. **slice** = always 1.
+
+11. **Route logic**: start AND end at city with airport or train station. No backtracking, no zigzags.
 
 ═══════════════════════════════════════════════════════════
 ✍️ WRITING STYLE — BLOG, NOT ENCYCLOPEDIA
@@ -1179,11 +1340,11 @@ The formula is simple:
 
 Where:
 - **SUM** = sum of all suggested_days across days_plan entries
-- **transport_days** = your honest estimate of days lost in transit, using your judgment:
-  - All drives < 1h → add 0
-  - Several drives 2-4h → add 0.5
-  - One long-haul flight (Paris→Bangkok, 12h+) → add 1
-  - Multi-leg long trip (flight + train + drives) → add 1 to 2
+- **transport_days** = honest estimate of days lost in transit, using this scale:
+  - **0** : all drives < 1h30, no flight, intra-region roadtrip
+  - **0.5** : 1-2 drives of 2-4h, OR 1-2 short domestic flights (under 2h)
+  - **1** : 1 long-haul flight (>4h), OR multiple medium flights, OR a very long single drive (>6h)
+  - **1.5-2** : multi-leg long trip (international flight + train + drives), exceptional cases
 - **round** = nearest integer (4.4 → 4, 4.5 → 5)
 
 **Example**: Nice (1) + Nice (1) + Cagnes (0.2) + Antibes (0.5) + Cannes (1) + Mandelieu (0.2) + Fréjus (0.5) = SUM 4.4. All drives < 1h → transport_days = 0. N = round(4.4) = **4**.
@@ -1192,7 +1353,7 @@ Where:
 
 ⚠️ **COUNT_DAYS (number of entries in days_plan) is FREE.** You can have 16 entries for a 12-day trip — that's normal when 5 villages are visited in the same day. The number of entries reflects the number of MAPPED PLACES, not the number of days. The Cagnes-rule requires every visited place to have its own entry, even at 0.2 days.
 
-**Once you have N**, place it identically in these 10 emplacements:
+**Once you have N**, place it identically in these 9 emplacements:
   □ title (the number, if duration shown)
   □ subtitle (if duration mentioned)
   □ estimated_days_base = N
@@ -1202,26 +1363,31 @@ Where:
   □ seo_keywords (the line containing "X jours/days")
   □ segments[last].to_day = N
   □ variants[0].to_day = N AND variants[0].label = "Var Nj"
-  □ days_plan[last].day = N
 
-The **day** field in each entry is a CALENDAR DAY LABEL, not a sequential index. Multiple entries can share the same **day** value when several places are visited the same day. Example:
+⚠️ **NOT in days_plan[last].day.** That field is a SEQUENTIAL STEP INDEX (1, 2, 3... up to COUNT_DAYS), unrelated to N. The front-end transforms steps into calendar days using suggested_days. Examples:
+
+  - 15 entries, N=10: days_plan[last].day = 15, estimated_days_base = 10. ✅ Coherent.
+  - Each day field MUST be unique (1, 2, 3...). No two entries share the same day value.
+
+Example with 5 places in a 4-day trip:
   - entry 1: day=1, Nice, suggested_days=1
   - entry 2: day=2, Nice, suggested_days=1
-  - entry 3: day=3, Cagnes, suggested_days=0.2 (visited morning)
-  - entry 4: day=3, Antibes, suggested_days=0.5 (visited afternoon)
-  - entry 5: day=4, Cannes, suggested_days=1
-  - ...
-  - last entry: day=N
+  - entry 3: day=3, Cagnes, suggested_days=0.2
+  - entry 4: day=4, Antibes, suggested_days=0.5
+  - entry 5: day=5, Cannes, suggested_days=1
+  → SUM = 3.7, transport=0, N = round(3.7) = 4
+  → estimated_days_base = 4, variants[0].label = "Var 4j", segments[last].to_day = 4
+  → days_plan[last].day = 5 (it's the step index, NOT a duration mismatch)
 
-CHECK each emplacement before output. If even ONE differs, REWRITE.
+CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 
 ═══════════════════════════════════════════════════════════
 ✅ FINAL CHECK BEFORE OUTPUT
 ═══════════════════════════════════════════════════════════
 
-- [ ] Output is in an ARTIFACT/CANVAS, valid JSON, no Markdown fences.
+- [ ] **JSON delivered in a CLAUDE ARTIFACT (the dedicated editable panel), NOT as inline chat code block.** This is the most failed rule. Re-check before output.
 - [ ] Title ≤ 60 characters, SEO-compliant.
-- [ ] **DURATION:** N = round(SUM(suggested_days) + transport_days). N appears identically in title, subtitle, h1, intro, hook, seo_keywords, estimated_days_base, segments[last].to_day, variants[0].to_day, label "Var Nj", days_plan[last].day. COUNT_DAYS (number of entries) is FREE — can be > N. The **day** field is a calendar label, multiple entries can share it.
+- [ ] **DURATION:** N = round(SUM(suggested_days) + transport_days). N appears identically in title, subtitle, h1, intro, hook, seo_keywords, estimated_days_base, segments[last].to_day, variants[0].to_day, label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), can be > N.
 - [ ] Every visited place = one days_plan entry with its own night.place_id (Cagnes-rule). No "ES::murcia" entry when actually visiting Aledo.
 - [ ] **PLACE_ID FORMAT:** every night.place_id = a real municipality slug. No "-centre", "-vieille-ville", "-airport", "-trek", "-ski", "-stop", "-return", "-day2". If it's not on Wikipedia/Google Maps as that entity, don't invent it.
 - [ ] suggested_days realistic decimals.
@@ -1230,10 +1396,12 @@ CHECK each emplacement before output. If even ONE differs, REWRITE.
 - [ ] No text > 100 words (4 lines visual). No big pavés.
 - [ ] Opening patterns distributed. "Vous + verbe" ≤20%.
 - [ ] 5+ signature moves planted.
-- [ ] map_keywords = JSON array on every day.
+- [ ] map_keywords = JSON array on every day. Local language if Latin/English alphabet, English if non-Latin script.
+- [ ] road_type: empty by default. Only filled with the closed enum (flight/ferry/boat/train/scenic_road/mountain_pass/gravel/seasonal). NEVER free text like "nationale", "autoroute", "même nuit à X".
 - [ ] Drive > 2h → intermediate stop inserted.
 - [ ] transport_mode ∈ {car, train, flight, ferry, boat, walk}.
 - [ ] places_taglines = one per UNIQUE night.place_id used.
+- [ ] **source_url FILLED** with the URLs from RESEARCH block, comma-separated, minimum 5 URLs. Empty source_url = JSON INVALID.
 - [ ] **ANTI-INVENTION SCAN:** zero "selon les experts" without name, zero round-number stats, zero "l'un des X meilleurs au monde" without source, zero "fondé en YYYY" you can't verify. Soften or delete.
 - [ ] No "iconique", "incontournable", "inoubliable", "joyau caché", "magique", even in quotation marks or meta-comments.
 
@@ -1396,16 +1564,46 @@ Format:
        N = round([X.X] + [X]) = [N]
        title contains: "[exact title from JSON]" → number shown: [N]
        estimated_days_base in JSON: [N]
-       days_plan[last].day in JSON: [N]
        segments[last].to_day in JSON: [N]
        variants[0].to_day in JSON: [N]
        variants[0].label in JSON: "[exact label]"
-       ✅ all match / ❌ MISMATCH at [field] → THE JSON ABOVE IS INVALID, rewrite.
+       ---
+       days_plan[last].day in JSON: [whatever it is — this is the STEP INDEX, not N]
+       COUNT_DAYS (number of entries in days_plan): [whatever it is]
+       Note: days_plan[last].day and COUNT_DAYS can be > N. That's normal, NOT a mismatch.
+       ---
+       ✅ all 9 emplacements of N match / ❌ MISMATCH at [field] → THE JSON ABOVE IS INVALID, rewrite.
     
     H. PLACE_ID SANITY CHECK (scan night.place_id values):
        Total unique night.place_id: [count]
        Any "-centre", "-airport", "-stop", "-return", neighborhood, fantasy compound: [list or "none"]
        ⚠️ Any found → THE JSON ABOVE IS INVALID, rewrite place_ids.
+    
+    H2. ROAD_TYPE AND MAP_KEYWORDS CHECK:
+       road_type values found in days_plan (list all non-empty values): [list or "all empty"]
+       ⚠️ Any value NOT in {flight, ferry, boat, train, scenic_road, mountain_pass, gravel, seasonal} → INVALID. Free text like "nationale", "autoroute", "même nuit", "métro" → REWRITE to empty string.
+       map_keywords language sample (3 entries):
+       - Day [N]: [sample keywords] → language: [local/English]
+       - Day [N]: [sample keywords] → language: [local/English]
+       - Day [N]: [sample keywords] → language: [local/English]
+       ⚠️ map_keywords in French for Spain/Italy/UK/US, or in Polish/Greek/Cyrillic/non-Latin script → REWRITE.
+    
+    I. WEB SOURCES VERIFICATION:
+       Total URLs in source_url field of the JSON: [count]
+       Sample URLs (paste 3 exact URLs from source_url):
+       - [URL 1]
+       - [URL 2]
+       - [URL 3]
+       Cross-check with RESEARCH block at top: do source_url URLs MATCH the RESEARCH block URLs?
+       - All RESEARCH URLs present in source_url: [yes/no]
+       - source_url contains URLs NOT in RESEARCH: [list or "none"]
+       ⚠️ source_url field empty or has < 5 URLs → JSON INVALID, recherche web insuffisante.
+       ⚠️ source_url contains URLs not in RESEARCH block → invented URLs, JSON INVALID.
+       ⚠️ Major facts in the JSON not backed by any URL in RESEARCH → soften or delete those facts.
+    
+    J. DELIVERY FORMAT CHECK:
+       JSON was delivered as: [ARTIFACT / inline chat code block]
+       ⚠️ If inline chat code block → INVALID DELIVERY. The user needs an artifact to edit easily. Re-deliver as artifact.
     
     === END AUDIT ===
 
@@ -3287,7 +3485,8 @@ N must appear identically in ALL these emplacements:
   □ seo_keywords (the line containing "X jours/days")
   □ segments[last].to_day = N
   □ variants[0].to_day = N AND label = "Var Nj"
-  □ days_plan[last].day = N
+
+⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), unrelated to N. COUNT_DAYS (number of entries) can be > N. The front transforms steps into calendar days via suggested_days.
 
 ⚠️ IF N IS DIFFERENT FROM THE CURRENT TITLE:
    → Either ADJUST suggested_days to match
@@ -3333,7 +3532,7 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 
 **suggested_days** = real time spent at this stop. Decimals expected: 0.2 (drive-through), 0.3 (quick stop), 0.5 (half-day), 1 (full day), 1.5, 2 (rich city). Adjust freely based on what the place deserves.
 
-**estimated_days_base** = ceil(sum of ALL suggested_days). This integer N MUST equal the number in title, subtitle (if duration mentioned), h1_title, intro_paragraph, seo_hook, seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj", and days_plan[last].day. If these are not all identical, the JSON is INVALID. Example: 7×1 + 2×0.3 = 7.6 → estimated_days_base = 8 → title says "8 jours" → variants[0].label = "Var 8j".
+**estimated_days_base** = round(sum of suggested_days + transport_days). This integer N MUST equal the number in title, subtitle (if duration mentioned), h1_title, intro_paragraph, seo_hook, seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj". NOT in days_plan[last].day (that's the step index, can be > N). Example: 7×1 + 2×0.3 = 7.6 → estimated_days_base = 8 → title says "8 jours" → variants[0].label = "Var 8j".
 
 **meta.themes** = ALWAYS IN FRENCH. EXACTLY 2 from:
 "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente"
@@ -3455,7 +3654,7 @@ If you can't pass all 5, the text is REJECTED.
 ✅ FINAL CHECK
 ═══════════════════════════════════════════════════════════
 ✅ itin_id and id = "${itin.itin_id}" (unchanged)
-✅ DURATION CONSISTENCY: write SUM = X.X, ceil = N, then verify N appears identically in: title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keyword line, segments[last].to_day, variants[0].to_day & label "Var Nj", days_plan[last].day. ANY mismatch → REWRITE.
+✅ DURATION CONSISTENCY: write SUM = X.X, round(SUM+transport) = N, then verify N appears identically in: title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keyword line, segments[last].to_day, variants[0].to_day & label "Var Nj". NOT in days_plan[last].day (step index, can be > N). ANY of the 9 emplacements mismatch → REWRITE.
 ✅ suggested_days = realistic decimals per stop
 ✅ meta.themes = 2 values from French list (verbatim)
 ✅ meta.audience = French values, 2-4
