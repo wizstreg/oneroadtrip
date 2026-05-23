@@ -425,7 +425,7 @@
 .ort-ed-launch{display:flex;align-items:stretch;gap:8px;margin:16px auto;max-width:720px;flex-wrap:wrap;justify-content:center;padding:0 16px}
 .ort-ed-launch button,.ort-ed-launch a{border:none;border-radius:12px;padding:12px 20px;font-size:.85rem;font-weight:600;cursor:pointer;transition:transform .15s,box-shadow .15s;box-shadow:0 4px 12px rgba(0,0,0,.15);line-height:1.4;text-align:center}
 .ort-ed-launch .ort-ed-btn-steps{background:linear-gradient(135deg,#113f7a,#0a2a57);color:#fff}
-.ort-ed-launch .ort-ed-btn-detail{background:linear-gradient(135deg,#ff6b35,#e55a28);color:#fff;font-weight:500;font-size:.8rem}
+.ort-ed-launch .ort-ed-btn-detail{background:linear-gradient(135deg,#113f7a,#0a2a57);color:#fff;font-weight:500;font-size:.8rem}
 .ort-ed-launch button:hover,.ort-ed-launch a:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.2)}
 .ort-ed-launch small{font-size:.72rem;color:#7f8c8d;width:100%;text-align:center}
 @media(max-width:900px){.ort-ed-launch{gap:6px;margin:12px 10px;padding:0}.ort-ed-launch button,.ort-ed-launch a{padding:10px 14px;font-size:.78rem;flex:1 1 100%}}
