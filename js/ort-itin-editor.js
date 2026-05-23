@@ -1614,6 +1614,16 @@
         setTimeout(function () { global.map.invalidateSize(); }, d);
       });
     }
+
+    // Remonter à la carte (ou au top si pas de carte)
+    setTimeout(function () {
+      var mapEl = document.getElementById('mapPanel') || document.getElementById('map');
+      if (mapEl && mapEl.scrollIntoView) {
+        mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }, 50);
   }
 
   // ─────────────────────────────────────────────
