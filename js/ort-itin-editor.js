@@ -49,6 +49,7 @@
       nVisits: '{n} visite(s)',
       nActivities: '{n} activité(s)',
       editBtn: 'Ajoutez, supprimez, modifiez l\'ordre des étapes sur cette page',
+      editStops: 'Modifier',
       editBtnSub: '(nécessite d\'être connecté — la version mobile permet une visualisation plus fluide mais pas ces modifications)',
       limitReached: 'Limite de voyages sauvegardés atteinte. Supprimez un voyage existant depuis votre tableau de bord.',
       reorgTitle: 'Réorganisation',
@@ -109,6 +110,7 @@
       nVisits: '{n} visit(s)',
       nActivities: '{n} activity(ies)',
       editBtn: 'Add, remove, reorder stops on this page',
+      editStops: 'Edit',
       editBtnSub: '(requires login — mobile version allows smoother viewing but not these edits)',
       limitReached: 'Saved trips limit reached. Delete an existing trip from your dashboard.',
       reorgTitle: 'Reorganization',
@@ -169,6 +171,7 @@
       nVisits: '{n} visita(s)',
       nActivities: '{n} actividad(es)',
       editBtn: 'Añade, elimina, reordena las paradas en esta página',
+      editStops: 'Editar',
       editBtnSub: '(requiere iniciar sesión — la versión móvil permite una visualización más fluida pero no estas modificaciones)',
       limitReached: 'Límite de viajes guardados alcanzado. Elimina un viaje existente desde tu panel.',
       reorgTitle: 'Reorganización',
@@ -229,6 +232,7 @@
       nVisits: '{n} visita(s)',
       nActivities: '{n} atividade(s)',
       editBtn: 'Adicione, remova, reordene paragens nesta página',
+      editStops: 'Editar',
       editBtnSub: '(requer login — a versão móvel permite uma visualização mais fluida mas não estas modificações)',
       limitReached: 'Limite de viagens salvas atingido. Exclua uma viagem existente do seu painel.',
       reorgTitle: 'Reorganização',
@@ -289,6 +293,7 @@
       nVisits: '{n} visita/e',
       nActivities: '{n} attività',
       editBtn: 'Aggiungi, rimuovi, riordina le tappe in questa pagina',
+      editStops: 'Modifica',
       editBtnSub: '(richiede l\'accesso — la versione mobile permette una visualizzazione più fluida ma non queste modifiche)',
       limitReached: 'Limite di viaggi salvati raggiunto. Elimina un viaggio esistente dalla tua dashboard.',
       reorgTitle: 'Riorganizzazione',
@@ -349,6 +354,7 @@
       nVisits: '{n} زيارة/زيارات',
       nActivities: '{n} نشاط/أنشطة',
       editBtn: 'أضف، احذف، أعد ترتيب المحطات في هذه الصفحة',
+      editStops: 'تعديل',
       editBtnSub: '(يتطلب تسجيل الدخول — نسخة الجوال تتيح عرضاً أكثر سلاسة لكن لا تسمح بهذه التعديلات)',
       limitReached: 'تم الوصول إلى الحد الأقصى للرحلات المحفوظة. احذف رحلة موجودة من لوحة التحكم.',
       reorgTitle: 'إعادة الترتيب',
@@ -1408,11 +1414,10 @@
     div.id = 'ort-ed-launcher';
     div.className = 'ort-ed-launch';
 
-    var h = '<button class="ort-ed-btn-steps" onclick="ORT_ITIN_EDITOR._launch()">✏️ ' + esc(labels.editBtn) + '</button>';
+    var h = '';
     if (detailUrl) {
       h += '<a href="' + esc(detailUrl) + '" class="ort-ed-btn-detail" style="text-decoration:none;display:inline-block;text-align:center">🚀 ' + esc(labels.advanced) + '</a>';
     }
-    h += '<small>' + esc(labels.editBtnSub) + '</small>';
 
     div.innerHTML = h;
     textPanel.insertBefore(div, textPanel.firstChild);
@@ -2501,11 +2506,9 @@
     if (isDirty) {
       h += '<button class="ort-ed-btn-steps" style="background:linear-gradient(135deg,#d4a039,#b8860b)" onclick="ORT_ITIN_EDITOR._save()">💾 ' + esc(labels.saveNow || labels.save) + '</button>';
     }
-    h += '<button class="ort-ed-btn-steps" onclick="ORT_ITIN_EDITOR._launch()">✏️ ' + esc(labels.editBtn) + '</button>';
     if (detailUrl) {
       h += '<a href="' + esc(detailUrl) + '" class="ort-ed-btn-detail" style="text-decoration:none;display:inline-block;text-align:center">🚀 ' + esc(labels.advanced) + '</a>';
     }
-    h += '<small>' + esc(labels.editBtnSub) + '</small>';
 
     div.innerHTML = h;
     textPanel.insertBefore(div, textPanel.firstChild);
@@ -2563,7 +2566,14 @@
     _reorgAddOP: function (pid, pos) { reorgAddOP(pid, pos); },
     _openAddFromPanel: function () { openAddFromPanel(); },
     _reorgClickPanel: function (sIdx) { handleReorgClick(sIdx); },
-    _reorgDblClickPanel: function (sIdx) { handleReorgDblClick(sIdx); }
+    _reorgDblClickPanel: function (sIdx) { handleReorgDblClick(sIdx); },
+
+    // Récupère une chaîne i18n selon la langue détectée (fallback FR)
+    _getLabel: function (key) {
+      var lang = detectLang();
+      var L = I18N[lang] || I18N.fr;
+      return L[key] || (I18N.fr[key] || key);
+    }
   };
 
   // Injecter le CSS et le bouton dès le chargement du script

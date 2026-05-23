@@ -892,6 +892,14 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
   - Quebec : **FRANÇAIS**.
 - Format : "Exact Place Name + City". 1 à 3 entrées par jour.
 
+**13. Densité visits/activities insuffisante**
+- Règle : chaque entrée days_plan doit respecter ces minimums selon la taille du lieu :
+  - Village / petite ville (suggested_days ≤ 0.5) : **2 visits + 1 activity minimum**
+  - Ville (suggested_days 1–1.5) : **3 visits + 2 activities minimum**
+  - Grande ville / métropole (suggested_days ≥ 2) : **4 visits + 3 activities minimum**
+- Plusieurs entrées pour le même lieu (ex : 3 × Nice) : visites et activités doivent être différentes sur chaque entrée — aucune répétition.
+- Signaler chaque entrée sous le seuil avec le nombre réel constaté.
+
 🟢 À IGNORER :
 - Dates approximatives mineures (XIVe vs XVe siècle si la source est ambiguë).
 - Prix indicatifs.
@@ -966,6 +974,7 @@ Exemple de retour bien formé :
     ║ 6. source_url vide : à remplir                       ║
     ║ 7. road_type Day 3 et 7 : vider                      ║
     ║ 8. Day 5 : map_keywords en espagnol                  ║
+    ║ 9. Day 3 (village) : 1 visit seulement → enrichir    ║
     ╚══════════════════════════════════════════════════════╝
 
 ═══════════════════════════════════════════════════════════
@@ -1236,7 +1245,12 @@ The slug = the place's REAL name on a map. If the place doesn't exist on Wikiped
    - activities[] = things to DO (hikes, tastings, markets, classes, boat trips)
    - Never mix. Never repeat same content in both.
 
-2. **BE EXHAUSTIVE, NO PADDING** — list every genuinely interesting visit. No minimum count. Small village = 2 visits is fine if there are only 2. Big city = 6-10+. Never invent visits to hit a number.
+2. **BE EXHAUSTIVE — MANDATORY DENSITY PER STOP**:
+   - **Village / small town** (suggested_days ≤ 0.5): minimum **2 visits + 1 activity**
+   - **City** (suggested_days 1–1.5): minimum **3 visits + 2 activities**
+   - **Large city / metropolis** (suggested_days ≥ 2): minimum **4 visits + 3 activities**
+   - Multiple days at the same place (e.g. 3 entries for Nice) = split visits and activities differently across each day. No repeat content between days.
+   - NEVER invent a visit that doesn't exist. If a village genuinely has only 1 sight, find a viewpoint, a local market, a scenic walk, a chapel — anything real and verifiable. A day below the minimum = INCOMPLETE.
 
 3. **INTERMEDIATE STOPS** — drive > 2h between two nights = MANDATORY intermediate stop (suggested_days 0.3 or 0.5). Tolerance 4h ONLY for named scenic routes (passes, dunes, steppe, plateau). Standard expressways do NOT qualify.
 
@@ -3551,6 +3565,12 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 **practical_info** = optional on visits AND activities. Free-form keys. Only when genuinely useful.
 
 **Visits vs Activities**: visits[] = places to SEE. activities[] = things to DO. Never mix.
+
+**Visits/activities density (MANDATORY)**:
+- Village / small town (suggested_days ≤ 0.5): **2 visits + 1 activity minimum**
+- City (suggested_days 1–1.5): **3 visits + 2 activities minimum**
+- Large city / metropolis (suggested_days ≥ 2): **4 visits + 3 activities minimum**
+- Multiple entries for the same place: different visits and activities on each entry, no repeats across days.
 **place_id** in visits/activities = always "". Only night.place_id gets a value.
 **night.place_id** = real geographic location, REUSED IDENTICALLY when sleeping at the same place on multiple days. NEVER create artificial suffixes like "-stop", "-return", "-day2", "-airport". The places_taglines must contain ONE entry per UNIQUE night.place_id used in days_plan — no orphans, no missing entries.
 **rating** = always 0.
@@ -3660,6 +3680,7 @@ If you can't pass all 5, the text is REJECTED.
 ✅ meta.audience = French values, 2-4
 ✅ BLOG STYLE: every text has hook + facts + practical. No encyclopedia openings. No "vous entrez/découvrez/voici". Opening patterns distributed (no single >30%, "Vous+verb" ≤20%). At least 5 signature moves planted (paradox, local voice, contradiction, sharp tip, etc.).
 ✅ No text > 150 words
+✅ Every day meets the density minimum: village ≥ 2 visits + 1 activity / city ≥ 3 visits + 2 activities / metropolis ≥ 4 visits + 3 activities. Any day below = INCOMPLETE, must be enriched before output.
 ✅ Drive > 2h → intermediate stop (4h tolerance ONLY named scenic routes — not standard expressways)
 ✅ map_keywords = JSON array on every day
 ✅ places_taglines = sentence per unique night.place_id
