@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ORT Import v3.4 - Build 2026-05-17 - Prompt v11: dégraissé 40%, règles A/B/C répétées (hook+facts+pratique, distribution patterns, relecture-correcteur), Cagnes-rule, titre 60 chars, plafond 100 mots -->
+<!-- ORT Import v3.10 - Build 2026-05-24 - Prompt v17: cohérence tu/vous (règle + in-flight + final check + audit K) -->
 <html lang="fr" data-page="import_ia">
 <head>
 <!-- ort-pwa-injected-v1 -->
@@ -767,6 +767,8 @@ ${userRequest}
 
 📦 FORMAT DU SQUELETTE :
 
+🚨 **CHAQUE SQUELETTE EST LIVRÉ DANS UN ARTIFACT CLAUDE DÉDIÉ.** Un squelette = un artifact. Si tu proposes 2-3 variantes, chaque variante est dans son propre artifact. Le chat contient uniquement la présentation (1-2 phrases) et l'invitation à choisir. Jamais le squelette dans le chat en markdown brut — il sera copié-collé dans le prompt concepteur et le format artifact le rend éditable directement.
+
 **TITRE THÉMATIQUE** — pas un titre Google générique ("Sicile en 8 jours"), mais un titre qui vend l'angle ("Sicile hantée — 8 jours entre les Catacombes des Capucins et le volcan Stromboli"). 50-60 caractères max pour la version courte, sous-titre développe l'angle en 1 phrase.
 
 **Durée** : N jours. Préciser si N = somme des étapes ou inclut transferts.
@@ -812,8 +814,13 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 
 🚨 FAUTES À SIGNALER :
 
-**1. Structure days_plan (règle Cagnes)**
-- Un lieu mentionné dans une visit/activity mais qui n'a PAS sa propre entrée days_plan avec son night.place_id. Exemple cassé : on visite Aledo mais l'entrée du jour a night.place_id = "ES::murcia". Aledo doit avoir SA propre entrée (suggested_days 0.2 ou 0.3) sinon il n'apparaît pas sur la carte.
+**1. Structure days_plan (règle Cagnes — deux violations possibles)**
+
+**1a. Lieu rattaché à la mauvaise entrée** : un POI nommé est cité dans une visit/activity, mais l'entrée du jour a un night.place_id différent du POI. Exemple : visite Aledo mais night.place_id = "ES::murcia". Aledo doit avoir SA propre entrée (suggested_days 0.2 ou 0.3) sinon il n'apparaît pas sur la carte.
+
+**1b. POI nommé sans entrée propre** : un lieu d'intérêt avec nom propre + coordonnées GPS distinctes est cité dans une visit/activity, sans avoir sa propre entrée days_plan — même si l'entrée hôte a bien son propre night.place_id. S'applique aux cascades nommées, grottes, sommets, cols, lacs, sites archéologiques, hameaux. Exemple : Covão dos Conchos (lac nommé, coords distinctes de PT::torre) cité dans l'entrée Torre → créer une entrée séparée Covão dos Conchos, suggested_days 0.2.
+
+Le critère unique pour 1a comme 1b : **nom propre + coords GPS distinctes de l'entrée hôte**. La règle s'applique de la même manière, que le POI soit dans une commune différente ou dans la même commune que la night.place_id de l'entrée hôte.
 
 **2. Format place_id**
 - Suffixes interdits : "-centre", "-vieille-ville", "-airport", "-stop", "-return", "-day2", "-trek", "-ski", "-baignade", "-flamenco", "-gondoles".
@@ -825,8 +832,11 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 - Formule attendue : **N = round(SUM(suggested_days) + transport_days)**.
 - Barème transport_days : 0 (tous trajets < 1h30), 0.5 (1-2 trajets 2-4h ou vols courts), 1 (long-haul ou très long drive), 1.5-2 (cas exceptionnels multi-leg). Si tu doutes du transport_days appliqué par le concepteur, recalcule depuis les drive_min cumulés dans le JSON.
 - **DOIS signaler** : si SUM(suggested_days) + transport_days estimé ne donne PAS N une fois arrondi. Exemple : SUM = 5.1, transport_days = 0, donc N devrait être 5, mais title affiche "6 j" → INCOHÉRENT, à signaler.
-- **DOIS signaler** : si N n'apparaît PAS identiquement dans title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keywords, segments[last].to_day, variants[0].to_day, label "Var Nj". Une seule discordance → INVALIDE.
-- **NE PAS signaler** : la discordance entre days_plan[last].day et N. Le champ **day** dans chaque entrée est un index séquentiel d'étape (1, 2, 3... jusqu'au nombre d'entrées), pas un jour calendaire. days_plan[last].day peut être > N, c'est normal (le front transforme les étapes en jours calendaires via suggested_days).
+- **DOIS signaler** : si N n'apparaît PAS identiquement dans title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keywords, variants[0].to_day, label "Var Nj". Une seule discordance → INVALIDE.
+- **DOIS signaler** : si seo.h1_title est différent de title, même légèrement. h1_title = copie exacte de title, sans reformulation.
+- **NE PAS signaler** : la discordance entre days_plan[last].day et N. Le champ **day** dans chaque entrée est un index séquentiel d'étape (1, 2, 3... jusqu'au nombre d'entrées), pas un jour calendaire. days_plan[last].day peut être > N, c'est normal.
+- **NE PAS signaler** : segments[last].to_day ≠ N. Le champ **segments[last].to_day** = l'index de la dernière entrée days_plan (= COUNT_DAYS), pas N. Il est normal qu'il soit > N si le voyage comporte plus d'étapes cartographiées que de jours calendaires.
+- **NE PAS signaler** : COUNT(days_plan) ≠ N. Le nombre d'entrées days_plan peut largement dépasser N — c'est même attendu sur les itinéraires à forte densité de POI nommés (montagne, archipels, sites archéologiques). Ce qui valide N, c'est UNIQUEMENT la formule N = round(SUM(suggested_days) + transport_days). Pas le nombre d'entrées. Exemple correct : 15 entrées days_plan, N = 8 jours → cohérent si SUM(suggested_days) + transport_days ≈ 8.
 
 **4. Inventions de faits (les plus pénibles à débusquer)**
 - Chiffres ronds suspects sans source : "30% des légumes exportés", "200 000 palmiers", "1,2 million de visiteurs". Signaler si pas vérifiable.
@@ -850,17 +860,16 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 **7. Style — perte du mordant blog**
 - Textes encyclopédiques type "Le X, classé Y, fut Z."
 - Distribution déséquilibrée : Place-first ("Le X est...", "La Y de Z...") au-delà de 25-30% des textes. Le LLM concepteur a tendance à monter à 80% Place-first, c'est le défaut le plus fréquent.
-- Vous+verbe ("Vous montez...", "Vous découvrez...") au-delà de 20%.
+- Vous+verbe ("Vous montez...", "Vous découvrez...") au-delà de 30%.
 - Textes manquant de hook (sensoriel, opinion, comparaison, contradiction, conditionnel).
 - Textes manquant de détail pratique (horaire, prix, warning, tuyau local).
 - Textes > 100 mots / 4 lignes à l'écran.
 
-**Méthode de comptage** : le concepteur produit normalement en tête de son output un DRAFT TALLY chiffré (pourcentages par pattern). Tu vérifies par **échantillonnage pondéré vers la fin du JSON** :
+**Méthode de comptage** : vérifie par **échantillonnage pondéré vers la fin du JSON** :
 
 - Prends 10 textes au total, répartis ainsi : **3 au début (premier tiers), 3 au milieu (deuxième tiers), 4 à la fin (dernier tiers)**. Le LLM tient ses bonnes intentions au début et se relâche à la fin — l'échantillon doit refléter cette fatigue.
 - Identifie le pattern d'ouverture de chaque texte (Place-first / Sensory / Opinion / FactualPivot / Conditional / LocalVoice / Contradiction / VousVerbe).
-- **Si DRAFT TALLY présent** : compare aux pourcentages annoncés. S'ils divergent (DRAFT dit 0% Place-first mais ton échantillon en montre 4-5 sur 10, surtout dans la fin), le concepteur a triché — signale-le.
-- **Si DRAFT TALLY absent** (le concepteur l'a oublié) : signale-le comme faute distincte ET fais l'échantillonnage quand même. Si > 5 textes Place-first sur 10, ou si > 3 sur les 4 derniers, déséquilibre flagrant — à signaler.
+- Si > 5 textes Place-first sur 10, ou si > 3 sur les 4 derniers : déséquilibre flagrant — à signaler.
 
 Pas besoin de tout recompter sur 30+ textes, mais la fin du JSON doit être inspectée systématiquement — c'est là que les défauts se concentrent.
 
@@ -900,6 +909,19 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
 - Plusieurs entrées pour le même lieu (ex : 3 × Nice) : visites et activités doivent être différentes sur chaque entrée — aucune répétition.
 - Signaler chaque entrée sous le seuil avec le nombre réel constaté.
 
+**14. POI non nommé dans les textes**
+- Chaque texte de visit/activity doit nommer explicitement le lieu ou l'attraction qu'il décrit dans les deux premières phrases.
+- ❌ "Longez la falaise sur une passerelle suspendue au-dessus du lac." → quel lieu ?
+- ❌ "Ce sanctuaire perché domine le lac depuis le XIIe siècle." → lequel ?
+- ✅ "La Passeggiata degli Innamorati longe la falaise sur 200 m."
+- Signaler chaque texte où le lecteur ne peut pas identifier le lieu sans contexte extérieur.
+
+**15. Longueurs SEO hors norme**
+- **title** : doit faire 50-60 caractères (partie éditoriale, sans le suffixe " | OneRoadTrip" ajouté par le front). Au-delà de 60 : Google tronque. En-dessous de 50 : signal SEO faible.
+- **seo_hook** (= meta description) : 120-155 caractères. En-dessous de 120 : Google réécrit souvent sa propre description. Au-dessus de 155 : tronqué en "…" dans les résultats.
+- **subtitle** : 80-120 caractères. Phrase complète avec verbe. Une liste de mots-clés sans verbe = rejet.
+- Compter les caractères et signaler chaque dépassement avec le nombre réel constaté.
+
 🟢 À IGNORER :
 - Dates approximatives mineures (XIVe vs XVe siècle si la source est ambiguë).
 - Prix indicatifs.
@@ -907,7 +929,7 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
 - Choix éditoriaux de tournure quand le hook tient.
 
 📤 FORMAT DE RETOUR D'AUDIT :
-- Section par catégorie (1 à 12 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
+- Section par catégorie (1 à 15 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
 - Pour chaque faute : citation exacte du JSON + correction proposée + raison brève.
 - Si une catégorie est propre, ne l'évoque pas.
 - Si rien à signaler du tout : "RAS, le JSON est propre" et tu t'arrêtes là.
@@ -928,6 +950,12 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
     ╚══════════════════════════════════════════════════════╝
 
 Si aucun changement à faire : la box affiche simplement "RAS — JSON propre". La box est OBLIGATOIRE même si tu écris RAS, c'est elle qui clôt l'audit.
+
+🛠️ **MODE D'APPLICATION DES CORRECTIONS — consigne au concepteur**
+
+Le rapport d'audit doit se clore par cette instruction explicite, en-dessous de la box récap, dans tous les rapports d'audit sauf RAS :
+
+"Applique UNIQUEMENT les corrections listées dans la box ci-dessus. Ne réécris pas les textes, sections, ou champs qui ne sont pas signalés. Ne touche pas au reste du JSON. Pas de régénération from scratch. Si une correction ciblée n'est pas faisable sans toucher à autre chose (rare), signale-le et propose le périmètre minimal nécessaire avant d'agir. La consigne par défaut est : édition chirurgicale, pas réécriture."
 
 Exemple de retour bien formé :
 
@@ -1076,6 +1104,13 @@ If you must make an assumption (departure airport, transport mode), record it in
 ALL text fields MUST be in "${targetLang}". Keep original proper nouns (Wat, Piazza, Playa, Château, Medina...).
 EXCEPTIONS: meta.themes + meta.audience = ALWAYS in French. best_months = lowercase in "${targetLang}".
 
+🧑 REGISTER (tu/vous) — CONSISTENT THROUGHOUT:
+Pick ONE and apply it to every single visit/activity text in the JSON. No exceptions.
+- Default: **"vous"** (formal, suits all audiences).
+- Use "tu" ONLY if the SOURCE uses "tu" consistently throughout.
+- NEVER mix tu and vous in the same JSON. One wrong register found anywhere = fix the whole JSON.
+- The in-flight check after every 2 entries must include: no register switch since last pair.
+
 ═══════════════════════════════════════════════════════════
 🚨 THE 3 RULES YOU WILL FORGET — REPEAT THEM TO YOURSELF BEFORE WRITING
 ═══════════════════════════════════════════════════════════
@@ -1089,13 +1124,21 @@ Every visit/activity text MUST have all three:
 3. PRACTICAL TOUCH (1 sentence): when to go, what to avoid, local trick, price warning.
 If only facts → encyclopedia, REWRITE. If only feelings → marketing slop, REWRITE.
 
+**RULE A+ — POI NAME MANDATORY**
+Every visit/activity text MUST contain the official name of the place or attraction within the first two sentences. The reader must know EXACTLY what they are visiting without guessing.
+- ✅ "La Passeggiata degli Innamorati longe la falaise sur 200 m — vertige garanti."
+- ✅ "Montez au Sacro Monte d'Orta tôt le matin : les 20 chapelles sont désertes avant 9h."
+- ❌ "Longez la falaise sur une passerelle suspendue au-dessus du lac." (which place?)
+- ❌ "Ce sanctuaire perché domine le lac depuis le XIIe siècle." (which one?)
+A text without its POI name = INVALID, rewrite.
+
 **RULE B — DISTRIBUTE OPENING PATTERNS**
 Across all texts, vary openings. Target distribution:
-- Place-first ~25% | Sensory ~15% | Opinion ~15% | Factual-pivot ~15% | Conditional ~10% | "Vous + verbe" ≤20%
+- Place-first ~25% | Sensory ~15% | Opinion ~15% | Factual-pivot ~15% | Conditional ~10% | "Vous + verbe" ~30% (transitions, mouvement, conseils pratiques — interdit comme ouverture factuelle sèche)
 SAME PATTERN TWICE IN A ROW = REWRITE.
 
 **RULE C — RE-READ AS A CORRECTOR, NOT AS THE AUTHOR**
-After writing, RE-READ every text as if someone else wrote it. Your job: hunt for invented facts, dates, dimensions. If you can't cite a source, DELETE the fact. Never guess. Never round up to make it sound better. A short truthful text beats a rich invented one.
+After writing, RE-READ every text as if someone else wrote it. Your job: hunt for invented facts, dates, dimensions. **Default posture: every fact is suspect until you can cite its source.** If you can't cite a source, DELETE the fact. Never guess. Never round up to make it sound better. A short truthful text beats a rich invented one. When in doubt, soften: "village très ancien" beats a fake "fondé en 723". "région maraîchère importante" beats an unverifiable "30% des légumes exportés d'Espagne".
 
 🚨 INVENTION PATTERNS TO DELETE ON SIGHT — these are how AI lies. Hunt them in every text:
 - "selon les biologistes / selon les experts / selon les locaux / selon X" without naming a real source
@@ -1106,8 +1149,9 @@ After writing, RE-READ every text as if someone else wrote it. Your job: hunt fo
 - Statistics with conveniently round numbers (1,2 million de visiteurs, 200 000 palmiers) — if you didn't find this exact number in a real source, soften ("plus de 100 000") or delete
 - Dates of events that are not Wikipedia-grade (random "fondé en 1847")
 - "Considéré comme" + claim — by whom?
+- **Any number that wasn't in your RESEARCH block.** If you didn't search for it, you invented it.
 
-If a fact passes Wikipedia or an official tourism site: keep it. Otherwise: DELETE or soften to a qualitative statement. A vague "village très ancien" beats a fake "fondé en 723 par Wamba". The reader trusts you. Don't burn that trust for a flashier sentence.
+If a fact passes Wikipedia or an official tourism site: keep it. Otherwise: DELETE or soften to a qualitative statement. The reader trusts you. Don't burn that trust for a flashier sentence.
 
 ═══════════════════════════════════════════════════════════
 📋 STRUCTURE & FIELDS
@@ -1179,12 +1223,19 @@ JSON skeleton (every field mandatory):
 
 **FIELD RULES**:
 
-- **title**: SEO-compliant, 50-60 characters MAX. Not a Google search pavé. Punchy.
+- **title**: 50-60 characters MAX (the editorial part, excluding the " | OneRoadTrip" suffix added by the front-end). Count characters yourself before writing. This field feeds og:title directly and the title tag with the suffix appended. A title exceeding 60 chars will be truncated by Google. Not a Google search pavé. Punchy. Must contain the main destination keyword.
+- **seo.h1_title** = IDENTICAL to title. No variation, no reformulation. Copy-paste. This feeds the h1 tag directly.
+- **seo.seo_hook** = feeds meta description and og:description. **120-155 characters** (count yourself). Under 120 = Google may rewrite it. Over 155 = truncated with "…" in search results. Must be a complete sentence, contain the main keyword, and give a concrete reason to click. NOT a tagline — a pitch.
+  - ❌ Too short: "Castille en 14 jours." (22 chars)
+  - ❌ Too long: [a 200-char sentence]
+  - ✅ Target: "Aqueduc de Ségovie, université de Salamanque, vitraux de León et cathédrale de Burgos : 14 jours à travers les trésors médiévaux de Castille-et-León." (149 chars)
+- **subtitle**: 80-120 characters. Complete sentence with a verb. Describes the route angle. Not a keyword list.
 - **itin_id / id**: same value, format CC::region::slug (CC = ISO 3166-1 alpha-2 uppercase).
 - **dept_code**: real regional code ("FR-06", "IT-RM", "US-AL"). Never "CC", "XX".
 - **specialties**: 2-4 themes in "${targetLang}".
 - **suggested_days**: real time at this stop. Decimals expected: 0.2 (drive-through), 0.3 (quick stop, e.g. Cagnes-sur-Mer visited from Nice), 0.5 (half-day), 1 (full day), 1.5, 2 (rich city).
 - **estimated_days_base** = round(SUM(suggested_days) + transport_days). N must appear identically in: title (if duration shown), subtitle (if duration), h1_title, intro_paragraph, seo_hook (if duration), seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), unrelated to N. COUNT_DAYS can be > N.
+- **segments[last].to_day** = the step index of the last days_plan entry (= COUNT_DAYS, e.g. 15 for a trip with 15 mapped places). This is NOT N. It equals days_plan[last].day. The range in segments maps step indices, not calendar days.
 - **best_months**: lowercase in "${targetLang}".
 - **meta.themes** = ALWAYS FRENCH, EXACTLY 2 from: "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente". No invention, no translation.
 - **meta.audience** = ALWAYS FRENCH, 2-4 from: "couples", "solo", "familles", "seniors", "culture", "nature", "histoire", "aventure", "gastronomie".
@@ -1251,6 +1302,22 @@ The slug = the place's REAL name on a map. If the place doesn't exist on Wikiped
    - **Large city / metropolis** (suggested_days ≥ 2): minimum **4 visits + 3 activities**
    - Multiple days at the same place (e.g. 3 entries for Nice) = split visits and activities differently across each day. No repeat content between days.
    - NEVER invent a visit that doesn't exist. If a village genuinely has only 1 sight, find a viewpoint, a local market, a scenic walk, a chapel — anything real and verifiable. A day below the minimum = INCOMPLETE.
+
+   🚨 **DENSITY AUTO-COUNT — MANDATORY BEFORE WRITING THE JSON. NO EXCEPTIONS.**
+
+   Before writing a single line of JSON, produce this block for EVERY days_plan entry:
+
+       === DENSITY COUNT ===
+       Day 1 — FR::nice (suggested_days=1, category: City) → required: 3V+2A → planned: [V count] visits + [A count] activities ✅/❌
+       Day 2 — FR::cagnes-sur-mer (suggested_days=0.3, category: Village) → required: 2V+1A → planned: [V] visits + [A] activities ✅/❌
+       ... one line per days_plan entry ...
+       === END DENSITY COUNT ===
+
+   Rules:
+   - Category is determined by suggested_days: ≤0.5 → Village, 1–1.5 → City, ≥2 → Metropolis.
+   - Any entry marked ❌ = **JSON REJECTED before it's written**. Fix the count first, THEN write the JSON.
+   - If you skip this block or write it after the JSON, the output is INVALID. The count must precede the JSON.
+   - This is the #1 defect found in every delivered JSON. There is no tolerance.
 
 3. **INTERMEDIATE STOPS** — drive > 2h between two nights = MANDATORY intermediate stop (suggested_days 0.3 or 0.5). Tolerance 4h ONLY for named scenic routes (passes, dunes, steppe, plateau). Standard expressways do NOT qualify.
 
@@ -1341,12 +1408,16 @@ What changed: opinion ("c'est tant mieux" implied), comparison live, practical d
 ═══════════════════════════════════════════════════════════
 
 A. Every text = HOOK + FACTS + PRACTICAL (the 3 layers).
-B. Distribute opening patterns. No single >30%. "Vous + verbe" ≤20%.
+B. Distribute opening patterns. No single >30%. "Vous + verbe" ~30%. Autorisé pour transitions et conseils, interdit comme ouverture factuelle.
 C. Re-read every text as a corrector, not as the author. Delete any unverifiable fact.
 
 ═══════════════════════════════════════════════════════════
 🔒 STEP 0 — DURATION CALCULATION (BEFORE WRITING ANYTHING)
 ═══════════════════════════════════════════════════════════
+
+🚨 **DO THIS FIRST. Before title. Before subtitle. Before any header field.**
+
+The failure pattern: you write title "10 jours en Andalousie", then discover SUM = 8.3, so N = 8. Now every header is wrong and you waste tokens rewriting. Avoid this by calculating N before touching any field.
 
 The formula is simple:
 
@@ -1400,15 +1471,18 @@ CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 ═══════════════════════════════════════════════════════════
 
 - [ ] **JSON delivered in a CLAUDE ARTIFACT (the dedicated editable panel), NOT as inline chat code block.** This is the most failed rule. Re-check before output.
-- [ ] Title ≤ 60 characters, SEO-compliant.
+- [ ] Title ≤ 60 characters, SEO-compliant. **Count now**: "[your title]" = [N] chars. If > 60, rewrite before proceeding.
+- [ ] **seo_hook** = 120-155 characters (meta description). **Count now**: "[your seo_hook]" = [N] chars. Under 120 → add detail. Over 155 → cut.
+- [ ] **subtitle** = 80-120 characters. Complete sentence with verb. **Count now**.
 - [ ] **DURATION:** N = round(SUM(suggested_days) + transport_days). N appears identically in title, subtitle, h1, intro, hook, seo_keywords, estimated_days_base, segments[last].to_day, variants[0].to_day, label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), can be > N.
 - [ ] Every visited place = one days_plan entry with its own night.place_id (Cagnes-rule). No "ES::murcia" entry when actually visiting Aledo.
 - [ ] **PLACE_ID FORMAT:** every night.place_id = a real municipality slug. No "-centre", "-vieille-ville", "-airport", "-trek", "-ski", "-stop", "-return", "-day2". If it's not on Wikipedia/Google Maps as that entity, don't invent it.
 - [ ] suggested_days realistic decimals.
 - [ ] meta.themes = 2 French values verbatim. meta.audience = French.
 - [ ] Every text: hook + facts + practical. No encyclopedia opener. No "Vous entrez/découvrez".
+- [ ] **POI NAME (Rule A+):** every visit/activity text names its POI explicitly within the first two sentences. A text without a named place = INVALID.
 - [ ] No text > 100 words (4 lines visual). No big pavés.
-- [ ] Opening patterns distributed. "Vous + verbe" ≤20%.
+- [ ] Opening patterns distributed. "Vous + verbe" ~30%. Autorisé pour transitions et conseils, interdit comme ouverture factuelle.
 - [ ] 5+ signature moves planted.
 - [ ] map_keywords = JSON array on every day. Local language if Latin/English alphabet, English if non-Latin script.
 - [ ] road_type: empty by default. Only filled with the closed enum (flight/ferry/boat/train/scenic_road/mountain_pass/gravel/seasonal). NEVER free text like "nationale", "autoroute", "même nuit à X".
@@ -1418,6 +1492,7 @@ CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 - [ ] **source_url FILLED** with the URLs from RESEARCH block, comma-separated, minimum 5 URLs. Empty source_url = JSON INVALID.
 - [ ] **ANTI-INVENTION SCAN:** zero "selon les experts" without name, zero round-number stats, zero "l'un des X meilleurs au monde" without source, zero "fondé en YYYY" you can't verify. Soften or delete.
 - [ ] No "iconique", "incontournable", "inoubliable", "joyau caché", "magique", even in quotation marks or meta-comments.
+- [ ] **REGISTER**: every text uses the same register (tu OR vous). Zero mixing. Default = vous.
 
 ═══════════════════════════════════════════════════════════
 🎨 PATTERN LABELING — MANDATORY DRAFT PHASE
@@ -1431,7 +1506,9 @@ CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 
 **Phase 1 — DRAFT (write this in a code block first, BEFORE the JSON):**
 
-For every single visit/activity text you'll put in the JSON, write ONE line in this format:
+Structure the DRAFT **day by day**. For each day, list every visit and activity, then write the density sub-total. If the sub-total is ❌, **STOP and fix before moving to the next day**. Do not continue until the day is complete.
+
+For every single visit/activity text, write ONE line in this format:
 
     Day [N] visit [i] — [PATTERN: <Type>] — "<first 8 words>"
 
@@ -1440,15 +1517,23 @@ Where <Type> is one of: **Sensory**, **Opinion**, **FactualPivot**, **Conditiona
 Example draft block:
 
     === DRAFT — PATTERN LABELS ===
+    
+    Day 1 — FR::nice (suggested_days=1, City → min 3v+2a)
     Day 1 visit 1 — [PATTERN: Opinion] — "Touristique, mais le lagon tient sa promesse"
-    Day 1 activity 1 — [PATTERN: Conditional] — "Si vous arrivez avant 10h, la lagune"
-    Day 2 visit 1 — [PATTERN: Sensory] — "L'odeur de sel et d'iode prend"
-    Day 2 activity 1 — [PATTERN: VousVerbe] — "Plongez avec les centres du port"
-    Day 3 visit 1 — [PATTERN: FactualPivot] — "Construite vers 220 av. J.-C., Cartagena fut"
-    Day 3 visit 2 — [PATTERN: Contradiction] — "Sous l'immeuble banal des années 90"
-    Day 3 activity 1 — [PATTERN: LocalVoice] — "Les habitants l'appellent simplement El Peral"
-    Day 4 visit 1 — [PATTERN: Sensory] — "L'argile blanche craque sous les pas"
-    ... etc for all texts ...
+    Day 1 visit 2 — [PATTERN: FactualPivot] — "Construite en 1885, la promenade longe"
+    Day 1 visit 3 — [PATTERN: Sensory] — "L'odeur de la lavande envahit le marché"
+    Day 1 activity 1 — [PATTERN: Conditional] — "Si vous arrivez avant 10h, la vieille ville"
+    Day 1 activity 2 — [PATTERN: VousVerbe] — "Prenez le bus 100 jusqu'au cap Ferrat"
+    → Sub-total: 3v + 2a ✅ — proceeding to Day 2
+    
+    Day 2 — FR::cagnes-sur-mer (suggested_days=0.3, Village → min 2v+1a)
+    Day 2 visit 1 — [PATTERN: Contradiction] — "Sous l'immeuble banal des années 90"
+    Day 2 activity 1 — [PATTERN: LocalVoice] — "Les habitants l'appellent simplement El Peral"
+    → Sub-total: 1v + 1a ❌ — MISSING 1 visit. Adding before continuing:
+    Day 2 visit 2 — [PATTERN: Sensory] — "L'argile blanche craque sous les pas"
+    → Sub-total corrected: 2v + 1a ✅ — proceeding to Day 3
+    
+    ... etc for all days ...
     
     === DRAFT TALLY ===
     Place-first: 0
@@ -1458,22 +1543,32 @@ Example draft block:
     Conditional: 1
     LocalVoice: 1
     Contradiction: 1
-    VousVerbe: 1
+    VousVerbe: 2 (~30%)
     
-    ✅ No pattern > 30%. VousVerbe ≤ 20%. Distribution valid. Proceeding to JSON.
+    ✅ No pattern > 30%. VousVerbe ~30%. Distribution valid. Proceeding to JSON.
     === END DRAFT ===
 
 **RULES for the DRAFT:**
 
 1. **HARD CAP: Place-first ≤ 25% of total.** If you reach 25%, you cannot label another text Place-first. Pick a different pattern.
 
-2. **No two consecutive identical patterns.** Day 3 visit 1 = Sensory → Day 3 visit 2 cannot be Sensory. Day 4 visit 1 = Place-first → Day 4 activity 1 must be something else.
+2. **DENSITY GATE per day: if a day's sub-total is ❌, you cannot proceed to the next day.** Fix the missing visits/activities first, add their labels to the draft, then recheck the sub-total.
 
-3. **Tally as you go.** After every 4 labels, update the tally. If Place-first hits 25% before you've covered half the days, STOP and rewrite the next labels to compensate.
+3. **No two consecutive identical patterns.** Day 3 visit 1 = Sensory → Day 3 visit 2 cannot be Sensory.
 
-4. **The first 8 words you wrote MUST match the actual opening sentence in the JSON.** No "I'll write Opinion" then writing "Le X est...". The draft is binding.
+4. **Tally as you go.** After every 4 labels, update the tally. If Place-first hits 25% before you've covered half the days, STOP and rewrite the next labels to compensate.
 
-5. **If the tally fails (Place-first > 30%, VousVerbe > 20%, any single pattern > 30%):** rewrite labels before proceeding to JSON. Don't pretend it's fine.
+5. **The first 8 words you wrote MUST match the actual opening sentence in the JSON.** The draft is binding.
+
+6. **If the tally fails (Place-first > 30%, VousVerbe > 30%, any single pattern > 30%):** rewrite labels before proceeding to JSON.
+
+**VousVerbe — usage rules (~30% target):**
+VousVerbe works for transitions, movement, and practical advice. It fails as a dry factual opener.
+- ✅ "Vous passerez d'abord par la réserve naturelle d'Aguada Blanca, où vous verrez des lamas..."
+- ✅ "Voiture de location en main, vous vous dirigerez vers la région de Mpumalanga..."
+- ✅ "Vous pourrez faire une petite marche et profiter des piscines thermales (4 US$)."
+- ❌ "Vous visitez le site archéologique de Baelo Claudia." (factual opener — use Opinion or FactualPivot instead)
+- ❌ "Vous découvrez la vieille ville." (banned opener — see FORBIDDEN list)
 
 **Phase 2 — JSON:**
 
@@ -1494,6 +1589,7 @@ After writing each PAIR of days_plan entries (and before moving to the next pair
 3. **Cliché scan**: zero "iconique", "incontournable", "inoubliable", "magique", "joyau caché". If found → DELETE now.
 4. **Invention scan**: zero round-number stat, "selon les X", "l'un des X meilleurs" without source. Soften or DELETE now.
 5. **Cagnes-rule**: each visited place = its own days_plan entry with its own night.place_id (real municipality).
+6. **Register check**: no switch between tu and vous since the last pair. If found → fix now.
 
 These are silent self-corrections — do NOT output a separate checkpoint message. Just fix and continue.
 
@@ -1537,7 +1633,7 @@ Format:
        Contradiction: [count] ([%]) — DRAFT said: [count]
        VousVerbe: [count] ([%]) — DRAFT said: [count]
        ⚠️ Place-first > 25% → THE JSON ABOVE IS INVALID, rewrite the offending texts.
-       ⚠️ VousVerbe > 20% → THE JSON ABOVE IS INVALID, rewrite.
+       ⚠️ VousVerbe > 30% → THE JSON ABOVE IS INVALID, rewrite.
        ⚠️ JSON counts don't match DRAFT counts → you cheated on the draft, rewrite.
     
     C. SIGNATURE MOVES PLANTED ([count]/5 minimum) — quote exact phrases from the JSON above:
@@ -1572,7 +1668,13 @@ Format:
        "Premier/unique/seul" claims you can't cite to Wikipedia: [quote or "none"]
        ⚠️ Any found → softened or deleted in the JSON above? If still present, the JSON is invalid.
     
-    G. DURATION CHECK (read the JSON above and copy the actual values):
+    G. SEO LENGTH CHECK (count characters from the actual JSON above):
+       title: "[exact title]" → [N] chars → ✅ ≤60 / ❌ >60 (Google truncates)
+       seo_hook: "[exact seo_hook]" → [N] chars → ✅ 120-155 / ❌ <120 (too short, Google rewrites) / ❌ >155 (truncated)
+       subtitle: "[exact subtitle]" → [N] chars → ✅ 80-120 / ❌ out of range
+       ⚠️ title > 60 → REWRITE. seo_hook outside 120-155 → REWRITE. subtitle outside 80-120 → REWRITE.
+    
+    G2. DURATION CHECK (read the JSON above and copy the actual values):
        SUM(suggested_days) computed from days_plan: [X.X]
        transport_days estimate: [X]
        N = round([X.X] + [X]) = [N]
@@ -1618,6 +1720,11 @@ Format:
     J. DELIVERY FORMAT CHECK:
        JSON was delivered as: [ARTIFACT / inline chat code block]
        ⚠️ If inline chat code block → INVALID DELIVERY. The user needs an artifact to edit easily. Re-deliver as artifact.
+    
+    K. REGISTER CHECK (tu/vous):
+       Register used: [tu / vous / MIXED]
+       If mixed: list the day numbers where the wrong register appears.
+       ⚠️ Any mixing → THE JSON ABOVE IS INVALID. Fix all occurrences to match the dominant register (default: vous).
     
     === END AUDIT ===
 
@@ -3548,7 +3655,13 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 
 **estimated_days_base** = round(sum of suggested_days + transport_days). This integer N MUST equal the number in title, subtitle (if duration mentioned), h1_title, intro_paragraph, seo_hook, seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj". NOT in days_plan[last].day (that's the step index, can be > N). Example: 7×1 + 2×0.3 = 7.6 → estimated_days_base = 8 → title says "8 jours" → variants[0].label = "Var 8j".
 
-**meta.themes** = ALWAYS IN FRENCH. EXACTLY 2 from:
+**title** = 50-60 characters MAX (editorial part, excluding the " | OneRoadTrip" suffix added by the front). Feeds og:title directly. Count before writing. Must contain the main destination keyword.
+
+**seo.h1_title** = IDENTICAL to title. No variation, no reformulation. Copy-paste.
+
+**seo.seo_hook** = feeds meta description and og:description. **120-155 characters** (count). Under 120 → Google may rewrite. Over 155 → truncated in search results. Complete sentence with main keyword and concrete reason to click.
+
+**subtitle** = 80-120 characters. Complete sentence with a verb. Not a keyword list. EXACTLY 2 from:
 "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente"
 ⚠️ Use ONLY these values verbatim. No invention, no translation.
 
@@ -3607,6 +3720,14 @@ What changed: opinion ("c'est tant mieux"), live comparison, practical detail ("
 
 If only facts → ENCYCLOPEDIA, rewrite. If only feelings → MARKETING, rewrite. If only "vous + verb" → ROBOT, rewrite.
 
+🏷️ POI NAME — MANDATORY IN EVERY TEXT
+Every visit/activity text MUST name its POI explicitly within the first two sentences. The reader must know EXACTLY what they are visiting without having to guess.
+- ✅ "La Passeggiata degli Innamorati longe la falaise sur 200 m — vertige garanti."
+- ✅ "Montez au Sacro Monte d'Orta tôt le matin : les 20 chapelles sont désertes avant 9h."
+- ❌ "Longez la falaise sur une passerelle suspendue au-dessus du lac." (which place?)
+- ❌ "Ce sanctuaire perché domine le lac depuis le XIIe siècle." (which one?)
+A text without its named POI = INVALID. Rewrite before output.
+
 ═══════════════════════════════════════════════════════════
 🎨 OPENING PATTERNS — distribute across the itinerary
 ═══════════════════════════════════════════════════════════
@@ -3618,7 +3739,7 @@ Across all 30-50 texts, NO single opening pattern above 30%, NONE below 10%:
 3. OPINION (~15%): "Sans doute le plus beau village du Xinjiang..."
 4. FACTUAL-PIVOT (~15%): "Construite en 1372, la forteresse marque la limite ouest — passée cette porte, on entrait chez les barbares..."
 5. CONDITIONAL (~10%): "Si vous êtes là entre le 5 et le 25 avril..."
-6. DIRECT "Vous + verb" (~20% MAX): used SPARINGLY, only when the action is the focus.
+6. DIRECT "Vous + verb" (~30%): transitions, movement, practical advice. NOT as a dry factual opener.
 
 ⚠️ SAME PATTERN TWICE IN A ROW = REWRITE.
 
@@ -3674,11 +3795,13 @@ If you can't pass all 5, the text is REJECTED.
 ✅ FINAL CHECK
 ═══════════════════════════════════════════════════════════
 ✅ itin_id and id = "${itin.itin_id}" (unchanged)
+✅ SEO LENGTHS: title ≤ 60 chars (count: [N]) / seo_hook 120-155 chars (count: [N]) / subtitle 80-120 chars (count: [N]). Any out of range → REWRITE before output.
 ✅ DURATION CONSISTENCY: write SUM = X.X, round(SUM+transport) = N, then verify N appears identically in: title, subtitle, estimated_days_base, h1_title, intro_paragraph, seo_hook, seo_keyword line, segments[last].to_day, variants[0].to_day & label "Var Nj". NOT in days_plan[last].day (step index, can be > N). ANY of the 9 emplacements mismatch → REWRITE.
 ✅ suggested_days = realistic decimals per stop
 ✅ meta.themes = 2 values from French list (verbatim)
 ✅ meta.audience = French values, 2-4
-✅ BLOG STYLE: every text has hook + facts + practical. No encyclopedia openings. No "vous entrez/découvrez/voici". Opening patterns distributed (no single >30%, "Vous+verb" ≤20%). At least 5 signature moves planted (paradox, local voice, contradiction, sharp tip, etc.).
+✅ BLOG STYLE: every text has hook + facts + practical. No encyclopedia openings. No "vous entrez/découvrez/voici". Opening patterns distributed (no single >30%, "Vous+verb" ~30% — transitions and practical tips only). At least 5 signature moves planted (paradox, local voice, contradiction, sharp tip, etc.).
+✅ POI NAME: every visit/activity text explicitly names its POI within the first two sentences. Any text without a named place = INVALID, must be rewritten.
 ✅ No text > 150 words
 ✅ Every day meets the density minimum: village ≥ 2 visits + 1 activity / city ≥ 3 visits + 2 activities / metropolis ≥ 4 visits + 3 activities. Any day below = INCOMPLETE, must be enriched before output.
 ✅ Drive > 2h → intermediate stop (4h tolerance ONLY named scenic routes — not standard expressways)
