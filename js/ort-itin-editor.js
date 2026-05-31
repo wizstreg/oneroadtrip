@@ -2548,8 +2548,47 @@
   // ─────────────────────────────────────────────
   // API PUBLIQUE
   // ─────────────────────────────────────────────
+  // V3 : point d'entree fusion (appele par ort-merge.js). Recoit un days_plan deja
+  // dedoublonne et reordonne ; on le normalise et on entre direct en reorganisation.
+  async function startMerged(daysPlan, title, cc) {
+    try {
+      if (cc) config.cc = (cc || '').toUpperCase();
+      if (!config.lang) config.lang = detectLang();
+      t = I18N[config.lang] || I18N.fr;
+      var textPanel = document.getElementById('textPanel');
+      if (!textPanel) { console.error('[ORT-EDITOR] #textPanel introuvable'); return; }
+      console.log('[MERGE] _startMerged daysPlan=', (daysPlan || []).length, 'cc=', cc, 'title=', title);
+      showToast(t.saving, 'info');
+      try { await loadPlacesData(); } catch (e) {}
+      steps = normalizeSteps(daysPlan || [], config.cc);
+      if (typeof reindex === 'function') reindex();
+      console.log('[MERGE] steps=', steps.length, 'avec coords=', steps.filter(function (s) { return s.lat && s.lng; }).length);
+      console.log('[MERGE] coords=', steps.map(function (s) { return s.name + ':' + s.lat + ',' + s.lng; }));
+      // V3 fusion : reploter TOUS les marqueurs depuis les etapes fusionnees,
+      // sinon la carte ne montre que l'itineraire d'origine.
+      try { if (typeof updateMap === 'function') updateMap(); } catch (e) { console.warn('[ORT-EDITOR] updateMap:', e); }
+      console.log('[MERGE] apres updateMap: mk=', Object.keys(global.mk || {}).length, 'MP=', (global.MP || []).length);
+      try {
+        var _m = global.map;
+        var _pts = steps.filter(function (s) { return s.lat && s.lng; }).map(function (s) { return [s.lat, s.lng]; });
+        if (_m && _pts.length) _m.fitBounds(_pts, { padding: [40, 40] });
+      } catch (e) {}
+      if (title) itinTitle = title;
+      originalHTML = textPanel.innerHTML;
+      originalSteps = deepClone(steps);
+      editorActive = true;
+      isDirty = true;
+      editorMode = 'map';
+      startMapReorg();
+    } catch (err) {
+      console.error('[ORT-EDITOR] startMerged:', err);
+      try { showToast(String(err.message || err), 'error'); } catch (e) {}
+    }
+  }
+
   global.ORT_ITIN_EDITOR = {
     init: init,
+    _startMerged: startMerged,
     injectLaunchButton: injectLaunchButton,
 
     // Méthodes appelées depuis le HTML (onclick)

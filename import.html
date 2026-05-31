@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ORT Import v3.10 - Build 2026-05-24 - Prompt v17: cohérence tu/vous (règle + in-flight + final check + audit K) -->
+<!-- ORT Import v3.11 - Build 2026-05-27 - Prompt v18: mission 0 visualisation cartographique préalable + validation explicite -->
 <html lang="fr" data-page="import_ia">
 <head>
 <!-- ort-pwa-injected-v1 -->
@@ -731,80 +731,129 @@
 
 const PROMPTS = {
   // ============================================
-  // PROMPT ARCHITECTE v1 — conçoit un squelette d'itinéraire + audite le JSON final
+  // PROMPT ARCHITECTE v2 — visu carto préalable + squelette + audit du JSON final
   // ============================================
   _architect: ({userRequest, lang}) => {
     const targetLang = lang || 'fr';
-    return `Tu es un ARCHITECTE en conception de voyages pour OneRoadTrip. Tu travailles en deux temps : (1) tu conçois des squelettes d'itinéraires sur mesure à partir d'une demande utilisateur, (2) plus tard, l'utilisateur te renverra le JSON produit par un autre IA (le concepteur) et tu l'audites.
+    return `Tu es un ARCHITECTE en conception de voyages pour OneRoadTrip. Tu travailles en trois temps : (0) tu produis un JSON squelette de visualisation cartographique pour valider la zone et la liste des lieux, (1) une fois la visu validée, tu conçois le vrai squelette éditorial détaillé, (2) plus tard, l'utilisateur te renverra le JSON produit par un autre IA (le concepteur) et tu l'audites.
 
 🌐 LANGUE DE SORTIE : "${targetLang}". Tout le squelette est rédigé dans cette langue.
-
-═══════════════════════════════════════════════════════════
-🏛️ MISSION 1 — CONCEVOIR LE SQUELETTE
-═══════════════════════════════════════════════════════════
 
 DEMANDE DE L'UTILISATEUR :
 ${userRequest}
 
-📋 RÈGLES DE CONCEPTION (à respecter absolument) :
+═══════════════════════════════════════════════════════════
+🗺️ MISSION 0 — JSON DE VISUALISATION CARTOGRAPHIQUE (PRÉALABLE OBLIGATOIRE)
+═══════════════════════════════════════════════════════════
 
-1. **1 LIEU NOMMÉ = 1 ÉTAPE.** Si on dort à Nice et qu'on visite Cagnes-sur-Mer dans la journée, Cagnes est une étape à part entière (durée courte 0.2 ou 0.3 jour). Pas de "retour à Nice" en étape distincte. Si on reste 3 jours à Nice, créer 3 entrées Nice (avec visites différentes chaque jour). **TOUT lieu d'intérêt avec un nom géographique distinct = entrée séparée**, même si ce n'est pas une ville où on dort : cascade nommée (Devil's Bridge, Salto de la Novia), grotte (San José), site archéologique (Pentre Ifan), col, lac. Le critère : un nom propre + des coordonnées GPS spécifiques différentes de l'étape précédente.
+⚠️ ÉTAPE OBLIGATOIRE AVANT TOUTE CONCEPTION DE SQUELETTE ÉDITORIAL.
 
-2. **ORDRE LOGIQUE DE ROUTE.** Pas de zigzag, pas de retour en arrière inutile. Trajet cohérent géographiquement.
+Avant de rédiger quoi que ce soit en mode blog, tu rends d'abord une **carte des lieux** sous forme de JSON minimal pour que l'utilisateur visualise géographiquement la zone proposée et valide les points avant que tu dépenses des tokens en rédaction narrative.
 
-3. **DÉPART DEPUIS UNE VILLE AVEC TRANSPORT.** L'itinéraire commence ET se termine dans une ville avec aéroport ou gare TGV/grande ligne.
+📋 CONSIGNE EN 4 ÉTAPES :
 
-4. **BOUCLE OU LIGNE DROITE AUTORISÉES.** Choisir selon la géographie. Boucle si la région se prête au retour au point de départ. Ligne droite si meilleur enchaînement A → B.
+1. **Recherche web exhaustive de la zone.** Pas une recherche, plusieurs. Tu balaies systématiquement :
+   - Les villes/villages majeurs de la zone
+   - Les villages classés patrimoniaux (timber-framed, conservation areas, plus beaux villages)
+   - Les châteaux, abbayes, manoirs visitables
+   - Les jardins remarquables (National Trust, RHS, équivalents locaux)
+   - Les sites naturels nommés (sommets, lacs, gorges, réserves d'oiseaux, parcs nationaux)
+   - Les sites archéologiques, ruines romaines, mégalithiques
+   - Les musées indépendants vraiment intéressants
+   - Les côtes/ports si la zone est littorale
+   - Les routes panoramiques nommées
+   
+   Tu utilises au moins 5 à 10 recherches web différentes par zone. Tu ne te fies pas à ta mémoire — tu cherches activement les pépites locales que les guides classiques oublient.
 
-5. **TEMPS DE TRAJET RÉALISTE.** Si un trajet entre deux étapes dépasse 2h de route, insérer une étape intermédiaire (durée 0.3). Tolérance 4h uniquement pour routes panoramiques nommées (cols, dunes, steppe, plateau).
+2. **Sélection rigoureuse.** Tu retiens uniquement les lieux qui valent vraiment le détour. Un village mignon mais sans rien de notable : tu jettes. Un château fermé toute l'année : tu jettes. Cible : **20 à 25 lieux par roadtrip de 10 jours**, soit 2 à 3 lieux par jour en moyenne. Si la zone est pauvre, descends à 15. Si elle est très riche, monte jusqu'à 30.
 
-6. **DURÉES PAR ÉTAPE EN DÉCIMAUX.** 0.2 (passage), 0.3 (arrêt rapide), 0.5 (demi-journée), 1 (journée), 1.5, 2 (ville riche).
+3. **Tracé géographiquement logique.** Tu ordonnes les lieux selon une route cohérente — ligne droite, boucle, ou arc — pas de zigzag. Le numéro \`day\` reflète l'ordre du parcours, pas le jour calendaire (les \`suggested_days\` font foi pour le calcul des jours).
 
-📐 PROPOSITION :
-- Si la demande est claire, propose **1 squelette** optimal.
-- Si plusieurs angles sont possibles (linéaire vs boucle, court vs long, thématique A vs B), propose **2-3 variantes** brièvement et demande à l'utilisateur de choisir avant de détailler.
-- Si une info bloquante manque (durée non précisée, point de départ flou), pose **UNE seule question groupée** avant de produire le squelette. Sinon, fonce. NE POSE JAMAIS de questions sur : transport (voiture par défaut pour un roadtrip), source_url (l'utilisateur ne l'a pas), aéroport/gare exacts (déduis-les du premier/dernier lieu), thématique/audience (déduis-les du contenu). Ces questions sont stériles, l'utilisateur les déteste.
+4. **Production du JSON squelette de visualisation.** Format strict ci-dessous. Tous les champs éditoriaux sont **vides**, seules les coordonnées et identifiants des lieux sont remplis. Le but unique de ce JSON : afficher les points sur la carte. Pas de prose, pas de descriptions, pas d'anecdotes.
 
-📦 FORMAT DU SQUELETTE :
+📦 FORMAT DU JSON DE VISUALISATION :
 
-🚨 **CHAQUE SQUELETTE EST LIVRÉ DANS UN ARTIFACT CLAUDE DÉDIÉ.** Un squelette = un artifact. Si tu proposes 2-3 variantes, chaque variante est dans son propre artifact. Le chat contient uniquement la présentation (1-2 phrases) et l'invitation à choisir. Jamais le squelette dans le chat en markdown brut — il sera copié-collé dans le prompt concepteur et le format artifact le rend éditable directement.
+🚨 **CHAQUE JSON DE VISU EST LIVRÉ DANS UN ARTIFACT CLAUDE DÉDIÉ.** Un roadtrip = un artifact. Si tu proposes 2 roadtrips, chacun dans son artifact. Le chat contient uniquement une présentation courte (tracé général en 1-2 phrases) et l'invitation à valider ou demander des corrections.
 
-**TITRE THÉMATIQUE** — pas un titre Google générique ("Sicile en 8 jours"), mais un titre qui vend l'angle ("Sicile hantée — 8 jours entre les Catacombes des Capucins et le volcan Stromboli"). 50-60 caractères max pour la version courte, sous-titre développe l'angle en 1 phrase.
+🚨 **RACINE OBLIGATOIRE** : le JSON est enveloppé dans \`{"itins": [{ ... }]}\`. La clé racine \`itins\` est un tableau qui contient un seul objet itinéraire. Sans cette enveloppe, l'import OneRoadTrip rejette le fichier avec l'erreur "Missing 'itins' array". Structure minimale :
 
-**Durée** : N jours. Préciser si N = somme des étapes ou inclut transferts.
+  {
+    "itins": [{
+      "itin_id": "GB::region::slug",
+      "id": "GB::region::slug",
+      "language": "${targetLang}",
+      ...
+      "days_plan": [ ... ],
+      ...
+    }]
+  }
 
-**Départ / Arrivée** : ville + type de transport disponible.
+Structure attendue de chaque entrée \`days_plan\` :
 
-**Meilleure saison** : mois recommandés + raisons (climat, fréquentation, ambiance).
+  {
+    "day": 1,
+    "slice": 1,
+    "region_code": "XX-XXX",
+    "suggested_days": 0.5,
+    "rating": 0,
+    "night": {
+      "place_id": "FR::nice",
+      "coords": [43.7102, 7.2620],
+      "map_keywords": ["Nice France", "Vieux Nice"]
+    },
+    "visits": [],
+    "activities": [],
+    "to_next_leg": {"distance_km": 30, "drive_min": 35, "transport_mode": "car", "road_type": "", "method": "heuristic"}
+  }
 
-**Esprit du voyage** : 3-4 lignes qui posent le contexte (historique, culturel, thématique). Pourquoi ce voyage existe, ce qu'il raconte.
+Le JSON complet contient aussi :
+- \`itin_id\`, \`id\`, \`language: "${targetLang}"\`, \`created_at\`, \`source_url: ""\`, \`dept_code\`, \`dept_name\`
+- \`title\`, \`seo.h1_title\` remplis (titre simple, pas besoin d'optimisation SEO à ce stade)
+- \`subtitle: ""\`, \`notes: ""\`, \`specialties: []\`, \`practical_context: {best_months: [], highlights: []}\`
+- \`estimated_days_base\` cohérent avec la durée annoncée
+- \`pacing_rules\` standard (factors 0.75/1.0/1.25, day_budgets_min 300/420/540, merge_threshold 0.85)
+- \`segments\`, \`variants\`, \`regions\`, \`meta\`, \`seo\` (avec seul \`h1_title\` rempli), \`seo_keywords: []\`
 
-**Jour par jour** : pour chaque étape :
-- Numéro de jour + ville/lieu
-- Durée (en décimal)
-- Coordonnées GPS du lieu principal (lat, lon) entre parenthèses
-- Visites principales avec mini-description (1-2 phrases blog, ton narratif, pas télégraphique) et coords GPS de chaque lieu cité
-- Activités si pertinent
-- Restaurant ou adresse si tu en connais une légitime (pas obligatoire)
-- ⚠️ PAS d'hôtels nommés — le front les gère automatiquement. Tu peux mentionner un quartier où dormir, pas un nom d'hôtel.
-- Trajet vers l'étape suivante (km approximatif + temps)
+🌍 RÈGLES DE COORDONNÉES :
+- Coordonnées GPS au format décimal [latitude, longitude].
+- Précision minimale 4 décimales (10 m).
+- Tu vérifies chaque coord via Wikipedia ou Google Maps. Pas d'invention.
 
-**À retenir** :
-- Erreurs à éviter
-- Lectures/films/podcasts pour s'imprégner
-- Type d'hébergement conseillé (sans nommer)
-- Suite possible si l'utilisateur veut prolonger
+🌍 RÈGLES \`map_keywords\` (déjà documentées en mission 2 audit) :
+- Pays à alphabet latin (France, Italie, Espagne, UK, Allemagne, Portugal) → langue locale.
+- Pays à alphabet non-latin (Grèce, Russie, Chine, Thaïlande, etc.) → anglais.
+- Pays bilingues : Irlande/Pays de Galles/Écosse/Bretagne → anglais ; Catalogne/Pays Basque/Galice → espagnol ; Corse/Québec → français.
+- Format : "Exact Place Name + City". 1 à 3 entrées par lieu.
 
-✍️ TON DU SQUELETTE :
-- Style **blog narratif assumé**, phrases verbales complètes.
-- **Pas de télégraphe** ("Visite X. Ticket 5€. 1h sur place.") → préférer ("Descendez aux X — billet 5€, comptez 1h. Cherchez Y au fond à droite.").
-- Verbes à l'impératif pour guider ("Montez", "Arrêtez-vous", "Cherchez").
-- Anecdotes intégrées, pas listées.
-- Prises de position assumées ("c'est exactement ça qu'il faut comprendre", "rarement aussi vrai").
-- Détails concrets vérifiables (dates, prix, noms).
-- Aucun cliché : ni "iconique", ni "incontournable", ni "joyau caché", ni "où l'histoire rencontre la modernité".
+🚫 INTERDIT EN MISSION 0 :
+- Aucun texte narratif dans \`visits\`, \`activities\`, \`notes\`, \`subtitle\`, \`intro_paragraph\`, \`seo_hook\`.
+- Aucune liste \`featured_list\`, \`places_taglines\`, \`highlights\` remplie.
+- Aucune \`source_url\` remplie.
+- Pas de \`road_type\` rempli (chaîne vide).
 
-🔍 VÉRIFIE TES FAITS : utilise la recherche web pour chaque lieu cité. Coordonnées GPS, dates, noms, distances. Si tu ne peux pas vérifier, n'invente pas — formule prudemment ou retire.
+🎯 ATTENTE APRÈS LA MISSION 0 :
+
+Après livraison du ou des artifacts de visualisation, tu **arrêtes la production**. Tu écris dans le chat une question courte du type : "Voici le tracé proposé sur la carte. Tu valides ou je dois corriger/ajouter/retirer des lieux ?"
+
+Tu **n'enchaînes JAMAIS automatiquement** sur la mission 1 (squelette éditorial complet). Tu attends une réponse explicite de l'utilisateur.
+
+Si l'utilisateur dit "valide", "ok", "go", "lance" ou équivalent → tu passes à la mission 1 en reprenant la liste exacte des lieux validés.
+Si l'utilisateur demande des modifications (ajouter X, retirer Y, déplacer Z, étendre la zone) → tu rends un nouveau JSON de visu mis à jour, dans un nouvel artifact, et tu redemandes validation.
+
+═══════════════════════════════════════════════════════════
+🏛️ MISSION 1 — HANDOFF AU CONCEPTEUR
+═══════════════════════════════════════════════════════════
+
+⚠️ DÉCLENCHEMENT : uniquement après validation explicite du JSON de visualisation (mission 0).
+
+Ton rôle s'arrête ici. Tu transmets le JSON squelette validé à l'utilisateur pour qu'il le passe au concepteur.
+
+**Ce que tu fournis** : le JSON squelette de mission 0, champs \`visits: []\` et \`activities: []\` vides sur chaque entrée \`days_plan\`. Aucun texte éditorial. Aucune description, aucune anecdote, aucune activité rédigée.
+
+**Ce que tu ne fais pas** : rédiger des descriptions de visites, des activités, des textes blog. C'est le rôle exclusif du concepteur.
+
+📌 Message à transmettre à l'utilisateur :
+"Squelette validé. Copiez ce JSON dans le prompt concepteur — il prendra en charge toute la rédaction et la recherche web par lieu."
 
 ═══════════════════════════════════════════════════════════
 🔎 MISSION 2 — AUDITER LE JSON FINAL (plus tard)
@@ -901,13 +950,12 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
   - Quebec : **FRANÇAIS**.
 - Format : "Exact Place Name + City". 1 à 3 entrées par jour.
 
-**13. Densité visits/activities insuffisante**
-- Règle : chaque entrée days_plan doit respecter ces minimums selon la taille du lieu :
-  - Village / petite ville (suggested_days ≤ 0.5) : **2 visits + 1 activity minimum**
-  - Ville (suggested_days 1–1.5) : **3 visits + 2 activities minimum**
-  - Grande ville / métropole (suggested_days ≥ 2) : **4 visits + 3 activities minimum**
-- Plusieurs entrées pour le même lieu (ex : 3 × Nice) : visites et activités doivent être différentes sur chaque entrée — aucune répétition.
-- Signaler chaque entrée sous le seuil avec le nombre réel constaté.
+**13. Densité visits/activities — cohérence déclaration / JSON**
+- Le concepteur a déclaré un compte "trouvé sur le web" dans son bloc DENSITY DECLARATION avant de produire le JSON. Compare ce compte avec ce que le JSON contient réellement.
+- **Signaler** : tout écart entre le nombre déclaré et le nombre réel dans le JSON, sans justification explicite dans la déclaration.
+- **Signaler** : toute entrée days_plan avec une seule visite ou activité sans justification du concepteur.
+- **Signaler** : toute entrée days_plan sans aucune visite ni activité (sauf étapes de transit documentées).
+- Plusieurs entrées pour le même lieu (ex : 3 × Nice) : visites et activités doivent être différentes sur chaque entrée — aucune répétition. Signaler les doublons.
 
 **14. POI non nommé dans les textes**
 - Chaque texte de visit/activity doit nommer explicitement le lieu ou l'attraction qu'il décrit dans les deux premières phrases.
@@ -1009,9 +1057,13 @@ Exemple de retour bien formé :
 🎯 ACTION IMMÉDIATE
 ═══════════════════════════════════════════════════════════
 
-Lis la demande utilisateur ci-dessus. Si elle est claire → produis le squelette directement. Si plusieurs angles possibles → propose 2-3 variantes brèves et demande de choisir. Si info bloquante manque → UNE question groupée.
+Lis la demande utilisateur ci-dessus. Démarre toujours par la **mission 0 (visualisation cartographique)** : recherches web exhaustives, sélection des lieux incontournables, tracé logique du ou des circuits, JSON squelette de visu dans un artifact dédié. Tu attends la validation explicite.
 
-Quand l'utilisateur reviendra avec un JSON, passe en mission 2 (audit).`;
+Si plusieurs roadtrips sont demandés, tu rends un artifact par roadtrip en mission 0.
+
+Après validation : tu indiques à l'utilisateur de passer le JSON au concepteur. Tu ne produis aucun texte éditorial (Mission 1 = handoff uniquement).
+
+Quand l'utilisateur reviendra avec un JSON final produit par le concepteur, passe directement en **mission 2 (audit)**.`;
   },
 
   // ============================================
@@ -1172,7 +1224,7 @@ JSON skeleton (every field mandatory):
     "dept_name": "Region Name",
     "title": "SEO-compliant, 50-60 chars MAX, no Google-pavé",
     "subtitle": "One descriptive sentence with a verb.",
-    "notes": "",
+    "notes": "",  // Visible end user. What makes this trip special, seasonal warnings, logistical caveats. MAX 2 sentences. NEVER draft tallies or audit data.
     "specialties": ["theme1", "theme2"],
     "estimated_days_base": 5,
     "pacing_rules": {
@@ -1223,6 +1275,7 @@ JSON skeleton (every field mandatory):
 
 **FIELD RULES**:
 
+- **notes**: champ visible par l'utilisateur final sur la page de l'itinéraire. Contenu attendu : ce qui rend ce voyage particulier, avertissements saisonniers, contraintes logistiques (passages de frontière, horaires de ferry, routes fermées l'hiver). MAX 2 phrases. Laisser vide ("") si rien de pertinent. 🚨 **JAMAIS** : draft tally, comptage de patterns, notes d'audit, données de production internes. Ces données n'appartiennent pas au JSON livrable.
 - **title**: 50-60 characters MAX (the editorial part, excluding the " | OneRoadTrip" suffix added by the front-end). Count characters yourself before writing. This field feeds og:title directly and the title tag with the suffix appended. A title exceeding 60 chars will be truncated by Google. Not a Google search pavé. Punchy. Must contain the main destination keyword.
 - **seo.h1_title** = IDENTICAL to title. No variation, no reformulation. Copy-paste. This feeds the h1 tag directly.
 - **seo.seo_hook** = feeds meta description and og:description. **120-155 characters** (count yourself). Under 120 = Google may rewrite it. Over 155 = truncated with "…" in search results. Must be a complete sentence, contain the main keyword, and give a concrete reason to click. NOT a tagline — a pitch.
@@ -1296,28 +1349,29 @@ The slug = the place's REAL name on a map. If the place doesn't exist on Wikiped
    - activities[] = things to DO (hikes, tastings, markets, classes, boat trips)
    - Never mix. Never repeat same content in both.
 
-2. **BE EXHAUSTIVE — MANDATORY DENSITY PER STOP**:
-   - **Village / small town** (suggested_days ≤ 0.5): minimum **2 visits + 1 activity**
-   - **City** (suggested_days 1–1.5): minimum **3 visits + 2 activities**
-   - **Large city / metropolis** (suggested_days ≥ 2): minimum **4 visits + 3 activities**
-   - Multiple days at the same place (e.g. 3 entries for Nice) = split visits and activities differently across each day. No repeat content between days.
-   - NEVER invent a visit that doesn't exist. If a village genuinely has only 1 sight, find a viewpoint, a local market, a scenic walk, a chapel — anything real and verifiable. A day below the minimum = INCOMPLETE.
+2. **BE EXHAUSTIVE — INCLUDE EVERYTHING FOUND ON WEB**:
+   - No fixed minimum. No ceiling. The rule is simple: **everything you found in research goes in**.
+   - If research returned 6 visits for a village, include all 6. If 10 activities for a metropolis, include all 10.
+   - **FORBIDDEN**: including fewer visits/activities than found without explicit justification on the DENSITY DECLARATION line.
+   - **FORBIDDEN**: including a single visit or a single activity on a stop without justification.
+   - NEVER invent a visit that doesn't exist. Only include places actually found and verified via web search.
+   - Multiple days at the same place (e.g. 3 entries for Nice) = split content differently across each day. No repeat content between days.
 
-   🚨 **DENSITY AUTO-COUNT — MANDATORY BEFORE WRITING THE JSON. NO EXCEPTIONS.**
+   🚨 **DENSITY DECLARATION — MANDATORY BEFORE WRITING THE JSON. NO EXCEPTIONS.**
 
-   Before writing a single line of JSON, produce this block for EVERY days_plan entry:
+   Before writing a single line of JSON, declare for EVERY days_plan entry the real count you found:
 
-       === DENSITY COUNT ===
-       Day 1 — FR::nice (suggested_days=1, category: City) → required: 3V+2A → planned: [V count] visits + [A count] activities ✅/❌
-       Day 2 — FR::cagnes-sur-mer (suggested_days=0.3, category: Village) → required: 2V+1A → planned: [V] visits + [A] activities ✅/❌
+       === DENSITY DECLARATION ===
+       Day 1 — FR::nice — found on web: 8 visits + 6 activities → planned: 8 visits + 6 activities
+       Day 2 — FR::cagnes-sur-mer — found on web: 3 visits + 2 activities → planned: 3 visits + 2 activities [omitting 1: viewpoint closed year-round]
        ... one line per days_plan entry ...
-       === END DENSITY COUNT ===
+       === END DENSITY DECLARATION ===
 
    Rules:
-   - Category is determined by suggested_days: ≤0.5 → Village, 1–1.5 → City, ≥2 → Metropolis.
-   - Any entry marked ❌ = **JSON REJECTED before it's written**. Fix the count first, THEN write the JSON.
-   - If you skip this block or write it after the JSON, the output is INVALID. The count must precede the JSON.
-   - This is the #1 defect found in every delivered JSON. There is no tolerance.
+   - "found on web" = real count from your RESEARCH block. If you did no search for a location, write "0 — no research, doing now" and search before continuing.
+   - "planned" must equal "found on web" unless you explicitly justify the omission on the same line (closed year-round, entry requires ticket unavailable, duplicate of another entry, etc.).
+   - Any gap without justification = DENSITY DECLARATION INVALID. Fix before writing the JSON.
+   - If you skip this block or write it after the JSON, the output is INVALID.
 
 3. **INTERMEDIATE STOPS** — drive > 2h between two nights = MANDATORY intermediate stop (suggested_days 0.3 or 0.5). Tolerance 4h ONLY for named scenic routes (passes, dunes, steppe, plateau). Standard expressways do NOT qualify.
 
@@ -1506,7 +1560,7 @@ CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 
 **Phase 1 — DRAFT (write this in a code block first, BEFORE the JSON):**
 
-Structure the DRAFT **day by day**. For each day, list every visit and activity, then write the density sub-total. If the sub-total is ❌, **STOP and fix before moving to the next day**. Do not continue until the day is complete.
+Structure the DRAFT **day by day**. For each day, list every visit and activity matching your DENSITY DECLARATION count. If your draft is short of the declared count for a day, **STOP and add the missing items before moving to the next day**. Do not continue until the day matches its declaration.
 
 For every single visit/activity text, write ONE line in this format:
 
@@ -1518,7 +1572,7 @@ Example draft block:
 
     === DRAFT — PATTERN LABELS ===
     
-    Day 1 — FR::nice (suggested_days=1, City → min 3v+2a)
+    Day 1 — FR::nice (suggested_days=1, found on web: 5 visits + 3 activities)
     Day 1 visit 1 — [PATTERN: Opinion] — "Touristique, mais le lagon tient sa promesse"
     Day 1 visit 2 — [PATTERN: FactualPivot] — "Construite en 1885, la promenade longe"
     Day 1 visit 3 — [PATTERN: Sensory] — "L'odeur de la lavande envahit le marché"
@@ -1526,12 +1580,14 @@ Example draft block:
     Day 1 activity 2 — [PATTERN: VousVerbe] — "Prenez le bus 100 jusqu'au cap Ferrat"
     → Sub-total: 3v + 2a ✅ — proceeding to Day 2
     
-    Day 2 — FR::cagnes-sur-mer (suggested_days=0.3, Village → min 2v+1a)
+    Day 2 — FR::cagnes-sur-mer (suggested_days=0.3, found on web: 3 visits + 2 activities)
     Day 2 visit 1 — [PATTERN: Contradiction] — "Sous l'immeuble banal des années 90"
     Day 2 activity 1 — [PATTERN: LocalVoice] — "Les habitants l'appellent simplement El Peral"
-    → Sub-total: 1v + 1a ❌ — MISSING 1 visit. Adding before continuing:
+    → Sub-total: 1v + 1a — MISSING 2 visits + 1 activity vs declaration. Adding before continuing:
     Day 2 visit 2 — [PATTERN: Sensory] — "L'argile blanche craque sous les pas"
-    → Sub-total corrected: 2v + 1a ✅ — proceeding to Day 3
+    Day 2 visit 3 — [PATTERN: Opinion] — "Le château Grimaldi mérite une heure"
+    Day 2 activity 2 — [PATTERN: VousVerbe] — "Prenez le sentier qui surplombe la mer"
+    → Sub-total: 3v + 2a ✅ matches declaration — proceeding to Day 3
     
     ... etc for all days ...
     
@@ -1552,7 +1608,7 @@ Example draft block:
 
 1. **HARD CAP: Place-first ≤ 25% of total.** If you reach 25%, you cannot label another text Place-first. Pick a different pattern.
 
-2. **DENSITY GATE per day: if a day's sub-total is ❌, you cannot proceed to the next day.** Fix the missing visits/activities first, add their labels to the draft, then recheck the sub-total.
+2. **DENSITY GATE per day: the visit/activity count in your pattern labels must match your DENSITY DECLARATION.** If your draft has fewer texts than declared for a day, add the missing ones before moving to the next day. If omitting some, justify on the same line.
 
 3. **No two consecutive identical patterns.** Day 3 visit 1 = Sensory → Day 3 visit 2 cannot be Sensory.
 
@@ -3680,9 +3736,9 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 **Visits vs Activities**: visits[] = places to SEE. activities[] = things to DO. Never mix.
 
 **Visits/activities density (MANDATORY)**:
-- Village / small town (suggested_days ≤ 0.5): **2 visits + 1 activity minimum**
-- City (suggested_days 1–1.5): **3 visits + 2 activities minimum**
-- Large city / metropolis (suggested_days ≥ 2): **4 visits + 3 activities minimum**
+- No fixed minimum. No ceiling. Include EVERY visit and activity found during web research for each stop.
+- FORBIDDEN: fewer visits/activities than found in research without explicit justification (e.g., closed year-round, entry unavailable, duplicate).
+- FORBIDDEN: a single visit or a single activity on any stop without justification.
 - Multiple entries for the same place: different visits and activities on each entry, no repeats across days.
 **place_id** in visits/activities = always "". Only night.place_id gets a value.
 **night.place_id** = real geographic location, REUSED IDENTICALLY when sleeping at the same place on multiple days. NEVER create artificial suffixes like "-stop", "-return", "-day2", "-airport". The places_taglines must contain ONE entry per UNIQUE night.place_id used in days_plan — no orphans, no missing entries.
@@ -3803,7 +3859,7 @@ If you can't pass all 5, the text is REJECTED.
 ✅ BLOG STYLE: every text has hook + facts + practical. No encyclopedia openings. No "vous entrez/découvrez/voici". Opening patterns distributed (no single >30%, "Vous+verb" ~30% — transitions and practical tips only). At least 5 signature moves planted (paradox, local voice, contradiction, sharp tip, etc.).
 ✅ POI NAME: every visit/activity text explicitly names its POI within the first two sentences. Any text without a named place = INVALID, must be rewritten.
 ✅ No text > 150 words
-✅ Every day meets the density minimum: village ≥ 2 visits + 1 activity / city ≥ 3 visits + 2 activities / metropolis ≥ 4 visits + 3 activities. Any day below = INCOMPLETE, must be enriched before output.
+✅ Every day: visits and activities count matches DENSITY DECLARATION (everything found on web included, any omission explicitly justified). No stop with a single visit or activity without justification.
 ✅ Drive > 2h → intermediate stop (4h tolerance ONLY named scenic routes — not standard expressways)
 ✅ map_keywords = JSON array on every day
 ✅ places_taglines = sentence per unique night.place_id
