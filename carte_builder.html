@@ -533,6 +533,41 @@ body.fullscreen-mode.selection-open .map-container {
   box-shadow: 0 8px 24px rgba(17, 63, 122, 0.2);
 }
 
+/* Bandeau compteur pendant le chargement progressif des POI */
+.map-loading-counter {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 600;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(17, 63, 122, 0.92);
+  color: #fff;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+  transition: opacity 0.4s ease;
+}
+.map-loading-counter[hidden] { display: none; }
+.map-loading-counter.fade-out { opacity: 0; }
+.map-loading-counter .mlc-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+  animation: mlc-pulse 0.9s ease-in-out infinite;
+}
+@keyframes mlc-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
 /* Preview popup - PLEINE HAUTEUR depuis le haut de la page */
 .place-preview {
   position: fixed;
@@ -754,10 +789,30 @@ body.fullscreen-mode .place-preview {
 
 .legend-title {
   font-weight: 700;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   color: var(--acc);
   font-size: 13px;
 }
+
+/* En-tête repliable de la légende */
+.legend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.legend-toggle {
+  color: var(--acc);
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.color-legend.collapsed .legend-header { margin-bottom: 0; }
+.color-legend.collapsed .legend-item { display: none; }
+.color-legend.collapsed .legend-toggle { transform: rotate(-90deg); }
 
 .legend-item {
   display: flex;
@@ -1269,6 +1324,10 @@ body.fullscreen-mode .place-preview {
 <!-- Carte -->
 <div class="map-container">
   <div id="map"></div>
+  <div id="loadingCounter" class="map-loading-counter" hidden>
+    <span class="mlc-dot"></span>
+    <span id="loadingCounterText">Chargement des lieux…</span>
+  </div>
   
   <!-- Preview lieu -->
   <div id="placePreview" class="place-preview">
@@ -1299,7 +1358,10 @@ body.fullscreen-mode .place-preview {
   
   <!-- Légende couleurs -->
   <div class="color-legend" id="colorLegend">
-    <div class="legend-title" id="legendTitle">Lieux</div>
+    <div class="legend-header" onclick="toggleLegend()">
+      <span class="legend-title" id="legendTitle">Lieux</span>
+      <span class="legend-toggle" id="legendToggle">▾</span>
+    </div>
     <div class="legend-item" data-filter="mustsee" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><svg class="legend-star" width="16" height="16" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span data-i18n="mustSee">Incontournable</span></div>
     <div class="legend-item" data-filter="recommended" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot recommended"></div> <span data-i18n="recommended">Recommandé</span></div>
     <div class="legend-item" data-filter="discover" onclick="toggleLegendFilter(this)"><span class="legend-checkbox">✓</span><div class="legend-dot discover"></div> <span data-i18n="discover">À découvrir</span></div>
@@ -1798,7 +1860,7 @@ function initMap() {
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
     disableClusteringAtZoom: 3,     // Clusters uniquement en vue monde très large, points individuels dès qu'on voit un pays
-    chunkedLoading: true,           // Chargement par lots (plus fluide)
+    chunkedLoading: false,          // Cadence gérée par le moteur progressif maison
     chunkInterval: 50,              // Intervalle entre les lots (ms)
     chunkDelay: 25,                 // Délai initial
     animate: false,                 // Désactiver animations (plus rapide)
@@ -1821,10 +1883,7 @@ function initMap() {
   // Mise à jour visibilité au zoom
   map.on('zoomend', updateMarkersVisibility);
   map.on('moveend', updateStats);
-  
-  // Charger les marqueurs progressivement lors du mouvement et zoom
-  map.on('zoomend', loadMarkersInViewport);
-  map.on('moveend', loadMarkersInViewport);
+  map.on('zoomend', updateStats);
 }
 
 // ===============================
@@ -1858,8 +1917,13 @@ async function loadAllPlaces() {
       return;
     }
 
+    // Le sélecteur de pays et le moteur de rendu démarrent tout de suite,
+    // sans attendre le téléchargement de tous les pays.
+    populateCountrySelect(countryList);
+    startProgressiveRender();
+
     // Charger les places de chaque pays avec la langue actuelle
-    const promises = countryList.map(async (countryObj) => {
+    const loadCountry = async (countryObj) => {
       const cc = String(countryObj.cc || countryObj.code || countryObj).toUpperCase();
       const ccLower = cc.toLowerCase();
 
@@ -1977,24 +2041,29 @@ async function loadAllPlaces() {
       }
 
       return [];
+    };
+
+    // On lance tous les pays en parallèle, mais on AFFICHE chacun dès qu'il
+    // arrive, sans attendre le plus lent. C'est ça qui supprime le délai long.
+    let pendingCountries = countryList.length;
+    countryList.forEach((countryObj) => {
+      loadCountry(countryObj)
+        .then((places) => {
+          if (places && places.length) {
+            allPlaces.push(...places);
+            enqueuePlaces(places);
+          }
+        })
+        .catch((e) => console.warn('Pays en échec:', e))
+        .finally(() => {
+          pendingCountries--;
+          if (pendingCountries === 0) {
+            console.log(`✅ Total: ${allPlaces.length} lieux chargés`);
+            calculateRatingThreshold();
+            allCountriesLoaded = true; // le moteur masquera le bandeau à la fin
+          }
+        });
     });
-
-    const results = await Promise.all(promises);
-    allPlaces = results.flat();
-    console.log(`✅ Total: ${allPlaces.length} lieux chargés`);
-
-    // Populer le sélecteur de pays
-    populateCountrySelect(countryList);
-
-    // Calculer le seuil top 20%
-    calculateRatingThreshold();
-
-    // Créer les marqueurs
-    createMarkers();
-
-    // Mise à jour initiale
-    updateMarkersVisibility();
-    updateStats();
 
   } catch (error) {
     console.error('Erreur chargement:', error);
@@ -2139,6 +2208,130 @@ function isPlaceInBounds(place, bounds) {
   return bounds.contains([place.lat, place.lon]);
 }
 
+// ===============================
+// RENDU PROGRESSIF DES POI
+// ===============================
+// Réglages faciles à ajuster :
+const RENDER_BATCH_SIZE = 60;   // nombre de points ajoutés par image (frame)
+const RENDER_FRAME_GAP = 0;     // ms de pause en plus entre deux lots (0 = une frame)
+
+let renderQueue = [];           // lieux en attente d'affichage
+let queueDirty = false;         // la file a reçu de nouveaux lieux, à retrier
+let renderRunning = false;      // le moteur tourne déjà
+let renderedCount = 0;          // nombre de points déjà affichés
+let allCountriesLoaded = false; // tous les pays ont fini de télécharger
+
+// Démarre le moteur. Sans danger si appelé plusieurs fois.
+function startProgressiveRender() {
+  renderedCount = 0;
+  showLoadingCounter();
+  if (!renderRunning) {
+    renderRunning = true;
+    requestAnimationFrame(renderTick);
+  }
+}
+
+// Ajoute des lieux à la file. Les doublons et lieux sans coordonnées sont ignorés.
+function enqueuePlaces(places) {
+  for (const place of places) {
+    if (!place.lat || !place.lon) continue;
+    if (loadedMarkersIds.has(place.place_id)) continue;
+    renderQueue.push(place);
+  }
+  queueDirty = true;
+}
+
+// Trie la file : d'abord les lieux dans la vue, puis du plus proche au plus loin du centre.
+function sortRenderQueue() {
+  if (!map) return;
+  const bounds = map.getBounds();
+  const center = map.getCenter();
+  for (const p of renderQueue) {
+    const inView = bounds.contains([p.lat, p.lon]);
+    const dLat = p.lat - center.lat;
+    const dLon = p.lon - center.lng;
+    // Les lieux dans la vue gardent une priorité négative pour passer devant.
+    p._renderKey = (inView ? -1e9 : 0) + (dLat * dLat + dLon * dLon);
+  }
+  renderQueue.sort((a, b) => a._renderKey - b._renderKey);
+  queueDirty = false;
+}
+
+// Une passe : ajoute un lot, met à jour le compteur, reprogramme la suivante.
+function renderTick() {
+  // La carte ou la couche peuvent ne pas être prêtes si les données arrivent très vite.
+  if (!map || !markersLayer) {
+    requestAnimationFrame(renderTick);
+    return;
+  }
+  if (queueDirty) sortRenderQueue();
+
+  if (renderQueue.length > 0) {
+    const batch = renderQueue.splice(0, RENDER_BATCH_SIZE);
+    const layers = [];
+    for (const place of batch) {
+      if (loadedMarkersIds.has(place.place_id)) continue;
+      const marker = createMarkerElement(place);
+      marker.placeData = place;
+      layers.push(marker);
+      allMarkers.push(marker);
+      loadedMarkersIds.add(place.place_id);
+    }
+    if (layers.length) {
+      markersLayer.addLayers(layers);
+      renderedCount += layers.length;
+    }
+    updateLoadingCounter();
+    updateStats();
+  }
+
+  // Fini seulement quand la file est vide ET que tous les pays sont arrivés.
+  if (renderQueue.length === 0 && allCountriesLoaded) {
+    renderRunning = false;
+    finishProgressiveRender();
+    return;
+  }
+
+  if (RENDER_FRAME_GAP > 0) {
+    setTimeout(() => requestAnimationFrame(renderTick), RENDER_FRAME_GAP);
+  } else {
+    requestAnimationFrame(renderTick);
+  }
+}
+
+function finishProgressiveRender() {
+  applyLegendFilters();
+  updateMarkersVisibility();
+  updateStats();
+  hideLoadingCounter();
+}
+
+// --- Bandeau compteur ---
+function showLoadingCounter() {
+  const el = document.getElementById('loadingCounter');
+  if (el) { el.hidden = false; el.classList.remove('fade-out'); }
+  updateLoadingCounter();
+}
+
+function updateLoadingCounter() {
+  const txt = document.getElementById('loadingCounterText');
+  if (!txt) return;
+  const loaded = renderedCount.toLocaleString('fr-FR');
+  if (allCountriesLoaded) {
+    const total = (renderedCount + renderQueue.length).toLocaleString('fr-FR');
+    txt.textContent = `Chargement des lieux… ${loaded} / ${total}`;
+  } else {
+    txt.textContent = `Chargement des lieux… ${loaded}`;
+  }
+}
+
+function hideLoadingCounter() {
+  const el = document.getElementById('loadingCounter');
+  if (!el) return;
+  el.classList.add('fade-out');
+  setTimeout(() => { el.hidden = true; }, 450);
+}
+
 function createMarkers() {
   markersLayer.clearLayers();
   allMarkers = [];
@@ -2219,6 +2412,11 @@ function loadMarkersInViewport() {
 // ===============================
 // Garde en mémoire quelles catégories sont visibles
 let legendFilters = { mustsee: true, recommended: true, discover: true, standard: true, selected: true };
+
+function toggleLegend() {
+  const el = document.getElementById('colorLegend');
+  if (el) el.classList.toggle('collapsed');
+}
 
 function toggleLegendFilter(el) {
   const filter = el.dataset.filter;
