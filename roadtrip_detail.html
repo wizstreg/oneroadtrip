@@ -9293,7 +9293,83 @@ $('#btnShowOtherPlaces')?.addEventListener('click', async ()=>{
       renderOtherPlaces();
     }
   }, 300);
+
+  // Charger en fond tous les autres pays (itinéraires transfrontaliers / mondiaux)
+  loadWorldPlacesProgressive();
 });
+
+// === [WORLD-PLACES] Chargement progressif de tous les pays ===
+// Charge les master.json de tous les pays listés dans countries.index.json,
+// un pays à la fois avec un délai, pour ne pas figer la page. renderOtherPlaces()
+// affiche automatiquement les nouveaux pays au fur et à mesure (filtre déjà ouvert).
+async function loadWorldPlacesProgressive(){
+  if (window.__WORLD_LOADING__ || window.__WORLD_DONE__) return;
+  window.__WORLD_LOADING__ = true;
+
+  const DELAY_MS = 200;        // pause entre deux pays
+  const RENDER_THROTTLE = 400; // re-render au plus une fois toutes les 400ms
+
+  // 1) Manifest des pays (chargé une seule fois). Plusieurs noms candidats
+  //    car l'extension .json peut être masquée selon l'export.
+  if (!window.__ALL_CC__) {
+    const candidates = [
+      './data/Roadtripsprefabriques/countries/countries.index.json',
+      './data/Roadtripsprefabriques/countries/countries_index.json',
+      './data/Roadtripsprefabriques/countries/countries.index'
+    ];
+    let manifest = null;
+    for (const url of candidates) {
+      try { const r = await fetch(url); if (r.ok) { manifest = await r.json(); break; } }
+      catch(_){}
+    }
+    if (!manifest || !Array.isArray(manifest.countries)) {
+      console.warn('[WORLD] Manifest pays introuvable – chargement mondial annulé');
+      window.__WORLD_LOADING__ = false;
+      return;
+    }
+    window.__ALL_CC__ = manifest.countries
+      .map(c => (c.cc || '').toUpperCase())
+      .filter(Boolean);
+  }
+
+  // 2) File des pays restant à charger (ceux absents de PLACES_INDEX)
+  const loadedCC = new Set(
+    Object.values(window.PLACES_INDEX || {}).map(p => (p.cc || '').toUpperCase())
+  );
+  const queue = window.__ALL_CC__.filter(cc => cc && cc !== 'XX' && !loadedCC.has(cc));
+  console.log('[WORLD] Chargement progressif:', queue.length, 'pays restants');
+
+  // 3) Re-render throttlé (respecte le toggle "autres lieux")
+  let renderScheduled = false;
+  const scheduleRender = () => {
+    if (renderScheduled) return;
+    renderScheduled = true;
+    setTimeout(() => {
+      renderScheduled = false;
+      try {
+        const tog = document.getElementById('toggleOtherPlaces');
+        if ((!tog || tog.checked) && typeof renderOtherPlaces === 'function') renderOtherPlaces();
+      } catch(_){}
+    }, RENDER_THROTTLE);
+  };
+
+  // 4) Boucle décalée : un pays à la fois
+  let i = 0;
+  const next = async () => {
+    if (i >= queue.length) {
+      window.__WORLD_LOADING__ = false;
+      window.__WORLD_DONE__ = true;
+      scheduleRender();
+      console.log('[WORLD] Terminé –', Object.keys(window.PLACES_INDEX || {}).length, 'lieux dans l\'index');
+      return;
+    }
+    const cc = queue[i++];
+    try { await ensurePlacesIndex([cc]); scheduleRender(); }
+    catch(e){ console.warn('[WORLD] Échec', cc, e); }
+    setTimeout(next, DELAY_MS);
+  };
+  next();
+}
 
 // Handler km/mi (bouton supprimé mais garde la logique au cas où)
 if($('#unitToggle')) $('#unitToggle').onclick=()=>{

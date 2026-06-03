@@ -34,7 +34,7 @@
 <link rel="shortcut icon" href="https://www.oneroadtrip.com/favicon.ico">
 <link rel="dns-prefetch" href="https://www.googletagmanager.com">
 <title id="pageTitle">Tous les itinéraires | OneRoadTrip</title>
-<meta name="description" id="metaDesc" content="663 itinéraires - 100 pays">
+<meta name="description" id="metaDesc" content="850+ roadtrips, 5500+ places, 45000+ visits">
 <link rel="canonical" id="canonicalLink" href="https://www.oneroadtrip.com/index.html">
 <link rel="alternate" hreflang="fr" href="https://www.oneroadtrip.com/index.html?lang=fr">
 <link rel="alternate" hreflang="en" href="https://www.oneroadtrip.com/index.html?lang=en">
@@ -67,7 +67,11 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);li
 @keyframes scrollLatest{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
 
 /* Top bar with lang selector */
-.top-bar{display:flex;justify-content:flex-end;padding:6px 16px;background:var(--pd)}
+.top-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 16px;background:var(--pd)}
+.top-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.top-nav a{color:#fff;text-decoration:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);padding:6px 12px;border-radius:25px;font-size:0.9rem;white-space:nowrap;transition:background 0.2s}
+.top-nav a:hover{background:rgba(255,255,255,0.25)}
+@media(max-width:600px){.top-nav a{padding:5px 9px;font-size:0.75rem}}
 .lang-selector{position:relative;z-index:100}
 .lang-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:8px 14px;border-radius:25px;cursor:pointer;font-size:0.9rem;transition:all 0.2s}
 .lang-btn:hover{background:rgba(255,255,255,0.25)}
@@ -259,6 +263,11 @@ footer p{opacity:.5;font-size:.8rem}
 
 <!-- ===== TOP BAR (lang selector) ===== -->
 <div class="top-bar">
+  <nav class="top-nav" id="topNav">
+    <a id="navNews" href="news.html">News</a>
+    <a id="navPress" href="news.html">Presse</a>
+    <a id="navPartners" href="news.html">Partenaires</a>
+  </nav>
   <div class="lang-selector" id="langSelector">
     <button class="lang-btn" onclick="document.getElementById('langSelector').classList.toggle('open')">
       <span id="langFlag">🇫🇷</span>
@@ -483,6 +492,25 @@ document.getElementById('heroSub').textContent = t.heroSub;
 
 document.getElementById('langFlag').textContent = t.flag;
 document.getElementById('langName').textContent = t.name;
+
+/* Nav Actualités / Presse / Partenaires (i18n) → ouvre news.html sur le bon onglet */
+(function(){
+  var NAV = {
+    fr:{news:'Actualités',press:'Presse',partners:'Partenaires'},
+    en:{news:'News',press:'Press',partners:'Partners'},
+    es:{news:'Noticias',press:'Prensa',partners:'Socios'},
+    it:{news:'Notizie',press:'Stampa',partners:'Partner'},
+    pt:{news:'Notícias',press:'Imprensa',partners:'Parceiros'},
+    ar:{news:'\u0623\u062E\u0628\u0627\u0631',press:'\u0627\u0644\u0635\u062D\u0627\u0641\u0629',partners:'\u0634\u0631\u0643\u0627\u0621'}
+  };
+  var L = NAV[currentLang] || NAV.en;
+  ['news','press','partners'].forEach(function(tab){
+    var el = document.getElementById('nav' + tab.charAt(0).toUpperCase() + tab.slice(1));
+    if(!el) return;
+    el.textContent = L[tab];
+    el.href = 'news.html?lang=' + currentLang + '&tab=' + tab;
+  });
+})();
 document.getElementById('searchInput').placeholder = t.searchPh;
 document.getElementById('searchInputMobile').placeholder = t.searchPh;
 document.getElementById('trioFiltersTitle').textContent = '\uD83D\uDD0D ' + (t.searchPh || 'Trouvez votre itinéraire');

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneRoadTrip – Actualités &amp; Presse</title>
+<meta name="description" content="Les actualités et la revue de presse de OneRoadTrip.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#113f7a;
+  --acc:#113f7a;
+  --bg:#f6f9fb;
+  --card:#ffffff;
+  --bd:#d4e0ea;
+  --mut:#64748b;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+
+/* Header (remplaçable par ort-header.js) */
+header{
+  background:var(--acc);
+  color:#fff;
+  padding:12px 18px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+header a.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:800;font-size:17px}
+header a.brand .logo{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--acc);display:flex;align-items:center;justify-content:center;font-weight:800}
+header .spacer{flex:1}
+header a.back{color:#fff;text-decoration:none;font-size:14px;border:1px solid rgba(255,255,255,.5);padding:7px 12px;border-radius:9px}
+header a.back:hover{background:rgba(255,255,255,.15)}
+
+.hero{max-width:880px;margin:0 auto;padding:26px 18px 6px}
+.hero h1{margin:0 0 4px;font-size:28px}
+.hero p{margin:0;color:var(--mut);font-size:15px}
+
+/* Onglets */
+.tabs{max-width:880px;margin:18px auto 0;padding:0 18px;display:flex;gap:8px}
+.tab{
+  padding:11px 26px;border-radius:12px 12px 0 0;cursor:pointer;font-weight:700;
+  background:#e4edf5;color:var(--acc);border:1px solid var(--bd);border-bottom:none;
+  transition:background .15s;
+}
+.tab:hover{background:#d8e6f1}
+.tab.active{background:var(--card);box-shadow:0 -3px 10px rgba(17,63,122,.08)}
+
+.feed{max-width:880px;margin:0 auto;padding:18px;}
+.feed-inner{background:var(--card);border:1px solid var(--bd);border-radius:0 14px 14px 14px;padding:18px}
+
+/* Carte article */
+.art{
+  border:1px solid var(--bd);border-radius:12px;overflow:hidden;margin-bottom:18px;
+  background:#fff;box-shadow:0 2px 8px rgba(17,63,122,.06);
+  opacity:0;transform:translateY(12px);animation:rise .5s ease forwards;
+}
+@keyframes rise{to{opacity:1;transform:none}}
+.art img.cover{width:100%;height:240px;object-fit:cover;background:#eef3f7;display:block}
+.art .body{padding:16px 18px}
+.art .date{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:700}
+.art h2{margin:6px 0 10px;font-size:21px;color:var(--ink)}
+.art .content{font-size:15px;line-height:1.6;color:#374151}
+.art .content h3{color:var(--ink);font-size:17px;margin:14px 0 6px}
+.art .content a{color:#1565C0}
+
+.empty{text-align:center;color:var(--mut);padding:40px 10px;font-size:15px}
+.loading{text-align:center;color:var(--mut);padding:30px 10px;font-size:14px}
+
+@media(max-width:600px){
+  .hero h1{font-size:23px}
+  .art img.cover{height:180px}
+  .tab{padding:10px 16px}
+}
+</style>
+</head>
+<body>
+
+<!-- Si tu utilises ort-header.js sur le site, remplace ce bloc header par ton header habituel. -->
+<header>
+  <a class="brand" href="/index.html"><span class="logo">OR</span> OneRoadTrip</a>
+  <span class="spacer"></span>
+  <a class="back" href="/index.html">← Accueil</a>
+</header>
+
+<div class="hero">
+  <h1>Actualités &amp; Presse</h1>
+  <p>Les dernières nouvelles de OneRoadTrip et ce que la presse en dit.</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="news" id="tabNews">📰 News</div>
+  <div class="tab" data-tab="press" id="tabPress">🗞️ Presse</div>
+  <div class="tab" data-tab="partners" id="tabPartners">🤝 Partenaires</div>
+</div>
+
+<div class="feed">
+  <div class="feed-inner" id="feed">
+    <div class="loading">Chargement…</div>
+  </div>
+</div>
+
+<script>
+const SOURCES = {
+  news:     'data/news/news.json',
+  press:    'data/news/press.json',
+  partners: 'data/news/partners.json'
+};
+const cache = {};
+let currentTab = 'news';
+
+async function loadTab(tab){
+  if (cache[tab]) { render(tab); return; }
+  document.getElementById('feed').innerHTML = '<div class="loading">Chargement…</div>';
+  try {
+    // chemins tolérants (racine ou relatif)
+    const tries = [SOURCES[tab], './' + SOURCES[tab], '/' + SOURCES[tab]];
+    let data = null;
+    for (const url of tries){
+      try {
+        const r = await fetch(url, { cache:'no-store' });
+        if (r.ok){ data = await r.json(); break; }
+      } catch(e){}
+    }
+    cache[tab] = Array.isArray(data) ? data : [];
+  } catch(e){ cache[tab] = []; }
+  render(tab);
+}
+
+function render(tab){
+  if (tab !== currentTab) return;
+  const arr = (cache[tab] || []).slice().sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const feed = document.getElementById('feed');
+  if (arr.length === 0){
+    feed.innerHTML = '<div class="empty">Aucun article pour le moment.</div>';
+    return;
+  }
+  feed.innerHTML = '';
+  arr.forEach((a, i)=>{
+    const el = document.createElement('article');
+    el.className = 'art';
+    el.style.animationDelay = (i * 80) + 'ms';
+    const img = a.image ? `<img class="cover" src="${escapeAttr(a.image)}" alt="${escapeAttr(a.title||'')}" loading="lazy">` : '';
+    el.innerHTML = `
+      ${img}
+      <div class="body">
+        <div class="date">${formatDate(a.date)}</div>
+        ${a.title ? `<h2>${escapeHtml(a.title)}</h2>` : ''}
+        <div class="content">${a.body || ''}</div>
+      </div>`;
+    feed.appendChild(el);
+  });
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    loadTab(currentTab);
+  });
+});
+
+function formatDate(d){
+  if (!d) return '';
+  try { return new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}); }
+  catch(e){ return d; }
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+loadTab('news');
+</script>
+</body>
+</html>
