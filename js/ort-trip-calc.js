@@ -195,6 +195,7 @@
     
     let currentPlaceId = null;
     let currentGroupStart = 0;
+    let currentGroupSdSum = 0;
     let currentGroupCount = 0;
     let groupsFound = 0;
     
@@ -203,10 +204,10 @@
       const placeId = step?.place_id || step?.placeId || step?.night?.place_id || `step_${i}`;
       
       if (i === steps.length || placeId !== currentPlaceId) {
-        // Fin du groupe précédent - assigner les nuits
+        // Fin du groupe précédent - assigner les nuits depuis sd cumulé
         if (currentGroupCount > 0 && currentPlaceId !== null) {
-          // Première étape du groupe = nombre de jours dans le groupe
-          steps[currentGroupStart].nights = currentGroupCount;
+          const nights = currentGroupSdSum < 0.5 ? 0 : Math.round(currentGroupSdSum);
+          steps[currentGroupStart].nights = nights;
           steps[currentGroupStart]._isGroupHead = true;
           steps[currentGroupStart]._groupSize = currentGroupCount;
           
@@ -219,7 +220,7 @@
           
           if (currentGroupCount > 1) {
             groupsFound++;
-            console.log(`[ORT-TRIP-CALC] Groupe ${groupsFound}: ${steps[currentGroupStart].name} (${currentGroupCount} jours) → ${currentGroupCount} nuit(s)`);
+            console.log(`[ORT-TRIP-CALC] Groupe ${groupsFound}: ${steps[currentGroupStart].name} (${currentGroupCount} entries, sd=${currentGroupSdSum.toFixed(1)}) → ${nights} nuit(s)`);
           }
         }
         
@@ -228,10 +229,12 @@
           currentPlaceId = placeId;
           currentGroupStart = i;
           currentGroupCount = 1;
+          currentGroupSdSum = Number(step.suggested_days || step._suggestedDays || step.suggestedDays || 0);
         }
       } else {
-        // Même lieu - continuer le groupe
+        // Même lieu - continuer le groupe, cumuler les sd
         currentGroupCount++;
+        currentGroupSdSum += Number(step.suggested_days || step._suggestedDays || step.suggestedDays || 0);
       }
     }
     
@@ -254,6 +257,76 @@
     console.log(`[ORT-TRIP-CALC] Total après regroupement: ${totalNights} nuits`);
     
     return steps;
+  }
+
+  // ============================================================
+  // APPLICATION DES NUITS SOURCE (suggested_days du JSON)
+  // ============================================================
+
+  /**
+   * Applique les nuits directement depuis les suggested_days du JSON.
+   * Règles :
+   *   - place_id consécutifs identiques = on cumule les sd (ancien format multi-jours)
+   *   - sd cumulé < 0.5 → 0 nuit (POI de passage)
+   *   - sd cumulé >= 0.5 → Math.round(sd cumulé)
+   *   - La première étape du groupe porte les nuits, les suivantes = 0
+   *
+   * @param {Array} steps - state.steps
+   * @returns {number} Total des nuits attribuées
+   */
+  function applySourceNights(steps) {
+    if (!steps || steps.length === 0) return 0;
+
+    console.log('[ORT-TRIP-CALC] === applySourceNights (respect du JSON) ===');
+
+    // Parcourir par groupes de place_id consécutifs identiques
+    let i = 0;
+    while (i < steps.length) {
+      const pid = steps[i].place_id || steps[i].placeId || `step_${i}`;
+      const groupStart = i;
+      let sdSum = 0;
+
+      // Cumuler les sd des place_id consécutifs identiques
+      while (i < steps.length) {
+        const currentPid = steps[i].place_id || steps[i].placeId || `step_${i}`;
+        if (currentPid !== pid) break;
+        const sd = Number(steps[i].suggested_days || steps[i]._suggestedDays || steps[i].suggestedDays || 0);
+        sdSum += sd;
+        i++;
+      }
+
+      const groupSize = i - groupStart;
+      const nights = sdSum < 0.5 ? 0 : Math.round(sdSum);
+
+      // Première étape du groupe = nuits, les autres = 0
+      steps[groupStart].nights = nights;
+      for (let j = groupStart + 1; j < groupStart + groupSize; j++) {
+        steps[j].nights = 0;
+        steps[j]._isGroupMember = true;
+        steps[j]._groupHead = groupStart;
+      }
+      if (groupSize > 1) {
+        steps[groupStart]._isGroupHead = true;
+        steps[groupStart]._groupSize = groupSize;
+      }
+
+      console.log(`[ORT-TRIP-CALC]   ${steps[groupStart].name}: sd=${sdSum.toFixed(1)} → ${nights} nuit(s)${groupSize > 1 ? ` (${groupSize} entries)` : ''}`);
+    }
+
+    // Dernière étape : 0 nuit si aéroport
+    const last = steps[steps.length - 1];
+    if (last && (
+      last.place_id?.includes('airport') ||
+      last.name?.toLowerCase().includes('aéroport') ||
+      last.name?.toLowerCase().includes('airport')
+    )) {
+      last.nights = 0;
+      console.log(`[ORT-TRIP-CALC]   ✈️ ${last.name}: 0 nuit (aéroport)`);
+    }
+
+    const total = steps.reduce((s, x) => s + (x.nights || 0), 0);
+    console.log(`[ORT-TRIP-CALC] ✅ applySourceNights terminé: ${total} nuits`);
+    return total;
   }
 
   // ============================================================
@@ -283,9 +356,14 @@
   function calculateHubScore(step, groupSize, positionInGroup) {
     let score = 0;
     
-    // 1. Jours suggérés (critère principal — toujours renseigné à l'intégration)
-    const suggestedDays = Number(step.suggested_days || step.suggestedDays || 1);
+    // 1. Jours suggérés (critère principal)
+    const suggestedDays = Number(step.suggested_days || step._suggestedDays || step.suggestedDays || 0);
     score += suggestedDays * 40;
+    
+    // Malus sévère pour les POI de passage (sd < 0.5) : ne devrait jamais être hub
+    if (suggestedDays < 0.5) {
+      score -= 200;
+    }
     
     // 2. Rating du lieu (bonus quand renseigné, 0 à l'intégration → fallback neutre)
     const rawRating = Number(step.rating || step.score || 0);
@@ -469,6 +547,7 @@
     });
     
     // 3. Pour chaque groupe, marquer hub et satellites
+    //    Détecter les place_id doublés consécutifs = intention du concepteur = nuits verrouillées
     const hubs = [];
     
     groups.forEach(group => {
@@ -479,10 +558,44 @@
       hubStep._satellites = [];
       
       const rawRating = Number(hubStep.rating || hubStep.score || 0);
+      
+      // Le hub absorbe les sd de tous les membres du groupe
+      let groupSdSum = 0;
+      group.indices.forEach(i => {
+        groupSdSum += Number(steps[i].suggested_days || steps[i]._suggestedDays || steps[i].suggestedDays || 0);
+      });
+      
+      // Détecter les doublés consécutifs dans CE groupe (même place_id)
+      // Ex: Zurich, Zurich = 2 entries doublées → lockedNights = 2
+      const hubPid = hubStep.place_id || hubStep.placeId || '';
+      let maxConsecutive = 0;
+      if (hubPid) {
+        let run = 0;
+        for (const i of group.indices) {
+          const pid = steps[i].place_id || steps[i].placeId || '';
+          if (pid === hubPid) {
+            run++;
+            if (run > maxConsecutive) maxConsecutive = run;
+          } else {
+            run = 0;
+          }
+        }
+      }
+      // Verrouillé si le hub apparaît 2+ fois consécutivement dans le groupe
+      const isLocked = maxConsecutive >= 2;
+      const lockedNights = isLocked ? maxConsecutive : 0;
+      
+      if (isLocked) {
+        console.log(`[LOG-CONTROLE][TRIP-CALC] 🔒 ${hubStep.name}: ${maxConsecutive} entries doublées → verrouillé à ${lockedNights} nuits`);
+      }
+      
       hubs.push({
         idx: hubIdx,
-        rating: rawRating > 0 ? rawRating : 5, // fallback 5 si non renseigné
-        suggestedDays: Number(hubStep.suggested_days || hubStep.suggestedDays || 1)
+        rating: rawRating > 0 ? rawRating : 5,
+        suggestedDays: groupSdSum,
+        placeType: hubStep.place_type || '',
+        locked: isLocked,
+        lockedNights: lockedNights
       });
       
       // Marquer les satellites
@@ -490,7 +603,7 @@
         if (i !== hubIdx) {
           steps[i]._isSatellite = true;
           steps[i]._hubGroup = hubIdx;
-          steps[i].nights = 0; // Satellites = 0 nuit
+          steps[i].nights = 0;
           hubStep._satellites.push(i);
         }
       });
@@ -521,12 +634,19 @@
       console.log(`[LOG-CONTROLE][TRIP-CALC]   - idx=${h.idx}: ${steps[h.idx].name} (rating=${h.rating}, suggestedDays=${h.suggestedDays})`);
     });
     
-    // 6. Répartir les nuits entre les hubs selon suggested_days (+ bonus rating si renseigné)
-    // suggested_days est toujours renseigné à l'intégration, rating souvent à 0
+    // 6. Répartir les nuits entre les hubs selon suggested_days, place_type et rating
+    // Hiérarchie : capital > metropolis > large_city > city > medium_city > small_city > village > site/nature
+    const PLACE_TYPE_WEIGHT = {
+      capital: 3, metropolis: 2.5, large_city: 2, city: 1.5,
+      medium_city: 1.2, small_city: 1, village: 0.7,
+      site: 0, nature: 0, beach: 0.5, island: 0.5, suburb: 0.8
+    };
+    
     const getWeight = (h) => {
-      const sdWeight = h.suggestedDays * 2;           // poids principal
-      const ratingBonus = h.rating > 5 ? (h.rating - 5) * 0.1 : 0; // bonus si rating > médiane
-      return sdWeight + ratingBonus;
+      const sdWeight = h.suggestedDays * 2;
+      const ratingBonus = h.rating > 5 ? (h.rating - 5) * 0.1 : 0;
+      const ptBonus = PLACE_TYPE_WEIGHT[h.placeType] ?? 1; // fallback 1 si inconnu
+      return (sdWeight + ratingBonus) * Math.max(ptBonus, 0.1); // min 0.1 pour éviter poids 0
     };
 
     console.log('[LOG-CONTROLE][TRIP-CALC] ========== RÉPARTITION NUITS ==========');
@@ -571,33 +691,61 @@
       });
     }
 
-    const totalWeight = activeHubs.reduce((sum, h) => sum + getWeight(h), 0);
-    let allocatedNights = 0;
-    console.log(`[LOG-CONTROLE][TRIP-CALC] Total weight (suggestedDays×2 + ratingBonus): ${totalWeight.toFixed(2)}`);
-
-    // Première passe : allocation proportionnelle avec floor (sur activeHubs uniquement)
+    // === PHASE 1 : Assigner les nuits verrouillées (doublés) en priorité ===
+    let lockedNightsTotal = 0;
     activeHubs.forEach(hub => {
-      const proportion = getWeight(hub) / totalWeight;
-      const nights = Math.floor(targetNights * proportion);
-      const finalNights = Math.max(nights, CONFIG.MIN_NIGHTS_PER_HUB);
-
-      steps[hub.idx].nights = finalNights;
-      allocatedNights += finalNights;
-
-      console.log(`[LOG-CONTROLE][TRIP-CALC]   ${steps[hub.idx].name}: sd=${hub.suggestedDays} → ${(proportion*100).toFixed(1)}% → ${nights} nuits (min ${CONFIG.MIN_NIGHTS_PER_HUB}) → ${finalNights} nuits`);
+      if (hub.locked) {
+        steps[hub.idx].nights = hub.lockedNights;
+        lockedNightsTotal += hub.lockedNights;
+        console.log(`[LOG-CONTROLE][TRIP-CALC]   🔒 ${steps[hub.idx].name}: ${hub.lockedNights} nuits (verrouillé)`);
+      }
     });
+    
+    // Budget restant pour les hubs non-verrouillés
+    const unlockedHubs = activeHubs.filter(h => !h.locked);
+    const remainingBudget = targetNights - lockedNightsTotal;
+    
+    console.log(`[LOG-CONTROLE][TRIP-CALC] Verrouillés: ${lockedNightsTotal} nuits, reste ${remainingBudget} pour ${unlockedHubs.length} hub(s)`);
+    
+    // === PHASE 2 : Répartir le reste proportionnellement sur les non-verrouillés ===
+    const totalWeight = unlockedHubs.reduce((sum, h) => sum + getWeight(h), 0);
+    let allocatedNights = lockedNightsTotal;
+    
+    if (totalWeight > 0 && remainingBudget > 0) {
+      console.log(`[LOG-CONTROLE][TRIP-CALC] Total weight (non-verrouillés): ${totalWeight.toFixed(2)}`);
+      
+      // Première passe : allocation proportionnelle avec floor
+      unlockedHubs.forEach(hub => {
+        const proportion = getWeight(hub) / totalWeight;
+        const nights = Math.floor(remainingBudget * proportion);
+        const minNights = hub.suggestedDays >= 0.5 ? CONFIG.MIN_NIGHTS_PER_HUB : 0;
+        const finalNights = Math.max(nights, minNights);
 
-    // Deuxième passe : répartir le reste sur les meilleurs hubs actifs
+        steps[hub.idx].nights = finalNights;
+        allocatedNights += finalNights;
+
+        console.log(`[LOG-CONTROLE][TRIP-CALC]   ${steps[hub.idx].name}: sd=${hub.suggestedDays} → ${(proportion*100).toFixed(1)}% → ${nights} nuits (min ${minNights}) → ${finalNights} nuits`);
+      });
+    } else {
+      // Tous verrouillés ou pas de budget
+      unlockedHubs.forEach(hub => {
+        const minNights = hub.suggestedDays >= 0.5 ? CONFIG.MIN_NIGHTS_PER_HUB : 0;
+        steps[hub.idx].nights = minNights;
+        allocatedNights += minNights;
+      });
+    }
+
+    // Deuxième passe : répartir le reste sur les meilleurs hubs NON-verrouillés
     let remainingNights = targetNights - allocatedNights;
-    console.log(`[LOG-CONTROLE][TRIP-CALC] Après 1ère passe: ${allocatedNights} allouées, ${remainingNights} restantes`);
+    console.log(`[LOG-CONTROLE][TRIP-CALC] Après allocation: ${allocatedNights} allouées, ${remainingNights} restantes`);
 
-    // Trier par suggestedDays décroissant (puis rating en départage)
-    const sortedHubs = [...activeHubs].sort((a, b) =>
+    // Trier par suggestedDays décroissant (puis rating en départage) - uniquement non-verrouillés
+    const sortedHubs = [...unlockedHubs].sort((a, b) =>
       (b.suggestedDays - a.suggestedDays) || (b.rating - a.rating)
     );
 
     if (remainingNights > 0) {
-      console.log(`[LOG-CONTROLE][TRIP-CALC] 2ème passe: +${remainingNights} nuit(s) sur les meilleurs hubs`);
+      console.log(`[LOG-CONTROLE][TRIP-CALC] 2ème passe: +${remainingNights} nuit(s) sur les meilleurs hubs non-verrouillés`);
     }
 
     for (let i = 0; remainingNights > 0 && i < sortedHubs.length; i++) {
@@ -649,8 +797,9 @@
         return;
       }
       
-      // Hubs = au moins 1
-      if (step._isHub && step.nights < 1) {
+      // Hubs = au moins 1 nuit, sauf si sd < 0.5 (passage)
+      const sd = Number(step.suggested_days || step._suggestedDays || step.suggestedDays || 0);
+      if (step._isHub && step.nights < 1 && sd >= 0.5) {
         step.nights = 1;
       }
     });
@@ -680,6 +829,7 @@
     
     // Nuits
     groupNightsByPlace,
+    applySourceNights,
     determineNightsFromVisitTime,
     calculateHubScore,
     identifyGroups,

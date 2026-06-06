@@ -646,6 +646,7 @@
         if (trip && trip.steps && trip.steps.length) {
           console.log('[ORT-EDITOR] Chargement depuis Firestore pour tripId:', urlTripId);
           itinTitle = trip.title || 'Roadtrip';
+          config._estimatedDaysBase = trip.estimated_days_base || null;
           steps = normalizeSteps(trip.steps, config.cc);
           savedTripId = urlTripId;
           console.log('[ORT-EDITOR] ' + steps.length + ' étapes chargées depuis Firestore pour "' + itinTitle + '"');
@@ -684,6 +685,7 @@
     if (!itin) throw new Error('Itinéraire ' + config.itinId + ' non trouvé');
 
     itinTitle = itin.title || itin.name || 'Roadtrip';
+    config._estimatedDaysBase = itin.estimated_days_base || null;
     steps = normalizeSteps(itin.days_plan || itin.steps || [], cc);
 
     console.log('[ORT-EDITOR] ' + steps.length + ' étapes chargées pour "' + itinTitle + '"');
@@ -825,7 +827,7 @@
       name: placeData.name || '',
       lat: placeData.lat || null,
       lng: placeData.lon || placeData.lng || null,
-      nights: placeData.suggested_days || 1,
+      nights: Math.max(0, Math.round(placeData.suggested_days || 1)),
       description: (placeData.visits || []).map(function (v) { return v.text || v; }).filter(Boolean).join(' '),
       photos: [],
       distance_km: 0,
@@ -1218,14 +1220,14 @@
       cc: config.cc,
       steps: normalizedSteps,
       days_plan: daysPlan,
-      estimated_days_base: steps.length,
+      estimated_days_base: config._estimatedDaysBase || steps.length,
       saved: true,
       source: 'static-editor',
       _originalItinId: config.itinId,
       sourceUrl: global.location.href,
       updatedAt: Date.now(),
       createdAt: savedTripId ? undefined : Date.now(),
-      nights: steps.reduce(function (sum, s) { return sum + (s.nights || 1); }, 0),
+      nights: steps.reduce(function (sum, s) { return sum + (s.nights || 0); }, 0),
       kms: steps.reduce(function (sum, s) { return sum + (s.distance_km || 0); }, 0)
     };
 
@@ -1255,7 +1257,7 @@
             cc: config.cc,
             itin: config.itinId,
             lang: config.lang,
-            days: steps.reduce(function (sum, s) { return sum + (s.nights || 1); }, 0),
+            days: config._estimatedDaysBase || steps.reduce(function (sum, s) { return sum + (s.nights || 0); }, 0),
             tripId: finalTripId
           });
           config.detailUrl = '/roadtrip_detail.html?' + detailParams.toString();
@@ -2083,7 +2085,7 @@
       name: place.name || '',
       lat: place.lat || null,
       lng: place.lon || place.lng || null,
-      nights: place.suggested_days || 1,
+      nights: Math.max(0, Math.round(place.suggested_days || 1)),
       description: '',
       photos: [],
       distance_km: 0,
@@ -2252,7 +2254,7 @@
           name: place.name || '',
           lat: place.lat || null,
           lng: place.lon || place.lng || null,
-          nights: place.suggested_days || 1,
+          nights: Math.max(0, Math.round(place.suggested_days || 1)),
           description: '',
           photos: [],
           distance_km: 0,

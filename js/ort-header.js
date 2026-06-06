@@ -671,6 +671,23 @@
     const T = getT();
     const lang = getLang();
 
+    // Lien "Actualités" : libellé localisé + style injecté une seule fois,
+    // pour qu'il s'affiche correctement sur toutes les pages.
+    const NEWS_LABEL = { fr:'Actualités', en:'News', es:'Noticias', it:'Notizie', pt:'Notícias', ar:'أخبار' };
+    const newsLabel = NEWS_LABEL[lang] || 'News';
+    if (!document.getElementById('ort-nav-style')) {
+      const st = document.createElement('style');
+      st.id = 'ort-nav-style';
+      st.textContent = `
+        .ort-nav-link{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
+          border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;
+          text-decoration:none;font-size:14px;white-space:nowrap;flex:0 0 auto;}
+        .ort-nav-link:hover{background:#ffffff2b;}
+        @media(max-width:600px){.ort-nav-link .lbl{display:none;}.ort-nav-link{padding:8px 10px;}}
+      `;
+      document.head.appendChild(st);
+    }
+
     header.innerHTML = `
       <div class="header-row-1">
         <a class="brandlink" id="homeLink" href="/index.html">
@@ -678,6 +695,9 @@
           <div class="brand">OneRoadTrip</div>
         </a>
         <div class="spacer"></div>
+        <a class="ort-nav-link" id="newsLink" href="/news.html" aria-label="${newsLabel}">
+          <span aria-hidden="true">📰</span><span class="lbl">${newsLabel}</span>
+        </a>
         <select id="langSel" class="langpick" aria-label="Langue">
           <option value="fr">FR</option>
           <option value="en">EN</option>
