@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OneRoadTrip — Créez votre itinéraire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- Module de routage OneRoadTrip (window.ORT_ROUTING). Ajuste le chemin si besoin. -->
+<script src="ort-routing.js"></script>
+<!-- Firebase (compat) + ta config (définit window.__FIREBASE_CONFIG__). Ajuste le chemin de ort-config.js. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="ort-config.js"></script>
+<style>
+:root{
+  --ink:#1d2b2e; --ink-soft:#4a5b5e; --paper:#f4efe6; --card:#fffdf8;
+  --line:#ddd3c2; --line-soft:#e8e0d2; --accent:#b5552d; --accent-deep:#8f3f1f;
+  --gold:#c9923a; --ok:#2f6d4f; --ok-bg:#e6f1ea; --err:#9a2b1e; --err-bg:#fbe9e6;
+  --radius:14px; --shadow:0 1px 2px rgba(40,30,20,.06),0 8px 24px rgba(40,30,20,.06);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Spline Sans",system-ui,sans-serif;line-height:1.5;
+  background-image:radial-gradient(circle at 1px 1px,rgba(120,100,70,.05) 1px,transparent 0);
+  background-size:22px 22px;
+}
+.wrap{max-width:920px;margin:0 auto;padding:0 18px 140px}
+header.top{position:relative;text-align:center;padding:46px 18px 30px}
+.lang-switch{position:absolute;top:16px;right:16px}
+.lang-switch select{
+  font:inherit;font-size:.82rem;font-weight:600;color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:999px;padding:7px 30px 7px 14px;cursor:pointer;
+  appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238f3f1f' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+}
+.lang-switch select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(181,85,45,.13)}
+header.top .kicker{font-size:.72rem;letter-spacing:.32em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px}
+header.top h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(2rem,5vw,3rem);margin:0 0 10px;letter-spacing:-.01em;line-height:1.05}
+header.top p{max-width:560px;margin:0 auto;color:var(--ink-soft);font-size:1rem}
+.steps-guide{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:22px;font-size:.78rem;color:var(--ink-soft)}
+.steps-guide span{background:var(--card);border:1px solid var(--line);padding:5px 12px;border-radius:999px;display:inline-flex;align-items:center;gap:6px}
+.steps-guide b{color:var(--accent);font-family:"Fraunces",serif}
+
+section.block{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px;margin:18px 0;box-shadow:var(--shadow)}
+section.block>h2{font-family:"Fraunces",serif;font-weight:600;font-size:1.35rem;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+section.block>h2 .ord{width:30px;height:30px;flex:none;border-radius:50%;background:var(--accent);color:#fff;font-size:.95rem;display:grid;place-items:center;font-family:"Spline Sans"}
+section.block>.hint{color:var(--ink-soft);font-size:.85rem;margin:0 0 18px;padding-left:40px}
+
+label{display:block;font-size:.78rem;font-weight:600;letter-spacing:.02em;color:var(--ink-soft);text-transform:uppercase;margin:0 0 5px}
+input,textarea,select{width:100%;font:inherit;color:var(--ink);background:#fffefb;border:1px solid var(--line);border-radius:9px;padding:10px 12px;transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(181,85,45,.13)}
+textarea{resize:vertical;min-height:62px}
+.field{margin-bottom:15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:620px){.grid2,.grid3{grid-template-columns:1fr}}
+.slug{font-size:.74rem;color:var(--ink-soft);margin-top:5px;font-family:ui-monospace,monospace}
+.slug b{color:var(--accent-deep)}
+
+.step{border:1px solid var(--line);border-radius:var(--radius);margin:16px 0;background:#fffefb;overflow:hidden}
+.step-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:linear-gradient(180deg,#fbf6ec,#fffefb);border-bottom:1px solid var(--line-soft)}
+.step-head .num{width:30px;height:30px;flex:none;border-radius:8px;background:var(--ink);color:#fff;font-family:"Fraunces",serif;font-weight:600;display:grid;place-items:center}
+.step-head .title{font-family:"Fraunces",serif;font-weight:600;font-size:1.1rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-head .title .placeholder{color:#b3a890;font-style:italic}
+.step-tools{display:flex;gap:5px;flex:none}
+.icon-btn{width:30px;height:30px;border:1px solid var(--line);background:#fff;border-radius:8px;cursor:pointer;display:grid;place-items:center;color:var(--ink-soft);font-size:.95rem;transition:.15s}
+.icon-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff7f1}
+.icon-btn.danger:hover{border-color:var(--err);color:var(--err);background:var(--err-bg)}
+.step-body{padding:18px 16px}
+
+.sub{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px}
+.sub-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px;flex-wrap:wrap}
+.sub-title h4{margin:0;font-size:.92rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.sub-title h4 .dot{width:9px;height:9px;border-radius:50%}
+.sub-title h4 .muted{font-weight:400;color:var(--ink-soft)}
+.dot.v{background:var(--accent)} .dot.a{background:var(--gold)} .dot.h{background:var(--ok)}
+.row-item{border:1px solid var(--line-soft);border-radius:10px;padding:13px;margin-bottom:10px;background:#fdfbf6;position:relative}
+.row-item .rm{position:absolute;top:8px;right:8px;width:24px;height:24px;border:none;background:transparent;color:#b3a890;cursor:pointer;font-size:1.1rem;border-radius:6px;line-height:1}
+.row-item .rm:hover{color:var(--err);background:var(--err-bg)}
+.add-btn{border:1px dashed var(--line);background:transparent;color:var(--ink-soft);padding:9px 14px;border-radius:9px;cursor:pointer;font:inherit;font-size:.85rem;font-weight:600;display:inline-flex;align-items:center;gap:7px;transition:.15s}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff7f1}
+.add-step{display:block;width:100%;border:2px dashed var(--line);background:transparent;color:var(--accent);padding:16px;border-radius:var(--radius);cursor:pointer;font:inherit;font-weight:600;font-size:1rem;margin-top:8px;transition:.15s}
+.add-step:hover{border-color:var(--accent);background:#fff7f1}
+.gallery-urls .row-item{padding:10px 13px}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;background:rgba(255,253,248,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:12px 18px}
+.bar-inner{max-width:920px;margin:0 auto;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bar .status{flex:1;min-width:160px;font-size:.82rem;color:var(--ink-soft)}
+.btn{font:inherit;font-weight:600;border-radius:10px;padding:12px 20px;cursor:pointer;border:1px solid transparent;transition:.15s;display:inline-flex;align-items:center;gap:8px}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-deep)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+.toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:13px 22px;border-radius:10px;font-size:.9rem;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:var(--ok)} .toast.err{background:var(--err)}
+
+dialog{border:none;border-radius:var(--radius);padding:0;max-width:460px;width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(29,43,46,.45)}
+.modal{padding:24px}
+.modal h3{font-family:"Fraunces",serif;margin:0 0 8px;font-size:1.3rem}
+.modal p{color:var(--ink-soft);font-size:.9rem;margin:0 0 16px}
+.modal .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+.intro-card .lead{font-size:1.05rem;color:var(--ink);margin:0 0 12px;font-weight:500}
+.intro-card p{color:var(--ink-soft);margin:0 0 12px;font-size:.95rem}
+.intro-card .offer{background:#fff7f1;border:1px solid #ecd8c9;border-left:3px solid var(--accent);border-radius:10px;padding:12px 14px;color:var(--ink);font-size:.92rem;margin:0}
+.intro-card .adv{margin-top:16px;border-top:1px dashed var(--line);padding-top:14px}
+.intro-card .adv-title{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;margin-bottom:8px}
+.intro-card .adv ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.intro-card .adv li{position:relative;padding-left:26px;font-size:.92rem;color:var(--ink-soft)}
+.intro-card .adv li::before{content:"✓";position:absolute;left:0;top:0;color:var(--ok);font-weight:700}
+
+.help{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:var(--line);color:var(--accent-deep);font-size:.7rem;font-weight:700;cursor:help;position:relative;vertical-align:middle;margin-left:5px;user-select:none}
+.help:hover,.help:focus{background:var(--accent);color:#fff;outline:none}
+.help::after{content:attr(data-tip);position:absolute;left:50%;bottom:150%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 12px;border-radius:8px;font-size:.78rem;font-weight:400;line-height:1.4;width:240px;max-width:62vw;text-align:left;letter-spacing:0;text-transform:none;opacity:0;pointer-events:none;transition:.15s;z-index:55}
+.help:hover::after,.help:focus::after{opacity:1}
+@media(max-width:620px){.help::after{left:auto;right:-4px;transform:none}}
+
+.place-wrap{position:relative}
+.ac{position:absolute;left:0;right:0;top:100%;z-index:40;background:#fff;border:1px solid var(--accent);border-top:none;border-radius:0 0 10px 10px;box-shadow:var(--shadow);max-height:250px;overflow:auto;display:none}
+.ac.open{display:block}
+.ac-item{padding:9px 12px;cursor:pointer;font-size:.9rem;border-bottom:1px solid var(--line-soft)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover{background:#fff7f1}
+.ac-item .sub{display:block;font-size:.76rem;color:var(--ink-soft)}
+
+.map-toggle-row{margin-top:4px}
+.step-mapwrap{margin-top:12px}
+.step-map{height:220px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.leaflet-container{font:inherit}
+
+.tip-row{display:flex;gap:6px;margin-bottom:6px}
+.tip-row input{flex:1}
+.rm-tip{flex:none;width:38px;border:1px solid var(--line);background:#fff;border-radius:9px;color:#b3a890;cursor:pointer;font-size:.95rem}
+.rm-tip:hover{color:var(--err);border-color:var(--err);background:var(--err-bg)}
+
+#routemap{height:320px;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin:6px 0 8px;background:#e8eef0}
+.map-hint{font-size:.78rem;color:var(--ink-soft);margin:0 0 16px}
+.rm-pin{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:.8rem;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4)}
+.leg-label{background:var(--ink);color:#fff;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+
+.dash-item{display:flex;align-items:center;gap:12px;border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fdfbf6}
+.dash-item .di-main{flex:1;min-width:0}
+.dash-item .di-title{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dash-item .di-meta{font-size:.76rem;color:var(--ink-soft)}
+.dash-item .di-actions{display:flex;gap:6px;flex:none}
+.di-btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--ink-soft)}
+.di-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff7f1}
+.di-btn.del:hover{border-color:var(--err);color:var(--err);background:var(--err-bg)}
+@media(max-width:560px){.dash-item{flex-direction:column;align-items:stretch}.dash-item .di-actions{justify-content:flex-end}}
+
+.acct{position:absolute;top:14px;left:16px;display:flex;align-items:center;gap:8px;max-width:46%}
+.acct-email{font-size:.8rem;color:var(--ink-soft);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-btn{font:inherit;font-size:.8rem;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:7px 14px;cursor:pointer}
+.acct-btn:hover{border-color:var(--accent);color:var(--accent)}
+.acct-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.acct-btn.primary:hover{background:var(--accent-deep)}
+@media(max-width:560px){.acct-email{max-width:80px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="acct" id="acct"></div>
+  <div class="lang-switch">
+    <select id="uiLang" aria-label="Language">
+      <option value="fr">Français</option>
+      <option value="en">English</option>
+      <option value="es">Español</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+    </select>
+  </div>
+  <div class="kicker" data-i18n="kicker"></div>
+  <h1 data-i18n="h1"></h1>
+  <p data-i18n="intro"></p>
+  <div class="steps-guide">
+    <span><b>1</b> <span data-i18n="guide1"></span></span>
+    <span><b>2</b> <span data-i18n="guide2"></span></span>
+    <span><b>3</b> <span data-i18n="guide3"></span></span>
+    <span><b>4</b> <span data-i18n="guide4"></span></span>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="block intro-card">
+    <p class="lead" data-i18n="about_p1"></p>
+    <p data-i18n="about_p2"></p>
+    <p class="offer" data-i18n="about_offer"></p>
+    <div class="adv">
+      <div class="adv-title" data-i18n="about_advTitle"></div>
+      <ul>
+        <li data-i18n="about_adv1"></li>
+        <li data-i18n="about_adv2"></li>
+        <li data-i18n="about_adv3"></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="block dash" id="dash" style="display:none">
+    <h2 style="font-size:1.2rem"><span data-i18n="dashTitle"></span></h2>
+    <p class="hint" style="padding-left:0" data-i18n="dashHint"></p>
+    <div id="dashList"></div>
+  </section>
+
+  <section class="block dash" id="cloud" style="display:none">
+    <h2 style="font-size:1.2rem">☁︎ <span data-i18n="cloudTitle"></span></h2>
+    <p class="hint" style="padding-left:0" data-i18n="cloudHint"></p>
+    <div id="cloudList"></div>
+  </section>
+
+  <section class="block">
+    <h2><span class="ord">1</span> <span data-i18n="s1title"></span></h2>
+    <p class="hint" data-i18n="s1hint"></p>
+    <div class="field"><label data-i18n="f_title"></label><input id="t_title" data-ph="f_title_ph"></div>
+    <div class="field"><label data-i18n="f_subtitle"></label><input id="t_subtitle" data-ph="f_subtitle_ph"></div>
+    <div class="grid2">
+      <div class="field"><label data-i18n="f_country"></label><input id="t_country" maxlength="2" placeholder="CZ" style="text-transform:uppercase"></div>
+      <div class="field"><label data-i18n="f_lang"></label>
+        <select id="t_lang">
+          <option value="fr">Français</option><option value="en">English</option>
+          <option value="es">Español</option><option value="it">Italiano</option><option value="pt">Português</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label data-i18n="f_cover"></label><input id="t_cover" data-ph="f_cover_ph"></div>
+    <div class="field"><label data-i18n="f_notes"></label><textarea id="t_notes" data-ph="f_notes_ph"></textarea></div>
+  </section>
+
+  <section class="block">
+    <h2><span class="ord">2</span> <span data-i18n="s2title"></span></h2>
+    <p class="hint" data-i18n="s2hint"></p>
+    <div class="grid2">
+      <div class="field"><label data-i18n="a_name"></label><input id="a_name" data-ph="a_name_ph"></div>
+      <div class="field"><label data-i18n="a_email"></label><input id="a_email" type="email" data-ph="a_email_ph"></div>
+    </div>
+    <div class="field"><label data-i18n="a_bio"></label><textarea id="a_bio" data-ph="a_bio_ph"></textarea></div>
+    <div class="grid2">
+      <div class="field"><label data-i18n="a_site"></label><input id="a_site" placeholder="https://…"></div>
+      <div class="field"><label data-i18n="a_photo"></label><input id="a_photo" placeholder="https://…"></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2><span class="ord">3</span> <span data-i18n="s3title"></span></h2>
+    <p class="hint" data-i18n="s3hint"></p>
+    <div id="routemap"></div>
+    <div class="map-hint" data-i18n="mapHint"></div>
+    <div id="steps"></div>
+    <button class="add-step" id="addStep" data-i18n="addStep"></button>
+  </section>
+
+</div>
+
+<div class="bar">
+  <div class="bar-inner">
+    <div class="status" id="status"></div>
+    <button class="btn btn-ghost" id="btnReset" data-i18n="btnReset"></button>
+    <button class="btn btn-ghost" id="btnSave" data-i18n="btnSave"></button>
+    <button class="btn btn-ghost" id="btnDownload" data-i18n="btnDownload"></button>
+    <button class="btn btn-primary" id="btnSend" data-i18n="btnSend"></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="dlgAuth">
+  <div class="modal">
+    <h3 id="auTitle"></h3>
+    <div class="field"><label data-i18n="authEmail"></label><input id="au_email" type="email" data-ph="a_email_ph" autocomplete="email"></div>
+    <div class="field"><label data-i18n="authPwd"></label><input id="au_pwd" type="password" autocomplete="current-password"></div>
+    <div class="field" id="au_pwd2wrap" style="display:none"><label data-i18n="authPwd2"></label><input id="au_pwd2" type="password" autocomplete="new-password"></div>
+    <div id="au_err" style="display:none;background:var(--err-bg);color:var(--err);padding:9px 12px;border-radius:8px;font-size:.85rem;margin-bottom:10px"></div>
+    <button class="btn btn-primary" id="au_do" style="width:100%;justify-content:center"></button>
+    <div style="text-align:center;color:var(--ink-soft);font-size:.8rem;margin:12px 0">— <span data-i18n="authOr"></span> —</div>
+    <button class="btn btn-ghost" id="au_google" style="width:100%;justify-content:center;gap:10px">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" style="width:18px;height:18px"> Google
+    </button>
+    <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:.82rem">
+      <button type="button" id="au_forgot" style="background:none;border:none;color:var(--accent);cursor:pointer;font:inherit;padding:0" data-i18n="authForgot"></button>
+      <button type="button" id="au_toggle" style="background:none;border:none;color:var(--accent);cursor:pointer;font:inherit;padding:0"></button>
+    </div>
+    <div style="text-align:right;margin-top:14px"><button class="btn btn-ghost" id="au_close" data-i18n="cancel"></button></div>
+  </div>
+</dialog>
+
+<template id="tplStep">
+  <div class="step" data-step>
+    <div class="step-head">
+      <div class="num"></div>
+      <div class="title"></div>
+      <div class="step-tools">
+        <button class="icon-btn" data-up data-title="tUp">↑</button>
+        <button class="icon-btn" data-down data-title="tDown">↓</button>
+        <button class="icon-btn" data-dup data-title="tDup">⧉</button>
+        <button class="icon-btn danger" data-del data-title="tDel">✕</button>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="grid2">
+        <div class="field">
+          <label data-i18n="place"></label>
+          <div class="place-wrap">
+            <input data-f="place" data-ph="place_ph" autocomplete="off">
+            <div class="ac" data-ac></div>
+          </div>
+          <div class="slug"><span data-i18n="idGen"></span> <b data-slug>—</b></div>
+        </div>
+        <div class="field"><label data-i18n="country"></label><input data-f="country" maxlength="2" placeholder="CZ" style="text-transform:uppercase"></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label><span data-i18n="lat"></span><span class="help" tabindex="0" data-tiptext="tip_coords">?</span></label><input data-f="lat" inputmode="decimal" placeholder="50.0875"></div>
+        <div class="field"><label><span data-i18n="lon"></span></label><input data-f="lon" inputmode="decimal" placeholder="14.4213"></div>
+        <div class="field"><label><span data-i18n="daysLabel"></span><span class="help" tabindex="0" data-tiptext="tip_days">?</span></label>
+          <select data-f="days">
+            <option value="0.3" data-i18n="dOptShort"></option>
+            <option value="0.5" data-i18n="dOptHalf"></option>
+            <option value="1" selected data-i18n="dOpt1"></option>
+            <option value="1.5" data-i18n="dOpt15"></option>
+            <option value="2" data-i18n="dOpt2"></option>
+            <option value="3" data-i18n="dOpt3"></option>
+            <option value="4" data-i18n="dOpt4"></option>
+            <option value="5" data-i18n="dOpt5"></option>
+            <option value="6" data-i18n="dOpt6"></option>
+            <option value="7" data-i18n="dOpt7"></option>
+            <option value="8" data-i18n="dOpt8"></option>
+            <option value="9" data-i18n="dOpt9"></option>
+            <option value="10" data-i18n="dOpt10"></option>
+          </select>
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label data-i18n="modeLabel"></label>
+          <select data-f="mode">
+            <option value="car" data-i18n="mCar"></option>
+            <option value="train" data-i18n="mTrain"></option>
+            <option value="flight" data-i18n="mFlight"></option>
+            <option value="ferry" data-i18n="mFerry"></option>
+            <option value="boat" data-i18n="mBoat"></option>
+            <option value="walk" data-i18n="mWalk"></option>
+          </select>
+        </div>
+        <div class="field"><label><span data-i18n="kmLabel"></span><span class="help" tabindex="0" data-tiptext="tip_dist">?</span></label><input data-f="km" inputmode="numeric" placeholder="200"></div>
+        <div class="field"><label data-i18n="minLabel"></label><input data-f="min" inputmode="numeric" placeholder="120"></div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-title"><h4><span class="dot v"></span> <span data-i18n="visitsTitle"></span> <span class="muted" data-i18n="visitsSub"></span></h4><button class="add-btn" data-add="visit" data-i18n="addVisit"></button></div>
+        <div data-list="visit"></div>
+      </div>
+      <div class="sub">
+        <div class="sub-title"><h4><span class="dot a"></span> <span data-i18n="actTitle"></span> <span class="muted" data-i18n="actSub"></span></h4><button class="add-btn" data-add="activity" data-i18n="addAct"></button></div>
+        <div data-list="activity"></div>
+      </div>
+      <div class="sub">
+        <div class="sub-title"><h4><span class="dot h"></span> <span data-i18n="hotTitle"></span> <span class="muted" data-i18n="hotSub"></span></h4><button class="add-btn" data-add="hotel" data-i18n="addHot"></button></div>
+        <div data-list="hotel"></div>
+      </div>
+      <div class="sub">
+        <div class="sub-title"><h4>📷 <span data-i18n="galTitle"></span> <span class="muted" data-i18n="galSub"></span></h4><button class="add-btn" data-add="photo" data-i18n="addPhoto"></button></div>
+        <div data-list="photo" class="gallery-urls"></div>
+      </div>
+      <div class="sub">
+        <div class="field" style="margin-bottom:0"><label data-i18n="tipsLabel"></label><textarea data-f="tips" data-ph="tips_ph"></textarea></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="tplVisit">
+  <div class="row-item" data-row>
+    <button class="rm" data-rm data-title="rmTitle">✕</button>
+    <div class="field"><label data-i18n="riVisitName"></label><input data-f="name" data-ph="riVisitName_ph"></div>
+    <div class="field"><label data-i18n="riDesc"></label><textarea data-f="text" data-ph="riVisitDesc_ph"></textarea></div>
+    <div class="grid2">
+      <div class="field" style="margin-bottom:0"><label data-i18n="riDur"></label><input data-f="dur" inputmode="numeric" placeholder="90"></div>
+      <div class="field" style="margin-bottom:0"><label data-i18n="riPhoto"></label><input data-f="photo" placeholder="https://…"></div>
+    </div>
+    <div class="field" style="margin:13px 0 0">
+      <div class="sub-title" style="margin-bottom:8px"><label style="margin:0" data-i18n="tipsGroup"></label><button class="add-btn" type="button" data-add-tip data-i18n="addTip"></button></div>
+      <div data-tips></div>
+    </div>
+  </div>
+</template>
+
+<template id="tplActivity">
+  <div class="row-item" data-row>
+    <button class="rm" data-rm data-title="rmTitle">✕</button>
+    <div class="field"><label data-i18n="riActName"></label><input data-f="name" data-ph="riActName_ph"></div>
+    <div class="field"><label data-i18n="riDesc"></label><textarea data-f="text" data-ph="riActDesc_ph"></textarea></div>
+    <div class="grid2">
+      <div class="field" style="margin-bottom:0"><label data-i18n="riDur"></label><input data-f="dur" inputmode="numeric" placeholder="60"></div>
+      <div class="field" style="margin-bottom:0"><label data-i18n="riPhoto"></label><input data-f="photo" placeholder="https://…"></div>
+    </div>
+    <div class="field" style="margin:13px 0 0">
+      <div class="sub-title" style="margin-bottom:8px"><label style="margin:0" data-i18n="tipsGroup"></label><button class="add-btn" type="button" data-add-tip data-i18n="addTip"></button></div>
+      <div data-tips></div>
+    </div>
+  </div>
+</template>
+
+<template id="tplHotel">
+  <div class="row-item" data-row>
+    <button class="rm" data-rm data-title="rmTitle">✕</button>
+    <div class="field"><label data-i18n="riHotName"></label><input data-f="name" data-ph="riHotName_ph"></div>
+    <div class="field"><label data-i18n="riHotUrl"></label><input data-f="url" data-ph="riHotUrl_ph"></div>
+    <div class="grid2">
+      <div class="field" style="margin-bottom:0"><label data-i18n="riHotPrice"></label><input data-f="price" data-ph="riHotPrice_ph"></div>
+      <div class="field" style="margin-bottom:0"><label data-i18n="riPhoto"></label><input data-f="photo" placeholder="https://…"></div>
+    </div>
+    <div class="field" style="margin:13px 0 0"><label data-i18n="riHotDesc"></label><textarea data-f="text" data-ph="riHotDesc_ph"></textarea></div>
+  </div>
+</template>
+
+<template id="tplPhoto">
+  <div class="row-item" data-row>
+    <button class="rm" data-rm data-title="rmTitle">✕</button>
+    <div class="field" style="margin-bottom:0"><label data-i18n="riPhotoUrl"></label><input data-f="url" placeholder="https://…"></div>
+  </div>
+</template>
+
+<script>
+"use strict";
+
+/* ====== CONFIG ====== */
+var EMAILJS = {
+  publicKey:  "ofOAMANfqdxM-tQsH",
+  serviceId:  "service_9bdqzog",
+  templateId: "template_f1eynm7"  /* à remplacer par un template dédié "créateur" */
+};
+var STORE_KEY = "ort_creator_draft_v1";
+var SAVED_KEY = "ort_creator_saved_v1";
+var LANG_KEY  = "ort_creator_lang";
+var currentId = null;
+var SUPPORTED = ["en","fr","es","it","pt"];
+
+/* ====== I18N ====== */
+var I18N = {
+  fr:{
+    kicker:"OneRoadTrip · Espace créateur", h1:"Composez votre itinéraire",
+    intro:"Remplissez votre voyage étape par étape. On s'occupe du reste (mise en forme, SEO, carte). Vos liens, vos photos, vos conseils restent les vôtres.",
+    about_p1:"OneRoadTrip est une plateforme d'itinéraires gratuite, lancée en janvier 2026. Elle accueille des voyageurs du monde entier venus s'inspirer ou organiser leur propre road trip.",
+    about_p2:"Blogueur, travel planner ou spécialiste du voyage : profitez de notre savoir-faire et de notre audience pour publier vos propres itinéraires.",
+    about_offer:"Votre premier itinéraire est gratuit, en échange d'un lien vers OneRoadTrip sur votre site ou vos réseaux. Envie d'en publier plusieurs ? Écrivez-nous.",
+    about_advTitle:"Vos avantages",
+    about_adv1:"Un outil interactif en 5 langues — votre itinéraire est traduit pour vous.",
+    about_adv2:"Une audience qui ne fait que grandir.",
+    about_adv3:"Les liens hôtels restent les vôtres : vous gardez vos commissions.",
+    guide1:"Le voyage", guide2:"Vous", guide3:"Les étapes", guide4:"Envoyer",
+    s1title:"Le voyage", s1hint:"Le titre et le sous-titre tels qu'ils apparaîtront. Soyez parlant.",
+    f_title:"Titre du voyage", f_title_ph:"Ex : Nord de Prague, l'Elbe et la Suisse de Bohême",
+    f_subtitle:"Sous-titre", f_subtitle_ph:"Une phrase qui donne envie et résume le parcours",
+    f_country:"Pays principal (code 2 lettres)", f_lang:"Langue des textes",
+    f_cover:"Photo de couverture (lien)", f_cover_ph:"https://… (votre photo d'ouverture)",
+    f_notes:"Notes / particularités (optionnel)", f_notes_ph:"Ce qui rend ce voyage spécial, contraintes saisonnières, conseils logistiques…",
+    s2title:"Vous, le créateur", s2hint:"Votre signature : nom, bio courte et lien vers votre site.",
+    a_name:"Votre nom / pseudo", a_name_ph:"Marie Voyage", a_email:"Votre email (pour vous recontacter)", a_email_ph:"vous@exemple.com",
+    a_bio:"Bio courte", a_bio_ph:"Deux phrases sur vous et votre univers de voyage.",
+    a_site:"Lien vers votre site / blog", a_photo:"Votre photo (lien, optionnel)",
+    s3title:"Les étapes", s3hint:"Une étape = un lieu où l'on s'arrête. Ajoutez ses visites, activités, hôtels, photos et conseils.",
+    addStep:"＋ Ajouter une étape", newStep:"Nouvelle étape",
+    tUp:"Monter", tDown:"Descendre", tDup:"Dupliquer", tDel:"Supprimer", rmTitle:"Retirer",
+    place:"Nom du lieu", place_ph:"Ex : Prague", idGen:"id généré :", country:"Pays (code 2 lettres)",
+    lat:"Latitude (optionnel)", lon:"Longitude (optionnel)", daysLabel:"Temps conseillé sur place",
+    dOptShort:"Court arrêt", dOptHalf:"Demi-journée", dOpt1:"1 jour", dOpt15:"1 jour et demi", dOpt2:"2 jours", dOpt3:"3 jours",
+    modeLabel:"Transport vers l'étape suivante", mCar:"Voiture", mTrain:"Train", mFlight:"Avion", mFerry:"Ferry", mBoat:"Bateau", mWalk:"À pied",
+    kmLabel:"Distance (km, optionnel)", minLabel:"Durée trajet (min, optionnel)",
+    visitsTitle:"Visites", visitsSub:"(ce qu'on voit)", addVisit:"＋ Visite",
+    actTitle:"Activités", actSub:"(ce qu'on fait)", addAct:"＋ Activité",
+    hotTitle:"Hôtels", hotSub:"(avec votre lien)", addHot:"＋ Hôtel",
+    galTitle:"Galerie du lieu", galSub:"(liens photos)", addPhoto:"＋ Photo",
+    tipsLabel:"💡 Vos conseils sur ce lieu", tips_ph:"Le bon moment, ce qu'il faut éviter, l'astuce locale…",
+    tip_days:"Vous pouvez indiquer plusieurs jours, mais pour plus de clarté mieux vaut 1 étape = 1 jour, en répartissant visites et activités.",
+    tip_coords:"Tapez le nom du lieu ci-dessus et choisissez une proposition : les coordonnées se remplissent toutes seules. Ajustez le point sur la carte si besoin.",
+    tip_dist:"Laissez vide : le site calcule la distance et le temps. Ne remplissez que pour imposer un passage précis.",
+    mapToggle:"🗺 Voir / ajuster sur la carte",
+    mapHint:"Glissez un marqueur pour déplacer un lieu. La route et le temps de trajet en voiture s'affichent entre les étapes.",
+    tipsGroup:"Conseils (un ou plusieurs)", addTip:"＋ Conseil", tipRow_ph:"Un conseil pratique : horaire, prix, astuce…",
+    dashTitle:"Mes itinéraires", dashHint:"Enregistrés sur cet appareil. Conservés tant que vous ne videz pas le cache du navigateur.",
+    dashSteps:"{n} étapes", dashOpen:"Ouvrir", btnSave:"💾 Enregistrer", btnReset:"↺ Réinitialiser",
+    confirmReset:"Réinitialiser l'itinéraire ? Vos infos créateur sont conservées ; le titre, les options et les étapes sont effacés.",
+    confirmDelSaved:"Supprimer cet itinéraire enregistré ?", savedOk:"Enregistré dans vos itinéraires.",
+    signIn:"Se connecter", signOut:"Se déconnecter",
+    cloudTitle:"Itinéraires envoyés", cloudHint:"Liés à votre compte, accessibles depuis n'importe quel appareil.",
+    authUnavail:"Connexion indisponible (configuration Firebase manquante).",
+    loginToSend:"Connectez-vous pour envoyer votre itinéraire.",
+    sentCloud:"Itinéraire envoyé sur votre compte.", sendErrCloud:"Envoi impossible.",
+    authTitleLogin:"Connexion", authTitleSignup:"Créer un compte",
+    authEmail:"Email", authPwd:"Mot de passe", authPwd2:"Confirmez le mot de passe",
+    authDoLogin:"Se connecter", authDoSignup:"Créer mon compte",
+    authToggleToSignup:"Pas de compte ? En créer un", authToggleToLogin:"Déjà un compte ? Se connecter",
+    authForgot:"Mot de passe oublié ?", authOr:"ou", authResetSent:"Email de réinitialisation envoyé.",
+    authErrPwd2:"Les mots de passe ne correspondent pas.", authNeedEmail:"Entrez votre email.",
+    dOpt4:"4 jours", dOpt5:"5 jours", dOpt6:"6 jours", dOpt7:"7 jours", dOpt8:"8 jours", dOpt9:"9 jours", dOpt10:"10 jours",
+    riVisitName:"Nom de la visite", riVisitName_ph:"Ex : Château de Prague", riDesc:"Descriptif",
+    riVisitDesc_ph:"Votre description du lieu.", riDur:"Durée (min)", riPhoto:"Photo (lien)", riTip:"Astuce (optionnel)",
+    riVisitTip_ph:"Arrivez tôt, billet à prendre en ligne…",
+    riActName:"Nom de l'activité", riActName_ph:"Ex : Balade en barque dans les gorges",
+    riActDesc_ph:"Votre description de l'activité.", riActTip_ph:"Réserver, prix, meilleur créneau…",
+    riHotName:"Nom de l'hôtel", riHotName_ph:"Ex : Hotel U Zlaté studny", riHotUrl:"Votre lien affilié",
+    riHotUrl_ph:"https://… (votre lien de réservation)", riHotPrice:"Prix indicatif", riHotPrice_ph:"à partir de 120 €",
+    riHotDesc:"Descriptif (optionnel)", riHotDesc_ph:"Pourquoi vous le recommandez.", riPhotoUrl:"Lien de la photo",
+    statusEmpty:"Brouillon vide.", statusSaved:"{n} étape(s) · brouillon enregistré localement",
+    btnDownload:"⬇︎ Télécharger le JSON", btnSend:"✉︎ Envoyer mon itinéraire",
+    sendTitle:"Envoyer votre itinéraire", sendDesc:"Votre itinéraire part directement vers l'équipe OneRoadTrip. Une copie du fichier est aussi téléchargée sur votre appareil, par sécurité.",
+    confirmEmail:"Confirmez votre email", cancel:"Annuler", sendNow:"Envoyer maintenant", sending:"Envoi…",
+    missing:"Il manque : ", downloaded:"JSON téléchargé.", sent:"Itinéraire envoyé. Merci !",
+    sendErr:"Envoi mail impossible — le fichier a été téléchargé, envoyez-le à contact@oneroadtrip.com",
+    confirmDel:"Supprimer cette étape ?", copySuffix:" (copie)",
+    vTitle:"le titre", vCountry:"le code pays (2 lettres)", vStep:"au moins une étape", vPlace:"le nom du lieu (étape {i})",
+    docTitle:"OneRoadTrip — Créez votre itinéraire"
+  },
+  en:{
+    kicker:"OneRoadTrip · Creator space", h1:"Build your itinerary",
+    intro:"Fill in your trip step by step. We handle the rest (layout, SEO, map). Your links, your photos, your tips stay yours.",
+    about_p1:"OneRoadTrip is a free itinerary platform, launched in January 2026. It welcomes travellers from around the world looking for inspiration or planning their own road trip.",
+    about_p2:"Blogger, travel planner or travel expert: tap into our know-how and our audience to publish your own itineraries.",
+    about_offer:"Your first itinerary is free, in exchange for a link to OneRoadTrip on your site or socials. Want to publish several? Get in touch.",
+    about_advTitle:"What's in it for you",
+    about_adv1:"An interactive tool in 5 languages — your itinerary is translated for you.",
+    about_adv2:"An audience that keeps growing.",
+    about_adv3:"Hotel links stay yours: you keep your commissions.",
+    guide1:"The trip", guide2:"You", guide3:"The stops", guide4:"Send",
+    s1title:"The trip", s1hint:"The title and subtitle as they will appear. Make them speak.",
+    f_title:"Trip title", f_title_ph:"E.g. North of Prague: the Elbe and Bohemian Switzerland",
+    f_subtitle:"Subtitle", f_subtitle_ph:"One line that sums up the route and makes people want to go",
+    f_country:"Main country (2-letter code)", f_lang:"Content language",
+    f_cover:"Cover photo (link)", f_cover_ph:"https://… (your opening photo)",
+    f_notes:"Notes / specifics (optional)", f_notes_ph:"What makes this trip special, seasonal constraints, logistics tips…",
+    s2title:"You, the creator", s2hint:"Your signature: name, short bio and a link to your site.",
+    a_name:"Your name / handle", a_name_ph:"Mary Travels", a_email:"Your email (so we can reach you)", a_email_ph:"you@example.com",
+    a_bio:"Short bio", a_bio_ph:"Two lines about you and your travel world.",
+    a_site:"Link to your site / blog", a_photo:"Your photo (link, optional)",
+    s3title:"The stops", s3hint:"A stop = a place where you pause. Add its visits, activities, hotels, photos and tips.",
+    addStep:"＋ Add a stop", newStep:"New stop",
+    tUp:"Move up", tDown:"Move down", tDup:"Duplicate", tDel:"Delete", rmTitle:"Remove",
+    place:"Place name", place_ph:"E.g. Prague", idGen:"generated id:", country:"Country (2-letter code)",
+    lat:"Latitude (optional)", lon:"Longitude (optional)", daysLabel:"Suggested time on site",
+    dOptShort:"Quick stop", dOptHalf:"Half day", dOpt1:"1 day", dOpt15:"1.5 days", dOpt2:"2 days", dOpt3:"3 days",
+    modeLabel:"Transport to next stop", mCar:"Car", mTrain:"Train", mFlight:"Plane", mFerry:"Ferry", mBoat:"Boat", mWalk:"On foot",
+    kmLabel:"Distance (km, optional)", minLabel:"Travel time (min, optional)",
+    visitsTitle:"Visits", visitsSub:"(what you see)", addVisit:"＋ Visit",
+    actTitle:"Activities", actSub:"(what you do)", addAct:"＋ Activity",
+    hotTitle:"Hotels", hotSub:"(with your link)", addHot:"＋ Hotel",
+    galTitle:"Place gallery", galSub:"(photo links)", addPhoto:"＋ Photo",
+    tipsLabel:"💡 Your tips for this place", tips_ph:"The best time, what to avoid, the local trick…",
+    tip_days:"You can set several days, but for clarity it's better to keep 1 stop = 1 day and split visits and activities.",
+    tip_coords:"Type the place name above and pick a suggestion: the coordinates fill in automatically. Fine-tune the point on the map if needed.",
+    tip_dist:"Leave empty: the site calculates distance and time. Fill in only to force a specific detour.",
+    mapToggle:"🗺 Show / adjust on map",
+    mapHint:"Drag a marker to move a place. The driving route and travel time show between stops.",
+    tipsGroup:"Tips (one or more)", addTip:"＋ Tip", tipRow_ph:"A practical tip: timing, price, trick…",
+    dashTitle:"My itineraries", dashHint:"Saved on this device. Kept until you clear your browser cache.",
+    dashSteps:"{n} stops", dashOpen:"Open", btnSave:"💾 Save", btnReset:"↺ Reset",
+    confirmReset:"Reset the itinerary? Your creator info is kept; the title, options and stops are cleared.",
+    confirmDelSaved:"Delete this saved itinerary?", savedOk:"Saved to your itineraries.",
+    signIn:"Sign in", signOut:"Sign out",
+    cloudTitle:"Sent itineraries", cloudHint:"Linked to your account, available on any device.",
+    authUnavail:"Sign-in unavailable (Firebase config missing).",
+    loginToSend:"Sign in to send your itinerary.",
+    sentCloud:"Itinerary sent to your account.", sendErrCloud:"Could not send.",
+    authTitleLogin:"Sign in", authTitleSignup:"Create an account",
+    authEmail:"Email", authPwd:"Password", authPwd2:"Confirm password",
+    authDoLogin:"Sign in", authDoSignup:"Create my account",
+    authToggleToSignup:"No account? Create one", authToggleToLogin:"Already have an account? Sign in",
+    authForgot:"Forgot password?", authOr:"or", authResetSent:"Password reset email sent.",
+    authErrPwd2:"Passwords do not match.", authNeedEmail:"Enter your email.",
+    dOpt4:"4 days", dOpt5:"5 days", dOpt6:"6 days", dOpt7:"7 days", dOpt8:"8 days", dOpt9:"9 days", dOpt10:"10 days",
+    riVisitName:"Visit name", riVisitName_ph:"E.g. Prague Castle", riDesc:"Description",
+    riVisitDesc_ph:"Your description of the place.", riDur:"Duration (min)", riPhoto:"Photo (link)", riTip:"Tip (optional)",
+    riVisitTip_ph:"Arrive early, buy tickets online…",
+    riActName:"Activity name", riActName_ph:"E.g. Boat ride through the gorges",
+    riActDesc_ph:"Your description of the activity.", riActTip_ph:"Booking, price, best time slot…",
+    riHotName:"Hotel name", riHotName_ph:"E.g. Hotel U Zlaté studny", riHotUrl:"Your affiliate link",
+    riHotUrl_ph:"https://… (your booking link)", riHotPrice:"Indicative price", riHotPrice_ph:"from €120",
+    riHotDesc:"Description (optional)", riHotDesc_ph:"Why you recommend it.", riPhotoUrl:"Photo link",
+    statusEmpty:"Empty draft.", statusSaved:"{n} stop(s) · draft saved locally",
+    btnDownload:"⬇︎ Download JSON", btnSend:"✉︎ Send my itinerary",
+    sendTitle:"Send your itinerary", sendDesc:"Your itinerary goes straight to the OneRoadTrip team. A copy of the file is also downloaded to your device, just in case.",
+    confirmEmail:"Confirm your email", cancel:"Cancel", sendNow:"Send now", sending:"Sending…",
+    missing:"Missing: ", downloaded:"JSON downloaded.", sent:"Itinerary sent. Thank you!",
+    sendErr:"Email failed — the file was downloaded, send it to contact@oneroadtrip.com",
+    confirmDel:"Delete this stop?", copySuffix:" (copy)",
+    vTitle:"the title", vCountry:"the country code (2 letters)", vStep:"at least one stop", vPlace:"the place name (stop {i})",
+    docTitle:"OneRoadTrip — Build your itinerary"
+  },
+  es:{
+    kicker:"OneRoadTrip · Espacio creador", h1:"Crea tu itinerario",
+    intro:"Completa tu viaje paso a paso. Nosotros nos ocupamos del resto (diseño, SEO, mapa). Tus enlaces, tus fotos y tus consejos siguen siendo tuyos.",
+    about_p1:"OneRoadTrip es una plataforma de itinerarios gratuita, lanzada en enero de 2026. Acoge a viajeros de todo el mundo que buscan inspiración u organizan su propio road trip.",
+    about_p2:"Blogger, travel planner o especialista en viajes: aprovecha nuestro saber hacer y nuestra audiencia para publicar tus propios itinerarios.",
+    about_offer:"Tu primer itinerario es gratis, a cambio de un enlace a OneRoadTrip en tu sitio o tus redes. ¿Quieres publicar varios? Escríbenos.",
+    about_advTitle:"Tus ventajas",
+    about_adv1:"Una herramienta interactiva en 5 idiomas: tu itinerario se traduce por ti.",
+    about_adv2:"Una audiencia que no para de crecer.",
+    about_adv3:"Los enlaces de hoteles son tuyos: conservas tus comisiones.",
+    guide1:"El viaje", guide2:"Tú", guide3:"Las etapas", guide4:"Enviar",
+    s1title:"El viaje", s1hint:"El título y el subtítulo tal como aparecerán. Que sean atractivos.",
+    f_title:"Título del viaje", f_title_ph:"Ej.: Norte de Praga, el Elba y la Suiza Bohemia",
+    f_subtitle:"Subtítulo", f_subtitle_ph:"Una frase que resuma la ruta y dé ganas de ir",
+    f_country:"País principal (código de 2 letras)", f_lang:"Idioma de los textos",
+    f_cover:"Foto de portada (enlace)", f_cover_ph:"https://… (tu foto de portada)",
+    f_notes:"Notas / particularidades (opcional)", f_notes_ph:"Lo que hace especial este viaje, restricciones de temporada, consejos logísticos…",
+    s2title:"Tú, el creador", s2hint:"Tu firma: nombre, biografía breve y enlace a tu sitio.",
+    a_name:"Tu nombre / alias", a_name_ph:"María Viajes", a_email:"Tu email (para contactarte)", a_email_ph:"tu@ejemplo.com",
+    a_bio:"Biografía breve", a_bio_ph:"Dos frases sobre ti y tu universo viajero.",
+    a_site:"Enlace a tu sitio / blog", a_photo:"Tu foto (enlace, opcional)",
+    s3title:"Las etapas", s3hint:"Una etapa = un lugar donde te detienes. Añade sus visitas, actividades, hoteles, fotos y consejos.",
+    addStep:"＋ Añadir una etapa", newStep:"Nueva etapa",
+    tUp:"Subir", tDown:"Bajar", tDup:"Duplicar", tDel:"Eliminar", rmTitle:"Quitar",
+    place:"Nombre del lugar", place_ph:"Ej.: Praga", idGen:"id generado:", country:"País (código de 2 letras)",
+    lat:"Latitud (opcional)", lon:"Longitud (opcional)", daysLabel:"Tiempo recomendado",
+    dOptShort:"Parada corta", dOptHalf:"Medio día", dOpt1:"1 día", dOpt15:"1 día y medio", dOpt2:"2 días", dOpt3:"3 días",
+    modeLabel:"Transporte a la siguiente etapa", mCar:"Coche", mTrain:"Tren", mFlight:"Avión", mFerry:"Ferry", mBoat:"Barco", mWalk:"A pie",
+    kmLabel:"Distancia (km, opcional)", minLabel:"Duración trayecto (min, opcional)",
+    visitsTitle:"Visitas", visitsSub:"(lo que se ve)", addVisit:"＋ Visita",
+    actTitle:"Actividades", actSub:"(lo que se hace)", addAct:"＋ Actividad",
+    hotTitle:"Hoteles", hotSub:"(con tu enlace)", addHot:"＋ Hotel",
+    galTitle:"Galería del lugar", galSub:"(enlaces de fotos)", addPhoto:"＋ Foto",
+    tipsLabel:"💡 Tus consejos sobre este lugar", tips_ph:"El mejor momento, qué evitar, el truco local…",
+    tip_days:"Puedes indicar varios días, pero para mayor claridad es mejor 1 etapa = 1 día, repartiendo visitas y actividades.",
+    tip_coords:"Escribe el nombre del lugar arriba y elige una sugerencia: las coordenadas se rellenan solas. Ajusta el punto en el mapa si hace falta.",
+    tip_dist:"Déjalo vacío: el sitio calcula la distancia y el tiempo. Rellénalo solo para imponer un paso concreto.",
+    mapToggle:"🗺 Ver / ajustar en el mapa",
+    mapHint:"Arrastra un marcador para mover un lugar. La ruta y el tiempo en coche aparecen entre las etapas.",
+    tipsGroup:"Consejos (uno o varios)", addTip:"＋ Consejo", tipRow_ph:"Un consejo práctico: horario, precio, truco…",
+    dashTitle:"Mis itinerarios", dashHint:"Guardados en este dispositivo. Se conservan hasta que vacíes la caché del navegador.",
+    dashSteps:"{n} etapas", dashOpen:"Abrir", btnSave:"💾 Guardar", btnReset:"↺ Reiniciar",
+    confirmReset:"¿Reiniciar el itinerario? Tus datos de creador se conservan; el título, las opciones y las etapas se borran.",
+    confirmDelSaved:"¿Eliminar este itinerario guardado?", savedOk:"Guardado en tus itinerarios.",
+    signIn:"Iniciar sesión", signOut:"Cerrar sesión",
+    cloudTitle:"Itinerarios enviados", cloudHint:"Vinculados a tu cuenta, disponibles en cualquier dispositivo.",
+    authUnavail:"Inicio de sesión no disponible (falta la configuración de Firebase).",
+    loginToSend:"Inicia sesión para enviar tu itinerario.",
+    sentCloud:"Itinerario enviado a tu cuenta.", sendErrCloud:"No se pudo enviar.",
+    authTitleLogin:"Iniciar sesión", authTitleSignup:"Crear una cuenta",
+    authEmail:"Email", authPwd:"Contraseña", authPwd2:"Confirma la contraseña",
+    authDoLogin:"Iniciar sesión", authDoSignup:"Crear mi cuenta",
+    authToggleToSignup:"¿Sin cuenta? Crear una", authToggleToLogin:"¿Ya tienes cuenta? Iniciar sesión",
+    authForgot:"¿Olvidaste la contraseña?", authOr:"o", authResetSent:"Email de restablecimiento enviado.",
+    authErrPwd2:"Las contraseñas no coinciden.", authNeedEmail:"Introduce tu email.",
+    dOpt4:"4 días", dOpt5:"5 días", dOpt6:"6 días", dOpt7:"7 días", dOpt8:"8 días", dOpt9:"9 días", dOpt10:"10 días",
+    riVisitName:"Nombre de la visita", riVisitName_ph:"Ej.: Castillo de Praga", riDesc:"Descripción",
+    riVisitDesc_ph:"Tu descripción del lugar.", riDur:"Duración (min)", riPhoto:"Foto (enlace)", riTip:"Consejo (opcional)",
+    riVisitTip_ph:"Llega temprano, compra la entrada en línea…",
+    riActName:"Nombre de la actividad", riActName_ph:"Ej.: Paseo en barca por los desfiladeros",
+    riActDesc_ph:"Tu descripción de la actividad.", riActTip_ph:"Reservar, precio, mejor horario…",
+    riHotName:"Nombre del hotel", riHotName_ph:"Ej.: Hotel U Zlaté studny", riHotUrl:"Tu enlace de afiliado",
+    riHotUrl_ph:"https://… (tu enlace de reserva)", riHotPrice:"Precio orientativo", riHotPrice_ph:"desde 120 €",
+    riHotDesc:"Descripción (opcional)", riHotDesc_ph:"Por qué lo recomiendas.", riPhotoUrl:"Enlace de la foto",
+    statusEmpty:"Borrador vacío.", statusSaved:"{n} etapa(s) · borrador guardado localmente",
+    btnDownload:"⬇︎ Descargar JSON", btnSend:"✉︎ Enviar mi itinerario",
+    sendTitle:"Enviar tu itinerario", sendDesc:"Tu itinerario se envía directamente al equipo de OneRoadTrip. También se descarga una copia del archivo en tu dispositivo, por seguridad.",
+    confirmEmail:"Confirma tu email", cancel:"Cancelar", sendNow:"Enviar ahora", sending:"Enviando…",
+    missing:"Falta: ", downloaded:"JSON descargado.", sent:"Itinerario enviado. ¡Gracias!",
+    sendErr:"No se pudo enviar el email — el archivo se descargó, envíalo a contact@oneroadtrip.com",
+    confirmDel:"¿Eliminar esta etapa?", copySuffix:" (copia)",
+    vTitle:"el título", vCountry:"el código de país (2 letras)", vStep:"al menos una etapa", vPlace:"el nombre del lugar (etapa {i})",
+    docTitle:"OneRoadTrip — Crea tu itinerario"
+  },
+  it:{
+    kicker:"OneRoadTrip · Spazio creatori", h1:"Componi il tuo itinerario",
+    intro:"Compila il tuo viaggio tappa per tappa. Al resto pensiamo noi (impaginazione, SEO, mappa). I tuoi link, le tue foto e i tuoi consigli restano tuoi.",
+    about_p1:"OneRoadTrip è una piattaforma di itinerari gratuita, lanciata a gennaio 2026. Accoglie viaggiatori da tutto il mondo in cerca di ispirazione o che organizzano il proprio road trip.",
+    about_p2:"Blogger, travel planner o esperto di viaggi: sfrutta il nostro know-how e il nostro pubblico per pubblicare i tuoi itinerari.",
+    about_offer:"Il tuo primo itinerario è gratuito, in cambio di un link a OneRoadTrip sul tuo sito o sui tuoi social. Vuoi pubblicarne diversi? Scrivici.",
+    about_advTitle:"I tuoi vantaggi",
+    about_adv1:"Uno strumento interattivo in 5 lingue — il tuo itinerario viene tradotto per te.",
+    about_adv2:"Un pubblico in continua crescita.",
+    about_adv3:"I link degli hotel restano tuoi: mantieni le tue commissioni.",
+    guide1:"Il viaggio", guide2:"Tu", guide3:"Le tappe", guide4:"Invia",
+    s1title:"Il viaggio", s1hint:"Il titolo e il sottotitolo così come appariranno. Rendili efficaci.",
+    f_title:"Titolo del viaggio", f_title_ph:"Es.: A nord di Praga, l'Elba e la Svizzera Boema",
+    f_subtitle:"Sottotitolo", f_subtitle_ph:"Una frase che riassume il percorso e fa venire voglia di partire",
+    f_country:"Paese principale (codice 2 lettere)", f_lang:"Lingua dei testi",
+    f_cover:"Foto di copertina (link)", f_cover_ph:"https://… (la tua foto di apertura)",
+    f_notes:"Note / particolarità (facoltativo)", f_notes_ph:"Ciò che rende speciale questo viaggio, vincoli stagionali, consigli logistici…",
+    s2title:"Tu, il creatore", s2hint:"La tua firma: nome, bio breve e link al tuo sito.",
+    a_name:"Il tuo nome / pseudonimo", a_name_ph:"Marco Viaggi", a_email:"La tua email (per ricontattarti)", a_email_ph:"tu@esempio.com",
+    a_bio:"Bio breve", a_bio_ph:"Due frasi su di te e sul tuo mondo di viaggio.",
+    a_site:"Link al tuo sito / blog", a_photo:"La tua foto (link, facoltativo)",
+    s3title:"Le tappe", s3hint:"Una tappa = un luogo dove ci si ferma. Aggiungi visite, attività, hotel, foto e consigli.",
+    addStep:"＋ Aggiungi una tappa", newStep:"Nuova tappa",
+    tUp:"Su", tDown:"Giù", tDup:"Duplica", tDel:"Elimina", rmTitle:"Rimuovi",
+    place:"Nome del luogo", place_ph:"Es.: Praga", idGen:"id generato:", country:"Paese (codice 2 lettere)",
+    lat:"Latitudine (facoltativo)", lon:"Longitudine (facoltativo)", daysLabel:"Tempo consigliato",
+    dOptShort:"Sosta breve", dOptHalf:"Mezza giornata", dOpt1:"1 giorno", dOpt15:"1 giorno e mezzo", dOpt2:"2 giorni", dOpt3:"3 giorni",
+    modeLabel:"Trasporto verso la tappa successiva", mCar:"Auto", mTrain:"Treno", mFlight:"Aereo", mFerry:"Traghetto", mBoat:"Barca", mWalk:"A piedi",
+    kmLabel:"Distanza (km, facoltativo)", minLabel:"Durata tragitto (min, facoltativo)",
+    visitsTitle:"Visite", visitsSub:"(cosa si vede)", addVisit:"＋ Visita",
+    actTitle:"Attività", actSub:"(cosa si fa)", addAct:"＋ Attività",
+    hotTitle:"Hotel", hotSub:"(con il tuo link)", addHot:"＋ Hotel",
+    galTitle:"Galleria del luogo", galSub:"(link foto)", addPhoto:"＋ Foto",
+    tipsLabel:"💡 I tuoi consigli su questo luogo", tips_ph:"Il momento giusto, cosa evitare, il trucco locale…",
+    tip_days:"Puoi indicare più giorni, ma per chiarezza è meglio 1 tappa = 1 giorno, distribuendo visite e attività.",
+    tip_coords:"Scrivi il nome del luogo qui sopra e scegli un suggerimento: le coordinate si compilano da sole. Regola il punto sulla mappa se serve.",
+    tip_dist:"Lascia vuoto: il sito calcola distanza e tempo. Compila solo per imporre un passaggio preciso.",
+    mapToggle:"🗺 Mostra / regola sulla mappa",
+    mapHint:"Trascina un segnaposto per spostare un luogo. Il percorso e il tempo in auto compaiono tra le tappe.",
+    tipsGroup:"Consigli (uno o più)", addTip:"＋ Consiglio", tipRow_ph:"Un consiglio pratico: orario, prezzo, trucco…",
+    dashTitle:"I miei itinerari", dashHint:"Salvati su questo dispositivo. Restano finché non svuoti la cache del browser.",
+    dashSteps:"{n} tappe", dashOpen:"Apri", btnSave:"💾 Salva", btnReset:"↺ Azzera",
+    confirmReset:"Azzerare l'itinerario? I tuoi dati creatore restano; titolo, opzioni e tappe vengono cancellati.",
+    confirmDelSaved:"Eliminare questo itinerario salvato?", savedOk:"Salvato nei tuoi itinerari.",
+    signIn:"Accedi", signOut:"Esci",
+    cloudTitle:"Itinerari inviati", cloudHint:"Collegati al tuo account, disponibili su qualsiasi dispositivo.",
+    authUnavail:"Accesso non disponibile (configurazione Firebase mancante).",
+    loginToSend:"Accedi per inviare il tuo itinerario.",
+    sentCloud:"Itinerario inviato al tuo account.", sendErrCloud:"Invio non riuscito.",
+    authTitleLogin:"Accedi", authTitleSignup:"Crea un account",
+    authEmail:"Email", authPwd:"Password", authPwd2:"Conferma la password",
+    authDoLogin:"Accedi", authDoSignup:"Crea il mio account",
+    authToggleToSignup:"Non hai un account? Crealo", authToggleToLogin:"Hai già un account? Accedi",
+    authForgot:"Password dimenticata?", authOr:"o", authResetSent:"Email di reimpostazione inviata.",
+    authErrPwd2:"Le password non corrispondono.", authNeedEmail:"Inserisci la tua email.",
+    dOpt4:"4 giorni", dOpt5:"5 giorni", dOpt6:"6 giorni", dOpt7:"7 giorni", dOpt8:"8 giorni", dOpt9:"9 giorni", dOpt10:"10 giorni",
+    riVisitName:"Nome della visita", riVisitName_ph:"Es.: Castello di Praga", riDesc:"Descrizione",
+    riVisitDesc_ph:"La tua descrizione del luogo.", riDur:"Durata (min)", riPhoto:"Foto (link)", riTip:"Consiglio (facoltativo)",
+    riVisitTip_ph:"Arriva presto, biglietto da prendere online…",
+    riActName:"Nome dell'attività", riActName_ph:"Es.: Gita in barca nelle gole",
+    riActDesc_ph:"La tua descrizione dell'attività.", riActTip_ph:"Prenotare, prezzo, orario migliore…",
+    riHotName:"Nome dell'hotel", riHotName_ph:"Es.: Hotel U Zlaté studny", riHotUrl:"Il tuo link di affiliazione",
+    riHotUrl_ph:"https://… (il tuo link di prenotazione)", riHotPrice:"Prezzo indicativo", riHotPrice_ph:"da 120 €",
+    riHotDesc:"Descrizione (facoltativo)", riHotDesc_ph:"Perché lo consigli.", riPhotoUrl:"Link della foto",
+    statusEmpty:"Bozza vuota.", statusSaved:"{n} tappa/e · bozza salvata localmente",
+    btnDownload:"⬇︎ Scarica JSON", btnSend:"✉︎ Invia il mio itinerario",
+    sendTitle:"Invia il tuo itinerario", sendDesc:"Il tuo itinerario va direttamente al team OneRoadTrip. Una copia del file viene anche scaricata sul tuo dispositivo, per sicurezza.",
+    confirmEmail:"Conferma la tua email", cancel:"Annulla", sendNow:"Invia ora", sending:"Invio…",
+    missing:"Manca: ", downloaded:"JSON scaricato.", sent:"Itinerario inviato. Grazie!",
+    sendErr:"Invio email non riuscito — il file è stato scaricato, invialo a contact@oneroadtrip.com",
+    confirmDel:"Eliminare questa tappa?", copySuffix:" (copia)",
+    vTitle:"il titolo", vCountry:"il codice paese (2 lettere)", vStep:"almeno una tappa", vPlace:"il nome del luogo (tappa {i})",
+    docTitle:"OneRoadTrip — Componi il tuo itinerario"
+  },
+  pt:{
+    kicker:"OneRoadTrip · Espaço criador", h1:"Crie o seu itinerário",
+    intro:"Preencha a sua viagem etapa por etapa. Tratamos do resto (formatação, SEO, mapa). Os seus links, fotos e dicas continuam a ser seus.",
+    about_p1:"A OneRoadTrip é uma plataforma de itinerários gratuita, lançada em janeiro de 2026. Recebe viajantes de todo o mundo em busca de inspiração ou a organizar a sua própria road trip.",
+    about_p2:"Blogger, travel planner ou especialista em viagens: aproveite o nosso saber-fazer e a nossa audiência para publicar os seus próprios itinerários.",
+    about_offer:"O seu primeiro itinerário é gratuito, em troca de um link para a OneRoadTrip no seu site ou nas suas redes. Quer publicar vários? Fale connosco.",
+    about_advTitle:"As suas vantagens",
+    about_adv1:"Uma ferramenta interativa em 5 idiomas — o seu itinerário é traduzido para si.",
+    about_adv2:"Uma audiência que não para de crescer.",
+    about_adv3:"Os links dos hotéis são seus: fica com as suas comissões.",
+    guide1:"A viagem", guide2:"Você", guide3:"As etapas", guide4:"Enviar",
+    s1title:"A viagem", s1hint:"O título e o subtítulo tal como aparecerão. Que sejam apelativos.",
+    f_title:"Título da viagem", f_title_ph:"Ex.: Norte de Praga, o Elba e a Suíça da Boêmia",
+    f_subtitle:"Subtítulo", f_subtitle_ph:"Uma frase que resume o percurso e dá vontade de viajar",
+    f_country:"País principal (código de 2 letras)", f_lang:"Idioma dos textos",
+    f_cover:"Foto de capa (link)", f_cover_ph:"https://… (a sua foto de abertura)",
+    f_notes:"Notas / particularidades (opcional)", f_notes_ph:"O que torna esta viagem especial, restrições sazonais, dicas logísticas…",
+    s2title:"Você, o criador", s2hint:"A sua assinatura: nome, bio curta e link para o seu site.",
+    a_name:"O seu nome / pseudónimo", a_name_ph:"Maria Viagens", a_email:"O seu email (para o contactarmos)", a_email_ph:"voce@exemplo.com",
+    a_bio:"Bio curta", a_bio_ph:"Duas frases sobre você e o seu universo de viagem.",
+    a_site:"Link para o seu site / blog", a_photo:"A sua foto (link, opcional)",
+    s3title:"As etapas", s3hint:"Uma etapa = um lugar onde se para. Adicione visitas, atividades, hotéis, fotos e dicas.",
+    addStep:"＋ Adicionar uma etapa", newStep:"Nova etapa",
+    tUp:"Subir", tDown:"Descer", tDup:"Duplicar", tDel:"Eliminar", rmTitle:"Remover",
+    place:"Nome do lugar", place_ph:"Ex.: Praga", idGen:"id gerado:", country:"País (código de 2 letras)",
+    lat:"Latitude (opcional)", lon:"Longitude (opcional)", daysLabel:"Tempo recomendado",
+    dOptShort:"Paragem curta", dOptHalf:"Meio dia", dOpt1:"1 dia", dOpt15:"1 dia e meio", dOpt2:"2 dias", dOpt3:"3 dias",
+    modeLabel:"Transporte para a etapa seguinte", mCar:"Carro", mTrain:"Comboio", mFlight:"Avião", mFerry:"Ferry", mBoat:"Barco", mWalk:"A pé",
+    kmLabel:"Distância (km, opcional)", minLabel:"Duração trajeto (min, opcional)",
+    visitsTitle:"Visitas", visitsSub:"(o que se vê)", addVisit:"＋ Visita",
+    actTitle:"Atividades", actSub:"(o que se faz)", addAct:"＋ Atividade",
+    hotTitle:"Hotéis", hotSub:"(com o seu link)", addHot:"＋ Hotel",
+    galTitle:"Galeria do lugar", galSub:"(links de fotos)", addPhoto:"＋ Foto",
+    tipsLabel:"💡 As suas dicas sobre este lugar", tips_ph:"O melhor momento, o que evitar, a dica local…",
+    tip_days:"Pode indicar vários dias, mas para maior clareza é melhor 1 etapa = 1 dia, distribuindo visitas e atividades.",
+    tip_coords:"Escreva o nome do lugar acima e escolha uma sugestão: as coordenadas preenchem-se sozinhas. Ajuste o ponto no mapa se necessário.",
+    tip_dist:"Deixe vazio: o site calcula a distância e o tempo. Preencha apenas para impor uma passagem específica.",
+    mapToggle:"🗺 Ver / ajustar no mapa",
+    mapHint:"Arraste um marcador para mover um lugar. O percurso e o tempo de carro aparecem entre as etapas.",
+    tipsGroup:"Dicas (uma ou várias)", addTip:"＋ Dica", tipRow_ph:"Uma dica prática: horário, preço, truque…",
+    dashTitle:"Os meus itinerários", dashHint:"Guardados neste dispositivo. Mantidos até esvaziar a cache do navegador.",
+    dashSteps:"{n} etapas", dashOpen:"Abrir", btnSave:"💾 Guardar", btnReset:"↺ Reiniciar",
+    confirmReset:"Reiniciar o itinerário? Os seus dados de criador são mantidos; o título, as opções e as etapas são apagados.",
+    confirmDelSaved:"Eliminar este itinerário guardado?", savedOk:"Guardado nos seus itinerários.",
+    signIn:"Entrar", signOut:"Sair",
+    cloudTitle:"Itinerários enviados", cloudHint:"Associados à sua conta, disponíveis em qualquer dispositivo.",
+    authUnavail:"Início de sessão indisponível (configuração Firebase em falta).",
+    loginToSend:"Inicie sessão para enviar o seu itinerário.",
+    sentCloud:"Itinerário enviado para a sua conta.", sendErrCloud:"Não foi possível enviar.",
+    authTitleLogin:"Entrar", authTitleSignup:"Criar uma conta",
+    authEmail:"Email", authPwd:"Palavra-passe", authPwd2:"Confirme a palavra-passe",
+    authDoLogin:"Entrar", authDoSignup:"Criar a minha conta",
+    authToggleToSignup:"Sem conta? Criar uma", authToggleToLogin:"Já tem conta? Entrar",
+    authForgot:"Esqueceu a palavra-passe?", authOr:"ou", authResetSent:"Email de redefinição enviado.",
+    authErrPwd2:"As palavras-passe não coincidem.", authNeedEmail:"Introduza o seu email.",
+    dOpt4:"4 dias", dOpt5:"5 dias", dOpt6:"6 dias", dOpt7:"7 dias", dOpt8:"8 dias", dOpt9:"9 dias", dOpt10:"10 dias",
+    riVisitName:"Nome da visita", riVisitName_ph:"Ex.: Castelo de Praga", riDesc:"Descrição",
+    riVisitDesc_ph:"A sua descrição do lugar.", riDur:"Duração (min)", riPhoto:"Foto (link)", riTip:"Dica (opcional)",
+    riVisitTip_ph:"Chegue cedo, bilhete a comprar online…",
+    riActName:"Nome da atividade", riActName_ph:"Ex.: Passeio de barco nas gargantas",
+    riActDesc_ph:"A sua descrição da atividade.", riActTip_ph:"Reservar, preço, melhor horário…",
+    riHotName:"Nome do hotel", riHotName_ph:"Ex.: Hotel U Zlaté studny", riHotUrl:"O seu link de afiliado",
+    riHotUrl_ph:"https://… (o seu link de reserva)", riHotPrice:"Preço indicativo", riHotPrice_ph:"a partir de 120 €",
+    riHotDesc:"Descrição (opcional)", riHotDesc_ph:"Por que o recomenda.", riPhotoUrl:"Link da foto",
+    statusEmpty:"Rascunho vazio.", statusSaved:"{n} etapa(s) · rascunho guardado localmente",
+    btnDownload:"⬇︎ Transferir JSON", btnSend:"✉︎ Enviar o meu itinerário",
+    sendTitle:"Enviar o seu itinerário", sendDesc:"O seu itinerário vai diretamente para a equipa OneRoadTrip. Uma cópia do ficheiro também é transferida para o seu dispositivo, por segurança.",
+    confirmEmail:"Confirme o seu email", cancel:"Cancelar", sendNow:"Enviar agora", sending:"A enviar…",
+    missing:"Falta: ", downloaded:"JSON transferido.", sent:"Itinerário enviado. Obrigado!",
+    sendErr:"Falha no envio do email — o ficheiro foi transferido, envie-o para contact@oneroadtrip.com",
+    confirmDel:"Eliminar esta etapa?", copySuffix:" (cópia)",
+    vTitle:"o título", vCountry:"o código de país (2 letras)", vStep:"pelo menos uma etapa", vPlace:"o nome do lugar (etapa {i})",
+    docTitle:"OneRoadTrip — Crie o seu itinerário"
+  }
+};
+
+/* ====== LANG ====== */
+function detectLang(){
+  var saved=null; try{ saved=localStorage.getItem(LANG_KEY); }catch(e){}
+  if(saved && SUPPORTED.indexOf(saved)>=0) return saved;
+  var nav=(navigator.languages&&navigator.languages[0])||navigator.language||"en";
+  var two=String(nav).slice(0,2).toLowerCase();
+  return SUPPORTED.indexOf(two)>=0 ? two : "en";
+}
+var LANG = detectLang();
+function dict(){ return I18N[LANG]||I18N.en; }
+
+/* ====== UTILS ====== */
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function slugify(s){
+  return (s||"").toString().toLowerCase().trim()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+}
+function numOrNull(v){ if(v===null||v===undefined) return null; var s=String(v).trim().replace(",","."); if(s==="")return null; var n=Number(s); return isNaN(n)?null:n; }
+function escapeHtml(s){ return String(s||"").replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+function toast(msg,kind){
+  var el=$("#toast"); el.textContent=msg; el.className="toast show "+(kind||"");
+  clearTimeout(toast._t); toast._t=setTimeout(function(){el.className="toast";},3400);
+}
+
+/* ====== API ONEROADTRIP (fonctions Netlify) ======
+   Même domaine par défaut. Si la page est hébergée ailleurs, mets API_BASE = "https://oneroadtrip.com". */
+var API_BASE = "";
+function apiCitysearch(){ return API_BASE+"/.netlify/functions/citysearch"; }
+
+/* ====== GÉOCODAGE (fonction citysearch : Photon + Nominatim, côté serveur) ====== */
+function geocode(q,lang){
+  var p=new URLSearchParams({ q:q, lang:lang||"fr", limit:"8" });
+  return fetch(apiCitysearch()+"?"+p.toString()).then(function(r){return r.ok?r.json():null;}).then(function(j){
+    if(!j||!j.items) return [];
+    return j.items.map(function(it){
+      return { name:it.displayName||it.name||"", city:"", state:it.admin1||"",
+               country:"", cc:(it.countryCode||"").toUpperCase(), lat:it.lat, lon:it.lon };
+    }).filter(function(x){ return x.lat!=null && x.lon!=null && x.name; });
+  }).catch(function(){ return []; });
+}
+function renderAc(node,acEl,list){
+  if(!list||!list.length){ acEl.className="ac"; acEl.innerHTML=""; return; }
+  acEl.innerHTML="";
+  list.forEach(function(it){
+    var d=document.createElement("div"); d.className="ac-item";
+    var sub=[ (it.city&&it.city!==it.name)?it.city:"", it.state, it.country ].filter(Boolean).join(", ");
+    d.innerHTML="<span>"+escapeHtml(it.name)+"</span>"+(sub?'<span class="sub">'+escapeHtml(sub)+"</span>":"");
+    d.addEventListener("mousedown",function(e){ e.preventDefault(); pickPlace(node,it); });
+    acEl.appendChild(d);
+  });
+  acEl.className="ac open";
+}
+function pickPlace(node,it){
+  $("[data-f=place]",node).value=it.name;
+  if(it.cc && it.cc.length===2) $("[data-f=country]",node).value=it.cc;
+  $("[data-f=lat]",node).value=Number(it.lat).toFixed(5);
+  $("[data-f=lon]",node).value=Number(it.lon).toFixed(5);
+  $("[data-ac]",node).className="ac";
+  if(node._refreshHead) node._refreshHead();
+  persist();
+}
+
+/* ====== CARTE D'ITINÉRAIRE (Leaflet / OSM) + ROUTAGE ====== */
+/* Tracé réel via ort-routing.js (window.ORT_ROUTING) : Netlify /route → OSRM → Mapbox.
+   Renvoie la géométrie complète, donc la vraie courbe. Repli ligne droite si le module est absent. */
+var _rmap=null, _rlayers=null, _legCache={}, _mapTimer=null, _lastSig="", _lastCount=-1;
+
+function fmtDur(min){
+  min=Math.round(min);
+  if(min<60) return min+" min";
+  var h=Math.floor(min/60), m=min%60;
+  return m ? (h+" h "+m) : (h+" h");
+}
+function haversineKm(a,b){
+  var R=6371, dLat=(b[0]-a[0])*Math.PI/180, dLon=(b[1]-a[1])*Math.PI/180;
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+function modeToRoute(mode){ return mode==="car"?"driving":(mode==="walk"?"walking":null); }
+function routeLeg(a,b,mode){
+  var key=mode+":"+a[0].toFixed(4)+","+a[1].toFixed(4)+";"+b[0].toFixed(4)+","+b[1].toFixed(4);
+  if(_legCache[key]) return Promise.resolve(_legCache[key]);
+  var rmode=modeToRoute(mode);
+  var straight={coords:[a,b],min:null,km:haversineKm(a,b),dashed:true};
+  if(!rmode || typeof ORT_ROUTING==="undefined" || !ORT_ROUTING.calculateOSRMRoute){ _legCache[key]=straight; return Promise.resolve(straight); }
+  return ORT_ROUTING.calculateOSRMRoute([a,b],rmode).then(function(res){
+    var leg=straight;
+    if(res && res.coordinates && res.coordinates.length){
+      leg={ coords:res.coordinates,
+            km:(res.distance!=null?res.distance/1000:haversineKm(a,b)),
+            min:(res.duration!=null?res.duration/60:null),
+            dashed:(res.type==="fallback") };
+    }
+    _legCache[key]=leg; return leg;
+  }).catch(function(){ _legCache[key]=straight; return straight; });
+}
+function initRouteMap(){
+  if(_rmap || typeof L==="undefined") return;
+  _rmap=L.map("routemap",{scrollWheelZoom:false}).setView([20,0],2);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(_rmap);
+  _rlayers=L.layerGroup().addTo(_rmap);
+}
+function scheduleMapRender(){ clearTimeout(_mapTimer); _mapTimer=setTimeout(renderRouteMap,250); }
+function renderRouteMap(){
+  initRouteMap(); if(!_rmap) return;
+  var steps=$$("#steps [data-step]");
+  var pts=steps.map(function(node){
+    var lat=numOrNull($("[data-f=lat]",node).value), lon=numOrNull($("[data-f=lon]",node).value);
+    return { node:node, ll:(lat!=null&&lon!=null)?[lat,lon]:null, mode:($("[data-f=mode]",node).value||"car") };
+  });
+  var withCoords=pts.filter(function(p){return p.ll;});
+  var sig=JSON.stringify(pts.map(function(p){return p.ll?[p.ll[0],p.ll[1],p.mode]:0;}));
+  if(sig===_lastSig){ return; }   // rien de pertinent n'a changé
+  _lastSig=sig;
+  _rlayers.clearLayers();
+  if(!withCoords.length){ _rmap.setView([20,0],2); setTimeout(function(){_rmap.invalidateSize();},60); _lastCount=0; return; }
+
+  var bounds=[];
+  pts.forEach(function(p,idx){
+    if(!p.ll) return;
+    var mk=L.marker(p.ll,{draggable:true, icon:L.divIcon({className:"",html:'<div class="rm-pin">'+(idx+1)+'</div>',iconSize:[26,26],iconAnchor:[13,13]})}).addTo(_rlayers);
+    mk.on("dragend",function(){
+      var ll=mk.getLatLng();
+      $("[data-f=lat]",p.node).value=ll.lat.toFixed(5);
+      $("[data-f=lon]",p.node).value=ll.lng.toFixed(5);
+      persist();
+    });
+    mk.on("click",function(){ p.node.scrollIntoView({behavior:"smooth",block:"center"}); });
+    bounds.push(p.ll);
+  });
+  if(bounds.length && withCoords.length!==_lastCount){ _rmap.fitBounds(bounds,{padding:[40,40],maxZoom:11}); }
+  _lastCount=withCoords.length;
+  setTimeout(function(){_rmap.invalidateSize();},60);
+
+  for(var i=0;i<pts.length-1;i++){
+    if(!pts[i].ll||!pts[i+1].ll) continue;
+    (function(a,b,mode){
+      routeLeg(a,b,mode).then(function(leg){
+        var line=(leg.coords&&leg.coords.length)?leg.coords:[a,b];
+        L.polyline(line,{color:"#b5552d",weight:4,opacity:.85,dashArray:leg.dashed?"6 8":null}).addTo(_rlayers);
+        var mid=line[Math.floor(line.length/2)];
+        var label=(leg.min!=null?fmtDur(leg.min)+" · ":"≈ ")+Math.round(leg.km)+" km";
+        L.marker(mid,{interactive:false,icon:L.divIcon({className:"",html:'<div class="leg-label">'+label+'</div>',iconSize:[0,0]})}).addTo(_rlayers);
+      });
+    })(pts[i].ll,pts[i+1].ll,pts[i].mode);
+  }
+}
+
+/* ====== CONSEILS (plusieurs par visite/activité) ====== */
+function addTipRow(container,value){
+  var row=document.createElement("div"); row.className="tip-row";
+  var inp=document.createElement("input"); inp.setAttribute("data-tipinput",""); inp.setAttribute("data-ph","tipRow_ph");
+  if(value) inp.value=value; inp.addEventListener("input",persist);
+  var rm=document.createElement("button"); rm.type="button"; rm.className="rm-tip"; rm.textContent="✕";
+  rm.addEventListener("click",function(){ row.remove(); persist(); });
+  row.appendChild(inp); row.appendChild(rm); container.appendChild(row);
+  applyI18n(row);
+  return row;
+}
+
+/* ====== APPLIQUE LES TRADUCTIONS ====== */
+function applyI18n(root){
+  var d=dict();
+  $$("[data-i18n]",root).forEach(function(el){ var k=el.getAttribute("data-i18n"); if(d[k]!=null) el.textContent=d[k]; });
+  $$("[data-ph]",root).forEach(function(el){ var k=el.getAttribute("data-ph"); if(d[k]!=null) el.setAttribute("placeholder",d[k]); });
+  $$("[data-title]",root).forEach(function(el){ var k=el.getAttribute("data-title"); if(d[k]!=null) el.setAttribute("title",d[k]); });
+  $$("[data-tiptext]",root).forEach(function(el){ var k=el.getAttribute("data-tiptext"); if(d[k]!=null){ el.setAttribute("data-tip",d[k]); el.setAttribute("title",d[k]); } });
+}
+
+/* ====== LIGNES ====== */
+var TPL = { visit:"#tplVisit", activity:"#tplActivity", hotel:"#tplHotel", photo:"#tplPhoto" };
+function addRow(listEl,type,data){
+  var node=$(TPL[type]).content.firstElementChild.cloneNode(true);
+  applyI18n(node);
+  if(data){ $$("[data-f]",node).forEach(function(inp){ var k=inp.getAttribute("data-f"); if(data[k]!=null) inp.value=data[k]; }); }
+  $("[data-rm]",node).addEventListener("click",function(){ node.remove(); persist(); });
+  $$("[data-f]",node).forEach(function(inp){ inp.addEventListener("input",persist); });
+  var tipsC=$("[data-tips]",node);
+  if(tipsC){
+    var addTipBtn=$("[data-add-tip]",node);
+    if(addTipBtn) addTipBtn.addEventListener("click",function(){ addTipRow(tipsC,""); persist(); });
+    if(data && Array.isArray(data.tips) && data.tips.length){ data.tips.forEach(function(t){ addTipRow(tipsC,t); }); }
+    else if(!data){ addTipRow(tipsC,""); }
+  }
+  listEl.appendChild(node);
+  return node;
+}
+
+/* ====== ÉTAPES ====== */
+function addStep(data){
+  var node=$("#tplStep").content.firstElementChild.cloneNode(true);
+  applyI18n(node);
+  var stepsEl=$("#steps");
+
+  $$("[data-f]",node).forEach(function(inp){
+    if(data && data[inp.getAttribute("data-f")]!=null) inp.value=data[inp.getAttribute("data-f")];
+    inp.addEventListener("input",persist);
+  });
+  var ctry=$("[data-f=country]",node);
+  if(!ctry.value) ctry.value=($("#t_country").value||"").toUpperCase();
+
+  var placeInp=$("[data-f=place]",node);
+  function refreshHead(){
+    var v=placeInp.value.trim(); var titleEl=$(".title",node);
+    if(v){ titleEl.textContent=v; }
+    else { titleEl.innerHTML='<span class="placeholder">'+dict().newStep+'</span>'; }
+    var cc=(ctry.value||"").toUpperCase()||"CC";
+    $("[data-slug]",node).textContent = cc+"::"+(slugify(v)||"…");
+  }
+  node._refreshHead=refreshHead;
+  placeInp.addEventListener("input",refreshHead);
+  ctry.addEventListener("input",refreshHead);
+
+  // Autocomplétion du lieu
+  var acEl=$("[data-ac]",node);
+  placeInp.addEventListener("input",function(){
+    var q=placeInp.value.trim();
+    clearTimeout(node._acTimer);
+    if(q.length<2){ acEl.className="ac"; return; }
+    node._acTimer=setTimeout(function(){ geocode(q,LANG).then(function(list){ renderAc(node,acEl,list); }); },300);
+  });
+  placeInp.addEventListener("blur",function(){ setTimeout(function(){ acEl.className="ac"; },180); });
+  placeInp.addEventListener("keydown",function(e){ if(e.key==="Escape") acEl.className="ac"; });
+
+  $("[data-del]",node).addEventListener("click",function(){
+    if(confirm(dict().confirmDel)){ node.remove(); renumber(); persist(); }
+  });
+  $("[data-up]",node).addEventListener("click",function(){
+    var p=node.previousElementSibling; if(p) stepsEl.insertBefore(node,p); renumber(); persist();
+  });
+  $("[data-down]",node).addEventListener("click",function(){
+    var n=node.nextElementSibling; if(n) stepsEl.insertBefore(n,node); renumber(); persist();
+  });
+  $("[data-dup]",node).addEventListener("click",function(){
+    var copy=readStep(node); copy.place=(copy.place||"")+dict().copySuffix;
+    var added=addStep(copy); node.after(added); renumber(); persist();
+  });
+
+  $$("[data-add]",node).forEach(function(btn){
+    btn.addEventListener("click",function(){
+      addRow($("[data-list="+btn.getAttribute("data-add")+"]",node),btn.getAttribute("data-add"),null); persist();
+    });
+  });
+
+  if(data){
+    (data.visits||[]).forEach(function(v){ addRow($("[data-list=visit]",node),"visit",v); });
+    (data.activities||[]).forEach(function(a){ addRow($("[data-list=activity]",node),"activity",a); });
+    (data.hotels||[]).forEach(function(h){ addRow($("[data-list=hotel]",node),"hotel",h); });
+    (data.photos||[]).forEach(function(u){ addRow($("[data-list=photo]",node),"photo",{url:u}); });
+  }
+
+  stepsEl.appendChild(node);
+  refreshHead(); renumber();
+  return node;
+}
+
+function renumber(){
+  var steps=$$("#steps [data-step]");
+  steps.forEach(function(s,i){ $(".num",s).textContent=i+1; });
+  var d=dict();
+  $("#status").textContent = steps.length ? d.statusSaved.replace("{n}",steps.length) : d.statusEmpty;
+}
+
+/* ====== LECTURE ====== */
+function readRows(node,type){
+  return $$("[data-list="+type+"] [data-row]",node).map(function(r){
+    var o={}; $$("[data-f]",r).forEach(function(inp){ o[inp.getAttribute("data-f")]=inp.value.trim(); });
+    if($("[data-tips]",r)){ o.tips=$$("[data-tipinput]",r).map(function(i){return i.value.trim();}).filter(Boolean); }
+    return o;
+  });
+}
+function readStep(node){
+  var get=function(f){ var el=$("[data-f="+f+"]",node); return el?el.value.trim():""; };
+  return {
+    place:get("place"), country:(get("country")||"").toUpperCase(),
+    lat:get("lat"), lon:get("lon"), days:get("days"),
+    mode:get("mode"), km:get("km"), min:get("min"), tips:get("tips"),
+    visits:readRows(node,"visit"), activities:readRows(node,"activity"),
+    hotels:readRows(node,"hotel"),
+    photos:readRows(node,"photo").map(function(p){return p.url;}).filter(Boolean)
+  };
+}
+
+/* ====== JSON creator-v1 ====== */
+function buildJSON(){
+  var cc=($("#t_country").value||"").toUpperCase();
+  var steps=$$("#steps [data-step]").map(readStep);
+  var days_plan=steps.map(function(s,i){
+    var pcc=s.country||cc;
+    var lat=numOrNull(s.lat), lon=numOrNull(s.lon);
+    var leg=null;
+    if(i<steps.length-1){ leg={ transport_mode:s.mode||"car", distance_km:numOrNull(s.km), drive_min:numOrNull(s.min) }; }
+    return {
+      place:s.place, place_id:pcc+"::"+slugify(s.place), country:pcc,
+      coords:(lat!=null&&lon!=null)?[lat,lon]:null, suggested_days:numOrNull(s.days),
+      visits:s.visits.filter(function(v){return v.name||v.text;}).map(function(v){
+        return {name:v.name,text:v.text,visit_duration_min:numOrNull(v.dur),photo:v.photo||"",tips:v.tips||[]}; }),
+      activities:s.activities.filter(function(a){return a.name||a.text;}).map(function(a){
+        return {name:a.name,text:a.text,activity_duration_min:numOrNull(a.dur),photo:a.photo||"",tips:a.tips||[]}; }),
+      hotels:s.hotels.filter(function(h){return h.name||h.url;}).map(function(h){
+        return {name:h.name,affiliate_url:h.url||"",price:h.price||"",image_url:h.photo||"",text:h.text||""}; }),
+      photos:s.photos, place_tips:s.tips||"", to_next_leg:leg
+    };
+  });
+  return {
+    schema:"creator-v1", generated_at:new Date().toISOString(),
+    language:$("#t_lang").value, country:cc,
+    title:$("#t_title").value.trim(), subtitle:$("#t_subtitle").value.trim(),
+    cover_photo:$("#t_cover").value.trim(), notes:$("#t_notes").value.trim(),
+    author:{ name:$("#a_name").value.trim(), email:$("#a_email").value.trim(),
+             bio:$("#a_bio").value.trim(), website:$("#a_site").value.trim(), photo:$("#a_photo").value.trim() },
+    days_plan:days_plan,
+    _pending:{ seo:true, pacing:true, segments:true, variants:true }
+  };
+}
+
+/* ====== VALIDATION ====== */
+function validate(j){
+  var d=dict(), errs=[];
+  if(!j.title) errs.push(d.vTitle);
+  if(!j.country||j.country.length!==2) errs.push(d.vCountry);
+  if(!j.days_plan.length) errs.push(d.vStep);
+  j.days_plan.forEach(function(dp,i){ if(!dp.place) errs.push(d.vPlace.replace("{i}",i+1)); });
+  return errs;
+}
+
+/* ====== SAUVEGARDE LOCALE ====== */
+function snapshot(){
+  return {
+    meta:{ title:$("#t_title").value, subtitle:$("#t_subtitle").value, country:$("#t_country").value,
+           lang:$("#t_lang").value, cover:$("#t_cover").value, notes:$("#t_notes").value,
+           a_name:$("#a_name").value, a_email:$("#a_email").value, a_bio:$("#a_bio").value,
+           a_site:$("#a_site").value, a_photo:$("#a_photo").value, _id:currentId },
+    steps:$$("#steps [data-step]").map(readStep)
+  };
+}
+function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(snapshot())); }catch(e){} renumber(); scheduleMapRender(); }
+function clearSteps(){ $("#steps").innerHTML=""; _lastSig=""; _lastCount=-1; }
+function loadSnapshot(d){
+  var m=d.meta||{};
+  $("#t_title").value=m.title||""; $("#t_subtitle").value=m.subtitle||"";
+  $("#t_country").value=m.country||""; $("#t_lang").value=m.lang||LANG;
+  $("#t_cover").value=m.cover||""; $("#t_notes").value=m.notes||"";
+  $("#a_name").value=m.a_name||""; $("#a_email").value=m.a_email||"";
+  $("#a_bio").value=m.a_bio||""; $("#a_site").value=m.a_site||""; $("#a_photo").value=m.a_photo||"";
+  currentId = m._id || null;
+  clearSteps();
+  (d.steps||[]).forEach(function(s){ addStep(s); });
+}
+function restore(){
+  var raw=null; try{ raw=localStorage.getItem(STORE_KEY); }catch(e){}
+  if(!raw) return false;
+  var d; try{ d=JSON.parse(raw); }catch(e){ return false; }
+  loadSnapshot(d);
+  return (d.steps||[]).length>0;
+}
+
+/* ====== DASHBOARD LOCAL (plusieurs itinéraires sur l'appareil) ====== */
+function genId(){ return "it_"+Date.now()+"_"+Math.random().toString(36).slice(2,7); }
+function savedList(){ try{ return JSON.parse(localStorage.getItem(SAVED_KEY))||[]; }catch(e){ return []; } }
+function setSaved(arr){ try{ localStorage.setItem(SAVED_KEY, JSON.stringify(arr)); }catch(e){} }
+function fmtDate(ts){ try{ return new Date(ts).toLocaleDateString(LANG); }catch(e){ return ""; } }
+function saveToDashboard(){
+  var snap=snapshot();
+  if(!currentId){ currentId=genId(); snap.meta._id=currentId; }
+  var entry={ id:currentId, savedAt:Date.now(), title:(snap.meta.title||"").trim(),
+              country:(snap.meta.country||"").toUpperCase(), steps:(snap.steps||[]).length, snap:snap };
+  var list=savedList(), i=list.findIndex(function(e){return e.id===currentId;});
+  if(i>=0) list[i]=entry; else list.unshift(entry);
+  setSaved(list); persist(); renderDashboard(); toast(dict().savedOk,"ok");
+}
+function openSaved(id){
+  var e=savedList().find(function(x){return x.id===id;});
+  if(!e) return;
+  loadSnapshot(e.snap||{}); currentId=id; persist(); renderDashboard();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function duplicateSaved(id){
+  var e=savedList().find(function(x){return x.id===id;});
+  if(!e) return;
+  var copy=JSON.parse(JSON.stringify(e));
+  copy.id=genId(); copy.savedAt=Date.now(); copy.title=(copy.title||"")+dict().copySuffix;
+  if(copy.snap&&copy.snap.meta){ copy.snap.meta._id=copy.id; copy.snap.meta.title=copy.title; }
+  var list=savedList(); list.unshift(copy); setSaved(list); renderDashboard();
+}
+function deleteSaved(id){
+  if(!confirm(dict().confirmDelSaved)) return;
+  setSaved(savedList().filter(function(x){return x.id!==id;}));
+  if(currentId===id){ currentId=null; persist(); }
+  renderDashboard();
+}
+function resetItinerary(){
+  if(!confirm(dict().confirmReset)) return;
+  ["t_title","t_subtitle","t_country","t_cover","t_notes"].forEach(function(id){ $("#"+id).value=""; });
+  currentId=null; clearSteps(); addStep(null); persist();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function renderDashboard(){
+  var box=$("#dashList"), sec=$("#dash"); if(!box||!sec) return;
+  var list=savedList().slice().sort(function(a,b){return b.savedAt-a.savedAt;});
+  if(!list.length){ sec.style.display="none"; box.innerHTML=""; return; }
+  sec.style.display="block"; box.innerHTML="";
+  var d=dict();
+  list.forEach(function(e){
+    var row=document.createElement("div"); row.className="dash-item";
+    var meta=[ (e.country||""), d.dashSteps.replace("{n}", e.steps||0), fmtDate(e.savedAt) ].filter(Boolean).join(" · ");
+    row.innerHTML='<div class="di-main"><div class="di-title">'+escapeHtml(e.title||"—")+'</div><div class="di-meta">'+escapeHtml(meta)+'</div></div>';
+    var act=document.createElement("div"); act.className="di-actions";
+    [["",d.dashOpen,function(){openSaved(e.id);}],["",d.tDup,function(){duplicateSaved(e.id);}],["del",d.tDel,function(){deleteSaved(e.id);}]].forEach(function(b){
+      var btn=document.createElement("button"); btn.className="di-btn"+(b[0]?" "+b[0]:""); btn.textContent=b[1]; btn.addEventListener("click",b[2]); act.appendChild(btn);
+    });
+    row.appendChild(act); box.appendChild(row);
+  });
+}
+
+/* ====== COMPTE & CLOUD (Firebase Auth + Firestore) ======
+   Chemin Firestore : {COL}/{uid}/{SUB}/{itinId}. Adapte si besoin + règles de sécurité côté Firebase. */
+var FS = { COL:"creators", SUB:"itineraries" };
+var fbUser=null, _db=null;
+
+function fbReady(){ return typeof firebase!=="undefined" && firebase.apps && firebase.apps.length>0; }
+function fbConfig(){
+  if(window.__FIREBASE_CONFIG__ && window.__FIREBASE_CONFIG__.apiKey) return window.__FIREBASE_CONFIG__;
+  var C=window.ORT_CONFIG;
+  if(C){
+    var isPre=/oneroadtrip-preprod|localhost|127\.0\.0\.1/.test(location.hostname);
+    var c=isPre ? (C.PREPROD||{}) : (C.PROD||{});
+    if(c && c.apiKey) return c;
+    if(C.PREPROD && C.PREPROD.apiKey) return C.PREPROD;
+  }
+  return null;
+}
+function initFirebase(){
+  if(typeof firebase==="undefined") return false;
+  try{
+    if(!firebase.apps.length){
+      var cfg=fbConfig();
+      if(!cfg || !cfg.apiKey) return false;
+      firebase.initializeApp(cfg);
+    }
+    if(firebase.auth.Auth) firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(){});
+    _db=firebase.firestore();
+    return true;
+  }catch(e){ console.warn("[ORT-CREATEUR] Firebase:",e&&e.message); return false; }
+}
+function watchAuth(){
+  if(!fbReady()) return;
+  firebase.auth().onAuthStateChanged(function(u){ fbUser=u; updateAccountUI(); if(u) loadCloud(); else renderCloud([]); });
+}
+function signInGoogle(){
+  if(!fbReady()){ toast(dict().authUnavail,"err"); return; }
+  var p=new firebase.auth.GoogleAuthProvider(); p.setCustomParameters({prompt:"select_account"});
+  firebase.auth().signInWithPopup(p).then(closeAuth).catch(function(e){ authErr(e&&e.message||"Auth error"); });
+}
+function signOutFb(){ if(fbReady()) firebase.auth().signOut(); }
+
+var _authMode="login";
+function authErr(msg){ var e=$("#au_err"); if(!e) return; e.textContent=msg; e.style.display=msg?"block":"none"; }
+function closeAuth(){ var d=$("#dlgAuth"); if(d&&d.open) d.close(); }
+function renderAuthModal(){
+  var d=dict();
+  $("#auTitle").textContent = _authMode==="signup" ? d.authTitleSignup : d.authTitleLogin;
+  $("#au_do").textContent   = _authMode==="signup" ? d.authDoSignup   : d.authDoLogin;
+  $("#au_toggle").textContent = _authMode==="signup" ? d.authToggleToLogin : d.authToggleToSignup;
+  $("#au_pwd2wrap").style.display = _authMode==="signup" ? "block" : "none";
+  authErr("");
+}
+function openAuthModal(){
+  if(!fbReady()){ toast(dict().authUnavail,"err"); return; }
+  _authMode="login"; renderAuthModal();
+  var d=$("#dlgAuth"); if(d && d.showModal) d.showModal();
+}
+function doAuth(){
+  if(!fbReady()){ authErr(dict().authUnavail); return; }
+  var email=($("#au_email").value||"").trim(), pwd=$("#au_pwd").value||"";
+  if(!email){ authErr(dict().authNeedEmail); return; }
+  if(!pwd){ authErr(dict().authPwd); return; }
+  var btn=$("#au_do"), lbl=btn.textContent; btn.disabled=true; btn.textContent=dict().sending;
+  var done=function(){ btn.disabled=false; btn.textContent=lbl; closeAuth(); };
+  var fail=function(e){ btn.disabled=false; btn.textContent=lbl; authErr(e&&e.message||"Error"); };
+  if(_authMode==="signup"){
+    if(pwd!==($("#au_pwd2").value||"")){ btn.disabled=false; btn.textContent=lbl; authErr(dict().authErrPwd2); return; }
+    firebase.auth().createUserWithEmailAndPassword(email,pwd).then(function(cred){
+      try{ if(cred.user && cred.user.sendEmailVerification) cred.user.sendEmailVerification(); }catch(e){}
+      done();
+    }).catch(fail);
+  } else {
+    firebase.auth().signInWithEmailAndPassword(email,pwd).then(done).catch(fail);
+  }
+}
+function forgotPwd(){
+  if(!fbReady()){ authErr(dict().authUnavail); return; }
+  var email=($("#au_email").value||"").trim();
+  if(!email){ authErr(dict().authNeedEmail); return; }
+  firebase.auth().sendPasswordResetEmail(email).then(function(){ authErr(""); toast(dict().authResetSent,"ok"); })
+    .catch(function(e){ authErr(e&&e.message||"Error"); });
+}
+function updateAccountUI(){
+  var el=$("#acct"); if(!el) return; var d=dict();
+  el.innerHTML="";
+  if(fbUser){
+    var em=document.createElement("span"); em.className="acct-email"; em.textContent=fbUser.email||fbUser.displayName||"";
+    var b=document.createElement("button"); b.className="acct-btn"; b.textContent=d.signOut; b.addEventListener("click",signOutFb);
+    el.appendChild(em); el.appendChild(b);
+  } else {
+    var bi=document.createElement("button"); bi.className="acct-btn primary"; bi.textContent=d.signIn; bi.addEventListener("click",openAuthModal);
+    el.appendChild(bi);
+  }
+}
+
+/* Envoi vers Firestore sous l'uid */
+function sendToCloud(){
+  var j=buildJSON(), errs=validate(j);
+  if(errs.length){ toast(dict().missing+errs.join(", "),"err"); return; }
+  if(!fbReady()){ toast(dict().authUnavail,"err"); return; }
+  if(!fbUser){ toast(dict().loginToSend,"err"); openAuthModal(); return; }
+  if(!currentId) currentId=genId();
+  var btn=$("#btnSend"), lbl=btn.textContent; btn.disabled=true; btn.textContent=dict().sending;
+  download(j); // copie de sécurité locale
+  try{ sendEmail(j, (j.author&&j.author.email)||"").catch(function(){}); }catch(e){}  // email en parallèle
+  var ref=_db.collection(FS.COL).doc(fbUser.uid).collection(FS.SUB).doc(currentId);
+  ref.set({
+    itinerary:j, snap:snapshot(),
+    title:j.title||"", country:j.country||"", steps:j.days_plan.length,
+    author:j.author||{}, status:"sent",
+    updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+  },{merge:true}).then(function(){
+    btn.disabled=false; btn.textContent=lbl; toast(dict().sentCloud,"ok"); persist(); loadCloud();
+  }).catch(function(e){
+    btn.disabled=false; btn.textContent=lbl; toast(dict().sendErrCloud+" "+(e&&e.code||""),"err"); console.error(e);
+  });
+}
+function loadCloud(){
+  if(!fbReady()||!fbUser){ renderCloud([]); return; }
+  _db.collection(FS.COL).doc(fbUser.uid).collection(FS.SUB).orderBy("updatedAt","desc").get().then(function(snap){
+    var arr=[]; snap.forEach(function(doc){ var x=doc.data()||{};
+      arr.push({ id:doc.id, title:x.title||"", country:x.country||"", steps:x.steps||0, snap:x.snap||null,
+                 updatedAt:(x.updatedAt&&x.updatedAt.toMillis)?x.updatedAt.toMillis():Date.now() }); });
+    renderCloud(arr);
+  }).catch(function(e){ console.error(e); renderCloud([]); });
+}
+function renderCloud(arr){
+  var sec=$("#cloud"), box=$("#cloudList"); if(!sec||!box) return;
+  if(!fbUser || !arr || !arr.length){ sec.style.display="none"; box.innerHTML=""; return; }
+  sec.style.display="block"; box.innerHTML=""; var d=dict();
+  arr.forEach(function(e){
+    var row=document.createElement("div"); row.className="dash-item";
+    var meta=[ (e.country||""), d.dashSteps.replace("{n}", e.steps||0), fmtDate(e.updatedAt) ].filter(Boolean).join(" · ");
+    row.innerHTML='<div class="di-main"><div class="di-title">'+escapeHtml(e.title||"—")+'</div><div class="di-meta">'+escapeHtml(meta)+'</div></div>';
+    var act=document.createElement("div"); act.className="di-actions";
+    [["",d.dashOpen,function(){ openCloud(e); }],["del",d.tDel,function(){ deleteCloud(e.id); }]].forEach(function(b){
+      var btn=document.createElement("button"); btn.className="di-btn"+(b[0]?" "+b[0]:""); btn.textContent=b[1]; btn.addEventListener("click",b[2]); act.appendChild(btn);
+    });
+    row.appendChild(act); box.appendChild(row);
+  });
+}
+function openCloud(e){
+  if(!e.snap){ toast(dict().sendErrCloud,"err"); return; }
+  loadSnapshot(e.snap); currentId=e.id; persist();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function deleteCloud(id){
+  if(!fbReady()||!fbUser) return;
+  if(!confirm(dict().confirmDelSaved)) return;
+  _db.collection(FS.COL).doc(fbUser.uid).collection(FS.SUB).doc(id).delete().then(loadCloud).catch(function(e){ console.error(e); });
+}
+
+/* ====== TÉLÉCHARGEMENT ====== */
+function download(j){
+  var name=(slugify(j.title)||"itineraire")+"_"+(j.country||"xx").toLowerCase()+".json";
+  var blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },1500);
+}
+
+/* ====== EMAIL ====== */
+function sendEmail(j,replyEmail){
+  if(typeof emailjs==="undefined") return Promise.reject(new Error("EmailJS indisponible"));
+  emailjs.init({publicKey:EMAILJS.publicKey});
+  var jsonStr=JSON.stringify(j,null,2);
+  var sizeKb=Math.round(jsonStr.length/1024);
+  return emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
+    name: j.author.name || "Créateur",
+    email: replyEmail || j.author.email || "",
+    title: "Itinéraire créateur — "+(j.title||"sans titre")+" ("+(j.country||"")+", "+j.days_plan.length+" étapes, ~"+sizeKb+"Ko)",
+    message: jsonStr
+  });
+}
+
+/* ====== CHANGEMENT DE LANGUE ====== */
+function setLang(lang){
+  if(SUPPORTED.indexOf(lang)<0) lang="en";
+  LANG=lang;
+  try{ localStorage.setItem(LANG_KEY,lang); }catch(e){}
+  document.documentElement.setAttribute("lang",lang);
+  document.title=dict().docTitle;
+  applyI18n(document);
+  $$("#steps [data-step]").forEach(function(s){ if(s._refreshHead) s._refreshHead(); });
+  if(typeof renderDashboard==="function") renderDashboard();
+  if(typeof updateAccountUI==="function") updateAccountUI();
+  if(typeof loadCloud==="function" && fbUser) loadCloud();
+  renumber();
+}
+
+/* ====== INIT ====== */
+document.addEventListener("DOMContentLoaded",function(){
+  if(typeof L!=="undefined" && L.Icon && L.Icon.Default){
+    delete L.Icon.Default.prototype._getIconUrl;
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl:"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+      iconUrl:"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+      shadowUrl:"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png"
+    });
+  }
+  $("#uiLang").value=LANG;
+  setLang(LANG);
+
+  var had=restore();
+  if(!had){ if(!$("#t_lang").value) $("#t_lang").value=LANG; addStep(null); }
+  renumber();
+  scheduleMapRender();
+
+  ["t_title","t_subtitle","t_country","t_lang","t_cover","t_notes",
+   "a_name","a_email","a_bio","a_site","a_photo"].forEach(function(id){
+    var el=$("#"+id); if(el) el.addEventListener("input",persist);
+  });
+
+  $("#uiLang").addEventListener("change",function(){ setLang(this.value); });
+
+  $("#addStep").addEventListener("click",function(){
+    var n=addStep(null); n.scrollIntoView({behavior:"smooth",block:"center"}); persist();
+  });
+
+  $("#btnReset").addEventListener("click",resetItinerary);
+  $("#btnSave").addEventListener("click",saveToDashboard);
+  renderDashboard();
+
+  if(initFirebase()) watchAuth();
+  updateAccountUI();
+
+  $("#au_do").addEventListener("click",doAuth);
+  $("#au_google").addEventListener("click",signInGoogle);
+  $("#au_forgot").addEventListener("click",forgotPwd);
+  $("#au_toggle").addEventListener("click",function(){ _authMode=(_authMode==="signup"?"login":"signup"); renderAuthModal(); });
+  $("#au_close").addEventListener("click",closeAuth);
+  $("#au_pwd").addEventListener("keydown",function(e){ if(e.key==="Enter") doAuth(); });
+
+  $("#btnDownload").addEventListener("click",function(){
+    var j=buildJSON(), errs=validate(j);
+    if(errs.length){ toast(dict().missing+errs.join(", "),"err"); return; }
+    download(j); toast(dict().downloaded,"ok");
+  });
+
+  $("#btnSend").addEventListener("click",sendToCloud);
+});
+</script>
+</body>
+</html>
