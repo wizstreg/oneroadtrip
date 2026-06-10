@@ -272,30 +272,24 @@ async function callOpenRouter(content) {
 
 // ===== PARSE =====
 async function parseEmail(content) {
-  // 1. Gemini
-  if (GEMINI_KEY) {
+  // Ordre des fournisseurs : Gemini, puis Groq, puis OpenRouter
+  const providers = [];
+  if (GEMINI_KEY) providers.push(['Gemini', () => callGemini(content)]);
+  if (GROQ_KEY) providers.push(['Groq', () => callGroq(content)]);
+  if (OPENROUTER_KEY) providers.push(['OpenRouter', () => callOpenRouter(content)]);
+
+  for (const [name, call] of providers) {
     try {
-      return await callGemini(content);
+      const result = await call();
+      // On valide le JSON ICI : une réponse coupée ou vide compte comme un échec
+      const data = JSON.parse(cleanJSON(result.text));
+      return { data, model: result.model };
     } catch (e) {
-      console.warn('❌ Gemini échoué:', e.message);
+      console.warn(`❌ ${name} échoué:`, e.message);
     }
   }
 
-  // 2. Groq
-  if (GROQ_KEY) {
-    try {
-      return await callGroq(content);
-    } catch (e) {
-      console.warn('❌ Groq échoué:', e.message);
-    }
-  }
-
-  // 3. OpenRouter
-  if (OPENROUTER_KEY) {
-    return await callOpenRouter(content);
-  }
-  
-  throw new Error('Aucune API configurée');
+  throw new Error('Aucune réponse exploitable (toutes les IA ont échoué)');
 }
 
 function cleanJSON(text) {
@@ -455,9 +449,9 @@ export default async (request, context) => {
       return new Response(JSON.stringify({ success: false, error: `Quota atteint (${quota.limit}/mois)`, usage: quota }), { status: 429, headers });
     }
 
-    // Parse
+    // Parse (le JSON est déjà validé dans parseEmail)
     const result = await parseEmail(content);
-    const data = JSON.parse(cleanJSON(result.text));
+    const data = result.data;
     
     data.id = `booking_${Date.now()}`;
     data.source = 'ai_parser';

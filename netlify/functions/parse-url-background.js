@@ -589,36 +589,27 @@ export default async (request, context) => {
     
     await updateJobStatus(uid, jobId, 'analyzing');
     
-    // Try Gemini first
-    let result;
-    if (GEMINI_KEY) {
+    // Providers en cascade ; un JSON coupé ou vide compte comme un échec et passe au suivant
+    const providers = [];
+    if (GEMINI_KEY) providers.push(['Gemini', () => callGemini(content, language)]);
+    if (GROQ_KEY) providers.push(['Groq', () => callGroq(content, language)]);
+    if (OPENROUTER_KEY) providers.push(['OpenRouter', () => callOpenRouter(content, language)]);
+
+    let data, usedModel;
+    for (const [name, call] of providers) {
       try {
-        result = await callGemini(content, language);
+        const result = await call();
+        data = JSON.parse(cleanJSON(result.text)); // validation ici
+        usedModel = result.model;
+        break;
       } catch (e) {
-        console.warn('❌ Gemini failed:', e.message);
+        console.warn(`❌ ${name} failed:`, e.message);
       }
     }
 
-    // Fallback to Groq
-    if (!result && GROQ_KEY) {
-      try {
-        result = await callGroq(content, language);
-      } catch (e) {
-        console.warn('❌ Groq failed:', e.message);
-      }
+    if (!data) {
+      throw new Error('No usable AI response (all providers failed)');
     }
-
-    // Fallback to OpenRouter
-    if (!result && OPENROUTER_KEY) {
-      result = await callOpenRouter(content, language);
-    }
-    
-    if (!result) {
-      throw new Error('No AI API available');
-    }
-    
-    // Parse and validate
-    const data = JSON.parse(cleanJSON(result.text));
     const enhanced = validateAndEnhance(data, url);
     const places = generatePlacesFromItin(enhanced);
     
@@ -626,7 +617,7 @@ export default async (request, context) => {
     await updateJobStatus(uid, jobId, 'completed', {
       data: enhanced,
       places: places,
-      model: result.model,
+      model: usedModel,
       source_url: url
     });
     
