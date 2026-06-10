@@ -697,8 +697,12 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         <input type="text" id="fieldRef" placeholder="N° de confirmation">
       </div>
       <div class="form-group">
-        <label data-i18n="price">Prix (€)</label>
+        <label data-i18n="price">Prix</label>
         <input type="number" id="fieldPrice" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Devise</label>
+        <select id="fieldCurrency"></select>
       </div>
     </div>
     
@@ -795,7 +799,8 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       <div style="display:grid;grid-template-columns:1fr 1fr 100px;gap:6px;margin-bottom:8px">
         <input type="date" id="editFieldDateStart" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
         <input type="date" id="editFieldDateEnd" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
-        <input type="number" id="editFieldPrice" placeholder="Prix €" step="0.01" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <input type="number" id="editFieldPrice" placeholder="Prix" step="0.01" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <select id="editFieldCurrency" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem"></select>
       </div>
       
       <!-- Ref + Adresse -->
@@ -1416,6 +1421,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     $('editFieldDateEnd').value = booking.date_end || booking.dateEnd || '';
     $('editFieldRef').value = booking.reference || '';
     $('editFieldPrice').value = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : '';
+    populateCurrencySelect('editFieldCurrency', booking.currency || (booking.price && booking.price.currency));
     $('editFieldAddress').value = booking.address || '';
     $('editFieldNotes').value = booking.notes || '';
     
@@ -1457,6 +1463,20 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   let editMode = 'edit'; // 'edit' ou 'parse'
   let parsedData = null; // Données parsées par l'IA (pour les flights, etc.)
   
+  // Remplit un <select> de devises depuis ORT_CURRENCY et sélectionne une valeur
+  function populateCurrencySelect(id, selected) {
+    const sel = document.getElementById(id);
+    if (!sel || !window.ORT_CURRENCY) return;
+    const tripCur = ORT_CURRENCY.getTripCurrency() || 'EUR';
+    const val = String(selected || tripCur).toUpperCase();
+    sel.innerHTML = ORT_CURRENCY.orderedCodes().map(c => {
+      const cur = ORT_CURRENCY.CURRENCIES[c];
+      const label = c + (cur && cur.symbol && cur.symbol !== c ? ' (' + cur.symbol + ')' : '');
+      return '<option value="' + c + '"' + (c === val ? ' selected' : '') + '>' + label + '</option>';
+    }).join('');
+    sel.value = val;
+  }
+
   async function openParseModal(data, preview = null) {
     // Vérifier si le disclaimer a été accepté
     if (!disclaimerAccepted) {
@@ -1547,6 +1567,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     $('editFieldDateStart').value = data.date_start || '';
     $('editFieldDateEnd').value = data.date_end || '';
     $('editFieldPrice').value = data.price || '';
+    populateCurrencySelect('editFieldCurrency', data.currency);
     $('editFieldRef').value = data.reference || '';
     $('editFieldAddress').value = data.address || '';
     $('editFieldNotes').value = data.notes || '';
@@ -1885,6 +1906,21 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     }
     
     const totalPrice = $('editFieldPrice').value ? parseFloat($('editFieldPrice').value) : null;
+
+    // === DEVISE & CONVERSION vers la devise du voyage ===
+    const tripCur = (window.ORT_CURRENCY && ORT_CURRENCY.getTripCurrency()) || 'EUR';
+    const fromCur = String($('editFieldCurrency')?.value || tripCur).toUpperCase();
+    let finalPrice = totalPrice;
+    let priceOriginal = null;
+    if (totalPrice != null && fromCur !== tripCur.toUpperCase() && window.ORT_CURRENCY && ORT_CURRENCY.convert) {
+      const conv = await ORT_CURRENCY.convert(totalPrice, fromCur, tripCur);
+      if (conv != null) {
+        finalPrice = Math.round(conv * 100) / 100;
+        priceOriginal = { amount: totalPrice, currency: fromCur };
+      } else {
+        showToast('Conversion indisponible, montant gardé en ' + fromCur, 'error');
+      }
+    }
     
     if (editMode === 'parse') {
       // Mode PARSING : créer une nouvelle réservation
@@ -1895,7 +1931,9 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         date_start: $('editFieldDateStart').value || null,
         date_end: $('editFieldDateEnd').value || null,
         reference: $('editFieldRef').value.trim() || null,
-        price: totalPrice,
+        price: finalPrice,
+        currency: tripCur,
+        price_original: priceOriginal,
         address: $('editFieldAddress').value.trim() || null,
         notes: $('editFieldNotes').value.trim() || null,
         addedAt: Date.now(),
@@ -1966,7 +2004,9 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         date_start: $('editFieldDateStart').value || null,
         date_end: $('editFieldDateEnd').value || null,
         reference: $('editFieldRef').value.trim() || null,
-        price: totalPrice,
+        price: finalPrice,
+        currency: tripCur,
+        price_original: priceOriginal,
         address: $('editFieldAddress').value.trim() || null,
         notes: $('editFieldNotes').value.trim() || null,
         addedAt: editingBooking?.addedAt || Date.now(),
@@ -2464,6 +2504,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         date_end: result.data.date_end || '',
         reference: result.data.confirmation_number || '',
         price: result.data.price?.amount || null,
+        currency: result.data.price?.currency || null,
         address: [result.data.address, result.data.city, result.data.country].filter(Boolean).join(', '),
         notes: result.data.notes || '',
         // Garder les infos supplémentaires
@@ -2538,6 +2579,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
   function showManualForm() {
     $('cardForm').style.display = 'block';
     $('resultPreview').classList.remove('show');
+    populateCurrencySelect('fieldCurrency');
     $('fieldName').focus();
   }
   
@@ -2575,6 +2617,21 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     }
     
     const totalPrice = $('fieldPrice').value ? parseFloat($('fieldPrice').value) : null;
+
+    // === DEVISE & CONVERSION vers la devise du voyage ===
+    const tripCur = (window.ORT_CURRENCY && ORT_CURRENCY.getTripCurrency()) || 'EUR';
+    const fromCur = String($('fieldCurrency')?.value || tripCur).toUpperCase();
+    let finalPrice = totalPrice;
+    let priceOriginal = null;
+    if (totalPrice != null && fromCur !== tripCur.toUpperCase() && window.ORT_CURRENCY && ORT_CURRENCY.convert) {
+      const conv = await ORT_CURRENCY.convert(totalPrice, fromCur, tripCur);
+      if (conv != null) {
+        finalPrice = Math.round(conv * 100) / 100;
+        priceOriginal = { amount: totalPrice, currency: fromCur };
+      } else {
+        showToast('Conversion indisponible, montant gardé en ' + fromCur, 'error');
+      }
+    }
     
     const booking = {
       id: `booking_${Date.now()}`,
@@ -2583,7 +2640,9 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
       date_start: $('fieldDateStart').value || null,
       date_end: $('fieldDateEnd').value || null,
       reference: $('fieldRef').value.trim() || null,
-      price: totalPrice,
+      price: finalPrice,
+      currency: tripCur,
+      price_original: priceOriginal,
       address: $('fieldAddress').value.trim() || null,
       notes: $('fieldNotes').value.trim() || null,
       addedAt: Date.now(),

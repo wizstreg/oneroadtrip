@@ -125,6 +125,41 @@
     return getSymbol(cur);
   }
 
+  // === CONVERSION (API de taux gratuite, sans cle) ===
+  const FX_BASES = [
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies',
+    'https://latest.currency-api.pages.dev/v1/currencies'
+  ];
+
+  async function fetchRate(from, to) {
+    const f = String(from || '').toLowerCase();
+    const t = String(to || '').toLowerCase();
+    if (!f || !t) return null;
+    for (const base of FX_BASES) {
+      try {
+        const res = await fetch(base + '/' + f + '.json');
+        if (!res.ok) continue;
+        const data = await res.json();
+        const rate = data && data[f] && data[f][t];
+        if (typeof rate === 'number' && isFinite(rate)) return rate;
+      } catch (e) { /* on tente la base suivante */ }
+    }
+    return null;
+  }
+
+  // Convertit un montant. Retourne le montant converti, ou null si taux indispo.
+  async function convert(amount, from, to) {
+    const a = Number(amount);
+    if (!isFinite(a)) return null;
+    const f = String(from || '').toUpperCase();
+    const tt = String(to || '').toUpperCase();
+    if (!f || !tt) return null;
+    if (f === tt) return a;
+    const rate = await fetchRate(f, tt);
+    if (rate == null) return null;
+    return a * rate;
+  }
+
   // === MODALE DE CHOIX ===
   function buildOptions() {
     return orderedCodes().map(code => {
@@ -195,7 +230,8 @@
     ensureTripCurrency,
     getSymbol,
     format,
-    symbolForBooking
+    symbolForBooking,
+    convert
   };
 
   global.ORT_CURRENCY = ORT_CURRENCY;
