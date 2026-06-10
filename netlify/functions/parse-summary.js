@@ -230,7 +230,7 @@ async function callGemini(title, stepsText, language) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.6, maxOutputTokens: 3000, responseMimeType: 'application/json' }
+        generationConfig: { temperature: 0.6, maxOutputTokens: 16384, responseMimeType: 'application/json', thinkingConfig: { thinkingLevel: 'low' } }
       })
     });
     if (res.status === 429 || res.status >= 500) {

@@ -36,74 +36,6 @@ const CATEGORIES = {
   activity: '🎯', visit: '🏛️', show: '🎭'
 };
 
-// ===== TAUX DE CHANGE (fawazahmed0, gratuit, sans cle) =====
-// Primaire jsDelivr, fallback Cloudflare Pages. Taux quotidiens.
-const FX_PRIMARY = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies';
-const FX_FALLBACK = 'https://latest.currency-api.pages.dev/v1/currencies';
-
-async function fetchRate(from, to) {
-  const f = String(from || '').toLowerCase();
-  const t = String(to || '').toLowerCase();
-  if (!f || !t) return null;
-
-  for (const base of [FX_PRIMARY, FX_FALLBACK]) {
-    try {
-      const res = await fetch(`${base}/${f}.json`);
-      if (!res.ok) continue;
-      const data = await res.json();
-      const rate = data && data[f] && data[f][t];
-      if (typeof rate === 'number' && isFinite(rate)) return rate;
-    } catch (e) {
-      console.warn('FX fetch echec', base, e.message);
-    }
-  }
-  return null;
-}
-
-// Convertit data.price vers targetCurrency. Conserve l'original.
-async function applyCurrencyConversion(data, targetCurrency) {
-  const target = String(targetCurrency || '').toUpperCase();
-  if (!target) return;
-
-  const hasPrice = data.price && data.price.amount != null && !isNaN(parseFloat(data.price.amount));
-  if (!hasPrice) return;
-
-  const original = {
-    amount: parseFloat(data.price.amount),
-    currency: String(data.price.currency || '').toUpperCase()
-  };
-
-  if (!original.currency) {
-    data.fx = { converted: false, reason: 'unknown_source_currency', to: target };
-    return;
-  }
-  if (original.currency === target) {
-    data.fx = { converted: false, reason: 'same_currency', from: original.currency, to: target };
-    return;
-  }
-
-  const rate = await fetchRate(original.currency, target);
-  if (rate == null) {
-    // On ne fausse rien: on garde l'original et on signale.
-    data.fx = { converted: false, reason: 'rate_unavailable', from: original.currency, to: target };
-    return;
-  }
-
-  data.price_original = original;
-  data.price = {
-    amount: Math.round(original.amount * rate * 100) / 100,
-    currency: target
-  };
-  data.fx = {
-    converted: true,
-    rate,
-    from: original.currency,
-    to: target,
-    source: 'fawazahmed0',
-    date: new Date().toISOString().slice(0, 10)
-  };
-}
-
 const PROMPT = `Tu extrais les infos de réservations voyage en JSON.
 
 RÈGLES:
@@ -224,7 +156,7 @@ async function callGemini(content) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: PROMPT + '\n\n' + content }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+      generationConfig: { temperature: 0.1, maxOutputTokens: 16384, thinkingConfig: { thinkingLevel: 'low' } }
     })
   });
   
@@ -505,7 +437,7 @@ export default async (request, context) => {
   }
 
   try {
-    const { content, targetCurrency } = await request.json();
+    const { content } = await request.json();
     
     if (!content || content.length < 50) {
       return new Response(JSON.stringify({ success: false, error: 'Contenu trop court' }), { status: 400, headers });
@@ -530,9 +462,6 @@ export default async (request, context) => {
     data.id = `booking_${Date.now()}`;
     data.source = 'ai_parser';
     data.created_at = new Date().toISOString();
-
-    // Conversion dans la devise du voyage (si fournie)
-    await applyCurrencyConversion(data, targetCurrency);
 
     return new Response(JSON.stringify({
       success: true,

@@ -137,7 +137,8 @@ async function callGemini(photoBase64) {
       }],
       generationConfig: {
         temperature: 0.1, // Très bas pour extraction précise
-        maxOutputTokens: 800
+        maxOutputTokens: 8192,
+        thinkingConfig: { thinkingLevel: 'low' }
       }
     })
   });

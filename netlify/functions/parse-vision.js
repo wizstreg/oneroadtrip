@@ -180,7 +180,8 @@ async function callGemini(photoBase64, prompt, language) {
       }],
       generationConfig: {
         temperature: 0.7,
-        maxOutputTokens: 600
+        maxOutputTokens: 8192,
+        thinkingConfig: { thinkingLevel: 'low' }
       }
     })
   });
