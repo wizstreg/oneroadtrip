@@ -1006,14 +1006,16 @@ body.view-itin-only .group-badge {
 /* Icône réorganisation en mode plein écran (BAS GAUCHE) */
 #reorgFullscreenBtn{
   display:none;
-  width:40px;            
+  width:auto;
   height:40px;
+  padding:0 14px;
+  white-space:nowrap;
   border-radius:8px;     
   background:#fff;       
   color:#dc2626;         
   border:2px solid #cfd6e4; 
   box-shadow:0 2px 6px rgba(0,0,0,.12);
-  font-size:20px;        
+  font-size:14px;        
   font-weight:bold;
   cursor:pointer;
   transition:all .2s;
@@ -2446,6 +2448,7 @@ input[type="number"] {
 <script src="/js/ort-config.js"></script>
 <script src="/js/ort-partners.js"></script>
 <script src="/js/ort-widgets.js"></script>
+<script src="/js/ort-currency.js"></script>
 <script src="/js/ort-budget.js"></script>
 <script src="/js/ort-utils.js"></script>
 <script src="/js/ort-trip-calc.js"></script>
@@ -2502,8 +2505,21 @@ if (typeof t !== 'function') {
 (function(){
   const HEADER_I18N = {
     dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' },
+    myTrips: { fr: 'Vos voyages', en: 'Your trips', es: 'Tus viajes', it: 'I tuoi viaggi', pt: 'As tuas viagens', ar: 'رحلاتك' },
+    startDateShort: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' },
     tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' },
     travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' },
+    printBtn: { fr: '🖨️ Imprimer', en: '🖨️ Print', es: '🖨️ Imprimir', it: '🖨️ Stampa', pt: '🖨️ Imprimir', ar: '🖨️ طباعة' },
+    bookingsBtn: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' },
+    bookingAddTypes: { fr: '➕ Intégrer une nouvelle réservation (hôtels, guides, avions)', en: '➕ Add a new booking (hotels, guides, flights)', es: '➕ Añadir una nueva reserva (hoteles, guías, vuelos)', it: '➕ Aggiungi una nuova prenotazione (hotel, guide, voli)', pt: '➕ Adicionar uma nova reserva (hotéis, guias, voos)', ar: '➕ إضافة حجز جديد (فنادق، مرشدون، رحلات جوية)' },
+    bookingView: { fr: '📋 Voir les réservations', en: '📋 View bookings', es: '📋 Ver las reservas', it: '📋 Vedi le prenotazioni', pt: '📋 Ver as reservas', ar: '📋 عرض الحجوزات' },
+    bookingBudget: { fr: '💰 Budget', en: '💰 Budget', es: '💰 Presupuesto', it: '💰 Budget', pt: '💰 Orçamento', ar: '💰 الميزانية' },
+    editMapBtn: { fr: 'Modifier', en: 'Edit', es: 'Editar', it: 'Modifica', pt: 'Editar', ar: 'تعديل' },
+    reorgAddManual: { fr: '➕ Ajouter une étape non présente dans nos lieux listés', en: '➕ Add a stop not in our listed places', es: '➕ Añadir una etapa que no está en nuestros lugares listados', it: '➕ Aggiungi una tappa non presente nei nostri luoghi elencati', pt: '➕ Adicionar uma etapa não presente nos nossos locais listados', ar: '➕ إضافة مرحلة غير موجودة في أماكننا المدرجة' },
+    insertWhereTitle: { fr: 'Où insérer « {name} » ?', en: 'Where to insert "{name}"?', es: '¿Dónde insertar «{name}»?', it: 'Dove inserire «{name}»?', pt: 'Onde inserir «{name}»?', ar: 'أين تُدرج «{name}»؟' },
+    insertAtStart: { fr: 'Au début', en: 'At the start', es: 'Al inicio', it: "All'inizio", pt: 'No início', ar: 'في البداية' },
+    insertAfterLbl: { fr: 'Après', en: 'After', es: 'Después de', it: 'Dopo', pt: 'Depois de', ar: 'بعد' },
+    insertCancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' },
     shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' },
     importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' },
     customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' },
@@ -2696,7 +2712,7 @@ row.style.marginBottom = '0';   // ↓ supprime l’espace dessous
     // 5) Le bouton "Dashboard" (centré, même style header)
     var a = document.createElement('a');
     a.href = 'dashboard_user.html?lang=' + lang;
-    a.innerHTML = t('dashboard');
+    a.innerHTML = t('myTrips');
     a.className = 'hdr-btn';
     // renforts visuels au cas où hdr-btn n’existe pas partout
     a.style.textDecoration = 'none';
@@ -2733,23 +2749,49 @@ row.style.marginBottom = '0';   // ↓ supprime l’espace dessous
     var d = document.getElementById('rtStartDate');
 if(!d){
   d = document.createElement('input');
-  d.type = 'date';
   d.id   = 'rtStartDate';
   // Ajouter la langue du document pour forcer le calendrier natif à l'utiliser
   const lang = (document.documentElement.lang || 'fr').slice(0, 2);
   d.lang = lang;
-  // Priorité: URL departure > localStorage
+  // Priorité: URL departure > localStorage. Pas de date du jour par défaut.
   const urlDeparture = new URLSearchParams(location.search).get('departure') || '';
-  d.value = urlDeparture || localStorage.getItem('ort.rtStartDate') || '';
+  const initVal = urlDeparture || localStorage.getItem('ort.rtStartDate') || '';
   Object.assign(d.style, {
     padding:'6px 10px', borderRadius:'10px',
-    border:'1px solid #c3d6b6', color:'#113f7a'
+    border:'1px solid #c3d6b6', color:'#113f7a', cursor:'pointer'
   });
   // i18n titre 6 langues
-  d.title = t('startDate');
+  d.title = t('startDateShort');
+
+  // Un <input type=date> n'accepte pas de placeholder texte.
+  // Astuce: tant que vide -> type=text affichant "Date de départ".
+  // Au clic -> bascule type=date et ouvre le calendrier natif.
+  const PLACEHOLDER = t('startDateShort');
+  function showPlaceholder(){
+    d.type = 'text';
+    d.readOnly = true;
+    d.value = PLACEHOLDER;
+  }
+  function showDateField(open){
+    d.readOnly = false;
+    d.type = 'date';
+    d.value = (window.state && window.state.startDateStr) ? window.state.startDateStr
+              : (localStorage.getItem('ort.rtStartDate') || '');
+    if(open){ try{ d.showPicker && d.showPicker(); }catch(e){} }
+  }
+  if(initVal){
+    d.type = 'date';
+    d.value = initVal;
+  } else {
+    showPlaceholder();
+  }
+  d.addEventListener('mousedown', function(ev){ if(d.type==='text'){ ev.preventDefault(); showDateField(true); } });
+  d.addEventListener('focus',     function(){ if(d.type==='text'){ showDateField(true); } });
+  d.addEventListener('blur',      function(){ if(!d.value){ showPlaceholder(); } });
 }
 // écouteurs (saisie immédiate + validation)
 function onDateChange(){
+  if(d.type!=='date') return;
   localStorage.setItem('ort.rtStartDate', d.value || '');
   if (window.state){ state.startDateStr = d.value || ''; renderRows(); }
 }
@@ -2859,7 +2901,7 @@ if (typeof initBookingManager === 'function') {
     const normalized = {
       id: booking.id || `b_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: booking.type,
-      category: booking.category || 'other',
+      category: booking.category || (typeof detectBookingCategory === 'function' ? detectBookingCategory(booking) : 'other'),
       name: booking.name,
       confirmationNumber: booking.confirmation_number,
       checkin: booking.date_start,
@@ -3196,7 +3238,8 @@ Object.assign(toolsBtnRow.style, {
   border: '1px solid #c3d6b6',
   cursor: 'pointer',
   fontWeight: '600',
-  fontSize: '14px'
+  fontSize: '14px',
+  display: 'none'   // MENU OUTILS MASQUÉ (réactiver: supprimer cette ligne)
 });
 
 // Handler pour ouvrir le popup
@@ -3232,7 +3275,7 @@ const pdfBtnRow = document.createElement('button');
 pdfBtnRow.id = 'btnExportPDFHeader';
 pdfBtnRow.type = 'button';
 pdfBtnRow.className = 'hdr-btn';
-pdfBtnRow.textContent = t('travelBook');
+pdfBtnRow.textContent = t('printBtn');
 pdfBtnRow.title = t('generatePdf');
 Object.assign(pdfBtnRow.style, {
   marginLeft: '6px',
@@ -3298,14 +3341,18 @@ shareBtnRow.addEventListener('click', () => {
 row.insertBefore(shareBtnRow, toolsBtnRow);
 
 // === Bouton Importer Réservations - CADRE ROUGE ===
+// === Menu Réservations (cadre rouge) : ajouter / voir ===
+const resaWrap = document.createElement('div');
+resaWrap.className = 'resa-dropdown';
+resaWrap.style.cssText = 'position:relative;display:inline-block;margin-left:6px;';
+
 const importBookBtnRow = document.createElement('button');
 importBookBtnRow.id = 'btnImportBookHeader';
 importBookBtnRow.type = 'button';
 importBookBtnRow.className = 'hdr-btn';
-importBookBtnRow.textContent = t('importBookings');
-importBookBtnRow.title = t('menuImportBooking');
+importBookBtnRow.textContent = t('bookingsBtn');
+importBookBtnRow.title = t('bookingsBtn');
 Object.assign(importBookBtnRow.style, {
-  marginLeft: '6px',
   padding: '6px 14px',
   borderRadius: '10px',
   background: '#fff',
@@ -3315,16 +3362,68 @@ Object.assign(importBookBtnRow.style, {
   fontWeight: '700',
   fontSize: '14px'
 });
-importBookBtnRow.addEventListener('click', () => {
-  if (typeof navigateToCustomizePage === 'function') {
-    navigateToCustomizePage('rt-booking-import.html');
-  } else {
-    const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
-    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-    window.location.href = `rt-booking-import.html?tripId=${tripId}&lang=${lang}`;
-  }
+
+const resaMenu = document.createElement('div');
+resaMenu.className = 'resa-menu';
+resaMenu.style.cssText = `
+  display:none;position:absolute;top:100%;right:0;margin-top:4px;
+  background:#fff;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.15);
+  min-width:260px;z-index:1000;overflow:hidden;border:1px solid #e5e7eb;
+`;
+
+const resaItems = [
+  { key: 'bookingAddTypes', page: 'rt-booking-import.html' },
+  { key: 'bookingView',     page: 'rt-bookings.html' },
+  { key: 'bookingBudget',   action: 'budget' }
+];
+
+resaItems.forEach((item, idx) => {
+  const resaItem = document.createElement('div');
+  resaItem.className = 'resa-menu-item';
+  resaItem.textContent = t(item.key);
+  resaItem.style.cssText = `
+    padding:12px 16px;cursor:pointer;font-weight:500;color:#113f7a;
+    border-bottom:${idx < resaItems.length - 1 ? '1px solid #f1f5f9' : 'none'};
+    transition:background 0.15s;
+  `;
+  resaItem.addEventListener('mouseenter', () => resaItem.style.background = '#f8fafc');
+  resaItem.addEventListener('mouseleave', () => resaItem.style.background = '#fff');
+  resaItem.addEventListener('click', () => {
+    resaMenu.style.display = 'none';
+    if (item.action === 'budget') {
+      // Réutilise le comportement existant défini dans ort-budget.js
+      if (typeof window.openBudgetModal === 'function') {
+        window.openBudgetModal();
+      } else {
+        const bb = document.getElementById('budgetBadge');
+        if (bb) bb.click();
+      }
+      return;
+    }
+    if (typeof navigateToCustomizePage === 'function') {
+      navigateToCustomizePage(item.page);
+    } else {
+      const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
+      const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+      window.location.href = `${item.page}?tripId=${tripId}&lang=${lang}`;
+    }
+  });
+  resaMenu.appendChild(resaItem);
 });
-row.insertBefore(importBookBtnRow, toolsBtnRow);
+
+importBookBtnRow.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = resaMenu.style.display === 'block';
+  resaMenu.style.display = isOpen ? 'none' : 'block';
+});
+
+document.addEventListener('click', () => {
+  resaMenu.style.display = 'none';
+});
+
+resaWrap.appendChild(importBookBtnRow);
+resaWrap.appendChild(resaMenu);
+row.insertBefore(resaWrap, toolsBtnRow);
 
 // === Menu Personnaliser (Photos, Résas, Documents) ===
 const customizeWrap = document.createElement('div');
@@ -3388,7 +3487,8 @@ document.addEventListener('click', () => {
 
 customizeWrap.appendChild(customizeBtn);
 customizeWrap.appendChild(customizeMenu);
-row.appendChild(customizeWrap);
+// MENU PERSONNALISER MASQUÉ (réactiver: décommenter la ligne ci-dessous)
+// row.appendChild(customizeWrap);
 
 function navigateToCustomizePage(page) {
   const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
@@ -3719,10 +3819,17 @@ hdr.appendChild(row);
   <div id="mapActions" aria-label="Actions carte">
 <button id="btnMapFull" class="tool" type="button" data-i18n-title="fullscreen" title="Plein écran">⤢</button>
 <button id="btnMapExit" class="tool" type="button" data-i18n-title="exitFullscreen" title="Quitter plein écran" style="display:none">⤡</button>
-<button id="reorgFullscreenBtn" type="button" aria-label="Modifier itinéraire" title="Modifier l'ordre des étapes">✏️</button>
+<button id="reorgFullscreenBtn" type="button" aria-label="Modifier itinéraire" title="Modifier l'ordre des étapes">Modifier</button>
 
    
   </div>
+<script>
+  // Libellé "Modifier" (ex-crayon) en 6 langues, dès que le bouton existe
+  (function(){
+    var eb = document.getElementById('reorgFullscreenBtn');
+    if(eb && typeof t === 'function'){ eb.textContent = t('editMapBtn'); eb.title = t('editMapBtn'); }
+  })();
+</script>
 
 </div>
          <!-- Aide "Survolez un marqueur" supprimée -->
@@ -4192,7 +4299,7 @@ function showAffiliatePopover(anchorEl, step, idx){
     <div style="font-weight:600;margin-bottom:8px;color:#113f7a;">${step.name || 'Étape'}</div>
     <div style="font-size:12px;color:#64748b;margin-bottom:10px;">${step.nights || 0} nuit(s)</div>
     <a href="${stay22Url}" target="_blank" rel="noopener" class="btn" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;margin-bottom:6px;">
-      <img src="/assets/hotel.webp" alt="" style="width:14px;height:14px" onerror="this.style.display='none'"> ${t.hotels}
+      <img src="/assets/hotel.png" alt="" style="width:14px;height:14px" onerror="this.style.display='none'"> ${t.hotels}
     </a>
     <button class="btn ghost" data-act="close" style="width:100%">${t.close}</button>
   `;
@@ -4493,7 +4600,7 @@ function openBookingsModal(stepIdx, stepName) {
               ${b.provider ? `<div style="font-size:0.85rem;color:#6b7280">🏢 ${b.provider}</div>` : ''}
               ${getDateLine(b) ? `<div style="font-size:0.85rem;color:#6b7280">${getDateLine(b)}</div>` : ''}
               ${b.reference ? `<div style="font-size:0.85rem;color:#6b7280">🔖 Réf: ${b.reference}</div>` : ''}
-              ${b.price ? `<div style="font-size:0.9rem;font-weight:600;color:#16a34a;margin-top:4px">💰 ${typeof b.price === 'object' ? b.price.amount : b.price} €</div>` : ''}
+              ${b.price ? `<div style="font-size:0.9rem;font-weight:600;color:#16a34a;margin-top:4px">💰 ${parseFloat(typeof b.price === 'object' ? b.price.amount : b.price).toFixed(0)} ${window.ORT_CURRENCY ? ORT_CURRENCY.symbolForBooking(b) : '€'}</div>` : ''}
               ${b.address ? `<div style="font-size:0.85rem;color:#6b7280">📍 ${b.address}</div>` : ''}
               ${b.notes ? `<div style="font-size:0.85rem;color:#6b7280;font-style:italic;margin-top:4px">📝 ${b.notes}</div>` : ''}
             </div>
@@ -5847,12 +5954,10 @@ async function initFromItin(it){
       const masterData = PLACES_INDEX[pid] || {};
       const rating = d.rating || masterData.rating || 0;
       const suggestedDays = d.suggested_days || masterData.suggested_days || 1;
-      const placeType = d.place_type || masterData.place_type || '';
       
       steps.push({
         place_id:pid,name,lat,lon,nights:1,visits,activities,
         rating,
-        place_type: placeType,
         region_code: d.region_code || '',
         _suggestedDays: suggestedDays,
         _driveMinToNext: d.to_next_leg?.drive_min || 0,
@@ -5869,7 +5974,6 @@ async function initFromItin(it){
       const masterData = PLACES_INDEX[pid] || {};
       const rating = p.rating || masterData.rating || 0;
       const suggestedDays = p.suggested_days || masterData.suggested_days || 1;
-      const placeType = p.place_type || masterData.place_type || '';
       return{
         place_id:pid,
         name:p.name||p.title||'',
@@ -5877,7 +5981,6 @@ async function initFromItin(it){
         lon:Number(p.lon)||null,
         nights:1,
         rating,
-        place_type: placeType,
         _suggestedDays: suggestedDays,
         visits:p.visits||[],
         activities:p.activities||[],
@@ -6580,7 +6683,7 @@ function renderTripBookings() {
           <div style="font-weight:600;color:#1f2937">${booking.name || 'N/A'}</div>
           ${booking.confirmationNumber ? `<div style="color:#666;font-size:0.85rem">N°: ${booking.confirmationNumber}</div>` : ''}
           ${booking.date_start ? `<div style="color:#666;font-size:0.85rem">📅 ${booking.date_start}</div>` : ''}
-          ${booking.price ? `<div style="color:#047857;font-weight:600;margin-top:4px">€ ${booking.price}</div>` : ''}
+          ${booking.price ? `<div style="color:#047857;font-weight:600;margin-top:4px">${parseFloat(typeof booking.price === 'object' ? booking.price.amount : booking.price).toFixed(0)} ${window.ORT_CURRENCY ? ORT_CURRENCY.symbolForBooking(booking) : '€'}</div>` : ''}
         </div>`;
     });
     
@@ -6922,7 +7025,7 @@ dateCell.style.textAlign='left';
       const shortName = hotelName.length > 25 ? hotelName.substring(0, 23) + '…' : hotelName;
       hotel.innerHTML = `
         <div style="font-size:0.8rem;line-height:1.3;color:#059669;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px" title="${_esc(hotelName)}">
-          <img src="/assets/hotel.webp" alt="" style="width:14px;height:14px;display:inline-block;vertical-align:middle" onerror="this.style.display='none'"> ${_esc(shortName)}
+          <img src="/assets/hotel.png" alt="" style="width:14px;height:14px;display:inline-block;vertical-align:middle" onerror="this.style.display='none'"> ${_esc(shortName)}
         </div>`;
       hotel.addEventListener('click', () => {
         if (typeof openStepBookingsModal === 'function') openStepBookingsModal(idx);
@@ -6934,7 +7037,7 @@ dateCell.style.textAlign='left';
         <button class="btn-hotel-choose" data-step-idx="${idx}" 
           title="${t('chooseHotel')}"
           style="background:transparent;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center">
-          <img src="/assets/hotel.webp" alt="${t('chooseHotel')}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.12)" onerror="this.style.display='none'">
+          <img src="/assets/hotel.png" alt="${t('chooseHotel')}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.12)" onerror="this.style.display='none'">
         </button>`;
       
       // Essayer de charger la photo hôtel du JSON → remplace le bouton
@@ -6973,7 +7076,7 @@ dateCell.style.textAlign='left';
         }
       }, 0);
     } else {
-      hotel.innerHTML = '<div style="color:#94a3b8;font-size:0.85rem;display:flex;align-items:center;gap:4px"><img src="/assets/hotel.webp" alt="" style="width:14px;height:14px;opacity:0.5" onerror="this.style.display=\'none\'"> —</div>';
+      hotel.innerHTML = '<div style="color:#94a3b8;font-size:0.85rem;display:flex;align-items:center;gap:4px"><img src="/assets/hotel.png" alt="" style="width:14px;height:14px;opacity:0.5" onerror="this.style.display=\'none\'"> —</div>';
     }
   } else {
     hotel.innerHTML = '&nbsp;';
@@ -8632,7 +8735,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
     const starInfo = ratingToStars(stepRating);
     
     // Drapeau pour les hubs (étapes avec nuits d'hôtel)
-    const isHub = Number(step.nights) > 0;
+    const isHub = step._isHub || (step.nights && step.nights > 0);
     const flagHtml = isHub ? '<span class="hub-flag">🚩</span>' : '';
     
     const iconHtml = `<div class="marker-num">${(i + 1)}${flagHtml}</div>`;
@@ -9200,6 +9303,58 @@ document.addEventListener('change',e=>{
   }
 });
 
+// Sélecteur de position pour l'ajout d'une étape par nom (même logique que l'insertion d'un lieu)
+function ortAskInsertPosition(placeName, onPick){
+  const steps = (window.state && Array.isArray(state.steps)) ? state.steps : [];
+  const L = (typeof t === 'function') ? t : (k)=>k;
+  const esc = (s)=> String(s||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:14px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.3);';
+
+  const head = document.createElement('div');
+  head.style.cssText = 'padding:14px 16px;font-weight:700;color:#113f7a;border-bottom:1px solid #eef2f7;';
+  head.textContent = L('insertWhereTitle').replace('{name}', placeName);
+
+  const list = document.createElement('div');
+  list.style.cssText = 'padding:12px 16px;overflow-y:auto;';
+
+  function close(){ ov.remove(); document.removeEventListener('keydown', onKey); }
+  function onKey(e){ if(e.key==='Escape') close(); }
+
+  const mkBtn = (pos, labelHtml, color, badge) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.style.cssText = 'display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:9px;background:#fff;cursor:pointer;text-align:left;margin-bottom:6px;font-family:inherit;';
+    b.innerHTML = `<span style="background:${color};color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex:none">${badge}</span><span style="font-size:.9rem;color:#374151">${labelHtml}</span>`;
+    b.addEventListener('click', ()=>{ close(); onPick(pos); });
+    return b;
+  };
+
+  list.appendChild(mkBtn(0, esc(L('insertAtStart')), '#e11d48', '↑'));
+  steps.forEach((s, i)=>{
+    list.appendChild(mkBtn(i+1, esc(L('insertAfterLbl'))+' <strong>'+esc(s && s.name)+'</strong>', '#113f7a', String(i+1)));
+  });
+
+  const foot = document.createElement('div');
+  foot.style.cssText = 'padding:10px 16px;border-top:1px solid #eef2f7;text-align:right;';
+  const cancel = document.createElement('button');
+  cancel.type='button';
+  cancel.textContent = L('insertCancel');
+  cancel.style.cssText='padding:8px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-weight:600;cursor:pointer;';
+  cancel.addEventListener('click', close);
+  foot.appendChild(cancel);
+
+  ov.addEventListener('click', (e)=>{ if(e.target===ov) close(); });
+  document.addEventListener('keydown', onKey);
+
+  box.appendChild(head); box.appendChild(list); box.appendChild(foot);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+}
+
 $('#btnAddStep').onclick=()=>{
   const name=prompt('Nom du lieu:');
   if(!name)return;
@@ -9226,49 +9381,52 @@ let slugVar = item.name
 
 const pid = `${item.countryCode}::${slugVar}`;
 
-// 2) push de l’étape (on affiche ce qu’on a déjà en cache)
-//    + __sid unique dès l’insertion
-{
-  const newStep = {
-    place_id: pid,
-    name: item.name,
-    lat: item.lat,
-    lon: item.lon,
-    nights: 1,
-    visits: [],
-    activities: [],
-    images: optimizePhotoUrls(getPhotosForPlace(pid))
-  };
-  newStep.__sid = (typeof ensureSid === 'function') ? ensureSid(newStep) : (crypto?.randomUUID?.() || ('S'+Date.now()+Math.random().toString(36).slice(2)));
-  state.steps.push(newStep);
-}
+// 2) construire l’étape (sans l’insérer tout de suite)
+const newStep = {
+  place_id: pid,
+  name: item.name,
+  lat: item.lat,
+  lon: item.lon,
+  nights: 1,
+  visits: [],
+  activities: [],
+  images: optimizePhotoUrls(getPhotosForPlace(pid))
+};
+newStep.__sid = (typeof ensureSid === 'function') ? ensureSid(newStep) : (crypto?.randomUUID?.() || ('S'+Date.now()+Math.random().toString(36).slice(2)));
 
+// 3) demander OÙ insérer (comme pour une étape existante), puis insérer
+ortAskInsertPosition(item.name, async (posInOrder) => {
+  const at = Math.max(0, Math.min(posInOrder, state.steps.length));
+  state.steps.splice(at, 0, newStep);
 
-// 3) (optionnel) tentative d’auto-photos si absentes — garde-fous >= 2
-try {
-  if (!PHOTOS_CACHE[pid] || (PHOTOS_CACHE[pid].photos||[]).length < 2) {
-    const query = encodeURIComponent(item.name + " France ville");
-    const resp = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=8&client_id=YOUR_UNSPLASH_KEY`);
-    if (resp.ok) {
-      const d = await resp.json();
-      const urls = (d.results || [])
-        .map(p => p.urls?.small)
-        .filter(Boolean)
-        .slice(0, 4);
-      if (urls.length >= 2) {
-        PHOTOS_CACHE[pid] = { photos: urls };
-        localStorage.setItem('ort.photos_cache', JSON.stringify(PHOTOS_CACHE));
-        // met à jour les images de la ligne ajoutée
-        state.steps[state.steps.length-1].images = urls;
-        console.log(`📸 ${urls.length} photos ajoutées pour ${item.name}`);
+  // (optionnel) auto-photos si absentes
+  try {
+    if (!PHOTOS_CACHE[pid] || (PHOTOS_CACHE[pid].photos||[]).length < 2) {
+      const query = encodeURIComponent(item.name + " France ville");
+      const resp = await fetch(`https://api.unsplash.com/search/photos?query=${query}&per_page=8&client_id=YOUR_UNSPLASH_KEY`);
+      if (resp.ok) {
+        const d = await resp.json();
+        const urls = (d.results || [])
+          .map(p => p.urls?.small)
+          .filter(Boolean)
+          .slice(0, 4);
+        if (urls.length >= 2) {
+          PHOTOS_CACHE[pid] = { photos: urls };
+          localStorage.setItem('ort.photos_cache', JSON.stringify(PHOTOS_CACHE));
+          newStep.images = urls;
+          console.log(`📸 ${urls.length} photos ajoutées pour ${item.name}`);
+        }
       }
     }
+  } catch(e) {
+    console.warn('auto-photos error:', e);
   }
-} catch(e) {
-  console.warn('auto-photos error:', e);
-}
-            renderRows();
-            toast(`✅ ${item.name} ajouté`);
+
+  if (typeof renderRows === 'function') renderRows();
+  if (typeof drawMap === 'function') drawMap();
+  if (typeof markUnsavedChanges === 'function') markUnsavedChanges();
+  toast(`✅ ${item.name} ajouté`);
+});
             return;
           }
         }
@@ -9404,7 +9562,7 @@ async function loadWorldPlacesProgressive(){
       return;
     }
     const cc = queue[i++];
-    try { await ensurePlacesIndex([cc]); scheduleRender(); }
+    try { await ensurePlacesIndex({ additionalCountries: [cc] }); scheduleRender(); }
     catch(e){ console.warn('[WORLD] Échec', cc, e); }
     setTimeout(next, DELAY_MS);
   };
@@ -11036,6 +11194,10 @@ window.showLoginModalForSave = function() {
       </div>
     </div>
     
+    <button id="reorgAddStepBtn" type="button" style="display:block;width:100%;margin:0 0 10px 0;padding:10px 12px;border-radius:8px;border:1px dashed #2563eb;background:#eff6ff;color:#1d4ed8;font-weight:600;cursor:pointer;text-align:left;">
+      ➕ Ajouter une étape non présente dans nos lieux listés
+    </button>
+    
     <div id="reorgStepsList">
 
       <!-- Les étapes seront générées dynamiquement ici -->
@@ -11048,6 +11210,19 @@ window.showLoginModalForSave = function() {
     </button>
   </div>
 </div>
+<script>
+  // Lien "Ajouter une étape non présente" du panneau réorg :
+  // libellé 6 langues + rejoue l'ajout par nom existant (#btnAddStep)
+  (function(){
+    var b = document.getElementById('reorgAddStepBtn');
+    if(!b) return;
+    if(typeof t === 'function'){ b.textContent = t('reorgAddManual'); }
+    b.addEventListener('click', function(){
+      var original = document.getElementById('btnAddStep');
+      if(original) original.click();
+    });
+  })();
+</script>
 
 
 <!-- Modal de prévisualisation de la réorganisation -->
@@ -13183,8 +13358,14 @@ if (!cc || !itin) {
             
             console.log('[LOG-CONTROLE][INIT] ✅ Modifications appliquées');
             
-            // Re-render après chargement async ORT_TRIP_DATA pour afficher les hôtels réservés
-            setTimeout(() => {
+            // Charger les réservations depuis ORT_TRIP_DATA (l'import les écrit là), puis re-render
+            setTimeout(async () => {
+              try {
+                if (window.ORT_TRIP_DATA && typeof ORT_TRIP_DATA.loadTrip === 'function' && tripId) {
+                  await ORT_TRIP_DATA.loadTrip(tripId);
+                  console.log('[LOG-CONTROLE][INIT] ✅ ORT_TRIP_DATA chargé (réservations importées)');
+                }
+              } catch (e) { console.warn('[BOOKINGS] loadTrip échec:', e); }
               if (typeof renderRows === 'function') {
                 console.log('[LOG-CONTROLE][INIT] 🔄 Re-render post-bookings (ORT_TRIP_DATA async)');
                 renderRows();

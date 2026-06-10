@@ -1,0 +1,3169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ORT Admin – Thèmes & Photos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f5f5; color: #1a1a1a; }
+  .header { background: #fff; border-bottom: 2px solid #e0e0e0; padding: 12px 20px; display: flex; align-items: center; gap: 16px; }
+  .header h1 { font-size: 16px; font-weight: 700; color: #333; white-space: nowrap; }
+  .tabs { display: flex; gap: 2px; }
+  .tab { padding: 8px 18px; border: 1px solid #ccc; background: #f0f0f0; color: #555; cursor: pointer; font-size: 13px; font-weight: 500; border-radius: 6px 6px 0 0; border-bottom: none; }
+  .tab:hover { background: #e8e8e8; }
+  .tab.active { background: #fff; color: #1a1a1a; font-weight: 600; border-bottom: 1px solid #fff; position: relative; top: 1px; }
+  #statusBar { padding: 8px 20px; font-size: 13px; display: none; }
+  #statusBar.success { display: block; background: #e8f5e9; color: #2e7d32; }
+  #statusBar.error { display: block; background: #ffebee; color: #c62828; }
+  #statusBar.info { display: block; background: #e3f2fd; color: #1565c0; }
+  .container { display: none; height: calc(100vh - 53px); }
+  .container.active { display: flex; }
+  .sidebar { width: 360px; min-width: 360px; border-right: 1px solid #ddd; display: flex; flex-direction: column; background: #fff; }
+  .sidebar-header { padding: 12px; border-bottom: 1px solid #eee; }
+  .sidebar-header select, .sidebar-header input { width: 100%; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; margin-top: 6px; }
+  .sidebar-stats { display: flex; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 11px; color: #666; flex-wrap: wrap; }
+  .sidebar-stats span { background: #f5f5f5; padding: 3px 7px; border-radius: 3px; }
+  .sidebar-stats b { color: #1565c0; }
+  .sidebar-list { flex: 1; overflow-y: auto; padding: 6px; }
+  .itin-item { padding: 8px 10px; border-radius: 4px; cursor: pointer; border: 1px solid transparent; margin-bottom: 2px; }
+  .itin-item:hover { background: #f0f4ff; }
+  .itin-item.selected { background: #e3f2fd; border-color: #90caf9; }
+  .itin-item .title { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .itin-item .meta { font-size: 11px; color: #888; margin-top: 2px; display: flex; gap: 8px; }
+  .itin-item.done { background: #f1f8e9; }
+  .itin-item.uploading { background: #e3f2fd; border-left: 3px solid #1976d2; }
+  .itin-item.upload-error { background: #ffebee; border-left: 3px solid #c62828; }
+  .badge { font-size: 10px; padding: 1px 6px; border-radius: 8px; font-weight: 600; }
+  .badge-ok { background: #e8f5e9; color: #2e7d32; }
+  .badge-empty { background: #fff3e0; color: #e65100; }
+  .badge-bad { background: #fce4ec; color: #c62828; }
+  .editor { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; }
+  .editor-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; text-align: center; line-height: 2; }
+  .theme-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; margin-bottom: 12px; }
+  .theme-tag { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 16px; font-size: 13px; }
+  .theme-tag.canon { background: #e3f2fd; color: #1565c0; }
+  .theme-tag.noncanon { background: #fff3e0; color: #e65100; }
+  .theme-tag .remove { background: none; border: none; color: inherit; cursor: pointer; opacity: .5; font-size: 16px; padding: 0; }
+  .theme-tag .remove:hover { opacity: 1; }
+  .add-row { display: flex; gap: 6px; margin-top: 8px; }
+  .add-row select, .add-row input { flex: 1; padding: 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
+  .btn { padding: 7px 14px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500; }
+  .btn-blue { background: #1976d2; color: #fff; }
+  .btn-green { background: #2e7d32; color: #fff; }
+  .btn-red { background: #c62828; color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-outline { background: #fff; border: 1px solid #ccc; color: #333; }
+  .btn-outline:hover { background: #f5f5f5; }
+  .day-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 6px; }
+  .day-card .day-head { font-size: 13px; font-weight: 600; color: #1565c0; margin-bottom: 4px; }
+  .day-card .day-visits { font-size: 12px; color: #666; line-height: 1.5; }
+  .section-title { font-size: 14px; font-weight: 600; color: #555; margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid #eee; }
+  .photos-place { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 14px; overflow: hidden; }
+  .photos-place-header { background: #f5f5f5; padding: 10px 14px; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; justify-content: space-between; }
+  .photos-place-header h4 { font-size: 14px; font-weight: 600; margin: 0; }
+  .place-id { font-size: 11px; color: #999; font-weight: 400; margin-left: 8px; }
+  .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; padding: 12px; }
+  .photo-card { position: relative; border-radius: 4px; overflow: hidden; aspect-ratio: 16/10; background: #eee; border: 2px solid transparent; }
+  .photo-card img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-card img.broken { opacity: .2; }
+  .photo-card.marked-delete { border-color: #c62828; opacity: .4; }
+  .photo-card.marked-first { border-color: #2e7d32; box-shadow: 0 0 0 1px #2e7d32; }
+  .photo-card.marked-up { border-color: #1565c0; box-shadow: 0 0 0 1px #1565c0; }
+  .photo-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; gap: 4px; }
+  .photo-card:hover .photo-overlay { display: flex; }
+  .photo-num { position: absolute; top: 4px; left: 4px; font-size: 10px; background: rgba(0,0,0,.6); color: #fff; padding: 1px 5px; border-radius: 3px; }
+  .photo-new { position: absolute; top: 4px; right: 4px; font-size: 10px; background: #ff9800; color: #fff; padding: 1px 5px; border-radius: 3px; }
+  .photo-overlay .btn { padding: 4px 8px; font-size: 18px; border-radius: 4px; min-width: 32px; text-align: center; }
+  .no-photos { padding: 20px; text-align: center; color: #999; font-size: 13px; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .review-container { width: 100%; height: 100%; }
+  .review-container iframe { width: 100%; height: 100%; border: none; }
+  .review-offline { display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; color: #999; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 1000; align-items: center; justify-content: center; cursor: pointer; }
+  .modal-overlay.open { display: flex; }
+  .modal-overlay img { max-width: 92vw; max-height: 92vh; border-radius: 4px; }
+  .va-toggle { background: none; border: none; cursor: pointer; font-size: 12px; color: #1565c0; font-weight: 500; padding: 0; display: flex; align-items: center; gap: 4px; }
+  .va-toggle:hover { text-decoration: underline; }
+  .va-panel { display: none; border-top: 1px solid #eee; padding: 10px 14px; background: #fafafa; font-size: 12px; line-height: 1.6; }
+  .va-panel.open { display: block; }
+  .va-item { margin-bottom: 6px; padding: 4px 8px; border-left: 3px solid #ddd; background: #fff; border-radius: 0 4px 4px 0; }
+  .va-item.visit { border-left-color: #1565c0; }
+  .va-item.activity { border-left-color: #ff9800; }
+  .va-item.hotel { border-left-color: #7b1fa2; }
+  .va-item.resto { border-left-color: #2e7d32; }
+  .va-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .va-label.visit { color: #1565c0; }
+  .va-label.activity { color: #ff9800; }
+  .va-label.hotel { color: #7b1fa2; }
+  .va-label.resto { color: #2e7d32; }
+  .va-text { color: #333; }
+  .va-day { font-size: 10px; color: #999; margin-top: 2px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>ORT Admin</h1>
+  <div class="tabs">
+    <button class="tab active" data-tab="themes">Thèmes</button>
+    <button class="tab" data-tab="r2photos">📸 R2 Photos</button>
+    <button class="tab" data-tab="newplaces">🆕 Nouveaux lieux</button>
+    <button class="tab" data-tab="rotten">🗑️ Itins pourris</button>
+    <button class="tab" data-tab="viewer">👁️ Visionneuse R2</button>
+    <button class="tab" data-tab="gplaces">🌍 Google Places</button>
+    <!-- Anciens onglets masqués, gardés pour ne pas casser le JS -->
+    <button class="tab" data-tab="photos" style="display:none">Photos / Itin</button>
+    <button class="tab" data-tab="review" style="display:none">Review Photos</button>
+  </div>
+  <div style="flex:1"></div>
+  <span id="serverStatus" style="font-size:11px;color:#999"></span>
+</div>
+<div id="statusBar"></div>
+
+<div id="tab-themes" class="container active">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px"><select id="thCC" style="flex:1"><option value="">Chargement...</option></select><select id="thLang" style="width:60px"><option value="fr">FR</option><option value="en">EN</option><option value="es">ES</option><option value="it">IT</option><option value="pt">PT</option><option value="ar">AR</option></select><button class="btn btn-blue btn-sm" onclick="loadAllTh()">Tous</button></div>
+      <input type="text" id="thSearch" placeholder="Rechercher...">
+      <select id="thFilter" style="margin-top:4px"><option value="all">Tous</option><option value="empty">Sans thèmes</option><option value="noncanon">Non canoniques</option><option value="ok">OK</option></select>
+    </div>
+    <div class="sidebar-stats"><span>Total: <b id="sTotal">0</b></span><span>OK: <b id="sOk" style="color:#2e7d32">0</b></span><span>Vides: <b id="sEmpty" style="color:#e65100">0</b></span><span>Modifiés: <b id="sMod" style="color:#d84315">0</b></span></div>
+    <div class="sidebar-list" id="thList"></div>
+  </div>
+  <div class="editor" id="thEd"><div class="editor-empty">Choisissez un pays puis un itinéraire</div></div>
+</div>
+
+<div id="tab-photos" class="container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px"><select id="phCC" style="flex:1"><option value="">Chargement...</option></select><button class="btn btn-blue btn-sm" onclick="loadAllPh()">Tous</button></div>
+      <input type="text" id="phSearch" placeholder="Rechercher...">
+      <select id="phFilter" style="margin-top:4px"><option value="all">Tous</option><option value="todo">À faire</option><option value="done">Travaillés</option></select>
+    </div>
+    <div class="sidebar-stats"><span>Itins: <b id="pTotal">0</b></span><span>Places: <b id="pPlaces">0</b></span><span>Faits: <b id="pDone" style="color:#2e7d32">0</b></span></div>
+    <div class="sidebar-list" id="phList"></div>
+  </div>
+  <div class="editor" id="phEd"><div class="editor-empty">Choisissez un pays puis un itinéraire<br><br><small>Le serveur review (port 3000) doit tourner.</small></div></div>
+</div>
+
+<div id="tab-review" class="container">
+  <div class="review-container" id="rvBox">
+    <div class="review-offline" id="rvOff">
+      <div style="font-size:40px">📸</div>
+      <div style="font-size:15px;font-weight:500;color:#555">Review Photos</div>
+      <div>Le serveur review (port 3000) doit tourner.</div>
+      <button class="btn btn-blue" onclick="loadRv()" style="margin-top:8px">Réessayer</button>
+      <button class="btn btn-outline" onclick="window.open('http://localhost:3000','_blank')" style="margin-top:4px">Ouvrir dans un onglet</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal" class="modal-overlay" onclick="this.classList.remove('open')"><img id="mImg" src=""></div>
+
+<div id="tab-r2photos" class="container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px">
+        <select id="r2CC" style="flex:1"><option value="">-- Pays --</option></select>
+        <button class="btn btn-blue btn-sm" onclick="r2LoadCountry('')">Tous</button>
+      </div>
+      <input type="text" id="r2Search" placeholder="Rechercher un lieu..." oninput="r2RenderList()">
+      <select id="r2Filter" style="margin-top:4px" onchange="r2RenderList()">
+        <option value="all">Tous les lieux</option>
+        <option value="todo">À traiter</option>
+        <option value="done">Traités ✅</option>
+        <option value="no-photo">Sans photo</option>
+        <option value="old-format">⚠️ Ancien format (non-R2)</option>
+      </select>
+      <!-- Precache Wikimedia -->
+      <div id="wcBox" style="margin-top:6px;padding:6px 8px;background:#fff3e0;border:1px solid #ffb74d;border-radius:4px;font-size:11px;color:#555">
+        <div style="display:flex;gap:4px;align-items:center">
+          <button id="wcBtn" class="btn btn-sm" onclick="wcToggle()" style="background:#ff9800;color:#fff;border:none;padding:3px 8px;font-size:11px;flex:1">⚡ Précache Wiki</button>
+          <button class="btn btn-sm" onclick="wcRefresh()" title="Rafraîchir" style="background:#fff;border:1px solid #ccc;padding:3px 6px;font-size:11px">🔄</button>
+        </div>
+        <div id="wcStatus" style="margin-top:4px;font-size:10px;color:#666">Cliquer pour démarrer ou reprendre</div>
+      </div>
+    </div>
+    <div class="sidebar-stats">
+      <span>Lieux: <b id="r2Total">0</b></span>
+      <span>Traités: <b id="r2Done" style="color:#2e7d32">0</b></span>
+      <span>Reste: <b id="r2Missing" style="color:#e65100">0</b></span>
+    </div>
+    <div class="sidebar-list" id="r2List"></div>
+  </div>
+  <div class="editor" id="r2Ed" style="position:relative"><div class="editor-empty">Choisissez un pays puis un lieu</div></div>
+</div>
+
+<div id="tab-newplaces" class="container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px">
+        <select id="npCC" style="flex:1"><option value="">-- Pays --</option></select>
+        <button class="btn btn-blue btn-sm" onclick="npLoad('')">Tous</button>
+      </div>
+      <input type="text" id="npSearch" placeholder="Rechercher..." oninput="npRenderList()">
+    </div>
+    <div class="sidebar-stats">
+      <span>Sans photo: <b id="npTotal" style="color:#e65100">0</b></span>
+      <span>Traités: <b id="npDone" style="color:#2e7d32">0</b></span>
+    </div>
+    <div class="sidebar-list" id="npList"></div>
+  </div>
+  <div class="editor" id="npEd" style="position:relative"><div class="editor-empty">Choisissez un pays pour voir les lieux sans photo</div></div>
+</div>
+
+<div id="tab-rotten" class="container">
+  <div class="sidebar" style="width:520px">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px">
+        <select id="roCC" style="flex:1"><option value="">-- Pays (ou Tous) --</option></select>
+        <select id="roLang" style="width:70px">
+          <option value="fr">FR</option><option value="en">EN</option><option value="es">ES</option>
+          <option value="it">IT</option><option value="pt">PT</option><option value="ar">AR</option>
+        </select>
+        <button class="btn btn-blue btn-sm" onclick="roScan()">Scanner</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:6px;align-items:center;font-size:11px;color:#666">
+        <label>Mot min: <input type="number" id="roMinWords" value="30" style="width:50px"></label>
+        <label>Seuil %: <input type="number" id="roThreshold" value="40" style="width:50px"></label>
+        <label><input type="checkbox" id="roAllCC" checked> Tous pays</label>
+      </div>
+      <input type="text" id="roSearch" placeholder="Rechercher..." oninput="roRenderList()" style="margin-top:6px">
+    </div>
+    <div class="sidebar-stats">
+      <span>Scannés: <b id="roTotal">0</b></span>
+      <span>Pourris: <b id="roBad" style="color:#c62828">0</b></span>
+    </div>
+    <div class="sidebar-list" id="roList"></div>
+  </div>
+  <div class="editor" id="roEd"><div class="editor-empty">Cliquez sur "Scanner" pour détecter les itins à refaire</div></div>
+</div>
+
+<div id="tab-viewer" class="container" style="flex-direction:column;padding:0;background:#1a1a1a;color:#fff">
+  <!-- Barre de contrôle -->
+  <div style="padding:12px 16px;background:#222;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #333">
+    <select id="vwCC" style="padding:6px 10px;background:#333;color:#fff;border:1px solid #555;border-radius:4px">
+      <option value="">Tous pays</option>
+    </select>
+    <select id="vwFilter" style="padding:6px 10px;background:#333;color:#fff;border:1px solid #555;border-radius:4px">
+      <option value="unseen" selected>Non vues seulement</option>
+      <option value="all">Toutes</option>
+      <option value="seen">Déjà vues seulement</option>
+    </select>
+    <button class="btn btn-blue btn-sm" onclick="vwLoad()">Charger</button>
+    <button class="btn btn-sm" onclick="vwResetSeen()" style="background:#555;color:#fff;border:none" title="Effacer la mémoire des photos déjà vues">♻️ Reset vues</button>
+    <span style="flex:1"></span>
+    <span id="vwCount" style="font-size:13px;color:#bbb"></span>
+    <button class="btn btn-sm" onclick="vwPrev()" style="background:#444;color:#fff;border:none">← Précédente</button>
+    <button class="btn btn-sm" onclick="vwKeep()" style="background:#2e7d32;color:#fff;border:none" title="Garder et passer à la suivante (↓ ou Entrée)">✓ Garder (↓)</button>
+    <button class="btn btn-sm" onclick="vwNext()" style="background:#444;color:#fff;border:none">Suivante →</button>
+    <button class="btn btn-red btn-sm" onclick="vwDelete()">🗑️ Supprimer (Suppr)</button>
+  </div>
+  <!-- Zone d'affichage -->
+  <div id="vwStage" style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0;padding:20px;position:relative">
+    <div id="vwEmpty" style="color:#888;font-size:14px;text-align:center">
+      Cliquez sur "Charger" pour commencer.<br>
+      <small style="color:#666">← → naviguer · ↓ garder · Suppr supprimer</small>
+    </div>
+    <img id="vwImg" src="" style="display:none;max-width:100%;max-height:100%;object-fit:contain">
+  </div>
+  <!-- Info bas -->
+  <div id="vwInfo" style="padding:10px 16px;background:#222;border-top:1px solid #333;font-size:12px;color:#ccc;font-family:monospace;word-break:break-all"></div>
+</div>
+
+<div id="tab-gplaces" class="container" style="flex-direction:column;padding:0">
+  <!-- Barre de contrôle haut -->
+  <div style="padding:12px 16px;background:#f5f5f5;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #ddd">
+    <strong style="margin-right:10px">🌍 Google Places Photos</strong>
+    <select id="gpCC" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px">
+      <option value="">Tous pays</option>
+    </select>
+    <label style="font-size:13px">Keywords :
+      <select id="gpKw" style="padding:6px 10px;border:1px solid #ccc;border-radius:4px">
+        <option value="0,1">0 et 1 (défaut)</option>
+        <option value="0">Seulement 0</option>
+        <option value="1">Seulement 1</option>
+        <option value="2,3">2 et 3 (mois suivant)</option>
+        <option value="4,5">4 et 5</option>
+      </select>
+    </label>
+    <label style="font-size:13px">Limit :
+      <input id="gpLimit" type="number" value="100" min="1" max="5000" style="width:70px;padding:6px;border:1px solid #ccc;border-radius:4px">
+    </label>
+    <label style="font-size:13px"><input id="gpOnlyMissing" type="checkbox" checked> Sauter ceux déjà faits</label>
+    <button class="btn btn-blue btn-sm" onclick="gpStart()">▶ Lancer</button>
+    <button class="btn btn-sm" onclick="gpStop()" style="background:#d32f2f;color:#fff;border:none">■ Stop</button>
+    <span style="flex:1"></span>
+    <button class="btn btn-sm" onclick="gpRefreshPending()" style="background:#555;color:#fff;border:none">🔄 Rafraîchir pending</button>
+  </div>
+
+  <!-- Zone progress -->
+  <div id="gpProgress" style="padding:10px 16px;background:#fff;border-bottom:1px solid #ddd;font-family:monospace;font-size:13px;min-height:60px">
+    <div style="color:#888">Cliquez sur ▶ Lancer pour démarrer un batch.</div>
+  </div>
+
+  <!-- Zone tri des pending -->
+  <div style="padding:12px 16px;background:#fafafa;flex:1;overflow:auto">
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <strong>Lieux à trier :</strong>
+      <span id="gpPendingCount" style="color:#666">0 lieux</span>
+      <span style="flex:1"></span>
+      <span id="gpRevisitCount" style="color:#ff9800;font-size:13px"></span>
+    </div>
+    <div id="gpPendingList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+  </div>
+</div>
+
+<script>
+const API='http://127.0.0.1:'+(location.port||'8030'),PH='http://localhost:3000',DP='data/Roadtripsprefabriques/countries';
+const TH=["Montagne","Mer & Côtes","Ville & Histoire","Nature","Culture","Gastronomie & Vin","Aventure & Outdoor","Route & Exploration","Insolite & Hors sentiers battus","Faune & Vie sauvage","Spiritualité & Religion","Bien-être & Détente","Détente","Testé & approuvé ORT","Les plus beaux villages","Itinéraires de créateurs","Bestseller"];
+let CC=[],tI=[],tM={},tS=null,pI=[],pP=null,pD=new Set(),pF=new Map(),pU=new Map(),pS=null,pW=new Set();
+const $=id=>document.getElementById(id);
+function st(m,t='success'){const b=$('statusBar');b.textContent=m;b.className=t;b.style.display='block';clearTimeout(b._t);b._t=setTimeout(()=>{b.className='';b.style.display='none'},4000)}
+
+document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.container').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('tab-'+t.dataset.tab).classList.add('active');if(t.dataset.tab==='review')loadRv()});
+
+function loadRv(){fetch(PH+'/api/stats').then(r=>{if(r.ok)$('rvBox').innerHTML='<iframe src="'+PH+'"></iframe>';else $('rvOff').style.display='flex'}).catch(()=>{if(!$('rvBox').querySelector('iframe'))$('rvOff').style.display='flex'})}
+
+async function loadCC(){
+  try{
+    const r=await fetch(API+'/'+DP+'/'),h=await r.text(),m=h.match(/href="([A-Z]{2,3})\/"/gi)||[];
+    CC=m.map(x=>(x.match(/href="([^"]+)\/"/i)||[])[1]).filter(Boolean);
+    if(!CC.length){const codes='AD,AE,AL,AM,AR,AT,AU,AZ,BA,BD,BE,BG,BH,BO,BR,BT,BW,BY,CA,CH,CI,CL,CM,CN,CO,CR,CU,CV,CY,CZ,DE,DK,DO,DZ,EC,EE,EG,ES,ET,FI,FJ,FR,GA,GB,GE,GH,GR,GT,HK,HN,HR,HT,HU,ID,IE,IL,IN,IQ,IR,IS,IT,JM,JO,JP,KE,KG,KH,KR,KW,KZ,LA,LB,LK,LT,LU,LV,MA,MD,ME,MG,MK,MM,MN,MT,MU,MV,MX,MY,MZ,NA,NE,NG,NI,NL,NO,NP,NZ,OM,PA,PE,PH,PK,PL,PT,PY,QA,RO,RS,RW,SA,SC,SE,SG,SI,SK,SN,SO,SV,SZ,TG,TH,TJ,TN,TR,TT,TW,TZ,UA,UG,US,UY,UZ,VE,VN,XK,ZA,ZM,ZW'.split(',');
+    const ck=codes.map(async c=>{try{const r=await fetch(API+'/'+DP+'/'+c+'/',{method:'HEAD'});return r.ok?c:null}catch(e){return null}});CC=(await Promise.all(ck)).filter(Boolean)}
+    CC.sort();const o=CC.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+    $('thCC').innerHTML='<option value="">-- Pays --</option>'+o;$('phCC').innerHTML='<option value="">-- Pays --</option>'+o;
+    if($('r2CC'))$('r2CC').innerHTML='<option value="">-- Pays --</option>'+o;
+    if($('npCC'))$('npCC').innerHTML='<option value="">-- Pays --</option>'+o;
+    $('serverStatus').textContent=CC.length+' pays · OK';
+  }catch(e){$('serverStatus').textContent='Serveur OFF';st('Serveur non joignable','error')}
+}
+
+async function loadIt(cc,lang){
+  cc=cc.toUpperCase();lang=lang||'fr';
+  for(const f of [cc+'.itins.modules-'+lang+'.json',cc.toLowerCase()+'.itins.modules-'+lang+'.json'])
+    for(const d of [cc,cc.toLowerCase()])
+      try{const r=await fetch(API+'/'+DP+'/'+d+'/'+f);if(!r.ok)continue;const j=await r.json();return{its:j.itineraries||[],fp:DP+'/'+d+'/'+f,cc}}catch(e){}
+  return{its:[],fp:null,cc};
+}
+
+// THEMES
+function gT(i){if(i.meta?.themes&&Array.isArray(i.meta.themes))return i.meta.themes;if(typeof i.themes==='string')return i.themes.split('|').map(t=>t.trim()).filter(Boolean);return Array.isArray(i.themes)?i.themes:[]}
+function sT(i,a){if(!i.meta)i.meta={};i.meta.themes=[...a]}
+function tStat(i){const t=gT(i);if(!t.length)return'empty';if(t.some(x=>!TH.includes(x)))return'noncanon';return'ok'}
+
+async function loadThCC(){const cc=$('thCC').value;if(!cc)return;const lang=$('thLang').value;st('Chargement '+cc+' ('+lang.toUpperCase()+')...','info');const r=await loadIt(cc,lang);tI=r.its.map(i=>({i,cc:r.cc,fp:r.fp}));tS=null;rTL();$('thEd').innerHTML='<div class="editor-empty">Sélectionnez un itinéraire</div>';st(tI.length+' itinéraires ('+lang.toUpperCase()+')','success')}
+$('thCC').onchange=loadThCC;
+$('thLang').onchange=loadThCC;
+
+async function loadAllTh(){st('Chargement...','info');tI=[];let n=0;const lang=$('thLang').value;for(const c of CC){const r=await loadIt(c,lang);r.its.forEach(i=>tI.push({i,cc:r.cc,fp:r.fp}));n++;if(n%10===0)st(n+'/'+CC.length+'...','info')}tS=null;rTL();st(tI.length+' itinéraires ('+lang.toUpperCase()+')','success')}
+
+function rTL(){
+  const s=$('thSearch').value.toLowerCase(),f=$('thFilter').value;
+  let l=tI;if(s)l=l.filter(({i})=>((i.itin_id||i.id||'')+(i.title||'')).toLowerCase().includes(s));
+  if(f!=='all')l=l.filter(({i})=>tStat(i)===f);
+  $('sTotal').textContent=tI.length;$('sOk').textContent=tI.filter(({i})=>tStat(i)==='ok').length;
+  $('sEmpty').textContent=tI.filter(({i})=>tStat(i)==='empty').length;$('sMod').textContent=Object.keys(tM).length;
+  $('thList').innerHTML=l.map(({i,cc})=>{
+    const id=i.itin_id||i.id,t=gT(i),s=tStat(i),sel=tS&&(tS.i.itin_id||tS.i.id)===id,mod=tM[id],
+    bc=s==='ok'?'badge-ok':s==='empty'?'badge-empty':'badge-bad',bl=s==='ok'?t.length+' thèmes':s==='empty'?'Aucun':'Non canon';
+    return'<div class="itin-item '+(sel?'selected':'')+'" onclick="selT(\''+id+'\')"><div class="title">'+(mod?'📝 ':'')+( i.title||id)+'</div><div class="meta"><span>'+cc+'</span><span class="badge '+bc+'">'+bl+'</span><span>'+(i.estimated_days_base||'?')+'j</span></div></div>';
+  }).join('');
+}
+
+function selT(id){tS=tI.find(({i})=>(i.itin_id||i.id)===id);rTL();rTE()}
+
+function rTE(){
+  const e=$('thEd');if(!tS){e.innerHTML='<div class="editor-empty">Sélectionnez un itinéraire</div>';return}
+  const{i,cc,fp}=tS,id=i.itin_id||i.id,th=gT(i),days=i.days_plan||[];
+  const tags=th.length?th.map(t=>'<span class="theme-tag '+(TH.includes(t)?'canon':'noncanon')+'">'+t+'<button class="remove" onclick="thRm(\''+id+"','"+t.replace(/'/g,"\\'")+"')\">×</button></span>").join(''):'<span style="color:#999;font-size:13px;font-style:italic">Aucun thème</span>';
+  const av=TH.filter(t=>!th.includes(t)),opts=av.map(t=>'<option value="'+t+'">'+t+'</option>').join('');
+  const dH=days.map(d=>{const p=d.night?.place_id?.split('::').slice(1).join(' ').replace(/-/g,' ')||'?',v=(d.visits||[]).map(x=>x.text).filter(Boolean).join(', '),a=(d.activities||[]).map(x=>x.text).filter(Boolean).join(', ');return'<div class="day-card"><div class="day-head">Jour '+d.day+' — '+p+'</div><div class="day-visits">'+(v?'📍 '+v:'')+(a?'<br>🎯 '+a:'')+'</div></div>'}).join('');
+  e.innerHTML='<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:16px"><div><div style="font-size:17px;font-weight:600">'+(i.title||id)+'</div><div style="font-size:12px;color:#888;margin-top:3px">'+id+' · '+cc+' · '+(i.estimated_days_base||'?')+' jours</div></div><button class="btn btn-green" onclick="thSv(\''+id+'\')">Sauvegarder</button></div><div class="section-title">Thèmes</div><div class="theme-tags">'+tags+'</div><div class="add-row"><select id="thAdd"><option value="">Ajouter un thème...</option>'+opts+'</select><button class="btn btn-blue btn-sm" onclick="thAd(\''+id+'\')">Ajouter</button></div><div class="section-title" style="margin-top:20px">Programme ('+days.length+' jours)</div>'+dH;
+}
+
+function thAd(id){const s=$('thAdd');if(!s.value)return;const f=tI.find(({i})=>(i.itin_id||i.id)===id);if(!f)return;const t=gT(f.i);if(!t.includes(s.value)){t.push(s.value);sT(f.i,t);tM[id]=1}rTE();rTL();st('"'+s.value+'" ajouté (non sauvegardé)','info')}
+function thRm(id,theme){const f=tI.find(({i})=>(i.itin_id||i.id)===id);if(!f)return;sT(f.i,gT(f.i).filter(x=>x!==theme));tM[id]=1;rTE();rTL();st('"'+theme+'" retiré','info')}
+async function thSv(id){
+  const f=tI.find(({i})=>(i.itin_id||i.id)===id);if(!f)return;
+  const themes=gT(f.i);
+  const cc=f.cc;
+  const LANGS=['fr','en','es','it','pt','ar'];
+  let ok=0,fail=0;
+  st('Sauvegarde 6 langues...','info');
+  for(const lang of LANGS){
+    let done=false;
+    // Dédupliquer les chemins à tester
+    const tried=new Set();
+    const folders=[cc,cc.toLowerCase()];
+    const fnames=[cc+'.itins.modules-'+lang+'.json',cc.toLowerCase()+'.itins.modules-'+lang+'.json'];
+    for(const fn of fnames){
+      if(done)break;
+      for(const folder of folders){
+        if(done)break;
+        const fp=DP+'/'+folder+'/'+fn;
+        if(tried.has(fp.toLowerCase()))continue;
+        tried.add(fp.toLowerCase());
+        try{
+          const r=await fetch(API+'/'+fp);if(!r.ok)continue;
+          const data=await r.json();
+          const itins=data.itineraries||[];
+          const target=itins.find(x=>(x.itin_id||x.id)===id);
+          if(!target)continue;
+          if(!target.meta)target.meta={};
+          target.meta.themes=[...themes];
+          const sv=await fetch(API+'/api/save-itinerary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:fp,data:target,country:cc})});
+          const j=await sv.json();
+          if(j.success){ok++;done=true}else{fail++;done=true}
+        }catch(e){continue}
+      }
+    }
+  }
+  if(ok>0){delete tM[id];rTL();st('Sauvegardé dans '+ok+' langue(s)'+(fail?' ('+fail+' échec)':''),'success')}
+  else st('Erreur : aucune langue sauvegardée','error');
+}
+
+$('thSearch').oninput=rTL;$('thFilter').onchange=rTL;
+
+// PHOTOS
+$('phCC').onchange=async e=>{if(!e.target.value)return;if(pD.size||pF.size||pU.size){st('Sauvegarde auto...','info');await pDoA()}st('Chargement...','info');const r=await loadIt(e.target.value);pI=r.its.map(i=>({i,cc:r.cc,fp:r.fp}));pS=null;rPL();await ldPh();st(pI.length+' itinéraires','success')};
+
+async function loadAllPh(){if(pD.size||pF.size||pU.size){st('Sauvegarde auto...','info');await pDoA()}st('Chargement tous les pays...','info');pI=[];let n=0;for(const c of CC){const r=await loadIt(c);r.its.forEach(i=>pI.push({i,cc:r.cc,fp:r.fp}));n++;if(n%10===0)st(n+'/'+CC.length+'...','info')}pS=null;rPL();await ldPh();st(pI.length+' itinéraires (tous pays)','success')}
+
+$('phFilter').onchange=rPL;
+$('phSearch').oninput=rPL;
+
+async function ldPh(){try{const r=await fetch(PH+'/api/all-photos');if(!r.ok)throw 0;pP=await r.json();$('pPlaces').textContent=Object.keys(pP).length}catch(e){pP=null;st('Serveur photos (3000) non joignable','error')}}
+
+function gpids(i){const s=new Set();(i.days_plan||[]).forEach(d=>{if(d.night?.place_id)s.add(d.night.place_id)});return[...s]}
+
+function gVA(i){
+  const m={};
+  (i.days_plan||[]).forEach(d=>{
+    const pid=d.night?.place_id;if(!pid)return;
+    if(!m[pid])m[pid]=[];
+    (d.visits||[]).forEach(v=>{
+      const t=v.text||'';let type='visit';
+      m[pid].push({type,text:t,day:d.day});
+    });
+    (d.activities||[]).forEach(a=>{
+      const t=a.text||'';let type='activity';
+      if(t.includes('🏨'))type='hotel';
+      else if(t.includes('🍽'))type='resto';
+      m[pid].push({type,text:t,day:d.day});
+    });
+  });
+  return m;
+}
+
+function toggleVA(pid){
+  const el=document.getElementById('va_'+pid.replace(/[^a-zA-Z0-9]/g,'_'));
+  if(el)el.classList.toggle('open');
+}
+
+function r2ToggleVA(vaId){
+  var el=document.getElementById(vaId);
+  var btn=document.getElementById('btn_'+vaId);
+  if(el){
+    el.classList.toggle('open');
+    if(btn){
+      var label=btn.textContent.substring(2);
+      btn.textContent=(el.classList.contains('open')?'▼ ':'▶ ')+label;
+    }
+  }
+}
+
+// Cache des itinéraires par pays pour le panneau V/A
+window.r2VAcache=window.r2VAcache||{};
+
+async function r2LoadVA(cc,placeId){
+  // Collecter tous les codes pays des places visibles
+  var allCCs=new Set();
+  r2Places.forEach(function(p){
+    var c=p.place_id.split('::')[0].toUpperCase();
+    if(c)allCCs.add(c);
+  });
+  if(!allCCs.size)allCCs.add(cc);
+  
+  // Charger les itinéraires de tous les pays dans toutes les langues
+  var allIts=[];
+  var langs=['fr','en','es','de','it','pt'];
+  var seen=new Set();
+  for(var c of allCCs){
+    if(r2VAcache[c]){allIts=allIts.concat(r2VAcache[c]);continue}
+    var countryIts=[];
+    for(var li=0;li<langs.length;li++){
+      try{
+        var r=await loadIt(c,langs[li]);
+        if(r.its)r.its.forEach(function(it){
+          var id=it.itin_id||it.id;
+          if(!seen.has(id+langs[li])){seen.add(id+langs[li]);countryIts.push(it)}
+        });
+      }catch(e){}
+    }
+    r2VAcache[c]=countryIts;
+    allIts=allIts.concat(countryIts);
+  }
+  // Stocker un cache global pour la recherche
+  r2VAcache['__all']=allIts;
+  r2RenderEditor();
+}
+
+function r2BuildVAPanel(placeId,itins){
+  var vaItems=[];
+  (itins||[]).forEach(function(it){
+    if(!it||!it.days_plan)return;
+    it.days_plan.forEach(function(d){
+      if(d.night&&d.night.place_id===placeId){
+        (d.visits||[]).forEach(function(v){vaItems.push({type:'visit',text:v.text||'',day:d.day,itin:it.title||it.itin_id||it.id})});
+        (d.activities||[]).forEach(function(a){
+          var t=a.text||'',tp='activity';
+          if(t.indexOf('🏨')>=0)tp='hotel';else if(t.indexOf('🍽')>=0)tp='resto';
+          vaItems.push({type:tp,text:t,day:d.day,itin:it.title||it.itin_id||it.id});
+        });
+      }
+    });
+  });
+  if(vaItems.length===0)return'<div style="margin-bottom:12px;padding:8px 12px;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;font-size:12px;color:#888">Aucune visite/activité trouvée pour ce lieu.</div>';
+  var vC=vaItems.filter(function(x){return x.type==='visit'}).length;
+  var aC=vaItems.filter(function(x){return x.type==='activity'}).length;
+  var hC=vaItems.filter(function(x){return x.type==='hotel'}).length;
+  var rC=vaItems.filter(function(x){return x.type==='resto'}).length;
+  var vaId='r2va_'+placeId.replace(/[^a-zA-Z0-9]/g,'_');
+  var vaLabel=vC+'V · '+aC+'A'+(hC?' · '+hC+'H':'')+(rC?' · '+rC+'R':'');
+  return'<div style="margin-bottom:12px;border:1px solid #e0e0e0;border-radius:6px;background:#fff;overflow:hidden">'
+    +'<div style="padding:8px 12px;background:#f5f5f5;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between">'
+    +'<button class="va-toggle" id="btn_'+vaId+'" onclick="r2ToggleVA(\''+vaId+'\')">▶ '+vaLabel+'</button>'
+    +'</div>'
+    +'<div class="va-panel" id="'+vaId+'">'
+    +vaItems.map(function(x){
+      var preview=x.text.replace(/</g,'&lt;');
+      var itinLabel=x.itin?'<span style="font-size:10px;color:#999;margin-left:6px">['+x.itin.replace(/</g,'&lt;').substring(0,40)+']</span>':'';
+      return'<div class="va-item '+x.type+'"><div class="va-label '+x.type+'">'
+        +(x.type==='visit'?'📍 Visite':x.type==='hotel'?'🏨 Hôtel':x.type==='resto'?'🍽️ Restaurant':'🎯 Activité')
+        +' <span class="va-day">J'+x.day+'</span>'+itinLabel+'</div><div class="va-text">'+preview+'</div></div>';
+    }).join('')
+    +'</div></div>';
+}
+
+function rPL(){
+  const s=$('phSearch').value.toLowerCase(),f=$('phFilter')?$('phFilter').value:'all';
+  let l=pI;
+  if(s)l=l.filter(({i})=>((i.itin_id||i.id||'')+(i.title||'')).toLowerCase().includes(s));
+  if(f==='done')l=l.filter(({i})=>pW.has(i.itin_id||i.id));
+  if(f==='todo')l=l.filter(({i})=>!pW.has(i.itin_id||i.id));
+  $('pTotal').textContent=pI.length;
+  $('pDone').textContent=pW.size;
+  $('phList').innerHTML=l.map(({i,cc})=>{const id=i.itin_id||i.id,p=gpids(i),sel=pS&&(pS.i.itin_id||pS.i.id)===id,done=pW.has(id);return'<div class="itin-item '+(sel?'selected':'')+' '+(done?'done':'')+'" onclick="selP(\''+id+'\')"><div class="title">'+(i.title||id)+'</div><div class="meta"><span>'+cc+'</span><span>'+p.length+' places</span><span>'+(i.estimated_days_base||'?')+'j</span></div></div>'}).join('');
+}
+
+async function selP(id){if(pD.size||pF.size||pU.size){st('Sauvegarde auto...','info');await pDoA()}pS=pI.find(({i})=>(i.itin_id||i.id)===id);pD.clear();pF.clear();pU.clear();rPL();rPE()}
+
+function rPE(){
+  const e=$('phEd');
+  if(!pS){e.innerHTML='<div class="editor-empty">Sélectionnez un itinéraire</div>';return}
+  if(!pP){e.innerHTML='<div class="editor-empty">Serveur photos (3000) non connecté</div>';return}
+  const{i}=pS,id=i.itin_id||i.id,ps=gpids(i);let tot=0;
+  const vaMap=gVA(i);
+  const html=ps.map(pid=>{
+    const d=pP[pid],cur=d?.current||[],nw=d?.new||[],all=[...cur,...nw],nm=d?.place_name||pid.split('::').slice(1).join(' ').replace(/-/g,' ');tot+=all.length;
+    const g=all.length?all.map((u,idx)=>{const isDel=pD.has(pid+'|||'+u),isF=pF.get(u)===pid,isU=pU.get(u)===pid,isNew=nw.includes(u),cls=isDel?'marked-delete':isF?'marked-first':isU?'marked-up':'',eu=encodeURIComponent(u);
+      return'<div class="photo-card '+cls+'"><img src="'+u+'" onerror="this.classList.add(\'broken\')" loading="lazy" referrerPolicy="no-referrer"><span class="photo-num">'+(idx+1)+'</span>'+(isNew?'<span class="photo-new">NEW</span>':'')+'<div class="photo-overlay"><button class="btn btn-red" onclick="event.stopPropagation();pTD(\''+pid+"','"+eu+"')\" title=\"Supprimer\">×</button><button class=\"btn btn-green\" onclick=\"event.stopPropagation();pTF('"+pid+"','"+eu+"')\" title=\"1er\">★</button><button class=\"btn btn-blue\" onclick=\"event.stopPropagation();pTU('"+pid+"','"+eu+"')\" title=\"2e\">↑</button></div></div>"}).join(''):'<div class="no-photos">Aucune photo</div>';
+    const iid='au_'+pid.replace(/[^a-zA-Z0-9]/g,'_');
+    const vaId='va_'+pid.replace(/[^a-zA-Z0-9]/g,'_');
+    const items=vaMap[pid]||[];
+    const vCount=items.filter(x=>x.type==='visit').length;
+    const aCount=items.filter(x=>x.type==='activity').length;
+    const hCount=items.filter(x=>x.type==='hotel').length;
+    const rCount=items.filter(x=>x.type==='resto').length;
+    const vaBtn=items.length?'<button class="va-toggle" onclick="toggleVA(\''+pid+'\')">▶ '+vCount+'V · '+aCount+'A'+(hCount?' · '+hCount+'H':'')+(rCount?' · '+rCount+'R':'')+'</button>':'';
+    const vaItems=items.map(x=>{
+      const preview=(x.text||'').replace(/</g,'&lt;');
+      return'<div class="va-item '+x.type+'"><div class="va-label '+x.type+'">'+(x.type==='visit'?'📍 Visite':x.type==='hotel'?'🏨 Hôtel':x.type==='resto'?'🍽️ Restaurant':'🎯 Activité')+' <span class="va-day">J'+x.day+'</span></div><div class="va-text">'+preview+'</div></div>';
+    }).join('');
+    const vaPanel='<div class="va-panel" id="'+vaId+'">'+vaItems+'</div>';
+    return'<div class="photos-place"><div class="photos-place-header"><h4>'+nm+'<span class="place-id">'+pid+' · '+all.length+' photo(s)</span></h4><div style="display:flex;gap:8px;align-items:center">'+vaBtn+'<button class="btn btn-outline btn-sm" onclick="window.open(\'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(nm)+'\',\'_blank\')">Google</button><button class="btn btn-outline btn-sm" onclick="window.open(\'https://commons.wikimedia.org/w/index.php?search='+encodeURIComponent(nm)+'&title=Special:MediaSearch&type=image\',\'_blank\')">Wiki</button></div></div>'+vaPanel+'<div class="photos-grid">'+g+'</div><div style="padding:8px 12px;border-top:1px solid #eee"><div class="add-row"><input type="text" id="'+iid+'" placeholder="Coller une URL..."><button class="btn btn-blue btn-sm" onclick="pAdd(\''+pid+'\')">Ajouter</button></div></div></div>';
+  }).join('');
+  const ha=pD.size||pF.size||pU.size;
+  e.innerHTML='<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:14px"><div><div style="font-size:17px;font-weight:600">'+(i.title||id)+'</div><div style="font-size:12px;color:#888;margin-top:3px">'+id+' · '+ps.length+' places · '+tot+' photos</div></div></div><div class="toolbar">'+(pD.size?'<button class="btn btn-red" onclick="pDoD()">Supprimer '+pD.size+' photo(s)</button>':'')+(pF.size+pU.size?'<button class="btn btn-blue" onclick="pDoR()">Réordonner '+(pF.size+pU.size)+' photo(s)</button>':'')+(ha?'<button class="btn btn-green" onclick="pDoA()">Tout appliquer</button>':'')+'</div>'+html;
+}
+
+function pTD(pid,eu){const u=decodeURIComponent(eu),k=pid+'|||'+u;pD.has(k)?pD.delete(k):(pD.add(k),pF.delete(u),pU.delete(u));rPE()}
+function pTF(pid,eu){const u=decodeURIComponent(eu);pF.has(u)?pF.delete(u):(pF.set(u,pid),pD.delete(pid+'|||'+u),pU.delete(u));rPE()}
+function pTU(pid,eu){const u=decodeURIComponent(eu);pU.has(u)?pU.delete(u):(pU.set(u,pid),pD.delete(pid+'|||'+u),pF.delete(u));rPE()}
+
+async function pDoD(){if(!pD.size)return;const urls=[...pD].map(k=>k.split('|||')[1]);st('Suppression...','info');try{await fetch(PH+'/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({urls})});await fetch(PH+'/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});pD.clear();await ldPh();rPE();st(urls.length+' supprimée(s)','success')}catch(e){st('Erreur','error')}}
+async function pDoR(){if(!pF.size&&!pU.size)return;st('Réorganisation...','info');try{await fetch(PH+'/api/reorder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({first:[...pF.entries()],up:[...pU.entries()]})});await fetch(PH+'/api/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});pF.clear();pU.clear();await ldPh();rPE();st('Réordonné','success')}catch(e){st('Erreur','error')}}
+async function pDoA(){if(!pD.size&&!pF.size&&!pU.size)return;if(pS){pW.add(pS.i.itin_id||pS.i.id)}if(pD.size)await pDoD();if(pF.size||pU.size)await pDoR();rPL()}
+async function pAdd(pid){const iid='au_'+pid.replace(/[^a-zA-Z0-9]/g,'_'),inp=$(iid);if(!inp)return;const u=inp.value.trim();if(!u||!u.startsWith('http')){st('URL invalide','error');return}st('Ajout...','info');try{const r=await fetch(PH+'/api/add-photo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({placeId:pid,url:u})});const j=await r.json();if(j.ok){inp.value='';if(pS){pW.add(pS.i.itin_id||pS.i.id)}await ldPh();rPE();rPL();st('Photo ajoutée','success')}else st(j.error||'Erreur','error')}catch(e){st('Erreur','error')}}
+
+document.addEventListener('dblclick',e=>{if(e.target.tagName==='IMG'&&e.target.closest('.photo-card')){$('mImg').src=e.target.src;$('modal').classList.add('open')}});
+
+// ============================================
+// R2 PHOTOS
+// ============================================
+let r2Places=[],r2Sel=null,r2Current=[],r2New=[],r2Selected=new Map(),r2Primary=null,r2Loading=false,r2Groups=[],r2Keywords=[],r2ShowAll=false;
+let r2Prefetch={};  // Cache: place_id → données de recherche pré-chargées
+let r2WikiOnlyDone=new Set();  // place_ids pour lesquels on a déjà fait la recherche élargie (non wiki-only)
+
+// ============================================
+// PREFETCH R2 — pré-charger les 3 places suivantes en arrière-plan
+// ============================================
+// Règles de sécurité :
+//   1. Le prefetch n'écrit JAMAIS dans l'affichage (r2Sel, r2Current, r2New, etc.)
+//   2. Chaque lancement a un "token de génération" qui est invalidé si l'utilisateur change de place
+//   3. Démarrage différé de 2s (si l'utilisateur change vite, on annule)
+//   4. Pas de double prefetch pour la même place
+//   5. Maximum 2 requêtes réseau en parallèle
+let r2PrefetchGen = 0;          // Token : incrémenté à chaque nouveau clic utilisateur
+let r2PrefetchInflight = new Set();  // place_ids dont le prefetch est en cours
+let r2PrefetchTimer = null;     // setTimeout du délai avant lancement
+const R2_PREFETCH_MAX_PARALLEL = 1;
+const R2_PREFETCH_COUNT = 10;    // nombre de places suivantes à pré-charger
+const R2_PREFETCH_DELAY_MS = 500;
+
+async function r2PrefetchNext(currentPid){
+  // Annuler tout prefetch en attente (pas encore lancé) car l'utilisateur vient de changer de place
+  if(r2PrefetchTimer){ clearTimeout(r2PrefetchTimer); r2PrefetchTimer=null; }
+  // Invalider les prefetchs actuellement en cours de requête
+  const myGen = ++r2PrefetchGen;
+
+  // Attendre que l'utilisateur ait "posé" son regard 2s sur la place actuelle
+  r2PrefetchTimer = setTimeout(function(){
+    r2PrefetchTimer = null;
+    // Re-vérifier : on est toujours sur la même génération ?
+    if(myGen !== r2PrefetchGen) return;
+
+    // Trouver l'index de la place actuelle dans la liste AFFICHÉE (avec filtres appliqués)
+    // On applique les MEMES filtres que r2RenderList pour suivre ce que l'utilisateur voit
+    const s=($('r2Search').value||'').toLowerCase();
+    const f=$('r2Filter').value;
+    let list = r2Places;
+    if(s) list = list.filter(p=>(p.name+' '+p.place_id).toLowerCase().includes(s));
+    if(f==='todo') list = list.filter(p=>!p.is_done || (p.photo_count>0 && !p.has_r2));
+    if(f==='done') list = list.filter(p=>p.is_done);
+    if(f==='no-photo') list = list.filter(p=>p.photo_count===0);
+    if(f==='old-format') list = list.filter(p=>p.photo_count>0 && !p.has_r2);
+    const idx = list.findIndex(p => p.place_id === currentPid);
+    if(idx < 0) return;
+
+    // Prendre les 3 suivantes (dans la liste, pas déjà traitées ni déjà prefetchées)
+    const targets = [];
+    for(let i = idx + 1; i < list.length && targets.length < R2_PREFETCH_COUNT; i++){
+      const p = list[i];
+      if(!p || !p.place_id) continue;
+      if(p.is_done) continue;                    // skip traités
+      if(r2Prefetch[p.place_id]) continue;       // déjà en cache
+      if(r2PrefetchInflight.has(p.place_id)) continue; // déjà en cours
+      targets.push(p.place_id);
+    }
+    if(!targets.length) return;
+
+    // Lancer 2 en parallèle maximum, enchaîner les suivants quand ils finissent
+    let activeCount = 0;
+    let queueIdx = 0;
+
+    function launchNext(){
+      // Vérifier que la génération est encore valide
+      if(myGen !== r2PrefetchGen) return;
+      while(activeCount < R2_PREFETCH_MAX_PARALLEL && queueIdx < targets.length){
+        const pid = targets[queueIdx++];
+        activeCount++;
+        r2PrefetchInflight.add(pid);
+        doPrefetch(pid).then(function(){
+          activeCount--;
+          r2PrefetchInflight.delete(pid);
+          launchNext();
+        });
+      }
+    }
+
+    function doPrefetch(pid){
+      // Capture la génération au moment du lancement
+      const genAtStart = myGen;
+      return fetch(API+'/api/photos/search',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({place_id:pid, wiki_only:true})
+      }).then(function(resp){
+        if(!resp.ok) throw new Error('HTTP '+resp.status);
+        return resp.json();
+      }).then(function(d){
+        // PROTECTION : si l'utilisateur a changé de place depuis, on jette le résultat
+        if(genAtStart !== r2PrefetchGen) return;
+        // Stocker silencieusement — AUCUN rendu, AUCUN changement de variables d'affichage
+        r2Prefetch[pid] = d;
+      }).catch(function(e){
+        // Échec silencieux : on ne perturbe pas l'utilisateur
+        console.warn('[Prefetch] '+pid+':', e.message);
+      });
+    }
+
+    launchNext();
+  }, R2_PREFETCH_DELAY_MS);
+}
+
+function r2ApplyPreselection(preselected){
+  r2Selected.clear();
+  r2Primary=null;
+  const allPhotos=[...r2Current,...r2New];
+  // Exclure Bing et DuckDuckGo de la preselection automatique (dernier ressort uniquement)
+  const isBingOrDdg=function(p){
+    const s=((p&&p.source)||'').toLowerCase();
+    return s.includes('bing')||s.includes('duckduckgo');
+  };
+  for(const url of preselected){
+    const photo=allPhotos.find(c=>c.url===url);
+    if(photo && !isBingOrDdg(photo))r2Selected.set(url,photo);
+  }
+  // La première pré-sélectionnée (non-bing) devient la principale
+  const firstNonBing=preselected.find(u=>{
+    const p=allPhotos.find(c=>c.url===u);
+    return p && !isBingOrDdg(p);
+  });
+  if(firstNonBing)r2Primary=firstNonBing;
+}
+
+// ============================================
+// UPLOAD ASYNCHRONE — file d'attente, max 3 en parallèle
+// ============================================
+// r2UploadStatus : map place_id → 'pending' | 'uploading' | 'done' | 'error'
+// Les indicateurs sont dessinés dans la sidebar par r2RenderList()
+let r2UploadStatus = new Map();   // place_id → statut
+let r2UploadErrors = new Map();   // place_id → message d'erreur
+let r2UploadQueue = [];           // liste de {place_id, photos} en attente
+let r2UploadActive = 0;           // nombre d'uploads en cours
+const R2_UPLOAD_MAX_PARALLEL = 2;
+const R2_QUEUE_STORAGE_KEY = 'ort_r2_upload_queue';
+
+function r2QueueSave(){
+  // Sauvegarde la queue + les jobs en cours dans localStorage.
+  // Comme ça si la page ferme, on peut reprendre au rechargement.
+  try{
+    // On stocke la queue en attente. Les jobs déjà partis sur le serveur termineront
+    // côté serveur même si la page ferme — ils sont juste retirés du localStorage à succès.
+    const data = r2UploadQueue.map(j => ({place_id: j.place_id, photos: j.photos}));
+    if(data.length === 0){
+      localStorage.removeItem(R2_QUEUE_STORAGE_KEY);
+    } else {
+      localStorage.setItem(R2_QUEUE_STORAGE_KEY, JSON.stringify(data));
+    }
+  }catch(e){
+    console.warn('[Queue] Sauvegarde localStorage impossible:', e);
+  }
+}
+
+function r2QueueLoad(){
+  // Charge la queue depuis localStorage au démarrage. Retourne un array (vide si rien).
+  try{
+    const raw = localStorage.getItem(R2_QUEUE_STORAGE_KEY);
+    if(!raw) return [];
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : [];
+  }catch(e){
+    console.warn('[Queue] Lecture localStorage impossible:', e);
+    return [];
+  }
+}
+
+function r2QueueClear(){
+  try{ localStorage.removeItem(R2_QUEUE_STORAGE_KEY); }catch(_){}
+}
+
+function r2Dirty(){
+  // Une place est "dirty" si la sélection actuelle diffère de celle d'origine.
+  // On compare les URLs sélectionnées à r2OriginalSelection (défini au chargement de la place).
+  if(!r2Sel) return false;
+  if(!r2OriginalSelection) return r2Selected.size > 0;  // pas d'origine = tout ce qui est sélectionné est nouveau
+  // Compare les sets
+  if(r2Selected.size !== r2OriginalSelection.urls.size) return true;
+  for(const u of r2Selected.keys()){
+    if(!r2OriginalSelection.urls.has(u)) return true;
+  }
+  // Compare la principale
+  if(r2Primary !== r2OriginalSelection.primary) return true;
+  return false;
+}
+
+let r2OriginalSelection = null;  // snapshot au chargement : {urls: Set, primary: string}
+
+function r2SnapshotOriginal(){
+  // Capture l'état "originel" de la sélection juste après chargement d'une place.
+  // Ce snapshot sert à détecter si l'utilisateur a modifié quoi que ce soit.
+  r2OriginalSelection = {
+    urls: new Set(r2Selected.keys()),
+    primary: r2Primary
+  };
+}
+
+function r2EnqueueUpload(placeId, photosPayload){
+  // Ajoute un upload à la file. Le statut passe à 'pending' immédiatement.
+  r2UploadStatus.set(placeId, 'pending');
+  r2UploadErrors.delete(placeId);
+  r2UploadQueue.push({place_id: placeId, photos: photosPayload});
+  r2QueueSave();  // persister
+  r2RenderList();
+  r2ProcessQueue();
+}
+
+function r2ProcessQueue(){
+  // Lance les uploads tant qu'on est sous la limite
+  while(r2UploadActive < R2_UPLOAD_MAX_PARALLEL && r2UploadQueue.length > 0){
+    const job = r2UploadQueue.shift();
+    r2QueueSave();  // queue diminue → sauver
+    r2UploadActive++;
+    r2UploadStatus.set(job.place_id, 'uploading');
+    r2RenderList();
+    r2DoUpload(job).finally(function(){
+      r2UploadActive--;
+      r2ProcessQueue();
+    });
+  }
+}
+
+function r2DoUpload(job, attempt){
+  attempt = attempt || 1;
+  const pid = job.place_id;
+  return fetch(API+'/api/photos/select',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({place_id: pid, photos: job.photos})
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    return resp.json();
+  }).then(function(d){
+    if(d.success){
+      r2UploadStatus.set(pid, 'done');
+      // Mettre à jour la liste locale pour que le filtre "done" marche
+      const pl = r2Places.find(p => p.place_id === pid);
+      if(pl){
+        pl.is_done = true;
+        pl.has_r2 = true;
+        pl.photo_count = d.r2_urls ? d.r2_urls.length : 0;
+        pl.first_photo = d.r2_urls && d.r2_urls[0] || pl.first_photo;
+      }
+      st('✅ '+pid+' uploadé ('+(d.r2_urls||[]).length+' photos)', 'success');
+      r2RenderList();
+      // Si on est toujours sur cette place, mettre à jour l'éditeur aussi
+      if(r2Sel && r2Sel.place_id === pid){
+        r2Sel.is_done = true;
+        r2RenderEditor();
+      }
+    } else {
+      throw new Error(d.error || 'Erreur inconnue');
+    }
+  }).catch(function(e){
+    // Est-ce une erreur réseau (transitoire) ?
+    const msg = e.message || String(e);
+    const isNetwork = (e instanceof TypeError)
+      || /network|failed to fetch|load failed/i.test(msg);
+    const maxRetry = 3;
+    if(isNetwork && attempt < maxRetry){
+      // On retente : délais 1s, 3s, 5s
+      const delays = [1000, 3000, 5000];
+      const delay = delays[attempt-1] || 5000;
+      r2UploadStatus.set(pid, 'retry');
+      r2UploadErrors.set(pid, 'Retry '+(attempt+1)+'/'+maxRetry+' dans '+(delay/1000)+'s — '+msg);
+      r2RenderList();
+      return new Promise(function(resolve){
+        setTimeout(function(){
+          r2UploadStatus.set(pid, 'uploading');
+          r2RenderList();
+          r2DoUpload(job, attempt+1).then(resolve);
+        }, delay);
+      });
+    }
+    // Échec définitif
+    r2UploadStatus.set(pid, 'error');
+    r2UploadErrors.set(pid, msg + (attempt>1 ? ' (après '+attempt+' tentatives)' : ''));
+    r2RenderList();
+    stErr('❌ Upload échoué pour '+pid+' : '+msg+' (cliquer sur la place pour réessayer)');
+  });
+}
+
+// Toast d'erreur persistant (10s, au lieu des 4s du toast normal)
+function stErr(msg){
+  const b = $('statusBar');
+  b.textContent = msg;
+  b.className = 'error';
+  b.style.display = 'block';
+  clearTimeout(b._t);
+  b._t = setTimeout(function(){ b.className=''; b.style.display='none'; }, 10000);
+}
+
+// Construit le payload photos à uploader à partir de la sélection actuelle
+function r2BuildPayload(){
+  // Si aucune principale définie, la 1ère sélectionnée devient principale
+  const entries = [...r2Selected.entries()];
+  if(entries.length === 0) return null;
+  let effectivePrimary = r2Primary;
+  if(!effectivePrimary || !r2Selected.has(effectivePrimary)){
+    effectivePrimary = entries[0][0];
+  }
+  return entries.map(function(pair){
+    const url = pair[0], photo = pair[1];
+    let keyword = photo.group || '';
+    keyword = keyword.replace(/^[🔑🏷️👁📍]\s*/,'').replace(/\s*\(\d+\)\s*$/,'').trim();
+    return {
+      url: photo.url, url_full: photo.url_full || photo.url,
+      caption: photo.caption || '', author: photo.author || '',
+      source: photo.source || '', is_primary: url === effectivePrimary,
+      keyword: keyword,
+    };
+  });
+}
+
+// Gère ce qu'il faut faire quand on QUITTE la place actuelle.
+// Retourne une promesse qui se résout quand on peut charger la suivante.
+function r2HandleLeaveCurrent(){
+  if(!r2Sel) return Promise.resolve();
+  const dirty = r2Dirty();
+  const isDone = !!r2Sel.is_done;
+
+  // Cas 1 : rien modifié + place déjà traitée → on s'en va sans rien faire
+  if(!dirty && isDone) return Promise.resolve();
+
+  // Cas 2 : rien modifié + place NEUVE → auto-upload avec toast "Annuler" (2s)
+  if(!dirty && !isDone){
+    if(r2Selected.size === 0) return Promise.resolve();
+    const payload = r2BuildPayload();
+    if(payload) r2ScheduleUploadWithCancel(r2Sel.place_id, payload, r2Selected.size);
+    return Promise.resolve();
+  }
+
+  // Cas 3 : modifié → upload direct sans popup
+  const payload = r2BuildPayload();
+  if(payload) r2EnqueueUpload(r2Sel.place_id, payload);
+  return Promise.resolve();
+}
+
+// Lance un upload après 2s, avec un toast permettant d'annuler avant l'envoi.
+// Utilisé quand on quitte une place neuve sans y avoir rien modifié (la pré-sélection
+// auto est alors validée par défaut sauf si l'utilisateur clique "Annuler").
+const r2PendingUploads = new Map();  // place_id → {timer, payload}
+function r2ScheduleUploadWithCancel(pid, payload, nbPhotos){
+  // Si un upload était déjà en attente pour ce lieu, on l'écrase
+  if(r2PendingUploads.has(pid)){
+    clearTimeout(r2PendingUploads.get(pid).timer);
+  }
+  const toastId = 'r2CancelToast_'+pid.replace(/[^a-zA-Z0-9]/g,'_');
+  // Créer la box en bas
+  const box = document.createElement('div');
+  box.id = toastId;
+  box.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:10000;background:#2e7d32;color:#fff;padding:10px 14px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;font-size:13px';
+  box.innerHTML = '<span>📤 Upload de '+nbPhotos+' photo(s) pour '+pid+'...</span>'
+    +'<button style="background:#fff;color:#2e7d32;border:none;padding:4px 10px;border-radius:4px;font-weight:600;cursor:pointer" onclick="r2CancelPending(\''+pid.replace(/'/g,"\\'")+'\')">Annuler</button>';
+  document.body.appendChild(box);
+
+  const timer = setTimeout(function(){
+    // Expire → upload réel + retirer la box
+    r2PendingUploads.delete(pid);
+    const el = document.getElementById(toastId);
+    if(el) el.remove();
+    r2EnqueueUpload(pid, payload);
+  }, 2000);
+
+  r2PendingUploads.set(pid, {timer: timer, toastId: toastId});
+}
+
+function r2CancelPending(pid){
+  const entry = r2PendingUploads.get(pid);
+  if(!entry) return;
+  clearTimeout(entry.timer);
+  r2PendingUploads.delete(pid);
+  const el = document.getElementById(entry.toastId);
+  if(el) el.remove();
+  st('Upload annulé pour '+pid,'info');
+}
+
+function r2Click(pid){
+  // 1. Gérer le départ de la place actuelle (upload si modifié / popup si neuve)
+  const leavePromise = r2HandleLeaveCurrent();
+
+  leavePromise.then(function(){
+    // 2. Passer à la nouvelle place
+    r2Sel=r2Places.find(p=>p.place_id===pid)||null;
+    r2Selected.clear();r2Primary=null;
+    r2Groups=[];r2Keywords=[];
+    r2OriginalSelection=null;
+
+    if(r2Prefetch[pid]){
+      const d=r2Prefetch[pid];
+      r2Current=d.current_photos||[];
+      r2New=d.new_candidates||[];
+      r2Groups=d.groups||[];
+      r2Keywords=d.map_keywords||[];
+      r2ApplyPreselection(d.preselected||[]);
+      r2SnapshotOriginal();  // Snapshot juste après pré-sélection
+      delete r2Prefetch[pid];
+      r2RenderList();r2RenderEditor();
+      st(r2New.length+' candidates, '+r2Selected.size+' pré-sélectionnées','success');
+      r2PrefetchNext(pid);
+    }else{
+      r2Current=[];r2New=[];
+      r2Loading=true;
+      r2RenderList();r2RenderEditor();
+      const requestedPid=pid;  // Capturer le pid au moment du clic
+      fetch(API+'/api/photos/search',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({place_id:pid, wiki_only:true})
+      }).then(function(resp){
+        if(!resp.ok)throw new Error('Erreur serveur '+resp.status);
+        return resp.json();
+      }).then(function(d){
+        // Ne rien faire si l'utilisateur a cliqué sur une autre place entre temps
+        if(!r2Sel||r2Sel.place_id!==requestedPid)return;
+        r2Current=d.current_photos||[];
+        r2New=d.new_candidates||[];
+        r2Groups=d.groups||[];
+        r2Keywords=d.map_keywords||[];
+        r2ApplyPreselection(d.preselected||[]);
+        r2SnapshotOriginal();  // Snapshot juste après pré-sélection
+        r2Loading=false;
+        r2RenderEditor();
+        st(r2New.length+' candidates, '+r2Selected.size+' pré-sélectionnées','success');
+        r2PrefetchNext(requestedPid);
+      }).catch(function(e){
+        if(!r2Sel||r2Sel.place_id!==requestedPid)return;
+        console.error('[R2] Erreur:',e);
+        r2Loading=false;
+        r2RenderEditor();
+        st('Erreur: '+e.message,'error');
+      });
+    }
+  });  // fin du leavePromise.then
+}
+
+function r2SearchMore(){
+  // Relance la recherche pour le lieu sélectionné avec wiki_only=false,
+  // pour aller chercher Pexels/Pixabay/Bing en plus.
+  if(!r2Sel) return;
+  const pid = r2Sel.place_id;
+  if(r2WikiOnlyDone.has(pid)){
+    st('Recherche élargie déjà effectuée pour ce lieu','info');
+    return;
+  }
+  r2WikiOnlyDone.add(pid);
+  r2Loading = true;
+  r2RenderEditor();
+  st('Recherche élargie (Pexels, Pixabay, Bing)...','info');
+  fetch(API+'/api/photos/search',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({place_id:pid, wiki_only:false})
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('Erreur serveur '+resp.status);
+    return resp.json();
+  }).then(function(d){
+    if(!r2Sel || r2Sel.place_id !== pid) return;  // user a changé de lieu
+    // On remplace totalement les candidats (le nouvel appel contient tout, y compris Wiki)
+    // Mais on garde la sélection déjà faite par l'utilisateur
+    const keepSelected = new Map(r2Selected);
+    const keepPrimary = r2Primary;
+    r2Current = d.current_photos || [];
+    r2New = d.new_candidates || [];
+    r2Groups = d.groups || [];
+    r2Keywords = d.map_keywords || [];
+    // Ré-appliquer la pré-sélection auto (seuls les scores ≥ 25)
+    r2ApplyPreselection(d.preselected || []);
+    // Restaurer la sélection manuelle de l'utilisateur (par URL)
+    for(const [url, photo] of keepSelected){
+      if(!r2Selected.has(url)) r2Selected.set(url, photo);
+    }
+    if(keepPrimary) r2Primary = keepPrimary;
+    r2Loading = false;
+    r2RenderEditor();
+    st(r2New.length+' candidates au total, '+r2Selected.size+' sélectionnées','success');
+  }).catch(function(e){
+    if(!r2Sel || r2Sel.place_id !== pid) return;
+    r2Loading = false;
+    r2RenderEditor();
+    st('Erreur: '+e.message,'error');
+  });
+}
+
+$('r2CC').onchange=e=>{if(e.target.value)r2LoadCountry(e.target.value)};
+
+async function r2LoadCountry(cc){
+  r2Prefetch={};
+  r2WikiOnlyDone=new Set();
+  st('Chargement...','info');
+  try{
+    const u=cc?API+'/api/photos/places?country='+cc:API+'/api/photos/places';
+    const r=await fetch(u);if(!r.ok)throw new Error('Serveur indisponible');
+    const d=await r.json();
+    r2Places=d.places||[];r2Sel=null;r2Selected.clear();r2Primary=null;
+    r2RenderList();r2RenderEditor();
+    st(r2Places.length+' lieux','success');
+  }catch(e){st(e.message,'error');r2Places=[];r2RenderList()}
+}
+
+function r2RenderList(){
+  const s=($('r2Search').value||'').toLowerCase(),f=$('r2Filter').value;
+  let l=r2Places;
+  if(s)l=l.filter(p=>(p.name+' '+p.place_id).toLowerCase().includes(s));
+  if(f==='todo')l=l.filter(p=>!p.is_done || (p.photo_count>0 && !p.has_r2));
+  if(f==='done')l=l.filter(p=>p.is_done);
+  if(f==='no-photo')l=l.filter(p=>p.photo_count===0);
+  if(f==='old-format')l=l.filter(p=>p.photo_count>0 && !p.has_r2);
+  const done=r2Places.filter(p=>p.is_done).length;
+  $('r2Total').textContent=r2Places.length;
+  $('r2Done').textContent=done;
+  $('r2Missing').textContent=r2Places.length-done;
+  $('r2List').innerHTML=l.map(p=>{
+    const sel=r2Sel&&r2Sel.place_id===p.place_id;
+    // Indicateur d'upload
+    const st = r2UploadStatus.get(p.place_id);
+    let badge = '';
+    let extraClass = '';
+    if(st === 'pending'){
+      badge = '<span style="color:#f9a825;margin-right:4px" title="En file d\'attente">⏳</span>';
+    } else if(st === 'uploading'){
+      badge = '<span style="color:#1976d2;margin-right:4px" title="Upload en cours...">⏫</span>';
+      extraClass = 'uploading';
+    } else if(st === 'retry'){
+      const err = r2UploadErrors.get(p.place_id) || 'Retry en cours';
+      badge = '<span style="color:#f57c00;margin-right:4px" title="'+err.replace(/"/g,'&quot;')+'">🔄</span>';
+      extraClass = 'uploading';
+    } else if(st === 'error'){
+      const err = r2UploadErrors.get(p.place_id) || 'Erreur';
+      badge = '<span style="color:#c62828;margin-right:4px" title="'+err.replace(/"/g,'&quot;')+' (clic pour réessayer)">❌</span>';
+      extraClass = 'upload-error';
+    } else if(st === 'done' || p.is_done){
+      badge = '<span style="color:#2e7d32;margin-right:4px">✅</span>';
+    }
+    // Le ✅ de p.is_done original est remplacé par le badge
+    return'<div class="itin-item '+(sel?'selected':'')+' '+(p.is_done?'done':'')+' '+extraClass+'" onclick="r2Click(\''+p.place_id.replace(/'/g,"\\'")+'\')">'
+      +'<div class="title">'+badge+p.name.replace(/-/g,' ')+'</div>'
+      +'<div class="meta"><span>'+p.country+'</span><span>'+p.photo_count+' ph</span><span>'+p.type+'</span></div></div>';
+  }).join('');
+}
+
+function r2RenderEditor(){
+  const ed=$('r2Ed');
+  if(!r2Sel){ed.innerHTML='<div class="editor-empty">Sélectionnez un lieu</div>';return}
+  const p=r2Sel,nm=p.name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const cn=p.country_name||p.country;  // Nom complet du pays, fallback sur code
+
+  // Titre + boutons
+  let h='<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">'
+    +'<div><div style="font-size:17px;font-weight:600">'+nm+'</div>'
+    +'<div style="font-size:12px;color:#888;margin-top:2px">'+p.place_id+' · '+cn+' · '+p.type+'</div></div>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button class="btn btn-outline btn-sm" onclick="window.open(\'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(nm+' '+cn)+'\')">Google</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="window.open(\'https://commons.wikimedia.org/w/index.php?search='+encodeURIComponent(nm+' '+cn)+'\')">Wiki</button>'
+    +'</div></div>';
+
+  // Panel visits/activities (auto-chargé par pays)
+  const vaCC=p.place_id.split('::')[0].toUpperCase();
+  if(!r2VAcache)window.r2VAcache={};
+  var vaAllIts=r2VAcache['__all']||r2VAcache[vaCC];
+  if(vaAllIts){
+    h+=r2BuildVAPanel(p.place_id,vaAllIts);
+  } else {
+    var vaId='r2va_'+p.place_id.replace(/[^a-zA-Z0-9]/g,'_');
+    h+='<div id="r2va_loader_'+vaId+'" style="margin-bottom:12px;padding:8px 12px;background:#e3f2fd;border:1px solid #90caf9;border-radius:6px;font-size:12px;color:#1565c0;cursor:pointer" onclick="r2LoadVA(\''+vaCC+'\',\''+p.place_id+'\')">'
+      +'📋 Cliquer pour charger les visites/activités</div>';
+  }
+
+  // URL manuelle + indicateur chargement
+  h+='<div style="display:flex;gap:8px;margin-bottom:12px;align-items:stretch">'
+    +(r2Loading?'<span style="padding:7px 10px;font-size:12px;color:#1976d2">⏳ Chargement...</span>':'')
+    +'<input type="text" id="r2ManualUrl" placeholder="Coller une URL d\'image..." style="flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
+    +'<input type="text" id="r2ManualCaption" placeholder="Légende..." style="width:180px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
+    +'<button class="btn btn-outline btn-sm" onclick="r2AddManual()">Ajouter</button>'
+    +'</div>';
+
+  // Bouton "Chercher ailleurs" : si moins de 3 photos auto-sélectionnées
+  // ET qu'on n'a pas déjà fait l'appel élargi sur ce lieu
+  if(!r2Loading && !r2WikiOnlyDone.has(r2Sel.place_id) && r2Selected.size < 3){
+    h+='<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">'
+      +'<span style="font-size:12px;color:#e65100">Seulement '+r2Selected.size+' photo(s) préselectionnée(s) sur Wikimedia — tu peux chercher ailleurs si ce n\'est pas suffisant.</span>'
+      +'<button class="btn btn-sm" style="background:#ef6c00;color:#fff;border:none;white-space:nowrap" onclick="r2SearchMore()">🔎 Chercher ailleurs</button>'
+      +'</div>';
+  }
+
+  // Sélection en cours — bouton flottant
+  if(r2Selected.size>0){
+    h+='<div id="r2FloatBar" style="position:sticky;top:0;z-index:50;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.1)">'
+      +'<span style="font-weight:500">'+r2Selected.size+' photo(s) sélectionnée(s)'+(r2Primary?' · ★ principale définie':'')+'</span>'
+      +'<button class="btn btn-green" onclick="r2Validate()">✅ Valider → Upload R2</button></div>';
+    // Afficher les sélectionnées en premier
+    h+='<div style="font-size:14px;font-weight:700;color:#2e7d32;margin:8px 0 6px;padding-bottom:4px;border-bottom:2px solid #a5d6a7">🎯 Ma sélection ('+r2Selected.size+')</div>';
+    const selPhotos=[...r2Selected.values()];
+    // Mettre la principale en premier
+    selPhotos.sort((a,b)=>(a.url===r2Primary?-1:b.url===r2Primary?1:0));
+    h+=r2RenderGrid(selPhotos);
+  }
+
+  // Photos actuelles
+  if(r2Current.length>0){
+    h+='<div style="font-size:13px;font-weight:600;color:#555;margin:8px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee">Photos actuelles ('+r2Current.length+')</div>';
+    h+=r2RenderGrid(r2Current,true);
+  }
+
+  // Keywords recherchés avec boutons Google par keyword (pays ajouté si pas déjà dedans)
+  if(r2Keywords.length>0){
+    h+='<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:6px;padding:10px 12px;margin:12px 0;font-size:12px;color:#333">'
+      +'<div style="font-weight:600;margin-bottom:6px;color:#e65100">🔎 Recherche par keyword — clique 🌍 pour ajouter des photos Google Places API</div>'
+      +r2Keywords.map(function(k,i){
+        const q=k.toLowerCase().includes(cn.toLowerCase())?k:(k+' '+cn);
+        const ek=encodeURIComponent(k);
+        return '<div style="display:inline-flex;gap:6px;align-items:center;margin:3px 6px 3px 0;background:#fff;padding:4px 8px;border:1px solid #ddd;border-radius:4px">'
+          +'<span style="color:#333">'+k+'</span>'
+          +'<a href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q)+'" target="_blank" title="Google Images (web)" style="text-decoration:none;color:#1565c0;font-size:12px">🔍</a>'
+          +'<button title="Chercher sur Google Places API (payant)" onclick="r2FetchGoogle(\''+ek+'\',this)" style="background:#ea4335;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">🌍 Google</button>'
+          +'</div>';
+      }).join('')
+      +'</div>';
+  }
+
+  // Nouvelles candidates groupées (SANS les déjà sélectionnées)
+  if(r2New.length>0){
+    const allNonSel=r2New.filter(c=>!r2Selected.has(c.url));
+    // Filtrer : par defaut seulement score >= 12 sans bing/ddg ET sans photos < 800px
+    const isLowOrBing=function(c){
+      const src=((c.source||'')+'').toLowerCase();
+      if(src.includes('bing')||src.includes('duckduckgo'))return true;
+      // Filtre taille : width connue et < 800 → pourrie
+      const w=parseInt(c.width)||0;
+      if(w>0 && w<800)return true;
+      return (typeof c.score==='number') && c.score < 12;
+    };
+    const nonSelected = r2ShowAll ? allNonSel : allNonSel.filter(c=>!isLowOrBing(c));
+    const hiddenCount = allNonSel.length - nonSelected.length;
+
+    // Toggle : afficher aussi Bing + scores < 12 + petites images
+    h+='<div style="background:#eceff1;border:1px solid #cfd8dc;border-radius:6px;padding:8px 12px;margin:14px 0 8px;font-size:12px;color:#455a64;display:flex;align-items:center;gap:10px">'
+      +'<label style="cursor:pointer;display:inline-flex;align-items:center;gap:6px"><input type="checkbox" id="r2ShowAllChk" '+(r2ShowAll?'checked':'')+' onchange="r2ShowAll=this.checked;r2RenderEditor()"> Afficher Bing, scores &lt; 12 et petites images</label>'
+      +'<span style="color:#90a4ae">'+(r2ShowAll?'toutes visibles':hiddenCount+' masquées')+'</span>'
+      +'</div>';
+
+    if(r2Groups.length>0){
+      for(const g of r2Groups){
+        const groupPhotos=nonSelected.filter(c=>c.group===g.name);
+        if(groupPhotos.length===0)continue;
+        h+='<div style="font-size:13px;font-weight:600;color:#1565c0;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #e3f2fd">'+g.name+' ('+groupPhotos.length+')</div>';
+        h+=r2RenderGrid(groupPhotos);
+      }
+      const ungrouped=nonSelected.filter(c=>!c.group);
+      if(ungrouped.length>0){
+        h+='<div style="font-size:13px;font-weight:600;color:#555;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee">Autres ('+ungrouped.length+')</div>';
+        h+=r2RenderGrid(ungrouped);
+      }
+    }else if(nonSelected.length>0){
+      h+='<div style="font-size:13px;font-weight:600;color:#555;margin:12px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee">Autres candidates ('+nonSelected.length+')</div>';
+      h+=r2RenderGrid(nonSelected);
+    }
+  }
+
+  if(r2Current.length===0&&r2New.length===0){
+    if(r2Loading){
+      h+='<div style="padding:40px;text-align:center;color:#1976d2;font-size:15px">⏳ Recherche de photos en cours...<br><small style="color:#999;font-size:12px">Wikimedia + Pexels + Pixabay par keywords (peut prendre 30s-1min)</small></div>';
+    }else{
+      h+='<div style="padding:30px;text-align:center;color:#999">Cliquez sur un lieu dans la liste pour charger ses photos</div>';
+    }
+  }
+
+  ed.innerHTML=h;
+}
+
+// Extrait un nom lisible depuis une URL d'image.
+// Ex: ".../Vue_du_Vat_Phou_au_coucher_du_soleil.jpg" → "Vue du Vat Phou au coucher du soleil"
+// Pour Google Places (URL=places.googleapis.com/.../photos/AbC.../media), retourne "(Google Places)" car pas de nom de fichier
+// Pour Pexels/Pixabay, retourne le slug d'URL (souvent un mot-clé descriptif)
+function r2FileNameFromUrl(url){
+  if(!url) return '?';
+  try{
+    const u = new URL(url);
+    const host = u.hostname;
+    // Google Places : URL ne contient pas le nom de fichier, retour neutre
+    if(host.includes('googleapis.com') || host.includes('googleusercontent.com')){
+      return '(Google Places — pas de nom de fichier)';
+    }
+    // Récupérer le dernier segment de chemin
+    let last = u.pathname.split('/').filter(Boolean).pop() || '';
+    // Décoder les %20, %C3%A9, etc.
+    try{ last = decodeURIComponent(last); }catch(_){}
+    // Retirer une extension finale (.jpg, .png, .webp...)
+    last = last.replace(/\.(jpe?g|png|webp|gif|tiff?|bmp)$/i, '');
+    // Remplacer underscores et tirets par espaces pour lisibilité
+    last = last.replace(/[_-]+/g, ' ');
+    // Pour les URLs Pexels/Pixabay : souvent c'est juste un ID numérique → peu utile, on garde quand même
+    return last || '?';
+  }catch(_){
+    return '?';
+  }
+}
+
+function r2RenderGrid(photos,showDelete){
+  // Tri par priorite source : wikimedia/unsplash/pexels/pixabay/manuel → google → R2 → bing/ddg en dernier
+  const sortedPhotos = photos.slice().sort(function(a,b){
+    const srcPriority = function(s){
+      s = (s||'').toLowerCase();
+      if(s.includes('wikimedia')||s.includes('wikipedia')) return 1;
+      if(s.includes('unsplash')) return 2;
+      if(s.includes('pexels')) return 3;
+      if(s.includes('pixabay')) return 4;
+      if(s.includes('manuel')) return 5;
+      if(s.includes('google')) return 6;
+      if(s.includes('r2')||s.includes('actuelle')) return 7;
+      if(s.includes('bing')) return 8;
+      if(s.includes('duckduckgo')) return 9;
+      return 10;
+    };
+    const pa = srcPriority(a.source), pb = srcPriority(b.source);
+    if(pa !== pb) return pa - pb;
+    // Meme source : trier par score descendant
+    const sa = (typeof a.score==='number') ? a.score : 0;
+    const sb = (typeof b.score==='number') ? b.score : 0;
+    return sb - sa;
+  });
+  let g='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">';
+  sortedPhotos.forEach(c=>{
+    const key=c.url;
+    const isSel=r2Selected.has(key);
+    const isPrim=r2Primary===key;
+    const srcColor=c.source.includes('wikimedia')?'#1565c0':c.source.includes('google')?'#ea4335':c.source.includes('bing')?'#008373':c.source.includes('duckduckgo')?'#de5833':c.source.includes('manuel')?'#6a1b9a':c.source.includes('pexels')?'#05a081':c.source.includes('pixabay')?'#ff6f00':c.source.includes('R2')?'#2e7d32':'#757575';
+    const border=isPrim?'3px solid #2e7d32':isSel?'3px solid #1976d2':'1px solid #e0e0e0';
+
+    // Calcul de la couleur du score : vert ≥10, jaune 5-9, orange 2-4, rouge <2
+    const sc = c.score;
+    const hasScore = (typeof sc === 'number');
+    const scoreBg = !hasScore ? '#9e9e9e' : sc >= 10 ? '#2e7d32' : sc >= 5 ? '#f9a825' : sc >= 2 ? '#ef6c00' : '#c62828';
+    const scoreTxt = hasScore ? sc : '?';
+    const scoreReasons = (c.score_reasons||[]).join(' · ');
+    // Extraire le domaine de l'URL source (page où Bing a trouvé l'image)
+    const srcPage = c.source_page || '';
+    let srcDomain = '';
+    if (srcPage) {
+      try { srcDomain = new URL(srcPage).hostname.replace(/^www\./, ''); } catch(e) { srcDomain = ''; }
+    }
+
+    // Bandeau KW au-dessus : keyword qui a matché + détail des parts
+    const kwBest = c.kw_best || '';
+    const kwMatched = c.kw_matched || [];
+    let kwBanner = '';
+    if (kwBest && kwMatched.length) {
+      // On prend le détail du meilleur keyword (celui avec le plus gros total)
+      let bestEntry = kwMatched[0];
+      for (const e of kwMatched) if ((e.total||0) > (bestEntry.total||0)) bestEntry = e;
+      const partsHtml = (bestEntry.parts||[]).map(p=>{
+        const lbl = p.label || '';
+        const col = lbl.startsWith('suite:') ? '#2e7d32'
+                  : lbl.startsWith('propre:') ? '#1565c0'
+                  : '#999';
+        return '<span style="color:'+col+';margin-right:6px">'+lbl+' +'+p.bonus+'</span>';
+      }).join('');
+      kwBanner = '<div style="background:#f5f5f5;padding:4px 8px;font-size:10px;border-bottom:1px solid #e0e0e0">'
+        +'<div style="font-weight:600;color:#333">KW: '+bestEntry.kw+' <span style="color:#666;font-weight:400">(+'+bestEntry.total+')</span></div>'
+        +'<div style="margin-top:2px">'+partsHtml+'</div>'
+        +'</div>';
+    } else if (kwMatched.length === 0) {
+      kwBanner = '<div style="background:#fff3e0;padding:4px 8px;font-size:10px;color:#e65100;border-bottom:1px solid #ffcc80">KW: aucun match</div>';
+    }
+
+    g+='<div style="background:#fff;border:'+border+';border-radius:6px;overflow:hidden">'
+      + kwBanner
+      // Image
+      +'<div style="position:relative;aspect-ratio:16/10;background:#eee;cursor:pointer" onclick="r2Toggle(\''+encodeURIComponent(key)+'\')">'
+      +'<img src="'+c.url+'" style="width:100%;height:100%;object-fit:cover" loading="lazy" referrerPolicy="no-referrer" onerror="this.style.opacity=0.15">'
+      +'<span style="position:absolute;top:4px;right:4px;font-size:10px;padding:2px 6px;border-radius:3px;background:'+srcColor+';color:#fff">'+c.source+'</span>'
+      +(showDelete?'<button title="Supprimer de R2" onclick="event.stopPropagation();r2DeletePhoto(\''+encodeURIComponent(key)+'\')" style="position:absolute;top:4px;right:56px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(198,40,40,.92);color:#fff;font-size:14px;font-weight:700;cursor:pointer;line-height:1;padding:0">×</button>':'')
+      // Badge score en bas-gauche avec tooltip des raisons
+      +'<span title="'+scoreReasons.replace(/"/g,'&quot;')+'" style="position:absolute;bottom:4px;left:4px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:3px;background:'+scoreBg+';color:#fff;cursor:help">'+scoreTxt+'</span>'
+      +(isSel?'<span style="position:absolute;top:4px;left:4px;font-size:14px;background:rgba(0,0,0,.6);color:#fff;padding:2px 6px;border-radius:3px">'+(isPrim?'★ Principal':'✓')+'</span>':'')
+      +'</div>'
+      // Légende
+      +'<div style="padding:6px 8px">'
+      +'<div style="font-size:11px;color:#333;line-height:1.3;min-height:28px">'+((c.caption||'').substring(0,120)||'<span style="color:#bbb;font-style:italic">Sans légende</span>')+'</div>'
+      // Nom de fichier extrait de l'URL (utile pour identifier ce qu'il y a sur la photo)
+      +'<div style="font-size:10px;color:#666;margin-top:3px;word-break:break-all" title="'+(c.url||'').replace(/"/g,'&quot;')+'">📄 '+r2FileNameFromUrl(c.url||'')+'</div>'
+      // Domaine source (si disponible, Bing seulement)
+      +(srcDomain?'<div style="font-size:10px;color:#1976d2;margin-top:2px;font-style:italic">🔗 '+srcDomain+'</div>':'')
+      +'<div style="font-size:10px;color:#999;margin-top:3px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span>📷 '+(c.author||'?')+'</span>'
+      +(isSel?'<button style="font-size:10px;padding:1px 6px;border:1px solid #2e7d32;border-radius:3px;background:'+(isPrim?'#2e7d32':'#fff')+';color:'+(isPrim?'#fff':'#2e7d32')+';cursor:pointer" onclick="event.stopPropagation();r2SetPrimary(\''+encodeURIComponent(key)+'\')">★</button>':'')
+      +'</div></div></div>';
+  });
+  g+='</div>';
+  return g;
+}
+
+function r2Toggle(encodedUrl){
+  const url=decodeURIComponent(encodedUrl);
+  if(r2Selected.has(url)){
+    r2Selected.delete(url);
+    if(r2Primary===url)r2Primary=null;
+  }else{
+    // Trouver l'objet photo correspondant
+    const photo=[...r2Current,...r2New].find(c=>c.url===url);
+    if(photo)r2Selected.set(url,photo);
+    // Si c'est la première sélection, elle devient primary
+    if(r2Selected.size===1)r2Primary=url;
+  }
+  r2RenderEditor();
+}
+
+function r2SetPrimary(encodedUrl){
+  const url=decodeURIComponent(encodedUrl);
+  if(r2Selected.has(url))r2Primary=url;
+  r2RenderEditor();
+}
+
+async function r2DeletePhoto(encodedUrl){
+  const url=decodeURIComponent(encodedUrl);
+  if(!confirm('Supprimer définitivement cette photo de R2 et du JSON ?\n\n'+url))return;
+  try{
+    const r=await fetch(API+'/api/photos/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+    const j=await r.json();
+    if(!r.ok||!j.success){st('❌ '+(j.error||'Erreur'),'error');return;}
+    r2Current=r2Current.filter(c=>c.url!==url);
+    r2Selected.delete(url);
+    if(r2Primary===url)r2Primary=null;
+    r2RenderEditor();
+    st('✓ Photo supprimée (R2: '+(j.r2_deleted?'OK':'échec')+')','success');
+  }catch(e){
+    st('❌ '+e.message,'error');
+  }
+}
+
+function r2AddManual(){
+  const urlInput=$('r2ManualUrl');
+  const capInput=$('r2ManualCaption');
+  if(!urlInput)return;
+  const url=urlInput.value.trim();
+  if(!url||!url.startsWith('http')){st('URL invalide','error');return}
+  const caption=capInput?capInput.value.trim():'';
+  const photo={
+    url:url, url_full:url,
+    caption:caption||'Photo ajoutée manuellement',
+    author:'', source:'manuel', license:'',
+    width:0, height:0, is_current:false,
+    score: 999,  // score élevé pour que si on re-trie, elle reste en tête
+    score_reasons: ['manuelle'],
+  };
+  // Ajouter aux candidates ET à la sélection directement
+  r2New.unshift(photo);  // unshift pour la mettre en haut des candidates
+  r2Selected.set(url, photo);
+  // Si pas de principale, elle devient principale
+  if(!r2Primary) r2Primary=url;
+  urlInput.value='';if(capInput)capInput.value='';
+  r2RenderEditor();
+  st('Photo ajoutée et sélectionnée','success');
+}
+
+async function r2FetchGoogle(encodedKw, btn){
+  if(!r2Sel){st('Sélectionnez un lieu','error');return}
+  const kw = decodeURIComponent(encodedKw);
+  const origText = btn ? btn.textContent : '';
+  if(btn){btn.disabled=true; btn.textContent='⏳';}
+  st('🌍 Recherche Google Places : '+kw+'...','info');
+  try{
+    const r = await fetch(API+'/api/gplaces/fetch-keyword',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({place_id: r2Sel.place_id, keyword: kw})
+    });
+    const j = await r.json();
+    console.log('[GPLACES] réponse pour "'+kw+'":', j);
+    if(!r.ok){
+      stErr('❌ Google : '+(j.error||'erreur'));
+      if(btn){btn.disabled=false; btn.textContent=origText;}
+      return;
+    }
+    const photos = j.photos||[];
+    if(!photos.length){
+      stErr('🌍 Google "'+kw+'" : aucune photo — '+(j.error||'total_found='+(j.total_found||0)));
+      if(btn){btn.disabled=false; btn.textContent=origText;}
+      return;
+    }
+    // Fusionner dans r2New (eviter les doublons d'URL) ET pré-sélectionner
+    const existing = new Set(r2New.map(p=>p.url));
+    let added = 0;
+    photos.forEach(p=>{
+      if(!existing.has(p.url)){
+        r2New.push(p);
+        added++;
+      }
+      // Auto-sélection : les photos Google sont payantes, on les veut direct
+      if(!r2Selected.has(p.url)){
+        r2Selected.set(p.url, p);
+      }
+    });
+    st('🌍 Google : '+added+' photo(s) ajoutée(s) et sélectionnée(s) pour "'+kw+'"','success');
+    r2RenderEditor();
+  }catch(e){
+    console.error('[GPLACES] exception:', e);
+    stErr('❌ '+e.message);
+    if(btn){btn.disabled=false; btn.textContent=origText;}
+  }
+}
+
+async function r2Search(){
+  if(!r2Sel||r2Loading)return;
+  r2Loading=true;r2RenderEditor();
+  try{
+    const resp=await fetch(API+'/api/photos/search',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({place_id:r2Sel.place_id})
+    });
+    if(!resp.ok)throw new Error('Erreur serveur');
+    const d=await resp.json();
+    r2Current=d.current_photos||[];
+    r2New=d.new_candidates||[];
+    r2Groups=d.groups||[];
+    r2Keywords=d.map_keywords||[];
+    // Auto-sélectionner les 7 meilleures
+    r2ApplyPreselection(d.preselected||[]);
+    st(r2Current.length+' actuelles + '+r2New.length+' nouvelles, '+r2Selected.size+' pré-sélectionnées','success');
+  }catch(e){
+    st('Erreur: '+e.message,'error');
+  }
+  r2Loading=false;r2RenderEditor();
+  // Pré-charger le lieu suivant en arrière-plan
+  if(r2Sel)r2PrefetchNext(r2Sel.place_id);
+}
+
+let r2Validating=false;
+
+async function r2Validate(){
+  if(r2Selected.size===0||!r2Sel){
+    st('Aucune photo sélectionnée','error');return;
+  }
+  const payload = r2BuildPayload();
+  if(!payload){st('Rien à uploader','error');return;}
+  const pid = r2Sel.place_id;
+  st('Upload en file d\'attente pour '+pid,'info');
+  r2EnqueueUpload(pid, payload);
+  // Snapshot pour que la place soit considérée "non dirty" après
+  r2SnapshotOriginal();
+}
+
+// ============================================
+// NOUVEAUX LIEUX (sans photo)
+// ============================================
+let npPlaces=[],npSel=null,npCurrent=[],npNew=[],npSelected=new Map(),npPrimary=null,npLoading=false,npGroups=[],npKeywords=[];
+
+$('npCC').onchange=e=>{if(e.target.value)npLoad(e.target.value)};
+
+async function npLoad(cc){
+  st('Chargement nouveaux lieux...','info');
+  try{
+    const u=cc?API+'/api/photos/new-places?country='+cc:API+'/api/photos/new-places';
+    const r=await fetch(u);if(!r.ok)throw new Error('Serveur indisponible');
+    const d=await r.json();
+    npPlaces=d.places||[];npSel=null;npSelected.clear();npPrimary=null;
+    npRenderList();npRenderEditor();
+    st(npPlaces.length+' lieux sans photo','success');
+  }catch(e){st(e.message,'error');npPlaces=[];npRenderList()}
+}
+
+function npRenderList(){
+  const s=($('npSearch').value||'').toLowerCase();
+  let l=npPlaces;
+  if(s)l=l.filter(p=>(p.name+' '+p.place_id).toLowerCase().includes(s));
+  const done=npPlaces.filter(p=>p.is_done).length;
+  $('npTotal').textContent=npPlaces.length;
+  $('npDone').textContent=done;
+  // Retirer les traités de la liste pour ne montrer que ce qui reste
+  l=l.filter(p=>!p.is_done);
+  $('npList').innerHTML=l.map(p=>{
+    const sel=npSel&&npSel.place_id===p.place_id;
+    const ust = npUploadStatus.get(p.place_id);
+    let badge = '';
+    let extraClass = '';
+    if(ust === 'pending'){
+      badge = '<span style="color:#f9a825;margin-right:4px" title="En file d\'attente">⏳</span>';
+    } else if(ust === 'uploading'){
+      badge = '<span style="color:#1976d2;margin-right:4px" title="Upload en cours...">⏫</span>';
+      extraClass = 'uploading';
+    } else if(ust === 'error'){
+      const err = npUploadErrors.get(p.place_id) || 'Erreur';
+      badge = '<span style="color:#c62828;margin-right:4px" title="'+err.replace(/"/g,'&quot;')+'">❌</span>';
+      extraClass = 'upload-error';
+    } else if(ust === 'done'){
+      badge = '<span style="color:#2e7d32;margin-right:4px">✅</span>';
+    }
+    return'<div class="itin-item '+(sel?'selected':'')+' '+extraClass+'" onclick="npClick(\''+p.place_id.replace(/'/g,"\\'")+'\')">'
+      +'<div class="title">'+badge+p.name.replace(/-/g,' ')+'</div>'
+      +'<div class="meta"><span>'+p.country+'</span><span>'+p.type+'</span>'
+      +(p.visits.length?'<span title="'+p.visits.join(', ')+'">'+p.visits.length+' visites</span>':'')
+      +'</div></div>';
+  }).join('');
+}
+
+// Statut des uploads en arrière-plan (copie du mécanisme R2)
+// npUploadStatus : map place_id → 'pending' | 'uploading' | 'done' | 'error'
+let npUploadStatus = new Map();
+let npUploadErrors = new Map();
+let npUploadQueue = [];
+let npUploadActive = 0;
+const NP_UPLOAD_MAX_PARALLEL = 3;
+
+// Snapshot de la sélection d'origine, pour savoir si l'utilisateur a modifié quoi que ce soit
+let npOriginalSelection = null;
+
+function npDirty(){
+  if(!npSel) return false;
+  if(!npOriginalSelection) return npSelected.size > 0;
+  if(npSelected.size !== npOriginalSelection.urls.size) return true;
+  for(const u of npSelected.keys()){
+    if(!npOriginalSelection.urls.has(u)) return true;
+  }
+  if(npPrimary !== npOriginalSelection.primary) return true;
+  return false;
+}
+
+function npSnapshotOriginal(){
+  npOriginalSelection = {
+    urls: new Set(npSelected.keys()),
+    primary: npPrimary
+  };
+}
+
+function npBuildPayload(){
+  const entries = [...npSelected.entries()];
+  if(entries.length === 0) return null;
+  let effectivePrimary = npPrimary;
+  if(!effectivePrimary || !npSelected.has(effectivePrimary)){
+    effectivePrimary = entries[0][0];
+  }
+  return entries.map(function(pair){
+    const url = pair[0], photo = pair[1];
+    let keyword = photo.group || '';
+    keyword = keyword.replace(/^[🔑🏷️👁📍]\s*/,'').replace(/\s*\(\d+\)\s*$/,'').trim();
+    return {
+      url: photo.url, url_full: photo.url_full || photo.url,
+      caption: photo.caption || '', author: photo.author || '',
+      source: photo.source || '', is_primary: url === effectivePrimary,
+      keyword: keyword,
+    };
+  });
+}
+
+function npEnqueueUpload(placeId, photosPayload){
+  npUploadStatus.set(placeId, 'pending');
+  npUploadErrors.delete(placeId);
+  npUploadQueue.push({place_id: placeId, photos: photosPayload});
+  npRenderList();
+  npProcessQueue();
+}
+
+function npProcessQueue(){
+  while(npUploadActive < NP_UPLOAD_MAX_PARALLEL && npUploadQueue.length > 0){
+    const job = npUploadQueue.shift();
+    npUploadActive++;
+    npUploadStatus.set(job.place_id, 'uploading');
+    npRenderList();
+    npDoUpload(job).finally(function(){
+      npUploadActive--;
+      npProcessQueue();
+    });
+  }
+}
+
+function npDoUpload(job){
+  const pid = job.place_id;
+  return fetch(API+'/api/photos/select',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({place_id: pid, photos: job.photos})
+  }).then(function(resp){
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    return resp.json();
+  }).then(function(d){
+    if(d.success){
+      npUploadStatus.set(pid, 'done');
+      const pl = npPlaces.find(p => p.place_id === pid);
+      if(pl){ pl.is_done = true; }
+      st('✅ '+pid+' uploadé ('+(d.r2_urls||[]).length+' photos)', 'success');
+      npRenderList();
+      if(npSel && npSel.place_id === pid){
+        npSel.is_done = true;
+        npRenderEditor();
+      }
+    } else {
+      throw new Error(d.error || 'Erreur inconnue');
+    }
+  }).catch(function(e){
+    npUploadStatus.set(pid, 'error');
+    npUploadErrors.set(pid, e.message || String(e));
+    npRenderList();
+    st('❌ Upload échoué pour '+pid+' : '+e.message,'error');
+  });
+}
+
+// Gère ce qu'il faut faire quand on QUITTE la place actuelle (même logique que R2)
+function npHandleLeaveCurrent(){
+  if(!npSel) return Promise.resolve();
+  const dirty = npDirty();
+  const isDone = !!npSel.is_done;
+
+  // Cas 1 : rien modifié + déjà traitée → on part
+  if(!dirty && isDone) return Promise.resolve();
+
+  // Cas 2 : rien modifié + neuve → popup de confirmation
+  if(!dirty && !isDone){
+    if(npSelected.size === 0) return Promise.resolve();
+    const ok = confirm('Valider les '+npSelected.size+' photo(s) pré-sélectionnée(s) pour '+npSel.place_id+' ?');
+    if(!ok) return Promise.resolve();
+    const payload = npBuildPayload();
+    if(payload) npEnqueueUpload(npSel.place_id, payload);
+    return Promise.resolve();
+  }
+
+  // Cas 3 : modifié → upload direct sans popup
+  const payload = npBuildPayload();
+  if(payload) npEnqueueUpload(npSel.place_id, payload);
+  return Promise.resolve();
+}
+
+let npPrefetch={};
+
+let npPrefetchGen = 0;
+let npPrefetchInflight = new Set();
+let npPrefetchTimer = null;
+const NP_PREFETCH_MAX_PARALLEL = 2;
+const NP_PREFETCH_COUNT = 3;
+const NP_PREFETCH_DELAY_MS = 2000;
+
+async function npPrefetchNext(currentPid){
+  if(npPrefetchTimer){ clearTimeout(npPrefetchTimer); npPrefetchTimer=null; }
+  const myGen = ++npPrefetchGen;
+
+  npPrefetchTimer = setTimeout(function(){
+    npPrefetchTimer = null;
+    if(myGen !== npPrefetchGen) return;
+
+    const list = npPlaces;
+    const idx = list.findIndex(p => p.place_id === currentPid);
+    if(idx < 0) return;
+
+    const targets = [];
+    for(let i = idx + 1; i < list.length && targets.length < NP_PREFETCH_COUNT; i++){
+      const p = list[i];
+      if(!p || !p.place_id) continue;
+      if(p.is_done) continue;
+      if(npPrefetch[p.place_id]) continue;
+      if(npPrefetchInflight.has(p.place_id)) continue;
+      targets.push(p.place_id);
+    }
+    if(!targets.length) return;
+
+    let activeCount = 0;
+    let queueIdx = 0;
+
+    function launchNext(){
+      if(myGen !== npPrefetchGen) return;
+      while(activeCount < NP_PREFETCH_MAX_PARALLEL && queueIdx < targets.length){
+        const pid = targets[queueIdx++];
+        activeCount++;
+        npPrefetchInflight.add(pid);
+        doPrefetch(pid).then(function(){
+          activeCount--;
+          npPrefetchInflight.delete(pid);
+          launchNext();
+        });
+      }
+    }
+
+    function doPrefetch(pid){
+      const genAtStart = myGen;
+      return fetch(API+'/api/photos/search',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({place_id:pid})
+      }).then(function(resp){
+        if(!resp.ok) throw new Error('HTTP '+resp.status);
+        return resp.json();
+      }).then(function(d){
+        if(genAtStart !== npPrefetchGen) return;
+        npPrefetch[pid] = d;
+      }).catch(function(e){
+        console.warn('[NP-Prefetch] '+pid+':', e.message);
+      });
+    }
+
+    launchNext();
+  }, NP_PREFETCH_DELAY_MS);
+}
+
+function npApplyPreselection(preselected){
+  npSelected.clear();
+  npPrimary=null;
+  const allPhotos=[...npNew];
+  for(const url of preselected){
+    const photo=allPhotos.find(c=>c.url===url);
+    if(photo)npSelected.set(url,photo);
+  }
+  if(preselected.length>0&&npSelected.has(preselected[0])){
+    npPrimary=preselected[0];
+  }
+}
+
+function npClick(pid){
+  // 1. Gérer le départ de la place actuelle (upload si modifié / popup si neuve)
+  const leavePromise = npHandleLeaveCurrent();
+
+  leavePromise.then(function(){
+    // 2. Passer à la nouvelle place
+    npSel=npPlaces.find(p=>p.place_id===pid)||null;
+    npSelected.clear();npPrimary=null;npGroups=[];npKeywords=[];
+    npOriginalSelection=null;
+
+    if(npPrefetch[pid]){
+      const d=npPrefetch[pid];
+      npNew=d.new_candidates||[];
+      npGroups=d.groups||[];
+      npKeywords=d.map_keywords||[];
+      if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
+      npApplyPreselection(d.preselected||[]);
+      npSnapshotOriginal();
+      delete npPrefetch[pid];
+      npRenderList();npRenderEditor();
+      st(npNew.length+' candidates, '+npSelected.size+' pré-sélectionnées','success');
+      npPrefetchNext(pid);
+    }else{
+      npCurrent=[];npNew=[];
+      npLoading=true;
+      npRenderList();npRenderEditor();
+      const requestedPid=pid;
+      fetch(API+'/api/photos/search',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({place_id:pid})
+      }).then(function(resp){
+        if(!resp.ok)throw new Error('Erreur serveur '+resp.status);
+        return resp.json();
+      }).then(function(d){
+        if(!npSel||npSel.place_id!==requestedPid)return;
+        npNew=d.new_candidates||[];
+        npGroups=d.groups||[];
+        npKeywords=d.map_keywords||[];
+        if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
+        npApplyPreselection(d.preselected||[]);
+        npSnapshotOriginal();
+        npLoading=false;
+        npRenderEditor();
+        st(npNew.length+' candidates, '+npSelected.size+' pré-sélectionnées','success');
+        npPrefetchNext(requestedPid);
+      }).catch(function(e){
+        if(!npSel||npSel.place_id!==requestedPid)return;
+        console.error('[NP] Erreur:',e);
+        npLoading=false;
+        npRenderEditor();
+        st('Erreur: '+e.message,'error');
+      });
+    }
+  });
+}
+
+function npRenderEditor(){
+  const ed=$('npEd');
+  if(!npSel){ed.innerHTML='<div class="editor-empty">Sélectionnez un lieu sans photo</div>';return}
+  const p=npSel,nm=p.name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+  const cn=p.country_name||p.country;
+
+  let h='<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">'
+    +'<div><div style="font-size:17px;font-weight:600">'+nm+'</div>'
+    +'<div style="font-size:12px;color:#888;margin-top:2px">'+p.place_id+' · '+cn+' · '+p.type+'</div>'
+    +(p.visits.length?'<div style="font-size:11px;color:#666;margin-top:4px">Visites: '+p.visits.join(' · ')+'</div>':'')
+    +'</div>'
+    +'<div style="display:flex;gap:6px">'
+    +'<button class="btn btn-outline btn-sm" onclick="window.open(\'https://www.google.com/search?tbm=isch&q='+encodeURIComponent(nm+' '+cn)+'\')">Google</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="window.open(\'https://commons.wikimedia.org/w/index.php?search='+encodeURIComponent(nm+' '+cn)+'\')">Wiki</button>'
+    +'</div></div>';
+
+  h+='<div style="display:flex;gap:8px;margin-bottom:12px;align-items:stretch">'
+    +(npLoading?'<span style="padding:7px 10px;font-size:12px;color:#1976d2">⏳ Chargement...</span>':'')
+    +'<input type="text" id="npManualUrl" placeholder="Coller une URL d\'image..." style="flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
+    +'<input type="text" id="npManualCaption" placeholder="Légende..." style="width:180px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
+    +'<button class="btn btn-outline btn-sm" onclick="npAddManual()">Ajouter</button>'
+    +'</div>';
+
+  if(npSelected.size>0){
+    h+='<div style="position:sticky;top:0;z-index:50;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:10px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.1)">'
+      +'<span style="font-weight:500">'+npSelected.size+' photo(s) sélectionnée(s)'+(npPrimary?' · ★ principale':'')+'</span>'
+      +'<button class="btn btn-green" onclick="npValidate()">✅ Valider → Upload R2</button></div>';
+    // Afficher les sélectionnées en premier
+    h+='<div style="font-size:14px;font-weight:700;color:#2e7d32;margin:8px 0 6px;padding-bottom:4px;border-bottom:2px solid #a5d6a7">🎯 Ma sélection ('+npSelected.size+')</div>';
+    const selPhotos=[...npSelected.values()];
+    selPhotos.sort((a,b)=>(a.url===npPrimary?-1:b.url===npPrimary?1:0));
+    h+=npRenderGrid(selPhotos);
+  }
+
+  if(npNew.length>0){
+    // Keywords avec boutons Google (pays ajouté si manquant)
+    if(npKeywords.length>0){
+      h+='<div style="background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;padding:8px 12px;margin:8px 0;font-size:11px;color:#555">'
+        +'<b>Keywords :</b> '
+        +npKeywords.map(function(k){
+          const q=k.toLowerCase().includes(cn.toLowerCase())?k:(k+' '+cn);
+          return '<a href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q)+'" target="_blank" '
+            +'style="background:#e3f2fd;padding:2px 6px;border-radius:3px;margin:2px;text-decoration:none;color:#1565c0;cursor:pointer">🔍 '+k+'</a>';
+        }).join(' ')
+        +'</div>';
+    }
+    // Candidates SANS les déjà sélectionnées
+    const nonSelected=npNew.filter(c=>!npSelected.has(c.url));
+    if(npGroups.length>0){
+      for(const g of npGroups){
+        const groupPhotos=nonSelected.filter(c=>c.group===g.name);
+        if(groupPhotos.length===0)continue;
+        h+='<div style="font-size:13px;font-weight:600;color:#1565c0;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #e3f2fd">'+g.name+' ('+groupPhotos.length+')</div>';
+        h+=npRenderGrid(groupPhotos);
+      }
+      const ungrouped=nonSelected.filter(c=>!c.group);
+      if(ungrouped.length>0){
+        h+='<div style="font-size:13px;font-weight:600;color:#555;margin:14px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee">Autres ('+ungrouped.length+')</div>';
+        h+=npRenderGrid(ungrouped);
+      }
+    }else if(nonSelected.length>0){
+      h+='<div style="font-size:13px;font-weight:600;color:#555;margin:8px 0 6px;padding-bottom:4px;border-bottom:1px solid #eee">Autres candidates ('+nonSelected.length+')</div>';
+      h+=npRenderGrid(nonSelected);
+    }
+  }
+
+  if(npNew.length===0&&!npLoading){
+    h+='<div style="padding:30px;text-align:center;color:#999">Cliquez sur un lieu dans la liste pour charger ses photos</div>';
+  }
+  if(npNew.length===0&&npLoading){
+    h+='<div style="padding:40px;text-align:center;color:#1976d2;font-size:15px">⏳ Recherche de photos en cours...<br><small style="color:#999;font-size:12px">Peut prendre 30s-1min</small></div>';
+  }
+
+  ed.innerHTML=h;
+}
+
+function npRenderGrid(photos){
+  let g='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">';
+  photos.forEach(c=>{
+    const key=c.url;
+    const isSel=npSelected.has(key);
+    const isPrim=npPrimary===key;
+    const srcColor=c.source.includes('wikimedia')?'#1565c0':c.source.includes('google')?'#ea4335':c.source.includes('bing')?'#008373':c.source.includes('duckduckgo')?'#de5833':c.source.includes('manuel')?'#6a1b9a':c.source.includes('pexels')?'#05a081':c.source.includes('pixabay')?'#ff6f00':'#757575';
+    const border=isPrim?'3px solid #2e7d32':isSel?'3px solid #1976d2':'1px solid #e0e0e0';
+    const sc = c.score;
+    const hasScore = (typeof sc === 'number');
+    const scoreBg = !hasScore ? '#9e9e9e' : sc >= 10 ? '#2e7d32' : sc >= 5 ? '#f9a825' : sc >= 2 ? '#ef6c00' : '#c62828';
+    const scoreTxt = hasScore ? sc : '?';
+    const scoreReasons = (c.score_reasons||[]).join(' · ');
+    const srcPage = c.source_page || '';
+    let srcDomain = '';
+    if (srcPage) {
+      try { srcDomain = new URL(srcPage).hostname.replace(/^www\./, ''); } catch(e) { srcDomain = ''; }
+    }
+    g+='<div style="background:#fff;border:'+border+';border-radius:6px;overflow:hidden">'
+      +'<div style="position:relative;aspect-ratio:16/10;background:#eee;cursor:pointer" onclick="npToggle(\''+encodeURIComponent(key)+'\')">'
+      +'<img src="'+c.url+'" style="width:100%;height:100%;object-fit:cover" loading="lazy" referrerPolicy="no-referrer" onerror="this.style.opacity=0.15">'
+      +'<span style="position:absolute;top:4px;right:4px;font-size:10px;padding:2px 6px;border-radius:3px;background:'+srcColor+';color:#fff">'+c.source+'</span>'
+      +'<span title="'+scoreReasons.replace(/"/g,'&quot;')+'" style="position:absolute;bottom:4px;left:4px;font-size:11px;font-weight:700;padding:2px 7px;border-radius:3px;background:'+scoreBg+';color:#fff;cursor:help">'+scoreTxt+'</span>'
+      +(isSel?'<span style="position:absolute;top:4px;left:4px;font-size:14px;background:rgba(0,0,0,.6);color:#fff;padding:2px 6px;border-radius:3px">'+(isPrim?'★ Principal':'✓')+'</span>':'')
+      +'</div>'
+      +'<div style="padding:6px 8px">'
+      +'<div style="font-size:11px;color:#333;line-height:1.3;min-height:28px">'+((c.caption||'').substring(0,120)||'<span style="color:#bbb;font-style:italic">Sans légende</span>')+'</div>'
+      +'<div style="font-size:10px;color:#666;margin-top:3px;word-break:break-all" title="'+(c.url||'').replace(/"/g,'&quot;')+'">📄 '+r2FileNameFromUrl(c.url||'')+'</div>'
+      +(srcDomain?'<div style="font-size:10px;color:#1976d2;margin-top:2px;font-style:italic">🔗 '+srcDomain+'</div>':'')
+      +'<div style="font-size:10px;color:#999;margin-top:3px;display:flex;justify-content:space-between;align-items:center">'
+      +'<span>📷 '+(c.author||'?')+'</span>'
+      +(isSel?'<button style="font-size:10px;padding:1px 6px;border:1px solid #2e7d32;border-radius:3px;background:'+(isPrim?'#2e7d32':'#fff')+';color:'+(isPrim?'#fff':'#2e7d32')+';cursor:pointer" onclick="event.stopPropagation();npSetPrimary(\''+encodeURIComponent(key)+'\')">★</button>':'')
+      +'</div></div></div>';
+  });
+  g+='</div>';
+  return g;
+}
+
+function npToggle(eu){
+  const url=decodeURIComponent(eu);
+  if(npSelected.has(url)){npSelected.delete(url);if(npPrimary===url)npPrimary=null}
+  else{const ph=npNew.find(c=>c.url===url);if(ph)npSelected.set(url,ph);if(npSelected.size===1)npPrimary=url}
+  npRenderEditor();
+}
+
+function npSetPrimary(eu){
+  const url=decodeURIComponent(eu);
+  if(npSelected.has(url))npPrimary=url;
+  npRenderEditor();
+}
+
+function npAddManual(){
+  const urlInput=$('npManualUrl');
+  const capInput=$('npManualCaption');
+  if(!urlInput)return;
+  const url=urlInput.value.trim();
+  if(!url||!url.startsWith('http')){st('URL invalide','error');return}
+  const caption=capInput?capInput.value.trim():'';
+  const photo={
+    url:url, url_full:url,
+    caption:caption||'Photo ajoutée manuellement',
+    author:'', source:'manuel', license:'',
+    width:0, height:0, is_current:false,
+    score: 999,
+    score_reasons: ['manuelle'],
+  };
+  // Ajouter aux candidates ET à la sélection
+  npNew.unshift(photo);
+  npSelected.set(url, photo);
+  if(!npPrimary) npPrimary=url;
+  urlInput.value='';if(capInput)capInput.value='';
+  npRenderEditor();
+  st('Photo ajoutée et sélectionnée','success');
+}
+
+async function npSearch(){
+  if(!npSel||npLoading)return;
+  npLoading=true;npRenderEditor();
+  try{
+    const resp=await fetch(API+'/api/photos/search',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({place_id:npSel.place_id})
+    });
+    if(!resp.ok)throw new Error('Erreur serveur');
+    const d=await resp.json();
+    npNew=d.new_candidates||[];
+    npGroups=d.groups||[];
+    npKeywords=d.map_keywords||[];
+    if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
+    npApplyPreselection(d.preselected||[]);
+    st(npNew.length+' candidates, '+npSelected.size+' pré-sélectionnées','success');
+  }catch(e){st('Erreur: '+e.message,'error')}
+  npLoading=false;npRenderEditor();
+  if(npSel)npPrefetchNext(npSel.place_id);
+}
+
+async function npValidate(){
+  if(npSelected.size===0||!npSel)return;
+  if(!npPrimary){st('Définissez une photo principale (★)','error');return}
+  const photos=[...npSelected.entries()].map(([url,photo])=>{
+    let keyword=photo.group||'';
+    keyword=keyword.replace(/^[🔑🏷️👁📍]\s*/,'').replace(/\s*\(\d+\)\s*$/,'').trim();
+    return {
+      url:photo.url,url_full:photo.url_full||photo.url,
+      caption:photo.caption||'',author:photo.author||'',
+      source:photo.source||'',is_primary:url===npPrimary,
+      keyword:keyword,
+    };
+  });
+  st('⏳ Upload R2 ('+photos.length+' photo(s))...','info');
+  try{
+    const resp=await fetch(API+'/api/photos/select',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({place_id:npSel.place_id,photos})
+    });
+    if(!resp.ok)throw new Error('Erreur upload');
+    const d=await resp.json();
+    if(d.success){
+      const pl=npPlaces.find(p=>p.place_id===npSel.place_id);
+      if(pl)pl.is_done=true;
+      npSelected.clear();npPrimary=null;npNew=[];
+      npRenderList();npRenderEditor();
+      st('✅ '+d.r2_urls.length+' photo(s) uploadée(s) !','success');
+    }else throw new Error(d.error);
+  }catch(e){st('❌ '+e.message,'error')}
+}
+
+// ============== ITINS POURRIS ==============
+let roItems=[],roSel=null,roAllScanned=[];
+const PROMPT_TEMPLATE_URL=null; // on embarque le template inline
+
+function roInit(){
+  const sel=$('roCC');if(sel.options.length>1)return;
+  CC.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o)});
+}
+
+function countWords(txt){if(!txt||typeof txt!=='string')return 0;return txt.trim().split(/\s+/).filter(Boolean).length}
+
+function getPlaceIds(itin){
+  // retourne Set des place_ids uniques (nights) d'un itin
+  const s=new Set();
+  (itin.days_plan||[]).forEach(d=>{const p=d.night?.place_id;if(p)s.add(p)});
+  return s;
+}
+
+function roFindDuplicates(targetItin,targetCC,targetLang){
+  // cherche itins du même pays+langue qui partagent >=70% des places
+  const targetPlaces=getPlaceIds(targetItin);
+  if(targetPlaces.size===0)return[];
+  const targetId=targetItin.itin_id||targetItin.id;
+  const dupes=[];
+  roAllScanned.forEach(({i:other,cc,lang})=>{
+    const otherId=other.itin_id||other.id;
+    if(otherId===targetId)return; // skip soi-même
+    if(cc!==targetCC||lang!==targetLang)return; // même pays + langue
+    const otherPlaces=getPlaceIds(other);
+    if(otherPlaces.size===0)return;
+    // % de places du target qu'on retrouve dans other
+    let common=0;
+    targetPlaces.forEach(p=>{if(otherPlaces.has(p))common++});
+    const pct=Math.round(100*common/targetPlaces.size);
+    if(pct>=70){
+      dupes.push({other,cc,lang,common,pct,totalTarget:targetPlaces.size,totalOther:otherPlaces.size});
+    }
+  });
+  return dupes.sort((a,b)=>b.pct-a.pct);
+}
+
+function analyzeItin(itin,minW){
+  const days=itin.days_plan||[];
+  let total=0,short=0;
+  const shortTexts=[];
+  days.forEach(d=>{
+    (d.visits||[]).forEach(v=>{const w=countWords(v.text);total++;if(w<minW){short++;shortTexts.push({type:'V',day:d.day,words:w,text:(v.text||'').slice(0,80)})}});
+    (d.activities||[]).forEach(a=>{const w=countWords(a.text);total++;if(w<minW){short++;shortTexts.push({type:'A',day:d.day,words:w,text:(a.text||'').slice(0,80)})}});
+  });
+  const pct=total?Math.round(100*short/total):0;
+  return{total,short,pct,shortTexts};
+}
+
+async function roScan(){
+  roInit();
+  const lang=$('roLang').value;
+  const minW=parseInt($('roMinWords').value)||40;
+  const threshold=parseInt($('roThreshold').value)||50;
+  const allCC=$('roAllCC').checked;
+  const onlyCC=$('roCC').value;
+  const ccList=allCC?CC:(onlyCC?[onlyCC]:[]);
+  if(!ccList.length){st('Choisis un pays ou coche "Tous pays"','error');return}
+  st('Scan en cours...','info');
+  roItems=[];roAllScanned=[];let n=0;
+  for(const cc of ccList){
+    try{
+      const r=await loadIt(cc,lang);
+      for(const it of r.its){
+        // stocker TOUS les itins pour la recherche de doublons
+        roAllScanned.push({i:it,cc:r.cc,lang});
+        const a=analyzeItin(it,minW);
+        if(a.total>0&&a.pct>=threshold){
+          roItems.push({i:it,cc:r.cc,fp:r.fp,lang,analysis:a});
+        }
+      }
+    }catch(e){}
+    n++;if(n%5===0)st('Scan '+n+'/'+ccList.length+'...','info');
+  }
+  roSel=null;roRenderList();
+  $('roEd').innerHTML='<div class="editor-empty">Sélectionnez un itinéraire pourri à gauche</div>';
+  st(roItems.length+' itin(s) pourri(s) sur '+roAllScanned.length+' scannés','success');
+}
+
+function roRenderList(){
+  const s=($('roSearch').value||'').toLowerCase();
+  let l=roItems;
+  if(s)l=l.filter(({i})=>((i.itin_id||i.id||'')+(i.title||'')).toLowerCase().includes(s));
+  $('roTotal').textContent=roItems.length;
+  $('roBad').textContent=l.length;
+  $('roList').innerHTML=l.map((item,idx)=>{
+    const{i,cc,analysis,lang}=item;
+    const id=i.itin_id||i.id;
+    const sel=roSel&&roSel.idx===idx;
+    const col=analysis.pct>=70?'#c62828':analysis.pct>=50?'#e65100':'#f9a825';
+    const nDup=roFindDuplicates(i,cc,lang).length;
+    const dupBadge=nDup?'<span class="badge" style="background:#ff9800;color:#fff">🔗 '+nDup+' dup</span>':'';
+    return'<div class="itin-item '+(sel?'selected':'')+'" onclick="roSelect('+idx+')">'+
+      '<div class="title">'+(i.title||id)+'</div>'+
+      '<div class="meta"><span>'+cc+' · '+lang.toUpperCase()+'</span>'+
+      '<span class="badge" style="background:'+col+';color:#fff">'+analysis.short+'/'+analysis.total+' ('+analysis.pct+'%)</span>'+
+      dupBadge+
+      '<span>'+(i.estimated_days_base||'?')+'j</span></div></div>';
+  }).join('');
+}
+
+// Cache des langues existantes par itin : key = cc+'|'+id, value = {fr:{i,fp}, en:{i,fp}, ...}
+const roLangCache={};
+
+async function roSelect(idx){
+  roSel={idx,...roItems[idx]};
+  roRenderList();
+  // Affichage immédiat avec ce qu'on a (pas encore les autres langues)
+  roRenderEditor();
+  // Précharge les 6 langues en arrière-plan, puis re-render pour griser les absentes
+  await roPreloadLangs(roSel.cc, roSel.i.itin_id||roSel.i.id);
+  if(roSel && (roSel.i.itin_id||roSel.i.id)===(roItems[idx].i.itin_id||roItems[idx].i.id)) roRenderEditor();
+}
+
+async function roPreloadLangs(cc,id){
+  const key=cc+'|'+id;
+  if(roLangCache[key])return roLangCache[key];
+  const LANGS=['fr','en','es','it','pt','ar'];
+  const cur=roSel?roSel.lang:null;
+  const result={};
+  // langue courante : déjà en mémoire
+  if(cur)result[cur]={i:roSel.i,fp:roSel.fp};
+  // les autres : on charge le fichier de la langue et on cherche l'itin par id
+  await Promise.all(LANGS.filter(L=>L!==cur).map(async L=>{
+    try{
+      const r=await loadIt(cc,L);
+      const found=r.its.find(x=>(x.itin_id||x.id)===id);
+      if(found)result[L]={i:found,fp:r.fp};
+    }catch(e){}
+  }));
+  roLangCache[key]=result;
+  return result;
+}
+
+function roRenderEditor(){
+  const e=$('roEd');if(!roSel){e.innerHTML='<div class="editor-empty">Sélectionnez un itinéraire</div>';return}
+  const{i,cc,analysis,lang}=roSel;
+  const id=i.itin_id||i.id;
+  const days=i.days_plan||[];
+  // Recherche de doublons
+  const dupes=roFindDuplicates(i,cc,lang);
+  const dupesHtml=dupes.length?
+    '<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:6px;padding:12px;margin-bottom:16px">'+
+      '<div style="font-weight:600;color:#e65100;margin-bottom:8px">⚠️ '+dupes.length+' doublon(s) potentiel(s) détecté(s)</div>'+
+      dupes.map(d=>{
+        const oid=d.other.itin_id||d.other.id;
+        return'<div style="background:#fff;padding:8px;border-radius:4px;margin-top:6px;font-size:13px">'+
+          '<div style="font-weight:500">'+(d.other.title||oid)+'</div>'+
+          '<div style="font-size:11px;color:#666;margin-top:3px">'+oid+' · '+
+          d.common+'/'+d.totalTarget+' villes communes ('+d.pct+'%) · '+
+          (d.other.estimated_days_base||'?')+'j</div></div>';
+      }).join('')+
+    '</div>':'';
+  const daysHtml=days.map(d=>{
+    const pid=d.night?.place_id||'?';
+    const visits=d.visits||[],acts=d.activities||[];
+    const minW=parseInt($('roMinWords').value)||30;
+    const renderTxt=(t,type)=>{
+      const w=countWords(t);
+      const short=w<minW;
+      const col=short?'#c62828':'#333';
+      const bg=short?'#ffebee':'transparent';
+      return'<div style="padding:6px 8px;margin:4px 0;background:'+bg+';border-left:3px solid '+col+';border-radius:3px;font-size:13px;color:'+col+'">'+
+        '<span style="font-size:11px;color:#888;font-weight:600">'+type+' · '+w+' mots</span><br>'+
+        (t||'<i>(vide)</i>')+'</div>';
+    };
+    const visitsHtml=visits.map(v=>renderTxt(v.text,'VISITE')).join('');
+    const actsHtml=acts.map(a=>renderTxt(a.text,'ACTIVITÉ')).join('');
+    return'<div class="day-card" style="margin-bottom:16px"><div class="day-head">Jour '+d.day+' — '+pid+' ('+(d.suggested_days||'?')+'j)</div>'+
+      '<div style="margin-top:8px">'+
+      '<div style="font-size:12px;font-weight:600;color:#666;margin-top:8px">📍 '+visits.length+' visite(s)</div>'+visitsHtml+
+      '<div style="font-size:12px;font-weight:600;color:#666;margin-top:8px">🎯 '+acts.length+' activité(s)</div>'+actsHtml+
+      '</div></div>';
+  }).join('');
+  // Barre de langues : switch d'affichage (clic = on bascule sur cette langue)
+  const LANGS=['fr','en','es','it','pt','ar'];
+  const cacheKey=cc+'|'+id;
+  const cached=roLangCache[cacheKey];
+  const langBar='<div style="display:flex;gap:4px;margin-bottom:8px;align-items:center">'+
+    '<span style="font-size:12px;color:#666;margin-right:6px">Voir dans :</span>'+
+    LANGS.map(L=>{
+      const exists=cached?!!cached[L]:(L===lang);
+      const isCur=L===lang;
+      const style=isCur?'background:#1976d2;color:#fff;border-color:#1976d2':
+                  exists?'background:#fff;color:#333':
+                  'background:#f5f5f5;color:#bbb;cursor:not-allowed';
+      const click=(exists && !isCur)?'onclick="roSwitchLang(\''+L+'\')"':'';
+      const label=cached?L.toUpperCase():(L===lang?L.toUpperCase():L.toUpperCase()+'…');
+      return'<button class="btn btn-sm" style="'+style+'" '+click+(!exists?' disabled':'')+'>'+label+'</button>';
+    }).join('')+
+    (cached?'':'<span style="font-size:11px;color:#999;margin-left:8px">chargement…</span>')+
+    '</div>';
+  // Cases à cocher pour suppression multi-langues
+  const checkedSet=roDelChecked[cacheKey]||new Set();
+  const delBar=cached?
+    '<div style="display:flex;gap:10px;margin-bottom:12px;align-items:center;padding:8px;background:#fff8e1;border:1px solid #ffd54f;border-radius:4px;flex-wrap:wrap">'+
+      '<span style="font-size:12px;color:#666">Supprimer :</span>'+
+      LANGS.filter(L=>cached[L]).map(L=>{
+        const checked=checkedSet.has(L)?'checked':'';
+        return'<label style="font-size:12px;cursor:pointer;display:flex;align-items:center;gap:3px"><input type="checkbox" '+checked+' onchange="roToggleDel(\''+L+'\')"> '+L.toUpperCase()+'</label>';
+      }).join('')+
+      (checkedSet.size?'<button class="btn btn-sm" style="background:#ef6c00;color:#fff;margin-left:auto" onclick="roDeleteSelected()">🗑️ Supprimer '+checkedSet.size+' langue(s) sélectionnée(s)</button>':'')+
+    '</div>':'';
+  e.innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px">'+
+      '<div><div style="font-size:17px;font-weight:600">'+(i.title||id)+'</div>'+
+      '<div style="font-size:12px;color:#888;margin-top:3px">'+id+' · '+cc+' · '+lang.toUpperCase()+' · '+analysis.short+'/'+analysis.total+' textes courts ('+analysis.pct+'%)</div></div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">'+
+        '<button class="btn btn-blue" onclick="roCopyPrompt()">📋 Copier prompt de refonte</button>'+
+        '<button class="btn" style="background:#c62828;color:#fff" onclick="roDelete()">🗑️ Supprimer (toutes langues)</button>'+
+      '</div>'+
+    '</div>'+
+    langBar+
+    delBar+
+    dupesHtml+
+    '<div class="section-title">Programme ('+days.length+' jours)</div>'+daysHtml;
+}
+
+// Bascule de langue : on utilise le cache préchargé pour avoir le vrai fp
+function roSwitchLang(newLang){
+  if(!roSel)return;
+  const id=roSel.i.itin_id||roSel.i.id;
+  const cc=roSel.cc;
+  const cached=roLangCache[cc+'|'+id];
+  if(!cached||!cached[newLang]){st('Langue '+newLang.toUpperCase()+' introuvable','error');return}
+  const{i:newI,fp:newFp}=cached[newLang];
+  // Si cette version est dans la liste des pourris, on garde l'idx pour cohérence
+  const inBad=roItems.findIndex(x=>(x.i.itin_id||x.i.id)===id && x.cc===cc && x.lang===newLang);
+  const minW=parseInt($('roMinWords').value)||30;
+  const a=analyzeItin(newI,minW);
+  roSel={idx:inBad>=0?inBad:-1,i:newI,cc,fp:newFp,lang:newLang,analysis:a};
+  if(inBad>=0)roRenderList();
+  roRenderEditor();
+  const threshold=parseInt($('roThreshold').value)||50;
+  st('Affichage en '+newLang.toUpperCase()+(a.pct>=threshold?' (pourri)':' (ok)'),'info');
+}
+
+// State des cases cochées pour suppression : key = cc+'|'+id, value = Set de langues
+const roDelChecked={};
+
+function roToggleDel(L){
+  if(!roSel)return;
+  const key=roSel.cc+'|'+(roSel.i.itin_id||roSel.i.id);
+  if(!roDelChecked[key])roDelChecked[key]=new Set();
+  if(roDelChecked[key].has(L))roDelChecked[key].delete(L);
+  else roDelChecked[key].add(L);
+  roRenderEditor();
+}
+
+async function roDeleteSelected(){
+  if(!roSel)return;
+  const{i,cc}=roSel;
+  const id=i.itin_id||i.id;
+  const title=i.title||id;
+  const key=cc+'|'+id;
+  const langs=Array.from(roDelChecked[key]||[]);
+  if(!langs.length){st('Aucune langue sélectionnée','error');return}
+  const allLangs=Object.keys(roLangCache[key]||{});
+  const isAll=langs.length===allLangs.length;
+  const msg=isAll
+    ?'⚠️ Tu as coché TOUTES les langues existantes ('+langs.map(l=>l.toUpperCase()).join(', ')+').\n\nItinéraire: '+id+'\nTitre: '+title+'\nPays: '+cc+'\n\nÇa revient à supprimer l\'itinéraire complet. Confirmer ?'
+    :'⚠️ Supprimer les langues : '+langs.map(l=>l.toUpperCase()).join(', ')+' ?\n\nItinéraire: '+id+'\nTitre: '+title+'\nPays: '+cc+'\n\nLes autres langues restent intactes.\n\nConfirmer ?';
+  if(!confirm(msg))return;
+  st('Suppression '+langs.map(l=>l.toUpperCase()).join(',')+'...','info');
+  try{
+    const r=await fetch(API+'/api/delete-itinerary',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({country:cc.toUpperCase(),itinId:id,title,allLanguages:isAll,languages:langs,confirmedBy:'admin'})
+    });
+    const j=await r.json();
+    if(j.success){
+      // retirer de roItems et roAllScanned les combinaisons supprimées
+      roItems=roItems.filter(x=>!((x.i.itin_id||x.i.id)===id && x.cc===cc && langs.includes(x.lang)));
+      roAllScanned=roAllScanned.filter(x=>!((x.i.itin_id||x.i.id)===id && x.cc===cc && langs.includes(x.lang)));
+      // nettoyer le cache et les cases cochées pour cet itin
+      delete roLangCache[key];
+      delete roDelChecked[key];
+      // si la langue affichée a été supprimée, on désélectionne ; sinon on rafraîchit
+      if(langs.includes(roSel.lang)){
+        roSel=null;
+        roRenderList();
+        $('roEd').innerHTML='<div class="editor-empty">Langue(s) supprimée(s). Sélectionne un autre itin.</div>';
+      }else{
+        // recharger le cache pour refléter ce qui reste
+        await roPreloadLangs(cc,id);
+        roRenderList();
+        roRenderEditor();
+      }
+      st('✅ '+langs.length+' langue(s) supprimée(s)','success');
+    }else{
+      st('❌ '+(j.error||'Erreur'),'error');
+    }
+  }catch(e){st('❌ '+e.message,'error')}
+}
+
+function roBuildPrompt(){
+  const{i,lang}=roSel;
+  const id=i.itin_id||i.id;
+  const days=i.days_plan||[];
+  const segSize=5;
+  const segs=[];
+  for(let s=0;s<days.length;s+=segSize){
+    const chunk=days.slice(s,s+segSize);
+    segs.push({from:chunk[0].day,to:chunk[chunk.length-1].day,days:chunk});
+  }
+  const segDesc=segs.map((sg,idx)=>{
+    const lines=sg.days.map(d=>'  • Day '+d.day+': '+(d.night?.place_id||'?')+' (suggested_days: '+(d.suggested_days||1)+')').join('\n');
+    return'\nSEGMENT '+(idx+1)+': Days '+sg.from+' to '+sg.to+'\n'+lines;
+  }).join('\n');
+  const jsonStr=JSON.stringify({itins:[i]},null,2);
+
+  return'You are a travel itinerary expert. I will give you an existing JSON to REWRITE, ENRICH and IMPROVE segment by segment using WEB RESEARCH.\n\n'+
+'🌐 OUTPUT LANGUAGE: "'+lang+'"\n'+
+'ALL text fields MUST be written in "'+lang+'". Keep original proper nouns as-is.\n'+
+'EXCEPTION: meta.themes and meta.audience are ALWAYS in French regardless of output language.\n\n'+
+'🎯 OBJECTIVE: Rewrite AND enrich this itinerary with VERIFIED information from web research. Every fact, date, dimension and anecdote must come from a real source.\n\n'+
+'🔓 YOU ARE EMPOWERED TO IMPROVE EVERYTHING — be a force of proposal:\n'+
+'- Add missing stops, reorder days, insert intermediate stops if drives exceed 2h\n'+
+'- Split a day into two if a city deserves more time\n'+
+'- Remove weak content, add better visits/activities you find through research\n'+
+'- Fix route logic (zigzags, backtracking, dead-end villages)\n'+
+'- Rewrite title, subtitle, SEO fields if the current ones are weak\n'+
+'- Fix transport modes, distances, coordinates if wrong\n\n'+
+'⚠️ THE ONLY THING YOU MUST KEEP: itin_id and id = "'+id+'" — everything else can change.\n\n'+
+'📋 FULL JSON TO IMPROVE:\n```json\n'+jsonStr+'\n```\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'🧭 ITINERARY AUDIT — DO THIS FIRST\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'Before rewriting, ANALYZE the itinerary and flag issues. Report findings under **"⚠️ ITINERARY AUDIT"**, then ask: *"Shall I proceed with these corrections?"*\n\n'+
+'Check for:\n'+
+'1️⃣ Route logic: coherent geographical path? No zigzags/backtracking?\n'+
+'2️⃣ Missing stops: important places along the route that should be added?\n'+
+'3️⃣ Airports: starts AND ends at a city with airport or train station?\n'+
+'4️⃣ Transport modes: flights/ferries/trains correctly flagged (not "car")?\n'+
+'5️⃣ Drive times: any leg > 2h without intermediate stop? (4h tolerance only in landscape-driven regions)\n'+
+'6️⃣ Fantasy place_ids: all night.place_id = real cities/villages?\n'+
+'7️⃣ suggested_days: realistic time at each stop? (decimals encouraged: 0.2, 0.3, 0.5, 1, 1.5, 2)\n'+
+'8️⃣ estimated_days_base: should equal ceil(sum of all suggested_days)\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'📦 SEGMENT-BY-SEGMENT APPROACH\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'Process in '+segs.length+' segments:\n'+segDesc+'\n\n'+
+'⚠️ PROCEDURE:\n'+
+'1️⃣ Segment 1: web search → write → SAVE to file immediately\n'+
+'2️⃣ Next segments: same process → SAVE\n'+
+'3️⃣ Merge all segments into ONE final JSON\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'📋 FIELD RULES\n'+
+'═══════════════════════════════════════════════════════════\n\n'+
+'**suggested_days** = real time spent at this stop. Decimals expected: 0.2 (drive-through), 0.3 (quick stop), 0.5 (half-day), 1 (full day), 1.5, 2 (rich city). Adjust freely based on what the place deserves.\n\n'+
+'**estimated_days_base** = ceil(sum of ALL suggested_days). Example: 7×1 + 2×0.3 = 7.6 → estimated_days_base = 8.\n\n'+
+'**meta.themes** = ALWAYS IN FRENCH. EXACTLY 2 from:\n'+
+'"Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente"\n'+
+'⚠️ Use ONLY these values verbatim. No invention, no translation.\n\n'+
+'**meta.audience** = ALWAYS IN FRENCH. 2-4 from: "couples", "solo", "familles", "seniors", "culture", "nature", "histoire", "aventure", "gastronomie"\n\n'+
+'**specialties** = 2-4 themes in "'+lang+'" (exists — keep or improve)\n\n'+
+'**practical_context** (exists — improve): best_months (lowercase in "'+lang+'") + 4-5 highlights with verified facts.\n\n'+
+'**seo.places_taglines** (exists — verify, fix bad ones): one per unique night.place_id. Complete sentence, 6-12 words, factual.\n\n'+
+'**seo_keywords** (exists — keep or improve)\n\n'+
+'**practical_info** = optional on visits AND activities. Free-form keys. Only when genuinely useful.\n\n'+
+'**Visits vs Activities**: visits[] = places to SEE. activities[] = things to DO. Never mix.\n'+
+'**place_id** in visits/activities = always "". Only night.place_id gets a value.\n'+
+'**rating** = always 0.\n'+
+'**to_next_leg**: mandatory except last day. Same-night = {distance_km:0, drive_min:0}.\n'+
+'**map_keywords**: JSON array of English-searchable place names on every day.\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'✍️ WRITING STYLE\n'+
+'═══════════════════════════════════════════════════════════\n\n'+
+'Write in TRAVEL BLOG mode. Address the reader directly ("vous" in French, "you" in English — adapt to "'+lang+'").\n\n'+
+'⚠️ TEXT LENGTH: Target 60-100 words. Hard ceiling 150 words. Stops < 1 day: 40-80 words.\n\n'+
+'⚠️ BLOG STYLE — 70% RULE:\n'+
+'At least 70% of ALL texts must address the reader in the first 2 sentences. Verify before outputting.\n\n'+
+'⚠️ ANTI-REPETITION:\n'+
+'- No two consecutive texts may start with the same pattern\n'+
+'- "Vous + verb" / "You + verb" openings: max 40% of all texts\n'+
+'- Vary: place-first, imperative, sensory, conditional, factual-then-pivot\n'+
+'- ❌ FORBIDDEN: "Vous entrez dans..." / "You walk into..." repeated. Never more than twice in the entire itinerary.\n\n'+
+'GOOD examples:\n'+
+'- "Juste au-dessus de Stintino, vous trouverez l\'une des plus belles plages de la Méditerranée. L\'eau y est translucide. Du 1er juin au 31 octobre, l\'accès est limité à 1 500 personnes par jour — réservez en ligne."\n'+
+'- "Le château de Neuschwanstein est posé sur un éperon rocheux à 200 mètres au-dessus de la vallée. Louis II n\'y a passé que 172 nuits. Arrivez avant 9h."\n\n'+
+'❌ FORBIDDEN: "iconic", "must-see", "unforgettable", "hidden gem", "where X meets Y", "testament to", encyclopedia style.\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'✅ FINAL CHECK\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'✅ itin_id and id = "'+id+'" (unchanged)\n'+
+'✅ estimated_days_base = ceil(sum of suggested_days)\n'+
+'✅ suggested_days = realistic decimals per stop\n'+
+'✅ meta.themes = 2 values from French list (verbatim)\n'+
+'✅ meta.audience = French values, 2-4\n'+
+'✅ 70% blog style, 40% max "Vous/You + verb" openings\n'+
+'✅ No text > 150 words\n'+
+'✅ Drive > 2h → intermediate stop (4h tolerance only landscape regions)\n'+
+'✅ map_keywords = JSON array on every day\n'+
+'✅ places_taglines = sentence per unique night.place_id\n'+
+'✅ All facts verified via web search\n'+
+'✅ No AI clichés\n\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'🎯 OUTPUT\n'+
+'═══════════════════════════════════════════════════════════\n'+
+'1. Save each segment to file as you go\n'+
+'2. Merge into final JSON { "itins": [...] }\n'+
+'3. source_url with URLs consulted\n'+
+'4. List SOURCES by segment after the JSON\n\n'+
+'The final JSON replaces the previous one in '+roSel.cc+'.itins.modules-'+lang+'.json.';
+}
+
+async function roCopyPrompt(){
+  if(!roSel)return;
+  const txt=roBuildPrompt();
+  try{
+    await navigator.clipboard.writeText(txt);
+    st('✅ Prompt copié ('+txt.length+' car.)','success');
+  }catch(e){
+    // fallback
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');st('✅ Prompt copié','success')}catch(e2){st('❌ Copie impossible','error')}
+    document.body.removeChild(ta);
+  }
+}
+
+async function roDelete(){
+  if(!roSel)return;
+  const{i,cc}=roSel;
+  const id=i.itin_id||i.id;
+  const title=i.title||id;
+  if(!confirm('⚠️ SUPPRESSION DÉFINITIVE\n\nItinéraire: '+id+'\nTitre: '+title+'\nPays: '+cc+'\n\nSupprimé de TOUTES les langues (FR, EN, ES, IT, PT, AR).\n\nConfirmer ?'))return;
+  st('Suppression...','info');
+  try{
+    const r=await fetch(API+'/api/delete-itinerary',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({country:cc.toUpperCase(),itinId:id,title,allLanguages:true,confirmedBy:'admin'})
+    });
+    const j=await r.json();
+    if(j.success){
+      // retirer de la liste
+      roItems=roItems.filter(x=>(x.i.itin_id||x.i.id)!==id);
+      roSel=null;
+      roRenderList();
+      $('roEd').innerHTML='<div class="editor-empty">Itin supprimé. Sélectionnez-en un autre.</div>';
+      st('✅ Supprimé de toutes les langues','success');
+    }else{
+      st('❌ '+(j.error||'Erreur'),'error');
+    }
+  }catch(e){st('❌ '+e.message,'error')}
+}
+
+// init du selecteur pays quand on clique sur l'onglet
+document.querySelector('[data-tab="rotten"]').addEventListener('click',()=>{setTimeout(roInit,100)});
+
+// === Visionneuse R2 ===
+let vwPhotos=[], vwIdx=0, vwDeleted=0, vwKept=0, vwSeenSet=new Set();
+
+function vwInitCC(){
+  const sel=$('vwCC');
+  if(sel.options.length>1)return;
+  if(Array.isArray(CC)&&CC.length){
+    CC.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c.cc||c.code; o.textContent=(c.cc||c.code)+' - '+(c.name||c.label||'');
+      sel.appendChild(o);
+    });
+  }
+}
+
+async function vwFetchSeen(){
+  try{
+    const r=await fetch(API+'/api/photos/viewer-seen');
+    const j=await r.json();
+    vwSeenSet=new Set(j.seen||[]);
+  }catch(e){vwSeenSet=new Set();}
+}
+
+async function vwMarkSeen(url){
+  vwSeenSet.add(url);
+  try{
+    await fetch(API+'/api/photos/viewer-seen',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+  }catch(e){}
+}
+
+async function vwResetSeen(){
+  if(!confirm('Effacer la mémoire des photos déjà vues ? La prochaine fois, toutes repasseront.'))return;
+  try{
+    await fetch(API+'/api/photos/viewer-reset',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    vwSeenSet=new Set();
+    alert('✓ Mémoire effacée');
+  }catch(e){alert('Erreur: '+e.message);}
+}
+
+async function vwLoad(){
+  const cc=$('vwCC').value;
+  const filter=$('vwFilter').value; // unseen | all | seen
+  $('vwCount').textContent='Chargement...';
+  await vwFetchSeen();
+  try{
+    const r=await fetch(API+'/api/photos/r2-list'+(cc?'?country='+cc:''));
+    const j=await r.json();
+    const allPhotos=j.photos||[];
+    // Appliquer le filtre
+    if(filter==='unseen'){
+      vwPhotos=allPhotos.filter(p=>!vwSeenSet.has(p.url));
+    }else if(filter==='seen'){
+      vwPhotos=allPhotos.filter(p=>vwSeenSet.has(p.url));
+    }else{
+      vwPhotos=allPhotos.slice();
+    }
+    vwIdx=0; vwDeleted=0; vwKept=0;
+    if(!vwPhotos.length){
+      const lbl=filter==='unseen'?'non vue':filter==='seen'?'déjà vue':'';
+      $('vwCount').textContent='0 photo '+lbl;
+      $('vwImg').style.display='none';
+      $('vwEmpty').style.display='block';
+      if(filter==='unseen'&&allPhotos.length){
+        $('vwEmpty').innerHTML='Toutes les photos'+(cc?' de '+cc:'')+' ont déjà été vues ('+allPhotos.length+').<br><small>Changez le filtre ou cliquez sur ♻️ Reset vues.</small>';
+      }else{
+        $('vwEmpty').textContent='Aucune photo à afficher'+(cc?' pour '+cc:'');
+      }
+      $('vwInfo').textContent='';
+      return;
+    }
+    $('vwEmpty').style.display='none';
+    $('vwImg').style.display='block';
+    vwShow();
+  }catch(e){
+    $('vwCount').textContent='Erreur: '+e.message;
+  }
+}
+
+function vwShow(){
+  if(!vwPhotos.length){$('vwImg').style.display='none';return;}
+  const p=vwPhotos[vwIdx];
+  if(!p){$('vwImg').style.display='none';return;}
+  $('vwImg').src=p.url;
+  $('vwImg').style.display='block';
+  let status=(vwIdx+1)+' / '+vwPhotos.length;
+  const extras=[];
+  if(vwDeleted)extras.push(vwDeleted+' suppr.');
+  if(vwKept)extras.push(vwKept+' gardées');
+  if(extras.length)status+=' ('+extras.join(', ')+')';
+  $('vwCount').textContent=status;
+
+  // Badge source coloré
+  const srcRaw=p.source||'';
+  const srcLower=srcRaw.toLowerCase();
+  let srcColor='#777', srcLabel=srcRaw||'?';
+  if(!srcRaw){srcLabel='source inconnue (avant meta)';srcColor='#555';}
+  else if(srcLower.includes('wikimedia')||srcLower.includes('wikipedia')){srcColor='#1565c0';}
+  else if(srcLower.includes('unsplash')){srcColor='#000';}
+  else if(srcLower.includes('pexels')){srcColor='#05a081';}
+  else if(srcLower.includes('pixabay')){srcColor='#ff6f00';}
+  else if(srcLower.includes('bing')){srcColor='#008373';}
+  else if(srcLower.includes('google')){srcColor='#ea4335';}
+  else if(srcLower.includes('duckduckgo')){srcColor='#de5833';}
+  else if(srcLower.includes('manuel')){srcColor='#6a1b9a';}
+
+  let line1='<b>'+(p.country||'??')+'</b> · '+(p.place_name||'')+' <span style="color:#777">('+p.place_id+')</span>';
+  line1+=' <span style="background:'+srcColor+';color:#fff;padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600;margin-left:8px">'+srcLabel+'</span>';
+  if(p.author)line1+=' <span style="color:#aaa;font-size:11px">📷 '+vwEscHtml(p.author)+'</span>';
+
+  let line2=p.url;
+  if(p.source_page){
+    line2+='<br><a href="'+p.source_page+'" target="_blank" rel="noopener noreferrer" style="color:#4aa3ff;text-decoration:none">🔗 Page d\'origine : '+vwEscHtml(p.source_page)+'</a>';
+  }
+  if(p.caption)line2+='<br><span style="color:#aaa;font-size:11px;font-style:italic">'+vwEscHtml(p.caption)+'</span>';
+
+  $('vwInfo').innerHTML=line1+'<br>'+line2;
+}
+
+function vwEscHtml(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function vwNext(){
+  if(!vwPhotos.length)return;
+  vwIdx=(vwIdx+1)%vwPhotos.length;
+  vwShow();
+}
+
+function vwPrev(){
+  if(!vwPhotos.length)return;
+  vwIdx=(vwIdx-1+vwPhotos.length)%vwPhotos.length;
+  vwShow();
+}
+
+// Garder : marque la photo comme vue (cote serveur) et la retire de la liste courante
+async function vwKeep(){
+  if(!vwPhotos.length)return;
+  const p=vwPhotos[vwIdx];
+  if(!p)return;
+  await vwMarkSeen(p.url);
+  vwPhotos.splice(vwIdx,1);
+  vwKept++;
+  if(vwIdx>=vwPhotos.length)vwIdx=0;
+  if(!vwPhotos.length){
+    $('vwImg').style.display='none';
+    $('vwEmpty').style.display='block';
+    $('vwEmpty').innerHTML='Terminé ! '+vwKept+' gardées, '+vwDeleted+' supprimées.';
+    $('vwCount').textContent='0 restante';
+    $('vwInfo').textContent='';
+    return;
+  }
+  vwShow();
+}
+
+async function vwDelete(){
+  if(!vwPhotos.length)return;
+  const p=vwPhotos[vwIdx];
+  if(!p)return;
+  try{
+    const r=await fetch(API+'/api/photos/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:p.url})});
+    const j=await r.json();
+    if(!r.ok||!j.success){alert('Erreur: '+(j.error||'inconnue'));return;}
+    // Marquer aussi comme vue (pour ne plus jamais repasser dessus si on reset pas)
+    await vwMarkSeen(p.url);
+    vwPhotos.splice(vwIdx,1);
+    vwDeleted++;
+    if(vwIdx>=vwPhotos.length)vwIdx=0;
+    if(!vwPhotos.length){
+      $('vwImg').style.display='none';
+      $('vwEmpty').style.display='block';
+      $('vwEmpty').innerHTML='Terminé ! '+vwKept+' gardées, '+vwDeleted+' supprimées.';
+      $('vwCount').textContent='0 restante';
+      $('vwInfo').textContent='';
+      return;
+    }
+    vwShow();
+  }catch(e){
+    alert('Erreur: '+e.message);
+  }
+}
+
+document.addEventListener('keydown',function(e){
+  const tab=document.getElementById('tab-viewer');
+  if(!tab||!tab.classList.contains('active'))return;
+  if(e.target&&(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT'))return;
+  if(e.key==='ArrowRight'){e.preventDefault();vwNext();}
+  else if(e.key==='ArrowLeft'){e.preventDefault();vwPrev();}
+  else if(e.key==='ArrowDown'||e.key==='Enter'){e.preventDefault();vwKeep();}
+  else if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();vwDelete();}
+});
+
+document.querySelector('[data-tab="viewer"]').addEventListener('click',()=>{setTimeout(vwInitCC,100)});
+
+// === Google Places batch ===
+let gpProgressTimer=null;
+
+function gpInitCC(){
+  const sel=document.getElementById('gpCC');
+  if(sel.options.length>1)return;
+  if(Array.isArray(CC)&&CC.length){
+    CC.forEach(c=>{
+      const o=document.createElement('option');
+      o.value=c; o.textContent=c;
+      sel.appendChild(o);
+    });
+  }
+}
+
+async function gpStart(){
+  const cc=document.getElementById('gpCC').value;
+  const kwStr=document.getElementById('gpKw').value;
+  const kw_indices=kwStr.split(',').map(x=>parseInt(x));
+  const limit=parseInt(document.getElementById('gpLimit').value)||100;
+  const only_missing=document.getElementById('gpOnlyMissing').checked;
+  try{
+    const r=await fetch(API+'/api/gplaces/start',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cc,kw_indices,limit,only_missing})
+    });
+    const j=await r.json();
+    if(!r.ok){alert('Erreur: '+(j.error||'inconnue'));return;}
+    if(j.count===0||j.total_places===0){alert('Rien à traiter.');return;}
+    alert('Batch lancé : '+j.total_places+' lieux');
+    gpStartPolling();
+  }catch(e){alert('Erreur: '+e.message);}
+}
+
+async function gpStop(){
+  if(!confirm('Arrêter le batch en cours ?'))return;
+  await fetch(API+'/api/gplaces/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+}
+
+function gpStartPolling(){
+  if(gpProgressTimer)clearInterval(gpProgressTimer);
+  gpProgressTimer=setInterval(gpFetchProgress,2000);
+  gpFetchProgress();
+}
+
+async function gpFetchProgress(){
+  try{
+    const r=await fetch(API+'/api/gplaces/progress');
+    const s=await r.json();
+    const box=document.getElementById('gpProgress');
+    const pct=s.total_places?Math.round(100*s.done_places/s.total_places):0;
+    box.innerHTML=
+      '<div><b>Statut :</b> '+(s.running?'🟢 EN COURS':'⚪ Arrêté')+'</div>'+
+      '<div><b>Progression :</b> '+s.done_places+' / '+s.total_places+' lieux ('+pct+'%) — <b>photos DL :</b> '+s.photos_downloaded+' — <b>erreurs :</b> '+s.errors+' — <b>sautés :</b> '+s.skipped+'</div>'+
+      '<div style="color:#666"><b>En cours :</b> '+(s.current_place||'')+'</div>'+
+      (s.last_error?'<div style="color:#c62828"><b>Dernière erreur :</b> '+s.last_error+'</div>':'');
+    if(!s.running){
+      clearInterval(gpProgressTimer);gpProgressTimer=null;
+      gpRefreshPending();
+    }
+  }catch(e){}
+}
+
+async function gpRefreshPending(){
+  try{
+    const cc=document.getElementById('gpCC').value;
+    const r=await fetch(API+'/api/gplaces/pending'+(cc?'?cc='+cc:''));
+    const j=await r.json();
+    const list=j.places||[];
+    gpPendingCache = list; // cache pour navigation lieu suivant
+    gpPrefetched = {}; // reset les preloads
+    document.getElementById('gpPendingCount').textContent=list.length+' lieux';
+    const box=document.getElementById('gpPendingList');
+    box.innerHTML='';
+    if(!list.length){
+      box.innerHTML='<div style="color:#888;padding:20px;grid-column:1/-1;text-align:center">Aucun lieu en attente de tri.</div>';
+      return;
+    }
+    list.forEach((p,i)=>{
+      const card=document.createElement('div');
+      card.style.cssText='background:#fff;border:1px solid #ddd;border-radius:6px;padding:10px';
+      card.innerHTML='<div style="font-weight:600;font-size:13px">'+p.name+'</div>'+
+        '<div style="color:#666;font-size:11px;margin:4px 0">'+p.cc+' · '+p.photos_count+' photos Google</div>'+
+        '<button class="btn btn-sm btn-blue" style="width:100%">Trier</button>';
+      card.querySelector('button').onclick=()=>gpOpenSorter(p);
+      box.appendChild(card);
+    });
+  }catch(e){}
+}
+
+// Preload des lieux suivants
+let gpPendingCache=[];
+let gpPrefetched={}; // place_id -> data de search-merged
+
+async function gpOpenSorter(place){
+  // Trouver l'index du lieu dans la liste
+  const idx = gpPendingCache.findIndex(p=>p.dir===place.dir && p.cc===place.cc);
+  // Lancer le fetch du courant + precharger les 3 suivants
+  gpShowLoadingModal(place);
+  try{
+    const data = await gpFetchMerged(place);
+    if(!data){alert('Erreur de chargement');document.getElementById('gpModal')?.remove();return;}
+    gpRenderModal(place, data, idx);
+    // Precharger les 3 suivants en arriere-plan
+    for(let i=1;i<=3;i++){
+      const next = gpPendingCache[idx+i];
+      if(next && !gpPrefetched[next.place_id]){
+        gpFetchMerged(next).catch(()=>{});
+      }
+    }
+  }catch(e){
+    alert('Erreur: '+e.message);
+    document.getElementById('gpModal')?.remove();
+  }
+}
+
+async function gpFetchMerged(place){
+  const pid = place.place_id;
+  if(gpPrefetched[pid])return gpPrefetched[pid];
+  const r = await fetch(API+'/api/gplaces/search-merged',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({place_id:pid})
+  });
+  if(!r.ok)return null;
+  const j = await r.json();
+  gpPrefetched[pid] = j;
+  return j;
+}
+
+function gpShowLoadingModal(place){
+  let mod=document.getElementById('gpModal');
+  if(mod)mod.remove();
+  mod=document.createElement('div');
+  mod.id='gpModal';
+  mod.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px';
+  mod.innerHTML='Chargement des photos de '+place.name+'...';
+  document.body.appendChild(mod);
+}
+
+function gpRenderModal(place, data, idx){
+  let mod=document.getElementById('gpModal');
+  if(mod)mod.remove();
+  mod=document.createElement('div');
+  mod.id='gpModal';
+  mod.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.92);z-index:9999;display:flex;flex-direction:column;padding:16px;overflow:hidden';
+
+  const selected=new Map(); // url -> photo obj
+  // Preselectionner les URLs par defaut
+  const presel = data.preselected || [];
+
+  // === HEADER ===
+  const header=document.createElement('div');
+  header.style.cssText='color:#fff;display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap';
+  header.innerHTML='<h3 style="margin:0;color:#fff">'+data.place_name+' <span style="color:#aaa;font-weight:400;font-size:14px">('+data.country_name+')</span></h3>'+
+    '<span style="color:#aaa;font-size:12px">Clique pour (dé)sélectionner · max 3</span>'+
+    '<span style="color:#888;font-size:11px">'+(idx>=0?'Lieu '+(idx+1)+'/'+gpPendingCache.length:'')+'</span>';
+  const closeBtn=document.createElement('button');
+  closeBtn.textContent='✕ Fermer';
+  closeBtn.style.cssText='margin-left:auto;background:#555;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer';
+  closeBtn.onclick=()=>mod.remove();
+  header.appendChild(closeBtn);
+  mod.appendChild(header);
+
+  // === SCROLL ZONE ===
+  const scroll=document.createElement('div');
+  scroll.style.cssText='flex:1;overflow-y:auto;padding-right:8px';
+  mod.appendChild(scroll);
+
+  // Helper pour creer une cellule photo
+  function makeCell(ph, isCurrent){
+    const cell=document.createElement('div');
+    const srcLabel = isCurrent ? 'ACTUELLE' : (ph.source||'?');
+    const srcColor = isCurrent ? '#ff9800' : (
+      ph.source==='google_places'?'#4285f4':
+      ph.source==='wikimedia'?'#2e7d32':
+      ph.source==='unsplash'?'#111':
+      ph.source==='pexels'?'#05a081':
+      ph.source==='pixabay'?'#2ec866':
+      ph.source==='manuel'?'#9c27b0':
+      ph.source==='bing'?'#888':
+      ph.source==='duckduckgo'?'#de5833':
+      '#555'
+    );
+    cell.style.cssText='background:#222;border:3px solid transparent;border-radius:6px;overflow:hidden;cursor:pointer;position:relative';
+    const imgUrl = ph.url || ph.url_full || '';
+    const caption = (ph.caption||ph.keyword||'').replace(/</g,'&lt;');
+    const author = (ph.author||'').replace(/</g,'&lt;');
+    cell.innerHTML='<div style="position:absolute;top:6px;left:6px;background:'+srcColor+';color:#fff;padding:2px 8px;font-size:10px;font-weight:600;border-radius:3px;z-index:2">'+srcLabel+'</div>'+
+      '<img src="'+imgUrl+'" style="width:100%;height:220px;object-fit:cover;display:block;background:#111" onerror="this.style.opacity=0.2">'+
+      '<div style="padding:8px;color:#fff;font-size:11px;line-height:1.4">'+
+        '<div style="color:#ddd">'+caption+'</div>'+
+        (author?'<div style="color:#888;margin-top:3px">© '+author+'</div>':'')+
+        (ph.width?'<div style="color:#666;margin-top:2px">'+ph.width+'×'+ph.height+'px</div>':'')+
+      '</div>';
+    // Preselection
+    if(presel.includes(imgUrl)){
+      selected.set(imgUrl, {...ph, is_current:isCurrent});
+      cell.style.borderColor='#2e7d32';
+    }
+    cell.onclick=()=>{
+      if(selected.has(imgUrl)){
+        selected.delete(imgUrl);
+        cell.style.borderColor='transparent';
+      }else if(selected.size<3){
+        selected.set(imgUrl, {...ph, is_current:isCurrent});
+        cell.style.borderColor='#2e7d32';
+      }else alert('Max 3 photos. Désélectionne d\'abord une photo.');
+    };
+    return cell;
+  }
+
+  // === SECTION PHOTOS ACTUELLES (en haut) ===
+  const currentPhotos = data.current_photos || [];
+  if(currentPhotos.length){
+    const secCur=document.createElement('div');
+    secCur.style.cssText='margin-bottom:16px';
+    secCur.innerHTML='<div style="color:#ff9800;font-weight:600;font-size:13px;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #ff9800">📸 Photos actuelles ('+currentPhotos.length+')</div>';
+    const gridCur=document.createElement('div');
+    gridCur.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px';
+    currentPhotos.forEach(ph=>gridCur.appendChild(makeCell(ph, true)));
+    secCur.appendChild(gridCur);
+    scroll.appendChild(secCur);
+  }
+
+  // === SECTION NOUVELLES — grouper par keyword pour afficher avec titres ===
+  const newCands = data.new_candidates || [];
+  // Grouper par keyword (fallback sur source si pas de keyword)
+  const byKeyword = {};
+  newCands.forEach(ph=>{
+    const k = ph.keyword || '(sans mot-clé)';
+    if(!byKeyword[k])byKeyword[k]=[];
+    byKeyword[k].push(ph);
+  });
+  // Trier les keywords : Google Places (pending) d'abord, puis par nombre de photos
+  const kwOrder = Object.keys(byKeyword).sort((a,b)=>{
+    const aHasGoogle = byKeyword[a].some(p=>p.source==='google_places');
+    const bHasGoogle = byKeyword[b].some(p=>p.source==='google_places');
+    if(aHasGoogle && !bHasGoogle)return -1;
+    if(!aHasGoogle && bHasGoogle)return 1;
+    return byKeyword[b].length - byKeyword[a].length;
+  });
+
+  kwOrder.forEach(kw=>{
+    const sec=document.createElement('div');
+    sec.style.cssText='margin-bottom:16px';
+    // Trier les photos du keyword : legal d'abord (google, wikimedia, unsplash, pexels, pixabay, manuel), puis autres
+    const legal = ['google_places','wikimedia','unsplash','pexels','pixabay','manuel'];
+    byKeyword[kw].sort((a,b)=>{
+      const aL = legal.indexOf(a.source);
+      const bL = legal.indexOf(b.source);
+      if(aL===-1 && bL===-1)return 0;
+      if(aL===-1)return 1;
+      if(bL===-1)return -1;
+      return aL-bL;
+    });
+    sec.innerHTML='<div style="color:#4fc3f7;font-weight:600;font-size:13px;margin-bottom:8px;padding:4px 0;border-bottom:1px solid #333">🔎 '+kw+' <span style="color:#666;font-weight:400">('+byKeyword[kw].length+' photos)</span></div>';
+    const grid=document.createElement('div');
+    grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px';
+    byKeyword[kw].forEach(ph=>grid.appendChild(makeCell(ph, false)));
+    sec.appendChild(grid);
+    scroll.appendChild(sec);
+  });
+
+  // === FOOTER : 3 boutons ===
+  const footer=document.createElement('div');
+  footer.style.cssText='margin-top:12px;padding-top:12px;border-top:1px solid #333;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap';
+  footer.innerHTML=
+    '<button id="gpKeepAsIs" style="background:#555;color:#fff;border:none;padding:10px 18px;border-radius:4px;cursor:pointer">👌 Garder tel quel (ne rien changer)</button>'+
+    '<button id="gpSaveProv" style="background:#ff9800;color:#fff;border:none;padding:10px 18px;border-radius:4px;cursor:pointer">💾 Sauver provisoirement (revoir)</button>'+
+    '<button id="gpSaveDef" style="background:#2e7d32;color:#fff;border:none;padding:10px 18px;border-radius:4px;cursor:pointer;font-weight:600">✅ Sauvegarder définitivement</button>';
+  mod.appendChild(footer);
+  document.body.appendChild(mod);
+
+  // Handlers boutons
+  document.getElementById('gpKeepAsIs').onclick=async()=>{
+    // Nettoyer le pending et avancer
+    await fetch(API+'/api/gplaces/cleanup-pending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:data.place_id})});
+    gpNextOrClose(idx);
+  };
+
+  document.getElementById('gpSaveProv').onclick=async()=>{
+    if(selected.size===0){alert('Sélectionne au moins une photo pour remplacer les actuelles.');return;}
+    // Upload en R2 via handle_select + marquer comme a revoir
+    if(!await gpDoSelect(data, selected))return;
+    await fetch(API+'/api/gplaces/mark-revisit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:data.place_id,note:'provisoire'})});
+    await fetch(API+'/api/gplaces/cleanup-pending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:data.place_id})});
+    gpNextOrClose(idx);
+  };
+
+  document.getElementById('gpSaveDef').onclick=async()=>{
+    if(selected.size===0){alert('Sélectionne au moins une photo.');return;}
+    if(!await gpDoSelect(data, selected))return;
+    // Retirer de revisit si present
+    await fetch(API+'/api/gplaces/unmark-revisit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:data.place_id})});
+    await fetch(API+'/api/gplaces/cleanup-pending',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:data.place_id})});
+    gpNextOrClose(idx);
+  };
+}
+
+async function gpDoSelect(data, selected){
+  // Appel /api/photos/select avec les photos choisies
+  const photos = Array.from(selected.values()).map((ph,i)=>({
+    url: ph.url,
+    url_full: ph.url_full || ph.url,
+    caption: ph.caption || '',
+    keyword: ph.keyword || '',
+    source: ph.source || '',
+    author: ph.author || '',
+    source_page: ph.source_page || '',
+    is_primary: i===0,
+  }));
+  try{
+    const r = await fetch(API+'/api/photos/select',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({place_id:data.place_id, photos})
+    });
+    const j = await r.json();
+    if(!r.ok){alert('Erreur sauvegarde : '+(j.error||'inconnue'));return false;}
+    return true;
+  }catch(e){
+    alert('Erreur réseau : '+e.message);
+    return false;
+  }
+}
+
+function gpNextOrClose(currentIdx){
+  document.getElementById('gpModal')?.remove();
+  // Trouver le lieu suivant dans la liste pending
+  if(currentIdx<0 || currentIdx+1>=gpPendingCache.length){
+    gpRefreshPending();
+    return;
+  }
+  const next = gpPendingCache[currentIdx+1];
+  // Rafraichir la liste en arriere-plan mais enchainer immediatement
+  setTimeout(()=>gpRefreshPending(), 500);
+  gpOpenSorter(next);
+}
+
+async function gpFetchRevisitCount(){
+  try{
+    const r = await fetch(API+'/api/gplaces/revisit');
+    const j = await r.json();
+    const n = j.count||0;
+    document.getElementById('gpRevisitCount').textContent = n>0 ? ('📝 '+n+' lieu(x) sauvés provisoirement (à revoir)') : '';
+  }catch(e){}
+}
+
+document.querySelector('[data-tab="gplaces"]').addEventListener('click',()=>{
+  setTimeout(()=>{gpInitCC();gpRefreshPending();gpFetchProgress();gpFetchRevisitCount();},100);
+});
+
+// === Precache Wikimedia ===
+let wcTimer = null;
+
+async function wcRefresh(){
+  try{
+    const r = await fetch(API+'/api/wcache/progress');
+    const s = await r.json();
+    const box = document.getElementById('wcStatus');
+    const btn = document.getElementById('wcBtn');
+    if(!box||!btn)return;
+
+    const cached = s.cache_size||0;
+    if(s.running){
+      btn.textContent='■ Arrêter';
+      btn.style.background='#d32f2f';
+      const pct = s.total ? Math.round(100*s.done/s.total) : 0;
+      box.innerHTML = '🟢 En cours '+s.done+'/'+s.total+' ('+pct+'%)<br>📸 '+s.photos_total+' photos · cache: '+cached+' lieux'+(s.errors?' · ⚠ '+s.errors+' err':'')+'<br><span style="color:#777">'+(s.current||'')+'</span>';
+      if(!wcTimer) wcTimer = setInterval(wcRefresh, 3000);
+    }else{
+      btn.textContent='⚡ Précache Wiki';
+      btn.style.background='#ff9800';
+      if(wcTimer){clearInterval(wcTimer); wcTimer=null;}
+      if(cached>0){
+        box.innerHTML='💾 Cache: '+cached+' lieux'+(s.done?' (dernière session: +'+s.done+')':'')+'<br><span style="color:#777">Cliquer pour reprendre</span>';
+      }else{
+        box.innerHTML='<span style="color:#777">Cliquer pour démarrer</span>';
+      }
+    }
+  }catch(e){}
+}
+
+async function wcToggle(){
+  try{
+    const r = await fetch(API+'/api/wcache/progress');
+    const s = await r.json();
+    if(s.running){
+      // Stop
+      await fetch(API+'/api/wcache/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+      setTimeout(wcRefresh, 500);
+    }else{
+      // Start (skip_done=true pour reprendre)
+      const cc = document.getElementById('r2CC').value || '';
+      const r2 = await fetch(API+'/api/wcache/start',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({cc:cc, skip_done:true})
+      });
+      const j = await r2.json();
+      if(!r2.ok){alert('Erreur: '+(j.error||'inconnue'));return;}
+      setTimeout(wcRefresh, 500);
+    }
+  }catch(e){alert('Erreur: '+e.message);}
+}
+
+// Auto-refresh au chargement et changement d'onglet r2photos
+document.querySelector('[data-tab="r2photos"]').addEventListener('click',()=>{setTimeout(wcRefresh,200)});
+setTimeout(wcRefresh, 1000);
+
+// Reprise automatique de la queue d'uploads en attente après fermeture/rechargement
+function r2QueueRestoreCheck(){
+  const pending = r2QueueLoad();
+  if(!pending.length) return;
+  // Bandeau de proposition (pas de confirm bloquant)
+  const bar = document.createElement('div');
+  bar.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:10000;background:#ff9800;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);font-size:14px';
+  bar.innerHTML = '<span>📤 <b>'+pending.length+' upload(s) R2 interrompu(s)</b> par la fermeture précédente. Reprendre ?</span>'
+    +'<div>'
+    +'<button id="r2QueueResume" style="background:#fff;color:#e65100;border:none;padding:6px 14px;border-radius:4px;font-weight:600;margin-right:8px;cursor:pointer">▶ Reprendre</button>'
+    +'<button id="r2QueueDiscard" style="background:transparent;color:#fff;border:1px solid #fff;padding:6px 14px;border-radius:4px;cursor:pointer">Effacer</button>'
+    +'</div>';
+  document.body.appendChild(bar);
+  document.getElementById('r2QueueResume').onclick = function(){
+    bar.remove();
+    // Réinjecter dans la queue mémoire et lancer
+    pending.forEach(j => r2EnqueueUpload(j.place_id, j.photos));
+    st('▶ Reprise de '+pending.length+' upload(s)','success');
+  };
+  document.getElementById('r2QueueDiscard').onclick = function(){
+    bar.remove();
+    r2QueueClear();
+    st('Queue effacée','info');
+  };
+}
+
+// Avertir l'utilisateur s'il essaie de fermer la page avec des uploads en cours/en attente
+window.addEventListener('beforeunload', function(e){
+  if(r2UploadQueue.length > 0 || r2UploadActive > 0){
+    const msg = r2UploadQueue.length+' upload(s) en attente, '+r2UploadActive+' en cours. Quitter quand même ?';
+    e.preventDefault();
+    e.returnValue = msg;
+    return msg;
+  }
+});
+
+loadCC();
+r2QueueRestoreCheck();
+</script>
+</body>
+</html>

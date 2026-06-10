@@ -25,13 +25,84 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 const MONTHLY_LIMIT = 20;
 
 const CATEGORIES = {
   flight: '✈️', car_rental: '🚗', insurance: '🛡️', hotel: '🏨',
   activity: '🎯', visit: '🏛️', show: '🎭'
 };
+
+// ===== TAUX DE CHANGE (fawazahmed0, gratuit, sans cle) =====
+// Primaire jsDelivr, fallback Cloudflare Pages. Taux quotidiens.
+const FX_PRIMARY = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies';
+const FX_FALLBACK = 'https://latest.currency-api.pages.dev/v1/currencies';
+
+async function fetchRate(from, to) {
+  const f = String(from || '').toLowerCase();
+  const t = String(to || '').toLowerCase();
+  if (!f || !t) return null;
+
+  for (const base of [FX_PRIMARY, FX_FALLBACK]) {
+    try {
+      const res = await fetch(`${base}/${f}.json`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      const rate = data && data[f] && data[f][t];
+      if (typeof rate === 'number' && isFinite(rate)) return rate;
+    } catch (e) {
+      console.warn('FX fetch echec', base, e.message);
+    }
+  }
+  return null;
+}
+
+// Convertit data.price vers targetCurrency. Conserve l'original.
+async function applyCurrencyConversion(data, targetCurrency) {
+  const target = String(targetCurrency || '').toUpperCase();
+  if (!target) return;
+
+  const hasPrice = data.price && data.price.amount != null && !isNaN(parseFloat(data.price.amount));
+  if (!hasPrice) return;
+
+  const original = {
+    amount: parseFloat(data.price.amount),
+    currency: String(data.price.currency || '').toUpperCase()
+  };
+
+  if (!original.currency) {
+    data.fx = { converted: false, reason: 'unknown_source_currency', to: target };
+    return;
+  }
+  if (original.currency === target) {
+    data.fx = { converted: false, reason: 'same_currency', from: original.currency, to: target };
+    return;
+  }
+
+  const rate = await fetchRate(original.currency, target);
+  if (rate == null) {
+    // On ne fausse rien: on garde l'original et on signale.
+    data.fx = { converted: false, reason: 'rate_unavailable', from: original.currency, to: target };
+    return;
+  }
+
+  data.price_original = original;
+  data.price = {
+    amount: Math.round(original.amount * rate * 100) / 100,
+    currency: target
+  };
+  data.fx = {
+    converted: true,
+    rate,
+    from: original.currency,
+    to: target,
+    source: 'fawazahmed0',
+    date: new Date().toISOString().slice(0, 10)
+  };
+}
 
 const PROMPT = `Tu extrais les infos de réservations voyage en JSON.
 
@@ -148,7 +219,7 @@ async function checkQuota(uid, email) {
 // ===== GEMINI =====
 async function callGemini(content) {
   console.log('🔄 Essai Gemini Flash...');
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -166,7 +237,47 @@ async function callGemini(content) {
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Réponse vide Gemini');
   
-  return { text, model: 'Gemini Flash' };
+  return { text, model: GEMINI_MODEL };
+}
+
+// ===== GROQ (fallback texte) =====
+async function callGroq(content) {
+  console.log('⚡ Fallback Groq...');
+  for (const model of GROQ_MODELS) {
+    try {
+      console.log('⚡ Essai', model);
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: PROMPT },
+            { role: 'user', content: content }
+          ],
+          temperature: 0.1,
+          max_tokens: 1024,
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!res.ok) { console.warn(`⚡ ❌ ${model}: HTTP ${res.status}`); continue; }
+
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (text) {
+        console.log('✅ Groq OK:', model);
+        return { text, model: `groq/${model}` };
+      }
+    } catch (e) {
+      console.warn('⚡ ❌', model, e.message);
+    }
+  }
+
+  throw new Error('Tous les modèles Groq ont échoué');
 }
 
 // ===== OPENROUTER =====
@@ -237,8 +348,17 @@ async function parseEmail(content) {
       console.warn('❌ Gemini échoué:', e.message);
     }
   }
-  
-  // 2. OpenRouter
+
+  // 2. Groq
+  if (GROQ_KEY) {
+    try {
+      return await callGroq(content);
+    } catch (e) {
+      console.warn('❌ Groq échoué:', e.message);
+    }
+  }
+
+  // 3. OpenRouter
   if (OPENROUTER_KEY) {
     return await callOpenRouter(content);
   }
@@ -385,7 +505,7 @@ export default async (request, context) => {
   }
 
   try {
-    const { content } = await request.json();
+    const { content, targetCurrency } = await request.json();
     
     if (!content || content.length < 50) {
       return new Response(JSON.stringify({ success: false, error: 'Contenu trop court' }), { status: 400, headers });
@@ -410,6 +530,9 @@ export default async (request, context) => {
     data.id = `booking_${Date.now()}`;
     data.source = 'ai_parser';
     data.created_at = new Date().toISOString();
+
+    // Conversion dans la devise du voyage (si fournie)
+    await applyCurrencyConversion(data, targetCurrency);
 
     return new Response(JSON.stringify({
       success: true,

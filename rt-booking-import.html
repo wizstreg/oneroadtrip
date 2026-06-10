@@ -831,6 +831,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
 <script src="/js/ort-i18n.js"></script>
 <script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-trip-data.js"></script>
+<script src="/js/ort-currency.js"></script>
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -2408,13 +2409,18 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         return;
       }
       
+      // Devise du voyage : demandée une fois (modale), puis réutilisée
+      const tripCurrency = window.ORT_CURRENCY
+        ? await ORT_CURRENCY.ensureTripCurrency(tripId, lang)
+        : null;
+
       const response = await fetch('/.netlify/functions/parse-booking', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ content: text })
+        body: JSON.stringify({ content: text, targetCurrency: tripCurrency })
       });
       
       const result = await response.json();

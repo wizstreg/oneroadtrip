@@ -22,9 +22,9 @@
 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OneRoadTrip – Actualités &amp; Presse</title>
-<meta name="description" content="Les actualités et la revue de presse de OneRoadTrip.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
+<title>OneRoadTrip</title>
+<meta name="description" content="Actualités, presse et partenaires de OneRoadTrip.">
+<link rel="icon" href="/assets/symbol.webp">
 <style>
 :root{
   --ink:#113f7a;
@@ -42,7 +42,7 @@ body{
   color:var(--ink);
 }
 
-/* Header (remplaçable par ort-header.js) */
+/* Header */
 header{
   background:var(--acc);
   color:#fff;
@@ -52,9 +52,9 @@ header{
   gap:12px;
 }
 header a.brand{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none;font-weight:800;font-size:17px}
-header a.brand .logo{width:34px;height:34px;border-radius:8px;background:#fff;color:var(--acc);display:flex;align-items:center;justify-content:center;font-weight:800}
+header a.brand img{width:40px;height:40px;object-fit:contain;display:block}
 header .spacer{flex:1}
-header a.back{color:#fff;text-decoration:none;font-size:14px;border:1px solid rgba(255,255,255,.5);padding:7px 12px;border-radius:9px}
+header a.back{color:#fff;text-decoration:none;font-size:14px;border:1px solid rgba(255,255,255,.5);padding:7px 12px;border-radius:9px;white-space:nowrap}
 header a.back:hover{background:rgba(255,255,255,.15)}
 
 .hero{max-width:880px;margin:0 auto;padding:26px 18px 6px}
@@ -62,11 +62,11 @@ header a.back:hover{background:rgba(255,255,255,.15)}
 .hero p{margin:0;color:var(--mut);font-size:15px}
 
 /* Onglets */
-.tabs{max-width:880px;margin:18px auto 0;padding:0 18px;display:flex;gap:8px}
+.tabs{max-width:880px;margin:18px auto 0;padding:0 18px;display:flex;gap:8px;flex-wrap:wrap}
 .tab{
   padding:11px 26px;border-radius:12px 12px 0 0;cursor:pointer;font-weight:700;
   background:#e4edf5;color:var(--acc);border:1px solid var(--bd);border-bottom:none;
-  transition:background .15s;
+  transition:background .15s;white-space:nowrap;
 }
 .tab:hover{background:#d8e6f1}
 .tab.active{background:var(--card);box-shadow:0 -3px 10px rgba(17,63,122,.08)}
@@ -81,7 +81,8 @@ header a.back:hover{background:rgba(255,255,255,.15)}
   opacity:0;transform:translateY(12px);animation:rise .5s ease forwards;
 }
 @keyframes rise{to{opacity:1;transform:none}}
-.art img.cover{width:100%;height:240px;object-fit:cover;background:#eef3f7;display:block}
+/* contain + max-height : l'image entière est visible, jamais coupée salement */
+.art img.cover{width:100%;height:auto;max-height:360px;object-fit:contain;background:#eef3f7;display:block}
 .art .body{padding:16px 18px}
 .art .date{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);font-weight:700}
 .art h2{margin:6px 0 10px;font-size:21px;color:var(--ink)}
@@ -94,23 +95,24 @@ header a.back:hover{background:rgba(255,255,255,.15)}
 
 @media(max-width:600px){
   .hero h1{font-size:23px}
-  .art img.cover{height:180px}
+  .art img.cover{max-height:240px}
   .tab{padding:10px 16px}
 }
 </style>
 </head>
 <body>
 
-<!-- Si tu utilises ort-header.js sur le site, remplace ce bloc header par ton header habituel. -->
 <header>
-  <a class="brand" href="/index.html"><span class="logo">OR</span> OneRoadTrip</a>
+  <a class="brand" id="homeLink" href="/index.html">
+    <img src="/assets/symbol.webp" alt="OneRoadTrip"> OneRoadTrip
+  </a>
   <span class="spacer"></span>
-  <a class="back" href="/index.html">← Accueil</a>
+  <a class="back" id="backLink" href="/index.html">← Accueil</a>
 </header>
 
 <div class="hero">
-  <h1>Actualités &amp; Presse</h1>
-  <p>Les dernières nouvelles de OneRoadTrip et ce que la presse en dit.</p>
+  <h1 id="heroTitle">Actualités &amp; presse</h1>
+  <p id="heroSub">Les dernières nouvelles de OneRoadTrip et ce que la presse en dit.</p>
 </div>
 
 <div class="tabs">
@@ -121,29 +123,64 @@ header a.back:hover{background:rgba(255,255,255,.15)}
 
 <div class="feed">
   <div class="feed-inner" id="feed">
-    <div class="loading">Chargement…</div>
+    <div class="loading">…</div>
   </div>
 </div>
 
 <script>
-const SOURCES = {
+/* ===== i18n ===== */
+var SUPPORTED = ['fr','en','es','it','pt','ar'];
+var currentLang = 'en';
+(function(){
+  var p = new URLSearchParams(location.search).get('lang');
+  if (p && SUPPORTED.indexOf(p) !== -1){ currentLang = p; return; }
+  var langs = navigator.languages || (navigator.language ? [navigator.language] : []);
+  for (var i=0;i<langs.length;i++){
+    var n = langs[i].slice(0,2).toLowerCase();
+    if (SUPPORTED.indexOf(n) !== -1){ currentLang = n; return; }
+  }
+})();
+
+var I18N = {
+  fr:{title:'Actualités & presse',sub:'Les dernières nouvelles de OneRoadTrip et ce que la presse en dit.',news:'Actualités',press:'Presse',partners:'Partenaires',back:'← Accueil',loading:'Chargement…',empty:'Aucun article pour le moment.',locale:'fr-FR',pageTitle:'OneRoadTrip · Actualités & presse'},
+  en:{title:'News & press',sub:'The latest from OneRoadTrip and what the press says about us.',news:'News',press:'Press',partners:'Partners',back:'← Home',loading:'Loading…',empty:'Nothing here yet.',locale:'en-GB',pageTitle:'OneRoadTrip · News & press'},
+  es:{title:'Noticias y prensa',sub:'Las últimas novedades de OneRoadTrip y lo que dice la prensa.',news:'Noticias',press:'Prensa',partners:'Socios',back:'← Inicio',loading:'Cargando…',empty:'Aún no hay nada.',locale:'es-ES',pageTitle:'OneRoadTrip · Noticias y prensa'},
+  it:{title:'Notizie e stampa',sub:'Le ultime novità di OneRoadTrip e cosa ne dice la stampa.',news:'Notizie',press:'Stampa',partners:'Partner',back:'← Home',loading:'Caricamento…',empty:'Ancora niente.',locale:'it-IT',pageTitle:'OneRoadTrip · Notizie e stampa'},
+  pt:{title:'Notícias e imprensa',sub:'As últimas novidades da OneRoadTrip e o que a imprensa diz.',news:'Notícias',press:'Imprensa',partners:'Parceiros',back:'← Início',loading:'A carregar…',empty:'Ainda não há nada.',locale:'pt-PT',pageTitle:'OneRoadTrip · Notícias e imprensa'},
+  ar:{title:'الأخبار والصحافة',sub:'آخر أخبار OneRoadTrip وما تقوله الصحافة عنّا.',news:'أخبار',press:'الصحافة',partners:'شركاء',back:'الرئيسية',loading:'جارٍ التحميل…',empty:'لا يوجد شيء بعد.',locale:'ar',pageTitle:'OneRoadTrip · الأخبار والصحافة'}
+};
+var T = I18N[currentLang] || I18N.en;
+
+document.documentElement.lang = currentLang;
+if (currentLang === 'ar') document.documentElement.dir = 'rtl';
+document.title = T.pageTitle;
+document.getElementById('heroTitle').textContent = T.title;
+document.getElementById('heroSub').textContent = T.sub;
+document.getElementById('tabNews').textContent = '📰 ' + T.news;
+document.getElementById('tabPress').textContent = '🗞️ ' + T.press;
+document.getElementById('tabPartners').textContent = '🤝 ' + T.partners;
+document.getElementById('backLink').textContent = T.back;
+document.getElementById('backLink').href = '/index.html?lang=' + currentLang;
+document.getElementById('homeLink').href = '/index.html?lang=' + currentLang;
+
+/* ===== Données ===== */
+var SOURCES = {
   news:     'data/news/news.json',
   press:    'data/news/press.json',
   partners: 'data/news/partners.json'
 };
-const cache = {};
-let currentTab = 'news';
+var cache = {};
+var currentTab = 'news';
 
 async function loadTab(tab){
   if (cache[tab]) { render(tab); return; }
-  document.getElementById('feed').innerHTML = '<div class="loading">Chargement…</div>';
+  document.getElementById('feed').innerHTML = '<div class="loading">' + T.loading + '</div>';
   try {
-    // chemins tolérants (racine ou relatif)
-    const tries = [SOURCES[tab], './' + SOURCES[tab], '/' + SOURCES[tab]];
-    let data = null;
-    for (const url of tries){
+    var tries = [SOURCES[tab], './' + SOURCES[tab], '/' + SOURCES[tab]];
+    var data = null;
+    for (var i=0;i<tries.length;i++){
       try {
-        const r = await fetch(url, { cache:'no-store' });
+        var r = await fetch(tries[i], { cache:'no-store' });
         if (r.ok){ data = await r.json(); break; }
       } catch(e){}
     }
@@ -154,32 +191,32 @@ async function loadTab(tab){
 
 function render(tab){
   if (tab !== currentTab) return;
-  const arr = (cache[tab] || []).slice().sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  const feed = document.getElementById('feed');
+  var arr = (cache[tab] || []).slice().sort(function(a,b){ return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+  var feed = document.getElementById('feed');
   if (arr.length === 0){
-    feed.innerHTML = '<div class="empty">Aucun article pour le moment.</div>';
+    feed.innerHTML = '<div class="empty">' + T.empty + '</div>';
     return;
   }
   feed.innerHTML = '';
-  arr.forEach((a, i)=>{
-    const el = document.createElement('article');
+  arr.forEach(function(a, i){
+    var el = document.createElement('article');
     el.className = 'art';
     el.style.animationDelay = (i * 80) + 'ms';
-    const img = a.image ? `<img class="cover" src="${escapeAttr(a.image)}" alt="${escapeAttr(a.title||'')}" loading="lazy">` : '';
-    el.innerHTML = `
-      ${img}
-      <div class="body">
-        <div class="date">${formatDate(a.date)}</div>
-        ${a.title ? `<h2>${escapeHtml(a.title)}</h2>` : ''}
-        <div class="content">${a.body || ''}</div>
-      </div>`;
+    var img = a.image ? '<img class="cover" src="' + escapeAttr(a.image) + '" alt="' + escapeAttr(a.title||'') + '" loading="lazy">' : '';
+    el.innerHTML =
+      img +
+      '<div class="body">' +
+        '<div class="date">' + formatDate(a.date) + '</div>' +
+        (a.title ? '<h2>' + escapeHtml(a.title) + '</h2>' : '') +
+        '<div class="content">' + (a.body || '') + '</div>' +
+      '</div>';
     feed.appendChild(el);
   });
 }
 
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
     t.classList.add('active');
     currentTab = t.dataset.tab;
     loadTab(currentTab);
@@ -188,15 +225,22 @@ document.querySelectorAll('.tab').forEach(t=>{
 
 function formatDate(d){
   if (!d) return '';
-  try { return new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}); }
+  try { return new Date(d+'T00:00:00').toLocaleDateString(T.locale, {day:'numeric',month:'long',year:'numeric'}); }
   catch(e){ return d; }
 }
 function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
 }
 function escapeAttr(s){ return escapeHtml(s); }
 
-loadTab('news');
+/* Ouvre l'onglet demandé via ?tab=news|press|partners (ou #ancre), sinon News. */
+(function initTab(){
+  var t = (new URLSearchParams(location.search).get('tab') || (location.hash||'').replace('#','') || 'news').toLowerCase();
+  if (!SOURCES[t]) t = 'news';
+  currentTab = t;
+  document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('active', x.dataset.tab === t); });
+  loadTab(t);
+})();
 </script>
 </body>
 </html>

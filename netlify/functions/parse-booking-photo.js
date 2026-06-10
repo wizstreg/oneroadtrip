@@ -15,6 +15,7 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 
 const DAILY_LIMIT = parseInt(process.env.BOOKING_PHOTO_DAILY_LIMIT || '10', 10);
 const MONTHLY_LIMIT = parseInt(process.env.BOOKING_PHOTO_MONTHLY_LIMIT || '50', 10);
@@ -119,7 +120,7 @@ async function checkQuota(uid, email) {
 async function callGemini(photoBase64) {
   console.log('📸 Gemini Parse Booking Photo...');
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

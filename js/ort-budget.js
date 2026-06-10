@@ -16,7 +16,17 @@
   };
 
   // État du budget
-  let budgetData = { total: 0, byCategory: {}, items: [] };
+  let budgetData = { total: 0, byCategory: {}, items: [], currency: 'EUR', unconverted: [] };
+
+  // Format montant + devise du voyage
+  function fmt(amount, decimals) {
+    const cur = budgetData.currency || 'EUR';
+    if (global.ORT_CURRENCY && global.ORT_CURRENCY.format) {
+      return global.ORT_CURRENCY.format(amount, cur, decimals);
+    }
+    const d = (decimals == null) ? 0 : decimals;
+    return (Number(amount) || 0).toFixed(d) + ' ' + cur;
+  }
 
   // === FONCTIONS PRINCIPALES ===
 
@@ -77,14 +87,27 @@
       });
     }
     
+    // Devise du voyage (par defaut EUR si non definie)
+    const tripCurrency = (global.ORT_CURRENCY && global.ORT_CURRENCY.getTripCurrency(tripId)) || 'EUR';
+
     // Calculate totals
-    budgetData = { total: 0, byCategory: { transport: 0, accommodation: 0, activities: 0, other: 0 }, items: [] };
+    budgetData = { total: 0, byCategory: { transport: 0, accommodation: 0, activities: 0, other: 0 }, items: [], currency: tripCurrency, unconverted: [] };
     
     allBookings.forEach(b => {
-      const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+      const isObj = b.price && typeof b.price === 'object';
+      const price = isObj ? b.price.amount : b.price;
       const amount = parseFloat(price) || 0;
       if (amount <= 0) return;
-      
+
+      // Devise de la resa: celle du prix objet, sinon on suppose la devise voyage (resas anciennes)
+      const itemCurrency = (isObj && b.price.currency ? String(b.price.currency) : tripCurrency).toUpperCase();
+
+      // Si la resa est dans une autre devise (conversion ratee ou import ancien), on ne melange pas
+      if (itemCurrency !== tripCurrency.toUpperCase()) {
+        budgetData.unconverted.push({ ...b, amount, itemCurrency });
+        return;
+      }
+
       budgetData.total += amount;
       budgetData.items.push({ ...b, amount });
       
@@ -110,7 +133,7 @@
     
     if (budgetData.total > 0) {
       badge.style.display = 'inline-flex';
-      amount.textContent = budgetData.total.toFixed(0) + ' €';
+      amount.textContent = fmt(budgetData.total, 0);
       badge.title = typeof t === 'function' ? t('budgetTooltip') : 'Budget total';
     } else {
       badge.style.display = 'none';
@@ -125,7 +148,7 @@
     
     // Update total
     const totalDisplay = document.getElementById('budgetTotalDisplay');
-    if (totalDisplay) totalDisplay.textContent = budgetData.total.toFixed(2) + ' €';
+    if (totalDisplay) totalDisplay.textContent = fmt(budgetData.total, 2);
     
     // Update categories
     const catHtml = Object.entries(BUDGET_CATEGORIES).map(([key, def]) => {
@@ -134,7 +157,7 @@
       const pct = budgetData.total > 0 ? Math.round(val / budgetData.total * 100) : 0;
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
         <span>${def.icon} ${tFunc(def.label)}</span>
-        <span style="font-weight:600;">${val.toFixed(0)} € <span style="color:#64748b;font-size:0.8rem;">(${pct}%)</span></span>
+        <span style="font-weight:600;">${fmt(val, 0)} <span style="color:#64748b;font-size:0.8rem;">(${pct}%)</span></span>
       </div>`;
     }).join('');
     
@@ -152,12 +175,23 @@
           <div style="font-weight:600;font-size:0.9rem;color:#113f7a;">${item.name || 'Réservation'}</div>
           <div style="font-size:0.75rem;color:#64748b;">${item.date_start || ''} ${item.stepName ? '• ' + item.stepName : ''}</div>
         </div>
-        <div style="font-weight:700;color:#166534;">${item.amount.toFixed(0)} €</div>
+        <div style="font-weight:700;color:#166534;">${fmt(item.amount, 0)}</div>
       </div>`;
     }).join('');
     
     const itemsContainer = document.getElementById('budgetItems');
-    if (itemsContainer) itemsContainer.innerHTML = itemsHtml;
+    if (itemsContainer) {
+      let warnHtml = '';
+      if (budgetData.unconverted && budgetData.unconverted.length > 0) {
+        const list = budgetData.unconverted
+          .map(u => `${u.name || 'Réservation'} (${u.amount.toFixed(0)} ${u.itemCurrency})`)
+          .join(', ');
+        warnHtml = `<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:10px;margin-bottom:10px;font-size:0.8rem;color:#92400e;">
+          ⚠️ ${budgetData.unconverted.length} réservation(s) dans une autre devise, non comptée(s) dans le total : ${list}
+        </div>`;
+      }
+      itemsContainer.innerHTML = warnHtml + itemsHtml;
+    }
     
     modal.style.display = 'flex';
     document.body.style.overflow = 'hidden';

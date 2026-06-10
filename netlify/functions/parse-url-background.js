@@ -30,7 +30,10 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 
 const DAILY_LIMIT = parseInt(process.env.URL_PARSE_DAILY_LIMIT || '5', 10);
 const MONTHLY_LIMIT = parseInt(process.env.URL_PARSE_MONTHLY_LIMIT || '30', 10);
@@ -341,7 +344,7 @@ async function callGemini(content, language) {
   
   const prompt = buildPrompt(language);
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -359,7 +362,50 @@ async function callGemini(content, language) {
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Empty Gemini response');
   
-  return { text, model: 'Gemini Flash' };
+  return { text, model: GEMINI_MODEL };
+}
+
+// ===== GROQ FALLBACK (texte) =====
+async function callGroq(content, language) {
+  console.log('⚡ Fallback Groq...');
+
+  const prompt = buildPrompt(language);
+
+  for (const model of GROQ_MODELS) {
+    try {
+      console.log('⚡ Trying', model);
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GROQ_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: 'system', content: prompt },
+            { role: 'user', content: content }
+          ],
+          temperature: 0.2,
+          max_tokens: 8192,
+          response_format: { type: 'json_object' }
+        })
+      });
+
+      if (!res.ok) { console.warn(`⚡ ❌ ${model}: HTTP ${res.status}`); continue; }
+
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (text) {
+        console.log('✅ Groq OK:', model);
+        return { text, model: `groq/${model}` };
+      }
+    } catch (e) {
+      console.warn('⚡ ❌', model, e.message);
+    }
+  }
+
+  throw new Error('All Groq models failed');
 }
 
 // ===== OPENROUTER FALLBACK =====
@@ -552,7 +598,16 @@ export default async (request, context) => {
         console.warn('❌ Gemini failed:', e.message);
       }
     }
-    
+
+    // Fallback to Groq
+    if (!result && GROQ_KEY) {
+      try {
+        result = await callGroq(content, language);
+      } catch (e) {
+        console.warn('❌ Groq failed:', e.message);
+      }
+    }
+
     // Fallback to OpenRouter
     if (!result && OPENROUTER_KEY) {
       result = await callOpenRouter(content, language);

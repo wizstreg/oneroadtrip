@@ -71,7 +71,8 @@
       cookiePolicy: 'Cookies',
       about: 'À propos',
       blog: 'Blog',
-      manageCookies: 'Gérer mes cookies'
+      manageCookies: 'Gérer mes cookies',
+      pressPartner: 'Partenaire presse'
     },
     
     en: {
@@ -104,7 +105,8 @@
       cookiePolicy: 'Cookies',
       about: 'About',
       blog: 'Blog',
-      manageCookies: 'Manage cookies'
+      manageCookies: 'Manage cookies',
+      pressPartner: 'Press partner'
     },
     
     es: {
@@ -137,7 +139,8 @@
       cookiePolicy: 'Cookies',
       about: 'Acerca de',
       blog: 'Blog',
-      manageCookies: 'Gestionar cookies'
+      manageCookies: 'Gestionar cookies',
+      pressPartner: 'Socio de prensa'
     },
     
     it: {
@@ -170,7 +173,8 @@
       cookiePolicy: 'Cookie',
       about: 'Chi siamo',
       blog: 'Blog',
-      manageCookies: 'Gestisci cookie'
+      manageCookies: 'Gestisci cookie',
+      pressPartner: 'Partner stampa'
     },
     
     pt: {
@@ -203,7 +207,8 @@
       cookiePolicy: 'Cookies',
       about: 'Sobre',
       blog: 'Blog',
-      manageCookies: 'Gerir cookies'
+      manageCookies: 'Gerir cookies',
+      pressPartner: 'Parceiro de imprensa'
     },
     
     ar: {
@@ -236,7 +241,8 @@
       cookiePolicy: 'ملفات تعريف الارتباط',
       about: 'حول',
       blog: 'المدونة',
-      manageCookies: 'إدارة ملفات تعريف الارتباط'
+      manageCookies: 'إدارة ملفات تعريف الارتباط',
+      pressPartner: 'شريك صحفي'
     }
   };
 
@@ -328,7 +334,7 @@
       font-size: 14px;
       padding: 12px 20px;
       max-width: 600px;
-      background: rgba(0, 0, 0, 0.5);
+      background: #113f7a;
       border: 1px solid rgba(195, 214, 182, 0.4);
       border-radius: 10px;
       backdrop-filter: blur(4px);
@@ -339,10 +345,10 @@
 
     // URLs des pages légales avec suffixe de langue
     const getLegalUrls = (lang) => ({
-      cgu: `cgu-${lang}.html`,
-      privacy: `confidentialite-${lang}.html`,
-      cookies: `cookies-${lang}.html`,
-      about: getAboutPageUrl(lang)
+      cgu: `/cgu-${lang}.html`,
+      privacy: `/confidentialite-${lang}.html`,
+      cookies: `/cookies-${lang}.html`,
+      about: '/' + getAboutPageUrl(lang)
     });
 
     const urls = getLegalUrls(lang);
@@ -376,6 +382,59 @@
     
     footer.appendChild(document.createTextNode(' · '));
     footer.appendChild(manageBtn);
+
+    // Bloc partenaire presse InfosTourisme
+    const partnerBlock = document.createElement('div');
+    partnerBlock.style.cssText = `
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(195, 214, 182, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    `;
+
+    const partnerLabel = document.createElement('span');
+    partnerLabel.textContent = T.pressPartner + ' :';
+    partnerLabel.style.cssText = `
+      color: #fff;
+      font-size: 13px;
+      opacity: 0.85;
+    `;
+
+    const partnerLink = document.createElement('a');
+    partnerLink.href = 'https://infostourisme.com/';
+    partnerLink.target = '_blank';
+    partnerLink.rel = 'noopener';
+    partnerLink.setAttribute('aria-label', 'InfosTourisme.com');
+    partnerLink.style.cssText = `
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      background: #ffffff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    `;
+
+    const partnerImg = document.createElement('img');
+    partnerImg.src = '/assets/logos/logoit2-3-scaled.webp';
+    partnerImg.alt = 'InfosTourisme.com';
+    partnerImg.loading = 'lazy';
+    partnerImg.style.cssText = `
+      height: 28px;
+      width: auto;
+      display: block;
+      mix-blend-mode: multiply;
+    `;
+
+    partnerLink.appendChild(partnerImg);
+    partnerBlock.appendChild(partnerLabel);
+    partnerBlock.appendChild(partnerLink);
+    footer.appendChild(partnerBlock);
   }
 
   // ============================================
@@ -425,7 +484,7 @@
           </div>
           <div style="color: #444; font-size: 14px; line-height: 1.5;">
             ${T.bannerText}
-            <a href="politique-cookies.html?lang=${lang}" style="color: #113f7a; text-decoration: underline; margin-${rtl ? 'right' : 'left'}: 4px;">
+            <a href="/politique-cookies.html?lang=${lang}" style="color: #113f7a; text-decoration: underline; margin-${rtl ? 'right' : 'left'}: 4px;">
               ${T.bannerLink}
             </a>
           </div>
@@ -565,7 +624,7 @@
           <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">
             ${T.modalIntro}
           </p>
-          <a href="politique-cookies.html?lang=${lang}" target="_blank" style="
+          <a href="/politique-cookies.html?lang=${lang}" target="_blank" style="
             display: inline-block;
             margin-top: 12px;
             color: #113f7a;

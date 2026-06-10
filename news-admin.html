@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>OneRoadTrip – Admin News & Presse</title>
+<style>
+:root{
+  --ink:#113f7a;
+  --acc:#113f7a;
+  --bg:#eef3f7;
+  --card:#ffffff;
+  --bd:#d4e0ea;
+  --mut:#64748b;
+  --ok:#2E7D32;
+  --danger:#e11d48;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+header{
+  background:var(--acc);
+  color:#fff;
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+header h1{font-size:18px;margin:0;font-weight:800}
+header .sub{font-size:13px;opacity:.85}
+.wrap{max-width:920px;margin:0 auto;padding:20px}
+
+/* Barre de connexion dossier */
+.connect{
+  background:var(--card);border:2px solid var(--acc);border-radius:14px;
+  padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.connect .status{font-size:13px;color:var(--mut)}
+.connect .status b{color:var(--ink)}
+
+.btn{
+  border:none;border-radius:10px;padding:9px 14px;font-size:14px;cursor:pointer;
+  background:var(--acc);color:#fff;font-weight:600;
+}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:#fff;color:var(--acc);border:1px solid var(--acc)}
+.btn.danger{background:var(--danger)}
+.btn.small{padding:6px 10px;font-size:13px}
+
+/* Onglets */
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{
+  flex:0 0 auto;padding:10px 22px;border-radius:10px 10px 0 0;cursor:pointer;
+  background:#dbe6f0;color:var(--acc);font-weight:700;border:1px solid var(--bd);border-bottom:none;
+}
+.tab.active{background:var(--card);color:var(--acc);box-shadow:0 -2px 6px rgba(17,63,122,.08)}
+
+.panel{background:var(--card);border:1px solid var(--bd);border-radius:0 14px 14px 14px;padding:18px}
+
+label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}
+input[type=text],input[type=date],select{
+  width:100%;padding:9px 11px;border:1px solid var(--bd);border-radius:8px;font-size:14px;color:var(--ink);
+}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.row>div{flex:1;min-width:220px}
+
+/* Aperçu image */
+.img-preview{
+  margin-top:8px;width:100%;max-height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);
+  background:#f1f5f9;display:none;
+}
+.hint{font-size:12px;color:var(--mut);margin-top:4px}
+
+/* Éditeur riche */
+.toolbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:0;border:1px solid var(--bd);border-bottom:none;border-radius:8px 8px 0 0;padding:6px;background:#f6f9fb}
+.toolbar button{border:1px solid var(--bd);background:#fff;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:14px;color:var(--ink)}
+.toolbar button:hover{background:#eaf2f8}
+.toolbar input[type=color]{width:34px;height:30px;border:1px solid var(--bd);border-radius:6px;padding:0;cursor:pointer;background:#fff}
+.editor{
+  border:1px solid var(--bd);border-radius:0 0 8px 8px;min-height:160px;padding:12px;font-size:15px;
+  line-height:1.5;color:#1f2937;background:#fff;outline:none;
+}
+.editor:empty:before{content:attr(data-placeholder);color:#9aa6b2}
+
+.actions{margin-top:18px;display:flex;gap:10px;align-items:center}
+.msg{font-size:13px;margin-left:auto}
+.msg.ok{color:var(--ok)}
+.msg.err{color:var(--danger)}
+
+/* Liste des articles */
+.list-title{margin:26px 0 10px;font-size:15px;font-weight:800}
+.article{
+  border:1px solid var(--bd);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;
+}
+.article img{width:90px;height:64px;object-fit:cover;border-radius:6px;background:#f1f5f9;flex-shrink:0}
+.article .meta{flex:1;min-width:0}
+.article .meta .d{font-size:12px;color:var(--mut)}
+.article .meta .t{font-weight:700;margin:2px 0 4px}
+.article .meta .b{font-size:13px;color:#475569;max-height:42px;overflow:hidden}
+.article .ctrl{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+.empty{color:var(--mut);font-size:14px;padding:10px 0}
+.warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>OneRoadTrip · Admin</h1>
+  <span class="sub">Rédaction News &amp; Presse</span>
+</header>
+
+<div class="wrap">
+
+  <div id="browserWarn" class="warn" style="display:none">
+    Ton navigateur ne gère pas l'écriture directe sur disque. Utilise Edge ou Chrome. Tu peux quand même rédiger, mais il faudra enregistrer les fichiers à la main.
+  </div>
+
+  <div class="connect">
+    <button class="btn" id="connectBtn">📁 Connecter mon dossier de site</button>
+    <span class="status" id="connectStatus">Aucun dossier connecté.</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="news" id="tabNews">📰 News</div>
+    <div class="tab" data-tab="press" id="tabPress">🗞️ Presse</div>
+    <div class="tab" data-tab="partners" id="tabPartners">🤝 Partenaires</div>
+  </div>
+
+  <div class="panel">
+    <input type="hidden" id="editingId" value="">
+
+    <div class="row">
+      <div>
+        <label for="fDate">Date</label>
+        <input type="date" id="fDate">
+      </div>
+      <div>
+        <label for="fImage">Photo (dans assets/news)</label>
+        <select id="fImage"><option value="">— Aucune —</option></select>
+        <div class="hint" id="imgHint">Connecte ton dossier pour voir tes photos.</div>
+      </div>
+    </div>
+
+    <img id="imgPreview" class="img-preview" alt="">
+
+    <label for="fTitle">Titre</label>
+    <input type="text" id="fTitle" placeholder="Titre de l'article">
+
+    <label>Corps de l'article</label>
+    <div class="toolbar">
+      <button type="button" data-cmd="bold" title="Gras"><b>G</b></button>
+      <button type="button" data-cmd="italic" title="Italique"><i>I</i></button>
+      <button type="button" data-cmd="formatBlock" data-val="h3" title="Sous-titre">H</button>
+      <button type="button" data-cmd="insertUnorderedList" title="Liste">• Liste</button>
+      <button type="button" id="linkBtn" title="Lien">🔗 Lien</button>
+      <input type="color" id="colorPick" value="#113f7a" title="Couleur du texte">
+      <button type="button" id="colorBtn" title="Appliquer la couleur">A couleur</button>
+      <button type="button" data-cmd="removeFormat" title="Effacer la mise en forme">✕ format</button>
+    </div>
+    <div class="editor" id="fBody" contenteditable="true" data-placeholder="Écris ton article ici. Sélectionne du texte puis clique sur Gras ou la couleur."></div>
+
+    <div class="actions">
+      <button class="btn" id="saveBtn">✓ Valider</button>
+      <button class="btn ghost" id="cancelBtn" style="display:none">Annuler la modification</button>
+      <span class="msg" id="formMsg"></span>
+    </div>
+
+    <div class="list-title" id="listTitle">Articles publiés</div>
+    <div id="articleList"><div class="empty">Aucun article pour l'instant.</div></div>
+  </div>
+
+</div>
+
+<script>
+// ===============================
+// État
+// ===============================
+const FILES = { news: 'news.json', press: 'press.json', partners: 'partners.json' };
+let rootHandle = null;        // dossier racine du site
+let dataDirHandle = null;     // data/news
+let assetsDirHandle = null;   // assets/news
+let store = { news: [], press: [], partners: [] };
+let currentTab = 'news';
+
+const supportsFS = ('showDirectoryPicker' in window);
+if (!supportsFS) document.getElementById('browserWarn').style.display = 'block';
+
+// Date du jour par défaut
+document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+
+// ===============================
+// Persistance du dossier (IndexedDB) pour ne pas reconnecter à chaque fois
+// ===============================
+function idbGet(key){
+  return new Promise((res)=>{
+    const r = indexedDB.open('ort-admin',1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore('h');
+    r.onsuccess = ()=>{
+      const tx = r.result.transaction('h','readonly').objectStore('h').get(key);
+      tx.onsuccess = ()=> res(tx.result || null);
+      tx.onerror = ()=> res(null);
+    };
+    r.onerror = ()=> res(null);
+  });
+}
+function idbSet(key,val){
+  return new Promise((res)=>{
+    const r = indexedDB.open('ort-admin',1);
+    r.onupgradeneeded = ()=> r.result.createObjectStore('h');
+    r.onsuccess = ()=>{
+      const tx = r.result.transaction('h','readwrite').objectStore('h').put(val,key);
+      tx.onsuccess = ()=> res(true);
+      tx.onerror = ()=> res(false);
+    };
+    r.onerror = ()=> res(false);
+  });
+}
+
+// ===============================
+// Connexion dossier
+// ===============================
+document.getElementById('connectBtn').addEventListener('click', async ()=>{
+  if (!supportsFS) return;
+  try {
+    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    await useRootHandle(handle);
+    await idbSet('root', handle);
+  } catch(e){ /* annulé par l'utilisateur */ }
+});
+
+async function useRootHandle(handle){
+  // Vérifier la permission en écriture
+  let perm = await handle.queryPermission({ mode:'readwrite' });
+  if (perm !== 'granted') perm = await handle.requestPermission({ mode:'readwrite' });
+  if (perm !== 'granted') {
+    setConnectStatus('Permission refusée.', false);
+    return;
+  }
+  rootHandle = handle;
+
+  // data/news (créé si absent)
+  const dataRoot = await handle.getDirectoryHandle('data', { create:true });
+  dataDirHandle = await dataRoot.getDirectoryHandle('news', { create:true });
+
+  // assets/news (lecture seule des photos, créé si absent)
+  try {
+    const assetsRoot = await handle.getDirectoryHandle('assets', { create:true });
+    assetsDirHandle = await assetsRoot.getDirectoryHandle('news', { create:true });
+  } catch(e){ assetsDirHandle = null; }
+
+  setConnectStatus(`Connecté à <b>${handle.name}</b>.`, true);
+  await loadStore();
+  await loadImages();
+  renderList();
+}
+
+function setConnectStatus(html, ok){
+  const el = document.getElementById('connectStatus');
+  el.innerHTML = html;
+  el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
+}
+
+// Reconnexion auto au chargement si possible
+(async ()=>{
+  if (!supportsFS) return;
+  const saved = await idbGet('root');
+  if (saved){
+    const perm = await saved.queryPermission({ mode:'readwrite' });
+    if (perm === 'granted') { await useRootHandle(saved); }
+    else setConnectStatus('Clique pour reconnecter ton dossier.', false);
+  }
+})();
+
+// ===============================
+// Lecture / écriture des fichiers JSON
+// ===============================
+async function readJsonFile(name){
+  try {
+    const fh = await dataDirHandle.getFileHandle(name, { create:false });
+    const file = await fh.getFile();
+    const txt = await file.text();
+    const data = JSON.parse(txt || '[]');
+    return Array.isArray(data) ? data : [];
+  } catch(e){ return []; } // fichier absent = liste vide
+}
+
+async function writeJsonFile(name, arr){
+  const fh = await dataDirHandle.getFileHandle(name, { create:true });
+  const w = await fh.createWritable();
+  await w.write(JSON.stringify(arr, null, 2));
+  await w.close();
+}
+
+async function loadStore(){
+  store.news     = await readJsonFile(FILES.news);
+  store.press    = await readJsonFile(FILES.press);
+  store.partners = await readJsonFile(FILES.partners);
+}
+
+async function persist(tab){
+  if (!dataDirHandle){ flash('Connecte ton dossier avant de valider.', false); return false; }
+  await writeJsonFile(FILES[tab], store[tab]);
+  return true;
+}
+
+// ===============================
+// Liste des photos de assets/news
+// ===============================
+const IMG_EXT = ['.jpg','.jpeg','.png','.webp','.gif','.avif'];
+async function loadImages(){
+  const sel = document.getElementById('fImage');
+  sel.innerHTML = '<option value="">— Aucune —</option>';
+  if (!assetsDirHandle){
+    document.getElementById('imgHint').textContent = "Dossier assets/news introuvable. Dépose tes photos dedans.";
+    return;
+  }
+  const names = [];
+  for await (const [name, h] of assetsDirHandle.entries()){
+    if (h.kind === 'file' && IMG_EXT.some(ext => name.toLowerCase().endsWith(ext))) names.push(name);
+  }
+  names.sort();
+  for (const n of names){
+    const o = document.createElement('option');
+    o.value = 'assets/news/' + n;
+    o.textContent = n;
+    sel.appendChild(o);
+  }
+  document.getElementById('imgHint').textContent = names.length
+    ? `${names.length} photo(s) trouvée(s) dans assets/news.`
+    : "Aucune photo dans assets/news pour l'instant.";
+}
+
+document.getElementById('fImage').addEventListener('change', updateImgPreview);
+function updateImgPreview(){
+  const v = document.getElementById('fImage').value;
+  const img = document.getElementById('imgPreview');
+  if (v && rootHandle){
+    // Aperçu depuis le disque connecté
+    showLocalImage(v, img);
+  } else { img.style.display = 'none'; }
+}
+async function showLocalImage(relPath, imgEl){
+  try {
+    const name = relPath.split('/').pop();
+    const fh = await assetsDirHandle.getFileHandle(name, { create:false });
+    const file = await fh.getFile();
+    imgEl.src = URL.createObjectURL(file);
+    imgEl.style.display = 'block';
+  } catch(e){ imgEl.style.display = 'none'; }
+}
+
+// ===============================
+// Éditeur riche
+// ===============================
+const editor = document.getElementById('fBody');
+document.querySelectorAll('.toolbar button[data-cmd]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    editor.focus();
+    const cmd = b.dataset.cmd;
+    if (cmd === 'formatBlock') document.execCommand('formatBlock', false, b.dataset.val);
+    else document.execCommand(cmd, false, null);
+  });
+});
+document.getElementById('colorBtn').addEventListener('click', ()=>{
+  editor.focus();
+  document.execCommand('foreColor', false, document.getElementById('colorPick').value);
+});
+document.getElementById('linkBtn').addEventListener('click', ()=>{
+  editor.focus();
+  const url = prompt('Adresse du lien (https://…)');
+  if (url) document.execCommand('createLink', false, url);
+});
+
+// ===============================
+// Onglets
+// ===============================
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    currentTab = t.dataset.tab;
+    resetForm();
+    renderList();
+  });
+});
+
+// ===============================
+// Valider (ajout ou modification)
+// ===============================
+document.getElementById('saveBtn').addEventListener('click', async ()=>{
+  const date = document.getElementById('fDate').value;
+  const title = document.getElementById('fTitle').value.trim();
+  const image = document.getElementById('fImage').value;
+  const body = editor.innerHTML.trim();
+  const editingId = document.getElementById('editingId').value;
+
+  if (!date){ flash('Indique une date.', false); return; }
+  if (!body){ flash('Le corps est vide.', false); return; }
+
+  if (editingId){
+    const art = store[currentTab].find(a => a.id === editingId);
+    if (art){ art.date=date; art.title=title; art.image=image; art.body=body; art.updated=Date.now(); }
+  } else {
+    store[currentTab].unshift({
+      id: 'a' + Date.now(),
+      type: currentTab,
+      date, title, image, body,
+      updated: Date.now()
+    });
+  }
+  // Tri par date décroissante
+  store[currentTab].sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+
+  const ok = await persist(currentTab);
+  if (ok){ flash(editingId ? 'Article modifié et enregistré.' : 'Article ajouté et enregistré.', true); resetForm(); renderList(); }
+});
+
+document.getElementById('cancelBtn').addEventListener('click', resetForm);
+
+function resetForm(){
+  document.getElementById('editingId').value = '';
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fImage').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  editor.innerHTML = '';
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('saveBtn').textContent = '✓ Valider';
+}
+
+function flash(text, ok){
+  const m = document.getElementById('formMsg');
+  m.textContent = text;
+  m.className = 'msg ' + (ok ? 'ok' : 'err');
+  if (ok) setTimeout(()=>{ if(m.textContent===text){ m.textContent=''; } }, 4000);
+}
+
+// ===============================
+// Affichage de la liste
+// ===============================
+function renderList(){
+  const titles = { news:'Articles News publiés', press:'Articles Presse publiés', partners:'Partenaires publiés' };
+  document.getElementById('listTitle').textContent = titles[currentTab] || 'Articles publiés';
+  const wrap = document.getElementById('articleList');
+  const arr = store[currentTab];
+  if (!arr || arr.length === 0){
+    wrap.innerHTML = '<div class="empty">Aucun article pour l\'instant.</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  arr.forEach(a=>{
+    const div = document.createElement('div');
+    div.className = 'article';
+    const plain = (a.body || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+    div.innerHTML = `
+      <img ${a.image ? '' : 'style="display:none"'} alt="" data-img="${a.image||''}">
+      <div class="meta">
+        <div class="d">${formatDate(a.date)}</div>
+        <div class="t">${escapeHtml(a.title || '(sans titre)')}</div>
+        <div class="b">${escapeHtml(plain).slice(0,140)}</div>
+      </div>
+      <div class="ctrl">
+        <button class="btn ghost small" data-edit="${a.id}">Modifier</button>
+        <button class="btn danger small" data-del="${a.id}">Supprimer</button>
+      </div>`;
+    wrap.appendChild(div);
+    // aperçu image depuis le disque
+    const imgEl = div.querySelector('img[data-img]');
+    if (a.image && assetsDirHandle) showLocalImage(a.image, imgEl);
+  });
+
+  wrap.querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=> editArticle(b.dataset.edit)));
+  wrap.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=> deleteArticle(b.dataset.del)));
+}
+
+function editArticle(id){
+  const a = store[currentTab].find(x=>x.id===id);
+  if (!a) return;
+  document.getElementById('editingId').value = a.id;
+  document.getElementById('fDate').value = a.date || '';
+  document.getElementById('fTitle').value = a.title || '';
+  const sel = document.getElementById('fImage');
+  // ajoute l'option si la photo n'est plus listée
+  if (a.image && ![...sel.options].some(o=>o.value===a.image)){
+    const o=document.createElement('option'); o.value=a.image; o.textContent=a.image.split('/').pop(); sel.appendChild(o);
+  }
+  sel.value = a.image || '';
+  updateImgPreview();
+  editor.innerHTML = a.body || '';
+  document.getElementById('cancelBtn').style.display = 'inline-block';
+  document.getElementById('saveBtn').textContent = '✓ Enregistrer les modifications';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+async function deleteArticle(id){
+  if (!confirm('Supprimer cet article ?')) return;
+  store[currentTab] = store[currentTab].filter(x=>x.id!==id);
+  const ok = await persist(currentTab);
+  if (ok){ flash('Article supprimé.', true); renderList(); }
+}
+
+// ===============================
+// Utilitaires
+// ===============================
+function formatDate(d){
+  if (!d) return '';
+  try { return new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}); }
+  catch(e){ return d; }
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

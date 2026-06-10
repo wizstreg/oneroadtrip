@@ -143,15 +143,15 @@
 
     if (user && user.emailVerified) {
       const name = user.displayName || (user.email || '').split('@')[0];
-      btn.innerHTML = '<span>👤 ' + name.slice(0, 12) + '</span>';
+      btn.innerHTML = '<span aria-hidden="true">👤</span> <span class="auth-txt">' + name.slice(0, 12) + '</span>';
       if (btnLogout) btnLogout.style.display = '';
     } else if (user && !user.emailVerified && user.providerData?.some(p => p.providerId !== 'password')) {
       // Connecté via Google (pas besoin de vérification email)
       const name = user.displayName || (user.email || '').split('@')[0];
-      btn.innerHTML = '<span>👤 ' + name.slice(0, 12) + '</span>';
+      btn.innerHTML = '<span aria-hidden="true">👤</span> <span class="auth-txt">' + name.slice(0, 12) + '</span>';
       if (btnLogout) btnLogout.style.display = '';
     } else {
-      btn.innerHTML = '<span>' + (T.login || 'Se connecter') + '</span>';
+      btn.innerHTML = '<span aria-hidden="true">👤</span> <span class="auth-txt">' + (T.login || 'Se connecter') + '</span>';
       if (btnLogout) btnLogout.style.display = 'none';
     }
   }
@@ -392,7 +392,7 @@
     cancelBtn.textContent = T.cancel || 'Annuler';
 
     // CGU label avec lien
-    cguLabel.innerHTML = `${T.acceptCgu || "J'accepte les"} <a href="cgu-${lang}.html" target="_blank" style="color:#113f7a">${T.cguLink || 'CGU'}</a>`;
+    cguLabel.innerHTML = `${T.acceptCgu || "J'accepte les"} <a href="/cgu-${lang}.html" target="_blank" style="color:#113f7a">${T.cguLink || 'CGU'}</a>`;
 
     // Configuration selon le mode
     if (mode === 'login') {
@@ -675,6 +675,8 @@
     // pour qu'il s'affiche correctement sur toutes les pages.
     const NEWS_LABEL = { fr:'Actualités', en:'News', es:'Noticias', it:'Notizie', pt:'Notícias', ar:'أخبار' };
     const newsLabel = NEWS_LABEL[lang] || 'News';
+    const CATALOG_LABEL = { fr:'Catalogue', en:'Catalogue', es:'Catálogo', it:'Catalogo', pt:'Catálogo', ar:'الكتالوج' };
+    const catalogLabel = CATALOG_LABEL[lang] || 'Catalogue';
     if (!document.getElementById('ort-nav-style')) {
       const st = document.createElement('style');
       st.id = 'ort-nav-style';
@@ -683,7 +685,8 @@
           border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;
           text-decoration:none;font-size:14px;white-space:nowrap;flex:0 0 auto;}
         .ort-nav-link:hover{background:#ffffff2b;}
-        @media(max-width:600px){.ort-nav-link .lbl{display:none;}.ort-nav-link{padding:8px 10px;}}
+        .lbl-short{display:none;}
+        @media(max-width:600px){.ort-nav-link{padding:7px 9px;font-size:13px;}.brand{display:none!important;}.auth-txt{display:none;}.lbl-full{display:none;}.lbl-short{display:inline;}}
       `;
       document.head.appendChild(st);
     }
@@ -695,8 +698,11 @@
           <div class="brand">OneRoadTrip</div>
         </a>
         <div class="spacer"></div>
+        <a class="ort-nav-link" id="catalogLink" href="/index.html" aria-label="${catalogLabel}">
+          <span aria-hidden="true">📋</span><span class="lbl">${catalogLabel}</span>
+        </a>
         <a class="ort-nav-link" id="newsLink" href="/news.html" aria-label="${newsLabel}">
-          <span aria-hidden="true">📰</span><span class="lbl">${newsLabel}</span>
+          <span aria-hidden="true">📰</span><span class="lbl lbl-full">${newsLabel}</span><span class="lbl lbl-short">News</span>
         </a>
         <select id="langSel" class="langpick" aria-label="Langue">
           <option value="fr">FR</option>
@@ -708,7 +714,7 @@
         </select>
         <div class="auth">
           <button id="openAuth" class="btn" type="button">
-            <span>${T.login || 'Se connecter'}</span>
+            <span aria-hidden="true">👤</span> <span class="auth-txt">${T.login || 'Se connecter'}</span>
           </button>
           <div id="authPop" class="auth-pop" role="dialog" aria-label="Connexion">
             <button id="btnGoogle" class="btn" type="button">Google</button>

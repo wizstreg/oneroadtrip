@@ -29,13 +29,13 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<!-- Module de routage OneRoadTrip (window.ORT_ROUTING). Ajuste le chemin si besoin. -->
-<script src="ort-routing.js"></script>
-<!-- Firebase (compat) + ta config (définit window.__FIREBASE_CONFIG__). Ajuste le chemin de ort-config.js. -->
+<!-- Module de routage OneRoadTrip (window.ORT_ROUTING). -->
+<script src="/js/ort-routing.js"></script>
+<!-- Firebase (compat) + ta config (window.ORT_CONFIG). -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="ort-config.js"></script>
+<script src="/js/ort-config.js"></script>
 <style>
 :root{
   --ink:#1d2b2e; --ink-soft:#4a5b5e; --paper:#f4efe6; --card:#fffdf8;
@@ -179,6 +179,17 @@ dialog::backdrop{background:rgba(29,43,46,.45)}
 .di-btn:hover{border-color:var(--accent);color:var(--accent);background:#fff7f1}
 .di-btn.del:hover{border-color:var(--err);color:var(--err);background:var(--err-bg)}
 @media(max-width:560px){.dash-item{flex-direction:column;align-items:stretch}.dash-item .di-actions{justify-content:flex-end}}
+#mapbar{margin-bottom:8px}
+@media(min-width:880px){
+  #mapbar{position:sticky;top:0;z-index:40;background:var(--paper);padding:10px 0 8px;box-shadow:0 10px 16px -12px rgba(0,0,0,.35)}
+  #mapbar #routemap{height:240px;margin:0}
+  #mapbar .map-hint{margin:6px 0 0}
+}
+.di-thumb{width:54px;height:54px;border-radius:9px;object-fit:cover;flex:none;background:#e8eef0}
+.di-badge{display:inline-block;font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:6px;vertical-align:middle}
+.di-badge.draft{background:#efe2c8;color:#8a6a32}
+.di-badge.sent{background:#d6efde;color:#1d7a4b}
+#cloud .dash-item{background:linear-gradient(180deg,#fff8ec,#fffefb);border-color:#e8cda6}
 
 .acct{position:absolute;top:14px;left:16px;display:flex;align-items:center;gap:8px;max-width:46%}
 .acct-email{font-size:.8rem;color:var(--ink-soft);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -215,6 +226,17 @@ dialog::backdrop{background:rgba(29,43,46,.45)}
 
 <div class="wrap">
 
+  <div id="mapbar">
+    <div id="routemap"></div>
+    <div class="map-hint" data-i18n="mapHint"></div>
+  </div>
+
+  <section class="block dash" id="cloud" style="display:none">
+    <h2 style="font-size:1.2rem">⭐ <span data-i18n="cloudTitle"></span></h2>
+    <p class="hint" style="padding-left:0" data-i18n="cloudHint"></p>
+    <div id="cloudList"></div>
+  </section>
+
   <section class="block intro-card">
     <p class="lead" data-i18n="about_p1"></p>
     <p data-i18n="about_p2"></p>
@@ -227,18 +249,6 @@ dialog::backdrop{background:rgba(29,43,46,.45)}
         <li data-i18n="about_adv3"></li>
       </ul>
     </div>
-  </section>
-
-  <section class="block dash" id="dash" style="display:none">
-    <h2 style="font-size:1.2rem"><span data-i18n="dashTitle"></span></h2>
-    <p class="hint" style="padding-left:0" data-i18n="dashHint"></p>
-    <div id="dashList"></div>
-  </section>
-
-  <section class="block dash" id="cloud" style="display:none">
-    <h2 style="font-size:1.2rem">☁︎ <span data-i18n="cloudTitle"></span></h2>
-    <p class="hint" style="padding-left:0" data-i18n="cloudHint"></p>
-    <div id="cloudList"></div>
   </section>
 
   <section class="block">
@@ -276,8 +286,6 @@ dialog::backdrop{background:rgba(29,43,46,.45)}
   <section class="block">
     <h2><span class="ord">3</span> <span data-i18n="s3title"></span></h2>
     <p class="hint" data-i18n="s3hint"></p>
-    <div id="routemap"></div>
-    <div class="map-hint" data-i18n="mapHint"></div>
     <div id="steps"></div>
     <button class="add-step" id="addStep" data-i18n="addStep"></button>
   </section>
@@ -461,7 +469,7 @@ var EMAILJS = {
   templateId: "template_f1eynm7"  /* à remplacer par un template dédié "créateur" */
 };
 var STORE_KEY = "ort_creator_draft_v1";
-var SAVED_KEY = "ort_creator_saved_v1";
+var SAVED_KEY = "ort_creator_saved_v1"; // (obsolète, conservé sans usage)
 var LANG_KEY  = "ort_creator_lang";
 var currentId = null;
 var SUPPORTED = ["en","fr","es","it","pt"];
@@ -513,7 +521,7 @@ var I18N = {
     confirmReset:"Réinitialiser l'itinéraire ? Vos infos créateur sont conservées ; le titre, les options et les étapes sont effacés.",
     confirmDelSaved:"Supprimer cet itinéraire enregistré ?", savedOk:"Enregistré dans vos itinéraires.",
     signIn:"Se connecter", signOut:"Se déconnecter",
-    cloudTitle:"Itinéraires envoyés", cloudHint:"Liés à votre compte, accessibles depuis n'importe quel appareil.",
+    cloudTitle:"Mes itinéraires", cloudHint:"Liés à votre compte, accessibles depuis n'importe quel appareil.",
     authUnavail:"Connexion indisponible (configuration Firebase manquante).",
     loginToSend:"Connectez-vous pour envoyer votre itinéraire.",
     sentCloud:"Itinéraire envoyé sur votre compte.", sendErrCloud:"Envoi impossible.",
@@ -522,7 +530,7 @@ var I18N = {
     authDoLogin:"Se connecter", authDoSignup:"Créer mon compte",
     authToggleToSignup:"Pas de compte ? En créer un", authToggleToLogin:"Déjà un compte ? Se connecter",
     authForgot:"Mot de passe oublié ?", authOr:"ou", authResetSent:"Email de réinitialisation envoyé.",
-    authErrPwd2:"Les mots de passe ne correspondent pas.", authNeedEmail:"Entrez votre email.",
+    authErrPwd2:"Les mots de passe ne correspondent pas.", authNeedEmail:"Entrez votre email.", stDraft:"Brouillon", stSent:"Envoyé",
     dOpt4:"4 jours", dOpt5:"5 jours", dOpt6:"6 jours", dOpt7:"7 jours", dOpt8:"8 jours", dOpt9:"9 jours", dOpt10:"10 jours",
     riVisitName:"Nom de la visite", riVisitName_ph:"Ex : Château de Prague", riDesc:"Descriptif",
     riVisitDesc_ph:"Votre description du lieu.", riDur:"Durée (min)", riPhoto:"Photo (lien)", riTip:"Astuce (optionnel)",
@@ -587,7 +595,7 @@ var I18N = {
     confirmReset:"Reset the itinerary? Your creator info is kept; the title, options and stops are cleared.",
     confirmDelSaved:"Delete this saved itinerary?", savedOk:"Saved to your itineraries.",
     signIn:"Sign in", signOut:"Sign out",
-    cloudTitle:"Sent itineraries", cloudHint:"Linked to your account, available on any device.",
+    cloudTitle:"My itineraries", cloudHint:"Linked to your account, available on any device.",
     authUnavail:"Sign-in unavailable (Firebase config missing).",
     loginToSend:"Sign in to send your itinerary.",
     sentCloud:"Itinerary sent to your account.", sendErrCloud:"Could not send.",
@@ -596,7 +604,7 @@ var I18N = {
     authDoLogin:"Sign in", authDoSignup:"Create my account",
     authToggleToSignup:"No account? Create one", authToggleToLogin:"Already have an account? Sign in",
     authForgot:"Forgot password?", authOr:"or", authResetSent:"Password reset email sent.",
-    authErrPwd2:"Passwords do not match.", authNeedEmail:"Enter your email.",
+    authErrPwd2:"Passwords do not match.", authNeedEmail:"Enter your email.", stDraft:"Draft", stSent:"Sent",
     dOpt4:"4 days", dOpt5:"5 days", dOpt6:"6 days", dOpt7:"7 days", dOpt8:"8 days", dOpt9:"9 days", dOpt10:"10 days",
     riVisitName:"Visit name", riVisitName_ph:"E.g. Prague Castle", riDesc:"Description",
     riVisitDesc_ph:"Your description of the place.", riDur:"Duration (min)", riPhoto:"Photo (link)", riTip:"Tip (optional)",
@@ -661,7 +669,7 @@ var I18N = {
     confirmReset:"¿Reiniciar el itinerario? Tus datos de creador se conservan; el título, las opciones y las etapas se borran.",
     confirmDelSaved:"¿Eliminar este itinerario guardado?", savedOk:"Guardado en tus itinerarios.",
     signIn:"Iniciar sesión", signOut:"Cerrar sesión",
-    cloudTitle:"Itinerarios enviados", cloudHint:"Vinculados a tu cuenta, disponibles en cualquier dispositivo.",
+    cloudTitle:"Mis itinerarios", cloudHint:"Vinculados a tu cuenta, disponibles en cualquier dispositivo.",
     authUnavail:"Inicio de sesión no disponible (falta la configuración de Firebase).",
     loginToSend:"Inicia sesión para enviar tu itinerario.",
     sentCloud:"Itinerario enviado a tu cuenta.", sendErrCloud:"No se pudo enviar.",
@@ -670,7 +678,7 @@ var I18N = {
     authDoLogin:"Iniciar sesión", authDoSignup:"Crear mi cuenta",
     authToggleToSignup:"¿Sin cuenta? Crear una", authToggleToLogin:"¿Ya tienes cuenta? Iniciar sesión",
     authForgot:"¿Olvidaste la contraseña?", authOr:"o", authResetSent:"Email de restablecimiento enviado.",
-    authErrPwd2:"Las contraseñas no coinciden.", authNeedEmail:"Introduce tu email.",
+    authErrPwd2:"Las contraseñas no coinciden.", authNeedEmail:"Introduce tu email.", stDraft:"Borrador", stSent:"Enviado",
     dOpt4:"4 días", dOpt5:"5 días", dOpt6:"6 días", dOpt7:"7 días", dOpt8:"8 días", dOpt9:"9 días", dOpt10:"10 días",
     riVisitName:"Nombre de la visita", riVisitName_ph:"Ej.: Castillo de Praga", riDesc:"Descripción",
     riVisitDesc_ph:"Tu descripción del lugar.", riDur:"Duración (min)", riPhoto:"Foto (enlace)", riTip:"Consejo (opcional)",
@@ -735,7 +743,7 @@ var I18N = {
     confirmReset:"Azzerare l'itinerario? I tuoi dati creatore restano; titolo, opzioni e tappe vengono cancellati.",
     confirmDelSaved:"Eliminare questo itinerario salvato?", savedOk:"Salvato nei tuoi itinerari.",
     signIn:"Accedi", signOut:"Esci",
-    cloudTitle:"Itinerari inviati", cloudHint:"Collegati al tuo account, disponibili su qualsiasi dispositivo.",
+    cloudTitle:"I miei itinerari", cloudHint:"Collegati al tuo account, disponibili su qualsiasi dispositivo.",
     authUnavail:"Accesso non disponibile (configurazione Firebase mancante).",
     loginToSend:"Accedi per inviare il tuo itinerario.",
     sentCloud:"Itinerario inviato al tuo account.", sendErrCloud:"Invio non riuscito.",
@@ -744,7 +752,7 @@ var I18N = {
     authDoLogin:"Accedi", authDoSignup:"Crea il mio account",
     authToggleToSignup:"Non hai un account? Crealo", authToggleToLogin:"Hai già un account? Accedi",
     authForgot:"Password dimenticata?", authOr:"o", authResetSent:"Email di reimpostazione inviata.",
-    authErrPwd2:"Le password non corrispondono.", authNeedEmail:"Inserisci la tua email.",
+    authErrPwd2:"Le password non corrispondono.", authNeedEmail:"Inserisci la tua email.", stDraft:"Bozza", stSent:"Inviato",
     dOpt4:"4 giorni", dOpt5:"5 giorni", dOpt6:"6 giorni", dOpt7:"7 giorni", dOpt8:"8 giorni", dOpt9:"9 giorni", dOpt10:"10 giorni",
     riVisitName:"Nome della visita", riVisitName_ph:"Es.: Castello di Praga", riDesc:"Descrizione",
     riVisitDesc_ph:"La tua descrizione del luogo.", riDur:"Durata (min)", riPhoto:"Foto (link)", riTip:"Consiglio (facoltativo)",
@@ -809,7 +817,7 @@ var I18N = {
     confirmReset:"Reiniciar o itinerário? Os seus dados de criador são mantidos; o título, as opções e as etapas são apagados.",
     confirmDelSaved:"Eliminar este itinerário guardado?", savedOk:"Guardado nos seus itinerários.",
     signIn:"Entrar", signOut:"Sair",
-    cloudTitle:"Itinerários enviados", cloudHint:"Associados à sua conta, disponíveis em qualquer dispositivo.",
+    cloudTitle:"Os meus itinerários", cloudHint:"Associados à sua conta, disponíveis em qualquer dispositivo.",
     authUnavail:"Início de sessão indisponível (configuração Firebase em falta).",
     loginToSend:"Inicie sessão para enviar o seu itinerário.",
     sentCloud:"Itinerário enviado para a sua conta.", sendErrCloud:"Não foi possível enviar.",
@@ -818,7 +826,7 @@ var I18N = {
     authDoLogin:"Entrar", authDoSignup:"Criar a minha conta",
     authToggleToSignup:"Sem conta? Criar uma", authToggleToLogin:"Já tem conta? Entrar",
     authForgot:"Esqueceu a palavra-passe?", authOr:"ou", authResetSent:"Email de redefinição enviado.",
-    authErrPwd2:"As palavras-passe não coincidem.", authNeedEmail:"Introduza o seu email.",
+    authErrPwd2:"As palavras-passe não coincidem.", authNeedEmail:"Introduza o seu email.", stDraft:"Rascunho", stSent:"Enviado",
     dOpt4:"4 dias", dOpt5:"5 dias", dOpt6:"6 dias", dOpt7:"7 dias", dOpt8:"8 dias", dOpt9:"9 dias", dOpt10:"10 dias",
     riVisitName:"Nome da visita", riVisitName_ph:"Ex.: Castelo de Praga", riDesc:"Descrição",
     riVisitDesc_ph:"A sua descrição do lugar.", riDur:"Duração (min)", riPhoto:"Foto (link)", riTip:"Dica (opcional)",
@@ -1128,43 +1136,71 @@ function readStep(node){
 /* ====== JSON creator-v1 ====== */
 function buildJSON(){
   var cc=($("#t_country").value||"").toUpperCase();
+  var lang=$("#t_lang").value;
   var steps=$$("#steps [data-step]").map(readStep);
+  var sumDays=0;
   var days_plan=steps.map(function(s,i){
     var pcc=s.country||cc;
     var lat=numOrNull(s.lat), lon=numOrNull(s.lon);
-    var leg=null;
-    if(i<steps.length-1){ leg={ transport_mode:s.mode||"car", distance_km:numOrNull(s.km), drive_min:numOrNull(s.min) }; }
+    var sd=numOrNull(s.days); if(sd) sumDays+=sd;
+    var leg={};
+    if(i<steps.length-1){
+      leg={ distance_km:numOrNull(s.km), drive_min:numOrNull(s.min),
+            transport_mode:s.mode||"car", road_type:"", method:"creator" };
+    }
     return {
-      place:s.place, place_id:pcc+"::"+slugify(s.place), country:pcc,
-      coords:(lat!=null&&lon!=null)?[lat,lon]:null, suggested_days:numOrNull(s.days),
+      day:i+1, slice:1, region_code:"", suggested_days:sd, rating:0,
+      night:{ place_id:pcc+"::"+slugify(s.place), coords:(lat!=null&&lon!=null)?[lat,lon]:null,
+              map_keywords:s.place?[s.place]:[] },
       visits:s.visits.filter(function(v){return v.name||v.text;}).map(function(v){
-        return {name:v.name,text:v.text,visit_duration_min:numOrNull(v.dur),photo:v.photo||"",tips:v.tips||[]}; }),
+        return { text:v.text||v.name||"", place_id:"", visit_duration_min:numOrNull(v.dur),
+                 name:v.name||"", photo:v.photo||"", tips:v.tips||[] }; }),
       activities:s.activities.filter(function(a){return a.name||a.text;}).map(function(a){
-        return {name:a.name,text:a.text,activity_duration_min:numOrNull(a.dur),photo:a.photo||"",tips:a.tips||[]}; }),
+        return { text:a.text||a.name||"", place_id:"", activity_duration_min:numOrNull(a.dur),
+                 practical_info:{ tip:(a.tips&&a.tips[0])||"" },
+                 name:a.name||"", photo:a.photo||"", tips:a.tips||[] }; }),
       hotels:s.hotels.filter(function(h){return h.name||h.url;}).map(function(h){
-        return {name:h.name,affiliate_url:h.url||"",price:h.price||"",image_url:h.photo||"",text:h.text||""}; }),
-      photos:s.photos, place_tips:s.tips||"", to_next_leg:leg
+        return { name:h.name, affiliate_url:h.url||"", price:h.price||"", image_url:h.photo||"", text:h.text||"" }; }),
+      photos:s.photos, place_tips:s.tips||"",
+      to_next_leg:leg
     };
   });
+  var N=Math.max(1, Math.round(sumDays||0));
+  var title=$("#t_title").value.trim();
+  var baseId=cc.toLowerCase()+"::creator::"+(slugify(title)||"itineraire");
+  var creator={ name:$("#a_name").value.trim(), email:$("#a_email").value.trim(),
+                bio:$("#a_bio").value.trim(), website:$("#a_site").value.trim(), photo:$("#a_photo").value.trim() };
   return {
     schema:"creator-v1", generated_at:new Date().toISOString(),
-    language:$("#t_lang").value, country:cc,
-    title:$("#t_title").value.trim(), subtitle:$("#t_subtitle").value.trim(),
-    cover_photo:$("#t_cover").value.trim(), notes:$("#t_notes").value.trim(),
-    author:{ name:$("#a_name").value.trim(), email:$("#a_email").value.trim(),
-             bio:$("#a_bio").value.trim(), website:$("#a_site").value.trim(), photo:$("#a_photo").value.trim() },
-    days_plan:days_plan,
-    _pending:{ seo:true, pacing:true, segments:true, variants:true }
+    itins:[{
+      itin_id:baseId, id:baseId, language:lang, created_at:new Date().toISOString(),
+      source_url:creator.website, dept_code:"", dept_name:"",
+      title:title, subtitle:$("#t_subtitle").value.trim(), notes:$("#t_notes").value.trim(),
+      specialties:[], estimated_days_base:N,
+      pacing_rules:{ factors:{slow:1.25,standard:1.0,fast:0.75}, day_budgets_min:{soft:300,standard:420,fast:540}, merge_threshold:0.85 },
+      practical_context:{ best_months:[], highlights:[] },
+      days_plan:days_plan,
+      segments:[{ n:1, range:[1, days_plan.length], label:"Segment 1", from_day:1, to_day:N }],
+      variants:[{ from_day:1, to_day:N, label:"Var "+N+"j" }],
+      regions:[], nearby_itins:[], merge_suggestions:[],
+      meta:{ themes:[], audience:[] },
+      seo:{ h1_title:title, intro_paragraph:"", seo_hook:"", featured_list:[], places_taglines:{} },
+      seo_keywords:[],
+      country:cc, cover_photo:$("#t_cover").value.trim(), creator:creator,
+      _pending:{ seo:true, pacing:true, segments:true, variants:true }
+    }]
   };
 }
 
 /* ====== VALIDATION ====== */
-function validate(j){
+function validate(){
   var d=dict(), errs=[];
-  if(!j.title) errs.push(d.vTitle);
-  if(!j.country||j.country.length!==2) errs.push(d.vCountry);
-  if(!j.days_plan.length) errs.push(d.vStep);
-  j.days_plan.forEach(function(dp,i){ if(!dp.place) errs.push(d.vPlace.replace("{i}",i+1)); });
+  if(!$("#t_title").value.trim()) errs.push(d.vTitle);
+  var cc=($("#t_country").value||"").toUpperCase();
+  if(cc.length!==2) errs.push(d.vCountry);
+  var steps=$$("#steps [data-step]").map(readStep);
+  if(!steps.length) errs.push(d.vStep);
+  steps.forEach(function(s,i){ if(!s.place) errs.push(d.vPlace.replace("{i}",i+1)); });
   return errs;
 }
 
@@ -1201,65 +1237,17 @@ function restore(){
 
 /* ====== DASHBOARD LOCAL (plusieurs itinéraires sur l'appareil) ====== */
 function genId(){ return "it_"+Date.now()+"_"+Math.random().toString(36).slice(2,7); }
-function savedList(){ try{ return JSON.parse(localStorage.getItem(SAVED_KEY))||[]; }catch(e){ return []; } }
-function setSaved(arr){ try{ localStorage.setItem(SAVED_KEY, JSON.stringify(arr)); }catch(e){} }
 function fmtDate(ts){ try{ return new Date(ts).toLocaleDateString(LANG); }catch(e){ return ""; } }
-function saveToDashboard(){
-  var snap=snapshot();
-  if(!currentId){ currentId=genId(); snap.meta._id=currentId; }
-  var entry={ id:currentId, savedAt:Date.now(), title:(snap.meta.title||"").trim(),
-              country:(snap.meta.country||"").toUpperCase(), steps:(snap.steps||[]).length, snap:snap };
-  var list=savedList(), i=list.findIndex(function(e){return e.id===currentId;});
-  if(i>=0) list[i]=entry; else list.unshift(entry);
-  setSaved(list); persist(); renderDashboard(); toast(dict().savedOk,"ok");
-}
-function openSaved(id){
-  var e=savedList().find(function(x){return x.id===id;});
-  if(!e) return;
-  loadSnapshot(e.snap||{}); currentId=id; persist(); renderDashboard();
-  window.scrollTo({top:0,behavior:"smooth"});
-}
-function duplicateSaved(id){
-  var e=savedList().find(function(x){return x.id===id;});
-  if(!e) return;
-  var copy=JSON.parse(JSON.stringify(e));
-  copy.id=genId(); copy.savedAt=Date.now(); copy.title=(copy.title||"")+dict().copySuffix;
-  if(copy.snap&&copy.snap.meta){ copy.snap.meta._id=copy.id; copy.snap.meta.title=copy.title; }
-  var list=savedList(); list.unshift(copy); setSaved(list); renderDashboard();
-}
-function deleteSaved(id){
-  if(!confirm(dict().confirmDelSaved)) return;
-  setSaved(savedList().filter(function(x){return x.id!==id;}));
-  if(currentId===id){ currentId=null; persist(); }
-  renderDashboard();
-}
 function resetItinerary(){
   if(!confirm(dict().confirmReset)) return;
   ["t_title","t_subtitle","t_country","t_cover","t_notes"].forEach(function(id){ $("#"+id).value=""; });
   currentId=null; clearSteps(); addStep(null); persist();
   window.scrollTo({top:0,behavior:"smooth"});
 }
-function renderDashboard(){
-  var box=$("#dashList"), sec=$("#dash"); if(!box||!sec) return;
-  var list=savedList().slice().sort(function(a,b){return b.savedAt-a.savedAt;});
-  if(!list.length){ sec.style.display="none"; box.innerHTML=""; return; }
-  sec.style.display="block"; box.innerHTML="";
-  var d=dict();
-  list.forEach(function(e){
-    var row=document.createElement("div"); row.className="dash-item";
-    var meta=[ (e.country||""), d.dashSteps.replace("{n}", e.steps||0), fmtDate(e.savedAt) ].filter(Boolean).join(" · ");
-    row.innerHTML='<div class="di-main"><div class="di-title">'+escapeHtml(e.title||"—")+'</div><div class="di-meta">'+escapeHtml(meta)+'</div></div>';
-    var act=document.createElement("div"); act.className="di-actions";
-    [["",d.dashOpen,function(){openSaved(e.id);}],["",d.tDup,function(){duplicateSaved(e.id);}],["del",d.tDel,function(){deleteSaved(e.id);}]].forEach(function(b){
-      var btn=document.createElement("button"); btn.className="di-btn"+(b[0]?" "+b[0]:""); btn.textContent=b[1]; btn.addEventListener("click",b[2]); act.appendChild(btn);
-    });
-    row.appendChild(act); box.appendChild(row);
-  });
-}
 
 /* ====== COMPTE & CLOUD (Firebase Auth + Firestore) ======
    Chemin Firestore : {COL}/{uid}/{SUB}/{itinId}. Adapte si besoin + règles de sécurité côté Firebase. */
-var FS = { COL:"creators", SUB:"itineraries" };
+var FS = { COL:"creator_itineraries", SUB:"itineraries" };
 var fbUser=null, _db=null;
 
 function fbReady(){ return typeof firebase!=="undefined" && firebase.apps && firebase.apps.length>0; }
@@ -1352,33 +1340,51 @@ function updateAccountUI(){
   }
 }
 
-/* Envoi vers Firestore sous l'uid */
-function sendToCloud(){
-  var j=buildJSON(), errs=validate(j);
+/* Choix d'une vignette : cover, sinon première photo trouvée */
+function pickCover(){
+  var c=$("#t_cover").value.trim(); if(c) return c;
+  var steps=$$("#steps [data-step]").map(readStep);
+  for(var i=0;i<steps.length;i++){ var s=steps[i];
+    if(s.photos&&s.photos[0]) return s.photos[0];
+    var v=(s.visits||[]).filter(function(x){return x.photo;})[0]; if(v) return v.photo;
+    var a=(s.activities||[]).filter(function(x){return x.photo;})[0]; if(a) return a.photo;
+    var h=(s.hotels||[]).filter(function(x){return x.photo;})[0]; if(h) return h.photo;
+  }
+  return "";
+}
+/* Écriture Firestore sous l'uid. status: "draft" (Enregistrer) ou "sent" (Envoyer) */
+function writeFirestore(status){
+  var errs=validate();
   if(errs.length){ toast(dict().missing+errs.join(", "),"err"); return; }
   if(!fbReady()){ toast(dict().authUnavail,"err"); return; }
   if(!fbUser){ toast(dict().loginToSend,"err"); openAuthModal(); return; }
   if(!currentId) currentId=genId();
-  var btn=$("#btnSend"), lbl=btn.textContent; btn.disabled=true; btn.textContent=dict().sending;
-  download(j); // copie de sécurité locale
-  try{ sendEmail(j, (j.author&&j.author.email)||"").catch(function(){}); }catch(e){}  // email en parallèle
+  var j=buildJSON(), it=j.itins[0];
+  var cc=($("#t_country").value||"").toUpperCase();
+  var btn = status==="sent" ? $("#btnSend") : $("#btnSave");
+  var lbl=btn.textContent; btn.disabled=true; btn.textContent=dict().sending;
+  if(status==="sent"){ download(j); try{ sendEmail(j,(it.creator&&it.creator.email)||"").catch(function(){}); }catch(e){} }
   var ref=_db.collection(FS.COL).doc(fbUser.uid).collection(FS.SUB).doc(currentId);
   ref.set({
     itinerary:j, snap:snapshot(),
-    title:j.title||"", country:j.country||"", steps:j.days_plan.length,
-    author:j.author||{}, status:"sent",
+    title:it.title||"", country:cc, steps:(it.days_plan||[]).length,
+    cover:pickCover(), author:it.creator||{}, status:status, published:false,
     updatedAt:firebase.firestore.FieldValue.serverTimestamp()
   },{merge:true}).then(function(){
-    btn.disabled=false; btn.textContent=lbl; toast(dict().sentCloud,"ok"); persist(); loadCloud();
+    btn.disabled=false; btn.textContent=lbl;
+    toast(status==="sent"?dict().sentCloud:dict().savedOk,"ok"); persist(); loadCloud();
   }).catch(function(e){
     btn.disabled=false; btn.textContent=lbl; toast(dict().sendErrCloud+" "+(e&&e.code||""),"err"); console.error(e);
   });
 }
+function saveDraftCloud(){ writeFirestore("draft"); }
+function sendToCloud(){ writeFirestore("sent"); }
 function loadCloud(){
   if(!fbReady()||!fbUser){ renderCloud([]); return; }
   _db.collection(FS.COL).doc(fbUser.uid).collection(FS.SUB).orderBy("updatedAt","desc").get().then(function(snap){
     var arr=[]; snap.forEach(function(doc){ var x=doc.data()||{};
       arr.push({ id:doc.id, title:x.title||"", country:x.country||"", steps:x.steps||0, snap:x.snap||null,
+                 cover:x.cover||"", status:x.status||"draft",
                  updatedAt:(x.updatedAt&&x.updatedAt.toMillis)?x.updatedAt.toMillis():Date.now() }); });
     renderCloud(arr);
   }).catch(function(e){ console.error(e); renderCloud([]); });
@@ -1389,8 +1395,13 @@ function renderCloud(arr){
   sec.style.display="block"; box.innerHTML=""; var d=dict();
   arr.forEach(function(e){
     var row=document.createElement("div"); row.className="dash-item";
+    if(e.cover){ var im=document.createElement("img"); im.className="di-thumb"; im.src=e.cover; im.alt=""; im.loading="lazy";
+                 im.onerror=function(){ im.style.display="none"; }; row.appendChild(im); }
+    var main=document.createElement("div"); main.className="di-main";
+    var badge='<span class="di-badge '+(e.status==="sent"?"sent":"draft")+'">'+(e.status==="sent"?d.stSent:d.stDraft)+'</span>';
     var meta=[ (e.country||""), d.dashSteps.replace("{n}", e.steps||0), fmtDate(e.updatedAt) ].filter(Boolean).join(" · ");
-    row.innerHTML='<div class="di-main"><div class="di-title">'+escapeHtml(e.title||"—")+'</div><div class="di-meta">'+escapeHtml(meta)+'</div></div>';
+    main.innerHTML='<div class="di-title">'+escapeHtml(e.title||"—")+'</div><div class="di-meta">'+badge+escapeHtml(meta)+'</div>';
+    row.appendChild(main);
     var act=document.createElement("div"); act.className="di-actions";
     [["",d.dashOpen,function(){ openCloud(e); }],["del",d.tDel,function(){ deleteCloud(e.id); }]].forEach(function(b){
       var btn=document.createElement("button"); btn.className="di-btn"+(b[0]?" "+b[0]:""); btn.textContent=b[1]; btn.addEventListener("click",b[2]); act.appendChild(btn);
@@ -1411,7 +1422,8 @@ function deleteCloud(id){
 
 /* ====== TÉLÉCHARGEMENT ====== */
 function download(j){
-  var name=(slugify(j.title)||"itineraire")+"_"+(j.country||"xx").toLowerCase()+".json";
+  var it=(j.itins&&j.itins[0])||{};
+  var name=(slugify(it.title)||"itineraire")+"_"+((it.country||"xx")).toLowerCase()+".json";
   var blob=new Blob([JSON.stringify(j,null,2)],{type:"application/json"});
   var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
   setTimeout(function(){ URL.revokeObjectURL(a.href); },1500);
@@ -1421,12 +1433,13 @@ function download(j){
 function sendEmail(j,replyEmail){
   if(typeof emailjs==="undefined") return Promise.reject(new Error("EmailJS indisponible"));
   emailjs.init({publicKey:EMAILJS.publicKey});
+  var it=(j.itins&&j.itins[0])||{}, cr=it.creator||{};
   var jsonStr=JSON.stringify(j,null,2);
   var sizeKb=Math.round(jsonStr.length/1024);
   return emailjs.send(EMAILJS.serviceId, EMAILJS.templateId, {
-    name: j.author.name || "Créateur",
-    email: replyEmail || j.author.email || "",
-    title: "Itinéraire créateur — "+(j.title||"sans titre")+" ("+(j.country||"")+", "+j.days_plan.length+" étapes, ~"+sizeKb+"Ko)",
+    name: cr.name || "Créateur",
+    email: replyEmail || cr.email || "",
+    title: "Itinéraire créateur — "+(it.title||"sans titre")+" ("+(it.country||"")+", "+((it.days_plan||[]).length)+" étapes, ~"+sizeKb+"Ko)",
     message: jsonStr
   });
 }
@@ -1440,7 +1453,6 @@ function setLang(lang){
   document.title=dict().docTitle;
   applyI18n(document);
   $$("#steps [data-step]").forEach(function(s){ if(s._refreshHead) s._refreshHead(); });
-  if(typeof renderDashboard==="function") renderDashboard();
   if(typeof updateAccountUI==="function") updateAccountUI();
   if(typeof loadCloud==="function" && fbUser) loadCloud();
   renumber();
@@ -1476,8 +1488,7 @@ document.addEventListener("DOMContentLoaded",function(){
   });
 
   $("#btnReset").addEventListener("click",resetItinerary);
-  $("#btnSave").addEventListener("click",saveToDashboard);
-  renderDashboard();
+  $("#btnSave").addEventListener("click",saveDraftCloud);
 
   if(initFirebase()) watchAuth();
   updateAccountUI();
@@ -1490,9 +1501,9 @@ document.addEventListener("DOMContentLoaded",function(){
   $("#au_pwd").addEventListener("keydown",function(e){ if(e.key==="Enter") doAuth(); });
 
   $("#btnDownload").addEventListener("click",function(){
-    var j=buildJSON(), errs=validate(j);
+    var errs=validate();
     if(errs.length){ toast(dict().missing+errs.join(", "),"err"); return; }
-    download(j); toast(dict().downloaded,"ok");
+    download(buildJSON()); toast(dict().downloaded,"ok");
   });
 
   $("#btnSend").addEventListener("click",sendToCloud);

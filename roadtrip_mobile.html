@@ -2658,6 +2658,7 @@ window.debugLog = function(msg) {
 <script src="/js/ort-routing.js"></script>
 <script src="/js/ort-tripid.js"></script>
 <script src="/js/ort-trip-data.js"></script>
+<script src="/js/ort-currency.js"></script>
 <script src="./js/ort-share.js"></script>
 <script src="/js/ort-state-manager.js"></script>
 <!-- ancien bridge désactivé : <script src="/js/ort-itin-editor-mobile-bridge.js"></script> -->
@@ -5235,6 +5236,10 @@ function renderBookings() {
   
   let html = '';
   let totalBudget = 0;
+  // Devise du voyage (lue via ort-currency, defaut EUR)
+  const tripCur = (window.ORT_CURRENCY && ORT_CURRENCY.getTripCurrency()) || 'EUR';
+  const curSym = (c) => (window.ORT_CURRENCY ? ORT_CURRENCY.getSymbol(c) : (c || 'EUR'));
+  const itemCurOf = (b) => (b.price && typeof b.price === 'object' && b.price.currency ? String(b.price.currency) : tripCur).toUpperCase();
   
   // Helper pour formater les dates
   function formatDate(dateStr) {
@@ -5290,7 +5295,8 @@ function renderBookings() {
     travelBookings.forEach(b => {
       const icon = getCategoryIcon(b.category);
       const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
-      totalBudget += parseFloat(price) || 0;
+      const itemCur = itemCurOf(b);
+      if (itemCur === tripCur.toUpperCase()) totalBudget += parseFloat(price) || 0;
       const dateLine = getDateLine(b, b.nights);
       
       html += `
@@ -5301,7 +5307,7 @@ function renderBookings() {
             ${dateLine ? `<div class="booking-detail">${dateLine}</div>` : ''}
             ${b.provider ? `<div class="booking-detail">🏢 ${b.provider}</div>` : ''}
           </div>
-          ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+          ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} ${curSym(itemCur)}</div>` : ''}
         </div>
       `;
     });
@@ -5394,7 +5400,8 @@ function renderBookings() {
         const b = data.booking;
         const icon = getCategoryIcon(b.category);
         const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
-        totalBudget += parseFloat(price) || 0;
+        const itemCur = itemCurOf(b);
+        if (itemCur === tripCur.toUpperCase()) totalBudget += parseFloat(price) || 0;
         
         // Calculer le nombre de nuits (pour hôtels)
         const nights = b.category === 'hotel' ? (b.nights || data.steps.length) : b.nights;
@@ -5409,7 +5416,7 @@ function renderBookings() {
               ${b.address ? `<div class="booking-detail">📍 ${b.address}</div>` : ''}
               ${b.reference ? `<div class="booking-detail">🔖 ${b.reference}</div>` : ''}
             </div>
-            ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+            ${price ? `<div class="booking-price">${parseFloat(price).toFixed(0)} ${curSym(itemCur)}</div>` : ''}
           </div>
         `;
       });
@@ -5434,7 +5441,7 @@ function renderBookings() {
     html += `
       <div class="booking-budget">
         <div class="budget-label">💰 Budget total</div>
-        <div class="budget-amount">${totalBudget.toFixed(2)} €</div>
+        <div class="budget-amount">${totalBudget.toFixed(2)} ${curSym(tripCur)}</div>
       </div>
     `;
   }
@@ -6347,7 +6354,7 @@ function openStepSheet(idx) {
               <div class="step-booking-name">${b.name || 'Réservation'}</div>
               ${dateStr ? `<div class="step-booking-dates">📅 ${dateStr}</div>` : ''}
             </div>
-            ${price ? `<div class="step-booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+            ${price ? `<div class="step-booking-price">${parseFloat(price).toFixed(0)} ${window.ORT_CURRENCY ? ORT_CURRENCY.symbolForBooking(b) : '€'}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -7866,7 +7873,7 @@ window.deleteActivity = deleteActivity;
                 <div class="viz-booking-name">${b.name || 'Réservation'}</div>
                 ${dateStr ? `<div class="viz-booking-dates">📅 ${dateStr}</div>` : ''}
               </div>
-              ${price ? `<div class="viz-booking-price">${parseFloat(price).toFixed(0)} €</div>` : ''}
+              ${price ? `<div class="viz-booking-price">${parseFloat(price).toFixed(0)} ${window.ORT_CURRENCY ? ORT_CURRENCY.symbolForBooking(b) : '€'}</div>` : ''}
             </div>
           `;
         });

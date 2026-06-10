@@ -24,7 +24,10 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 const MONTHLY_LIMIT = parseInt(process.env.SUMMARY_MONTHLY_LIMIT || '1', 10);
 const VIP = ['bWFyY3NvcmNpQGZyZWUuZnI='];
 
@@ -41,10 +44,10 @@ function stripLangSuffix(id) {
   return id.replace(/-(fr|en|es|it|pt|ar)$/i, '');
 }
 
-// Build the cache key from catalogId (the _originalItinId)
-function buildCacheKey(catalogId) {
+// Build the cache key from catalogId (the _originalItinId) + language
+function buildCacheKey(catalogId, lang) {
   if (!catalogId) return null;
-  return sanitizeDocId(stripLangSuffix(catalogId));
+  return sanitizeDocId(stripLangSuffix(catalogId)) + (lang ? `_${lang}` : '');
 }
 
 // ===== AUTH =====
@@ -106,19 +109,66 @@ async function saveSummary(cacheKey, tripKey, data, language, model) {
 }
 
 // ===== BUILD STEPS TEXT =====
-function buildStepsText(steps) {
+const STEP_LABELS = {
+  fr: { day: 'Jour', passage: 'Passage', visits: 'Visites', activities: 'Activités', info: 'Info', step: 'Étape', night: 'nuit', nights: 'nuits', via: 'via' },
+  en: { day: 'Day', passage: 'Pass-through', visits: 'Visits', activities: 'Activities', info: 'Info', step: 'Stop', night: 'night', nights: 'nights', via: 'via' },
+  es: { day: 'Día', passage: 'Paso', visits: 'Visitas', activities: 'Actividades', info: 'Info', step: 'Etapa', night: 'noche', nights: 'noches', via: 'vía' },
+  it: { day: 'Giorno', passage: 'Passaggio', visits: 'Visite', activities: 'Attività', info: 'Info', step: 'Tappa', night: 'notte', nights: 'notti', via: 'via' },
+  pt: { day: 'Dia', passage: 'Passagem', visits: 'Visitas', activities: 'Atividades', info: 'Info', step: 'Etapa', night: 'noite', nights: 'noites', via: 'via' },
+  ar: { day: 'يوم', passage: 'عبور', visits: 'زيارات', activities: 'أنشطة', info: 'معلومات', step: 'مرحلة', night: 'ليلة', nights: 'ليالٍ', via: 'عبر' }
+};
+
+function buildStepsText(steps, lang) {
+  const L = STEP_LABELS[lang] || STEP_LABELS.en;
   let day = 0;
-  return steps.map((s, i) => {
+  // First pass: collect passage names to attach to previous step's "next"
+  const pendingPassages = []; // grouped passages after each overnight step
+  const processed = [];
+
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
     const n = s.nights || 0;
-    if (n > 0) day++;
-    const label = n > 0 ? `Jour ${day}` : 'Passage';
-    const vis = (Array.isArray(s.visits) ? s.visits.map(v => typeof v === 'string' ? v : v.text).filter(Boolean) : []);
-    const act = (Array.isArray(s.activities) ? s.activities.map(a => typeof a === 'string' ? a : a.text).filter(Boolean) : []);
-    let t = `${label}: ${s.name || 'Étape '+(i+1)} (${n} nuit${n>1?'s':''})`;
-    if (vis.length) t += `\n  Visites: ${vis.join(' | ')}`;
-    if (act.length) t += `\n  Activités: ${act.join(' | ')}`;
-    if (s.description) t += `\n  Info: ${s.description}`;
-    return t;
+    if (n === 0) {
+      // Passage step — accumulate for attachment to previous overnight step
+      pendingPassages.push(s.name || `${L.step} ${i + 1}`);
+    } else {
+      // Overnight step
+      day++;
+      const dayStart = day;
+      const dayEnd = day + n - 1;
+      const dayLabel = n > 1 ? `${L.day} ${dayStart}-${dayEnd}` : `${L.day} ${dayStart}`;
+      day = dayEnd;
+
+      const vis = (Array.isArray(s.visits) ? s.visits.map(v => typeof v === 'string' ? v : v.text).filter(Boolean) : []);
+      const act = (Array.isArray(s.activities) ? s.activities.map(a => typeof a === 'string' ? a : a.text).filter(Boolean) : []);
+      let t = `${dayLabel}: ${s.name || L.step + ' ' + (i + 1)} (${n} ${n > 1 ? L.nights : L.night})`;
+      if (vis.length) t += `\n  ${L.visits}: ${vis.join(' | ')}`;
+      if (act.length) t += `\n  ${L.activities}: ${act.join(' | ')}`;
+      if (s.description) t += `\n  ${L.info}: ${s.description}`;
+
+      // Attach any pending passages to the PREVIOUS overnight step's "next" info
+      if (pendingPassages.length > 0 && processed.length > 0) {
+        processed[processed.length - 1].passagesAfter = [...pendingPassages];
+        pendingPassages.length = 0;
+      } else {
+        pendingPassages.length = 0; // passages before first overnight — discard (edge case)
+      }
+
+      processed.push({ text: t, passagesAfter: [] });
+    }
+  }
+  // Attach trailing passages (after last overnight step)
+  if (pendingPassages.length > 0 && processed.length > 0) {
+    processed[processed.length - 1].passagesAfter = [...pendingPassages];
+  }
+
+  // Second pass: render with passage info integrated
+  return processed.map((p, i) => {
+    let line = p.text;
+    if (p.passagesAfter.length > 0) {
+      line += `\n  → ${L.via}: ${p.passagesAfter.join(', ')}`;
+    }
+    return line;
   }).join('\n');
 }
 
@@ -126,27 +176,37 @@ function buildStepsText(steps) {
 function buildPrompt(title, stepsText, lang) {
   const instr = {
     fr: `Tu es un expert en road trips. Réponds UNIQUEMENT en JSON valide (pas de texte avant/après, pas de backticks).
-Format: {"alerts":["⚠️ alerte1","⚠️ alerte2"],"review":["Points forts: ...","Points faibles: ...","Avis: pour qui, réduire/augmenter, conseil"],"steps":[{"day":1,"city":"NOM","highlights":"1-2 phrases, noms clés EN MAJUSCULES","next":"direction + distance + temps"}]}
+Format: {"alerts":["⚠️ alerte1","⚠️ alerte2"],"review":["Points forts: ...","Points faibles: ...","Avis: pour qui, réduire/augmenter, conseil"],"steps":[{"day":"Jour X","city":"NOM","highlights":"1-2 phrases, noms clés EN MAJUSCULES","next":"direction + distance + temps"}]}
 alerts: liste COURTE (0-3) de choses à vérifier ou corriger sur ce parcours. Ex: étape trop longue en voiture, lieu fermé/saisonnier, détour inutile, étape manquante évidente, visa/permis nécessaire, meilleure saison. Si tout est OK, tableau vide [].
-review=3 chaînes, steps=étapes avec nuits>0, passages intégrés dans next précédent, next="" dernière étape. Concis, enthousiaste.`,
+review=3 chaînes, steps=TOUTES les étapes avec nuits (les passages sont indiqués dans "via" sous l'étape précédente, intègre-les dans le "next" de cette étape). Le champ "day" reprend le label exact (ex: "Jour 1", "Jour 2-4"). next="" pour la dernière étape. Concis, enthousiaste.
+IMPORTANT: Avant de répondre, vérifie que (1) chaque étape avec nuit apparaît dans steps (2) les jours correspondent exactement à ceux de l'itinéraire fourni (3) aucune étape n'est oubliée.`,
     en: `You are a road trip expert. Respond ONLY with valid JSON (no text before/after, no backticks).
-Format: {"alerts":["⚠️ alert1","⚠️ alert2"],"review":["Strengths: ...","Weaknesses: ...","Verdict: who, shorten/extend, tip"],"steps":[{"day":1,"city":"NAME","highlights":"1-2 sentences, key names IN CAPITALS","next":"direction + distance + time"}]}
+Format: {"alerts":["⚠️ alert1","⚠️ alert2"],"review":["Strengths: ...","Weaknesses: ...","Verdict: who, shorten/extend, tip"],"steps":[{"day":"Day X","city":"NAME","highlights":"1-2 sentences, key names IN CAPITALS","next":"direction + distance + time"}]}
 alerts: SHORT list (0-3) of things to verify or fix. E.g.: overly long drive, seasonal closure, unnecessary detour, obvious missing stop, visa required, best season. If all OK, empty array [].
-review=3 strings, steps=stops with nights>0, pass-throughs in previous next, next="" last step. Concise, enthusiastic.`,
+review=3 strings, steps=ALL stops with nights (pass-throughs are marked under "via" in previous stop, integrate them in that stop's "next"). "day" field must match the exact label (e.g. "Day 1", "Day 2-4"). next="" for last step. Concise, enthusiastic.
+IMPORTANT: Before responding, verify that (1) every overnight stop appears in steps (2) day labels match the itinerary exactly (3) no stop is missing.`,
     es: `Experto en road trips. Responde SOLO con JSON válido (sin texto antes/después).
-Formato: {"alerts":["⚠️ ..."],"review":["Fuertes: ...","Débiles: ...","Veredicto: ..."],"steps":[{"day":1,"city":"CIUDAD","highlights":"1-2 frases, nombres EN MAYÚSCULAS","next":"dirección + distancia + tiempo"}]}
-alerts: 0-3 cosas a verificar. review=3, steps=etapas noches>0, next="" última. Conciso, entusiasta.`,
+Formato: {"alerts":["⚠️ ..."],"review":["Fuertes: ...","Débiles: ...","Veredicto: ..."],"steps":[{"day":"Día X","city":"CIUDAD","highlights":"1-2 frases, nombres EN MAYÚSCULAS","next":"dirección + distancia + tiempo"}]}
+alerts: 0-3 cosas a verificar. review=3, steps=TODAS las etapas con noches (pasos integrados en "next" anterior). "day" = etiqueta exacta (ej: "Día 1", "Día 2-4"). next="" última. Conciso, entusiasta.
+IMPORTANTE: Antes de responder, verifica que (1) cada etapa con noche aparece en steps (2) los días coinciden exactamente (3) ninguna etapa falta.`,
     it: `Esperto di road trip. Rispondi SOLO con JSON valido (nessun testo prima/dopo).
-Formato: {"alerts":["⚠️ ..."],"review":["Forza: ...","Deboli: ...","Giudizio: ..."],"steps":[{"day":1,"city":"CITTÀ","highlights":"1-2 frasi, nomi IN MAIUSCOLO","next":"direzione + distanza + tempo"}]}
-alerts: 0-3 cose da verificare. review=3, steps=tappe notti>0, next="" ultima. Conciso, entusiasta.`,
+Formato: {"alerts":["⚠️ ..."],"review":["Forza: ...","Deboli: ...","Giudizio: ..."],"steps":[{"day":"Giorno X","city":"CITTÀ","highlights":"1-2 frasi, nomi IN MAIUSCOLO","next":"direzione + distanza + tempo"}]}
+alerts: 0-3 cose da verificare. review=3, steps=TUTTE le tappe con notti (passaggi integrati in "next" precedente). "day" = etichetta esatta (es: "Giorno 1", "Giorno 2-4"). next="" ultima. Conciso, entusiasta.
+IMPORTANTE: Prima di rispondere, verifica che (1) ogni tappa con notte appaia in steps (2) i giorni corrispondano esattamente (3) nessuna tappa manchi.`,
     pt: `Especialista em road trips. Responda APENAS com JSON válido (sem texto antes/depois).
-Formato: {"alerts":["⚠️ ..."],"review":["Fortes: ...","Fracos: ...","Veredicto: ..."],"steps":[{"day":1,"city":"CIDADE","highlights":"1-2 frases, nomes EM MAIÚSCULAS","next":"direção + distância + tempo"}]}
-alerts: 0-3 pontos a verificar. review=3, steps=etapas noites>0, next="" última. Conciso, entusiasta.`,
+Formato: {"alerts":["⚠️ ..."],"review":["Fortes: ...","Fracos: ...","Veredicto: ..."],"steps":[{"day":"Dia X","city":"CIDADE","highlights":"1-2 frases, nomes EM MAIÚSCULAS","next":"direção + distância + tempo"}]}
+alerts: 0-3 pontos a verificar. review=3, steps=TODAS as etapas com noites (passagens integradas em "next" anterior). "day" = rótulo exato (ex: "Dia 1", "Dia 2-4"). next="" última. Conciso, entusiasta.
+IMPORTANTE: Antes de responder, verifique que (1) cada etapa com noite aparece em steps (2) os dias correspondem exatamente (3) nenhuma etapa falta.`,
     ar: `خبير رحلات. أجب فقط بـ JSON صالح.
-{"alerts":["⚠️ ..."],"review":["القوة: ...","الضعف: ...","الحكم: ..."],"steps":[{"day":1,"city":"المدينة","highlights":"جملة أو جملتين","next":"اتجاه + مسافة + وقت"}]}
-alerts: 0-3 أشياء للتحقق. review=3, steps=مراحل بليالي>0, next="" الأخيرة.`
+{"alerts":["⚠️ ..."],"review":["القوة: ...","الضعف: ...","الحكم: ..."],"steps":[{"day":"يوم X","city":"المدينة","highlights":"جملة أو جملتين","next":"اتجاه + مسافة + وقت"}]}
+alerts: 0-3 أشياء للتحقق. review=3, steps=جميع المراحل بليالٍ (العبور مدمج في "next" السابق). "day" = التسمية الدقيقة. next="" الأخيرة.
+مهم: قبل الإجابة، تحقق أن (1) كل مرحلة بليالٍ موجودة (2) الأيام تطابق المسار (3) لا توجد مرحلة مفقودة.`
   };
-  return `${instr[lang] || instr.en}\n\nItinéraire "${title}":\n${stepsText}`;
+  const introLabel = {
+    fr: 'Itinéraire', en: 'Itinerary', es: 'Itinerario',
+    it: 'Itinerario', pt: 'Itinerário', ar: 'مسار الرحلة'
+  };
+  return `${instr[lang] || instr.en}\n\n${introLabel[lang] || introLabel.en} "${title}":\n${stepsText}`;
 }
 
 // ===== PARSE AI JSON =====
@@ -165,7 +225,7 @@ async function callGemini(title, stepsText, language) {
   console.log('🤖 Trying Gemini Flash...');
   const prompt = buildPrompt(title, stepsText, language);
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`, {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -182,9 +242,32 @@ async function callGemini(title, stepsText, language) {
     const data = await res.json();
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error('Empty Gemini response');
-    return { ...parseAiJson(text), model: 'gemini-2.0-flash' };
+    return { ...parseAiJson(text), model: GEMINI_MODEL };
   }
   throw new Error('Gemini failed after retry');
+}
+
+// ===== 1bis. GROQ FALLBACK (texte) =====
+async function callGroq(title, stepsText, language) {
+  console.log('⚡ Fallback Groq...');
+  const prompt = buildPrompt(title, stepsText, language);
+  for (const model of GROQ_MODELS) {
+    try {
+      console.log('  ⚡ Essai:', model);
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.6, max_tokens: 3000, response_format: { type: 'json_object' } })
+      });
+      if (!res.ok) { console.warn(`  ⚡ ❌ ${model}: HTTP ${res.status}`); continue; }
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (!text) continue;
+      try { return { ...parseAiJson(text), model: `groq/${model}` }; }
+      catch { console.warn(`  ⚡ ❌ ${model}: bad JSON`); continue; }
+    } catch (e) { console.warn(`  ⚡ ❌ ${model}:`, e.message); }
+  }
+  throw new Error('All Groq models failed');
 }
 
 // ===== 2. OPENROUTER FALLBACK =====
@@ -239,6 +322,10 @@ async function generateSummary(title, stepsText, language) {
     try { return await callGemini(title, stepsText, language); }
     catch (e) { console.warn('❌ Gemini:', e.message); }
   }
+  if (GROQ_KEY) {
+    try { return await callGroq(title, stepsText, language); }
+    catch (e) { console.warn('❌ Groq:', e.message); }
+  }
   if (OPENROUTER_KEY) {
     try { return await callOpenRouter(title, stepsText, language); }
     catch (e) { console.warn('❌ OpenRouter:', e.message); }
@@ -261,8 +348,9 @@ export default async (request, context) => {
     const { catalogId, tripId, title, steps, language, cacheOnly } = await request.json();
 
     // Build cache keys
-    const cacheKey = buildCacheKey(catalogId);
-    const tripKey = tripId ? sanitizeDocId(tripId) : null;
+    const lang = language || 'fr';
+    const cacheKey = buildCacheKey(catalogId, lang);
+    const tripKey = tripId ? sanitizeDocId(tripId) + `_${lang}` : null;
     const primaryKey = cacheKey || tripKey;
 
     // ===== CACHE-ONLY MODE (public, no auth required) =====
@@ -313,10 +401,9 @@ export default async (request, context) => {
     }
 
     // Generate
-    const lang = language || 'fr';
     let aiResult;
     try {
-      aiResult = await generateSummary(title || 'Road Trip', buildStepsText(steps), lang);
+      aiResult = await generateSummary(title || 'Road Trip', buildStepsText(steps, lang), lang);
     } catch (aiErr) {
       console.error('❌ All AI failed:', aiErr.message);
       return new Response(JSON.stringify({ success: false, error: 'ai_overloaded', message: aiErr.message, usage: quota }), { status: 503, headers });
