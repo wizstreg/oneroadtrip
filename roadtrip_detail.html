@@ -3649,13 +3649,11 @@ hdr.appendChild(row);
     if (window.ORT_I18N?.[key]?.[lang]) return window.ORT_I18N[key][lang];
     if (window.ORT_I18N?.[key]?.fr) return window.ORT_I18N[key].fr;
     // Fallback
-    const fb = { flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' }, carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' }, transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' }, insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' }, delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' } };
+    const fb = { bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' }, bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' }, vehTransferBtn: { fr: 'Véhicules et transferts', en: 'Vehicles & transfers', es: 'Vehículos y traslados', it: 'Veicoli e trasferimenti', pt: 'Veículos e transferências', ar: 'المركبات والتنقلات' }, insureTrip: { fr: 'Assurer son voyage', en: 'Insure your trip', es: 'Asegura tu viaje', it: 'Assicura il viaggio', pt: 'Seguro de viagem', ar: 'تأمين رحلتك' }, flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' }, carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' }, transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' }, insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' }, delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' } };
     return fb[key]?.[lang] || fb[key]?.fr || key;
   };
   
   const services = [
-    { emoji: '✈️', i18nKey: 'flights', action: () => showPartnerModal('flight') },
-    { emoji: '🚗', i18nKey: 'carRental', action: () => showPartnerModal('vehicle') },
     { emoji: '🚐', i18nKey: 'transfers', action: () => showPartnerModal('transfer') },
     { emoji: '🛡', i18nKey: 'insurance', action: () => showPartnerModal('insurance') },
     { emoji: '💰', i18nKey: 'delayCompensation', action: () => showPartnerModal('flight') }
@@ -3700,11 +3698,29 @@ hdr.appendChild(row);
     }
   });
   
-  console.log('[SERVICES] Avant wrap.appendChild(servicesMenuBtn)');
-  wrap.appendChild(servicesMenuBtn);
-  console.log('[SERVICES] Avant row.appendChild(wrap)');
-  row.appendChild(wrap);
-  console.log('[SERVICES] ✅ Menu Services ajouté');
+  // === Boutons CTA mis en avant : Réserver un vol / Louer une voiture ===
+  const mkCta = (emoji, key, type) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = emoji + ' ' + getLabel(key);
+    b.style.cssText = `
+      margin-left:6px;padding:6px 14px;border-radius:10px;
+      background:#2563eb;color:#fff;border:none;cursor:pointer;
+      font-weight:700;font-size:14px;
+    `;
+    b.addEventListener('mouseover', () => b.style.background = '#1d4ed8');
+    b.addEventListener('mouseout',  () => b.style.background = '#2563eb');
+    b.addEventListener('click', (e) => { e.preventDefault(); if (typeof showPartnerModal === 'function') showPartnerModal(type); });
+    return b;
+  };
+  row.appendChild(mkCta('✈️', 'bookFlight', 'flight'));
+  row.appendChild(mkCta('🚗', 'vehTransferBtn', 'vehicle'));
+  row.appendChild(mkCta('🛡️', 'insureTrip', 'insurance'));
+
+  // MENU SERVICES SUPPRIMÉ : ses 3 entrées sont reprises par les boutons ci-dessus
+  // (vol+compensation, véhicules+transferts, assurance). Code gardé, non affiché.
+  // wrap.appendChild(servicesMenuBtn);
+  // row.appendChild(wrap);
 })();
 
   }catch(_){}

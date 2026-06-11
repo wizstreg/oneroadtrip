@@ -435,9 +435,26 @@
     // Mise à jour du cache avec le nouvel ID
     tripsCache[finalTripId] = preparedData;
 
+    // 🔄 Resync de l'auth réelle AU MOMENT du save.
+    // Corrige le cas où l'utilisateur EST connecté (session Firebase restaurée) mais où
+    // la variable interne currentUser est encore à null parce que updateUser n'a pas été
+    // rappelée après le boot (typiquement la page detail, sans rafraîchissement).
+    // Sans ça, on sauvegarderait en brouillon local en affichant "sauvegardé".
+    if (!currentUser && window.firebase && typeof window.firebase.auth === 'function') {
+      const liveUser = window.firebase.auth().currentUser;
+      if (liveUser) {
+        console.log('🔄 [STATE] currentUser resynchronisé depuis Firebase avant sauvegarde');
+        currentUser = liveUser;
+        if (!firestoreDb) {
+          try { await initFirebase(); } catch (e) { console.warn('[STATE] initFirebase au save échoué:', e); }
+        }
+      }
+    }
+
     // RÈGLE ABSOLUE : Firestore = saved:true UNIQUEMENT
     // Brouillons et modifs temporaires → localStorage
     let success = false;
+    const storage = (currentUser && preparedData.saved === true) ? 'cloud' : 'local';
     if (currentUser && preparedData.saved === true) {
       console.log(`💾 [STATE] Sauvegarde Firestore (saved=true): ${finalTripId}`);
       success = await saveTripToFirestore(preparedData);
@@ -446,8 +463,8 @@
       success = saveTripToLocalStorage(preparedData);
     }
     
-    // Retourne le succès ET le tripId final (pour mise à jour URL)
-    return { success, tripId: finalTripId };
+    // Retourne le succès, le tripId final ET le type de stockage réellement utilisé
+    return { success, tripId: finalTripId, storage };
   }
 
   /**

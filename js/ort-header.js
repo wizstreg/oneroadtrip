@@ -51,19 +51,19 @@
 
   /** Initialise Firebase si pas déjà fait */
   async function ensureFirebase() {
-    if (window.firebase?.apps?.length) return window.firebase;
+    if (window.firebase?.apps?.length && typeof window.firebase.auth === 'function') return window.firebase;
     
     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
     await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js');
     
-    // Attendre que window.firebase soit disponible (max 2s)
-    for (let i = 0; i < 20 && !window.firebase; i++) {
+    // Attendre que window.firebase ET firebase.auth soient disponibles (max 2s)
+    for (let i = 0; i < 20 && !(window.firebase && typeof window.firebase.auth === 'function'); i++) {
       await new Promise(r => setTimeout(r, 100));
     }
     
-    if (!window.firebase) {
-      console.error('[ORT-HEADER] Firebase non chargé après timeout');
-      throw new Error('Firebase not loaded');
+    if (!(window.firebase && typeof window.firebase.auth === 'function')) {
+      console.error('[ORT-HEADER] Firebase Auth non chargé après timeout');
+      throw new Error('Firebase Auth not loaded');
     }
     
     const cfg = window.__FIREBASE_CONFIG__;
