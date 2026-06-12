@@ -943,6 +943,7 @@ async function saveAndRedirectToStatic(steps, itinerary, config, lang) {
       if (typeof window.getPhotosForPlace === 'function') {
         let hydrated = 0;
         steps.forEach(step => {
+          if (step && step.isReturn) return; // étape retour volontairement vide
           if (step && step.place_id && !(step.photos && step.photos.length)) {
             const photos = window.getPhotosForPlace(step.place_id) || [];
             if (photos.length) {
@@ -2028,12 +2029,21 @@ function selectStepsForLoop(config, places, searchRadius) {
     });
   }
   
-  // Ajouter le retour au départ (0 nuit = juste passage)
+  // Ajouter le retour au départ (0 nuit = juste passage).
+  // On VIDE le contenu (description, visites, activités, photos) : sinon la
+  // page affiche deux fois le même contenu que l'étape 1 (même ville).
+  // L'étape retour ne sert qu'à fermer la boucle sur la carte.
   steps.push({ 
     ...start, 
     nights: 0, 
     isEnd: true, 
     isReturn: true,
+    description: '',
+    visits: [],
+    activities: [],
+    photos: [],
+    images: [],
+    hotels: [],
     _suggestedDays: 0,
     suggested_days: 0
   });
@@ -2165,6 +2175,7 @@ async function generateLoopItinerary(steps, config, lang) {
         if (typeof getPhotosForPlace === 'function') {
           let hydrated = 0;
           window.state.steps.forEach(step => {
+            if (step && step.isReturn) return; // étape retour volontairement vide
             if (step && step.place_id) {
               const photos = getPhotosForPlace(step.place_id) || [];
               if (photos.length) {
