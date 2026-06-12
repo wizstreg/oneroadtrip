@@ -238,6 +238,7 @@ h1,h2,h3{line-height:1.2;text-wrap:balance}
 .site-nav{display:flex;gap:4px;margin-left:8px}
 .site-nav a{padding:8px 12px;border-radius:6px;font-size:14px;color:rgba(255,255,255,.82);font-weight:500}
 .site-nav a:hover{color:#fff;background:rgba(255,255,255,.10)}
+#navNews .nav-short{display:none}
 .header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
 .header-contact{color:rgba(255,255,255,.85);font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:3px}
 .header-contact:hover{color:#fff}
@@ -342,9 +343,12 @@ main{padding-block:40px 64px}
   .site-header .wrap{gap:8px}
   /* Le logo image porte la marque : on masque le texte redondant */
   .brand > span{display:none}
-  /* La nav reste visible, compactée */
+  /* Sur mobile : un seul lien, libellé "News" quelle que soit la langue */
   .site-nav{gap:10px}
-  .site-nav a{font-size:12.5px;padding:5px 6px}
+  .site-nav a{font-size:13px;padding:6px 8px}
+  #navPress,#navPartners{display:none}
+  #navNews .nav-full{display:none}
+  #navNews .nav-short{display:inline}
   /* Contact reste en footer ; langue compactée en drapeau seul */
   .header-contact{display:none}
   #langName{display:none}
@@ -435,6 +439,7 @@ main{padding-block:40px 64px}
 /* Statut formulaire contact */
 #contactStatus{margin-top:12px;padding:10px;border-radius:8px;display:none;text-align:center;font-size:14px}
 /* Logo image */
+.brand{flex:none}
 .brand .mark-img{height:42px;width:auto;display:block;flex:none}
 .footer-brand .mark-img{height:36px;width:auto;display:block;flex:none}
 @media(max-width:680px){.brand .mark-img{height:36px}}
@@ -448,7 +453,7 @@ main{padding-block:40px 64px}
 <!-- ===== HEADER ===== -->
 <header class="site-header">
   <div class="wrap">
-    <a class="brand" href="/index.html"><img class="mark-img" src="/assets/symbol.webp" alt=""><span>OneRoadTrip</span></a>
+    <a class="brand" href="/index.html"><img class="mark-img" src="/assets/symbol.webp" alt="OneRoadTrip"><span>OneRoadTrip</span></a>
     <nav class="site-nav" id="topNav">
       <a id="navNews" href="news.html">News</a>
       <a id="navPress" href="news.html">Presse</a>
@@ -599,7 +604,7 @@ main{padding-block:40px 64px}
   <div class="wrap">
     <div class="footer-cols">
       <div>
-        <div class="footer-brand"><img class="mark-img" src="/assets/symbol.webp" alt="">OneRoadTrip</div>
+        <div class="footer-brand"><img class="mark-img" src="/assets/symbol.webp" alt="OneRoadTrip">OneRoadTrip</div>
         <p class="footer-tag" id="footerTag"></p>
       </div>
       <div class="footer-col">
@@ -949,6 +954,13 @@ document.getElementById('contactModal').addEventListener('click', function(e){
     el.textContent = L[tab];
     el.href = 'news.html?lang=' + currentLang + '&tab=' + tab;
   });
+})();
+
+/* navNews : libellé localisé sur desktop, "News" universel sur mobile */
+(function(){
+  var nn = document.getElementById('navNews'); if(!nn) return;
+  var full = nn.textContent;
+  nn.innerHTML = '<span class="nav-full">' + full + '</span><span class="nav-short">News</span>';
 })();
 
 /* Fermeture du menu langue au clic exterieur */
