@@ -181,7 +181,7 @@ h1,h2,h3{line-height:1.2;text-wrap:balance}
 .module-tab:hover{color:var(--navy)}
 .module-body{padding:20px}
 .module-panel{display:none}
-.module-panel.is-active{display:block;animation:fade .2s var(--ease)}
+.module-panel.is-active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 .search-row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
@@ -402,12 +402,15 @@ main{padding-block:40px 64px}
   .heroB-stats{gap:18px}
   .heroB-stats .s b{font-size:19px}
 }
-/* module compact dans le split */
-.heroB .search-row{grid-template-columns:1fr 1fr;gap:10px}
-.heroB .search-row .field-search{grid-column:1/-1}
-.heroB .search-row .btn{grid-column:1/-1}
-.heroB .gen-row{grid-template-columns:1fr 1fr}
-.heroB .gen-row .btn{grid-column:1/-1}
+/* module compact dans le split — desktop seulement, pour ne pas
+   écraser les règles mobiles (1 colonne sous 480px) */
+@media(min-width:921px){
+  .heroB .search-row{grid-template-columns:1fr 1fr;gap:10px}
+  .heroB .search-row .field-search{grid-column:1/-1}
+  .heroB .search-row .btn{grid-column:1/-1}
+  .heroB .gen-row{grid-template-columns:1fr 1fr}
+  .heroB .gen-row .btn{grid-column:1/-1}
+}
 
 /* ============================================================
    Spécifique ORT (logique métier conservée)
@@ -895,17 +898,20 @@ injectIcons();
    Onglets du module
    ======================================================== */
 (function(){
-  var tabs = document.querySelectorAll('.module-tab');
-  for(var i=0;i<tabs.length;i++){
-    tabs[i].addEventListener('click', function(){
-      var name = this.getAttribute('data-tab');
-      var mod = this.closest('.module');
-      var bs = mod.querySelectorAll('.module-tab');
-      for(var j=0;j<bs.length;j++) bs[j].setAttribute('aria-selected', bs[j]===this ? 'true':'false');
-      var ps = mod.querySelectorAll('.module-panel');
-      for(var k=0;k<ps.length;k++) ps[k].classList.toggle('is-active', ps[k].getAttribute('data-panel')===name);
-    });
+  var tabS = document.querySelector('.module-tab[data-tab="search"]');
+  var tabG = document.querySelector('.module-tab[data-tab="generate"]');
+  var panS = document.querySelector('.module-panel[data-panel="search"]');
+  var panG = document.querySelector('.module-panel[data-panel="generate"]');
+  if(!tabS || !tabG || !panS || !panG) return;
+  function show(which){
+    var isS = (which === 'search');
+    tabS.setAttribute('aria-selected', isS ? 'true' : 'false');
+    tabG.setAttribute('aria-selected', isS ? 'false' : 'true');
+    panS.classList.toggle('is-active', isS);
+    panG.classList.toggle('is-active', !isS);
   }
+  tabS.addEventListener('click', function(e){ e.preventDefault(); show('search'); });
+  tabG.addEventListener('click', function(e){ e.preventDefault(); show('generate'); });
 })();
 
 /* ========================================================

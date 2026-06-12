@@ -4496,6 +4496,11 @@ async function loadBuilderResult() {
   state.title = data.title || 'Roadtrip';
   state.cc = data.cc || 'XX';
   state._fromBuilder = true;
+  // Durée demandée par l'utilisateur : transmise par le builder (sinon le
+  // calcul des nuits avant rendu utilise le nb d'étapes comme target et
+  // écrase la répartition du builder — ex: 7 jours devenaient 3 nuits).
+  state.targetNights = data.targetNights || data.days
+    || parseInt(new URLSearchParams(location.search).get('days')) || 0;
   if (data.notes) state._originalNotes = data.notes;
   if (data.practical_context) state._originalPracticalContext = data.practical_context;
   
@@ -4512,6 +4517,7 @@ async function loadBuilderResult() {
       lat: s.lat,
       lng: s.lng || s.lon,
       nights: s.nights || 0,
+      _suggestedDays: s._suggestedDays || s.nights || 1,
       description: s.description || '',
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,

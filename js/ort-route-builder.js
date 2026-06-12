@@ -927,7 +927,9 @@ const STATIC_LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas',
 async function saveAndRedirectToStatic(steps, itinerary, config, lang) {
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('noStatic') === '1') return false;       // opt-out debug
-  if (urlParams.get('returnTo') === 'mobile') return false;  // le flux mobile garde la priorité
+  // Note : returnTo=mobile ne court-circuite PLUS la statique. La page
+  // statique est la destination prioritaire pour tous les flux ; le retour
+  // vers RT mobile ne sert plus que de fallback si la sauvegarde échoue.
   
   if (!window.ORT_STATE || typeof window.ORT_STATE.saveTrip !== 'function') {
     console.warn('[ROUTE-BUILDER] ORT_STATE indisponible → fallback roadtrip_detail');
@@ -1218,12 +1220,18 @@ async function generateBuilderItinerary(steps, config, lang) {
     const builderResult = {
       title: itinerary.title,
       cc: config.start.cc || config.end.cc || 'XX',
+      // Transmettre la durée demandée : sans elle, RT mobile recalcule les
+      // nuits avec un mauvais target (nb d'étapes) et écrase la répartition.
+      days: config.days,
+      targetNights: steps.reduce((sum, s) => sum + (s.nights || 0), 0),
       steps: steps.map(s => ({
         name: s.name,
         lat: s.lat,
         lng: s.lng || s.lon,
         lon: s.lng || s.lon,
         nights: s.nights || 0,
+        // _suggestedDays = nuits attribuées : sert de fallback au calcul mobile
+        _suggestedDays: s.nights || 1,
         description: s.description || '',
         images: s.photos || s.images || [],
         photos: s.photos || s.images || [],
@@ -1238,9 +1246,9 @@ async function generateBuilderItinerary(steps, config, lang) {
     // Sauvegarder pour RT Mobile
     localStorage.setItem('ORT_BUILDER_RESULT', JSON.stringify(builderResult));
     
-    // Rediriger vers RT Mobile
+    // Rediriger vers RT Mobile (days transmis pour le calcul des nuits)
     setTimeout(() => {
-      window.location.href = `roadtrip_mobile.html?fromBuilder=1&lang=${lang}`;
+      window.location.href = `roadtrip_mobile.html?fromBuilder=1&lang=${lang}&days=${config.days}`;
     }, 1000);
     return;
   }
@@ -2244,12 +2252,18 @@ async function generateLoopItinerary(steps, config, lang) {
       },
       _loopUsedPlaces: window._loopUsedPlaces || [],
       _zoneInfo: window._loopZoneInfo || null,
+      // Transmettre la durée demandée : sans elle, RT mobile recalcule les
+      // nuits avec un mauvais target (nb d'étapes) et écrase la répartition.
+      days: config.days,
+      targetNights: steps.reduce((sum, s) => sum + (s.nights || 0), 0),
       steps: steps.map(s => ({
         name: s.name,
         lat: s.lat,
         lng: s.lng || s.lon,
         lon: s.lng || s.lon,
         nights: s.nights || 0,
+        // _suggestedDays = nuits attribuées : sert de fallback au calcul mobile
+        _suggestedDays: s.nights || (s.isReturn ? 0 : 1),
         description: s.description || '',
         images: s.photos || s.images || [],
         photos: s.photos || s.images || [],
@@ -2265,7 +2279,7 @@ async function generateLoopItinerary(steps, config, lang) {
     console.log('[ROUTE-BUILDER] ✅ ORT_BUILDER_RESULT sauvegardé (avec config recalcul), redirection mobile dans 1s');
     
     setTimeout(() => {
-      window.location.href = `roadtrip_mobile.html?fromBuilder=1&lang=${lang}`;
+      window.location.href = `roadtrip_mobile.html?fromBuilder=1&lang=${lang}&days=${config.days}`;
     }, 1000);
   }
 }
