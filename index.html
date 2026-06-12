@@ -43,398 +43,590 @@
 <link rel="alternate" hreflang="it" href="https://www.oneroadtrip.com/index.html?lang=it">
 <link rel="alternate" hreflang="ar" href="https://www.oneroadtrip.com/index.html?lang=ar">
 <link rel="alternate" hreflang="x-default" href="https://www.oneroadtrip.com/index.html">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--p:#113f7a;--pd:#0a2a57;--s:#00b2ff;--a:#ff6b35;--cream:#fafbfc;--text:#1a1a2e;--gray:#666;--border:#e5e7eb}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--text);line-height:1.6}
+/* ============================================================
+   OneRoadTrip — Design System (refonte)
+   Base : design.md — 1 accent, zéro dégradé sur boutons,
+   rayons sobres, Playfair rare, Inter partout, icônes SVG.
+   Partagé par les 3 variantes.
+   ============================================================ */
 
-/* Hero - small banner with ORT image, lighter overlay */
-.hero-banner{position:relative;height:90px;background:linear-gradient(135deg,rgba(17,63,122,0.45),rgba(10,42,87,0.55)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat;display:flex;align-items:center;justify-content:center;text-align:center;color:#fff;padding:0 20px}
-.hero-banner p{font-size:13px;max-width:800px;margin:0 auto;color:#fff;font-weight:700;line-height:1.4}
+:root{
+  --navy:#113F7A;
+  --navy-dark:#0A2A57;
+  --accent:#C2410C;        /* orange brûlé profond — un seul accent */
+  --accent-hover:#9A330A;
+  --ink:#1A1A2E;
+  --ink-soft:#5C6470;
+  --bg:#FAFBFC;
+  --surface:#FFFFFF;
+  --border:#E5E7EB;
+  --tint:#EBF2FA;
 
-/* Latest carousel */
-.latest-bar{background:#fff;border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;position:relative}
-.latest-bar h3{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--p);text-align:center;margin-bottom:10px;font-weight:600}
-.latest-track{display:flex;gap:14px;animation:scrollLatest 40s linear infinite;width:max-content;padding:0 14px}
-.latest-track:hover{animation-play-state:paused}
-.latest-item{flex-shrink:0;width:260px;display:flex;gap:10px;align-items:center;background:var(--cream);border:1px solid var(--border);border-radius:10px;padding:8px 12px;text-decoration:none;color:var(--text);transition:all .2s}
-.latest-item:hover{border-color:var(--s);box-shadow:0 3px 12px rgba(17,63,122,.1)}
-.latest-item-photo{width:60px;height:45px;border-radius:6px;background-size:cover;background-position:center;background-color:#d0d8e0;flex-shrink:0}
-.latest-item-info{flex:1;min-width:0}
-.latest-item-title{font-size:.8rem;font-weight:600;color:var(--p);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.latest-item-meta{font-size:.7rem;color:var(--gray);margin-top:2px}
-@keyframes scrollLatest{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+  --r-input:8px;
+  --r-card:12px;
+  --r-pill:999px;
 
-/* Top bar with lang selector */
-.top-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:6px 16px;background:var(--pd)}
-.top-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.top-nav a{color:#fff;text-decoration:none;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);padding:6px 12px;border-radius:25px;font-size:0.9rem;white-space:nowrap;transition:background 0.2s}
-.top-nav a:hover{background:rgba(255,255,255,0.25)}
-@media(max-width:600px){.top-nav a{padding:5px 9px;font-size:0.75rem}}
-.lang-selector{position:relative;z-index:100}
-.lang-btn{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);color:#fff;border:1px solid rgba(255,255,255,0.25);padding:8px 14px;border-radius:25px;cursor:pointer;font-size:0.9rem;transition:all 0.2s}
-.lang-btn:hover{background:rgba(255,255,255,0.25)}
-.lang-btn .arrow{font-size:0.7rem;margin-left:4px;transition:transform 0.2s}
-.lang-selector.open .arrow{transform:rotate(180deg)}
-.lang-dropdown{position:absolute;top:100%;right:0;margin-top:8px;background:#fff;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.15);overflow:hidden;opacity:0;visibility:hidden;transform:translateY(-10px);transition:all 0.2s}
-.lang-selector.open .lang-dropdown{opacity:1;visibility:visible;transform:translateY(0)}
-.lang-option{display:flex;align-items:center;gap:10px;padding:12px 20px;color:#333;text-decoration:none;font-size:0.9rem;transition:background 0.15s;white-space:nowrap}
-.lang-option:hover{background:#f0f4f8}
-.lang-option.active{background:#e8f4fc;color:var(--p);font-weight:600}
+  --sp-1:4px; --sp-2:8px; --sp-3:16px; --sp-4:24px; --sp-5:32px; --sp-6:48px; --sp-7:64px;
 
-/* Mobile filters bar - visible only on mobile */
-.mobile-filters-bar{display:none;flex-direction:column;gap:10px;padding:16px 5%;background:linear-gradient(135deg,rgba(17,63,122,0.92),rgba(10,42,87,0.95)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat;border-bottom:1px solid var(--border)}
-.mobile-filters-title{color:#fff;font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;text-align:center;margin-bottom:4px}
-.mobile-filters-bar .search-box{max-width:100%;flex:none}
-.mobile-filters-bar .search-box input{padding:10px 12px 10px 38px;font-size:0.9rem;width:100%;border:2px solid rgba(255,255,255,0.3);border-radius:25px;background:rgba(255,255,255,0.92)}
-.mobile-filters-bar .search-box input:focus{outline:none;border-color:var(--s)}
-.mobile-filters-bar .search-box::before{content:'\1F50D';position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:1rem}
-.mobile-filters-bar .filter-select{width:100%;padding:10px 15px;font-size:0.9rem;border:2px solid rgba(255,255,255,0.3);border-radius:25px;background:rgba(255,255,255,0.92);cursor:pointer}
-.mobile-filters-bar .filter-select:focus{outline:none;border-color:var(--s)}
-.mobile-filters-bar .results-count{text-align:center;font-size:.85rem;color:rgba(255,255,255,0.8)}
+  --container:1200px;
+  --shadow-card:0 1px 3px rgba(17,63,122,.06);
+  --shadow-card-hover:0 6px 20px rgba(17,63,122,.12);
+  --shadow-soft:0 8px 30px rgba(10,42,87,.10);
 
-/* Mobile CTA row inside mobile filters */
-.mobile-cta-row{display:flex;gap:10px;justify-content:center;margin-bottom:10px}
-.mobile-cta-row .cta-trips-btn,.mobile-cta-row .cta-contact-btn{flex:1;justify-content:center;font-size:13px;padding:10px 12px}
-
-/* Validate buttons */
-.validate-btn,.mobile-validate-btn{width:100%;padding:10px 20px;background:linear-gradient(135deg,var(--s),var(--p));color:#fff;border:none;border-radius:25px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;margin-top:6px}
-.validate-btn:hover,.mobile-validate-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(17,63,122,0.4)}
-.quick-themes{display:flex;justify-content:space-around;gap:8px;margin-top:10px}
-.quick-theme{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;background:rgba(255,255,255,0.92);border:2px solid rgba(255,255,255,0.3);border-radius:12px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;font-size:11px;font-weight:600;text-align:center;line-height:1.1}
-.quick-theme:hover{background:#fff;border-color:var(--s);transform:translateY(-1px);box-shadow:0 3px 8px rgba(0,0,0,0.1)}
-.quick-theme.active{background:var(--s);color:#fff;border-color:var(--s)}
-.quick-theme .qt-ico{font-size:22px;line-height:1}
-.quick-theme .qt-lbl{font-size:11px}
-
-/* 3-column trio zone (desktop) */
-.trio-zone{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:12px;max-width:1200px;margin:10px auto;padding:0 16px}
-.trio-col{border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
-
-/* Col 1: action cards stacked vertically */
-.trio-col-cards{display:flex;flex-direction:column;gap:10px}
-.action-card{position:relative;border-radius:10px;padding:20px 14px;text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;flex:1;min-height:150px;transition:transform .2s,box-shadow .2s;overflow:hidden;background-size:cover;background-position:center;background-repeat:no-repeat}
-.action-card::before{content:'';position:absolute;inset:0;background:linear-gradient(to top,rgba(10,42,87,0.92) 0%,rgba(17,63,122,0.35) 55%,rgba(17,63,122,0.1) 100%);z-index:1}
-.action-card:hover{transform:translateY(-2px);box-shadow:0 4px 15px rgba(17,63,122,0.3)}
-.action-card .label{position:relative;z-index:2;color:#fff;font-size:13px;font-weight:700;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
-
-/* Col 2: filters */
-.trio-col-filters{background:linear-gradient(135deg,rgba(17,63,122,0.88),rgba(10,42,87,0.92)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat;border-radius:10px;padding:16px}
-.trio-filters-inner{display:flex;flex-direction:column;gap:10px;height:100%}
-.trio-filters-title{color:#fff;font-family:'Playfair Display',serif;font-size:1rem;font-weight:600;text-align:center}
-.trio-filters-inner .search-box{max-width:100%;flex:none;position:relative}
-.trio-filters-inner .search-box input{width:100%;padding:10px 12px 10px 38px;border:2px solid rgba(255,255,255,0.3);border-radius:25px;font-size:.9rem;background:rgba(255,255,255,0.92);transition:border-color .2s}
-.trio-filters-inner .search-box input:focus{outline:none;border-color:var(--s)}
-.trio-filters-inner .search-box::before{content:'\1F50D';position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:1rem}
-.trio-filters-inner .filter-select{width:100%;padding:10px 15px;border:2px solid rgba(255,255,255,0.3);border-radius:25px;font-size:.9rem;background:rgba(255,255,255,0.92);cursor:pointer;transition:border-color .2s}
-.trio-filters-inner .filter-select:focus{outline:none;border-color:var(--s)}
-.trio-filters-inner .results-count{text-align:center;font-size:.85rem;color:rgba(255,255,255,0.8);margin-top:2px}
-.trio-filters-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-
-/* Col 3: route builder */
-.trio-col-rb .rb-box{height:100%;display:flex;flex-direction:column}
-.rb-col-fields{display:flex;flex-direction:column;gap:8px;flex:1}
-.rb-mini-row{display:flex;gap:8px}
-.rb-mini-row .rb-field{flex:1}
-.rb-col-fields .rb-go{margin-top:auto;width:100%}
-
-/* Route builder - ORT image background */
-.rb-box{position:relative;border-radius:10px;padding:12px;overflow:hidden;background:linear-gradient(135deg,rgba(17,63,122,0.88),rgba(10,42,87,0.92)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat}
-.rb-box h3{margin:0 0 8px;color:#fff;font-size:14px;text-align:center}
-.rb-row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
-.rb-field{position:relative}
-.rb-field label{display:block;color:rgba(255,255,255,0.85);font-size:12px;margin-bottom:3px}
-.rb-field input,.rb-field select{width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:13px;box-sizing:border-box;background:rgba(255,255,255,0.92)}
-.rb-go{padding:8px 18px;background:linear-gradient(135deg,var(--s),var(--p));color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;white-space:nowrap;transition:all .2s}
-.rb-go:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(17,63,122,0.4)}
-.rb-loop{display:flex;align-items:center;gap:6px;margin-top:5px}
-.rb-loop input{width:14px;height:14px;cursor:pointer;accent-color:#3b82f6}
-.rb-loop label{color:rgba(255,255,255,0.85);font-size:12px;cursor:pointer}
-.rb-sug{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:6px;max-height:150px;overflow-y:auto;z-index:1000;color:#333}
-.rb-sug div{padding:8px 10px;cursor:pointer;border-bottom:1px solid #eee;font-size:13px}
-.rb-sug div:hover{background:#f0f4f8}
-
-/* Stats bar with CTA buttons on sides */
-.stats-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;padding:20px 6%;background:#fff;border-bottom:1px solid var(--border)}
-.stats-group{display:flex;flex-wrap:wrap;gap:30px;align-items:center;justify-content:center}
-.stat{text-align:center;width:80px}
-.stat-val{font-family:'Playfair Display',serif;font-size:2rem;color:var(--p);font-weight:700;font-variant-numeric:tabular-nums}
-.stat-lbl{font-size:.8rem;color:var(--gray);text-transform:uppercase}
-
-/* CTA buttons inside stats bar */
-.cta-trips-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 22px;background:linear-gradient(135deg,#d4a039,#b8860b);color:#fff;border:none;border-radius:20px;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;transition:all .2s}
-.cta-trips-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(180,134,11,0.4)}
-.cta-contact-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 22px;background:linear-gradient(135deg,#6b7280,#4b5563);color:#fff;border:none;border-radius:20px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s}
-.cta-contact-btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(75,85,99,0.4)}
-
-/* Contact modal */
-.contact-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9998;opacity:0;pointer-events:none;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
-.contact-modal.active{opacity:1;pointer-events:auto}
-.contact-modal-content{background:linear-gradient(135deg,var(--pd),var(--p));border-radius:16px;padding:28px;max-width:500px;width:100%;color:#fff;box-shadow:0 25px 80px rgba(0,0,0,.5);transform:scale(0.95);opacity:0;transition:all .3s}
-.contact-modal.active .contact-modal-content{transform:scale(1);opacity:1}
-.contact-modal-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.contact-modal-close:hover{background:rgba(255,255,255,0.2)}
-.contact-modal-content h2{margin:0 0 8px;font-family:'Playfair Display',serif;font-size:1.4rem}
-.contact-modal-content p{margin:0 0 16px;opacity:.9;font-size:.95rem}
-.contact-modal-content label{display:block;margin-bottom:4px;font-weight:600;font-size:.85rem}
-.contact-modal-content input,.contact-modal-content textarea{width:100%;padding:8px;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:14px;margin-bottom:12px;background:rgba(255,255,255,0.92);color:#333}
-.contact-modal-content textarea{min-height:80px;resize:vertical}
-.contact-modal-content button[type="submit"]{background:#14b8a6;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:700;width:100%;font-size:14px}
-.contact-modal-content button[type="submit"]:hover{background:#0d9488}
-
-/* Filters are now integrated into trio-zone (desktop) and mobile-filters-bar (mobile) */
-
-/* Sort */
-.sort-bar{display:flex;justify-content:flex-end;padding:10px 6%;max-width:1400px;margin:0 auto}
-.sort-bar select{padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:.8rem;background:#fff;cursor:pointer}
-
-/* Main content */
-main{padding:40px 6%;max-width:1400px;margin:auto;background:rgba(255,255,255,0.95);backdrop-filter:blur(8px);border-radius:0}
-.country-section{margin-bottom:50px}
-.country-title{font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--p);margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--p)}
-.country-count{font-size:1rem;color:var(--gray);font-weight:400}
-
-/* Itin cards */
-.itins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
-.itin-card{display:block;background:#fff;border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;box-shadow:0 2px 10px rgba(17,63,122,.08);transition:all .2s;border:1px solid var(--border)}
-.itin-card:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(17,63,122,.12);border-color:var(--s)}
-.itin-card-photo{position:relative;height:160px;background-size:cover;background-position:center;background-color:#d0d8e0}
-.itin-card-photo .itin-cc-badge{position:absolute;top:10px;left:10px;background:rgba(17,63,122,.85);color:#fff;padding:3px 8px;border-radius:6px;font-size:.75rem;font-weight:700;letter-spacing:.05em}
-.itin-card-body{padding:14px 16px 16px}
-.itin-title{font-family:'Playfair Display',serif;font-size:1.05rem;color:var(--p);margin-bottom:8px;line-height:1.3}
-.itin-meta{font-size:.85rem;color:var(--gray)}
-.itin-meta span{margin:0 3px}
-.itin-themes{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
-.theme-tag{display:inline-block;background:#e8f4fc;color:var(--p);padding:3px 8px;border-radius:12px;font-size:.7rem;font-weight:500}
-
-/* Toggle flottant photo / carte */
-#viewToggle{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9999;display:none;background:#fff;border:1px solid var(--border);border-radius:24px;box-shadow:0 4px 14px rgba(17,63,122,.2);padding:4px;gap:0;font-family:inherit}
-#viewToggle.show{display:inline-flex}
-#viewToggle button{background:transparent;border:0;padding:8px 16px;border-radius:20px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--gray);transition:all .15s;display:flex;align-items:center;gap:6px}
-#viewToggle button.active{background:var(--p);color:#fff}
-#viewToggle button:hover:not(.active){background:#f0f4f8;color:var(--p)}
-.itin-card-photo.is-map{background-color:#eaf2f8;background-size:cover}
-@media(max-width:768px){
-  #viewToggle{top:8px;padding:3px}
-  #viewToggle button{padding:6px 12px;font-size:.75rem}
+  --ease:cubic-bezier(.2,.7,.3,1);
 }
 
-/* Loading */
-.loading{text-align:center;padding:60px 20px;color:var(--gray)}
-.loading-spinner{display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--s);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:15px}
-@keyframes spin{to{transform:rotate(360deg)}}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:inherit;text-decoration:none}
+img{display:block;max-width:100%}
+button{font-family:inherit;cursor:pointer}
+::selection{background:var(--tint)}
 
-/* Footer */
-footer{background:var(--pd);color:#fff;padding:30px 6%;text-align:center}
-footer p{opacity:.5;font-size:.8rem}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001ms!important;transition-duration:.001ms!important}
+}
 
-/* Responsive */
-@media(max-width:1100px){
-  /* Tablette / écran étroit : la grille 2x2 devient 1 colonne pour ne pas tronquer le contenu */
-  .trio-filters-grid{grid-template-columns:1fr}
+/* ---- Typo ---- */
+.font-display{font-family:'Playfair Display',Georgia,serif}
+h1,h2,h3{line-height:1.2;text-wrap:balance}
+
+.wrap{max-width:var(--container);margin:0 auto;padding-inline:24px}
+@media(max-width:600px){.wrap{padding-inline:16px}}
+
+/* ============================================================
+   Icônes SVG — trait 1.75, hérite de currentColor
+   ============================================================ */
+.ico{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+.ico-16{width:16px;height:16px}
+.ico-20{width:20px;height:20px}
+
+/* ============================================================
+   Boutons
+   ============================================================ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-size:14px;font-weight:600;line-height:1;
+  padding:12px 20px;border-radius:var(--r-input);
+  border:1px solid transparent;background:none;
+  transition:background .16s var(--ease),border-color .16s var(--ease),color .16s var(--ease);
+  white-space:nowrap;
+}
+.btn-accent{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-accent:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn-secondary{background:transparent;color:var(--navy);border-color:var(--navy)}
+.btn-secondary:hover{background:var(--tint)}
+.btn-secondary.on-dark{color:#fff;border-color:rgba(255,255,255,.55)}
+.btn-secondary.on-dark:hover{background:rgba(255,255,255,.12);border-color:#fff}
+.btn-ghost{background:transparent;color:var(--navy);padding-inline:10px}
+.btn-ghost:hover{background:var(--tint)}
+.btn-link{color:var(--navy);font-weight:600;text-decoration:underline;text-underline-offset:3px;background:none;border:0;padding:0;font-size:14px}
+.btn-link:hover{color:var(--accent)}
+.btn-block{width:100%}
+.btn-lg{padding:14px 26px;font-size:15px}
+
+/* ============================================================
+   Champs de formulaire
+   ============================================================ */
+.field{position:relative;display:flex;flex-direction:column;gap:6px}
+.field > label{font-size:12px;font-weight:600;color:var(--ink-soft);letter-spacing:.01em}
+.input,.select{
+  width:100%;height:44px;
+  padding:0 14px;
+  border:1px solid var(--border);border-radius:var(--r-input);
+  background:var(--surface);color:var(--ink);
+  font-size:14px;font-family:inherit;
+  transition:border-color .16s var(--ease),box-shadow .16s var(--ease);
+}
+.select{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C6470' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:38px;
+}
+.input::placeholder{color:#9aa3af}
+.input:focus,.select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--tint)}
+.input-search{padding-left:42px}
+.field-search{position:relative}
+.field-search .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none}
+
+/* checkbox */
+.check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none}
+.check input{width:18px;height:18px;accent-color:var(--navy);cursor:pointer}
+
+/* ============================================================
+   Module à onglets (hero)
+   ============================================================ */
+.module{
+  background:var(--surface);border-radius:14px;
+  box-shadow:var(--shadow-soft);
+  overflow:hidden;
+}
+.module-tabs{display:flex;border-bottom:1px solid var(--border)}
+.module-tab{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 16px;background:none;border:0;
+  font-size:14px;font-weight:600;color:var(--ink-soft);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .16s var(--ease),border-color .16s var(--ease);
+}
+.module-tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
+.module-tab:hover{color:var(--navy)}
+.module-body{padding:20px}
+.module-panel{display:none}
+.module-panel.is-active{display:block;animation:fade .2s var(--ease)}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+.search-row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
+@media(max-width:860px){.search-row{grid-template-columns:1fr 1fr;gap:10px}.search-row .btn{grid-column:1/-1}}
+@media(max-width:480px){.search-row{grid-template-columns:1fr}}
+
+.gen-row{display:grid;grid-template-columns:1fr 1fr .7fr auto;gap:10px;align-items:end}
+@media(max-width:860px){.gen-row{grid-template-columns:1fr 1fr}.gen-row .btn{grid-column:1/-1}}
+@media(max-width:480px){.gen-row{grid-template-columns:1fr}}
+
+.adv{margin-top:14px}
+.adv-toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--navy);font-weight:600;background:none;border:0}
+.adv-toggle .ico{transition:transform .2s var(--ease)}
+.adv[open] .adv-toggle .ico{transform:rotate(180deg)}
+.adv-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.adv summary{list-style:none}
+.adv summary::-webkit-details-marker{display:none}
+
+/* ============================================================
+   Chips de filtre (Bestseller, Testé ORT, Créateurs)
+   ============================================================ */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:8px 14px;border:1px solid var(--border);border-radius:var(--r-pill);
+  background:var(--surface);color:var(--ink);
+  font-size:13px;font-weight:600;
+  transition:all .15s var(--ease);
+}
+.chip .ico{width:16px;height:16px}
+.chip:hover{border-color:var(--navy);color:var(--navy)}
+.chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+
+/* Chip filtre actif (supprimable) dans la barre d'outils */
+.chip-active{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 8px 5px 12px;border-radius:var(--r-pill);
+  background:var(--tint);color:var(--navy);font-size:12px;font-weight:600;
+}
+.chip-active button{display:inline-flex;background:none;border:0;color:var(--navy);opacity:.7;padding:2px;border-radius:50%}
+.chip-active button:hover{opacity:1;background:rgba(17,63,122,.12)}
+
+/* ============================================================
+   Header
+   ============================================================ */
+.site-header{
+  background:var(--navy-dark);color:#fff;
+  position:sticky;top:0;z-index:50;
+}
+.site-header .wrap{display:flex;align-items:center;gap:18px;height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:17px;letter-spacing:-.01em}
+.brand .mark{width:26px;height:26px;display:grid;place-items:center;color:#fff}
+.brand .mark .ico{width:26px;height:26px;stroke-width:1.9}
+.site-nav{display:flex;gap:4px;margin-left:8px}
+.site-nav a{padding:8px 12px;border-radius:6px;font-size:14px;color:rgba(255,255,255,.82);font-weight:500}
+.site-nav a:hover{color:#fff;background:rgba(255,255,255,.10)}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.header-contact{color:rgba(255,255,255,.85);font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:3px}
+.header-contact:hover{color:#fff}
+
+/* Sélecteur langue */
+.lang{position:relative}
+.lang-btn{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);color:#fff;border:1px solid rgba(255,255,255,.2);padding:7px 12px;border-radius:var(--r-pill);font-size:13px;font-weight:600}
+.lang-btn:hover{background:rgba(255,255,255,.18)}
+.lang-btn .ico{width:15px;height:15px}
+.lang-menu{position:absolute;right:0;top:calc(100% + 8px);background:#fff;color:var(--ink);border-radius:10px;box-shadow:var(--shadow-soft);padding:6px;min-width:160px;display:none;z-index:60}
+.lang.open .lang-menu{display:block}
+.lang-menu a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:7px;font-size:14px}
+.lang-menu a:hover{background:var(--tint)}
+.lang-menu a.active{background:var(--tint);color:var(--navy);font-weight:600}
+
+/* ============================================================
+   Barre d'outils catalogue (sticky)
+   ============================================================ */
+.toolbar{
+  position:sticky;top:56px;z-index:40;
+  background:var(--surface);border-bottom:1px solid var(--border);
+}
+.toolbar .wrap{display:flex;align-items:center;gap:16px;min-height:56px;flex-wrap:wrap;padding-block:10px}
+.toolbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex:1;min-width:0}
+.result-count{font-size:14px;font-weight:600;color:var(--ink)}
+.result-count em{color:var(--ink-soft);font-weight:500;font-style:normal}
+.toolbar-right{display:flex;align-items:center;gap:10px;margin-left:auto}
+
+/* Toggle Photos / Cartes */
+.viewtoggle{display:inline-flex;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-pill);padding:3px}
+.viewtoggle button{display:inline-flex;align-items:center;gap:6px;border:0;background:none;color:var(--ink-soft);font-size:13px;font-weight:600;padding:7px 14px;border-radius:var(--r-pill);transition:all .15s var(--ease)}
+.viewtoggle button .ico{width:16px;height:16px}
+.viewtoggle button.active{background:var(--navy);color:#fff}
+
+.sort-select{height:40px;font-size:13px;padding:0 34px 0 12px;width:auto;min-width:150px}
+
+/* ============================================================
+   Catalogue
+   ============================================================ */
+main{padding-block:40px 64px}
+.cat-section{margin-bottom:48px}
+.cat-section:last-child{margin-bottom:0}
+.cat-head{display:flex;align-items:baseline;gap:10px;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.cat-title{font-family:'Playfair Display',serif;font-weight:600;font-size:24px;color:var(--navy)}
+.cat-count{font-size:14px;color:var(--ink-soft);font-weight:500}
+.cat-section.featured .cat-title{display:flex;align-items:center;gap:9px}
+.cat-section.featured .cat-title .ico{width:20px;height:20px;color:var(--accent)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px}
+
+/* Carte itinéraire */
+.card{
+  display:block;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-card);overflow:hidden;
+  box-shadow:var(--shadow-card);
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease),border-color .18s var(--ease);
+}
+.card:hover{transform:translateY(-2px);box-shadow:var(--shadow-card-hover);border-color:rgba(17,63,122,.3)}
+.card-photo{position:relative;aspect-ratio:16/10;background-size:cover;background-position:center;background-color:var(--tint)}
+.card-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(10,42,87,.28),transparent 45%)}
+.card-badge{position:absolute;top:10px;left:10px;z-index:1;background:rgba(10,42,87,.88);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;padding:4px 8px;border-radius:6px}
+.card-flag{position:absolute;top:10px;right:10px;z-index:1;font-size:18px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.3))}
+.card-body{padding:14px 16px 16px}
+.card-title{font-size:16px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:7px}
+.card-meta{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:var(--ink-soft);flex-wrap:wrap}
+.card-meta .dot{width:3px;height:3px;border-radius:50%;background:var(--ink-soft);opacity:.6}
+.card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.tag{display:inline-block;background:var(--tint);color:var(--navy);font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--r-pill)}
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.site-footer{background:var(--navy-dark);color:rgba(255,255,255,.8);padding:48px 0 32px}
+.footer-cols{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:32px}
+@media(max-width:760px){.footer-cols{grid-template-columns:1fr 1fr;gap:28px}}
+@media(max-width:430px){.footer-cols{grid-template-columns:1fr}}
+.footer-brand{display:flex;align-items:center;gap:9px;color:#fff;font-weight:700;font-size:17px;margin-bottom:12px}
+.footer-brand .ico{width:24px;height:24px}
+.footer-tag{font-size:13px;line-height:1.6;color:rgba(255,255,255,.6);max-width:30ch}
+.footer-col h4{color:#fff;font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:14px}
+.footer-col a,.footer-col button{display:block;color:rgba(255,255,255,.72);font-size:14px;padding:5px 0;background:none;border:0;text-align:left}
+.footer-col a:hover,.footer-col button:hover{color:#fff}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.12);margin-top:36px;padding-top:22px;font-size:12.5px;color:rgba(255,255,255,.5);text-align:center}
+
+/* ============================================================
+   Modale contact (conservée, restylée)
+   ============================================================ */
+.modal{position:fixed;inset:0;background:rgba(10,42,87,.55);z-index:9998;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .25s var(--ease)}
+.modal.active{opacity:1;pointer-events:auto}
+.modal-card{background:var(--surface);border-radius:16px;padding:28px;max-width:460px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,.4);transform:translateY(8px);transition:transform .25s var(--ease);position:relative}
+.modal.active .modal-card{transform:none}
+.modal-card h2{font-family:'Playfair Display',serif;font-weight:600;font-size:22px;color:var(--navy);margin-bottom:6px}
+.modal-card p{color:var(--ink-soft);font-size:14px;margin-bottom:18px}
+.modal-close{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;border:0;background:var(--bg);color:var(--ink-soft);display:grid;place-items:center}
+.modal-close:hover{background:var(--tint);color:var(--navy)}
+.modal-form{display:flex;flex-direction:column;gap:12px}
+
+/* ============================================================
+   Responsive — mobile
+   ============================================================ */
+@media(max-width:680px){
+  .site-header .wrap{gap:10px}
+  .site-nav,.header-contact{display:none}      /* nav et contact → footer / menu */
+  .brand{font-size:16px}
+  .header-right{gap:8px}
+  .btn-secondary.on-dark{padding:7px 12px!important;font-size:13px}
+  .toolbar .wrap{min-height:0;gap:10px}
+  .toolbar-right{flex-wrap:wrap}
+  main{padding-block:28px 48px}
+  .cat-title{font-size:21px}
+  .grid{grid-template-columns:1fr;gap:14px}
+}
+@media(max-width:380px){
+  .brand span:not(.mark){font-size:0}            /* logo seul si très étroit */
+  .lang-btn{padding:7px 9px}
+}
+
+/* utils */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.hidden{display:none!important}
+
+/* ============================================================
+   Variante B : hero split — texte à gauche, module à droite
+   ============================================================ */
+.heroB{position:relative;color:#fff;overflow:hidden;background:var(--navy-dark)}
+.heroB-bg{position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,42,87,.55),rgba(17,63,122,.45)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat}
+.heroB .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1fr 460px;gap:40px;align-items:center;padding-block:44px}
+.heroB-copy h1{font-family:'Playfair Display',serif;font-weight:700;font-size:38px;line-height:1.1;max-width:13ch;text-wrap:balance}
+.heroB-stats{display:flex;flex-wrap:wrap;gap:14px 26px;margin-top:22px}
+.heroB-stats .s{display:flex;flex-direction:column;gap:2px}
+.heroB-stats .s b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;line-height:1}
+.heroB-stats .s span{font-size:12px;font-weight:500;color:rgba(255,255,255,.66);text-transform:uppercase;letter-spacing:.04em}
+.heroB-copy .lede{margin-top:20px;font-size:15px;color:rgba(255,255,255,.86);max-width:46ch;line-height:1.6}
+.hero-entries{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
+.hero-entry{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.30);border-radius:12px;padding:12px 16px;color:#fff;transition:background .15s var(--ease),border-color .15s var(--ease),transform .15s var(--ease);min-width:218px;flex:1}
+.hero-entry:hover{background:rgba(255,255,255,.16);border-color:#fff;transform:translateY(-1px)}
+.hero-entry .ei{width:38px;height:38px;border-radius:9px;background:rgba(255,255,255,.16);display:grid;place-items:center;flex:none}
+.hero-entry .ei .ico{width:20px;height:20px}
+.hero-entry .et{display:flex;flex-direction:column;gap:1px;line-height:1.3}
+.hero-entry .et b{font-size:14px;font-weight:600}
+.hero-entry .et span{font-size:12px;color:rgba(255,255,255,.72)}
+.hero-entry .go{margin-left:auto;opacity:.6}
+.hero-entry .go .ico{width:16px;height:16px}
+.heroB .module{align-self:stretch}
+@media(max-width:920px){
+  .heroB .wrap{grid-template-columns:1fr;gap:26px;padding-block:34px}
+  .heroB-copy h1{font-size:30px}
 }
 @media(max-width:600px){
-  .hero-banner{height:70px;padding:0 10px}
-  .hero-banner p{font-size:11px}
-  .lang-btn{padding:6px 10px;font-size:0.8rem}
-  /* Mobile: show mobile filters bar */
-  .mobile-filters-bar{display:flex}
-  /* Mobile: hide stats bar */
-  .stats-bar{display:none}
-  /* Mobile: hide desktop trio filters column */
-  .trio-col-filters{display:none}
-  /* Mobile: trio becomes single column */
-  .trio-zone{grid-template-columns:1fr;gap:10px;padding:0 5%;margin:10px auto}
-  .trio-col-cards{flex-direction:row;gap:10px}
-  .action-card{padding:14px 10px}
-  .action-card .icon{font-size:22px}
-  .itins-grid{grid-template-columns:1fr;gap:12px}
-  .itin-card-photo{height:130px}
-  .itin-card-body{padding:10px 12px 12px}
-  .itin-title{font-size:1rem}
-  main{padding:25px 5%}
-  .country-title{font-size:1.3rem}
-  .rb-mini-row{flex-direction:column}
+  .heroB-copy h1{font-size:26px}
+  .heroB-stats{gap:18px}
+  .heroB-stats .s b{font-size:19px}
 }
+/* module compact dans le split */
+.heroB .search-row{grid-template-columns:1fr 1fr;gap:10px}
+.heroB .search-row .field-search{grid-column:1/-1}
+.heroB .search-row .btn{grid-column:1/-1}
+.heroB .gen-row{grid-template-columns:1fr 1fr}
+.heroB .gen-row .btn{grid-column:1/-1}
+
+/* ============================================================
+   Spécifique ORT (logique métier conservée)
+   ============================================================ */
+/* Suggestions d'autocomplétion des villes (route builder) */
+.rb-sug{display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-input);max-height:180px;overflow-y:auto;z-index:1000;color:var(--ink);box-shadow:var(--shadow-soft)}
+.rb-sug div{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px}
+.rb-sug div:last-child{border-bottom:none}
+.rb-sug div:hover{background:var(--tint)}
+
+/* Statut de zone dessinée (mode Circuit) */
+.rb-zone-status{font-size:12px;color:var(--navy);background:var(--tint);border:1px solid rgba(17,63,122,.25);border-radius:var(--r-pill);padding:6px 12px;display:inline-block;font-weight:600}
+.rb-zone-edit{font-size:11px;color:var(--ink-soft);text-decoration:underline;text-underline-offset:2px}
+.rb-zone-edit:hover{color:var(--navy)}
+
+/* Chargement */
+.loading{text-align:center;padding:60px 20px;color:var(--ink-soft)}
+.loading-spinner{display:inline-block;width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:15px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Vue carte sur les vignettes */
+.card-photo.is-map{background-color:var(--tint)}
+.card-photo.is-map::after{background:none}
+
+/* Bannière ?filter= */
+.filter-banner{background:var(--navy);color:#fff;padding:12px 20px;text-align:center;font-size:14px}
+.filter-banner a{color:#fff;text-decoration:underline;text-underline-offset:3px;margin-left:10px}
+
+/* Statut formulaire contact */
+#contactStatus{margin-top:12px;padding:10px;border-radius:8px;display:none;text-align:center;font-size:14px}
+/* Logo image */
+.brand .mark-img{height:42px;width:auto;display:block;flex:none}
+.footer-brand .mark-img{height:36px;width:auto;display:block;flex:none}
+@media(max-width:680px){.brand .mark-img{height:36px}}
+
+/* Derniers ajoutés : 2 cartes seulement sur mobile */
+@media(max-width:680px){.cat-section.featured .grid .card:nth-child(n+3){display:none}}
 </style>
 </head>
 <body>
 
-<!-- ===== TOP BAR (lang selector) ===== -->
-<div class="top-bar">
-  <nav class="top-nav" id="topNav">
-    <a id="navNews" href="news.html">News</a>
-    <a id="navPress" href="news.html">Presse</a>
-    <a id="navPartners" href="news.html">Partenaires</a>
-  </nav>
-  <div class="lang-selector" id="langSelector">
-    <button class="lang-btn" onclick="document.getElementById('langSelector').classList.toggle('open')">
-      <span id="langFlag">🇫🇷</span>
-      <span id="langName">Français</span>
-      <span class="arrow">▼</span>
-    </button>
-    <div class="lang-dropdown" id="langDropdown"></div>
-  </div>
-</div>
-
-<!-- ===== MOBILE FILTERS (shown only on mobile, at the top) ===== -->
-<div class="mobile-filters-bar" id="mobileFiltersBar">
-  <div class="mobile-cta-row">
-    <a href="dashboard_user.html" id="btnTripsMobile" class="cta-trips-btn"></a>
-    <button id="btnContactMobile" class="cta-contact-btn"></button>
-  </div>
-  <div class="mobile-filters-title" id="mobileFiltersTitle">🔍 Trouvez votre itinéraire</div>
-  <div class="search-box">
-    <input type="text" id="searchInputMobile" placeholder="Rechercher un itinéraire...">
-  </div>
-  <select class="filter-select" id="countryFilterMobile"></select>
-  <select class="filter-select" id="themeFilterMobile"></select>
-  <select class="filter-select" id="durationFilterMobile"></select>
-  <div class="results-count" id="resultsCountMobile"></div>
-  <button class="mobile-validate-btn" id="mobileValidateBtn">✓ Valider</button>
-  <div class="quick-themes" id="quickThemesMobile">
-    <a class="quick-theme" data-qtheme="best-seller"><span class="qt-ico">⭐</span><span class="qt-lbl" data-qt-lbl="best-seller">Bestseller</span></a>
-    <a class="quick-theme" data-qtheme="tested-ort"><span class="qt-ico">✅</span><span class="qt-lbl" data-qt-lbl="tested-ort">Testé ORT</span></a>
-    <a class="quick-theme" data-qtheme="creators"><span class="qt-ico">🎬</span><span class="qt-lbl" data-qt-lbl="creators">Créateurs</span></a>
-  </div>
-</div>
-
-<!-- ===== HERO ===== -->
-<div class="hero-banner">
-  <div class="hero-content">
-    <p id="heroSub">Consultez, modifiez, complétez, partagez nos itinéraires ou créez le vôtre de toutes pièces. Importez vos réservations, éditez votre carnet de voyage et consultez votre voyage hors ligne.</p>
-  </div>
-</div>
-
-<!-- ===== LATEST ITINERARIES CAROUSEL ===== -->
-<div class="latest-bar" id="latestBar">
-  <h3 id="latestTitle">Derniers itinéraires ajoutés</h3>
-  <div class="latest-track" id="latestTrack"></div>
-</div>
-
-<!-- ===== STATS + CTA ===== -->
-<div class="stats-bar">
-  <a href="dashboard_user.html" id="btnTrips" class="cta-trips-btn"></a>
-  <div class="stats-group">
-    <div class="stat"><div class="stat-val" id="statItins">—</div><div class="stat-lbl" id="statItinsLabel">itinéraires</div></div>
-    <div class="stat"><div class="stat-val" id="statCountries">—</div><div class="stat-lbl" id="statCountriesLabel">pays</div></div>
-    <div class="stat"><div class="stat-val" id="statPlaces">—</div><div class="stat-lbl" id="statPlacesLabel">lieux</div></div>
-    <div class="stat"><div class="stat-val" id="statVisits">—</div><div class="stat-lbl" id="statVisitsLabel">visites</div></div>
-    <div class="stat"><div class="stat-val" id="statActivities">—</div><div class="stat-lbl" id="statActivitiesLabel">activités</div></div>
-  </div>
-  <button id="btnContact" class="cta-contact-btn"></button>
-</div>
-
-<!-- ===== 3-COLUMN ACTION ZONE (desktop) ===== -->
-<div class="trio-zone">
-  <!-- Col 1: Action cards (map link) -->
-  <div class="trio-col trio-col-cards" id="actionGrid"></div>
-
-  <!-- Col 2: Filters -->
-  <div class="trio-col trio-col-filters">
-    <div class="trio-filters-inner">
-      <div class="trio-filters-title" id="trioFiltersTitle">🔍 Trouvez votre itinéraire</div>
-      <div class="trio-filters-grid">
-        <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Rechercher un itinéraire...">
-        </div>
-        <select class="filter-select" id="countryFilter"></select>
-        <select class="filter-select" id="themeFilter"></select>
-        <select class="filter-select" id="durationFilter"></select>
-      </div>
-      <div class="results-count" id="resultsCount"></div>
-      <button class="validate-btn" id="desktopValidateBtn">✓ Valider</button>
-      <div class="quick-themes" id="quickThemesDesktop">
-        <a class="quick-theme" data-qtheme="best-seller"><span class="qt-ico">⭐</span><span class="qt-lbl" data-qt-lbl="best-seller">Bestseller</span></a>
-        <a class="quick-theme" data-qtheme="tested-ort"><span class="qt-ico">✅</span><span class="qt-lbl" data-qt-lbl="tested-ort">Testé ORT</span></a>
-        <a class="quick-theme" data-qtheme="creators"><span class="qt-ico">🎬</span><span class="qt-lbl" data-qt-lbl="creators">Créateurs</span></a>
+<!-- ===== HEADER ===== -->
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/index.html"><img class="mark-img" src="/assets/symbol.webp" alt=""><span>OneRoadTrip</span></a>
+    <nav class="site-nav" id="topNav">
+      <a id="navNews" href="news.html">News</a>
+      <a id="navPress" href="news.html">Presse</a>
+      <a id="navPartners" href="news.html">Partenaires</a>
+    </nav>
+    <div class="header-right">
+      <a class="header-contact" href="#" id="btnContact">Contact</a>
+      <a class="btn btn-secondary on-dark" id="btnTrips" href="dashboard_user.html" style="height:auto;padding:8px 16px"></a>
+      <div class="lang" id="langSelector">
+        <button class="lang-btn" type="button" onclick="document.getElementById('langSelector').classList.toggle('open')">
+          <span id="langFlag">🇫🇷</span>
+          <span id="langName">Français</span>
+          <span data-icon="chevron"></span>
+        </button>
+        <div class="lang-menu" id="langDropdown"></div>
       </div>
     </div>
   </div>
+</header>
 
-  <!-- Col 3: Route builder -->
-  <div class="trio-col trio-col-rb">
-    <div class="rb-box">
-      <h3 id="rbTitle">🚀 Laissez-nous construire votre itinéraire</h3>
-      <div class="rb-col-fields">
-        <div class="rb-field">
-          <label id="rbStartLabel">Ville de départ</label>
-          <input type="text" id="rbStart" autocomplete="off" placeholder="Ex: Paris">
-          <div class="rb-sug" id="rbStartSug"></div>
-        </div>
-        <div class="rb-loop">
-          <input type="checkbox" id="rbLoopMode">
-          <label for="rbLoopMode" id="rbLoopLabel">Circuit (retour au départ)</label>
-        </div>
-        <!-- Statut de la zone (visible uniquement si une zone est dessinée) -->
-        <div class="rb-zone" id="rbZoneWrap" style="display:none;margin-top:6px;text-align:center">
-          <div id="rbZoneStatus" style="font-size:12px;color:rgba(255,255,255,0.9);background:rgba(16,185,129,0.25);border:1px solid rgba(16,185,129,0.5);border-radius:14px;padding:6px 10px;display:inline-block"></div>
-          <div style="margin-top:4px"><a href="#" id="rbZoneEdit" style="font-size:11px;color:rgba(255,255,255,0.75);text-decoration:underline">Modifier / effacer</a></div>
-        </div>
-        <div class="rb-field" id="rbEndContainer">
-          <label id="rbEndLabel">Ville d'arrivée</label>
-          <input type="text" id="rbEnd" autocomplete="off" placeholder="Ex: Barcelone">
-          <div class="rb-sug" id="rbEndSug"></div>
-        </div>
-        <div class="rb-field">
-          <label id="rbDaysLabel">Durée</label>
-          <input type="number" id="rbDays" value="7" min="2" max="30" step="1">
-        </div>
-        <div class="rb-mini-row">
-          <div class="rb-field">
-            <label id="rbMaxKmLabel">Km/jour max</label>
-            <input type="number" id="rbMaxKm" value="200" min="50" max="800" step="50">
-          </div>
-          <div class="rb-field">
-            <label id="rbDetourLabel">Détour (km)</label>
-            <input type="number" id="rbDetour" value="50" min="0" max="200" step="10">
-          </div>
-        </div>
-        <button class="rb-go" id="rbGo">🚀 Générer</button>
+<!-- ===== HERO SPLIT ===== -->
+<section class="heroB">
+  <div class="heroB-bg"></div>
+  <div class="wrap">
+    <div class="heroB-copy">
+      <h1 id="heroTitle"><span id="heroCount">0</span> <span id="heroSuffix">road trips prêts à l'emploi</span></h1>
+      <div class="heroB-stats">
+        <div class="s"><b id="statCountries">0</b><span id="statCountriesLabel">pays</span></div>
+        <div class="s"><b id="statPlaces">0</b><span id="statPlacesLabel">lieux</span></div>
+        <div class="s"><b id="statVisits">0</b><span id="statVisitsLabel">visites</span></div>
+        <div class="s"><b id="statActivities">0</b><span id="statActivitiesLabel">activités</span></div>
       </div>
+      <p class="lede" id="heroSub"></p>
+      <div class="hero-entries" id="actionGrid"></div>
+    </div>
+
+    <div class="module">
+      <div class="module-tabs">
+        <button class="module-tab" type="button" data-tab="search" aria-selected="true"><span data-icon="search"></span><span id="tabSearchLbl">Rechercher</span></button>
+        <button class="module-tab" type="button" data-tab="generate" aria-selected="false"><span data-icon="route"></span><span id="tabGuideLbl">Laissez-vous guider</span></button>
+      </div>
+      <div class="module-body">
+
+        <div class="module-panel is-active" data-panel="search">
+          <div class="search-row">
+            <div class="field field-search">
+              <span data-icon="search"></span>
+              <input class="input input-search" id="searchInput" type="text" placeholder="Rechercher un itinéraire...">
+            </div>
+            <select class="select" id="countryFilter"></select>
+            <select class="select" id="themeFilter"></select>
+            <select class="select" id="durationFilter"></select>
+            <select class="select" id="distanceFilter"></select>
+            <button class="btn btn-accent" type="button" id="desktopValidateBtn">Rechercher</button>
+          </div>
+          <div class="chips" id="quickThemesDesktop" style="margin-top:14px">
+            <button class="chip" type="button" data-qtheme="best-seller" aria-pressed="false"><span data-icon="star"></span><span data-qt-lbl="best-seller">Bestseller</span></button>
+            <button class="chip" type="button" data-qtheme="tested-ort" aria-pressed="false"><span data-icon="check"></span><span data-qt-lbl="tested-ort">Testé ORT</span></button>
+            <button class="chip" type="button" data-qtheme="creators" aria-pressed="false"><span data-icon="film"></span><span data-qt-lbl="creators">Créateurs</span></button>
+          </div>
+        </div>
+
+        <div class="module-panel" data-panel="generate">
+          <div class="gen-row">
+            <div class="field rb-field">
+              <label id="rbStartLabel" for="rbStart">Ville de départ</label>
+              <input class="input" type="text" id="rbStart" autocomplete="off" placeholder="Ex: Paris">
+              <div class="rb-sug" id="rbStartSug"></div>
+            </div>
+            <div class="field rb-field" id="rbEndContainer">
+              <label id="rbEndLabel" for="rbEnd">Ville d'arrivée</label>
+              <input class="input" type="text" id="rbEnd" autocomplete="off" placeholder="Ex: Barcelone">
+              <div class="rb-sug" id="rbEndSug"></div>
+            </div>
+            <div class="field">
+              <label id="rbDaysLabel" for="rbDays">Durée</label>
+              <input class="input" type="number" id="rbDays" value="7" min="2" max="30" step="1">
+            </div>
+            <div class="field">
+              <label id="rbStepsLabel" for="rbSteps">Nombre d'étapes</label>
+              <input class="input" type="number" id="rbSteps" min="1" step="1" placeholder="Auto">
+            </div>
+            <button class="btn btn-accent" type="button" id="rbGo">C'est parti</button>
+          </div>
+          <p id="rbHint" style="font-size:13px;color:var(--ink-soft);margin-top:10px"></p>
+          <p id="rbStepsWarn" style="display:none;font-size:12px;color:var(--accent);margin-top:8px;font-weight:600"></p>
+          <div style="margin-top:12px">
+            <label class="check"><input type="checkbox" id="rbLoopMode"><span id="rbLoopLabel">Circuit (retour au départ)</span></label>
+            <div id="rbZoneWrap" style="display:none;margin-top:8px">
+              <div id="rbZoneStatus" class="rb-zone-status"></div>
+              <div style="margin-top:4px"><a href="#" id="rbZoneEdit" class="rb-zone-edit">Modifier / effacer</a></div>
+            </div>
+            <details class="adv">
+              <summary class="adv-toggle"><span data-icon="sliders"></span><span id="advLabel">Options avancées</span><span data-icon="chevron"></span></summary>
+              <div class="adv-body">
+                <div class="field"><label id="rbMaxKmLabel" for="rbMaxKm">Km/jour max</label><input class="input" type="number" id="rbMaxKm" value="200" min="50" max="800" step="50"></div>
+                <div class="field"><label id="rbDetourLabel" for="rbDetour">Détour (km)</label><input class="input" type="number" id="rbDetour" value="50" min="0" max="200" step="10"></div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== BARRE D'OUTILS CATALOGUE ===== -->
+<div class="toolbar">
+  <div class="wrap">
+    <div class="toolbar-left">
+      <span class="result-count" id="resultsCount"></span>
+      <div class="active-filters" id="activeFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="toolbar-right">
+      <div class="viewtoggle" id="viewToggle" role="group" aria-label="Photos ou cartes">
+        <button type="button" id="vtPhoto" class="active" aria-pressed="true"><span data-icon="photo"></span><span id="vtPhotoLbl">Photos</span></button>
+        <button type="button" id="vtMap" aria-pressed="false"><span data-icon="map"></span><span id="vtMapLbl">Cartes</span></button>
+      </div>
+      <div class="viewtoggle" id="unitToggle" role="group" aria-label="Kilomètres ou miles">
+        <button type="button" id="utKm" aria-pressed="true">km</button>
+        <button type="button" id="utMi" aria-pressed="false">mi</button>
+      </div>
+      <select class="select sort-select" id="sortSelect" aria-label="Trier">
+        <option value="country" id="sortCountry">Tri par pays</option>
+        <option value="recent" id="sortRecent">Plus récents</option>
+        <option value="days-asc" id="sortDaysAsc">Durée ↑</option>
+        <option value="days-desc" id="sortDaysDesc">Durée ↓</option>
+      </select>
     </div>
   </div>
 </div>
 
-<!-- ===== CONTACT MODAL ===== -->
-<div class="contact-modal" id="contactModal">
-  <div class="contact-modal-content">
-    <button class="contact-modal-close" id="contactClose">&times;</button>
-    <h2 id="contactTitle"></h2>
-    <p id="contactDesc"></p>
-    <div id="contactFormWrap"></div>
-    <div id="contactStatus" style="margin-top:12px;padding:10px;border-radius:4px;display:none;text-align:center"></div>
-  </div>
-</div>
-
-<!-- ===== SORT ===== -->
-<div class="sort-bar">
-  <select id="sortSelect">
-    <option value="country" id="sortCountry">Tri par pays</option>
-    <option value="recent" id="sortRecent">Plus récents</option>
-    <option value="days-asc" id="sortDaysAsc">Durée ↑</option>
-    <option value="days-desc" id="sortDaysDesc">Durée ↓</option>
-  </select>
-</div>
-
-<!-- ===== ITINERARIES ===== -->
-<main id="mainContent">
-  <div class="loading" id="loadingMsg">
-    <div class="loading-spinner"></div>
-    <p id="loadingText">Chargement des itinéraires...</p>
+<!-- ===== CATALOGUE ===== -->
+<main id="catalogue">
+  <div class="wrap">
+    <div id="mainContent">
+      <div class="loading" id="loadingMsg">
+        <div class="loading-spinner"></div>
+        <p id="loadingText">Chargement des itinéraires...</p>
+      </div>
+    </div>
   </div>
 </main>
 
 <!-- ===== FOOTER ===== -->
-<footer id="footer-legal">
-  <p>&copy; 2026 OneRoadTrip - Des road trips inoubliables, partout dans le monde</p>
+<footer id="footer-legal" class="site-footer">
+  <div class="wrap">
+    <div class="footer-cols">
+      <div>
+        <div class="footer-brand"><img class="mark-img" src="/assets/symbol.webp" alt="">OneRoadTrip</div>
+        <p class="footer-tag" id="footerTag"></p>
+      </div>
+      <div class="footer-col">
+        <h4 id="footerDiscoverTitle">Découvrir</h4>
+        <a id="footerNews" href="news.html">News</a>
+        <a id="footerPress" href="news.html">Presse</a>
+        <a id="footerPartners" href="news.html">Partenaires</a>
+      </div>
+      <div class="footer-col">
+        <h4 id="footerSpaceTitle">Votre espace</h4>
+        <a id="footerTrips" href="dashboard_user.html"></a>
+        <button type="button" id="btnContactFooter"></button>
+      </div>
+      <div class="footer-col">
+        <h4 id="footerLangTitle">Langue</h4>
+        <div id="footerLangs"></div>
+      </div>
+    </div>
+    <div class="footer-bottom">&copy; 2026 OneRoadTrip - Des road trips inoubliables, partout dans le monde</div>
+  </div>
 </footer>
 
+<!-- ===== MODALE CONTACT ===== -->
+<div class="modal" id="contactModal">
+  <div class="modal-card">
+    <button class="modal-close" type="button" id="contactClose" aria-label="Fermer"><span data-icon="x"></span></button>
+    <h2 id="contactTitle"></h2>
+    <p id="contactDesc"></p>
+    <div id="contactFormWrap" class="modal-form"></div>
+    <div id="contactStatus"></div>
+  </div>
+</div>
+
 <script>
-/* ========================================================
-   i18n CONFIG
-   ======================================================== */
 var LANG_FOLDERS = {fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
 var LANG_META = {
   fr:{flag:'\u{1F1EB}\u{1F1F7}',name:'Fran\u00e7ais',heroTitle:'Tous les itin\u00e9raires',heroSub:'Consultez, modifiez, compl\u00e9tez, partagez nos itin\u00e9raires ou cr\u00e9ez le v\u00f4tre de toutes pi\u00e8ces. Importez vos r\u00e9servations, \u00e9ditez votre carnet de voyage et consultez votre voyage hors ligne.',homeLink:'Retour \u00e0 l\u2019accueil',searchPh:'Rechercher un itin\u00e9raire...',allCountries:'Tous les pays',allThemes:'Tous les th\u00e8mes',loading:'Chargement des itin\u00e9raires...',results:' r\u00e9sultats sur ',days:'Jours',km:'Km',stops:'\u00c9tapes',itins:'itin\u00e9raires',countries:'pays',placesLabel:'lieux',visitsLabel:'visites',activitiesLabel:'activit\u00e9s',rbTitle:'\u{1F680} Laissez-nous construire votre itin\u00e9raire',startCity:'Ville de d\u00e9part',endCity:'Ville d\u2019arriv\u00e9e',duration:'Dur\u00e9e',maxKmLabel:'Km/jour max',detour:'D\u00e9tour (km)',loop:'Circuit (retour au d\u00e9part)',generate:'\u{1F680} G\u00e9n\u00e9rer',sortCountry:'Tri par pays',sortRecent:'Plus r\u00e9cents',sortDaysAsc:'Dur\u00e9e \u2191',sortDaysDesc:'Dur\u00e9e \u2193',tripsBtn:'Vos voyages',contactBtn:'Nous contacter',contactTitle:'Nous contacter',contactDesc:'Une question ou un probl\u00e8me ? \u00c9crivez-nous.',contactName:'Votre nom',contactEmail:'Votre email',contactSubject:'Sujet',contactMessage:'Message',contactSend:'Envoyer',contactSuccess:'Message envoy\u00e9 !',contactError:'Erreur d\'envoi',latestTitle:'Derniers itinéraires ajoutés',allDurations:'Durée du voyage',durWeekend:'Week-end (1-3j)',durShort:'Court séjour (4-7j)',durMedium:'Séjour moyen (8-14j)',durLong:'Grand voyage (15-21j)',durEpic:'Périple (22j+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Choisir un itin\u00e9raire sur la carte',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construisez votre chemin \u00e0 partir des lieux',href:'carte_builder.html?mode=expert'}]},
@@ -444,6 +636,7 @@ var LANG_META = {
   pt:{flag:'\u{1F1F5}\u{1F1F9}',name:'Portugu\u00eas',heroTitle:'Todos os roteiros',heroSub:'Consulte, modifique, complete, partilhe os nossos roteiros ou crie o seu de raiz.',homeLink:'Voltar ao in\u00edcio',searchPh:'Pesquisar um roteiro...',allCountries:'Todos os pa\u00edses',allThemes:'Todos os temas',loading:'A carregar roteiros...',results:' resultados em ',days:'Dias',km:'Km',stops:'Paragens',itins:'roteiros',countries:'pa\u00edses',placesLabel:'lugares',visitsLabel:'visitas',activitiesLabel:'atividades',rbTitle:'\u{1F680} Deixe-nos construir o seu roteiro',startCity:'Cidade de partida',endCity:'Cidade de chegada',duration:'Dura\u00e7\u00e3o',maxKmLabel:'Km/dia m\u00e1x',detour:'Desvio (km)',loop:'Circuito (regresso ao in\u00edcio)',generate:'\u{1F680} Gerar',sortCountry:'Ordenar por pa\u00eds',sortRecent:'Mais recentes',sortDaysAsc:'Dura\u00e7\u00e3o \u2191',sortDaysDesc:'Dura\u00e7\u00e3o \u2193',tripsBtn:'As tuas viagens',contactBtn:'Fale conosco',contactTitle:'Fale Conosco',contactDesc:'Tem uma pergunta? Escreva-nos.',contactName:'Seu nome',contactEmail:'Seu email',contactSubject:'Assunto',contactMessage:'Mensagem',contactSend:'Enviar',contactSuccess:'Mensagem enviada!',contactError:'Erro de envio',latestTitle:'Últimos roteiros adicionados',allDurations:'Duração da viagem',durWeekend:'Fim de semana (1-3d)',durShort:'Estadia curta (4-7d)',durMedium:'Viagem média (8-14d)',durLong:'Grande viagem (15-21d)',durEpic:'Jornada (22d+)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'Escolher um roteiro no mapa',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'Construa o seu caminho a partir dos lugares',href:'carte_builder.html?mode=expert'}]},
   ar:{flag:'\u{1F1F8}\u{1F1E6}',name:'\u0627\u0644\u0639\u0631\u0628\u064A\u0629',heroTitle:'\u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A',heroSub:'\u062A\u0635\u0641\u062D \u0648\u0639\u062F\u0651\u0644 \u0648\u0634\u0627\u0631\u0643 \u0645\u0633\u0627\u0631\u0627\u062A\u0646\u0627 \u0623\u0648 \u0623\u0646\u0634\u0626 \u0645\u0633\u0627\u0631\u0643 \u0627\u0644\u062E\u0627\u0635.',homeLink:'\u0627\u0644\u0639\u0648\u062F\u0629',searchPh:'\u0627\u0628\u062D\u062B \u0639\u0646 \u0645\u0633\u0627\u0631...',allCountries:'\u0643\u0644 \u0627\u0644\u062F\u0648\u0644',allThemes:'\u0643\u0644 \u0627\u0644\u0645\u0648\u0627\u0636\u064A\u0639',loading:'\u062C\u0627\u0631\u064D \u062A\u062D\u0645\u064A\u0644 \u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062A...',results:' \u0646\u062A\u064A\u062C\u0629 \u0645\u0646 ',days:'\u0623\u064A\u0627\u0645',km:'\u0643\u0645',stops:'\u0645\u062D\u0637\u0627\u062A',itins:'\u0645\u0633\u0627\u0631',countries:'\u062F\u0648\u0644\u0629',placesLabel:'\u0623\u0645\u0627\u0643\u0646',visitsLabel:'\u0632\u064a\u0627\u0631\u0627\u062a',activitiesLabel:'\u0623\u0646\u0634\u0637\u0629',rbTitle:'\u{1F680} \u062F\u0639\u0646\u0627 \u0646\u0628\u0646\u064A \u0645\u0633\u0627\u0631\u0643',startCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0627\u0646\u0637\u0644\u0627\u0642',endCity:'\u0645\u062F\u064A\u0646\u0629 \u0627\u0644\u0648\u0635\u0648\u0644',duration:'\u0627\u0644\u0645\u062F\u0629',detour:'\u0627\u0646\u062D\u0631\u0627\u0641 (\u0643\u0645)',loop:'\u062F\u0627\u0626\u0631\u064A (\u0627\u0644\u0639\u0648\u062F\u0629)',generate:'\u{1F680} \u0625\u0646\u0634\u0627\u0621',sortCountry:'\u062A\u0631\u062A\u064A\u0628 \u062D\u0633\u0628 \u0627\u0644\u062F\u0648\u0644\u0629',sortRecent:'\u0627\u0644\u0623\u062D\u062F\u062B',sortDaysAsc:'\u0627\u0644\u0645\u062F\u0629 \u2191',sortDaysDesc:'\u0627\u0644\u0645\u062F\u0629 \u2193',tripsBtn:'\u0631\u062d\u0644\u0627\u062a\u0643',contactBtn:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactTitle:'\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0646\u0627',contactDesc:'\u0647\u0644 \u0644\u062f\u064a\u0643 \u0633\u0624\u0627\u0644\u061f \u0627\u0643\u062a\u0628 \u0644\u0646\u0627.',contactName:'\u0627\u0633\u0645\u0643',contactEmail:'\u0628\u0631\u064a\u062f\u0643',contactSubject:'\u0627\u0644\u0645\u0648\u0636\u0648\u0639',contactMessage:'\u0627\u0644\u0631\u0633\u0627\u0644\u0629',contactSend:'\u0625\u0631\u0633\u0627\u0644',contactSuccess:'\u062a\u0645 \u0627\u0644\u0625\u0631\u0633\u0627\u0644!',contactError:'\u062e\u0637\u0623',latestTitle:'أحدث المسارات',allDurations:'\u0645\u062F\u0629 \u0627\u0644\u0631\u062D\u0644\u0629',durWeekend:'\u0639\u0637\u0644\u0629 \u0646\u0647\u0627\u064A\u0629 \u0627\u0644\u0623\u0633\u0628\u0648\u0639 (1-3 \u0623\u064A\u0627\u0645)',durShort:'\u0625\u0642\u0627\u0645\u0629 \u0642\u0635\u064A\u0631\u0629 (4-7 \u0623\u064A\u0627\u0645)',durMedium:'\u0631\u062D\u0644\u0629 \u0645\u062A\u0648\u0633\u0637\u0629 (8-14 \u064A\u0648\u0645)',durLong:'\u0631\u062D\u0644\u0629 \u0637\u0648\u064A\u0644\u0629 (15-21 \u064A\u0648\u0645)',durEpic:'\u0631\u062D\u0644\u0629 \u0643\u0628\u0631\u0649 (22+ \u064A\u0648\u0645)',actionCards:[{icon:'\u{1F5FA}\u{FE0F}',label:'\u0627\u062E\u062A\u0631 \u0645\u0633\u0627\u0631\u064B\u0627 \u0639\u0644\u0649 \u0627\u0644\u062E\u0631\u064A\u0637\u0629',href:'pres_simple.html'},{icon:'\u{1F6E0}\u{FE0F}',label:'\u0627\u0628\u0646\u0650 \u0645\u0633\u0627\u0631\u0643 \u0645\u0646 \u0627\u0644\u0623\u0645\u0627\u0643\u0646',href:'carte_builder.html?mode=expert'}]}
 };
+
 
 /* Country code -> flag emoji */
 var CC_FLAGS = {};
@@ -482,16 +675,255 @@ var currentLang = 'en';
 var t = LANG_META[currentLang];
 var langFolder = LANG_FOLDERS[currentLang];
 
+
+window.ICON = {
+  search:'<svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
+  route:'<svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="5" r="2.4"/><path d="M8.4 19H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.6"/></svg>',
+  star:'<svg class="ico" viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>',
+  check:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.4 2.4 4.6-5"/></svg>',
+  film:'<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3 9.5h18M8 5v14M16 5v14"/></svg>',
+  map:'<svg class="ico" viewBox="0 0 24 24"><path d="M9 4L3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4z"/><path d="M9 4v13M15 6.5v13"/></svg>',
+  photo:'<svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="M21 16.5l-4.5-4-7 6.5"/></svg>',
+  sliders:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 7h11M4 17h7"/><circle cx="18" cy="7" r="2.3"/><circle cx="14" cy="17" r="2.3"/></svg>',
+  chevron:'<svg class="ico" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>',
+  globe:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>',
+  x:'<svg class="ico" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  arrowUR:'<svg class="ico" viewBox="0 0 24 24"><path d="M7 17L17 7M9 7h8v8"/></svg>',
+  pin:'<svg class="ico" viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  compass:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>',
+  clock:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  flag:'<svg class="ico" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>'
+};
 /* ========================================================
-   APPLY i18n to static elements
+   TRADUCTIONS ADDITIONNELLES (refonte) — fusionnées à LANG_META
+   NB : traductions ar à faire relire par un locuteur natif.
+   ======================================================== */
+var LANG_EXTRA = {
+  fr:{heroH1:"road trips prêts à l'emploi",lede:"Consultez, modifiez et partagez nos itinéraires — ou laissez-vous guider pour construire le vôtre.",tabSearch:"Rechercher",tabGuide:"Laissez-vous guider",searchBtn:"Rechercher",goBtn:"C'est parti",genHint:"Indiquez vos villes et la durée : on construit l'itinéraire pour vous, étape par étape.",advanced:"Options avancées",photosLbl:"Photos",mapsLbl:"Cartes",contactShort:"Contact",footerDiscover:"Découvrir",footerSpace:"Votre espace",footerLangTitle:"Langue",footerTag:"Des road trips inoubliables, partout dans le monde. Consultez, personnalisez et emportez votre voyage hors ligne.",entries:[{label:"Choisir sur la carte",sub:"Explorez par région",icon:"map",href:"pres_simple.html"},{label:"À partir des lieux",sub:"Composez votre tracé",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  en:{heroH1:"ready-made road trips",lede:"Browse, edit and share our itineraries — or let us guide you to build your own.",tabSearch:"Search",tabGuide:"Let us guide you",searchBtn:"Search",goBtn:"Let's go",genHint:"Enter your cities and duration: we build the itinerary for you, step by step.",advanced:"Advanced options",photosLbl:"Photos",mapsLbl:"Maps",contactShort:"Contact",footerDiscover:"Discover",footerSpace:"Your space",footerLangTitle:"Language",footerTag:"Unforgettable road trips, all over the world. Browse, customize and take your trip offline.",entries:[{label:"Choose on the map",sub:"Explore by region",icon:"map",href:"pres_simple.html"},{label:"From the places",sub:"Compose your route",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  es:{heroH1:"rutas listas para usar",lede:"Consulte, modifique y comparta nuestras rutas, o déjese guiar para crear la suya.",tabSearch:"Buscar",tabGuide:"Déjese guiar",searchBtn:"Buscar",goBtn:"Vamos",genHint:"Indique sus ciudades y la duración: construimos la ruta por usted, etapa por etapa.",advanced:"Opciones avanzadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descubrir",footerSpace:"Su espacio",footerLangTitle:"Idioma",footerTag:"Road trips inolvidables por todo el mundo. Consulte, personalice y lleve su viaje sin conexión.",entries:[{label:"Elegir en el mapa",sub:"Explore por región",icon:"map",href:"pres_simple.html"},{label:"Desde los lugares",sub:"Componga su ruta",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  it:{heroH1:"itinerari pronti all'uso",lede:"Consulta, modifica e condividi i nostri itinerari, o lasciati guidare per creare il tuo.",tabSearch:"Cerca",tabGuide:"Lasciati guidare",searchBtn:"Cerca",goBtn:"Si parte",genHint:"Indica le città e la durata: costruiamo l'itinerario per te, tappa dopo tappa.",advanced:"Opzioni avanzate",photosLbl:"Foto",mapsLbl:"Mappe",contactShort:"Contatti",footerDiscover:"Scopri",footerSpace:"Il tuo spazio",footerLangTitle:"Lingua",footerTag:"Road trip indimenticabili in tutto il mondo. Consulta, personalizza e porta il viaggio offline.",entries:[{label:"Scegli sulla mappa",sub:"Esplora per regione",icon:"map",href:"pres_simple.html"},{label:"Dai luoghi",sub:"Componi il tuo percorso",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  pt:{heroH1:"roteiros prontos a usar",lede:"Consulte, modifique e partilhe os nossos roteiros, ou deixe-se guiar para criar o seu.",tabSearch:"Pesquisar",tabGuide:"Deixe-se guiar",searchBtn:"Pesquisar",goBtn:"Vamos lá",genHint:"Indique as cidades e a duração: construímos o roteiro por si, etapa a etapa.",advanced:"Opções avançadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descobrir",footerSpace:"O seu espaço",footerLangTitle:"Idioma",footerTag:"Road trips inesquecíveis por todo o mundo. Consulte, personalize e leve a sua viagem offline.",entries:[{label:"Escolher no mapa",sub:"Explore por região",icon:"map",href:"pres_simple.html"},{label:"A partir dos lugares",sub:"Componha o seu trajeto",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  ar:{heroH1:"مسارات جاهزة للاستخدام",lede:"تصفح وعدّل وشارك مساراتنا، أو دعنا نرشدك لبناء مسارك.",tabSearch:"بحث",tabGuide:"دعنا نرشدك",searchBtn:"بحث",goBtn:"هيا بنا",genHint:"أدخل المدن والمدة: نبني المسار لك خطوة بخطوة.",advanced:"خيارات متقدمة",photosLbl:"صور",mapsLbl:"خرائط",contactShort:"اتصل بنا",footerDiscover:"اكتشف",footerSpace:"مساحتك",footerLangTitle:"اللغة",footerTag:"رحلات برية لا تُنسى حول العالم. تصفح وخصّص واصطحب رحلتك دون اتصال.",entries:[{label:"اختر على الخريطة",sub:"استكشف حسب المنطقة",icon:"map",href:"pres_simple.html"},{label:"من الأماكن",sub:"كوّن مسارك",icon:"pin",href:"carte_builder.html?mode=expert"}]}
+};
+var T2 = LANG_EXTRA[currentLang] || LANG_EXTRA.fr;
+
+/* i18n : filtre distance + champ étapes */
+var LANG_EXTRA2 = {
+  fr:{distLabel:"Distance",distUnder:"Moins de {x}",distOver:"Plus de {x}",stepsLabel:"Nombre d'étapes",stepsAuto:"Auto",stepsWarn:"Conseillé : entre 1 et {n} étapes. La valeur sera ajustée si besoin."},
+  en:{distLabel:"Distance",distUnder:"Under {x}",distOver:"Over {x}",stepsLabel:"Number of stops",stepsAuto:"Auto",stepsWarn:"Recommended: between 1 and {n} stops. The value will be adjusted if needed."},
+  es:{distLabel:"Distancia",distUnder:"Menos de {x}",distOver:"Más de {x}",stepsLabel:"Número de etapas",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 1 y {n} etapas. El valor se ajustará si es necesario."},
+  it:{distLabel:"Distanza",distUnder:"Meno di {x}",distOver:"Oltre {x}",stepsLabel:"Numero di tappe",stepsAuto:"Auto",stepsWarn:"Consigliato: tra 1 e {n} tappe. Il valore sarà adattato se necessario."},
+  pt:{distLabel:"Distância",distUnder:"Menos de {x}",distOver:"Mais de {x}",stepsLabel:"Número de etapas",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 1 e {n} etapas. O valor será ajustado se necessário."},
+  ar:{distLabel:"المسافة",distUnder:"أقل من {x}",distOver:"أكثر من {x}",stepsLabel:"عدد المراحل",stepsAuto:"تلقائي",stepsWarn:"يُنصح بما بين 1 و {n} مراحل. سيتم تعديل القيمة عند الحاجة."}
+};
+var T3 = LANG_EXTRA2[currentLang] || LANG_EXTRA2.fr;
+
+/* Unités : miles si la région du navigateur les utilise (US, GB, LR, MM), km sinon.
+   Affichage seulement : données et paramètres URL restent en km. */
+var USE_MILES = (function(){
+  /* 1. Préférence enregistrée par le commutateur km/mi */
+  try{
+    var saved = localStorage.getItem('ort_unit');
+    if(saved === 'mi') return true;
+    if(saved === 'km') return false;
+  }catch(e){}
+  /* 2. Sinon : seule la langue PRINCIPALE du navigateur compte
+     (en-US est presque toujours présent en langue de secours). */
+  var primary = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+  var m = /-([A-Za-z]{2})\b/.exec(primary);
+  var r = m ? m[1].toUpperCase() : '';
+  return r==='US' || r==='GB' || r==='LR' || r==='MM';
+})();
+function fmtDist(km){
+  if(USE_MILES) return Math.round((km||0)*0.621371).toLocaleString() + ' mi';
+  return (km||0).toLocaleString() + ' ' + t.km;
+}
+/* Tranches du filtre distance : bornes en km, libellés selon l'unité */
+var DIST_RANGES = [
+  {val:'0-200',    km:[null,200],  mi:[null,125]},
+  {val:'201-400',  km:[201,400],   mi:[125,250]},
+  {val:'401-600',  km:[401,600],   mi:[250,375]},
+  {val:'601-1000', km:[601,1000],  mi:[375,620]},
+  {val:'1001-99999',km:[1000,null],mi:[620,null]}
+];
+function distRangeLabel(r){
+  var u = USE_MILES ? 'mi' : 'km';
+  var b = USE_MILES ? r.mi : r.km;
+  if(b[0]===null) return T3.distUnder.replace('{x}', b[1].toLocaleString() + ' ' + u);
+  if(b[1]===null) return T3.distOver.replace('{x}', b[0].toLocaleString() + ' ' + u);
+  return b[0].toLocaleString() + '-' + b[1].toLocaleString() + ' ' + u;
+}
+function distFilterLabel(val){
+  for(var i=0;i<DIST_RANGES.length;i++) if(DIST_RANGES[i].val===val) return distRangeLabel(DIST_RANGES[i]);
+  return val;
+}
+
+/* ========================================================
+   APPLY i18n (nouvelle structure)
    ======================================================== */
 document.documentElement.lang = currentLang;
 if(currentLang === 'ar') document.documentElement.dir = 'rtl';
 document.getElementById('pageTitle').textContent = 'OneRoadTrip | ' + t.heroSub.substring(0,60) + '...';
-document.getElementById('heroSub').textContent = t.heroSub;
 
 document.getElementById('langFlag').textContent = t.flag;
 document.getElementById('langName').textContent = t.name;
+
+document.getElementById('heroSuffix').textContent = T2.heroH1;
+document.getElementById('heroSub').textContent = T2.lede;
+document.getElementById('tabSearchLbl').textContent = T2.tabSearch;
+document.getElementById('tabGuideLbl').textContent = T2.tabGuide;
+document.getElementById('searchInput').placeholder = t.searchPh;
+document.getElementById('desktopValidateBtn').textContent = T2.searchBtn;
+document.getElementById('loadingText').textContent = t.loading;
+
+document.getElementById('rbStartLabel').textContent = t.startCity;
+document.getElementById('rbEndLabel').textContent = t.endCity;
+document.getElementById('rbDaysLabel').textContent = t.duration;
+document.getElementById('rbMaxKmLabel').textContent = t.maxKmLabel || 'Km/j max';
+document.getElementById('rbDetourLabel').textContent = t.detour;
+document.getElementById('rbLoopLabel').textContent = t.loop;
+document.getElementById('rbGo').textContent = T2.goBtn;
+document.getElementById('rbHint').textContent = T2.genHint;
+document.getElementById('advLabel').textContent = T2.advanced;
+document.getElementById('rbStepsLabel').textContent = T3.stepsLabel;
+document.getElementById('rbSteps').placeholder = T3.stepsAuto;
+
+document.getElementById('statCountriesLabel').textContent = t.countries;
+document.getElementById('statPlacesLabel').textContent = t.placesLabel;
+document.getElementById('statVisitsLabel').textContent = t.visitsLabel;
+document.getElementById('statActivitiesLabel').textContent = t.activitiesLabel;
+
+document.getElementById('sortCountry').textContent = t.sortCountry;
+document.getElementById('sortRecent').textContent = t.sortRecent;
+document.getElementById('sortDaysAsc').textContent = t.sortDaysAsc;
+document.getElementById('sortDaysDesc').textContent = t.sortDaysDesc;
+document.getElementById('vtPhotoLbl').textContent = T2.photosLbl;
+document.getElementById('vtMapLbl').textContent = T2.mapsLbl;
+
+/* CTA et contact */
+document.getElementById('btnTrips').textContent = t.tripsBtn;
+document.getElementById('btnTrips').href = 'dashboard_user.html?lang=' + currentLang;
+document.getElementById('btnContact').textContent = T2.contactShort;
+document.getElementById('contactTitle').textContent = t.contactTitle;
+document.getElementById('contactDesc').textContent = t.contactDesc;
+
+/* Footer */
+document.getElementById('footerTag').textContent = T2.footerTag;
+document.getElementById('footerDiscoverTitle').textContent = T2.footerDiscover;
+document.getElementById('footerSpaceTitle').textContent = T2.footerSpace;
+document.getElementById('footerLangTitle').textContent = T2.footerLangTitle;
+document.getElementById('footerTrips').textContent = t.tripsBtn;
+document.getElementById('footerTrips').href = 'dashboard_user.html?lang=' + currentLang;
+document.getElementById('btnContactFooter').textContent = t.contactBtn;
+
+/* Liens footer Découvrir (mêmes cibles que la nav) */
+(function(){
+  var NAVF = {
+    fr:{news:'Actualités',press:'Presse',partners:'Partenaires'},
+    en:{news:'News',press:'Press',partners:'Partners'},
+    es:{news:'Noticias',press:'Prensa',partners:'Socios'},
+    it:{news:'Notizie',press:'Stampa',partners:'Partner'},
+    pt:{news:'Notícias',press:'Imprensa',partners:'Parceiros'},
+    ar:{news:'أخبار',press:'الصحافة',partners:'شركاء'}
+  };
+  var L = NAVF[currentLang] || NAVF.en;
+  [['footerNews','news'],['footerPress','press'],['footerPartners','partners']].forEach(function(pair){
+    var el = document.getElementById(pair[0]); if(!el) return;
+    el.textContent = L[pair[1]];
+    el.href = 'news.html?lang=' + currentLang + '&tab=' + pair[1];
+  });
+})();
+
+/* Liens de langue dans le footer */
+(function(){
+  var box = document.getElementById('footerLangs'); if(!box) return;
+  var keys = ['fr','en','es','pt','it','ar'];
+  var params = new URLSearchParams(location.search);
+  var html = '';
+  for(var i=0;i<keys.length;i++){
+    var k = keys[i], m = LANG_META[k];
+    params.set('lang', k);
+    html += '<a href="' + location.pathname + '?' + params.toString() + '"' + (k===currentLang?' style="color:#fff;font-weight:600"':'') + '>' + m.name + '</a>';
+  }
+  box.innerHTML = html;
+})();
+
+/* ========================================================
+   Icônes SVG inline (data-icon)
+   ======================================================== */
+function injectIcons(root){
+  var els = (root||document).querySelectorAll('[data-icon]');
+  for(var i=0;i<els.length;i++){
+    var name = els[i].getAttribute('data-icon');
+    if(window.ICON[name]) els[i].innerHTML = window.ICON[name];
+  }
+}
+injectIcons();
+
+/* ========================================================
+   Entrées secondaires du hero (carte / lieux)
+   ======================================================== */
+(function(){
+  var grid = document.getElementById('actionGrid'); if(!grid) return;
+  var html = '';
+  for(var i=0;i<T2.entries.length;i++){
+    var c = T2.entries[i];
+    var join = c.href.indexOf('?') === -1 ? '?' : '&';
+    html += '<a class="hero-entry" href="/' + c.href + join + 'lang=' + currentLang + '">';
+    html += '<span class="ei">' + window.ICON[c.icon] + '</span>';
+    html += '<span class="et"><b>' + c.label + '</b><span>' + c.sub + '</span></span>';
+    html += '<span class="go">' + window.ICON.arrowUR + '</span>';
+    html += '</a>';
+  }
+  grid.innerHTML = html;
+})();
+
+/* ========================================================
+   Onglets du module
+   ======================================================== */
+(function(){
+  var tabs = document.querySelectorAll('.module-tab');
+  for(var i=0;i<tabs.length;i++){
+    tabs[i].addEventListener('click', function(){
+      var name = this.getAttribute('data-tab');
+      var mod = this.closest('.module');
+      var bs = mod.querySelectorAll('.module-tab');
+      for(var j=0;j<bs.length;j++) bs[j].setAttribute('aria-selected', bs[j]===this ? 'true':'false');
+      var ps = mod.querySelectorAll('.module-panel');
+      for(var k=0;k<ps.length;k++) ps[k].classList.toggle('is-active', ps[k].getAttribute('data-panel')===name);
+    });
+  }
+})();
+
+/* ========================================================
+   Construction du formulaire de contact (restylé)
+   ======================================================== */
+(function(){
+  var fw = document.getElementById('contactFormWrap');
+  var html = '';
+  html += '<div class="field"><label for="cName">' + t.contactName + '</label><input class="input" type="text" id="cName" required></div>';
+  html += '<div class="field"><label for="cEmail">' + t.contactEmail + '</label><input class="input" type="email" id="cEmail" required></div>';
+  html += '<div class="field"><label for="cSubject">' + t.contactSubject + '</label><input class="input" type="text" id="cSubject" required></div>';
+  html += '<div class="field"><label for="cMessage">' + t.contactMessage + '</label><textarea class="input" id="cMessage" style="height:90px;padding:10px 14px;resize:vertical" required></textarea></div>';
+  html += '<button type="submit" class="btn btn-accent btn-block" id="cSend">' + t.contactSend + '</button>';
+  fw.innerHTML = html;
+})();
+
+/* Contact modal open/close */
+document.getElementById('btnContact').addEventListener('click', function(e){
+  e.preventDefault();
+  document.getElementById('contactModal').classList.add('active');
+});
+document.getElementById('btnContactFooter').addEventListener('click', function(){
+  document.getElementById('contactModal').classList.add('active');
+});
+document.getElementById('contactClose').addEventListener('click', function(){
+  document.getElementById('contactModal').classList.remove('active');
+});
+document.getElementById('contactModal').addEventListener('click', function(e){
+  if(e.target === this) this.classList.remove('active');
+});
 
 /* Nav Actualités / Presse / Partenaires (i18n) → ouvre news.html sur le bon onglet */
 (function(){
@@ -511,61 +943,12 @@ document.getElementById('langName').textContent = t.name;
     el.href = 'news.html?lang=' + currentLang + '&tab=' + tab;
   });
 })();
-document.getElementById('searchInput').placeholder = t.searchPh;
-document.getElementById('searchInputMobile').placeholder = t.searchPh;
-document.getElementById('trioFiltersTitle').textContent = '\uD83D\uDD0D ' + (t.searchPh || 'Trouvez votre itinéraire');
-document.getElementById('mobileFiltersTitle').textContent = '\uD83D\uDD0D ' + (t.searchPh || 'Trouvez votre itinéraire');
-document.getElementById('loadingText').textContent = t.loading;
-document.getElementById('latestTitle').textContent = t.latestTitle;
-document.getElementById('rbTitle').textContent = t.rbTitle;
-document.getElementById('rbStartLabel').textContent = t.startCity;
-document.getElementById('rbEndLabel').textContent = t.endCity;
-document.getElementById('rbDaysLabel').textContent = t.duration;
-document.getElementById('rbDetourLabel').textContent = t.detour;
-document.getElementById('rbMaxKmLabel').textContent = t.maxKmLabel;
-document.getElementById('rbLoopLabel').textContent = t.loop;
-document.getElementById('rbGo').textContent = t.generate;
-document.getElementById('statItinsLabel').textContent = t.itins;
-document.getElementById('statCountriesLabel').textContent = t.countries;
-document.getElementById('statPlacesLabel').textContent = t.placesLabel;
-document.getElementById('statVisitsLabel').textContent = t.visitsLabel;
-document.getElementById('statActivitiesLabel').textContent = t.activitiesLabel;
-document.getElementById('sortCountry').textContent = t.sortCountry;
-document.getElementById('sortRecent').textContent = t.sortRecent;
-document.getElementById('sortDaysAsc').textContent = t.sortDaysAsc;
-document.getElementById('sortDaysDesc').textContent = t.sortDaysDesc;
 
-/* CTA buttons */
-document.getElementById('btnTrips').textContent = t.tripsBtn;
-document.getElementById('btnTrips').href = 'dashboard_user.html?lang=' + currentLang;
-document.getElementById('btnContact').textContent = t.contactBtn;
-document.getElementById('btnTripsMobile').textContent = t.tripsBtn;
-document.getElementById('btnTripsMobile').href = 'dashboard_user.html?lang=' + currentLang;
-document.getElementById('btnContactMobile').textContent = t.contactBtn;
-document.getElementById('contactTitle').textContent = t.contactTitle;
-document.getElementById('contactDesc').textContent = t.contactDesc;
-
-/* Build contact form */
-(function(){
-  var fw = document.getElementById('contactFormWrap');
-  var html = '';
-  html += '<label>' + t.contactName + '</label><input type="text" id="cName" required>';
-  html += '<label>' + t.contactEmail + '</label><input type="email" id="cEmail" required>';
-  html += '<label>' + t.contactSubject + '</label><input type="text" id="cSubject" required>';
-  html += '<label>' + t.contactMessage + '</label><textarea id="cMessage" required></textarea>';
-  html += '<button type="submit" id="cSend">' + t.contactSend + '</button>';
-  fw.innerHTML = html;
-})();
-
-/* Contact modal open/close */
-document.getElementById('btnContact').addEventListener('click', function(){
-  document.getElementById('contactModal').classList.add('active');
-});
-document.getElementById('contactClose').addEventListener('click', function(){
-  document.getElementById('contactModal').classList.remove('active');
-});
-document.getElementById('contactModal').addEventListener('click', function(e){
-  if(e.target === this) this.classList.remove('active');
+/* Fermeture du menu langue au clic exterieur */
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.lang')){
+    document.getElementById('langSelector').classList.remove('open');
+  }
 });
 
 /* Contact form submit via EmailJS */
@@ -596,6 +979,7 @@ document.getElementById('cSend').addEventListener('click', function(e){
   });
 });
 
+
 /* Lang dropdown */
 (function(){
   var dd = document.getElementById('langDropdown');
@@ -614,35 +998,7 @@ document.getElementById('cSend').addEventListener('click', function(e){
   dd.innerHTML = html;
 })();
 
-/* Action cards - images de fond individuelles + ordre inversé (construire en premier) */
-(function(){
-  var grid = document.getElementById('actionGrid');
-  var cards = t.actionCards;
-  /* Mapping image par href : construire = ai-overwhelmed, carte = ltin (fléchettes) */
-  var cardImages = {
-    'carte_builder.html?mode=expert': 'assets/ai-overwhelmed.webp',
-    'pres_simple.html': 'assets/Itin.webp'
-  };
-  /* Ordre inversé : on affiche d'abord la carte "construire" (index 1), puis "carte" (index 0) */
-  var order = [1, 0];
-  var html = '';
-  for(var k=0;k<order.length;k++){
-    var c = cards[order[k]];
-    var bgImg = cardImages[c.href] || '';
-    var bgStyle = bgImg ? ' style="background-image:url(\'' + bgImg + '\')"' : '';
-    html += '<a href="/' + c.href + '?lang=' + currentLang + '" class="action-card"' + bgStyle + '>';
-    html += '<div class="label">' + c.label + '</div>';
-    html += '</a>';
-  }
-  grid.innerHTML = html;
-})();
 
-/* Lang selector toggle */
-document.addEventListener('click', function(e){
-  if(!e.target.closest('.lang-selector')){
-    document.getElementById('langSelector').classList.remove('open');
-  }
-});
 
 /* Canonical */
 document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/index.html?lang=' + currentLang;
@@ -652,6 +1008,7 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
    ======================================================== */
 (function(){
   var API = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://localhost:3031' : '/.netlify/functions';
+  window.ORT_API = API;
   var startCity=null, endCity=null, timer=null;
   function debounce(fn,ms){return function(){clearTimeout(timer);timer=setTimeout(fn,ms)}}
   function search(q,cb){if(!q||q.length<2)return;fetch(API+'/citysearch?q='+encodeURIComponent(q)+'&lang='+currentLang+'&limit=5').then(function(r){return r.json()}).then(function(d){cb(d.items||[])}).catch(function(){cb([])})}
@@ -701,6 +1058,11 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
     console.log('[GENERATE] Départ:', fs.name, fs.lat, fs.lon);
     var p='from=builder&startName='+encodeURIComponent(fs.name)+'&startLat='+(fs.lat||'')+'&startLon='+(fs.lon||'')+'&startCC='+(fs.countryCode||'')+'&endName='+encodeURIComponent(fe.name)+'&endLat='+(fe.lat||'')+'&endLon='+(fe.lon||'')+'&endCC='+(fe.countryCode||'')+'&maxKm='+(document.getElementById('rbMaxKm').value||200)+'&detour='+(document.getElementById('rbDetour').value||50)+'&days='+document.getElementById('rbDays').value+'&lang='+currentLang;
     if(isLoop)p+='&loop=1';
+    var stepsEl=document.getElementById('rbSteps');
+    if(stepsEl){
+      var stepsVal=parseInt(stepsEl.value,10);
+      if(!isNaN(stepsVal)&&stepsVal>0){p+='&steps='+stepsVal;}
+    }
     // Ajouter la zone dessinée si définie (mode Circuit uniquement)
     if(isLoop && window._rbZone && window._rbZone.polygon){
       // Encode le polygone en lat1,lon1;lat2,lon2;... (4 décimales pour rester court)
@@ -740,9 +1102,7 @@ document.getElementById('canonicalLink').href = 'https://www.oneroadtrip.com/ind
   });
 })();
 
-/* ========================================================
-   LOAD & RENDER ITINERARIES
-   ======================================================== */
+
 var allData = [];
 var filteredData = [];
 
@@ -770,391 +1130,6 @@ function normalizeCC(cc){
   return cc.toUpperCase();
 }
 
-function buildCard(item){
-  var cc = normalizeCC(item.cc);
-  var href = '/' + langFolder + '/' + item.slug + '.html';
-  var themes = (item.themes || []).concat((item.meta && item.meta.themes) || []);
-  var photoUrl = item._photo || '';
-  var bgStyle = '';
-  if(photoUrl){
-    /* Use wsrv.nl proxy for consistent sizing and webp */
-    var proxied = 'https://wsrv.nl/?url=' + encodeURIComponent(photoUrl) + '&w=600&q=80&output=webp&fit=cover&n=-1';
-    bgStyle = 'background-image:url(\'' + proxied + '\')';
-  }
-
-  /* URL carte : reconstruite depuis cc + slug, pas d'index a charger */
-  /* Le slug front a le prefixe cc en minuscules (ex: 'za-western-cape...'), */
-  /* le fichier carte sur R2 ne l'a pas. On retire ce prefixe si present. */
-  var ccLower = (item.cc || '').toLowerCase();
-  var mapSlug = item.slug;
-  if(ccLower && mapSlug.indexOf(ccLower + '-') === 0){
-    mapSlug = mapSlug.substring(ccLower.length + 1);
-  }
-  /* Translittération ASCII : aligne avec le nommage du script Python (ö->o, ü->u, etc.) */
-  mapSlug = mapSlug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  var mapUrl = 'https://photos.oneroadtrip.com/' + (item.cc || '').toUpperCase() + '/maps/' + mapSlug + '.webp';
-
-  var html = '<a href="' + href + '" class="itin-card">';
-  html += '<div class="itin-card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
-  html += '<div class="itin-cc-badge">' + cc + '</div>';
-  html += '</div>';
-  html += '<div class="itin-card-body">';
-  html += '<h3 class="itin-title">' + item.title + '</h3>';
-  html += '<div class="itin-meta">';
-  html += '<span>' + item.days + ' ' + t.days + '</span>';
-  html += '<span>\u2022</span>';
-  html += '<span>' + (item.km || 0).toLocaleString() + ' ' + t.km + '</span>';
-  html += '<span>\u2022</span>';
-  html += '<span>' + item.stops + ' ' + t.stops + '</span>';
-  html += '</div>';
-  if(themes.length){
-    html += '<div class="itin-themes">';
-    for(var i=0;i<themes.length && i<4;i++){
-      html += '<span class="theme-tag">' + themes[i] + '</span>';
-    }
-    html += '</div>';
-  }
-  html += '</div></a>';
-  return html;
-}
-
-function render(){
-  var main = document.getElementById('mainContent');
-  var sortMode = document.getElementById('sortSelect').value;
-  var data = filteredData.slice();
-
-  /* Sort */
-  if(sortMode === 'recent'){
-    data.sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'')});
-  } else if(sortMode === 'days-asc'){
-    data.sort(function(a,b){return (a.days||0)-(b.days||0)});
-  } else if(sortMode === 'days-desc'){
-    data.sort(function(a,b){return (b.days||0)-(a.days||0)});
-  } else {
-    /* by country name */
-    data.sort(function(a,b){
-      var na = getCountryName(a.cc);
-      var nb = getCountryName(b.cc);
-      return na.localeCompare(nb, currentLang);
-    });
-  }
-
-  if(sortMode === 'country'){
-    /* Group by country */
-    var groups = {};
-    var order = [];
-    for(var i=0;i<data.length;i++){
-      var name = getCountryName(data[i].cc);
-      if(!groups[name]){groups[name]=[];order.push(name)}
-      groups[name].push(data[i]);
-    }
-    var html = '';
-    for(var g=0;g<order.length;g++){
-      var grp = groups[order[g]];
-      html += '<section class="country-section">';
-      html += '<h2 class="country-title">' + order[g] + ' <span class="country-count">(' + grp.length + ')</span></h2>';
-      html += '<div class="itins-grid">';
-      for(var c=0;c<grp.length;c++){
-        html += buildCard(grp[c]);
-      }
-      html += '</div></section>';
-    }
-    main.innerHTML = html;
-  } else {
-    /* Flat grid */
-    var html = '<div class="itins-grid">';
-    for(var i=0;i<data.length;i++){
-      html += buildCard(data[i]);
-    }
-    html += '</div>';
-    main.innerHTML = html;
-  }
-  /* Re-evaluer le toggle apres re-render */
-  if(typeof window.__checkScrollToggle === 'function'){ window.__checkScrollToggle(); }
-}
-
-function applyFilters(){
-  var query = getSearchValue().toLowerCase().trim();
-  var selCountry = getCountryValue();
-  var selTheme = getThemeValue();
-  var selDuration = getDurationValue();
-  /* Parse la tranche "min-max" */
-  var durMin = 0, durMax = 9999;
-  if(selDuration){
-    var parts = selDuration.split('-');
-    durMin = parseInt(parts[0],10) || 0;
-    durMax = parseInt(parts[1],10) || 9999;
-  }
-
-  /* URL filter param */
-  var urlParams = new URLSearchParams(location.search);
-  var filterParam = urlParams.get('filter');
-  var allowedSlugs = filterParam ? new Set(decodeURIComponent(filterParam).split(',')) : null;
-
-  filteredData = [];
-  for(var i=0;i<allData.length;i++){
-    var d = allData[i];
-    var cc = normalizeCC(d.cc);
-    var countryName = getCountryName(d.cc);
-
-    /* Country filter */
-    if(selCountry && countryName !== selCountry) continue;
-
-    /* Duration filter */
-    if(selDuration){
-      var dDays = parseInt(d.days, 10) || 0;
-      if(dDays < durMin || dDays > durMax) continue;
-    }
-
-    /* Theme filter — match by key or synonyms from themes_i18n.json */
-    if(selTheme){
-      var matched = false;
-      var themeDef = null;
-      for(var ti=0;ti<THEMES_LIST.length;ti++){
-        if(THEMES_LIST[ti].key === selTheme){themeDef=THEMES_LIST[ti];break}
-      }
-      if(themeDef){
-        var syns = (themeDef.synonyms || []).concat([themeDef.key]);
-        /* Also add all i18n labels as matchable */
-        var i18nVals = themeDef.i18n || {};
-        for(var lk in i18nVals) syns.push(i18nVals[lk].toLowerCase());
-        var allThemes = (d.themes || []).concat((d.meta && d.meta.themes) || []);
-        var itinThemes = allThemes.join('|').toLowerCase();
-        for(var si=0;si<syns.length;si++){
-          if(itinThemes.indexOf(syns[si].toLowerCase()) !== -1){matched=true;break}
-        }
-      }
-      if(!matched) continue;
-    }
-
-    /* Search */
-    if(query){
-      var searchText = ((d.search || '') + ' ' + d.title + ' ' + countryName).toLowerCase();
-      if(searchText.indexOf(query) === -1) continue;
-    }
-
-    /* Slug filter from URL */
-    if(allowedSlugs && !allowedSlugs.has(d.slug)) continue;
-
-    filteredData.push(d);
-  }
-
-  /* Results count - update both desktop and mobile */
-  var rcText = '';
-  if(query || selCountry || selTheme || selDuration || allowedSlugs){
-    rcText = filteredData.length + t.results + allData.length;
-  }
-  document.getElementById('resultsCount').textContent = rcText;
-  document.getElementById('resultsCountMobile').textContent = rcText;
-
-  render();
-}
-
-function populateFilters(){
-  /* Countries — from countries_index.json (already loaded in CC_NAMES) */
-  var countryCount = {};
-  for(var i=0;i<allData.length;i++){
-    var name = getCountryName(allData[i].cc);
-    countryCount[name] = (countryCount[name]||0) + 1;
-  }
-  var countryNames = Object.keys(countryCount).sort(function(a,b){return a.localeCompare(b,currentLang)});
-  var cHtml = '<option value="">' + t.allCountries + '</option>';
-  for(var i=0;i<countryNames.length;i++){
-    cHtml += '<option value="' + countryNames[i] + '">' + countryNames[i] + ' (' + countryCount[countryNames[i]] + ')</option>';
-  }
-  document.getElementById('countryFilter').innerHTML = cHtml;
-  document.getElementById('countryFilterMobile').innerHTML = cHtml;
-
-  /* Themes — from themes_i18n.json (already loaded in THEMES_LIST) */
-  var tHtml = '<option value="">' + t.allThemes + '</option>';
-  for(var i=0;i<THEMES_LIST.length;i++){
-    var th = THEMES_LIST[i];
-    var label = (th.i18n && th.i18n[currentLang]) || th.label_fr;
-    tHtml += '<option value="' + th.key + '">' + label + '</option>';
-  }
-  document.getElementById('themeFilter').innerHTML = tHtml;
-  document.getElementById('themeFilterMobile').innerHTML = tHtml;
-
-  /* Durées - 5 tranches */
-  var dHtml = '<option value="">' + t.allDurations + '</option>';
-  dHtml += '<option value="1-3">' + t.durWeekend + '</option>';
-  dHtml += '<option value="4-7">' + t.durShort + '</option>';
-  dHtml += '<option value="8-14">' + t.durMedium + '</option>';
-  dHtml += '<option value="15-21">' + t.durLong + '</option>';
-  dHtml += '<option value="22-999">' + t.durEpic + '</option>';
-  document.getElementById('durationFilter').innerHTML = dHtml;
-  document.getElementById('durationFilterMobile').innerHTML = dHtml;
-
-  if (typeof updateQuickThemeLabels === 'function') updateQuickThemeLabels();
-}
-
-function animateCounters(nodes, targets, duration){
-  var easeOutCubic = function(t){ return 1 - Math.pow(1 - t, 3); };
-  var start = performance.now();
-  function frame(now){
-    var p = Math.min(1, (now - start) / duration);
-    var e = easeOutCubic(p);
-    nodes.forEach(function(el, i){
-      el.textContent = Math.floor(targets[i] * e).toLocaleString();
-    });
-    if(p < 1) requestAnimationFrame(frame);
-    else nodes.forEach(function(el, i){ el.textContent = targets[i].toLocaleString(); });
-  }
-  requestAnimationFrame(frame);
-}
-
-function updateStats(){
-  var nodes = [
-    document.getElementById('statItins'),
-    document.getElementById('statCountries'),
-    document.getElementById('statPlaces'),
-    document.getElementById('statVisits'),
-    document.getElementById('statActivities')
-  ];
-  fetch('/data/stats.index.json')
-    .then(function(r){if(!r.ok) throw new Error('HTTP ' + r.status);return r.json()})
-    .then(function(s){
-      animateCounters(nodes, [
-        s.itineraries||0,
-        s.countries||0,
-        s.places||0,
-        s.visits||0,
-        s.activities||0
-      ], 7000);
-    })
-    .catch(function(){
-      var countries = {};
-      for(var i=0;i<allData.length;i++) countries[normalizeCC(allData[i].cc)] = 1;
-      animateCounters([nodes[0], nodes[1]], [allData.length, Object.keys(countries).length], 7000);
-    });
-}
-
-/* Event listeners - sync desktop and mobile filters */
-function isMobile(){return window.innerWidth <= 600}
-
-/* Get active filter values from whichever set is visible */
-function getSearchValue(){
-  return isMobile() ? document.getElementById('searchInputMobile').value : document.getElementById('searchInput').value;
-}
-function getCountryValue(){
-  return isMobile() ? document.getElementById('countryFilterMobile').value : document.getElementById('countryFilter').value;
-}
-function getThemeValue(){
-  return isMobile() ? document.getElementById('themeFilterMobile').value : document.getElementById('themeFilter').value;
-}
-function getDurationValue(){
-  return isMobile() ? document.getElementById('durationFilterMobile').value : document.getElementById('durationFilter').value;
-}
-
-/* Sync: when desktop filter changes, copy to mobile and vice versa */
-function syncFilters(source){
-  if(source === 'desktop'){
-    document.getElementById('searchInputMobile').value = document.getElementById('searchInput').value;
-    document.getElementById('countryFilterMobile').value = document.getElementById('countryFilter').value;
-    document.getElementById('themeFilterMobile').value = document.getElementById('themeFilter').value;
-    document.getElementById('durationFilterMobile').value = document.getElementById('durationFilter').value;
-  } else {
-    document.getElementById('searchInput').value = document.getElementById('searchInputMobile').value;
-    document.getElementById('countryFilter').value = document.getElementById('countryFilterMobile').value;
-    document.getElementById('themeFilter').value = document.getElementById('themeFilterMobile').value;
-    document.getElementById('durationFilter').value = document.getElementById('durationFilterMobile').value;
-  }
-}
-
-/* Desktop filter listeners */
-document.getElementById('searchInput').addEventListener('input', function(){syncFilters('desktop');applyFilters()});
-document.getElementById('countryFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
-document.getElementById('themeFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
-document.getElementById('durationFilter').addEventListener('change', function(){syncFilters('desktop');applyFilters()});
-
-/* Mobile filter listeners */
-document.getElementById('searchInputMobile').addEventListener('input', function(){syncFilters('mobile');applyFilters()});
-document.getElementById('countryFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
-document.getElementById('themeFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
-document.getElementById('durationFilterMobile').addEventListener('change', function(){syncFilters('mobile');applyFilters()});
-
-document.getElementById('sortSelect').addEventListener('change', function(){render()});
-
-/* Quick themes (3 icônes sous le bouton Valider) */
-document.querySelectorAll('.quick-theme').forEach(function(el){
-  el.addEventListener('click', function(e){
-    e.preventDefault();
-    var key = el.getAttribute('data-qtheme');
-    var curDesk = document.getElementById('themeFilter').value;
-    // toggle : si déjà actif, on retire le filtre
-    var newVal = (curDesk === key) ? '' : key;
-    document.getElementById('themeFilter').value = newVal;
-    document.getElementById('themeFilterMobile').value = newVal;
-    // marque visuel actif
-    document.querySelectorAll('.quick-theme').forEach(function(q){
-      q.classList.toggle('active', newVal && q.getAttribute('data-qtheme') === newVal);
-    });
-    applyFilters();
-    // si on active un filtre, on scrolle vers les résultats
-    if (newVal) {
-      var grid = document.querySelector('.itins-grid') || document.getElementById('resultsCount');
-      if (grid) grid.scrollIntoView({behavior:'smooth', block:'start'});
-    }
-  });
-});
-
-/* Traduction des labels des 3 icônes selon la langue */
-function updateQuickThemeLabels(){
-  if (typeof THEMES_LIST === 'undefined') return;
-  document.querySelectorAll('[data-qt-lbl]').forEach(function(el){
-    var key = el.getAttribute('data-qt-lbl');
-    var th = THEMES_LIST.find(function(x){return x.key === key});
-    if (th){
-      el.textContent = (th.i18n && th.i18n[currentLang]) || th.label_fr;
-    }
-  });
-}
-
-/* Validate buttons — scroll to first itinerary found */
-function goToFirstItin(){
-  applyFilters();
-  var firstCard = document.querySelector('.itin-card');
-  if(firstCard){
-    firstCard.scrollIntoView({behavior:'smooth',block:'start'});
-  } else {
-    var main = document.getElementById('mainContent');
-    if(main) main.scrollIntoView({behavior:'smooth',block:'start'});
-  }
-}
-document.getElementById('desktopValidateBtn').addEventListener('click', goToFirstItin);
-document.getElementById('mobileValidateBtn').addEventListener('click', goToFirstItin);
-
-/* Mobile contact button — opens same modal */
-document.getElementById('btnContactMobile').addEventListener('click', function(){
-  document.getElementById('contactModal').classList.add('active');
-});
-
-function buildLatestCarousel(data, photosDb){
-  var sorted = data.slice().sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'')});
-  var latest = sorted.slice(0, 12);
-  if(!latest.length) return;
-  var track = document.getElementById('latestTrack');
-  var html = '';
-  /* Build items — duplicate set for infinite scroll effect */
-  for(var round=0; round<2; round++){
-    for(var i=0;i<latest.length;i++){
-      var it = latest[i];
-      var href = '/' + langFolder + '/' + it.slug + '.html';
-      var photoUrl = it._photo || '';
-      var bgStyle = '';
-      if(photoUrl){
-        bgStyle = 'background-image:url(\'https://wsrv.nl/?url=' + encodeURIComponent(photoUrl) + '&w=120&q=75&output=webp&fit=cover&n=-1\')';
-      }
-      html += '<a href="' + href + '" class="latest-item">';
-      html += '<div class="latest-item-photo" style="' + bgStyle + '"></div>';
-      html += '<div class="latest-item-info">';
-      html += '<div class="latest-item-title">' + it.title + '</div>';
-      html += '<div class="latest-item-meta">' + it.days + ' ' + t.days + ' \u2022 ' + (it.km||0).toLocaleString() + ' ' + t.km + '</div>';
-      html += '</div></a>';
-    }
-  }
-  track.innerHTML = html;
-}
 
 /* CC fallback map for photos_lieux lookup */
 var CC_PHOTO_FALLBACK = {'EA':'KE','val-de-marne-10-jours':'FR'};
@@ -1194,7 +1169,481 @@ function findPhoto(item, photosDb){
   return '';
 }
 
-/* Load data + photos + countries + themes in parallel */
+
+function animateCounters(nodes, targets, duration){
+  var easeOutCubic = function(t){ return 1 - Math.pow(1 - t, 3); };
+  var start = performance.now();
+  function frame(now){
+    var p = Math.min(1, (now - start) / duration);
+    var e = easeOutCubic(p);
+    nodes.forEach(function(el, i){
+      el.textContent = Math.floor(targets[i] * e).toLocaleString();
+    });
+    if(p < 1) requestAnimationFrame(frame);
+    else nodes.forEach(function(el, i){ el.textContent = targets[i].toLocaleString(); });
+  }
+  requestAnimationFrame(frame);
+}
+
+
+function applyFilters(){
+  var query = getSearchValue().toLowerCase().trim();
+  var selCountry = getCountryValue();
+  var selTheme = getThemeValue();
+  var selDuration = getDurationValue();
+  var selDistance = getDistanceValue();
+  /* Parse la tranche "min-max" */
+  var durMin = 0, durMax = 9999;
+  if(selDuration){
+    var parts = selDuration.split('-');
+    durMin = parseInt(parts[0],10) || 0;
+    durMax = parseInt(parts[1],10) || 9999;
+  }
+
+  /* Distance range "min-max" en km */
+  var distMin = 0, distMax = 999999;
+  if(selDistance){
+    var dparts = selDistance.split('-');
+    distMin = parseInt(dparts[0],10) || 0;
+    distMax = parseInt(dparts[1],10) || 999999;
+  }
+
+  /* URL filter param */
+  var urlParams = new URLSearchParams(location.search);
+  var filterParam = urlParams.get('filter');
+  var allowedSlugs = filterParam ? new Set(decodeURIComponent(filterParam).split(',')) : null;
+
+  filteredData = [];
+  for(var i=0;i<allData.length;i++){
+    var d = allData[i];
+    var cc = normalizeCC(d.cc);
+    var countryName = getCountryName(d.cc);
+
+    /* Country filter */
+    if(selCountry && countryName !== selCountry) continue;
+
+    /* Duration filter */
+    if(selDuration){
+      var dDays = parseInt(d.days, 10) || 0;
+      if(dDays < durMin || dDays > durMax) continue;
+    }
+
+    /* Distance filter */
+    if(selDistance){
+      var dKm = parseInt(d.km, 10) || 0;
+      if(dKm < distMin || dKm > distMax) continue;
+    }
+
+    /* Theme filter — match by key or synonyms from themes_i18n.json */
+    if(selTheme){
+      var matched = false;
+      var themeDef = null;
+      for(var ti=0;ti<THEMES_LIST.length;ti++){
+        if(THEMES_LIST[ti].key === selTheme){themeDef=THEMES_LIST[ti];break}
+      }
+      if(themeDef){
+        var syns = (themeDef.synonyms || []).concat([themeDef.key]);
+        /* Also add all i18n labels as matchable */
+        var i18nVals = themeDef.i18n || {};
+        for(var lk in i18nVals) syns.push(i18nVals[lk].toLowerCase());
+        var allThemes = (d.themes || []).concat((d.meta && d.meta.themes) || []);
+        var itinThemes = allThemes.join('|').toLowerCase();
+        for(var si=0;si<syns.length;si++){
+          if(itinThemes.indexOf(syns[si].toLowerCase()) !== -1){matched=true;break}
+        }
+      }
+      if(!matched) continue;
+    }
+
+    /* Search */
+    if(query){
+      var searchText = ((d.search || '') + ' ' + d.title + ' ' + countryName).toLowerCase();
+      if(searchText.indexOf(query) === -1) continue;
+    }
+
+    /* Slug filter from URL */
+    if(allowedSlugs && !allowedSlugs.has(d.slug)) continue;
+
+    filteredData.push(d);
+  }
+
+  updateCountAndChips();
+  render();
+}
+
+/* ========================================================
+   CARTE ITINÉRAIRE (nouveau composant .card)
+   ======================================================== */
+function buildCard(item){
+  var cc = normalizeCC(item.cc);
+  var href = '/' + langFolder + '/' + item.slug + '.html';
+  var themes = (item.themes || []).concat((item.meta && item.meta.themes) || []);
+  var photoUrl = item._photo || '';
+  var bgStyle = '';
+  if(photoUrl){
+    /* Use wsrv.nl proxy for consistent sizing and webp */
+    var proxied = 'https://wsrv.nl/?url=' + encodeURIComponent(photoUrl) + '&w=600&q=80&output=webp&fit=cover&n=-1';
+    bgStyle = 'background-image:url(\'' + proxied + '\')';
+  }
+
+  /* URL carte : reconstruite depuis cc + slug, pas d'index a charger */
+  var ccLower = (item.cc || '').toLowerCase();
+  var mapSlug = item.slug;
+  if(ccLower && mapSlug.indexOf(ccLower + '-') === 0){
+    mapSlug = mapSlug.substring(ccLower.length + 1);
+  }
+  mapSlug = mapSlug.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  var mapUrl = 'https://photos.oneroadtrip.com/' + (item.cc || '').toUpperCase() + '/maps/' + mapSlug + '.webp';
+
+  var html = '<a href="' + href + '" class="card">';
+  html += '<div class="card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
+  html += '<span class="card-badge">' + cc + '</span>';
+  html += '<span class="card-flag">' + getFlag(item.cc) + '</span>';
+  html += '</div>';
+  html += '<div class="card-body">';
+  html += '<h3 class="card-title">' + item.title + '</h3>';
+  html += '<div class="card-meta">';
+  html += '<span>' + item.days + ' ' + t.days + '</span><span class="dot"></span>';
+  html += '<span>' + fmtDist(item.km) + '</span><span class="dot"></span>';
+  html += '<span>' + item.stops + ' ' + t.stops + '</span>';
+  html += '</div>';
+  if(themes.length){
+    html += '<div class="card-tags">';
+    for(var i=0;i<themes.length && i<3;i++){
+      html += '<span class="tag">' + themes[i] + '</span>';
+    }
+    html += '</div>';
+  }
+  html += '</div></a>';
+  return html;
+}
+
+/* ========================================================
+   ÉTAT DES FILTRES (un seul jeu de contrôles)
+   ======================================================== */
+function getSearchValue(){ return document.getElementById('searchInput').value; }
+function getCountryValue(){ return document.getElementById('countryFilter').value; }
+function getThemeValue(){ return document.getElementById('themeFilter').value; }
+function getDurationValue(){ return document.getElementById('durationFilter').value; }
+function getDistanceValue(){ return document.getElementById('distanceFilter').value; }
+
+function hasActiveFilter(){
+  var urlParams = new URLSearchParams(location.search);
+  return !!(getSearchValue().trim() || getCountryValue() || getThemeValue() || getDurationValue() || getDistanceValue() || urlParams.get('filter'));
+}
+
+/* ========================================================
+   RENDU CATALOGUE
+   ======================================================== */
+function render(){
+  var main = document.getElementById('mainContent');
+  var sortMode = document.getElementById('sortSelect').value;
+  var data = filteredData.slice();
+
+  if(sortMode === 'recent'){
+    data.sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'')});
+  } else if(sortMode === 'days-asc'){
+    data.sort(function(a,b){return (a.days||0)-(b.days||0)});
+  } else if(sortMode === 'days-desc'){
+    data.sort(function(a,b){return (b.days||0)-(a.days||0)});
+  } else {
+    data.sort(function(a,b){
+      var na = getCountryName(a.cc);
+      var nb = getCountryName(b.cc);
+      return na.localeCompare(nb, currentLang);
+    });
+  }
+
+  var html = '';
+
+  /* Section "Derniers ajoutés" — sans filtre et en tri par pays (remplace l'ancien carrousel) */
+  if(!hasActiveFilter() && sortMode === 'country' && allData.length){
+    var latest = allData.slice().sort(function(a,b){return (b.created_at||'').localeCompare(a.created_at||'')}).slice(0,6);
+    html += '<section class="cat-section featured">';
+    html += '<div class="cat-head"><h2 class="cat-title">' + window.ICON.star + t.latestTitle + '</h2></div>';
+    html += '<div class="grid">';
+    for(var li=0;li<latest.length;li++) html += buildCard(latest[li]);
+    html += '</div></section>';
+  }
+
+  if(sortMode === 'country'){
+    var groups = {};
+    var order = [];
+    for(var i=0;i<data.length;i++){
+      var name = getCountryName(data[i].cc);
+      if(!groups[name]){groups[name]=[];order.push(name)}
+      groups[name].push(data[i]);
+    }
+    for(var g=0;g<order.length;g++){
+      var grp = groups[order[g]];
+      html += '<section class="cat-section">';
+      html += '<div class="cat-head"><h2 class="cat-title">' + order[g] + '</h2><span class="cat-count">(' + grp.length + ')</span></div>';
+      html += '<div class="grid">';
+      for(var c=0;c<grp.length;c++) html += buildCard(grp[c]);
+      html += '</div></section>';
+    }
+  } else {
+    html += '<section class="cat-section"><div class="grid">';
+    for(var j=0;j<data.length;j++) html += buildCard(data[j]);
+    html += '</div></section>';
+  }
+  main.innerHTML = html;
+  applyView();
+}
+
+/* ========================================================
+   COMPTEUR DE RÉSULTATS + CHIPS DE FILTRES ACTIFS
+   ======================================================== */
+function durFilterLabel(v){
+  var m = {'1-3':t.durWeekend,'4-7':t.durShort,'8-14':t.durMedium,'15-21':t.durLong,'22-999':t.durEpic};
+  return m[v] || v;
+}
+function themeFilterLabel(key){
+  for(var i=0;i<THEMES_LIST.length;i++){
+    if(THEMES_LIST[i].key === key){
+      return (THEMES_LIST[i].i18n && THEMES_LIST[i].i18n[currentLang]) || THEMES_LIST[i].label_fr || key;
+    }
+  }
+  return key;
+}
+function updateCountAndChips(){
+  var rc = document.getElementById('resultsCount');
+  if(hasActiveFilter()){
+    rc.innerHTML = '<strong>' + filteredData.length + '</strong><em>' + t.results + allData.length + '</em>';
+  } else {
+    rc.innerHTML = '<strong>' + allData.length.toLocaleString() + '</strong> <em>' + t.itins + '</em>';
+  }
+  var box = document.getElementById('activeFilters');
+  var q = getSearchValue().trim();
+  var html = '';
+  function chip(label, key){
+    return '<span class="chip-active">' + label + '<button type="button" data-clear="' + key + '" aria-label="Retirer">' + window.ICON.x + '</button></span>';
+  }
+  if(q) html += chip('\u00ab ' + q + ' \u00bb', 'q');
+  if(getCountryValue()) html += chip(getCountryValue(), 'country');
+  if(getThemeValue()) html += chip(themeFilterLabel(getThemeValue()), 'theme');
+  if(getDurationValue()) html += chip(durFilterLabel(getDurationValue()), 'duration');
+  if(getDistanceValue()) html += chip(distFilterLabel(getDistanceValue()), 'distance');
+  box.innerHTML = html;
+}
+document.getElementById('activeFilters').addEventListener('click', function(e){
+  var btn = e.target.closest('[data-clear]'); if(!btn) return;
+  var key = btn.getAttribute('data-clear');
+  if(key === 'q') document.getElementById('searchInput').value = '';
+  else if(key === 'country') document.getElementById('countryFilter').value = '';
+  else if(key === 'theme'){ document.getElementById('themeFilter').value = ''; syncQuickChips(); }
+  else if(key === 'duration') document.getElementById('durationFilter').value = '';
+  else if(key === 'distance') document.getElementById('distanceFilter').value = '';
+  applyFilters();
+});
+
+/* ========================================================
+   REMPLISSAGE DES FILTRES
+   ======================================================== */
+function populateFilters(){
+  var countryCount = {};
+  for(var i=0;i<allData.length;i++){
+    var name = getCountryName(allData[i].cc);
+    countryCount[name] = (countryCount[name]||0) + 1;
+  }
+  var countryNames = Object.keys(countryCount).sort(function(a,b){return a.localeCompare(b,currentLang)});
+  var cHtml = '<option value="">' + t.allCountries + '</option>';
+  for(var ci=0;ci<countryNames.length;ci++){
+    cHtml += '<option value="' + countryNames[ci] + '">' + countryNames[ci] + ' (' + countryCount[countryNames[ci]] + ')</option>';
+  }
+  document.getElementById('countryFilter').innerHTML = cHtml;
+
+  var tHtml = '<option value="">' + t.allThemes + '</option>';
+  for(var ti=0;ti<THEMES_LIST.length;ti++){
+    var th = THEMES_LIST[ti];
+    var label = (th.i18n && th.i18n[currentLang]) || th.label_fr;
+    tHtml += '<option value="' + th.key + '">' + label + '</option>';
+  }
+  document.getElementById('themeFilter').innerHTML = tHtml;
+
+  var dHtml = '<option value="">' + t.allDurations + '</option>';
+  dHtml += '<option value="1-3">' + t.durWeekend + '</option>';
+  dHtml += '<option value="4-7">' + t.durShort + '</option>';
+  dHtml += '<option value="8-14">' + t.durMedium + '</option>';
+  dHtml += '<option value="15-21">' + t.durLong + '</option>';
+  dHtml += '<option value="22-999">' + t.durEpic + '</option>';
+  document.getElementById('durationFilter').innerHTML = dHtml;
+
+  populateDistanceFilter();
+
+  updateQuickThemeLabels();
+}
+
+function populateDistanceFilter(){
+  var sel = document.getElementById('distanceFilter');
+  var kept = sel.value;
+  var distHtml = '<option value="">' + T3.distLabel + '</option>';
+  for(var di=0;di<DIST_RANGES.length;di++){
+    distHtml += '<option value="' + DIST_RANGES[di].val + '">' + distRangeLabel(DIST_RANGES[di]) + '</option>';
+  }
+  sel.innerHTML = distHtml;
+  sel.value = kept;
+}
+
+/* Commutateur km / mi */
+function syncUnitToggle(){
+  var bk = document.getElementById('utKm'), bm = document.getElementById('utMi');
+  bk.classList.toggle('active', !USE_MILES);
+  bm.classList.toggle('active', USE_MILES);
+  bk.setAttribute('aria-pressed', !USE_MILES);
+  bm.setAttribute('aria-pressed', USE_MILES);
+}
+function setUnit(unit){
+  USE_MILES = (unit === 'mi');
+  try{ localStorage.setItem('ort_unit', unit); }catch(e){}
+  syncUnitToggle();
+  populateDistanceFilter();
+  updateCountAndChips();
+  render();
+}
+document.getElementById('utKm').addEventListener('click', function(){ setUnit('km'); });
+document.getElementById('utMi').addEventListener('click', function(){ setUnit('mi'); });
+syncUnitToggle();
+
+/* Traduction des labels des 3 chips selon la langue */
+function updateQuickThemeLabels(){
+  if (typeof THEMES_LIST === 'undefined') return;
+  document.querySelectorAll('[data-qt-lbl]').forEach(function(el){
+    var key = el.getAttribute('data-qt-lbl');
+    var th = THEMES_LIST.find(function(x){return x.key === key});
+    if (th){
+      el.textContent = (th.i18n && th.i18n[currentLang]) || th.label_fr;
+    }
+  });
+}
+
+/* ========================================================
+   STATS DU HERO (compteur d'itinéraires dans le H1 + 4 stats)
+   ======================================================== */
+function updateStats(){
+  var nodes = [
+    document.getElementById('heroCount'),
+    document.getElementById('statCountries'),
+    document.getElementById('statPlaces'),
+    document.getElementById('statVisits'),
+    document.getElementById('statActivities')
+  ];
+  fetch('/data/stats.index.json')
+    .then(function(r){if(!r.ok) throw new Error('HTTP ' + r.status);return r.json()})
+    .then(function(s){
+      animateCounters(nodes, [
+        s.itineraries||allData.length,
+        s.countries||0,
+        s.places||0,
+        s.visits||0,
+        s.activities||0
+      ], 1400);
+    })
+    .catch(function(){
+      var countries = {};
+      for(var i=0;i<allData.length;i++) countries[normalizeCC(allData[i].cc)] = 1;
+      animateCounters([nodes[0], nodes[1]], [allData.length, Object.keys(countries).length], 1400);
+    });
+}
+
+/* ========================================================
+   ÉCOUTEURS DES FILTRES
+   ======================================================== */
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('countryFilter').addEventListener('change', applyFilters);
+document.getElementById('themeFilter').addEventListener('change', function(){ syncQuickChips(); applyFilters(); });
+document.getElementById('durationFilter').addEventListener('change', applyFilters);
+document.getElementById('distanceFilter').addEventListener('change', applyFilters);
+document.getElementById('sortSelect').addEventListener('change', function(){render()});
+
+/* Chips rapides (Bestseller / Testé ORT / Créateurs) */
+function syncQuickChips(){
+  var cur = document.getElementById('themeFilter').value;
+  document.querySelectorAll('.chip[data-qtheme]').forEach(function(q){
+    q.setAttribute('aria-pressed', (cur && q.getAttribute('data-qtheme') === cur) ? 'true' : 'false');
+  });
+}
+document.querySelectorAll('.chip[data-qtheme]').forEach(function(el){
+  el.addEventListener('click', function(e){
+    e.preventDefault();
+    var key = el.getAttribute('data-qtheme');
+    var cur = document.getElementById('themeFilter').value;
+    var newVal = (cur === key) ? '' : key;
+    document.getElementById('themeFilter').value = newVal;
+    syncQuickChips();
+    applyFilters();
+    if (newVal) goToFirstItin();
+  });
+});
+
+/* Bouton Rechercher : applique et descend au premier résultat */
+function goToFirstItin(){
+  var firstCard = document.querySelector('#mainContent .card');
+  var target = firstCard || document.getElementById('catalogue');
+  if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
+}
+document.getElementById('desktopValidateBtn').addEventListener('click', function(){
+  applyFilters();
+  goToFirstItin();
+});
+
+/* ========================================================
+   VALIDATION DOUCE DU CHAMP ÉTAPES (non bloquante)
+   ======================================================== */
+(function(){
+  var stepsEl = document.getElementById('rbSteps');
+  var daysEl = document.getElementById('rbDays');
+  var warnEl = document.getElementById('rbStepsWarn');
+  if(!stepsEl || !daysEl || !warnEl) return;
+  function checkSteps(){
+    var v = parseInt(stepsEl.value, 10);
+    var days = parseInt(daysEl.value, 10) || 7;
+    var max = Math.max(1, days - 1);
+    if(stepsEl.value !== '' && (!isNaN(v)) && (v < 1 || v > max)){
+      warnEl.textContent = T3.stepsWarn.replace('{n}', max);
+      warnEl.style.display = 'block';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
+  stepsEl.addEventListener('input', checkSteps);
+  daysEl.addEventListener('input', checkSteps);
+  daysEl.addEventListener('change', checkSteps);
+})();
+
+/* ========================================================
+   TOGGLE PHOTOS / CARTES (ancré dans la barre d'outils)
+   ======================================================== */
+var currentView = 'photo';
+function applyView(){
+  var cards = document.querySelectorAll('.card-photo');
+  for(var i=0;i<cards.length;i++){
+    var c = cards[i];
+    if(currentView === 'map'){
+      var mu = c.getAttribute('data-map-url');
+      if(mu){
+        c.style.backgroundImage = 'url(\'' + mu + '\')';
+        c.classList.add('is-map');
+      }
+    } else {
+      var ph = c.getAttribute('data-photo-bg') || '';
+      var match = ph.match(/url\(['"]?(.*?)['"]?\)/);
+      c.style.backgroundImage = match ? 'url(\'' + match[1] + '\')' : '';
+      c.classList.remove('is-map');
+    }
+  }
+  var bp = document.getElementById('vtPhoto'), bm = document.getElementById('vtMap');
+  bp.classList.toggle('active', currentView === 'photo');
+  bm.classList.toggle('active', currentView === 'map');
+  bp.setAttribute('aria-pressed', currentView === 'photo');
+  bm.setAttribute('aria-pressed', currentView === 'map');
+}
+document.getElementById('vtPhoto').addEventListener('click', function(){ currentView = 'photo'; applyView(); });
+document.getElementById('vtMap').addEventListener('click', function(){ currentView = 'map'; applyView(); });
+
+/* ========================================================
+   CHARGEMENT DES DONNÉES (logique d'origine conservée)
+   ======================================================== */
 var jsonUrl = '/' + langFolder + '/index-data.json';
 var photosUrl = '/data/photos-json/photos_lieux.json';
 var countriesUrl = '/data/Roadtripsprefabriques/countries/countries.index.json';
@@ -1211,18 +1660,15 @@ Promise.all([
     var photosDb = results[1];
     var countriesIdx = results[2];
     var themesIdx = results[3];
-    /* Build CC_NAMES from countries_index.json */
     if(countriesIdx && countriesIdx.countries){
       for(var ci=0;ci<countriesIdx.countries.length;ci++){
         var c = countriesIdx.countries[ci];
         CC_NAMES[c.cc] = c.names;
       }
     }
-    /* Build THEMES_LIST from themes_i18n.json */
     if(themesIdx && themesIdx.themes){
       THEMES_LIST = themesIdx.themes.sort(function(a,b){return (a.order||99)-(b.order||99)});
     }
-    /* Attach photo to each itinerary */
     for(var i=0;i<data.length;i++){
       data[i]._photo = findPhoto(data[i], photosDb);
     }
@@ -1230,92 +1676,21 @@ Promise.all([
     filteredData = data.slice();
     populateFilters();
     updateStats();
-    buildLatestCarousel(data, photosDb);
-    /* Show filter banner if URL has ?filter= */
+    /* Bannière si l'URL contient ?filter= */
     var urlParams = new URLSearchParams(location.search);
     if(urlParams.get('filter')){
       var banner = document.createElement('div');
-      banner.style.cssText = 'background:linear-gradient(135deg,#0d3a6d,#1a5a9e);color:#fff;padding:12px 20px;text-align:center;font-size:15px;';
-      banner.innerHTML = '\u{1F195} <strong>' + t.sortRecent + '</strong> \u2014 <a href="' + location.pathname + '" style="color:#7dd3fc;margin-left:10px;">OneRoadTrip \u2192</a>';
-      var fb = document.querySelector('.filters-bar');
-      if(fb) fb.parentNode.insertBefore(banner, fb);
+      banner.className = 'filter-banner';
+      banner.innerHTML = '<strong>' + t.sortRecent + '</strong> <a href="' + location.pathname + '">OneRoadTrip \u2192</a>';
+      var tb = document.querySelector('.toolbar');
+      if(tb) tb.parentNode.insertBefore(banner, tb);
     }
     applyFilters();
   })
   .catch(function(err){
-    document.getElementById('mainContent').innerHTML = '<div class="loading"><p style="color:#c00">Erreur de chargement: ' + err.message + '</p><p style="margin-top:10px"><a href="javascript:location.reload()" style="color:var(--s)">R\u00e9essayer</a></p></div>';
+    document.getElementById('mainContent').innerHTML = '<div class="loading"><p style="color:var(--accent);font-weight:600">Erreur de chargement: ' + err.message + '</p><p style="margin-top:10px"><a href="javascript:location.reload()" style="color:var(--navy);text-decoration:underline">R\u00e9essayer</a></p></div>';
   });
-</script>
 
-<div id="viewToggle" role="group" aria-label="Vue photo ou carte">
-  <button type="button" id="vtPhoto" class="active" aria-pressed="true">📷 Photos</button>
-  <button type="button" id="vtMap" aria-pressed="false">🗺️ Cartes</button>
-</div>
-
-<script>
-/* ========================================================
-   Toggle photo / carte sur les cards itineraires
-   ======================================================== */
-(function(){
-  var toggle = document.getElementById('viewToggle');
-  var btnPhoto = document.getElementById('vtPhoto');
-  var btnMap = document.getElementById('vtMap');
-  if(!toggle || !btnPhoto || !btnMap) return;
-
-  function setMode(mode){
-    btnPhoto.classList.toggle('active', mode === 'photo');
-    btnMap.classList.toggle('active', mode === 'map');
-    btnPhoto.setAttribute('aria-pressed', mode === 'photo');
-    btnMap.setAttribute('aria-pressed', mode === 'map');
-
-    var cards = document.querySelectorAll('.itin-card-photo');
-    for(var i=0;i<cards.length;i++){
-      var c = cards[i];
-      if(mode === 'map'){
-        var mu = c.getAttribute('data-map-url');
-        if(mu){
-          c.style.backgroundImage = 'url(\'' + mu + '\')';
-          c.classList.add('is-map');
-        }
-      } else {
-        var ph = c.getAttribute('data-photo-bg') || '';
-        var match = ph.match(/url\(['"]?(.*?)['"]?\)/);
-        c.style.backgroundImage = match ? 'url(\'' + match[1] + '\')' : '';
-        c.classList.remove('is-map');
-      }
-    }
-  }
-
-  btnPhoto.addEventListener('click', function(){ setMode('photo'); });
-  btnMap.addEventListener('click', function(){ setMode('map'); });
-
-  /* Affichage du toggle :
-     - Apparait quand le premier titre pays atteint le haut de l'ecran
-     - Reste visible tant qu'on est dans la zone resultats (mainContent)
-     - Disparait quand on remonte au-dessus du premier titre, ou en bas */
-  function checkScroll(){
-    var main = document.getElementById('mainContent');
-    if(!main){ toggle.classList.remove('show'); return; }
-    var mainRect = main.getBoundingClientRect();
-    /* En bas de page : on cache */
-    if(mainRect.bottom < 100){ toggle.classList.remove('show'); return; }
-    /* On affiche le toggle des qu'on est arrive a la zone resultats.
-       Seuil souple : top du main < 100px = on a depasse le hero/filters,
-       les cards sont visibles. Marche aussi quand la page filtree est courte
-       et qu'on ne peut pas scroller jusqu'aux titres pays. */
-    if(mainRect.top < 100){
-      toggle.classList.add('show');
-    } else {
-      toggle.classList.remove('show');
-    }
-  }
-  /* Expose pour que render() puisse rappeler */
-  window.__checkScrollToggle = checkScroll;
-  window.addEventListener('scroll', checkScroll, { passive: true });
-  window.addEventListener('resize', checkScroll);
-  setTimeout(checkScroll, 500);
-  setTimeout(checkScroll, 2000);
-})();
 </script>
 
 <!-- Google Analytics -->
@@ -1328,7 +1703,6 @@ gtag('config', 'G-JK3QGQGDDL');
 gtag('config', 'GT-WF83FMCX');
 </script>
 <script src="/js/ort-footer.js"></script>
-
 
 <!-- ===== MODALE SÉLECTEUR DE ZONE - DESSIN À MAIN LEVÉE ===== -->
 <style>
@@ -1511,7 +1885,7 @@ gtag('config', 'GT-WF83FMCX');
         return;
       }
       var lang = window.currentLang || localStorage.getItem('lang') || 'fr';
-      fetch(API + '/citysearch?q=' + encodeURIComponent(txt) + '&lang=' + lang + '&limit=5')
+      fetch((window.ORT_API || '/.netlify/functions') + '/citysearch?q=' + encodeURIComponent(txt) + '&lang=' + lang + '&limit=5')
         .then(function(r){ return r.json(); })
         .then(function(d){
           function norm(s){ return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[-\s]/g, ''); }
@@ -1770,6 +2144,5 @@ gtag('config', 'GT-WF83FMCX');
   }
 })();
 </script>
-
 </body>
 </html>

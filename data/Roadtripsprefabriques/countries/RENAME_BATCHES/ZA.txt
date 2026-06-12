@@ -1,0 +1,132 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "ZA" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays ZA)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+ZA::addo	Addo		
+ZA::atlantis	Atlantis		
+ZA::augrabies	Augrabies		
+ZA::barberspan	Barberspan		
+ZA::bethlehem	Bethlehem		
+ZA::blaauwberg	Blaauwberg		
+ZA::bloemfontein	Bloemfontein		
+ZA::blyde-river-canyon	Blyde River Canyon	Blyde River Canyon	Blyde River Canyon
+ZA::cape	Cape		
+ZA::centurion	Centurion		
+ZA::clarens	Clarens		
+ZA::coffee-bay	Coffee Bay		
+ZA::darling	Darling		
+ZA::dullstroom	Dullstroom		
+ZA::east-london	East London		
+ZA::gariep-dam	Gariep Dam		
+ZA::golden-gate	Golden Gate		
+ZA::graaff-reinet	Graaff Reinet		
+ZA::graskop	Graskop		
+ZA::groot-marico	Groot Marico		
+ZA::harrismith	Harrismith		
+ZA::hartbeespoort	Hartbeespoort		
+ZA::hazyview	Hazyview	Hazyview	Hazyview
+ZA::heidelberg	Heidelberg		
+ZA::hoedspruit	Hoedspruit		
+ZA::hogsback	Hogsback		
+ZA::hondeklipbaai	Hondeklipbaai		
+ZA::jeffreys-bay	Jeffreys Bay		
+ZA::johannesburg	Johannesburg		
+ZA::kaapsehoop	Kaapsehoop		
+ZA::kakamas	Kakamas		
+ZA::kathu	Kathu		
+ZA::kgalagadi	Kgalagadi		
+ZA::kimberley	Kimberley		
+ZA::kruger	Kruger		
+ZA::kuruman	Kuruman		
+ZA::langebaan	Langebaan		
+ZA::limpokwena	Limpokwena		
+ZA::madikwe	Madikwe		
+ZA::magaliesberg	Magaliesberg		
+ZA::mahikeng	Mahikeng		
+ZA::makhanda	Makhanda		
+ZA::manyeleti	Manyeleti		
+ZA::mapesu	Mapesu		
+ZA::mapungubwe	Mapungubwe		
+ZA::maropeng	Maropeng		
+ZA::matjiesfontein	Matjiesfontein		
+ZA::mazzeppa-bay	Mazzeppa Bay		
+ZA::mountain-zebra	Mountain Zebra		
+ZA::mthatha	Mthatha		
+ZA::olifants	Olifants		
+ZA::oudtshoorn	Oudtshoorn	Oudtshoorn	Oudtshoorn
+ZA::pafuri	Pafuri		
+ZA::parys	Parys		
+ZA::paternoster	Paternoster		
+ZA::pilanesberg	Pilanesberg		
+ZA::pilgrims-rest	Pilgrims Rest		
+ZA::port-alfred	Port Alfred		
+ZA::port-nolloth	Port Nolloth		
+ZA::port-st-johns	Port St Johns		
+ZA::pretoria	Pretoria		
+ZA::rhodes	Rhodes		
+ZA::richmond	Richmond		
+ZA::richtersveld	Richtersveld		
+ZA::riebeek-kasteel	Riebeek Kasteel		
+ZA::riemvasmaak	Riemvasmaak		
+ZA::roodepoort	Roodepoort		
+ZA::rosendal	Rosendal		
+ZA::rustenburg	Rustenburg		
+ZA::sabie	Sabie		
+ZA::saldanha	Saldanha		
+ZA::shingwedzi	Shingwedzi		
+ZA::simons	Simons		
+ZA::skukuza	Skukuza		
+ZA::st-francis-bay	St Francis Bay		
+ZA::storms-river	Storms River		
+ZA::sun	Sun		
+ZA::sutherland	Sutherland		
+ZA::taung	Taung		
+ZA::upington	Upington		
+ZA::velddrif	Velddrif		
+ZA::ventersburg	Ventersburg		
+ZA::vredefort	Vredefort		
+ZA::wakkerstroom	Wakkerstroom		
+ZA::welgevonden	Welgevonden		

@@ -56,6 +56,14 @@ async function initRouteBuilder(params) {
     maxKm: parseInt(params.get('maxKm')) || 200,
     detour: parseInt(params.get('detour')) || 30,
     days: parseInt(params.get('days')) || 7,
+    // Nombre d'étapes souhaité (param URL "steps", optionnel).
+    // Convention : étapes = villes où l'on s'arrête, HORS départ et arrivée.
+    // S'il est fourni, il PRIME sur maxKm : maxKm devient indicatif et les
+    // dépassements sont signalés dans la modale de compromis.
+    targetSteps: (function(){
+      var v = parseInt(params.get('steps'));
+      return (!isNaN(v) && v > 0) ? v : null;
+    })(),
     loop: isLoopMode,
     excludePlaces: ((params.get('excludePlaces') || params.get('exclude') || '').split(',').filter(Boolean)),
     // Zone optionnelle (mode Circuit) : polygone dessiné à main levée
@@ -102,8 +110,11 @@ async function initRouteBuilder(params) {
   const directDistance = _haversine(config.start.lat, config.start.lon, config.end.lat, config.end.lon);
   
   // === BOUCLE PRINCIPALE : vérifier faisabilité avant de lancer ===
+  // Si l'utilisateur a fixé un nombre d'étapes, il prime sur maxKm :
+  // on ne bloque pas ici, les dépassements seront signalés dans la
+  // modale de compromis après génération.
   let loopCount = 0;
-  while (true) {
+  while (!config.targetSteps) {
     loopCount++;
     if (loopCount > 10) {
       break;
@@ -424,9 +435,23 @@ async function selectStepsAlongRoute(config, routeData, places) {
   // Nombre d'étapes max : on respecte la contrainte maxKm comme un
   // PLAFOND (jamais plus de maxKm entre 2 étapes), mais on ne s'en
   // sert plus comme cible de marche.
-  const minStepsNeeded = Math.ceil(totalDist / maxKm);
-  const maxStepsPossible = Math.max(2, days - 1);
-  const targetSteps = Math.max(minStepsNeeded, Math.min(days - 1, maxStepsPossible));
+  // Si l'utilisateur a fixé un nombre d'étapes (param URL "steps"),
+  // ce nombre PRIME sur maxKm. Seule borne dure : 1 nuit minimum par
+  // lieu (départ + étapes), donc au plus days - 1 étapes intermédiaires.
+  let targetSteps;
+  if (config.targetSteps) {
+    targetSteps = Math.min(config.targetSteps, Math.max(1, days - 1));
+    if (targetSteps < config.targetSteps) {
+      config._stepsCapped = { requested: config.targetSteps, got: targetSteps, days: days };
+      console.log(`[ROUTE-BUILDER] ⚠️ ${config.targetSteps} étapes demandées mais ${days} jours → plafonné à ${targetSteps}`);
+    } else {
+      console.log(`[ROUTE-BUILDER] 🎯 Nombre d'étapes imposé par l'utilisateur: ${targetSteps}`);
+    }
+  } else {
+    const minStepsNeeded = Math.ceil(totalDist / maxKm);
+    const maxStepsPossible = Math.max(2, days - 1);
+    targetSteps = Math.max(minStepsNeeded, Math.min(days - 1, maxStepsPossible));
+  }
 
   // Espacement moyen visé entre 2 étapes consécutives.
   // Exemple : 500 km, 6 tronçons → moyenne ≈ 83 km par étape.
@@ -442,7 +467,7 @@ async function selectStepsAlongRoute(config, routeData, places) {
   const maxSpacingNormal = avgSpacing * 1.3;
   const maxSpacingFb     = avgSpacing * 2.0; // fallback si rien trouvé
 
-  console.log(`[ROUTE-BUILDER] 🎯 Étapes visées: ${targetSteps} (min=${minStepsNeeded}, max=${maxStepsPossible})`);
+  console.log(`[ROUTE-BUILDER] 🎯 Étapes visées: ${targetSteps}${config.targetSteps ? ' (fixé par l\'utilisateur)' : ''}`);
   console.log(`[ROUTE-BUILDER] 📏 Moyenne ${avgSpacing.toFixed(0)}km — fenêtre [${minSpacing.toFixed(0)}-${maxSpacingNormal.toFixed(0)}km], fallback ${maxSpacingFb.toFixed(0)}km`);
   
   const steps = [{ ...start, nights: 1, isStart: true }];
@@ -825,13 +850,95 @@ async function enrichStepsWithORTData(steps, config) {
   return steps;
 }
 
+// ====================================================================
+// SORTIE STATIQUE — sauvegarde le voyage via ORT_STATE puis redirige
+// vers la page coquille custom.html (rendu magazine) au lieu de rester
+// sur roadtrip_detail.
+// Fallback : comportement historique (injection window.state) si
+// ORT_STATE est indisponible ou si la sauvegarde échoue.
+// Opt-out debug : noStatic=1 dans l'URL conserve l'ancien comportement.
+// Note : sans utilisateur connecté, ORT_STATE.saveTrip écrit en
+// localStorage et la coquille relit le localStorage (patch template-v3).
+// ====================================================================
+const STATIC_LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', pt: 'roteiros', it: 'itinerari', ar: 'masar' };
+
+async function saveAndRedirectToStatic(steps, itinerary, config, lang) {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('noStatic') === '1') return false;       // opt-out debug
+  if (urlParams.get('returnTo') === 'mobile') return false;  // le flux mobile garde la priorité
+  
+  if (!window.ORT_STATE || typeof window.ORT_STATE.saveTrip !== 'function') {
+    console.warn('[ROUTE-BUILDER] ORT_STATE indisponible → fallback roadtrip_detail');
+    return false;
+  }
+  
+  const totalNights = steps.reduce((sum, s) => sum + Math.round(s.nights || 0), 0);
+  let totalKm = 0;
+  for (let i = 1; i < steps.length; i++) {
+    totalKm += _haversine(steps[i-1].lat, steps[i-1].lon || steps[i-1].lng, steps[i].lat, steps[i].lon || steps[i].lng);
+  }
+  
+  const tripData = {
+    // id préfixé custom:: → saveTrip le détecte comme temporaire et génère un trip_xxx propre
+    id: 'custom::' + itinerary.itin_id,
+    title: itinerary.title,
+    cc: config.start.cc || (config.end && config.end.cc) || 'XX',
+    country: config.start.cc || (config.end && config.end.cc) || 'XX',
+    nights: totalNights,
+    kms: Math.round(totalKm),
+    saved: true, // visible dans le dashboard ; en anonyme saveTrip route quand même vers localStorage
+    _fromBuilder: true,
+    _isLoop: !!itinerary._isLoop,
+    _builderConfig: config,
+    steps: steps.map((s, i) => {
+      const nx = steps[i + 1] || null;
+      return {
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng || s.lon,
+        lon: s.lng || s.lon,
+        nights: Math.round(s.nights || 0),
+        description: s.description || '',
+        images: s.photos || s.images || [],
+        photos: s.photos || s.images || [],
+        visits: s.visits || [],
+        activities: s.activities || [],
+        place_id: s.place_id || null,
+        cc: s.cc || config.start.cc || '',
+        to_next_leg: nx ? {
+          destination: nx.name,
+          distance_km: Math.round(_haversine(s.lat, s.lon || s.lng, nx.lat, nx.lon || nx.lng)),
+          duration_min: null
+        } : null
+      };
+    })
+  };
+  
+  try {
+    const res = await window.ORT_STATE.saveTrip(tripData);
+    if (!res || !res.success || !res.tripId) {
+      console.warn('[ROUTE-BUILDER] saveTrip a échoué → fallback roadtrip_detail', res);
+      return false;
+    }
+    const folder = STATIC_LANG_FOLDERS[lang] || STATIC_LANG_FOLDERS.en;
+    const url = '/' + folder + '/custom.html?tripId=' + encodeURIComponent(res.tripId) + '&lang=' + lang;
+    console.log('[ROUTE-BUILDER] ✅ Voyage sauvegardé (' + res.storage + '), redirection statique: ' + url);
+    window.location.href = url;
+    return true;
+  } catch (e) {
+    console.warn('[ROUTE-BUILDER] Erreur sauvegarde statique:', e);
+    return false;
+  }
+}
+
 // Générer l'itinéraire final et l'injecter dans l'interface
-function generateBuilderItinerary(steps, config, lang) {
+async function generateBuilderItinerary(steps, config, lang) {
   console.log('[ROUTE-BUILDER] 🎯 generateBuilderItinerary appelée');
   console.log(`[ROUTE-BUILDER] ${steps.length} étapes reçues: ${steps.map(s => s.name).join(' → ')}`);
   console.log(`[ROUTE-BUILDER] Jours demandés: ${config.days}`);
   
-  hideBuilderLoader();
+  // Le loader reste affiché : il sera masqué soit par la redirection
+  // statique, soit explicitement dans le chemin fallback ci-dessous.
   
   // === CALCUL INTELLIGENT DES NUITS ===
   // 7 jours = 7 nuits max
@@ -918,6 +1025,13 @@ function generateBuilderItinerary(steps, config, lang) {
   };
   
   console.log(`[ROUTE-BUILDER] ✅ Itinéraire créé: "${itinerary.title}" (${daysPlan.length} jours)`);
+  
+  // === SORTIE STATIQUE (prioritaire) ===
+  const redirectedToStatic = await saveAndRedirectToStatic(steps, itinerary, config, lang);
+  if (redirectedToStatic) return;
+  
+  // === FALLBACK : comportement historique (roadtrip_detail) ===
+  hideBuilderLoader();
   
   // Injecter dans l'interface de roadtrip_detail
   if (typeof window.loadItineraryFromBuilder === 'function') {
@@ -1422,7 +1536,21 @@ function selectStepsForLoop(config, places, searchRadius) {
   // Distance moyenne entre 2 étapes consécutives = périmètre / étapes.
   // On accepte une fenêtre [0.5x, 1.5x] de cette moyenne pour respirer.
   const targetPerimeter = maxKm * days;
-  const targetSteps = Math.max(3, Math.min(days, 10));
+  // Si l'utilisateur a fixé un nombre d'étapes (param URL "steps"), il prime.
+  // Convention identique au mode A→B : étapes = villes hors point de départ.
+  // Borne dure : au plus days - 1 (1 nuit minimum par étape + le départ).
+  let targetSteps;
+  if (config.targetSteps) {
+    targetSteps = Math.max(1, Math.min(config.targetSteps, Math.max(1, days - 1)));
+    if (targetSteps < config.targetSteps) {
+      config._stepsCapped = { requested: config.targetSteps, got: targetSteps, days: days };
+      console.log(`[ROUTE-BUILDER] ⚠️ ${config.targetSteps} étapes demandées mais ${days} jours → plafonné à ${targetSteps}`);
+    } else {
+      console.log(`[ROUTE-BUILDER] 🎯 Nombre d'étapes imposé par l'utilisateur: ${targetSteps}`);
+    }
+  } else {
+    targetSteps = Math.max(3, Math.min(days, 10));
+  }
   const avgSpacing = targetPerimeter / (targetSteps + 1); // +1 car le départ compte
   const minSpacing = avgSpacing * 0.5;
   const maxSpacing = avgSpacing * 1.5;
@@ -1730,8 +1858,9 @@ function selectStepsForLoop(config, places, searchRadius) {
 }
 
 // Générer l'itinéraire pour le mode circuit
-function generateLoopItinerary(steps, config, lang) {
-  hideBuilderLoader();
+async function generateLoopItinerary(steps, config, lang) {
+  // Le loader reste affiché : il sera masqué soit par la redirection
+  // statique, soit explicitement dans le chemin fallback ci-dessous.
   
   const t = (key) => {
     const texts = {
@@ -1809,6 +1938,13 @@ function generateLoopItinerary(steps, config, lang) {
   window._loopUsedPlacesWithRating = itinerary._usedPlacesWithRating;
   
   console.log(`[ROUTE-BUILDER] 📋 Itinéraire généré: "${title}", ${totalNights} nuits, ${steps.length} étapes`);
+  
+  // === SORTIE STATIQUE (prioritaire) ===
+  const redirectedToStatic = await saveAndRedirectToStatic(steps, itinerary, config, lang);
+  if (redirectedToStatic) return;
+  
+  // === FALLBACK : comportement historique (roadtrip_detail) ===
+  hideBuilderLoader();
   
   // Injecter dans l'interface
   if (typeof window.loadItineraryFromBuilder === 'function') {
@@ -2471,6 +2607,14 @@ const COMPROMISES_I18N = {
     pt: 'Zona demasiado grande para {max} km/etapa: seriam necessárias {needed} em vez de {got}',
     ar: 'المنطقة كبيرة جدًا لـ {max} كم/مرحلة: نحتاج {needed} بدلاً من {got}'
   },
+  stepsRequested: {
+    fr: 'Vous avez demandé {requested} étapes, mais {days} jours ne permettent que {got} (1 nuit minimum par étape)',
+    en: 'You asked for {requested} stops, but {days} days only allow {got} (1 night minimum per stop)',
+    it: 'Hai chiesto {requested} tappe, ma {days} giorni ne consentono solo {got} (minimo 1 notte per tappa)',
+    es: 'Pediste {requested} etapas, pero {days} días solo permiten {got} (mínimo 1 noche por etapa)',
+    pt: 'Pediu {requested} etapas, mas {days} dias só permitem {got} (mínimo 1 noite por etapa)',
+    ar: 'طلبت {requested} مراحل، لكن {days} أيام تسمح بـ {got} فقط (ليلة واحدة على الأقل لكل مرحلة)'
+  },
   outOfZone: {
     fr: '{n} étape(s) placée(s) hors de la zone que vous avez dessinée',
     en: '{n} stop(s) placed outside the area you drew',
@@ -2537,6 +2681,16 @@ function collectBuilderCompromises(steps, config, zoneInfo) {
     compromises.push({ type: 'outOfZone', n: zoneInfo.outCount });
   }
   
+  // 4) Nombre d'étapes demandé par l'utilisateur mais plafonné par les jours
+  if (config._stepsCapped) {
+    compromises.push({
+      type: 'stepsRequested',
+      requested: config._stepsCapped.requested,
+      got: config._stepsCapped.got,
+      days: config._stepsCapped.days
+    });
+  }
+  
   return compromises;
 }
 
@@ -2567,6 +2721,7 @@ function showCompromisesModalIfAny(steps, config, zoneInfo, lang) {
   const lines = compromises.map(c => {
     if (c.type === 'distance') return tr('distance', { n: c.n, max: c.max, worst: c.worst });
     if (c.type === 'stepsCap') return tr('stepsCap', { max: c.max, needed: c.needed, got: c.got });
+    if (c.type === 'stepsRequested') return tr('stepsRequested', { requested: c.requested, got: c.got, days: c.days });
     if (c.type === 'outOfZone') return tr('outOfZone', { n: c.n });
     return '';
   }).filter(Boolean);

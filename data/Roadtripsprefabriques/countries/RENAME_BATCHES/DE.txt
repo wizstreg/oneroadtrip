@@ -1,0 +1,168 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "DE" → la langue locale (de) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays DE)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+DE::augsbourg	Augsbourg		
+DE::augsburg	Augsburg		
+DE::bacharach	Bacharach		
+DE::bad-hersfeld	Bad Hersfeld	Bad Hersfeld	Bad Hersfeld
+DE::bad-homburg	Bad Homburg	Bad Homburg vor der Höhe	Bad Homburg vor der Höhe
+DE::bad-koesen	Bad Koesen		
+DE::bad-langensalza	Bad Langensalza	Bad Langensalza	Bad Langensalza
+DE::baden-baden	Baden Baden	Baden-Baden	Baden-Baden
+DE::bamberg	Bamberg		
+DE::bastei	Bastei	Bastei	Bastei
+DE::bautzen	Bautzen	Bautzen	Bautzen
+DE::berchtesgaden	Berchtesgaden		
+DE::berlin	Berlin		
+DE::blaubeuren	Blaubeuren		
+DE::bremen	Bremen		
+DE::brocken	Brocken		
+DE::celle	Celle		
+DE::chemnitz	Chemnitz	Chemnitz	Chemnitz
+DE::cochem	Cochem	Cochem	Cochem
+DE::cologne	Cologne		
+DE::dahn	Dahn		
+DE::darmstadt	Darmstadt	Darmstadt	Darmstadt
+DE::dessau	Dessau		
+DE::dinkelsbuehl	Dinkelsbuehl		
+DE::dresden	Dresden		
+DE::dusseldorf	Dusseldorf		
+DE::east-frisian-islands	East Frisian Islands		
+DE::eisenach	Eisenach	Eisenach	Eisenach
+DE::emden	Emden		
+DE::erfurt	Erfurt	Erfurt	Erfurt
+DE::esslingen	Esslingen		
+DE::frankfurt	Frankfurt		
+DE::freiburg	Freiburg		
+DE::freudenstadt	Freudenstadt		
+DE::fussen	Fussen	Füssen	Füssen
+DE::garmisch-partenkirchen	Garmisch Partenkirchen	Garmisch-Partenkirchen	Garmisch-Partenkirchen
+DE::gera	Gera		
+DE::goettingen	Goettingen		
+DE::gorlitz	Gorlitz	Görlitz	Görlitz
+DE::goslar	Goslar		
+DE::gutach	Gutach		
+DE::hainich	Hainich	Hainich	Hainich
+DE::halberstadt	Halberstadt		
+DE::halle	Halle		
+DE::hamburg	Hamburg		
+DE::hamelin	Hamelin		
+DE::hameln	Hameln		
+DE::hannover	Hannover		
+DE::harz	Harz		
+DE::hechingen	Hechingen		
+DE::heidelberg	Heidelberg		
+DE::hildesheim	Hildesheim		
+DE::hohenschwangau	Hohenschwangau	Hohenschwangau	Hohenschwangau
+DE::hohenwarte	Hohenwarte	Hohenwarte	Hohenwarte
+DE::jena	Jena	Jena	Jena
+DE::kassel	Kassel	Kassel	Kassel
+DE::kellerwald-edersee	Kellerwald Edersee	Kellerwald-Edersee National Park	Nationalpark Kellerwald-Edersee
+DE::kochel-am-see	Kochel Am See		
+DE::konigstein	Konigstein		
+DE::konstanz	Konstanz		
+DE::kuehlungsborn	Kuehlungsborn	Kühlungsborn	Kühlungsborn
+DE::leipzig	Leipzig	Leipzig	Leipzig
+DE::lindau	Lindau	Lindau	Lindau (Bodensee)
+DE::lorsch	Lorsch	Lorsch	Lorsch
+DE::lueneburg	Lueneburg		
+DE::lutherstadt-wittenberg	Lutherstadt Wittenberg		
+DE::magdebourg	Magdebourg		
+DE::meissen	Meissen	Meissen	Meißen
+DE::monschau	Monschau	Monschau	Monschau
+DE::moritzburg	Moritzburg		
+DE::munich	Munich		
+DE::neuruppin	Neuruppin	Neuruppin	Neuruppin
+DE::nuremberg	Nuremberg		
+DE::oberammergau	Oberammergau		
+DE::osnabrueck	Osnabrueck		
+DE::passau	Passau		
+DE::pillnitz	Pillnitz	Pillnitz	Pillnitz
+DE::pirna	Pirna	Pirna	Pirna
+DE::plau-am-see	Plau Am See	Plau am See	Plau am See
+DE::prien-am-chiemsee	Prien Am Chiemsee	Prien am Chiemsee	Prien am Chiemsee
+DE::quedlinburg	Quedlinburg		
+DE::radebeul	Radebeul		
+DE::ratisbonne	Ratisbonne		
+DE::riedlhuette	Riedlhuette		
+DE::rostock	Rostock	Rostock	Rostock
+DE::rothenburg-ob-der-tauber	Rothenburg Ob Der Tauber	Rothenburg ob der Tauber	Rothenburg ob der Tauber
+DE::rust	Rust		
+DE::saalfeld	Saalfeld	Saalfeld	Saalfeld/Saale
+DE::salzwedel	Salzwedel		
+DE::sassnitz	Sassnitz	Sassnitz	Sassnitz
+DE::schluchsee	Schluchsee		
+DE::schoenau-am-koenigssee	Schoenau Am Koenigssee	Schönau am Königsee	Schönau am Königssee
+DE::schoenebeck	Schoenebeck		
+DE::schotten-vogelsberg	Schotten Vogelsberg		Vogelsbergstraße
+DE::schwaebisch-hall	Schwaebisch Hall		
+DE::schwerin	Schwerin	Schwerin	Schwerin
+DE::schwetzingen	Schwetzingen		
+DE::seiffen	Seiffen	Seiffen/Erzgeb.	Seiffen/Erzgebirge
+DE::seitenroda	Seitenroda	Seitenroda	Seitenroda
+DE::soltau	Soltau		
+DE::sonnenbuehl	Sonnenbuehl	Sonnenbühl	Sonnenbühl
+DE::speyer	Speyer		
+DE::stade	Stade		
+DE::stendal	Stendal		
+DE::stolberg	Stolberg		
+DE::stralsund	Stralsund		
+DE::tangermuende	Tangermuende		
+DE::tegernsee	Tegernsee		
+DE::thale	Thale		
+DE::titisee	Titisee		
+DE::triberg	Triberg	Triberg im Schwarzwald	Triberg im Schwarzwald
+DE::trier	Trier	Trier	Trier
+DE::tubingen	Tubingen		
+DE::uhlstadt-kirchhasel	Uhlstadt Kirchhasel	Uhlstädt-Kirchhasel	Uhlstädt-Kirchhasel
+DE::weimar	Weimar	Weimar	Weimar
+DE::wernigerode	Wernigerode		
+DE::wiesbaden	Wiesbaden	Wiesbaden	Wiesbaden
+DE::woerlitz	Woerlitz		
+DE::wolfsburg	Wolfsburg		
+DE::wurtzbourg	Wurtzbourg		
+DE::wurzburg	Wurzburg	Würzburg	Würzburg

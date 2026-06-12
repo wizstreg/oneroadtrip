@@ -1,0 +1,311 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "IT" → la langue locale (it) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays IT, partie 2/2)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+IT::montecatini-terme	Montecatini Terme		
+IT::montecosaro	Montecosaro		
+IT::montefabbri	Montefabbri		
+IT::montefalco	Montefalco	Montefalco	Montefalco
+IT::montefiascone	Montefiascone	Montefiascone	Montefiascone
+IT::montefiore-dellaso	Montefiore Dellaso		
+IT::montegrotto-terme	Montegrotto Terme		
+IT::montelupone	Montelupone		
+IT::monteprandone	Monteprandone		
+IT::montepulciano	Montepulciano	Montepulciano	Montepulciano
+IT::monterchi	Monterchi		
+IT::monteriggioni	Monteriggioni	Monteriggioni	Monteriggioni
+IT::montopoli-in-val-darno	Montopoli In Val Darno		
+IT::morano-calabro	Morano Calabro		
+IT::moresco	Moresco		
+IT::morro-dalba	Morro Dalba		
+IT::muggia	Muggia	Muggia	Muggia
+IT::napoli	Napoli		
+IT::nardo	Nardo		
+IT::narni	Narni	Narni	Narni
+IT::navelli	Navelli		
+IT::nebrodi	Nebrodi		
+IT::neive	Neive		
+IT::nemi	Nemi	Nemi	Nemi
+IT::nerola	Nerola		
+IT::noale	Noale		
+IT::noto	Noto		
+IT::nove	Nove		
+IT::nuoro	Nuoro		
+IT::offagna	Offagna		
+IT::offida	Offida		
+IT::olbia	Olbia		
+IT::olgiasca	Olgiasca		
+IT::oliena	Oliena		
+IT::opi	Opi		
+IT::orgosolo	Orgosolo		
+IT::oria	Oria		
+IT::oristano	Oristano	Province of Oristano	Oristano
+IT::orosei	Orosei		
+IT::orsara-di-puglia	Orsara Di Puglia		
+IT::orta-san-giulio	Orta San Giulio	Orta San Giulio	Orta San Giulio
+IT::ortisei	Ortisei	Urtijëi	Ortisei
+IT::orvieto	Orvieto	Orvieto	Orvieto
+IT::ostana	Ostana		
+IT::ostuni	Ostuni	Ostuni	Ostuni
+IT::otranto	Otranto	Otranto	Otranto
+IT::pacentro	Pacentro		
+IT::padova	Padova	Province of Padua	Padova
+IT::paestum	Paestum	Paestum railway station	stazione di Paestum
+IT::palaia	Palaia		
+IT::palena	Palena		
+IT::palermo	Palermo		
+IT::palestrina	Palestrina	Palestrina	Palestrina
+IT::palinuro	Palinuro		
+IT::palmanova	Palmanova	Palmanova	Palmanova
+IT::palmi	Palmi	Palmi	Palmi
+IT::panarea	Panarea		
+IT::pantelleria	Pantelleria		
+IT::pantheon	Pantheon	Pantheon	Pantheon
+IT::parco-maremma	Parco Maremma		
+IT::parma	Parma		
+IT::parme	Parme		
+IT::passariano	Passariano		
+IT::peccioli	Peccioli		
+IT::penne	Penne	Penne	Penne
+IT::pergola	Pergola		
+IT::pesariis	Pesariis		
+IT::pescara	Pescara		
+IT::pescasseroli	Pescasseroli		
+IT::peschici	Peschici		
+IT::peschiera-del-garda	Peschiera Del Garda	Peschiera del Garda	Peschiera del Garda
+IT::pescia	Pescia	Pescia	Pescia
+IT::pescocostanzo	Pescocostanzo		
+IT::petritoli	Petritoli		
+IT::pettorano-sul-gizio	Pettorano Sul Gizio		
+IT::piacenza	Piacenza	Province of Piacenza	provincia di Piacenza
+IT::piancastagnaio	Piancastagnaio		
+IT::piazza-armerina	Piazza Armerina		
+IT::piazza-di-spagna	Piazza Di Spagna		
+IT::piazza-navona	Piazza Navona		
+IT::piazza-venezia	Piazza Venezia		
+IT::piazzola-sul-brenta	Piazzola Sul Brenta		
+IT::picinisco	Picinisco		
+IT::pienza	Pienza	Pienza	Pienza
+IT::pietra-di-bismantova	Pietra Di Bismantova		
+IT::pietracamela	Pietracamela		
+IT::pietrasanta	Pietrasanta	Pietrasanta	Pietrasanta
+IT::piglio	Piglio		
+IT::pisa	Pisa		
+IT::pistoia	Pistoia	Province of Pistoia	provincia di Pistoia
+IT::pitigliano	Pitigliano	Pitigliano	Pitigliano
+IT::pizzo	Pizzo	Pizzo	Pizzo
+IT::pizzo-calabro	Pizzo Calabro		
+IT::poggio-a-caiano	Poggio A Caiano	Poggio a Caiano	Poggio a Caiano
+IT::polignano-a-mare	Polignano A Mare	Polignano a Mare	Polignano a Mare
+IT::pomaia	Pomaia		
+IT::pont-saint-martin	Pont Saint Martin		
+IT::pontremoli	Pontremoli		
+IT::ponza	Ponza	Ponza	Ponza
+IT::poppi	Poppi	Poppi	Poppi
+IT::porlezza	Porlezza		
+IT::porretta-terme	Porretta Terme		
+IT::porto-cervo	Porto Cervo		
+IT::porto-ercole	Porto Ercole		
+IT::porto-selvaggio	Porto Selvaggio	Parco naturale regionale Porto Selvaggio e Palude del Capitano	parco naturale regionale Porto Selvaggio e Palude del Capitano
+IT::portovenere	Portovenere		
+IT::positano	Positano	Positano	Positano
+IT::praia-a-mare	Praia A Mare		
+IT::prato	Prato	Province of Prato	provincia di Prato
+IT::pratolino	Pratolino		
+IT::pretoro	Pretoro		
+IT::priverno	Priverno		
+IT::procida	Procida		
+IT::pula	Pula		
+IT::putignano	Putignano		
+IT::radda-in-chianti	Radda In Chianti	Radda in Chianti	Radda in Chianti
+IT::radicofani	Radicofani	Radicofani	Radicofani
+IT::ragusa	Ragusa		
+IT::rapolano-terme	Rapolano Terme		
+IT::rasiglia	Rasiglia		
+IT::rassa	Rassa		
+IT::ravenne	Ravenne		
+IT::reggio-calabria	Reggio Calabria		
+IT::rieti	Rieti	Province of Rieti	provincia di Rieti
+IT::rimini	Rimini		
+IT::riomaggiore	Riomaggiore		
+IT::riva-del-garda	Riva Del Garda		
+IT::rocca-di-papa	Rocca Di Papa		
+IT::rocca-san-giovanni	Rocca San Giovanni	Rocca San Giovanni	Rocca San Giovanni
+IT::roma	Roma		
+IT::ronciglione	Ronciglione		
+IT::rosazza	Rosazza		
+IT::rotonda	Rotonda		
+IT::rovigo	Rovigo	Province of Rovigo	Rovigo
+IT::sabbioneta	Sabbioneta		
+IT::sacile	Sacile	Sacile	Sacile
+IT::salerno	Salerno		
+IT::salina	Salina		
+IT::saludecio	Saludecio		
+IT::saluzzo	Saluzzo		
+IT::san-casciano-bagni	San Casciano Bagni		
+IT::san-daniele-del-friuli	San Daniele Del Friuli	San Daniele del Friuli	San Daniele del Friuli
+IT::san-felice-circeo	San Felice Circeo	San Felice Circeo	San Felice Circeo
+IT::san-fruttuoso	San Fruttuoso	San Fruttuoso	San Fruttuoso
+IT::san-gimignano	San Gimignano	San Gimignano	San Gimignano
+IT::san-ginesio	San Ginesio		
+IT::san-giovanni-in-fiore	San Giovanni In Fiore		
+IT::san-leo	San Leo	San Leo	San Leo
+IT::san-luigi-dei-francesi	San Luigi Dei Francesi	Church of Saint Louis the French	chiesa di San Luigi dei Francesi
+IT::san-marcello-piteglio	San Marcello Piteglio		
+IT::san-marino	San Marino		
+IT::san-marino-di-bentivoglio	San Marino Di Bentivoglio		
+IT::san-miniato	San Miniato	San Miniato	San Miniato
+IT::san-quirico-orcia	San Quirico Orcia		
+IT::san-vito-lo-capo	San Vito Lo Capo		
+IT::sanremo	Sanremo	Sanremo	Sanremo
+IT::sansepolcro	Sansepolcro	Sansepolcro	Sansepolcro
+IT::sant-agata-de-goti	Sant Agata De Goti	Sant'Agata de' Goti	Sant'Agata de' Goti
+IT::santa-cecilia-trastevere	Santa Cecilia Trastevere	Santa Cecilia in Trastevere	basilica di Santa Cecilia in Trastevere
+IT::santa-fiora	Santa Fiora		
+IT::santa-margherita-ligure	Santa Margherita Ligure	Santa Margherita Ligure	Santa Margherita Ligure
+IT::santa-severina	Santa Severina		
+IT::santa-teresa-gallura	Santa Teresa Gallura	Santa Teresa Gallura	Santa Teresa Gallura
+IT::santarcangelo-di-romagna	Santarcangelo Di Romagna	Santarcangelo di Romagna	Santarcangelo di Romagna
+IT::santo-stefano-di-sessanio	Santo Stefano Di Sessanio	Santo Stefano di Sessanio	Santo Stefano di Sessanio
+IT::sardara	Sardara		
+IT::sarnano	Sarnano		
+IT::sarteano	Sarteano		
+IT::sassari	Sassari	Sassari	Sassari
+IT::saturnia	Saturnia		
+IT::scalea	Scalea		
+IT::scanno	Scanno	Scanno	Scanno
+IT::scarperia	Scarperia		
+IT::scilla	Scilla	Scilla	Scilla
+IT::selinunte	Selinunte		
+IT::senigallia	Senigallia		
+IT::sermoneta	Sermoneta		
+IT::serravalle-pistoiese	Serravalle Pistoiese	Serravalle Pistoiese	Serravalle Pistoiese
+IT::servigliano	Servigliano		
+IT::sgonico	Sgonico		
+IT::siena	Siena		
+IT::siena-centro-storico	Siena Centro Storico		
+IT::siracusa	Siracusa		
+IT::sirmione	Sirmione	Sirmione	Sirmione
+IT::sirolo	Sirolo		
+IT::sistiana	Sistiana		
+IT::soncino	Soncino	Soncino	Soncino
+IT::sorano	Sorano		
+IT::sorrento	Sorrento	Sorrento	Sorrento
+IT::sovicille	Sovicille		
+IT::spello	Spello	Spello	Spello
+IT::sperlonga	Sperlonga	Sperlonga	Sperlonga
+IT::spiaggia-di-sansone	Spiaggia Di Sansone	Spiaggia Di Sansone	spiaggia di Sansone
+IT::spilimbergo	Spilimbergo	Spilimbergo	Spilimbergo
+IT::stia	Stia		
+IT::stilo	Stilo		
+IT::stintino	Stintino	Stintino	Stintino
+IT::stra	Stra		
+IT::stresa	Stresa	Stresa	Stresa
+IT::stromboli	Stromboli		
+IT::subiaco	Subiaco	Subiaco	Subiaco
+IT::sulmona	Sulmona		
+IT::sutri	Sutri		
+IT::tagliacozzo	Tagliacozzo	Tagliacozzo	Tagliacozzo
+IT::taormina	Taormina	Taormina	Taormina
+IT::taranto	Taranto		
+IT::tarquinia	Tarquinia	Tarquinia	Tarquinia
+IT::telese-terme	Telese Terme	Telese Terme	Telese Terme
+IT::tempio-pausania	Tempio Pausania		
+IT::terminillo	Terminillo	Monte Terminillo	Monte Terminillo
+IT::termoli	Termoli		
+IT::terricciola	Terricciola		
+IT::tivoli	Tivoli	Tivoli	Tivoli
+IT::torino	Torino		
+IT::torre-dell-orso	Torre Dell Orso		
+IT::torrechiara	Torrechiara	Torrechiara	Torrechiara
+IT::tortoli	Tortoli		
+IT::trani	Trani		
+IT::trapani	Trapani		
+IT::trastevere	Trastevere	Trastevere	Trastevere
+IT::treia	Treia		
+IT::trento	Trento	Trento	Trento
+IT::treviso	Treviso	Province of Treviso	Treviso
+IT::tricase	Tricase		
+IT::trieste-miramare	Trieste Miramare		
+IT::tropea	Tropea	Tropea	Tropea
+IT::tuscania	Tuscania	Tuscania	Tuscania
+IT::udine	Udine	Udine	Udine
+IT::urbino	Urbino		
+IT::vada	Vada	Vada	Vada
+IT::valdobbiadene	Valdobbiadene	Valdobbiadene	Valdobbiadene
+IT::vallombrosa	Vallombrosa		
+IT::varallo	Varallo		
+IT::varano-de-melegari	Varano De Melegari		
+IT::varenna	Varenna	Varenna	Varenna
+IT::vasto	Vasto		
+IT::venafro	Venafro	Venafro	Venafro
+IT::venezia	Venezia		
+IT::venosa	Venosa		
+IT::venzone	Venzone	Venzone	Venzone
+IT::verbania	Verbania		
+IT::veroli	Veroli	Veroli	Veroli
+IT::verona	Verona		
+IT::verucchio	Verucchio	Verucchio	Verucchio
+IT::vetralla	Vetralla		
+IT::vetulonia	Vetulonia		
+IT::via-dei-condotti	Via Dei Condotti	via Condotti	via dei Condotti
+IT::vicchio	Vicchio		
+IT::vicenza	Vicenza	Province of Vicenza	Vicenza
+IT::vico-del-gargano	Vico Del Gargano		
+IT::vicopisano	Vicopisano	Vicopisano	Vicopisano
+IT::vieste	Vieste		
+IT::vigoleno	Vigoleno	Vigoleno	Vigoleno
+IT::villa-rotonda	Villa Rotonda		
+IT::villasimius	Villasimius		
+IT::vinci	Vinci	Vinci	Vinci
+IT::visso	Visso		
+IT::viterbo	Viterbo	Province of Viterbo	provincia di Viterbo
+IT::vittorio-veneto	Vittorio Veneto	Vittorio Veneto	Vittorio Veneto
+IT::vogogna	Vogogna		
+IT::volpedo	Volpedo		
+IT::volterra	Volterra	Volterra	Volterra
+IT::vulcano	Vulcano		
+IT::zagarolo	Zagarolo		

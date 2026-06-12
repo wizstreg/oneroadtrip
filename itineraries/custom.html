@@ -253,8 +253,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
     ensureFirebase().then(function(){
     var unsub=firebase.auth().onAuthStateChanged(function(user){
       unsub();
-      if(!user){console.warn('[ORT-SHELL] Non connecte');return;}
-      window.ORT_STATE.init({user:user}).then(function(){
+      if(!user){console.log('[ORT-SHELL] Non connecte : lecture locale (localStorage)');}
+      window.ORT_STATE.init({user:user||null}).then(function(){
           console.log('[ORT-SHELL] tripId dans URL, chargement:',urlTripId);
           window.ORT_STATE.getTrip(urlTripId).then(function(trip){
             if(!trip||!trip.steps||!trip.steps.length){console.warn('[ORT-SHELL] Trip introuvable ou vide');return;}

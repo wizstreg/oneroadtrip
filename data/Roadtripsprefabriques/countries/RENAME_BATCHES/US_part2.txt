@@ -1,0 +1,263 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "US" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays US, partie 2/2)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+US::marfa	Marfa	Marfa	Marfa
+US::mariposa	Mariposa	Mariposa County	Mariposa County
+US::marquette-mi	Marquette Mi		
+US::mashantucket	Mashantucket		
+US::mccarthy-kennicott	Mccarthy Kennicott		
+US::mcgregor	Mcgregor		
+US::medicine-lodge	Medicine Lodge		
+US::medora	Medora		
+US::medora-nd	Medora Nd		
+US::mellen	Mellen		
+US::memphis	Memphis		
+US::miami	Miami	Miami	Miami
+US::michigan	Michigan		
+US::miles	Miles		
+US::milledgeville	Milledgeville		
+US::millinocket	Millinocket		
+US::milwaukee	Milwaukee		
+US::minneapolis	Minneapolis		
+US::missoula	Missoula	Missoula	Missoula
+US::missouri-valley	Missouri Valley		
+US::moab	Moab	Moab	Moab
+US::mobile	Mobile		
+US::mobridge-sd	Mobridge Sd		
+US::monroeville	Monroeville		
+US::monterey	Monterey	Monterey County	Monterey County
+US::montgomery	Montgomery		
+US::montrose-co	Montrose Co		
+US::mount-magazine	Mount Magazine		
+US::mount-nebo	Mount Nebo		
+US::mount-rainier	Mount Rainier	Mount Rainier	Mount Rainier
+US::mountain-view-ar	Mountain View Ar		
+US::munising	Munising	Munising	Munising
+US::murfreesboro	Murfreesboro		
+US::myrtle-beach	Myrtle Beach		
+US::mystic	Mystic		
+US::nags-head-nc	Nags Head Nc		
+US::nantucket	Nantucket		
+US::napa-valley	Napa Valley		
+US::napoli	Napoli		
+US::nashville	Nashville		
+US::natchez	Natchez	Natchez	Natchez
+US::natchez-ms	Natchez Ms		
+US::natchitoches	Natchitoches		
+US::new-glarus	New Glarus		
+US::new-haven	New Haven		
+US::new-iberia	New Iberia	New Iberia	New Iberia
+US::new-orleans	New Orleans		
+US::new-york	New York		
+US::newport	Newport	Newport	Newport
+US::niagara-falls	Niagara Falls	Niagara Falls	Niagara Falls
+US::north-platte	North Platte		
+US::oakhurst	Oakhurst	Oakhurst	Oakhurst
+US::oakland	Oakland		
+US::oakley	Oakley		
+US::ocala	Ocala		
+US::ohiopyle	Ohiopyle		
+US::okefenokee	Okefenokee		
+US::oklahoma	Oklahoma		
+US::okoboji	Okoboji		
+US::omaha	Omaha	Omaha	Omaha
+US::orange	Orange		
+US::orlando	Orlando	Orlando	Orlando
+US::padre-island	Padre Island		
+US::page	Page	Page County	Page County
+US::palm-springs	Palm Springs	Palm Springs	Palm Springs
+US::palo-duro-canyon	Palo Duro Canyon		
+US::panama-city-beach	Panama City Beach		
+US::park	Park		
+US::pawleys-island	Pawleys Island		
+US::pecos	Pecos		
+US::pella	Pella	Pella	Pella
+US::pensacola	Pensacola	Pensacola	Pensacola
+US::petit-jean	Petit Jean		
+US::philadelphia	Philadelphia	Philadelphia	Philadelphia
+US::phoenix	Phoenix	Phoenix	Phoenix
+US::pierre	Pierre		
+US::pigeon-forge	Pigeon Forge	Pigeon Forge	Pigeon Forge
+US::pinedale-wy	Pinedale Wy		
+US::pinnacle-mountain	Pinnacle Mountain		
+US::pittsburgh	Pittsburgh		
+US::porcupine-mountains	Porcupine Mountains		
+US::port-alsworth	Port Alsworth		
+US::port-angeles	Port Angeles	Port Angeles	Port Angeles
+US::port-st-joe	Port St Joe		
+US::portland	Portland	Portland	Portland
+US::portsmouth-nh	Portsmouth Nh		
+US::providence-canyon	Providence Canyon		
+US::providence-ri	Providence Ri		
+US::raleigh-nc	Raleigh Nc		
+US::rangeley	Rangeley		
+US::rapid	Rapid		
+US::rawlins	Rawlins		
+US::redding	Redding	Redding	Redding
+US::redwood	Redwood		
+US::reno	Reno	Reno	Reno
+US::richmond-va	Richmond Va		
+US::rochester	Rochester	City of Rochester	City of Rochester
+US::rock-harbor-isle-royale	Rock Harbor Isle Royale		
+US::rockford	Rockford		
+US::rockport-tx	Rockport Tx		
+US::roswell	Roswell		
+US::roxboro	Roxboro		
+US::sabbathday-lake-me	Sabbathday Lake Me		
+US::sacramento	Sacramento		
+US::saint-paul	Saint Paul		
+US::salem	Salem		
+US::salina	Salina		
+US::salt-flat	Salt Flat		
+US::salt-lake	Salt Lake		
+US::salton	Salton		
+US::san-antonio	San Antonio		
+US::san-diego	San Diego		
+US::san-francisco	San Francisco		
+US::san-luis-obispo	San Luis Obispo	San Luis Obispo County	San Luis Obispo County
+US::sandusky	Sandusky		
+US::santa-barbara	Santa Barbara	Santa Barbara	Santa Barbara
+US::santa-cruz	Santa Cruz		
+US::santa-fe	Santa Fe	Santa Fe	Santa Fe
+US::santa-monica	Santa Monica		
+US::sarasota	Sarasota		
+US::saratoga	Saratoga		
+US::savannah	Savannah		
+US::scottsbluff	Scottsbluff		
+US::seaside	Seaside		
+US::seattle	Seattle		
+US::sedona	Sedona	Sedona	Sedona
+US::selma	Selma		
+US::seneca-rocks-wv	Seneca Rocks Wv		
+US::seward	Seward	Seward County	Seward County
+US::sheridan	Sheridan		
+US::shiprock	Shiprock		
+US::shreveport	Shreveport		
+US::sioux	Sioux		
+US::sioux-falls	Sioux Falls	Sioux Falls	Sioux Falls
+US::slab	Slab		
+US::sleeping-bear-dunes-empire	Sleeping Bear Dunes Empire		
+US::south-bend	South Bend	South Bend	South Bend
+US::south-padre-island	South Padre Island		
+US::spartanburg	Spartanburg		
+US::spirit-lake	Spirit Lake		
+US::spring-green	Spring Green		
+US::springdale	Springdale	Springdale	Springdale
+US::springer-mountain	Springer Mountain		
+US::springfield	Springfield		
+US::st-augustine	St Augustine	St. Augustine	St. Augustine
+US::st-charles-mo	St Charles Mo		
+US::st-francisville	St Francisville		
+US::st-ignace	St Ignace	St. Ignace	St. Ignace
+US::st-louis	St Louis	St. Louis	St. Louis
+US::st-petersburg	St Petersburg		
+US::st-simons-island	St Simons Island		
+US::stampede-trail	Stampede Trail		
+US::stanley	Stanley		
+US::steamboat-springs-co	Steamboat Springs Co		
+US::stillwater	Stillwater		
+US::stroud-route66	Stroud Route66		
+US::sturgeon-bay	Sturgeon Bay		
+US::supai	Supai		
+US::superior	Superior		
+US::talkeetna	Talkeetna	Talkeetna	Talkeetna
+US::tallahassee	Tallahassee	Tallahassee	Tallahassee
+US::tallulah-falls	Tallulah Falls		
+US::tampa	Tampa		
+US::taos	Taos	Taos	Taos
+US::temecula	Temecula		
+US::terlingua	Terlingua	Terlingua	Terlingua
+US::the-forks-me	The Forks Me		
+US::thermopolis	Thermopolis		
+US::three-rivers	Three Rivers	Three Rivers	Three Rivers
+US::toledo	Toledo		
+US::tombstone	Tombstone		
+US::topeka	Topeka		
+US::torrey	Torrey	Torrey	Torrey
+US::traverse	Traverse		
+US::trempealeau	Trempealeau		
+US::tucson	Tucson	Tucson	Tucson
+US::tucumcari	Tucumcari		
+US::tulsa	Tulsa		
+US::tusayan	Tusayan	Tusayan	Tusayan
+US::tuskegee	Tuskegee		
+US::twentynine-palms	Twentynine Palms	Twentynine Palms	Twentynine Palms
+US::twin-falls	Twin Falls		
+US::tybee-island	Tybee Island		
+US::vacherie	Vacherie		
+US::valdez	Valdez		
+US::valentine	Valentine		
+US::vicksburg	Vicksburg	Vicksburg	Vicksburg
+US::virginia	Virginia		
+US::virginia-beach-va	Virginia Beach Va		
+US::waco	Waco		
+US::wall-sd	Wall Sd		
+US::wamego	Wamego		
+US::washington-dc	Washington Dc		
+US::waynesville	Waynesville		
+US::wendover	Wendover		
+US::west-branch	West Branch		
+US::west-glacier	West Glacier	West Glacier	West Glacier
+US::west-palm-beach	West Palm Beach		
+US::white-sands	White Sands		
+US::whitefish	Whitefish	Whitefish	Whitefish
+US::wichita	Wichita		
+US::williamsburg-va	Williamsburg Va		
+US::williston	Williston		
+US::wilmington	Wilmington		
+US::wilson	Wilson		
+US::windsor-locks	Windsor Locks		
+US::winslow	Winslow		
+US::winterset	Winterset		
+US::wisconsin-dells	Wisconsin Dells		
+US::wolf-point-mt	Wolf Point Mt		
+US::yakima	Yakima	Yakima	Yakima
+US::yankton-sd	Yankton Sd		
+US::york	York		
+US::yosemite	Yosemite		
+US::yuma-colorado	Yuma Colorado		
+US::zanesville-oh	Zanesville Oh		

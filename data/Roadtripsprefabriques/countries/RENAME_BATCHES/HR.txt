@@ -1,0 +1,118 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "HR" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays HR)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+HR::bale	Bale		
+HR::baska	Baska	Baška	Baška
+HR::bol	Bol	Bol	Bol
+HR::brijuni	Brijuni		
+HR::buzet	Buzet		
+HR::cakovec	Cakovec		
+HR::cres	Cres	Cres	Cres
+HR::dakovo	Dakovo	Đakovo	Đakovo
+HR::dubrovnik	Dubrovnik		
+HR::durdevac	Durdevac		
+HR::fazana	Fazana	Fažana	Fažana
+HR::gracisce	Gracisce		
+HR::groznjan	Groznjan	Grožnjan	Grožnjan
+HR::hlebine	Hlebine		
+HR::hum	Hum		
+HR::hvar	Hvar		
+HR::ilok	Ilok	Ilok	Ilok
+HR::karlovac	Karlovac		
+HR::kastela	Kastela		
+HR::knin	Knin		
+HR::koprivnica	Koprivnica		
+HR::korcula	Korcula		
+HR::krapina	Krapina		
+HR::krk	Krk		
+HR::krka-inland	Krka Inland		
+HR::kumrovec	Kumrovec		
+HR::labin	Labin	Labin	Labin
+HR::lastovo	Lastovo		
+HR::lopar	Lopar		
+HR::lupoglav	Lupoglav		
+HR::mali-losinj	Mali Losinj		
+HR::mljet	Mljet	Mljet	Mljet
+HR::motovun	Motovun	Motovun	Motovun
+HR::nasice	Nasice		
+HR::nin	Nin	Nin	Nin
+HR::novigrad	Novigrad	Novigrad	Novigrad
+HR::opatija	Opatija	Opatija	Opatija
+HR::osijek	Osijek	Osijek	Osijek
+HR::pag	Pag		
+HR::pazin	Pazin		
+HR::pican	Pican		
+HR::plitvice	Plitvice	Plitvice street	Plitvice street
+HR::plomin	Plomin		
+HR::porec	Porec	Poreč	Poreč
+HR::pozega	Pozega		
+HR::primosten	Primosten	Primošten	Primošten
+HR::pula	Pula	Pula	Pula
+HR::rab	Rab		
+HR::rabac	Rabac		
+HR::rijeka	Rijeka		
+HR::rovinj	Rovinj	Rovinj	Rovinj
+HR::samobor	Samobor	Samobor	Samobor
+HR::sibenik	Sibenik	Šibenik	Šibenik
+HR::sisak	Sisak		
+HR::skradin	Skradin	Skradin	Skradin
+HR::slavonski-brod	Slavonski Brod		
+HR::split	Split		
+HR::starigrad-paklenica	Starigrad Paklenica		
+HR::svetvincenat	Svetvincenat		
+HR::trakoscan	Trakoscan		
+HR::trogir	Trogir	Trogir	Trogir
+HR::umag	Umag	Umag	Umag
+HR::varazdin	Varazdin		
+HR::veli-losinj	Veli Losinj		
+HR::vis	Vis		
+HR::vodnjan	Vodnjan		
+HR::vrbnik	Vrbnik	Vrbnik	Vrbnik
+HR::vukovar	Vukovar	Vukovar	Vukovar
+HR::zadar	Zadar	Zadar	Zadar
+HR::zagreb	Zagreb		
+HR::zminj	Zminj		

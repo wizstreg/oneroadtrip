@@ -1,0 +1,264 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "ES" → la langue locale (es) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays ES)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+ES::a-coruna	A Coruna	A Coruña	La Coruña
+ES::aguilas	Aguilas	Águilas	Águilas
+ES::alba-de-tormes	Alba De Tormes		
+ES::albarracin	Albarracin	Albarracín	Albarracín
+ES::alcala-de-henares	Alcala De Henares		
+ES::alcala-de-xivert	Alcala De Xivert	Alcalà de Xivert	Alcalá de Chivert
+ES::alcudia	Alcudia	l'Alcúdia	Alcúdia
+ES::almagro	Almagro	Almagro	Almagro
+ES::almeria	Almeria	Almeria	Almería
+ES::almodovar-del-rio	Almodovar Del Rio		
+ES::alquezar	Alquezar	Alquézar	Alquézar
+ES::anso	Anso		
+ES::aranjuez	Aranjuez	Aranjuez	Aranjuez
+ES::arrecife	Arrecife	Arrecife	Arrecife
+ES::arribes-del-duero	Arribes Del Duero	Arribes del Duero Natural Park	Parque natural de Arribes del Duero
+ES::astorga	Astorga	Astorga	Astorga
+ES::avila	Avila	Ávila	Ávila
+ES::baeza	Baeza		
+ES::balouta	Balouta		
+ES::banos-de-la-encina	Banos De La Encina		
+ES::barcelona	Barcelona		
+ES::barcelone	Barcelone		
+ES::baza	Baza		
+ES::belalcazar	Belalcazar		
+ES::benicassim	Benicassim	Benicàssim	Benicasim
+ES::betancuria	Betancuria	Betancuria	Betancuria
+ES::bilbao	Bilbao	Bilbao	Bilbao
+ES::binibeca	Binibeca	Binibeca Vell	Binibeca Vell
+ES::brihuega	Brihuega		
+ES::buitrago	Buitrago	Buitrago	Buitrago
+ES::burgos	Burgos	Burgos	Burgos
+ES::cabo-de-gata	Cabo De Gata	Cape Gata	Cabo de Gata
+ES::cabo-de-palos	Cabo De Palos	Cape Palos	Cabo de Palos
+ES::caceres	Caceres	Cáceres	Cáceres
+ES::cadaques	Cadaques	Cadaqués	Cadaqués
+ES::cadiz	Cadiz	Cádiz	Cádiz
+ES::cala-galdana	Cala Galdana	Cala Galdana	Cala Galdana
+ES::calatanazor	Calatanazor	Calatañazor	Calatañazor
+ES::calatayud	Calatayud		
+ES::cambados	Cambados		
+ES::cambrils	Cambrils		
+ES::campo-de-criptana	Campo De Criptana	Campo de Criptana	Campo de Criptana
+ES::cangas-de-onis	Cangas De Onis	Cangues d'Onís	Cangas de Onís
+ES::capileira	Capileira		
+ES::caravaca-de-la-cruz	Caravaca De La Cruz		
+ES::cardona	Cardona		
+ES::cartagena	Cartagena	Cartagena	Cartagena
+ES::castillo-de-loarre	Castillo De Loarre	Loarre Castle	Castillo de Loarre
+ES::castro-urdiales	Castro Urdiales	Castro Urdiales	Castro-Urdiales
+ES::castulo	Castulo		
+ES::cazorla	Cazorla	Cazorla	Cazorla
+ES::cercedilla	Cercedilla	Cercedilla	Cercedilla
+ES::ciutadella	Ciutadella	Ciutadella de Menorca	Ciudadela
+ES::comillas	Comillas	Comillas	Comillas
+ES::consuegra	Consuegra	Consuegra	Consuegra
+ES::cordoba	Cordoba	Córdoba	Córdoba
+ES::coria	Coria		
+ES::corralejo	Corralejo	Corralejo	Corralejo
+ES::costa-teguise	Costa Teguise		
+ES::covarrubias	Covarrubias	Covarrubias	Covarrubias
+ES::cuenca	Cuenca	Cuenca	Cuenca
+ES::daroca	Daroca		
+ES::deltebre	Deltebre		
+ES::donana	Donana	Doñana National and Natural Park	Doñana
+ES::el-cotillo	El Cotillo	El Cotillo	El Cotillo
+ES::el-pont-de-suert	El Pont De Suert		
+ES::falset	Falset		
+ES::figueres	Figueres	Figueres	Figueres
+ES::fisterra	Fisterra		
+ES::fornells	Fornells	Fornells de la Selva	Fornells de la Selva
+ES::frias	Frias	Frías	Frías
+ES::fromista	Fromista	Frómista	Frómista
+ES::fuente	Fuente		
+ES::getaria	Getaria	Getaria	Guetaria
+ES::gijon	Gijon	Gijón	Gijón
+ES::girona	Girona	Girona	Gerona
+ES::granada	Granada	Granada	Granada
+ES::guadalupe	Guadalupe	Guadalupe	Guadalupe
+ES::guadix	Guadix		
+ES::guernica	Guernica	Guernica	Guernica y Luno
+ES::haro	Haro	Haro	Haro
+ES::hervas	Hervas		
+ES::huesca	Huesca	Huesca	Huesca
+ES::ibiza	Ibiza	Ibiza	Ibiza
+ES::jaca	Jaca		
+ES::jandia	Jandia	Jandía	Península de Jandía
+ES::jerez-de-la-frontera	Jerez De La Frontera	Jerez	Jerez de la Frontera
+ES::jerez-de-los-caballeros	Jerez De Los Caballeros		
+ES::la-alberca	La Alberca		
+ES::la-seu-d-urgell	La Seu D Urgell		
+ES::la-seu-durgell	La Seu Durgell		
+ES::lagos-de-covadonga	Lagos De Covadonga	Lagos de Covadonga	Lagos de Covadonga
+ES::laguardia	Laguardia	Laguardia - Guardia	Laguardia
+ES::laguna-negra-urbion	Laguna Negra Urbion		
+ES::lagunas-de-ruidera	Lagunas De Ruidera	Lagunas de Ruidera Natural Park	Parque natural de las Lagunas de Ruidera
+ES::las-medulas	Las Medulas	Las Médulas	Las Médulas
+ES::las-negras	Las Negras	Las Negras	Las Negras
+ES::las-palmas	Las Palmas	Las Palmas	Las Palmas de Gran Canaria
+ES::las-tuerces	Las Tuerces	Las Tuerces	Las Tuerces
+ES::ledesma	Ledesma		
+ES::leon	Leon	León	León
+ES::lerma	Lerma		
+ES::linares	Linares		
+ES::llanes	Llanes	Llanes	Llanes
+ES::lleida	Lleida		
+ES::logrono	Logrono	Logroño	Logroño
+ES::lorca	Lorca	Lorca	Lorca
+ES::los-llanos-de-aridane	Los Llanos De Aridane		
+ES::lugo	Lugo		
+ES::madrid	Madrid		
+ES::mahon	Mahon	Maó	Mahón
+ES::malaga	Malaga		
+ES::manzanares-el-real	Manzanares El Real	Manzanares el Real	Manzanares el Real
+ES::maspalomas	Maspalomas	Maspalomas	Maspalomas
+ES::medina-del-campo	Medina Del Campo		
+ES::medinaceli	Medinaceli		
+ES::merida	Merida	Merida	Mérida
+ES::miranda-del-castanar	Miranda Del Castanar		
+ES::miravet	Miravet		
+ES::mogarraz	Mogarraz		
+ES::mojacar	Mojacar	Mojácar	Mojácar
+ES::molinaseca	Molinaseca		
+ES::monforte-de-lemos	Monforte De Lemos		
+ES::monfrague	Monfrague	Monfragüe train station	estación de Monfragüe
+ES::monleon	Monleon		
+ES::montblanc	Montblanc		
+ES::montemayor-del-rio	Montemayor Del Rio		
+ES::montoro	Montoro		
+ES::montserrat	Montserrat		
+ES::moratalla	Moratalla		
+ES::morella	Morella	Morella	Morella
+ES::murcia	Murcia	Murcia	Murcia
+ES::muxia	Muxia	Muxía	Muxía
+ES::navacerrada	Navacerrada	Navacerrada	Navacerrada
+ES::o-cebreiro	O Cebreiro		
+ES::olite	Olite	Olite/Erriberri	Olite
+ES::orbaneja-del-castillo	Orbaneja Del Castillo	Orbaneja del Castillo	Orbaneja del Castillo
+ES::ourense	Ourense		
+ES::oviedo	Oviedo	Oviedo	Oviedo
+ES::palma	Palma		
+ES::pamplona	Pamplona	Pamplona	Pamplona
+ES::pastrana	Pastrana		
+ES::pedraza	Pedraza	Pedraza	Pedraza
+ES::pedroche	Pedroche		
+ES::penafiel	Penafiel	Peñafiel	Peñafiel
+ES::penalba-de-santiago	Penalba De Santiago	Peñalba de Santiago	Peñalba de Santiago
+ES::peniscola	Peniscola	Peníscola	Peñíscola
+ES::plasencia	Plasencia		
+ES::ponferrada	Ponferrada		
+ES::pontevedra	Pontevedra	Pontevedra	Pontevedra
+ES::puebla-de-sanabria	Puebla De Sanabria		
+ES::puente-del-congosto	Puente Del Congosto		
+ES::puerto-de-la-cruz	Puerto De La Cruz	Puerto de la Cruz	Puerto de la Cruz
+ES::puerto-del-rosario	Puerto Del Rosario	Puerto del Rosario	Puerto del Rosario
+ES::rascafria	Rascafria	Rascafría	Rascafría
+ES::reus	Reus		
+ES::ribadavia	Ribadavia		
+ES::ribeira-sacra	Ribeira Sacra		
+ES::roncesvalles	Roncesvalles	Orreaga-Roncesvalles	Roncesvalles
+ES::ronda	Ronda	Ronda	Ronda
+ES::rubielos-de-mora	Rubielos De Mora		
+ES::sajazarra	Sajazarra	Sajazarra	Sajazarra
+ES::salamanca	Salamanca	Salamanca	Salamanca
+ES::san-felices-de-los-gallegos	San Felices De Los Gallegos		
+ES::san-millan	San Millan	San Millán-Donemiliaga	San Millán
+ES::san-sebastian	San Sebastian	San Sebastián	San Sebastián
+ES::sanlucar-de-barrameda	Sanlucar De Barrameda	Sanlúcar de Barrameda	Sanlúcar de Barrameda
+ES::santa-cruz-de-tenerife	Santa Cruz De Tenerife	Santa Cruz de Tenerife	Santa Cruz de Tenerife
+ES::santa-cruz-la-palma	Santa Cruz La Palma		
+ES::santander	Santander	Santander	Santander
+ES::santiago-de-compostela	Santiago De Compostela	Santiago de Compostela	Santiago de Compostela
+ES::santillana-del-mar	Santillana Del Mar	Santillana del Mar	Santillana del Mar
+ES::segovia	Segovia	Segovia	Segovia
+ES::segura-de-la-sierra	Segura De La Sierra		
+ES::selva-de-irati	Selva De Irati	Selva de Irati	Selva de Irati
+ES::sequeros	Sequeros		
+ES::sevilla	Sevilla	Seville	Sevilla
+ES::sierra-de-cazorla	Sierra De Cazorla		
+ES::sierra-de-gredos	Sierra De Gredos		
+ES::siguenza	Siguenza		
+ES::sitges	Sitges		
+ES::siurana	Siurana		
+ES::soller	Soller	Sóller	Sóller
+ES::soria	Soria		
+ES::sort	Sort		
+ES::sos-del-rey-catolico	Sos Del Rey Catolico		
+ES::tabernas	Tabernas	Tabernas	Tabernas
+ES::tarragona	Tarragona	Tarragona	Tarragona
+ES::tarragone	Tarragone		
+ES::teide	Teide	Teide	Teide
+ES::teruel	Teruel	Teruel	Teruel
+ES::toledo	Toledo	Toledo	Toledo
+ES::tordesillas	Tordesillas		
+ES::torla	Torla		
+ES::toro	Toro		
+ES::tortosa	Tortosa		
+ES::tossa-de-mar	Tossa De Mar	Tossa de Mar	Tosa de Mar
+ES::trevelez	Trevelez		
+ES::trujillo	Trujillo	Trujillo	Trujillo
+ES::ubeda	Ubeda		
+ES::ujué	Ujué	Ujué/Uxue	Ujué
+ES::valderrobres	Valderrobres		
+ES::vall-de-boi	Vall De Boi		
+ES::valladolid	Valladolid		
+ES::valldemossa	Valldemossa	Valldemossa	Valldemosa
+ES::vejer-de-la-frontera	Vejer De La Frontera	Vejer de la Frontera	Vejer de la Frontera
+ES::vic	Vic		
+ES::vielha	Vielha		
+ES::vigo	Vigo	Vigo	Vigo
+ES::vilafames	Vilafames	Vilafamés	Villafamés
+ES::vilafranca-del-penedes	Vilafranca Del Penedes		
+ES::villafranca-del-bierzo	Villafranca Del Bierzo		
+ES::vitoria-gasteiz	Vitoria Gasteiz	Vitoria-Gasteiz	Vitoria
+ES::yaiza	Yaiza		
+ES::zafra	Zafra		
+ES::zamora	Zamora	Zamora Province	provincia de Zamora
+ES::zaragoza	Zaragoza	Zaragoza	Zaragoza

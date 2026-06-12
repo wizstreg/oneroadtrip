@@ -1,0 +1,119 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "BR" → la langue locale (pt) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays BR)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+BR::alto-paraiso-de-goias	Alto Paraiso De Goias		
+BR::angra-dos-reis	Angra Dos Reis		
+BR::aracaju	Aracaju	Aracaju	Aracaju
+BR::atins	Atins	Atins	Atins
+BR::barra-do-garcas	Barra Do Garcas	Barra do Garças	Barra do Garças
+BR::barreirinhas	Barreirinhas		
+BR::belo-horizonte	Belo Horizonte		
+BR::bonito	Bonito		
+BR::brasilia	Brasilia	Brazil	Brasil
+BR::campo-grande	Campo Grande	Campo Grande	Campo Grande
+BR::canoa-quebrada	Canoa Quebrada		
+BR::canudos	Canudos		
+BR::carolina	Carolina		
+BR::cavalcante	Cavalcante		
+BR::chapada-dos-guimaraes	Chapada Dos Guimaraes		
+BR::coronel-jose-dias	Coronel Jose Dias		
+BR::cristalino-lodge	Cristalino Lodge		
+BR::cuiaba	Cuiaba	Cuiabá	Cuiabá
+BR::cunha	Cunha	Cunha	Cunha
+BR::curimas-barroquinha	Curimas Barroquinha		
+BR::curitiba	Curitiba	Curitiba	Curitiba
+BR::diamantina	Diamantina		
+BR::feira-de-santana	Feira De Santana		
+BR::florianopolis	Florianopolis	Florianópolis	Florianópolis
+BR::fortaleza	Fortaleza	Fortaleza	Fortaleza
+BR::foz-do-iguacu	Foz Do Iguacu	Foz do Iguaçu	Foz do Iguaçu
+BR::galinhos	Galinhos	Galinhos	Galinhos
+BR::ilha-grande	Ilha Grande	Ilha Grande	Ilha Grande
+BR::itacare	Itacare		
+BR::jericoacoara	Jericoacoara	Jijoca de Jericoacoara	Jijoca de Jericoacoara
+BR::lencois	Lencois		
+BR::maceio	Maceio		
+BR::mateiros	Mateiros		
+BR::moitas-amontada	Moitas Amontada		
+BR::monte-santo	Monte Santo		
+BR::mumbuca	Mumbuca		
+BR::natal	Natal	Natal	Natal
+BR::nobres-bom-jardim	Nobres Bom Jardim		Bom Jardim
+BR::oeiras	Oeiras		
+BR::ouro-preto	Ouro Preto	Ouro Preto	Ouro Preto
+BR::palmas	Palmas		
+BR::pantanal-sul	Pantanal Sul		
+BR::paraty	Paraty	Paraty	Paraty
+BR::paraty-centro-historico	Paraty Centro Historico	Old Town	Centro Histórico
+BR::parnaiba	Parnaiba	Parnaíba	Parnaíba
+BR::paulo-afonso	Paulo Afonso		
+BR::petropolis	Petropolis	Petrópolis	Petrópolis
+BR::pipa	Pipa	Pipa	Pipa
+BR::pirenopolis	Pirenopolis		
+BR::pixaim-fazenda	Pixaim Fazenda		
+BR::ponte-alta-do-tocantins	Ponte Alta Do Tocantins		
+BR::porto-de-galinhas	Porto De Galinhas	Porto de Galinhas beach	Praia de Porto de Galinhas
+BR::porto-jofre	Porto Jofre		
+BR::porto-seguro	Porto Seguro	Porto Seguro	Porto Seguro
+BR::recife	Recife	Recife	Recife
+BR::riachao	Riachao		
+BR::rio-de-janeiro-leme	Rio De Janeiro Leme	Leme	Leme
+BR::salvador	Salvador	Salvador	Salvador
+BR::sao-jorge-vila	Sao Jorge Vila		
+BR::sao-luis	Sao Luis	São Luís	São Luís
+BR::sao-miguel-do-gostoso	Sao Miguel Do Gostoso	São Miguel do Gostoso	São Miguel do Gostoso
+BR::sao-paulo	Sao Paulo	São Paulo	São Paulo
+BR::sao-paulo-paulista	Sao Paulo Paulista		
+BR::sao-raimundo-nonato	Sao Raimundo Nonato		
+BR::teresina	Teresina	Teresina	Teresina
+BR::teresopolis	Teresopolis	Teresópolis	Teresópolis
+BR::tiradentes	Tiradentes		
+BR::tutoia	Tutoia	Tutóia	Tutóia
+BR::ubajara	Ubajara	Ubajara	Ubajara
+BR::vale-do-capao	Vale Do Capao		
+BR::vale-do-pati	Vale Do Pati		
+BR::vicosa-do-ceara	Vicosa Do Ceara	Viçosa do Ceará	Viçosa do Ceará
