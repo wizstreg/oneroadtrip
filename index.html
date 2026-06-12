@@ -521,8 +521,8 @@ main{padding-block:40px 64px}
               <input class="input" type="number" id="rbDays" value="7" min="2" max="30" step="1">
             </div>
             <div class="field">
-              <label id="rbStepsLabel" for="rbSteps">Nombre d'étapes</label>
-              <input class="input" type="number" id="rbSteps" min="1" step="1" placeholder="Auto">
+              <label id="rbStepsLabel" for="rbSteps">Nombre d'étapes (départ et arrivée inclus)</label>
+              <input class="input" type="number" id="rbSteps" min="3" step="1" placeholder="Auto">
             </div>
             <button class="btn btn-accent" type="button" id="rbGo">C'est parti</button>
           </div>
@@ -710,12 +710,12 @@ var T2 = LANG_EXTRA[currentLang] || LANG_EXTRA.fr;
 
 /* i18n : filtre distance + champ étapes */
 var LANG_EXTRA2 = {
-  fr:{distLabel:"Distance",distUnder:"Moins de {x}",distOver:"Plus de {x}",stepsLabel:"Nombre d'étapes",stepsAuto:"Auto",stepsWarn:"Conseillé : entre 1 et {n} étapes. La valeur sera ajustée si besoin."},
-  en:{distLabel:"Distance",distUnder:"Under {x}",distOver:"Over {x}",stepsLabel:"Number of stops",stepsAuto:"Auto",stepsWarn:"Recommended: between 1 and {n} stops. The value will be adjusted if needed."},
-  es:{distLabel:"Distancia",distUnder:"Menos de {x}",distOver:"Más de {x}",stepsLabel:"Número de etapas",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 1 y {n} etapas. El valor se ajustará si es necesario."},
-  it:{distLabel:"Distanza",distUnder:"Meno di {x}",distOver:"Oltre {x}",stepsLabel:"Numero di tappe",stepsAuto:"Auto",stepsWarn:"Consigliato: tra 1 e {n} tappe. Il valore sarà adattato se necessario."},
-  pt:{distLabel:"Distância",distUnder:"Menos de {x}",distOver:"Mais de {x}",stepsLabel:"Número de etapas",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 1 e {n} etapas. O valor será ajustado se necessário."},
-  ar:{distLabel:"المسافة",distUnder:"أقل من {x}",distOver:"أكثر من {x}",stepsLabel:"عدد المراحل",stepsAuto:"تلقائي",stepsWarn:"يُنصح بما بين 1 و {n} مراحل. سيتم تعديل القيمة عند الحاجة."}
+  fr:{distLabel:"Distance",distUnder:"Moins de {x}",distOver:"Plus de {x}",stepsLabel:"Nombre d'étapes (départ et arrivée inclus)",stepsAuto:"Auto",stepsWarn:"Conseillé : entre 3 et {n} étapes (départ et arrivée inclus). La valeur sera ajustée si besoin."},
+  en:{distLabel:"Distance",distUnder:"Under {x}",distOver:"Over {x}",stepsLabel:"Number of stops (including start and end)",stepsAuto:"Auto",stepsWarn:"Recommended: between 3 and {n} stops (including start and end). The value will be adjusted if needed."},
+  es:{distLabel:"Distancia",distUnder:"Menos de {x}",distOver:"Más de {x}",stepsLabel:"Número de etapas (incluidos salida y llegada)",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 3 y {n} etapas (incluidos salida y llegada). El valor se ajustará si es necesario."},
+  it:{distLabel:"Distanza",distUnder:"Meno di {x}",distOver:"Oltre {x}",stepsLabel:"Numero di tappe (inclusi partenza e arrivo)",stepsAuto:"Auto",stepsWarn:"Consigliato: tra 3 e {n} tappe (inclusi partenza e arrivo). Il valore sarà adattato se necessario."},
+  pt:{distLabel:"Distância",distUnder:"Menos de {x}",distOver:"Mais de {x}",stepsLabel:"Número de etapas (incluindo partida e chegada)",stepsAuto:"Auto",stepsWarn:"Recomendado: entre 3 e {n} etapas (incluindo partida e chegada). O valor será ajustado se necessário."},
+  ar:{distLabel:"المسافة",distUnder:"أقل من {x}",distOver:"أكثر من {x}",stepsLabel:"عدد المراحل (شاملاً الانطلاق والوصول)",stepsAuto:"تلقائي",stepsWarn:"يُنصح بما بين 3 و {n} مراحل (شاملاً الانطلاق والوصول). سيتم تعديل القيمة عند الحاجة."}
 };
 var T3 = LANG_EXTRA2[currentLang] || LANG_EXTRA2.fr;
 
@@ -1596,10 +1596,12 @@ document.getElementById('desktopValidateBtn').addEventListener('click', function
   var warnEl = document.getElementById('rbStepsWarn');
   if(!stepsEl || !daysEl || !warnEl) return;
   function checkSteps(){
+    /* steps = total d'étapes, départ et arrivée inclus.
+       1 nuit minimum par lieu => maximum days + 1 étapes. */
     var v = parseInt(stepsEl.value, 10);
     var days = parseInt(daysEl.value, 10) || 7;
-    var max = Math.max(1, days - 1);
-    if(stepsEl.value !== '' && (!isNaN(v)) && (v < 1 || v > max)){
+    var max = days + 1;
+    if(stepsEl.value !== '' && (!isNaN(v)) && (v < 3 || v > max)){
       warnEl.textContent = T3.stepsWarn.replace('{n}', max);
       warnEl.style.display = 'block';
     } else {
