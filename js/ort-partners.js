@@ -13,7 +13,13 @@
     getTransfer: 'https://gettransfer.tpo.li/NQ4bVvpZ',
     gyg: 'https://getyourguide.tpo.li/YQ9RFXj5',
     tiqets: 'https://tiqets.tpo.li/L1uxd085',
-    ekta: 'https://ektatraveling.com'
+    ekta: 'https://ektatraveling.com',
+    // Location de van CamperDays (Awin), par langue du site
+    camperdays: {
+      fr: 'https://tidd.ly/43y5Ajw',
+      es: 'https://tidd.ly/4aKeqyk'
+      // en, it, pt : à compléter quand les accords seront validés
+    }
   };
 
   // Stay22 Config
@@ -103,6 +109,12 @@
     
     // Transfert GetTransfer
     transfer: () => AFFILIATE_LINKS.getTransfer,
+    
+    // Location de van CamperDays, par langue. Renvoie null si pas de lien pour cette langue.
+    camper: (lang) => {
+      const l = lang || getPartnerLang();
+      return AFFILIATE_LINKS.camperdays[l] || null;
+    },
     
     // GetYourGuide avec ville
     gyg: (city) => `${AFFILIATE_LINKS.gyg}?q=${encodeURIComponent(city || '')}`,

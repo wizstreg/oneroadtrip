@@ -33,8 +33,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="https://www.oneroadtrip.com/apple-touch-icon.png">
 <link rel="shortcut icon" href="https://www.oneroadtrip.com/favicon.ico">
 <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-<title id="pageTitle">Tous les itinéraires | OneRoadTrip</title>
-<meta name="description" id="metaDesc" content="850+ roadtrips, 5500+ places, 45000+ visits">
+<title id="pageTitle">OneRoadTrip | 895+ road trips prêts à l'emploi à personnaliser</title>
+<meta name="description" id="metaDesc" content="Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 895+ parcours et 6000+ lieux testés.">
 <link rel="canonical" id="canonicalLink" href="https://www.oneroadtrip.com/index.html">
 <link rel="alternate" hreflang="fr" href="https://www.oneroadtrip.com/index.html?lang=fr">
 <link rel="alternate" hreflang="en" href="https://www.oneroadtrip.com/index.html?lang=en">
@@ -382,6 +382,7 @@ main{padding-block:40px 64px}
 .heroB-stats .s b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;line-height:1}
 .heroB-stats .s span{font-size:12px;font-weight:500;color:rgba(255,255,255,.66);text-transform:uppercase;letter-spacing:.04em}
 .heroB-copy .lede{margin-top:20px;font-size:15px;color:rgba(255,255,255,.86);max-width:46ch;line-height:1.6}
+.heroB-copy .lede-args{margin-top:10px;font-size:15px;font-weight:600;color:#fff;max-width:46ch;line-height:1.5}
 .hero-entries{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
 .hero-entry{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.30);border-radius:12px;padding:12px 16px;color:#fff;transition:background .15s var(--ease),border-color .15s var(--ease),transform .15s var(--ease);min-width:218px;flex:1}
 .hero-entry:hover{background:rgba(255,255,255,.16);border-color:#fff;transform:translateY(-1px)}
@@ -439,6 +440,12 @@ main{padding-block:40px 64px}
 .filter-banner{background:var(--navy);color:#fff;padding:12px 20px;text-align:center;font-size:14px}
 .filter-banner a{color:#fff;text-decoration:underline;text-underline-offset:3px;margin-left:10px}
 
+/* État aucun résultat */
+.no-results{text-align:center;padding:64px 24px;max-width:520px;margin:0 auto}
+.no-results .nr-title{font-size:18px;font-weight:600;color:var(--ink)}
+.no-results .nr-text{margin-top:8px;color:var(--ink-soft);font-size:15px;line-height:1.6}
+.no-results .btn{margin-top:20px}
+
 /* Statut formulaire contact */
 #contactStatus{margin-top:12px;padding:10px;border-radius:8px;display:none;text-align:center;font-size:14px}
 /* Logo image */
@@ -463,7 +470,7 @@ main{padding-block:40px 64px}
       <a id="navPartners" href="news.html">Partenaires</a>
     </nav>
     <div class="header-right">
-      <a class="header-contact" href="#" id="btnContact">Contact</a>
+      <a class="header-contact" href="#footer-legal" id="btnContact">Contact</a>
       <a class="btn btn-secondary on-dark" id="btnTrips" href="dashboard_user.html" style="height:auto;padding:8px 16px"></a>
       <div class="lang" id="langSelector">
         <button class="lang-btn" type="button" onclick="document.getElementById('langSelector').classList.toggle('open')">
@@ -482,14 +489,15 @@ main{padding-block:40px 64px}
   <div class="heroB-bg"></div>
   <div class="wrap">
     <div class="heroB-copy">
-      <h1 id="heroTitle"><span id="heroCount">0</span> <span id="heroSuffix">road trips prêts à l'emploi</span></h1>
+      <h1 id="heroTitle"><span id="heroCount">895</span> <span id="heroSuffix">road trips prêts à l'emploi</span></h1>
       <div class="heroB-stats">
-        <div class="s"><b id="statCountries">0</b><span id="statCountriesLabel">pays</span></div>
-        <div class="s"><b id="statPlaces">0</b><span id="statPlacesLabel">lieux</span></div>
-        <div class="s"><b id="statVisits">0</b><span id="statVisitsLabel">visites</span></div>
-        <div class="s"><b id="statActivities">0</b><span id="statActivitiesLabel">activités</span></div>
+        <div class="s"><b id="statCountries">97</b><span id="statCountriesLabel">pays</span></div>
+        <div class="s"><b id="statPlaces">6149</b><span id="statPlacesLabel">lieux</span></div>
+        <div class="s"><b id="statVisits">29900</b><span id="statVisitsLabel">visites</span></div>
+        <div class="s"><b id="statActivities">17778</b><span id="statActivitiesLabel">activités</span></div>
       </div>
       <p class="lede" id="heroSub"></p>
+      <p class="lede-args" id="heroArgs"></p>
       <div class="hero-entries" id="actionGrid"></div>
     </div>
 
@@ -603,32 +611,8 @@ main{padding-block:40px 64px}
 </main>
 
 <!-- ===== FOOTER ===== -->
-<footer id="footer-legal" class="site-footer">
-  <div class="wrap">
-    <div class="footer-cols">
-      <div>
-        <div class="footer-brand"><img class="mark-img" src="/assets/symbol.webp" alt="OneRoadTrip">OneRoadTrip</div>
-        <p class="footer-tag" id="footerTag"></p>
-      </div>
-      <div class="footer-col">
-        <h4 id="footerDiscoverTitle">Découvrir</h4>
-        <a id="footerNews" href="news.html">News</a>
-        <a id="footerPress" href="news.html">Presse</a>
-        <a id="footerPartners" href="news.html">Partenaires</a>
-      </div>
-      <div class="footer-col">
-        <h4 id="footerSpaceTitle">Votre espace</h4>
-        <a id="footerTrips" href="dashboard_user.html"></a>
-        <button type="button" id="btnContactFooter"></button>
-      </div>
-      <div class="footer-col">
-        <h4 id="footerLangTitle">Langue</h4>
-        <div id="footerLangs"></div>
-      </div>
-    </div>
-    <div class="footer-bottom">&copy; 2026 OneRoadTrip - Des road trips inoubliables, partout dans le monde</div>
-  </div>
-</footer>
+<!-- Footer injecté par ort-footer.js (légal + cookies + partenaire presse) -->
+<footer id="footer-legal"></footer>
 
 <!-- ===== MODALE CONTACT ===== -->
 <div class="modal" id="contactModal">
@@ -714,14 +698,17 @@ window.ICON = {
    NB : traductions ar à faire relire par un locuteur natif.
    ======================================================== */
 var LANG_EXTRA = {
-  fr:{heroH1:"road trips prêts à l'emploi",lede:"Consultez, modifiez et partagez nos itinéraires — ou laissez-vous guider pour construire le vôtre.",tabSearch:"Rechercher",tabGuide:"Laissez-vous guider",searchBtn:"Rechercher",goBtn:"C'est parti",genHint:"Indiquez vos villes et la durée : on construit l'itinéraire pour vous, étape par étape.",advanced:"Options avancées",photosLbl:"Photos",mapsLbl:"Cartes",contactShort:"Contact",footerDiscover:"Découvrir",footerSpace:"Votre espace",footerLangTitle:"Langue",footerTag:"Des road trips inoubliables, partout dans le monde. Consultez, personnalisez et emportez votre voyage hors ligne.",entries:[{label:"Choisir sur la carte",sub:"Explorez par région",icon:"map",href:"pres_simple.html"},{label:"À partir des lieux",sub:"Composez votre tracé",icon:"pin",href:"carte_builder.html?mode=expert"}]},
-  en:{heroH1:"ready-made road trips",lede:"Browse, edit and share our itineraries — or let us guide you to build your own.",tabSearch:"Search",tabGuide:"Let us guide you",searchBtn:"Search",goBtn:"Let's go",genHint:"Enter your cities and duration: we build the itinerary for you, step by step.",advanced:"Advanced options",photosLbl:"Photos",mapsLbl:"Maps",contactShort:"Contact",footerDiscover:"Discover",footerSpace:"Your space",footerLangTitle:"Language",footerTag:"Unforgettable road trips, all over the world. Browse, customize and take your trip offline.",entries:[{label:"Choose on the map",sub:"Explore by region",icon:"map",href:"pres_simple.html"},{label:"From the places",sub:"Compose your route",icon:"pin",href:"carte_builder.html?mode=expert"}]},
-  es:{heroH1:"rutas listas para usar",lede:"Consulte, modifique y comparta nuestras rutas, o déjese guiar para crear la suya.",tabSearch:"Buscar",tabGuide:"Déjese guiar",searchBtn:"Buscar",goBtn:"Vamos",genHint:"Indique sus ciudades y la duración: construimos la ruta por usted, etapa por etapa.",advanced:"Opciones avanzadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descubrir",footerSpace:"Su espacio",footerLangTitle:"Idioma",footerTag:"Road trips inolvidables por todo el mundo. Consulte, personalice y lleve su viaje sin conexión.",entries:[{label:"Elegir en el mapa",sub:"Explore por región",icon:"map",href:"pres_simple.html"},{label:"Desde los lugares",sub:"Componga su ruta",icon:"pin",href:"carte_builder.html?mode=expert"}]},
-  it:{heroH1:"itinerari pronti all'uso",lede:"Consulta, modifica e condividi i nostri itinerari, o lasciati guidare per creare il tuo.",tabSearch:"Cerca",tabGuide:"Lasciati guidare",searchBtn:"Cerca",goBtn:"Si parte",genHint:"Indica le città e la durata: costruiamo l'itinerario per te, tappa dopo tappa.",advanced:"Opzioni avanzate",photosLbl:"Foto",mapsLbl:"Mappe",contactShort:"Contatti",footerDiscover:"Scopri",footerSpace:"Il tuo spazio",footerLangTitle:"Lingua",footerTag:"Road trip indimenticabili in tutto il mondo. Consulta, personalizza e porta il viaggio offline.",entries:[{label:"Scegli sulla mappa",sub:"Esplora per regione",icon:"map",href:"pres_simple.html"},{label:"Dai luoghi",sub:"Componi il tuo percorso",icon:"pin",href:"carte_builder.html?mode=expert"}]},
-  pt:{heroH1:"roteiros prontos a usar",lede:"Consulte, modifique e partilhe os nossos roteiros, ou deixe-se guiar para criar o seu.",tabSearch:"Pesquisar",tabGuide:"Deixe-se guiar",searchBtn:"Pesquisar",goBtn:"Vamos lá",genHint:"Indique as cidades e a duração: construímos o roteiro por si, etapa a etapa.",advanced:"Opções avançadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descobrir",footerSpace:"O seu espaço",footerLangTitle:"Idioma",footerTag:"Road trips inesquecíveis por todo o mundo. Consulte, personalize e leve a sua viagem offline.",entries:[{label:"Escolher no mapa",sub:"Explore por região",icon:"map",href:"pres_simple.html"},{label:"A partir dos lugares",sub:"Componha o seu trajeto",icon:"pin",href:"carte_builder.html?mode=expert"}]},
-  ar:{heroH1:"مسارات جاهزة للاستخدام",lede:"تصفح وعدّل وشارك مساراتنا، أو دعنا نرشدك لبناء مسارك.",tabSearch:"بحث",tabGuide:"دعنا نرشدك",searchBtn:"بحث",goBtn:"هيا بنا",genHint:"أدخل المدن والمدة: نبني المسار لك خطوة بخطوة.",advanced:"خيارات متقدمة",photosLbl:"صور",mapsLbl:"خرائط",contactShort:"اتصل بنا",footerDiscover:"اكتشف",footerSpace:"مساحتك",footerLangTitle:"اللغة",footerTag:"رحلات برية لا تُنسى حول العالم. تصفح وخصّص واصطحب رحلتك دون اتصال.",entries:[{label:"اختر على الخريطة",sub:"استكشف حسب المنطقة",icon:"map",href:"pres_simple.html"},{label:"من الأماكن",sub:"كوّن مسارك",icon:"pin",href:"carte_builder.html?mode=expert"}]}
+  fr:{noResultsTitle:"Aucun itinéraire ne correspond à ces critères.",noResultsText:"Essayez d'élargir votre recherche : retirez un filtre ou changez de zone, de durée ou de thème.",noResultsBtn:"Réinitialiser les filtres",heroH1:"road trips prêts à l'emploi",lede:"Consultez, modifiez et partagez nos itinéraires — ou laissez-vous guider pour construire le vôtre.",tabSearch:"Rechercher",tabGuide:"Laissez-vous guider",searchBtn:"Rechercher",goBtn:"C'est parti",genHint:"Indiquez vos villes et la durée : on construit l'itinéraire pour vous, étape par étape.",advanced:"Options avancées",photosLbl:"Photos",mapsLbl:"Cartes",contactShort:"Contact",footerDiscover:"Découvrir",footerSpace:"Votre espace",footerLangTitle:"Langue",footerTag:"Des road trips inoubliables, partout dans le monde. Consultez, personnalisez et emportez votre voyage hors ligne.",entries:[{label:"Choisir sur la carte",sub:"Explorez par région",icon:"map",href:"pres_simple.html"},{label:"À partir des lieux",sub:"Composez votre tracé",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  en:{noResultsTitle:"No itinerary matches these criteria.",noResultsText:"Try widening your search: remove a filter or change the area, duration or theme.",noResultsBtn:"Reset filters",heroH1:"ready-made road trips",lede:"Browse, edit and share our itineraries — or let us guide you to build your own.",tabSearch:"Search",tabGuide:"Let us guide you",searchBtn:"Search",goBtn:"Let's go",genHint:"Enter your cities and duration: we build the itinerary for you, step by step.",advanced:"Advanced options",photosLbl:"Photos",mapsLbl:"Maps",contactShort:"Contact",footerDiscover:"Discover",footerSpace:"Your space",footerLangTitle:"Language",footerTag:"Unforgettable road trips, all over the world. Browse, customize and take your trip offline.",entries:[{label:"Choose on the map",sub:"Explore by region",icon:"map",href:"pres_simple.html"},{label:"From the places",sub:"Compose your route",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  es:{noResultsTitle:"Ninguna ruta coincide con estos criterios.",noResultsText:"Amplíe su búsqueda: quite un filtro o cambie la zona, la duración o el tema.",noResultsBtn:"Restablecer filtros",heroH1:"rutas listas para usar",lede:"Consulte, modifique y comparta nuestras rutas, o déjese guiar para crear la suya.",tabSearch:"Buscar",tabGuide:"Déjese guiar",searchBtn:"Buscar",goBtn:"Vamos",genHint:"Indique sus ciudades y la duración: construimos la ruta por usted, etapa por etapa.",advanced:"Opciones avanzadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descubrir",footerSpace:"Su espacio",footerLangTitle:"Idioma",footerTag:"Road trips inolvidables por todo el mundo. Consulte, personalice y lleve su viaje sin conexión.",entries:[{label:"Elegir en el mapa",sub:"Explore por región",icon:"map",href:"pres_simple.html"},{label:"Desde los lugares",sub:"Componga su ruta",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  it:{noResultsTitle:"Nessun itinerario corrisponde a questi criteri.",noResultsText:"Prova ad ampliare la ricerca: togli un filtro o cambia zona, durata o tema.",noResultsBtn:"Reimposta i filtri",heroH1:"itinerari pronti all'uso",lede:"Consulta, modifica e condividi i nostri itinerari, o lasciati guidare per creare il tuo.",tabSearch:"Cerca",tabGuide:"Lasciati guidare",searchBtn:"Cerca",goBtn:"Si parte",genHint:"Indica le città e la durata: costruiamo l'itinerario per te, tappa dopo tappa.",advanced:"Opzioni avanzate",photosLbl:"Foto",mapsLbl:"Mappe",contactShort:"Contatti",footerDiscover:"Scopri",footerSpace:"Il tuo spazio",footerLangTitle:"Lingua",footerTag:"Road trip indimenticabili in tutto il mondo. Consulta, personalizza e porta il viaggio offline.",entries:[{label:"Scegli sulla mappa",sub:"Esplora per regione",icon:"map",href:"pres_simple.html"},{label:"Dai luoghi",sub:"Componi il tuo percorso",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  pt:{noResultsTitle:"Nenhum roteiro corresponde a estes critérios.",noResultsText:"Tente alargar a pesquisa: remova um filtro ou mude a zona, a duração ou o tema.",noResultsBtn:"Repor filtros",heroH1:"roteiros prontos a usar",lede:"Consulte, modifique e partilhe os nossos roteiros, ou deixe-se guiar para criar o seu.",tabSearch:"Pesquisar",tabGuide:"Deixe-se guiar",searchBtn:"Pesquisar",goBtn:"Vamos lá",genHint:"Indique as cidades e a duração: construímos o roteiro por si, etapa a etapa.",advanced:"Opções avançadas",photosLbl:"Fotos",mapsLbl:"Mapas",contactShort:"Contacto",footerDiscover:"Descobrir",footerSpace:"O seu espaço",footerLangTitle:"Idioma",footerTag:"Road trips inesquecíveis por todo o mundo. Consulte, personalize e leve a sua viagem offline.",entries:[{label:"Escolher no mapa",sub:"Explore por região",icon:"map",href:"pres_simple.html"},{label:"A partir dos lugares",sub:"Componha o seu trajeto",icon:"pin",href:"carte_builder.html?mode=expert"}]},
+  ar:{noResultsTitle:"لا يوجد مسار يطابق هذه المعايير.",noResultsText:"وسّع بحثك: أزل عامل تصفية أو غيّر المنطقة أو المدة أو الموضوع.",noResultsBtn:"إعادة ضبط عوامل التصفية",heroH1:"مسارات جاهزة للاستخدام",lede:"تصفح وعدّل وشارك مساراتنا، أو دعنا نرشدك لبناء مسارك.",tabSearch:"بحث",tabGuide:"دعنا نرشدك",searchBtn:"بحث",goBtn:"هيا بنا",genHint:"أدخل المدن والمدة: نبني المسار لك خطوة بخطوة.",advanced:"خيارات متقدمة",photosLbl:"صور",mapsLbl:"خرائط",contactShort:"اتصل بنا",footerDiscover:"اكتشف",footerSpace:"مساحتك",footerLangTitle:"اللغة",footerTag:"رحلات برية لا تُنسى حول العالم. تصفح وخصّص واصطحب رحلتك دون اتصال.",entries:[{label:"اختر على الخريطة",sub:"استكشف حسب المنطقة",icon:"map",href:"pres_simple.html"},{label:"من الأماكن",sub:"كوّن مسارك",icon:"pin",href:"carte_builder.html?mode=expert"}]}
 };
 var T2 = LANG_EXTRA[currentLang] || LANG_EXTRA.fr;
+t.noResultsTitle = T2.noResultsTitle;
+t.noResultsText = T2.noResultsText;
+t.noResultsBtn = T2.noResultsBtn;
 
 /* i18n : filtre distance + champ étapes */
 var LANG_EXTRA2 = {
@@ -779,13 +766,38 @@ function distFilterLabel(val){
    ======================================================== */
 document.documentElement.lang = currentLang;
 if(currentLang === 'ar') document.documentElement.dir = 'rtl';
-document.getElementById('pageTitle').textContent = 'OneRoadTrip | ' + t.heroSub.substring(0,60) + '...';
+(function(){
+  var META = {
+    fr:{title:"OneRoadTrip | 895+ road trips prêts à l'emploi à personnaliser",desc:"Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 895+ parcours et 6000+ lieux testés."},
+    en:{title:"OneRoadTrip | 895+ ready-made road trips to customize",desc:"Plan your road trip your way: pick your starting point, duration and the area to explore. OneRoadTrip builds your itinerary from 895+ routes and 6000+ tested places."},
+    es:{title:"OneRoadTrip | 895+ rutas listas para personalizar",desc:"Planifica tu road trip a medida: elige tu punto de partida, la duración y la zona a explorar. OneRoadTrip genera tu ruta entre 895+ recorridos y 6000+ lugares probados."},
+    it:{title:"OneRoadTrip | 895+ itinerari pronti da personalizzare",desc:"Pianifica il tuo road trip su misura: scegli il punto di partenza, la durata e la zona da esplorare. OneRoadTrip genera il tuo itinerario tra 895+ percorsi e 6000+ luoghi testati."},
+    pt:{title:"OneRoadTrip | 895+ roteiros prontos para personalizar",desc:"Planeie a sua road trip à medida: escolha o ponto de partida, a duração e a zona a explorar. A OneRoadTrip gera o seu roteiro entre 895+ percursos e 6000+ lugares testados."},
+    ar:{title:"OneRoadTrip | أكثر من 895 مسارًا جاهزًا للتخصيص",desc:"خطط لرحلتك البرية كما تريد: اختر نقطة الانطلاق والمدة والمنطقة. ينشئ OneRoadTrip مسارك من بين أكثر من 895 مسارًا و6000 مكان مُختبَر."}
+  };
+  var m = META[currentLang] || META.fr;
+  document.getElementById('pageTitle').textContent = m.title;
+  var md = document.getElementById('metaDesc');
+  if(md) md.setAttribute('content', m.desc);
+})();
 
 document.getElementById('langFlag').textContent = t.flag;
 document.getElementById('langName').textContent = t.name;
 
 document.getElementById('heroSuffix').textContent = T2.heroH1;
 document.getElementById('heroSub').textContent = T2.lede;
+(function(){
+  var ARGS = {
+    fr:"Modifiables de A à Z, avec carte interactive, et 100 % gratuits.",
+    en:"Fully editable, with an interactive map, and 100% free.",
+    es:"Totalmente editables, con mapa interactivo y 100 % gratis.",
+    it:"Completamente modificabili, con mappa interattiva e 100% gratuiti.",
+    pt:"Totalmente editáveis, com mapa interativo e 100% gratuitos.",
+    ar:"قابلة للتعديل بالكامل، مع خريطة تفاعلية، ومجانية 100%."
+  };
+  var el = document.getElementById('heroArgs');
+  if(el) el.textContent = ARGS[currentLang] || ARGS.fr;
+})();
 document.getElementById('tabSearchLbl').textContent = T2.tabSearch;
 document.getElementById('tabGuideLbl').textContent = T2.tabGuide;
 document.getElementById('searchInput').placeholder = t.searchPh;
@@ -823,46 +835,6 @@ document.getElementById('btnContact').textContent = T2.contactShort;
 document.getElementById('contactTitle').textContent = t.contactTitle;
 document.getElementById('contactDesc').textContent = t.contactDesc;
 
-/* Footer */
-document.getElementById('footerTag').textContent = T2.footerTag;
-document.getElementById('footerDiscoverTitle').textContent = T2.footerDiscover;
-document.getElementById('footerSpaceTitle').textContent = T2.footerSpace;
-document.getElementById('footerLangTitle').textContent = T2.footerLangTitle;
-document.getElementById('footerTrips').textContent = t.tripsBtn;
-document.getElementById('footerTrips').href = 'dashboard_user.html?lang=' + currentLang;
-document.getElementById('btnContactFooter').textContent = t.contactBtn;
-
-/* Liens footer Découvrir (mêmes cibles que la nav) */
-(function(){
-  var NAVF = {
-    fr:{news:'Actualités',press:'Presse',partners:'Partenaires'},
-    en:{news:'News',press:'Press',partners:'Partners'},
-    es:{news:'Noticias',press:'Prensa',partners:'Socios'},
-    it:{news:'Notizie',press:'Stampa',partners:'Partner'},
-    pt:{news:'Notícias',press:'Imprensa',partners:'Parceiros'},
-    ar:{news:'أخبار',press:'الصحافة',partners:'شركاء'}
-  };
-  var L = NAVF[currentLang] || NAVF.en;
-  [['footerNews','news'],['footerPress','press'],['footerPartners','partners']].forEach(function(pair){
-    var el = document.getElementById(pair[0]); if(!el) return;
-    el.textContent = L[pair[1]];
-    el.href = 'news.html?lang=' + currentLang + '&tab=' + pair[1];
-  });
-})();
-
-/* Liens de langue dans le footer */
-(function(){
-  var box = document.getElementById('footerLangs'); if(!box) return;
-  var keys = ['fr','en','es','pt','it','ar'];
-  var params = new URLSearchParams(location.search);
-  var html = '';
-  for(var i=0;i<keys.length;i++){
-    var k = keys[i], m = LANG_META[k];
-    params.set('lang', k);
-    html += '<a href="' + location.pathname + '?' + params.toString() + '"' + (k===currentLang?' style="color:#fff;font-weight:600"':'') + '>' + m.name + '</a>';
-  }
-  box.innerHTML = html;
-})();
 
 /* ========================================================
    Icônes SVG inline (data-icon)
@@ -931,9 +903,6 @@ injectIcons();
 /* Contact modal open/close */
 document.getElementById('btnContact').addEventListener('click', function(e){
   e.preventDefault();
-  document.getElementById('contactModal').classList.add('active');
-});
-document.getElementById('btnContactFooter').addEventListener('click', function(){
   document.getElementById('contactModal').classList.add('active');
 });
 document.getElementById('contactClose').addEventListener('click', function(){
@@ -1197,12 +1166,23 @@ function findPhoto(item, photosDb){
 
 function animateCounters(nodes, targets, duration){
   var easeOutCubic = function(t){ return 1 - Math.pow(1 - t, 3); };
+  /* Part de la valeur deja affichee (repli en dur), jamais de 0 visible.
+     N'anime que si la cible differe du repli. */
+  var froms = nodes.map(function(el){
+    return parseInt((el.textContent || '0').replace(/[^0-9]/g, ''), 10) || 0;
+  });
+  var changed = false;
+  for(var c=0;c<nodes.length;c++){ if(froms[c] !== targets[c]) changed = true; }
+  if(!changed){
+    nodes.forEach(function(el, i){ el.textContent = targets[i].toLocaleString(); });
+    return;
+  }
   var start = performance.now();
   function frame(now){
     var p = Math.min(1, (now - start) / duration);
     var e = easeOutCubic(p);
     nodes.forEach(function(el, i){
-      el.textContent = Math.floor(targets[i] * e).toLocaleString();
+      el.textContent = Math.round(froms[i] + (targets[i] - froms[i]) * e).toLocaleString();
     });
     if(p < 1) requestAnimationFrame(frame);
     else nodes.forEach(function(el, i){ el.textContent = targets[i].toLocaleString(); });
@@ -1412,7 +1392,32 @@ function render(){
     for(var j=0;j<data.length;j++) html += buildCard(data[j]);
     html += '</div></section>';
   }
+
+  /* Aucun résultat : message clair plutôt qu'une page blanche */
+  if(data.length === 0){
+    html = '<div class="no-results">' +
+      '<p class="nr-title">' + t.noResultsTitle + '</p>' +
+      '<p class="nr-text">' + t.noResultsText + '</p>' +
+      '<button type="button" class="btn btn-accent" id="nrReset">' + t.noResultsBtn + '</button>' +
+      '</div>';
+  }
+
   main.innerHTML = html;
+
+  var nrBtn = document.getElementById('nrReset');
+  if(nrBtn){
+    nrBtn.addEventListener('click', function(){
+      document.getElementById('searchInput').value = '';
+      document.getElementById('countryFilter').value = '';
+      document.getElementById('themeFilter').value = '';
+      document.getElementById('durationFilter').value = '';
+      document.getElementById('distanceFilter').value = '';
+      syncQuickChips();
+      applyFilters();
+      var top = document.getElementById('catalogue');
+      if(top) top.scrollIntoView({behavior:'smooth', block:'start'});
+    });
+  }
   applyView();
 }
 
@@ -1603,8 +1608,10 @@ document.querySelectorAll('.chip[data-qtheme]').forEach(function(el){
 
 /* Bouton Rechercher : applique et descend au premier résultat */
 function goToFirstItin(){
+  /* Vers la première carte si elle existe, sinon vers le haut du catalogue
+     (cas zéro résultat : on amène quand même l'utilisateur au message). */
   var firstCard = document.querySelector('#mainContent .card');
-  var target = firstCard || document.getElementById('catalogue');
+  var target = firstCard || document.getElementById('catalogue') || document.getElementById('mainContent');
   if(target) target.scrollIntoView({behavior:'smooth', block:'start'});
 }
 document.getElementById('desktopValidateBtn').addEventListener('click', function(){

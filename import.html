@@ -929,6 +929,9 @@ Pas besoin de tout recompter sur 30+ textes, mais la fin du JSON doit être insp
 **9. Hôtels nommés dans les visits/activities**
 Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans un texte de visit/activity crée un doublon. À reformuler en "quartier où dormir" ou à supprimer.
 
+**10. Champ climate manquant, vide ou mal écrit**
+Le champ \`climate\` (top-level) doit contenir 2-3 phrases dans la langue cible avec : meilleure période (mois + °C), ce qu'il faut éviter (chaleur, mousson, gel), particularités locales si pertinent. Signaler si : absent, vide, dans une autre langue que \`language\`, ou trop générique ("agréable toute l'année", pas de chiffres). Doit être actionnable, parle au voyageur.
+
 **10. Sources web manquantes (source_url)**
 - Le champ **source_url** doit contenir une liste d'URLs séparées par virgule, minimum 5.
 - Si **source_url** est vide ou contient moins de 5 URLs : recherche web insuffisante. Le JSON est à rejeter.
@@ -1225,6 +1228,7 @@ JSON skeleton (every field mandatory):
     "title": "SEO-compliant, 50-60 chars MAX, no Google-pavé",
     "subtitle": "One descriptive sentence with a verb.",
     "notes": "",  // Visible end user. What makes this trip special, seasonal warnings, logistical caveats. MAX 2 sentences. NEVER draft tallies or audit data.
+    "climate": "2-3 sentences in target language, actionable style: best period (months + °C), what to avoid (extreme heat, monsoon, etc.), local specifics if any. Speak to traveler.",
     "specialties": ["theme1", "theme2"],
     "estimated_days_base": 5,
     "pacing_rules": {
@@ -1286,6 +1290,7 @@ JSON skeleton (every field mandatory):
 - **itin_id / id**: same value, format CC::region::slug (CC = ISO 3166-1 alpha-2 uppercase).
 - **dept_code**: real regional code ("FR-06", "IT-RM", "US-AL"). Never "CC", "XX".
 - **specialties**: 2-4 themes in "${targetLang}".
+- **climate**: 2-3 sentences in "${targetLang}", actionable style. Best period (months + °C range), what to AVOID (extreme heat, monsoon, hurricane season, freezing roads, etc.), local specifics if relevant (sirocco, altitude cold, humidity). Speak to the traveler ("visit", "avoid", "plan"). NO poetic bullshit, NO "agréable toute l'année". Example FR: "Meilleure période : avril-juin et septembre-octobre, 18 à 25°C, peu d'humidité. Évitez juillet-août (chaleur lourde, orages quotidiens). Hiver doux mais pluvieux."
 - **suggested_days**: real time at this stop. Decimals expected: 0.2 (drive-through), 0.3 (quick stop, e.g. Cagnes-sur-Mer visited from Nice), 0.5 (half-day), 1 (full day), 1.5, 2 (rich city).
 - **estimated_days_base** = round(SUM(suggested_days) + transport_days). N must appear identically in: title (if duration shown), subtitle (if duration), h1_title, intro_paragraph, seo_hook (if duration), seo_keywords line, segments[last].to_day, variants[0].to_day, variants[0].label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), unrelated to N. COUNT_DAYS can be > N.
 - **segments[last].to_day** = the step index of the last days_plan entry (= COUNT_DAYS, e.g. 15 for a trip with 15 mapped places). This is NOT N. It equals days_plan[last].day. The range in segments maps step indices, not calendar days.

@@ -3838,45 +3838,6 @@ async function init() {
       ORT_TRIP_CALC.groupNightsByPlace(state.steps);
     }
     
-    /* >>> ANCIEN CODE INLINE - COMMENTÉ - À SUPPRIMER <<<
-    // === REGROUPEMENT DES NUITS PAR LIEU (comme RT detail) ===
-    // Si plusieurs jours consécutifs au même place_id → fusionner sur la première étape
-    if (state.steps.length > 0) {
-      console.log('[LOG-CONTROLE][MOBILE] === REGROUPEMENT DES NUITS PAR LIEU ===');
-      let currentPlaceId = null;
-      let currentGroupStart = 0;
-      let currentGroupCount = 0;
-      
-      for (let i = 0; i <= state.steps.length; i++) {
-        const step = state.steps[i];
-        const placeId = step?.place_id || step?.placeId || `step_${i}`;
-        
-        if (i === state.steps.length || placeId !== currentPlaceId) {
-          // Fin du groupe précédent
-          if (currentGroupCount > 1 && currentPlaceId !== null) {
-            let totalNights = 0;
-            for (let j = currentGroupStart; j < currentGroupStart + currentGroupCount; j++) {
-              totalNights += state.steps[j].nights || 0;
-            }
-            state.steps[currentGroupStart].nights = totalNights;
-            state.steps[currentGroupStart]._isGroupHead = true;
-            for (let j = currentGroupStart + 1; j < currentGroupStart + currentGroupCount; j++) {
-              state.steps[j].nights = 0;
-              state.steps[j]._isGroupMember = true;
-            }
-            console.log(`[LOG-CONTROLE][MOBILE] Groupe: ${state.steps[currentGroupStart].name} (${currentGroupCount} jours) → ${totalNights} nuit(s)`);
-          }
-          if (i < state.steps.length) {
-            currentPlaceId = placeId;
-            currentGroupStart = i;
-            currentGroupCount = 1;
-          }
-        } else {
-          currentGroupCount++;
-        }
-      }
-    }
-    FIN ANCIEN CODE */
     
     // === CALCUL DES NUITS IMMÉDIAT (avant rendu) — sauf si trip dashboard ===
     if (state._isFromDashboard) {

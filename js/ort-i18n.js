@@ -1494,6 +1494,17 @@ window.ORT_I18N.builderCreating = {
   pt: 'Criando o seu itinerário...',
   ar: 'جار إنشاء مسارك...'
 };
+// Le Route Builder demande la clé "builderLoading" pour son écran de
+// chargement. Sans elle, le texte brut "builderLoading" s'affichait.
+// Même contenu que builderCreating.
+window.ORT_I18N.builderLoading = {
+  fr: 'Création de votre itinéraire...',
+  en: 'Creating your itinerary...',
+  es: 'Creando tu itinerario...',
+  it: 'Creazione del tuo itinerario...',
+  pt: 'Criando o seu itinerário...',
+  ar: 'جار إنشاء مسارك...'
+};
 window.ORT_I18N.builderError = {
   fr: 'Erreur lors de la création',
   en: 'Error creating itinerary',
