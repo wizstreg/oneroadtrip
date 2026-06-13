@@ -7136,11 +7136,23 @@ dateCell.style.textAlign='left';
       categoryGroups[cat].push(booking);
     });
     
-    // Afficher un résumé
+    // Afficher un résumé : pastille (icône + nombre) + noms des résas
     let html = '<div style="font-size:0.8rem;line-height:1.4;font-weight:600">';
+    // Set pour dédupliquer les noms (une résa peut revenir via stepIndexes)
+    const seenNames = new Set();
     Object.entries(categoryGroups).forEach(([cat, bookings]) => {
       const icon = getCategoryIconForCell(cat);
+      // Pastille existante (compteur), inchangée
       html += `<div style="margin:2px 0;color:#555">${icon} ${bookings.length}</div>`;
+      // Liste des noms sous la pastille
+      bookings.forEach(b => {
+        const nm = b && b.name ? String(b.name).trim() : '';
+        if (!nm) return;
+        const key = (b.reference ? b.reference + '|' : '') + nm.toLowerCase();
+        if (seenNames.has(key)) return;
+        seenNames.add(key);
+        html += `<div style="margin:1px 0 3px 16px;color:#1e3a8a;font-weight:500;font-size:0.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%" title="${safe(nm)}">${safe(nm)}</div>`;
+      });
     });
     html += '</div>';
     
