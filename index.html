@@ -311,39 +311,38 @@ main{padding-block:40px 64px}
 /* Pastille météo en coin de carte */
 .card-meteo{
   position:absolute; bottom:10px; right:10px; z-index:2;
-  width:30px; height:30px; border-radius:50%;
-  background:rgba(255,255,255,.92);
+  width:32px; height:32px; border-radius:50%;
+  background:rgba(255,255,255,.95);
+  color:var(--navy);
   display:flex; align-items:center; justify-content:center;
-  font-size:16px; line-height:1;
+  font-size:17px; line-height:1;
   box-shadow:0 1px 4px rgba(0,0,0,.25);
   cursor:pointer; user-select:none;
-  transition:transform .15s var(--ease);
+  transition:transform .15s var(--ease), background .15s var(--ease);
 }
-.card-meteo:hover{transform:scale(1.08)}
-.card-meteo.is-good{background:rgba(34,197,94,.95);color:#fff}
-.card-meteo.is-mid{background:rgba(245,158,11,.95);color:#fff}
-.card-meteo.is-bad{background:rgba(239,68,68,.95);color:#fff}
-.card-meteo.is-loading{background:rgba(255,255,255,.7);color:#999}
+.card-meteo:hover{transform:scale(1.08); background:#fff}
+.card-meteo.is-loading{opacity:.6}
+/* Sur tactile, on agrandit la zone de tap */
+@media (hover:none){
+  .card-meteo{ width:38px; height:38px; font-size:19px; }
+}
 
 /* Tooltip météo */
 .meteo-tooltip{
-  position:absolute; bottom:48px; right:10px; z-index:5;
-  width:260px; max-width:calc(100% - 20px);
+  position:fixed; z-index:9999;
+  width:max-content; max-width:280px;
   background:#fff; color:var(--ink);
-  border-radius:10px; padding:12px 14px;
+  border-radius:10px; padding:10px 12px;
   box-shadow:0 8px 24px rgba(0,0,0,.18);
-  font-size:12.5px; line-height:1.45;
+  font-size:12.5px; line-height:1.4;
   opacity:0; pointer-events:none;
   transform:translateY(6px);
   transition:opacity .15s var(--ease), transform .15s var(--ease);
 }
 .meteo-tooltip.is-open{opacity:1; transform:none; pointer-events:auto}
-.meteo-tooltip .mt-verdict{font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px}
-.meteo-tooltip .mt-verdict.is-good{color:#16a34a}
-.meteo-tooltip .mt-verdict.is-mid{color:#d97706}
-.meteo-tooltip .mt-verdict.is-bad{color:#dc2626}
-.meteo-tooltip .mt-months{font-size:11.5px; color:var(--ink-soft); margin-bottom:6px}
-.meteo-tooltip .mt-text{color:var(--ink); font-size:12px}
+.meteo-tooltip .mt-title{font-weight:700; margin-bottom:4px; color:var(--ink); font-size:12.5px}
+.meteo-tooltip .mt-months{font-size:12.5px; color:var(--navy); margin-bottom:6px; font-weight:600}
+.meteo-tooltip .mt-text{color:var(--ink-soft); font-size:11.5px}
 
 /* ============================================================
    Footer
@@ -1341,7 +1340,7 @@ function buildCard(item){
   html += '<div class="card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
   html += '<span class="card-badge">' + cc + '</span>';
   html += '<span class="card-flag">' + getFlag(item.cc) + '</span>';
-  html += '<span class="card-meteo is-loading" data-cc="' + (item.cc||'') + '" data-slug="' + (item.slug||'') + '" title="Météo">\u22EF</span>';
+  html += '<span class="card-meteo is-loading" data-cc="' + (item.cc||'') + '" data-slug="' + (item.slug||'') + '" aria-label="Météo">\u26C5</span>';
   html += '</div>';
   html += '<div class="card-body">';
   html += '<h3 class="card-title">' + item.title + '</h3>';
@@ -1726,12 +1725,12 @@ document.getElementById('vtMap').addEventListener('click', function(){ currentVi
     ar:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
   };
   var VERDICT_LABELS = {
-    fr:{good:'Période idéale',mid:'Période acceptable',bad:'Période à éviter',months:'Meilleurs mois',na:'Pas de donnée météo'},
-    en:{good:'Ideal period',mid:'Acceptable period',bad:'Avoid this period',months:'Best months',na:'No weather data'},
-    es:{good:'Periodo ideal',mid:'Periodo aceptable',bad:'Periodo a evitar',months:'Mejores meses',na:'Sin datos meteorológicos'},
-    it:{good:'Periodo ideale',mid:'Periodo accettabile',bad:'Periodo da evitare',months:'Mesi migliori',na:'Nessun dato meteo'},
-    pt:{good:'Período ideal',mid:'Período aceitável',bad:'Período a evitar',months:'Melhores meses',na:'Sem dados meteorológicos'},
-    ar:{good:'الفترة المثالية',mid:'فترة مقبولة',bad:'فترة يجب تجنبها',months:'أفضل الأشهر',na:'لا توجد بيانات الطقس'}
+    fr:{when:'Quand y aller',na:'Pas de donnée météo'},
+    en:{when:'When to go',na:'No weather data'},
+    es:{when:'Cuándo ir',na:'Sin datos meteorológicos'},
+    it:{when:'Quando andare',na:'Nessun dato meteo'},
+    pt:{when:'Quando ir',na:'Sem dados meteorológicos'},
+    ar:{when:'متى تذهب',na:'لا توجد بيانات الطقس'}
   };
   var lang = (typeof currentLang !== 'undefined') ? currentLang : 'fr';
   var monthNames = MONTHS[lang] || MONTHS.fr;
@@ -1793,18 +1792,15 @@ document.getElementById('vtMap').addEventListener('click', function(){ currentVi
   }
 
   function applyToBadge(badge, info){
-    badge.classList.remove('is-loading','is-good','is-mid','is-bad');
-    if(!info || !info.verdict){
-      badge.textContent = '?';
+    badge.classList.remove('is-loading');
+    /* Icône uniforme soleil-nuage, peu importe la saison */
+    badge.textContent = '\u26C5';
+    if(info){
+      badge.setAttribute('data-months', (info.bestMonths||[]).join(', '));
+      badge.setAttribute('data-text', info.climate || '');
+    } else {
       badge.setAttribute('data-state','none');
-      badge.setAttribute('data-text', labels.na);
-      return;
     }
-    badge.setAttribute('data-state', info.verdict);
-    badge.classList.add('is-' + info.verdict);
-    badge.textContent = info.verdict === 'good' ? '\u2600' : (info.verdict === 'mid' ? '\u26C5' : '\u26A0');
-    badge.setAttribute('data-text', info.climate || '');
-    badge.setAttribute('data-months', (info.bestMonths||[]).join(', '));
   }
 
   function loadFor(badge){
@@ -1846,19 +1842,39 @@ document.getElementById('vtMap').addEventListener('click', function(){ currentVi
     if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
     var info = cardCache[badge.getAttribute('data-cc') + '|' + badge.getAttribute('data-slug')];
     var tip = getTooltip();
-    var v = info && info.verdict;
-    var verdictLabel = v ? labels[v] : labels.na;
-    var icon = v === 'good' ? '\u2600' : v === 'mid' ? '\u26C5' : v === 'bad' ? '\u26A0' : '\u2026';
-    var months = info && info.bestMonths && info.bestMonths.length ? info.bestMonths.join(', ') : '';
     var text = info && info.climate ? info.climate : '';
-    tip.innerHTML =
-      '<div class="mt-verdict ' + (v ? 'is-'+v : '') + '">' + icon + ' ' + escapeHtml(verdictLabel) + '</div>' +
-      (months ? '<div class="mt-months"><strong>' + escapeHtml(labels.months) + ' :</strong> ' + escapeHtml(months) + '</div>' : '') +
-      (text ? '<div class="mt-text">' + escapeHtml(text) + '</div>' : '');
-    /* Position : ancré sur la carte parente */
-    var photo = badge.parentNode;
-    photo.appendChild(tip);
-    requestAnimationFrame(function(){ tip.classList.add('is-open'); });
+    if(!text){
+      tip.innerHTML = '<div class="mt-title">' + escapeHtml(labels.na) + '</div>';
+    } else {
+      tip.innerHTML =
+        '<div class="mt-title">' + escapeHtml(labels.when) + '</div>' +
+        '<div class="mt-text">' + escapeHtml(text) + '</div>';
+    }
+    /* Le tooltip est attaché au body (position:fixed) pour échapper à overflow:hidden des cards */
+    document.body.appendChild(tip);
+    /* Mesure puis positionnement */
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    tip.classList.add('is-open');
+    var rect = badge.getBoundingClientRect();
+    var tipW = tip.offsetWidth;
+    var tipH = tip.offsetHeight;
+    var gap = 8;
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    /* Position cible : au-dessus du badge, aligné à droite */
+    var left = rect.right - tipW;
+    var top = rect.top - tipH - gap;
+    /* Si pas la place en haut, on bascule en dessous */
+    if(top < 8) top = rect.bottom + gap;
+    /* Si déborde à gauche, on recadre */
+    if(left < 8) left = 8;
+    /* Si déborde à droite (peu probable car aligné right), on recadre */
+    if(left + tipW > vw - 8) left = vw - tipW - 8;
+    /* Si déborde en bas après bascule */
+    if(top + tipH > vh - 8) top = Math.max(8, vh - tipH - 8);
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
   }
   function hideTooltip(){
     if(hideTimer){ clearTimeout(hideTimer); }
