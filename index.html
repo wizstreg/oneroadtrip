@@ -308,6 +308,43 @@ main{padding-block:40px 64px}
 .card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .tag{display:inline-block;background:var(--tint);color:var(--navy);font-size:11px;font-weight:600;padding:4px 10px;border-radius:var(--r-pill)}
 
+/* Pastille météo en coin de carte */
+.card-meteo{
+  position:absolute; bottom:10px; right:10px; z-index:2;
+  width:30px; height:30px; border-radius:50%;
+  background:rgba(255,255,255,.92);
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; line-height:1;
+  box-shadow:0 1px 4px rgba(0,0,0,.25);
+  cursor:pointer; user-select:none;
+  transition:transform .15s var(--ease);
+}
+.card-meteo:hover{transform:scale(1.08)}
+.card-meteo.is-good{background:rgba(34,197,94,.95);color:#fff}
+.card-meteo.is-mid{background:rgba(245,158,11,.95);color:#fff}
+.card-meteo.is-bad{background:rgba(239,68,68,.95);color:#fff}
+.card-meteo.is-loading{background:rgba(255,255,255,.7);color:#999}
+
+/* Tooltip météo */
+.meteo-tooltip{
+  position:absolute; bottom:48px; right:10px; z-index:5;
+  width:260px; max-width:calc(100% - 20px);
+  background:#fff; color:var(--ink);
+  border-radius:10px; padding:12px 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);
+  font-size:12.5px; line-height:1.45;
+  opacity:0; pointer-events:none;
+  transform:translateY(6px);
+  transition:opacity .15s var(--ease), transform .15s var(--ease);
+}
+.meteo-tooltip.is-open{opacity:1; transform:none; pointer-events:auto}
+.meteo-tooltip .mt-verdict{font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px}
+.meteo-tooltip .mt-verdict.is-good{color:#16a34a}
+.meteo-tooltip .mt-verdict.is-mid{color:#d97706}
+.meteo-tooltip .mt-verdict.is-bad{color:#dc2626}
+.meteo-tooltip .mt-months{font-size:11.5px; color:var(--ink-soft); margin-bottom:6px}
+.meteo-tooltip .mt-text{color:var(--ink); font-size:12px}
+
 /* ============================================================
    Footer
    ============================================================ */
@@ -1304,6 +1341,7 @@ function buildCard(item){
   html += '<div class="card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
   html += '<span class="card-badge">' + cc + '</span>';
   html += '<span class="card-flag">' + getFlag(item.cc) + '</span>';
+  html += '<span class="card-meteo is-loading" data-cc="' + (item.cc||'') + '" data-slug="' + (item.slug||'') + '" title="Météo">\u22EF</span>';
   html += '</div>';
   html += '<div class="card-body">';
   html += '<h3 class="card-title">' + item.title + '</h3>';
@@ -1674,6 +1712,220 @@ function applyView(){
 }
 document.getElementById('vtPhoto').addEventListener('click', function(){ currentView = 'photo'; applyView(); });
 document.getElementById('vtMap').addEventListener('click', function(){ currentView = 'map'; applyView(); });
+
+/* ========================================================
+   PASTILLE MÉTÉO (lazy load par pays + tooltip)
+   ======================================================== */
+(function(){
+  var MONTHS = {
+    fr:['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],
+    en:['january','february','march','april','may','june','july','august','september','october','november','december'],
+    es:['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+    it:['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'],
+    pt:['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],
+    ar:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
+  };
+  var VERDICT_LABELS = {
+    fr:{good:'Période idéale',mid:'Période acceptable',bad:'Période à éviter',months:'Meilleurs mois',na:'Pas de donnée météo'},
+    en:{good:'Ideal period',mid:'Acceptable period',bad:'Avoid this period',months:'Best months',na:'No weather data'},
+    es:{good:'Periodo ideal',mid:'Periodo aceptable',bad:'Periodo a evitar',months:'Mejores meses',na:'Sin datos meteorológicos'},
+    it:{good:'Periodo ideale',mid:'Periodo accettabile',bad:'Periodo da evitare',months:'Mesi migliori',na:'Nessun dato meteo'},
+    pt:{good:'Período ideal',mid:'Período aceitável',bad:'Período a evitar',months:'Melhores meses',na:'Sem dados meteorológicos'},
+    ar:{good:'الفترة المثالية',mid:'فترة مقبولة',bad:'فترة يجب تجنبها',months:'أفضل الأشهر',na:'لا توجد بيانات الطقس'}
+  };
+  var lang = (typeof currentLang !== 'undefined') ? currentLang : 'fr';
+  var monthNames = MONTHS[lang] || MONTHS.fr;
+  var labels = VERDICT_LABELS[lang] || VERDICT_LABELS.fr;
+  var currentMonth = new Date().getMonth(); /* 0-11 */
+  var currentMonthName = monthNames[currentMonth];
+
+  /* Cache par pays : { CC: Promise<itineraries[]> } */
+  var countryCache = {};
+  /* Cache par carte (cc+slug) : { verdict, bestMonths, climate } */
+  var cardCache = {};
+
+  function fetchCountry(cc){
+    if(!cc) return Promise.resolve(null);
+    cc = cc.toUpperCase();
+    if(countryCache[cc]) return countryCache[cc];
+    var url = '/data/Roadtripsprefabriques/countries/' + cc + '/' + cc + '.itins.modules-' + lang + '.json';
+    countryCache[cc] = fetch(url)
+      .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); })
+      .then(function(data){ return (data && data.itineraries) || []; })
+      .catch(function(){ return []; });
+    return countryCache[cc];
+  }
+
+  function matchItin(itineraries, slug, cc){
+    if(!slug || !itineraries || !itineraries.length) return null;
+    var s = slug.toLowerCase();
+    var ccLow = (cc||'').toLowerCase();
+    for(var i=0;i<itineraries.length;i++){
+      var it = itineraries[i];
+      var id = (it.itin_id || it.id || '').toLowerCase();
+      if(!id) continue;
+      var parts = id.split('::');
+      var suffix = parts[parts.length-1];
+      if(!suffix) continue;
+      if(suffix === s) return it;
+      if(s === ccLow + '-' + suffix) return it;
+      if(s.endsWith('-' + suffix)) return it;
+      if(s.endsWith(suffix)) return it;
+    }
+    return null;
+  }
+
+  function computeVerdict(bestMonths){
+    if(!bestMonths || !bestMonths.length) return null;
+    var bm = bestMonths.map(function(m){ return String(m).toLowerCase().trim(); });
+    if(bm.indexOf(currentMonthName.toLowerCase()) !== -1) return 'good';
+    /* mois adjacents */
+    var prev = monthNames[(currentMonth+11)%12].toLowerCase();
+    var next = monthNames[(currentMonth+1)%12].toLowerCase();
+    if(bm.indexOf(prev) !== -1 || bm.indexOf(next) !== -1) return 'mid';
+    return 'bad';
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function applyToBadge(badge, info){
+    badge.classList.remove('is-loading','is-good','is-mid','is-bad');
+    if(!info || !info.verdict){
+      badge.textContent = '?';
+      badge.setAttribute('data-state','none');
+      badge.setAttribute('data-text', labels.na);
+      return;
+    }
+    badge.setAttribute('data-state', info.verdict);
+    badge.classList.add('is-' + info.verdict);
+    badge.textContent = info.verdict === 'good' ? '\u2600' : (info.verdict === 'mid' ? '\u26C5' : '\u26A0');
+    badge.setAttribute('data-text', info.climate || '');
+    badge.setAttribute('data-months', (info.bestMonths||[]).join(', '));
+  }
+
+  function loadFor(badge){
+    var cc = badge.getAttribute('data-cc');
+    var slug = badge.getAttribute('data-slug');
+    var key = cc + '|' + slug;
+    if(cardCache[key]){ applyToBadge(badge, cardCache[key]); return Promise.resolve(cardCache[key]); }
+    return fetchCountry(cc).then(function(itineraries){
+      var it = matchItin(itineraries, slug, cc);
+      var info = null;
+      if(it){
+        var bestMonths = (it.practical_context && it.practical_context.best_months) || [];
+        info = {
+          bestMonths: bestMonths,
+          climate: it.climate || '',
+          verdict: computeVerdict(bestMonths)
+        };
+      }
+      cardCache[key] = info;
+      applyToBadge(badge, info);
+      return info;
+    });
+  }
+
+  /* Tooltip unique réutilisé */
+  var tooltip = null;
+  var hideTimer = null;
+  function getTooltip(){
+    if(tooltip) return tooltip;
+    tooltip = document.createElement('div');
+    tooltip.className = 'meteo-tooltip';
+    /* Empêche le clic dans le tooltip de naviguer vers la page de l'itinéraire */
+    tooltip.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); });
+    tooltip.addEventListener('mouseenter', function(){ if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; } });
+    tooltip.addEventListener('mouseleave', function(){ hideTooltip(); });
+    return tooltip;
+  }
+  function showTooltip(badge){
+    if(hideTimer){ clearTimeout(hideTimer); hideTimer = null; }
+    var info = cardCache[badge.getAttribute('data-cc') + '|' + badge.getAttribute('data-slug')];
+    var tip = getTooltip();
+    var v = info && info.verdict;
+    var verdictLabel = v ? labels[v] : labels.na;
+    var icon = v === 'good' ? '\u2600' : v === 'mid' ? '\u26C5' : v === 'bad' ? '\u26A0' : '\u2026';
+    var months = info && info.bestMonths && info.bestMonths.length ? info.bestMonths.join(', ') : '';
+    var text = info && info.climate ? info.climate : '';
+    tip.innerHTML =
+      '<div class="mt-verdict ' + (v ? 'is-'+v : '') + '">' + icon + ' ' + escapeHtml(verdictLabel) + '</div>' +
+      (months ? '<div class="mt-months"><strong>' + escapeHtml(labels.months) + ' :</strong> ' + escapeHtml(months) + '</div>' : '') +
+      (text ? '<div class="mt-text">' + escapeHtml(text) + '</div>' : '');
+    /* Position : ancré sur la carte parente */
+    var photo = badge.parentNode;
+    photo.appendChild(tip);
+    requestAnimationFrame(function(){ tip.classList.add('is-open'); });
+  }
+  function hideTooltip(){
+    if(hideTimer){ clearTimeout(hideTimer); }
+    hideTimer = setTimeout(function(){
+      if(tooltip){ tooltip.classList.remove('is-open'); }
+      hideTimer = null;
+    }, 180);
+  }
+
+  /* Délégation : on écoute sur le document */
+  function isTouch(){ return window.matchMedia && window.matchMedia('(hover: none)').matches; }
+
+  document.addEventListener('mouseover', function(e){
+    var b = e.target.closest && e.target.closest('.card-meteo');
+    if(!b) return;
+    loadFor(b).then(function(){ showTooltip(b); });
+  });
+  document.addEventListener('mouseout', function(e){
+    var b = e.target.closest && e.target.closest('.card-meteo');
+    if(!b) return;
+    hideTooltip();
+  });
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('.card-meteo');
+    if(!b) return;
+    /* Sur mobile/tactile : empêche la navigation de la carte */
+    if(isTouch()){
+      e.preventDefault(); e.stopPropagation();
+      loadFor(b).then(function(){
+        if(tooltip && tooltip.classList.contains('is-open')) hideTooltip();
+        else showTooltip(b);
+      });
+    } else {
+      /* Desktop : le survol gère déjà, on bloque juste la nav */
+      e.preventDefault(); e.stopPropagation();
+    }
+  }, true);
+
+  /* Fermeture tooltip mobile au tap ailleurs */
+  document.addEventListener('click', function(e){
+    if(!tooltip || !tooltip.classList.contains('is-open')) return;
+    if(e.target.closest && (e.target.closest('.card-meteo') || e.target.closest('.meteo-tooltip'))) return;
+    hideTooltip();
+  });
+
+  /* Pré-chargement léger : quand une carte entre dans le viewport, on prépare la pastille */
+  if('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){
+        if(en.isIntersecting){
+          loadFor(en.target);
+          io.unobserve(en.target);
+        }
+      });
+    }, {rootMargin:'200px'});
+    /* Observer après chaque rendu */
+    var origRender = (typeof render === 'function') ? render : null;
+    if(origRender){
+      window.render = function(){
+        origRender.apply(this, arguments);
+        setTimeout(function(){
+          document.querySelectorAll('.card-meteo.is-loading').forEach(function(b){ io.observe(b); });
+        }, 0);
+      };
+    }
+  }
+})();
 
 /* ========================================================
    CHARGEMENT DES DONNÉES (logique d'origine conservée)
