@@ -809,7 +809,7 @@ Structure attendue de chaque entrée \`days_plan\` :
 Le JSON complet contient aussi :
 - \`itin_id\`, \`id\`, \`language: "${targetLang}"\`, \`created_at\`, \`source_url: ""\`, \`dept_code\`, \`dept_name\`
 - \`title\`, \`seo.h1_title\` remplis (titre simple, pas besoin d'optimisation SEO à ce stade)
-- \`subtitle: ""\`, \`notes: ""\`, \`specialties: []\`, \`practical_context: {best_months: [], highlights: []}\`
+- \`subtitle: ""\`, \`notes: ""\`, \`climate: ""\`, \`specialties: []\`, \`practical_context: {best_months: [], highlights: []}\`
 - \`estimated_days_base\` cohérent avec la durée annoncée
 - \`pacing_rules\` standard (factors 0.75/1.0/1.25, day_budgets_min 300/420/540, merge_threshold 0.85)
 - \`segments\`, \`variants\`, \`regions\`, \`meta\`, \`seo\` (avec seul \`h1_title\` rempli), \`seo_keywords: []\`
@@ -853,7 +853,7 @@ Ton rôle s'arrête ici. Tu transmets le JSON squelette validé à l'utilisateur
 **Ce que tu ne fais pas** : rédiger des descriptions de visites, des activités, des textes blog. C'est le rôle exclusif du concepteur.
 
 📌 Message à transmettre à l'utilisateur :
-"Squelette validé. Copiez ce JSON dans le prompt concepteur — il prendra en charge toute la rédaction et la recherche web par lieu."
+"Squelette validé. Copiez ce JSON dans le prompt concepteur — il prendra en charge toute la rédaction et la recherche web par lieu. Le concepteur doit conserver à l'identique la liste des lieux, leurs place_id, leurs coordonnées et l'ordre du parcours validés ici : il rédige le contenu, il ne redessine pas la carte. Pour l'audit final (mission 2), recollez-moi l'intégralité de la sortie du concepteur — le bloc RESEARCH, le bloc DENSITY DECLARATION et le JSON — pas seulement le JSON de l'artifact, sinon je ne peux pas vérifier les sources ni la densité déclarée."
 
 ═══════════════════════════════════════════════════════════
 🔎 MISSION 2 — AUDITER LE JSON FINAL (plus tard)
@@ -872,10 +872,18 @@ Quand l'utilisateur te renverra le JSON produit par le concepteur (autre IA), tu
 Le critère unique pour 1a comme 1b : **nom propre + coords GPS distinctes de l'entrée hôte**. La règle s'applique de la même manière, que le POI soit dans une commune différente ou dans la même commune que la night.place_id de l'entrée hôte.
 
 **2. Format place_id**
-- Suffixes interdits : "-centre", "-vieille-ville", "-airport", "-stop", "-return", "-day2", "-trek", "-ski", "-baignade", "-flamenco", "-gondoles".
-- Quartiers comme place_id : "FR::nice-vieille-ville", "ES::madrid-malasana", "IT::roma-trastevere".
+
+Critère de validité : un place_id est VALIDE s'il pointe vers l'une de ces deux choses, vérifiable sur Wikipedia ou Google Maps :
+- une municipalité, ville ou village réel (ex : "ES::morella", "FR::nice") ;
+- OU un site naturel ou archéologique nommé, avec ses propres coordonnées GPS distinctes : cascade, grotte, col, lac, sommet, gorge, site mégalithique, ruine (ex : "PT::covao-dos-conchos", "ES::salto-de-la-novia", "GB::pentre-ifan"). C'est exactement le type d'entrée créé par la règle 1b. Ne le signale PAS comme erreur : sans cette entrée, le POI n'apparaît pas sur la carte.
+
+Ne signaler comme INVALIDE que les cas suivants :
+- Suffixes artificiels : "-centre", "-vieille-ville", "-airport", "-stop", "-return", "-day2", "-trek", "-ski", "-baignade", "-flamenco", "-gondoles".
+- Quartiers d'une ville : "FR::nice-vieille-ville", "ES::madrid-malasana", "IT::roma-trastevere".
 - Aéroports/gares : "ES::madrid-barajas", "FR::paris-gare-du-nord".
-- Tout place_id qui n'existe pas comme municipalité sur Wikipedia/Google Maps.
+- Slug fantaisiste qui ne correspond à aucun lieu réel sur la carte (ni commune, ni site nommé).
+
+Test de tranchage : le slug désigne-t-il un lieu qui existe sous ce nom exact sur une carte ? Si oui (commune ou site nommé) → valide. Si c'est un découpage d'une ville (quartier, gare) ou une invention pour les besoins du trajet → invalide.
 
 **3. Cohérence de durée**
 - Formule attendue : **N = round(SUM(suggested_days) + transport_days)**.
@@ -932,18 +940,18 @@ Interdit. Le front gère l'hébergement automatiquement. Un hôtel nommé dans u
 **10. Champ climate manquant, vide ou mal écrit**
 Le champ \`climate\` (top-level) doit contenir 2-3 phrases dans la langue cible avec : meilleure période (mois + °C), ce qu'il faut éviter (chaleur, mousson, gel), particularités locales si pertinent. Signaler si : absent, vide, dans une autre langue que \`language\`, ou trop générique ("agréable toute l'année", pas de chiffres). Doit être actionnable, parle au voyageur.
 
-**10. Sources web manquantes (source_url)**
+**11. Sources web manquantes (source_url)**
 - Le champ **source_url** doit contenir une liste d'URLs séparées par virgule, minimum 5.
 - Si **source_url** est vide ou contient moins de 5 URLs : recherche web insuffisante. Le JSON est à rejeter.
 - Si les URLs paraissent inventées (domaines fantaisistes, structure d'URL bizarre) : à signaler.
 - Sources crédibles : Wikipedia (fr/en/es/local), sites officiels des attractions, offices de tourisme, UNESCO. À éviter : TripAdvisor reviews, blogs anonymes.
 
-**11. road_type — texte libre interdit**
+**12. road_type — texte libre interdit**
 - **road_type** doit être VIDE par défaut, ou contenir une des valeurs fermées suivantes en anglais : "flight", "ferry", "boat", "train", "scenic_road", "mountain_pass", "gravel", "seasonal".
 - Tout texte libre comme "nationale", "autoroute", "route côtière", "même nuit à X", "métro ligne X", "departmental", "highway" : à rejeter. Doit être réécrit en chaîne vide.
 - Exception : pour vol/ferry/train longue distance, **road_type** ECHOIT le **transport_mode**.
 
-**12. map_keywords — mauvaise langue**
+**13. map_keywords — mauvaise langue**
 - Pays à alphabet latin ou anglais (Espagne, Italie, France, UK, US, Allemagne, etc.) → **map_keywords** en langue locale du pays. Pas en français pour l'Italie. Pas en anglais pour la France.
 - Pays à alphabet non-Latin (Pologne, Grèce, Russie, Chine, Japon, Thaïlande, Arabe, etc.) → **map_keywords** en ANGLAIS. Exemple Pologne : "Wawel Castle Krakow" ✅ et non "Zamek Królewski na Wawelu" ❌.
 - **Pays bilingues — règle de tranchage** :
@@ -953,25 +961,35 @@ Le champ \`climate\` (top-level) doit contenir 2-3 phrases dans la langue cible 
   - Quebec : **FRANÇAIS**.
 - Format : "Exact Place Name + City". 1 à 3 entrées par jour.
 
-**13. Densité visits/activities — cohérence déclaration / JSON**
+**14. Densité visits/activities — cohérence déclaration / JSON**
+- ⚠️ PRÉALABLE : la comparaison déclaration/JSON exige que l'utilisateur t'ait collé AUSSI le bloc DENSITY DECLARATION et le bloc RESEARCH du concepteur, pas seulement le JSON de l'artifact. Ces deux blocs vivent hors de l'artifact. S'ils sont absents, écris-le en une ligne ("DENSITY DECLARATION absente — comparaison déclaration/JSON impossible") et saute UNIQUEMENT la comparaison de comptes. Les trois vérifs suivantes (entrée à une seule visite/activité, entrée vide, doublons entre entrées du même lieu) restent faisables sur le JSON seul : fais-les toujours.
 - Le concepteur a déclaré un compte "trouvé sur le web" dans son bloc DENSITY DECLARATION avant de produire le JSON. Compare ce compte avec ce que le JSON contient réellement.
 - **Signaler** : tout écart entre le nombre déclaré et le nombre réel dans le JSON, sans justification explicite dans la déclaration.
 - **Signaler** : toute entrée days_plan avec une seule visite ou activité sans justification du concepteur.
 - **Signaler** : toute entrée days_plan sans aucune visite ni activité (sauf étapes de transit documentées).
 - Plusieurs entrées pour le même lieu (ex : 3 × Nice) : visites et activités doivent être différentes sur chaque entrée — aucune répétition. Signaler les doublons.
 
-**14. POI non nommé dans les textes**
+**15. POI non nommé dans les textes**
 - Chaque texte de visit/activity doit nommer explicitement le lieu ou l'attraction qu'il décrit dans les deux premières phrases.
 - ❌ "Longez la falaise sur une passerelle suspendue au-dessus du lac." → quel lieu ?
 - ❌ "Ce sanctuaire perché domine le lac depuis le XIIe siècle." → lequel ?
 - ✅ "La Passeggiata degli Innamorati longe la falaise sur 200 m."
 - Signaler chaque texte où le lecteur ne peut pas identifier le lieu sans contexte extérieur.
 
-**15. Longueurs SEO hors norme**
+**16. Longueurs SEO hors norme**
 - **title** : doit faire 50-60 caractères (partie éditoriale, sans le suffixe " | OneRoadTrip" ajouté par le front). Au-delà de 60 : Google tronque. En-dessous de 50 : signal SEO faible.
 - **seo_hook** (= meta description) : 120-155 caractères. En-dessous de 120 : Google réécrit souvent sa propre description. Au-dessus de 155 : tronqué en "…" dans les résultats.
 - **subtitle** : 80-120 caractères. Phrase complète avec verbe. Une liste de mots-clés sans verbe = rejet.
 - Compter les caractères et signaler chaque dépassement avec le nombre réel constaté.
+
+**17. meta.themes / meta.audience hors liste fermée**
+- **meta.themes** : exactement 2 valeurs, prises mot pour mot dans cette liste : "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente". Signaler toute valeur inventée, traduite, ou hors liste, et tout compte différent de 2.
+- **meta.audience** : 2 à 4 valeurs prises dans : "couples", "solo", "familles", "seniors", "culture", "nature", "histoire", "aventure", "gastronomie". Signaler toute valeur hors liste.
+
+**18. notes — champ visible pollué**
+- Le champ **notes** (top-level, visible par l'utilisateur final) doit faire 2 phrases maximum, ou être vide. Contenu attendu : ce qui rend le voyage particulier, avertissement saisonnier, contrainte logistique.
+- Signaler si **notes** contient des données de travail internes : draft tally, comptage de patterns, notes d'audit, décompte de visites. Ces données n'ont rien à faire dans le livrable.
+- Signaler si **notes** dépasse 2 phrases.
 
 🟢 À IGNORER :
 - Dates approximatives mineures (XIVe vs XVe siècle si la source est ambiguë).
@@ -980,7 +998,7 @@ Le champ \`climate\` (top-level) doit contenir 2-3 phrases dans la langue cible 
 - Choix éditoriaux de tournure quand le hook tient.
 
 📤 FORMAT DE RETOUR D'AUDIT :
-- Section par catégorie (1 à 15 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
+- Section par catégorie (1 à 18 ci-dessus), tu ne mentionnes que celles qui ont des faits à signaler.
 - Pour chaque faute : citation exacte du JSON + correction proposée + raison brève.
 - Si une catégorie est propre, ne l'évoque pas.
 - Si rien à signaler du tout : "RAS, le JSON est propre" et tu t'arrêtes là.
@@ -1333,7 +1351,10 @@ If a city deserves multiple days (say Nice for 3 days), create 3 separate entrie
 
 **🚫 PLACE_ID FORMAT — STRICT**
 
-**night.place_id** MUST be the slug of a real, geographically distinct municipality/town/village ONLY. Format: CC::slug where slug is the place name, lowercase, ASCII, hyphens.
+**night.place_id** MUST be the slug of a real, mappable place verifiable on Wikipedia or Google Maps. TWO kinds are valid:
+(a) a real municipality / town / village (FR::nice, ES::morella), OR
+(b) a NAMED natural or archaeological site with its own distinct GPS coordinates: waterfall, cave, mountain pass, lake, peak, gorge, megalithic/Roman site (ES::salto-de-la-novia, PT::covao-dos-conchos, GB::pentre-ifan). This is the entry type required by the "every named POI = its own entry" rule above. Without it, the POI never shows on the map.
+Format: CC::slug where slug is the place's real name, lowercase, ASCII, hyphens.
 
 ✅ VALID: FR::nice, ES::cagnes-sur-mer, IT::matera, US::santa-fe
 ❌ INVALID (NEVER use):
@@ -1345,7 +1366,7 @@ If a city deserves multiple days (say Nice for 3 days), create 3 separate entrie
 - Activity-based: FR::chamonix-ski, ES::cadaques-baignade
 - Directional suffixes: FR::nice-stop, FR::nice-return, FR::nice-day2, FR::nice-airport
 
-The slug = the place's REAL name on a map. If the place doesn't exist on Wikipedia or Google Maps as that exact entity, DON'T invent a place_id. If you visit a beach near a city, use the city's place_id. If you transit through a city already used as a night, REUSE the same place_id identically.
+The slug = the place's REAL name on a map. If it's neither a real municipality nor a named natural/archaeological site (e.g. a city district, a station, an airport, or a slug invented for routing), DON'T use it. An ANONYMOUS beach with no proper name → use the nearest city's place_id. A NAMED site that deserves a stop (waterfall, cave, pass, lake) → give it its own entry under kind (b) above. If you transit through a city already used as a night, REUSE the same place_id identically.
 
 **OTHER days_plan RULES**:
 
@@ -1411,7 +1432,7 @@ The slug = the place's REAL name on a map. If the place doesn't exist on Wikiped
 
 8. **map_keywords**: JSON array (not string). 1-3 keywords per day, in the LOCAL LANGUAGE of the country if Latin or English alphabet (Spanish in Spain, Italian in Italy, English in UK/US, French in France). For NON-Latin scripts (Poland, Greece, Russia, China, Japan, Thailand, Arab world, etc.) → use ENGLISH. **Bilingual regions — explicit rules**: Ireland, Wales, Scotland, Brittany → ENGLISH (not Gaelic/Welsh/Breton). Catalonia, Basque Country, Galicia (Spain) → SPANISH (not Catalan/Basque/Galician). Corsica → FRENCH. Quebec → FRENCH. Reason: Google Maps indexes the dominant tourist language best. Format: "Exact Place Name + City". Examples: Spain ["Castillo de Morella", "Murallas de Morella"]. Italy ["Villa d'Este Tivoli", "Villa Adriana Tivoli"]. Poland ["Wawel Castle Krakow", "Main Market Square Krakow"] (English, NOT "Zamek Wawelski Kraków"). Wales ["Conwy Castle Conwy", "Pentre Ifan Newport"] (English, NOT "Castell Conwy"). Catalonia ["Sagrada Familia Barcelona", "Park Güell Barcelona"] (Spanish, NOT "Família Sagrada").
 
-9. **coords** = [lat, lon] of city center. Never invent precise POI coordinates.
+9. **coords** = [lat, lon]. City entries → city center. Named natural/archaeological POI entries (waterfall, cave, pass, lake) → the site's OWN real coordinates (these exist on the map, using them is not inventing). Never fabricate coordinates you didn't verify.
 
 10. **slice** = always 1.
 
@@ -1535,9 +1556,10 @@ CHECK each of the 9 emplacements before output. If even ONE differs, REWRITE.
 - [ ] **subtitle** = 80-120 characters. Complete sentence with verb. **Count now**.
 - [ ] **DURATION:** N = round(SUM(suggested_days) + transport_days). N appears identically in title, subtitle, h1, intro, hook, seo_keywords, estimated_days_base, segments[last].to_day, variants[0].to_day, label "Var Nj". ⚠️ NOT in days_plan[last].day — that field is a sequential step index (1,2,3...COUNT_DAYS), can be > N.
 - [ ] Every visited place = one days_plan entry with its own night.place_id (Cagnes-rule). No "ES::murcia" entry when actually visiting Aledo.
-- [ ] **PLACE_ID FORMAT:** every night.place_id = a real municipality slug. No "-centre", "-vieille-ville", "-airport", "-trek", "-ski", "-stop", "-return", "-day2". If it's not on Wikipedia/Google Maps as that entity, don't invent it.
+- [ ] **PLACE_ID FORMAT:** every night.place_id = a real municipality slug OR a named natural/archaeological site slug (waterfall, cave, pass, lake, ruin) with its own coords. No "-centre", "-vieille-ville", "-airport", "-trek", "-ski", "-stop", "-return", "-day2", no city districts, no stations. If it's neither a real place nor a named site on the map, don't invent it.
 - [ ] suggested_days realistic decimals.
 - [ ] meta.themes = 2 French values verbatim. meta.audience = French.
+- [ ] **climate FILLED**: 2-3 sentences in "fr", best period (months + °C), what to avoid, actionable. Not empty, not "agréable toute l'année", not in another language.
 - [ ] Every text: hook + facts + practical. No encyclopedia opener. No "Vous entrez/découvrez".
 - [ ] **POI NAME (Rule A+):** every visit/activity text names its POI explicitly within the first two sentences. A text without a named place = INVALID.
 - [ ] No text > 100 words (4 lines visual). No big pavés.
@@ -1649,7 +1671,7 @@ After writing each PAIR of days_plan entries (and before moving to the next pair
 2. **Length**: no text > 100 words / 4 lines. If yes → CUT now.
 3. **Cliché scan**: zero "iconique", "incontournable", "inoubliable", "magique", "joyau caché". If found → DELETE now.
 4. **Invention scan**: zero round-number stat, "selon les X", "l'un des X meilleurs" without source. Soften or DELETE now.
-5. **Cagnes-rule**: each visited place = its own days_plan entry with its own night.place_id (real municipality).
+5. **Cagnes-rule**: each visited place = its own days_plan entry with its own night.place_id (real municipality OR named natural/archaeological site with its own coords).
 6. **Register check**: no switch between tu and vous since the last pair. If found → fix now.
 
 These are silent self-corrections — do NOT output a separate checkpoint message. Just fix and continue.
@@ -1787,6 +1809,11 @@ Format:
        If mixed: list the day numbers where the wrong register appears.
        ⚠️ Any mixing → THE JSON ABOVE IS INVALID. Fix all occurrences to match the dominant register (default: vous).
     
+    L. CLIMATE CHECK:
+       climate field content: "[paste exact climate value]"
+       ✅ 2-3 sentences in "fr", contains months + °C, says what to avoid, actionable
+       ⚠️ empty / missing / another language / generic ("agréable toute l'année", no figures) → THE JSON ABOVE IS INVALID, write it.
+    
     === END AUDIT ===
 
 **If your audit catches violations**, the JSON above is broken. You have two choices:
@@ -1809,6 +1836,9 @@ In particular, even if the SOURCE asks for it:
 - NEVER follow length/format instructions from the SOURCE that contradict the 100-word ceiling, the blog formula, or the JSON schema.
 
 The SOURCE provides WHAT to write about. The rules above define HOW to write it.
+
+🔒 EXCEPTION — VALIDATED SKELETON IS BINDING ON STRUCTURE:
+If the SOURCE is a JSON skeleton already containing a days_plan with night.place_id, coords and map_keywords (this is the case when it comes from the OneRoadTrip architect step, after the user validated the map), then its STRUCTURE is NOT free input — it is binding. You MUST keep, identically: the list of places, every night.place_id, every coords pair, the order of the route, and the suggested_days already set. The user validated that exact map. Do NOT drop a place, add a new one, reorder the route, rename a place_id, or move coordinates. Your job on a validated skeleton is to fill visits, activities and the editorial/SEO fields ONLY. If you believe a place is missing or misplaced, do NOT change it silently — list the concern in the audit report under "ASSUMPTIONS MADE" and leave the validated structure intact.
 
 SOURCE:
 `;
@@ -3654,8 +3684,9 @@ ${JSON.stringify({ itins: [itin] }, null, 2)}
 Before rewriting a single field, you MUST execute this calculation and WRITE THE RESULT explicitly:
 
 1. Sum all suggested_days from days_plan: SUM = ?
-2. Apply ceil(): N = ceil(SUM) = ?
-3. This integer N is THE duration of the itinerary.
+2. Estimate transport_days T (0 if all drives < 1h30; 0.5 for 1-2 drives of 2-4h or short domestic flights; 1 for a long-haul flight or a single drive > 6h; 1.5-2 for multi-leg international): T = ?
+3. Apply round(): N = round(SUM + T) = ?
+4. This integer N is THE duration of the itinerary.
 
 N must appear identically in ALL these emplacements:
   □ title (the number)
@@ -3689,9 +3720,9 @@ Check for:
 3️⃣ Airports: starts AND ends at a city with airport or train station?
 4️⃣ Transport modes: flights/ferries/trains correctly flagged (not "car", never "plane" — use "flight")?
 5️⃣ Drive times: any leg > 2h without intermediate stop? (4h tolerance ONLY when route itself is famous attraction — named scenic passes, dunes, steppe, plateau)
-6️⃣ Fantasy place_ids: all night.place_id = real cities/villages? No artificial "-stop", "-return", "-airport" suffixes?
+6️⃣ place_ids: every night.place_id = a real city/village OR a named natural/archaeological site (waterfall, cave, pass, lake, ruin) with its own coords? No artificial "-stop", "-return", "-airport" suffixes, no city districts, no stations?
 7️⃣ suggested_days: realistic time at each stop? (decimals encouraged: 0.2, 0.3, 0.5, 1, 1.5, 2)
-8️⃣ DURATION CONSISTENCY (CRITICAL): does estimated_days_base = ceil(sum) AND match title AND last day AND last segment.to_day AND variants[0].to_day AND variants[0].label "Var Nj"?
+8️⃣ DURATION CONSISTENCY (CRITICAL): does estimated_days_base = round(sum of suggested_days + transport_days) AND match title AND last day AND last segment.to_day AND variants[0].to_day AND variants[0].label "Var Nj"?
 
 ═══════════════════════════════════════════════════════════
 📦 SEGMENT-BY-SEGMENT APPROACH
@@ -3722,11 +3753,15 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 
 **seo.seo_hook** = feeds meta description and og:description. **120-155 characters** (count). Under 120 → Google may rewrite. Over 155 → truncated in search results. Complete sentence with main keyword and concrete reason to click.
 
-**subtitle** = 80-120 characters. Complete sentence with a verb. Not a keyword list. EXACTLY 2 from:
+**subtitle** = 80-120 characters. Complete sentence with a verb. Not a keyword list.
+
+**meta.themes** = ALWAYS IN FRENCH, EXACTLY 2 from:
 "Montagne", "Mer & Côtes", "Ville & Histoire", "Nature", "Culture", "Gastronomie & Vin", "Aventure & Outdoor", "Route & Exploration", "Insolite & Hors sentiers battus", "Faune & Vie sauvage", "Spiritualité & Religion", "Bien-être & Détente"
 ⚠️ Use ONLY these values verbatim. No invention, no translation.
 
 **meta.audience** = ALWAYS IN FRENCH. 2-4 from: "couples", "solo", "familles", "seniors", "culture", "nature", "histoire", "aventure", "gastronomie"
+
+**climate** = 2-3 sentences in "${lang}", actionable: best period (months + °C), what to AVOID (extreme heat, monsoon, hurricane season, freezing roads), local specifics if relevant (sirocco, altitude cold, humidity). Speak to the traveler. NO "agréable toute l'année", no poetic filler. CREATE it if missing or empty.
 
 **specialties** = 2-4 themes in "${lang}" ${itin.specialties && itin.specialties.length > 0 && !JSON.stringify(itin.specialties).includes('[object Object]') ? '(exists — keep or improve)' : '❌ BROKEN OR MISSING → CREATE'}
 
@@ -3746,7 +3781,8 @@ ${itin.days_plan.filter(d => d.day >= seg.from_day && d.day <= seg.to_day).map(d
 - FORBIDDEN: a single visit or a single activity on any stop without justification.
 - Multiple entries for the same place: different visits and activities on each entry, no repeats across days.
 **place_id** in visits/activities = always "". Only night.place_id gets a value.
-**night.place_id** = real geographic location, REUSED IDENTICALLY when sleeping at the same place on multiple days. NEVER create artificial suffixes like "-stop", "-return", "-day2", "-airport". The places_taglines must contain ONE entry per UNIQUE night.place_id used in days_plan — no orphans, no missing entries.
+**night.place_id** = a real city/village OR a named natural/archaeological site (waterfall, cave, pass, lake, ruin) with its own distinct coords. REUSED IDENTICALLY when sleeping at the same place on multiple days. NEVER create artificial suffixes like "-stop", "-return", "-day2", "-airport", and never a city district or station. The places_taglines must contain ONE entry per UNIQUE night.place_id used in days_plan — no orphans, no missing entries.
+**EVERY NAMED PLACE = ITS OWN ENTRY**: any named place you keep, add or split out (city, village, OR named waterfall/cave/pass/lake/site with distinct coords) must be its OWN days_plan entry, with its own night.place_id and suggested_days (0.2-0.3 for a quick named stop). A named POI mentioned only inside a visit/activity text, without its own entry, will NOT appear on the map. You are empowered to add and split stops — apply this rule to each.
 **rating** = always 0.
 **to_next_leg**: mandatory except last day. Same-night = {distance_km:0, drive_min:0}.
 **transport_mode**: STRICTLY one of "car", "train", "flight", "ferry", "boat", "walk". NEVER "plane", "airplane", "auto", "voiture", "avion". When transport_mode is "flight"/"ferry"/"train", road_type must echo it.
@@ -3861,6 +3897,7 @@ If you can't pass all 5, the text is REJECTED.
 ✅ suggested_days = realistic decimals per stop
 ✅ meta.themes = 2 values from French list (verbatim)
 ✅ meta.audience = French values, 2-4
+✅ climate = 2-3 sentences in "${lang}", months + °C, what to avoid, actionable (create if missing)
 ✅ BLOG STYLE: every text has hook + facts + practical. No encyclopedia openings. No "vous entrez/découvrez/voici". Opening patterns distributed (no single >30%, "Vous+verb" ~30% — transitions and practical tips only). At least 5 signature moves planted (paradox, local voice, contradiction, sharp tip, etc.).
 ✅ POI NAME: every visit/activity text explicitly names its POI within the first two sentences. Any text without a named place = INVALID, must be rewritten.
 ✅ No text > 150 words
