@@ -85,8 +85,8 @@
     var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
     var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
     if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
-    // 2. Fallback : detectLang de ORT_I18N_AUTH (lit localStorage, URL param, etc.)
-    return window.ORT_I18N_AUTH?.detectLang?.() || 'fr';
+    // 2. Fallback : ORT_getLang de ort-i18n.js (lit localStorage 'lang' / documentElement.lang)
+    return window.ORT_getLang?.() || 'fr';
   }
 
   /** Récupère les traductions */
@@ -702,7 +702,7 @@
           <span aria-hidden="true">📋</span><span class="lbl">${catalogLabel}</span>
         </a>
         <a class="ort-nav-link" id="newsLink" href="/news.html" aria-label="${newsLabel}">
-          <span aria-hidden="true">📰</span><span class="lbl lbl-full">${newsLabel}</span><span class="lbl lbl-short">News</span>
+          <span aria-hidden="true">📰</span><span class="lbl">${newsLabel}</span>
         </a>
         <select id="langSel" class="langpick" aria-label="Langue">
           <option value="fr">FR</option>

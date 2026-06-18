@@ -26,6 +26,9 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>OneRoadTrip — Mon tableau de bord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Mulish:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#113f7a; --panel:#113f7a; --card:#fff; --ink:#113f7a;
@@ -668,8 +671,8 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
     const meta = document.createElement('div'); meta.className='meta';
     meta.appendChild(chip(rt.country||rt.cc||'–'));
     meta.appendChild(chip(L.metas(rt.nights||rt.nb_nights||0, rt.kms||0)));
-   if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+" étapes"));
-    if(rt.pace)  meta.appendChild(chip('Rythme '+rt.pace));
+   if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+" "+((L.labels&&L.labels.steps)||'étapes')));
+    if(rt.pace)  meta.appendChild(chip(((L.labels&&L.labels.pace)||'Rythme')+' '+rt.pace));
     c.appendChild(meta);
 
     if(rt.tags && rt.tags.length){ const chips=document.createElement('div'); chips.className='chips'; rt.tags.forEach(t=>chips.appendChild(chip('#'+t))); c.appendChild(chips); }
@@ -692,7 +695,7 @@ const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt
 const delBtn  = btn(L.btn.del, ()=> delRT(rt), true); actions.appendChild(delBtn);
 // const linkBtn = btn(L.btn.link, ()=> shareLink(rt)); actions.appendChild(linkBtn); // TODO: réactiver
 // const mailBtn = btn(L.btn.mail, ()=> shareEmail(rt)); actions.appendChild(mailBtn); // TODO: réactiver
-const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> generateAndShowImage(rt)); actions.appendChild(shareBtn);
+const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> openShareComposer(rt)); actions.appendChild(shareBtn);
 ;
 
 
@@ -1387,581 +1390,445 @@ function openRT(rt){
     return lines.slice(0, 3);
   }
 
-  // Génère une belle image professionnelle pour les réseaux sociaux
-  async function generateViralImagePro(rt, customIntroText = '') {
-    console.log('[GEN] 🎨 Génération image pour:', rt.title);
-    console.log('[GEN] 📊 Steps totales:', rt.steps?.length);
-    if (rt.steps && rt.steps.length > 0) {
-      console.log('[GEN] 📍 Premier step:', JSON.stringify(rt.steps[0]));
-      console.log('[GEN] 📍 Dernier step:', JSON.stringify(rt.steps[rt.steps.length - 1]));
+  // ====== VISUEL DE PARTAGE v2 (composer avec sélection de photo + html2canvas) ======
+  // Remplace generateViralImagePro. Garde une fonction de même nom qui génère
+  // directement (utilisée par shareSocial pour FB/IG), plus openShareComposer
+  // qui ouvre une modale de prévisualisation avec flèches.
+
+  // Collecte TOUTES les photos du voyage, avec le nom de l'étape associée
+  function collectTripPhotos(rt){
+    const out = [];
+    if (!rt.steps || !Array.isArray(rt.steps)) return out;
+    const seen = {};
+    for (const step of rt.steps){
+      const pid = step.place_id || step.pid;
+      if (!pid) continue;
+      const photos = getPhotosForPlace(pid) || [];
+      for (const url of photos){
+        if (!url || seen[url]) continue;
+        seen[url] = true;
+        out.push({ url: url, place: step.name || '' });
+      }
     }
-    
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      // Format Instagram portrait (4:5)
-      const width = 1080;
-      const height = 1600; // Augmenté de 1550 à 1600 pour carte 250px au lieu de 200px
-      canvas.width = width;
-      canvas.height = height;
-      
-      // Background blanc
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, width, height);
-      
-      // Header avec logo et "Généré par OneRoadTrip.com"
-      const headerHeight = 100;
-      ctx.fillStyle = '#113f7a';
-      ctx.fillRect(0, 0, width, headerHeight);
-      
-      // Logo et texte header
-      const logoImg = new Image();
-      logoImg.crossOrigin = 'anonymous';
-      logoImg.onload = () => {
-        // Logo
-        const logoSize = 70;
-        ctx.drawImage(logoImg, 20, 15, logoSize, logoSize);
-        
-        // Texte "Généré par OneRoadTrip.com"
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 28px system-ui';
-        ctx.fillText('Généré par OneRoadTrip.com', 110, 58);
-        
-        // Grid photos 2x2 (taille réduite pour laisser place au texte)
-        const photoSize = 300; // 300x300 par photo au lieu de 540x540
-        const photoY = headerHeight + 20;
-        const photosStartX = (width - (photoSize * 2 + 10)) / 2; // Centrer les photos
-        
-        // Photos du voyage (max 4) - utiliser selectedPhotos ou getTripPhotos
-        const photos = rt.selectedPhotos && rt.selectedPhotos.length > 0 
-          ? rt.selectedPhotos 
-          : getTripPhotos(rt, 4);
-        let loadedPhotos = 0;
-        const totalPhotos = Math.min(photos.length, 4);
-        
-        if (totalPhotos === 0) {
-          // Pas de photos : continuer avec le reste
-          drawTextContent();
-          return;
-        }
-        
-        photos.slice(0, 4).forEach((photoUrl, idx) => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          
-          img.onload = async () => {
-            const col = idx % 2;
-            const row = Math.floor(idx / 2);
-            const x = photosStartX + col * (photoSize + 10);
-            const y = photoY + row * (photoSize + 10);
-            
-            // Centrer et crop l'image
-            const scale = Math.max(photoSize / img.width, photoSize / img.height);
-            const scaledW = img.width * scale;
-            const scaledH = img.height * scale;
-            const offsetX = (photoSize - scaledW) / 2;
-            const offsetY = (photoSize - scaledH) / 2;
-            
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(x, y, photoSize, photoSize);
-            ctx.clip();
-            ctx.drawImage(img, x + offsetX, y + offsetY, scaledW, scaledH);
-            ctx.restore();
-            
-            // Border
-            ctx.strokeStyle = '#e0e0e0';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, photoSize, photoSize);
-            
-            loadedPhotos++;
-            if (loadedPhotos === totalPhotos) {
-              await drawMap(); // Dessiner la carte d'abord (async)
-            }
-          };
-          
-          img.onerror = async () => {
-            loadedPhotos++;
-            if (loadedPhotos === totalPhotos) {
-              await drawMap(); // Dessiner la carte même si erreur photo (async)
-            }
-          };
-          
-          img.src = photoUrl;
-        });
-        
-        // Dessine la carte avec les étapes (carte Leaflet interactive)
-        async function drawMap() {
-          console.log('[CARTE] 📍 Début drawMap()');
-          
-          // Attendre que Leaflet soit chargé (max 5 secondes)
-          let attempts = 0;
-          while ((typeof window.L === 'undefined' || typeof window.L.map !== 'function') && attempts < 50) {
-            console.log('[CARTE] ⏳ Attente Leaflet... tentative', attempts, '- window.L existe:', typeof window.L !== 'undefined', '- window.L.map:', typeof window.L?.map);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            attempts++;
-          }
-          
-          // Vérifier que Leaflet est chargé
-          if (typeof window.L === 'undefined' || typeof window.L.map !== 'function') {
-            console.error('[CARTE] ❌ Leaflet non chargé après 5s, utilisation du fallback');
-            console.error('[CARTE] État: window.L existe=', typeof window.L !== 'undefined', ', window.L.map=', typeof window.L?.map);
-            const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
-            const mapHeight = 200;
-            const mapWidth = width - 40;
-            const mapX = 20;
-            const steps = rt.steps || [];
-            const coords = steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon));
-            if (coords.length >= 2) {
-              drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords);
-            }
-            drawTextContent();
-            return;
-          }
-          console.log('[CARTE] ✅ Leaflet disponible (version', window.L.version, ')');
-          
-          const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
-          const mapHeight = 250; // Augmenté de 200 à 250px pour mieux cadrer
-          const mapWidth = width - 40;
-          const mapX = 20;
-          
-          console.log('[CARTE] 📐 Position:', { mapX, mapY, mapWidth, mapHeight });
-          
-          const steps = rt.steps || [];
-          const coords = steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lon));
-          
-          console.log('[CARTE] 📊 Steps:', steps.length, '→ Coords valides:', coords.length);
-          
-          if (coords.length >= 2) {
-            try {
-              console.log('[CARTE] 🗺️ Génération carte Leaflet - Solution NINJA');
-              
-              const mapBg = '#e8f4f8';
-              
-              // === Container avec visibility:hidden (NINJA) ===
-              const mapContainer = document.createElement('div');
-              const mapId = 'temp-map-' + Date.now();
-              mapContainer.id = mapId;
-              mapContainer.style.width = mapWidth + 'px';
-              mapContainer.style.height = mapHeight + 'px';
-              mapContainer.style.position = 'absolute';
-              mapContainer.style.left = '0px';
-              mapContainer.style.top = '0px';
-              mapContainer.style.visibility = 'hidden'; // Ninja: au lieu de left:-9999px
-              mapContainer.style.zIndex = '-1000';
-              
-              document.body.appendChild(mapContainer);
-              console.log('[CARTE] ✅ Container créé:', mapId);
-              
-              // === Initialisation Leaflet (passer l'ID, pas l'élément) ===
-              const leafletMap = window.L.map(mapId, {
-                zoomControl: false,
-                attributionControl: false,
-                center: [0, 0],
-                zoom: 1,
-                preferCanvas: true // Ninja: améliore performances
-              });
-              
-              window.L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                maxZoom: 20,
-                attribution: ''
-              }).addTo(leafletMap);
-              console.log('[CARTE] ✅ Carte initialisée');
-              
-              // === Données ===
-              const latlngs = coords.map(s => [s.lat, s.lon]);
-              const lats = coords.map(s => s.lat);
-              const lons = coords.map(s => s.lon);
-              const latRange = Math.max(...lats) - Math.min(...lats);
-              const lonRange = Math.max(...lons) - Math.min(...lons);
-              const itinRatio = lonRange / latRange;
-              
-              console.log('[CARTE] 📐 Ratio:', itinRatio.toFixed(2), 'latRange:', latRange.toFixed(2), 'lonRange:', lonRange.toFixed(2));
-              
-              // === Polyligne + Markers ===
-              window.L.polyline(latlngs, {
-                color: '#113f7a',
-                weight: 4,
-                opacity: 0.9,
-                smoothFactor: 1
-              }).addTo(leafletMap);
-              
-              coords.forEach((step, idx) => {
-                const isStart = idx === 0;
-                const isEnd = idx === coords.length - 1;
-                const color = isStart ? '#2ecc71' : (isEnd ? '#e74c3c' : '#3498db');
-                
-                window.L.circleMarker([step.lat, step.lon], {
-                  radius: isStart || isEnd ? 7 : 5,
-                  fillColor: color,
-                  color: '#fff',
-                  weight: 2,
-                  opacity: 1,
-                  fillOpacity: 0.9
-                }).addTo(leafletMap);
-              });
-              console.log('[CARTE] ✅ Polyligne + markers ajoutés');
-              
-              // === PADDING INTELLIGENT NINJA ===
-              function calculateOptimalPadding(itinRatio) {
-                let paddingTopBottom = 20;
-                let paddingLeftRight = 20;
-                
-                if (itinRatio < 0.5) {
-                  // Très vertical (Nord-Sud)
-                  paddingTopBottom = 10;
-                  paddingLeftRight = 80;
-                  console.log('[CARTE] 📍 Itinéraire très vertical détecté');
-                } else if (itinRatio > 2.0) {
-                  // Très horizontal (Est-Ouest)
-                  paddingTopBottom = 60;
-                  paddingLeftRight = 20;
-                  console.log('[CARTE] 📍 Itinéraire très horizontal détecté');
-                } else {
-                  // Équilibré
-                  const paddingFactor = Math.abs(itinRatio - 1.0);
-                  paddingTopBottom = 20 + (paddingFactor * 20);
-                  paddingLeftRight = 20 + (paddingFactor * 15);
-                }
-                
-                return [paddingTopBottom, paddingLeftRight];
-              }
-              
-              // === MAXZOOM INTELLIGENT NINJA (selon rangeSize!) ===
-              function calculateOptimalMaxZoom(latRange, lonRange) {
-                const rangeSize = Math.max(latRange, lonRange);
-                
-                if (rangeSize < 0.5) return 14;      // Très local
-                if (rangeSize < 1.0) return 12;      // Régional
-                if (rangeSize < 2.0) return 11;      // National
-                if (rangeSize < 5.0) return 10;      // International
-                return 9;                            // Continental
-              }
-              
-              const optimalPadding = calculateOptimalPadding(itinRatio);
-              const optimalMaxZoom = calculateOptimalMaxZoom(latRange, lonRange);
-              
-              console.log('[CARTE] 🎯 Padding:', optimalPadding, 'maxZoom:', optimalMaxZoom);
-              
-              // === Attendre que la carte soit prête ===
-              await new Promise(resolve => {
-                leafletMap.whenReady(() => {
-                  setTimeout(resolve, 100);
-                });
-              });
-              
-              // === FitBounds avec options NINJA ===
-              const bounds = window.L.latLngBounds(latlngs);
-              leafletMap.fitBounds(bounds, {
-                padding: optimalPadding,
-                maxZoom: optimalMaxZoom,
-                animate: false
-              });
-              console.log('[CARTE] ✅ fitBounds appliqué');
-              
-              // === ATTENTE INTELLIGENTE DES TILES (NINJA) ===
-              await new Promise((resolve) => {
-                const startTime = Date.now();
-                let tilesChecked = 0;
-                const maxChecks = 20;
-                
-                const checkTiles = () => {
-                  tilesChecked++;
-                  
-                  const tiles = leafletMap.getPanes().tilePane.querySelectorAll('img');
-                  let loadedCount = 0;
-                  let totalCount = tiles.length;
-                  
-                  tiles.forEach(tile => {
-                    if (tile.complete && tile.naturalHeight > 0) {
-                      loadedCount++;
-                    }
-                  });
-                  
-                  const allLoaded = totalCount === 0 || loadedCount >= totalCount * 0.9; // 90% minimum
-                  const timeElapsed = Date.now() - startTime;
-                  
-                  if (allLoaded || timeElapsed > 5000 || tilesChecked >= maxChecks) {
-                    console.log('[CARTE] ✅ Tiles:', loadedCount, '/', totalCount, 'en', timeElapsed, 'ms');
-                    resolve();
-                  } else {
-                    setTimeout(checkTiles, 200);
-                  }
-                };
-                
-                setTimeout(checkTiles, 300);
-              });
-              
-              // === Rendre visible avant capture (NINJA) ===
-              mapContainer.style.visibility = 'visible';
-              mapContainer.style.left = '-9999px';
-              
-              // === Capture ===
-              console.log('[CARTE] 📸 Capture...');
-              const mapCanvas = await window.html2canvas(mapContainer, {
-                useCORS: true,
-                allowTaint: false,
-                backgroundColor: mapBg,
-                scale: 1,
-                logging: false,
-                width: mapWidth,
-                height: mapHeight,
-                x: 0,
-                y: 0
-              });
-              console.log('[CARTE] ✅ Capture réussie');
-              
-              // === Dessin CENTRÉ ===
-              const centeredMapX = Math.round((width - mapWidth) / 2);
-              ctx.drawImage(mapCanvas, centeredMapX, mapY, mapWidth, mapHeight);
-              
-              // Bordure
-              ctx.strokeStyle = '#b0d4e3';
-              ctx.lineWidth = 2;
-              ctx.strokeRect(centeredMapX, mapY, mapWidth, mapHeight);
-              
-              console.log('[CARTE] ✅ Carte intégrée à X=', centeredMapX);
-              
-              // Nettoyage
-              leafletMap.remove();
-              document.body.removeChild(mapContainer);
-              console.log('[CARTE] 🧹 Nettoyage terminé');
-              
-            } catch (error) {
-              console.error('[CARTE] ❌ ERREUR:', error);
-              console.error('[CARTE] Stack:', error.stack);
-              // Fallback
-              drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords);
-            }
-          } else {
-            console.warn('[CARTE] ⚠️ Pas assez de coordonnées:', coords.length, '< 2');
-            // Pas assez de coordonnées
-            ctx.fillStyle = '#e8f4f8';
-            ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
-            ctx.strokeStyle = '#b0d4e3';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
-            
-            ctx.fillStyle = '#113f7a';
-            ctx.font = '18px system-ui';
-            ctx.textAlign = 'center';
-            ctx.fillText('Carte non disponible', mapX + mapWidth / 2, mapY + mapHeight / 2);
-          }
-          
-          // Texte après la carte
-          console.log('[CARTE] 📝 Appel drawTextContent()...');
-          drawTextContent();
-        }
-        
-        function drawSimpleMap(mapX, mapY, mapWidth, mapHeight, coords) {
-          console.log('[CARTE] Génération carte fallback');
-          
-          // Fond
-          ctx.fillStyle = '#e8f4f8';
-          ctx.fillRect(mapX, mapY, mapWidth, mapHeight);
-          
-          // Bordure
-          ctx.strokeStyle = '#b0d4e3';
-          ctx.lineWidth = 2;
-          ctx.strokeRect(mapX, mapY, mapWidth, mapHeight);
-          
-          if (coords.length >= 2) {
-            const lats = coords.map(s => s.lat);
-            const lons = coords.map(s => s.lon);
-            const minLat = Math.min(...lats);
-            const maxLat = Math.max(...lats);
-            const minLon = Math.min(...lons);
-            const maxLon = Math.max(...lons);
-            
-            const latRange = maxLat - minLat || 0.1;
-            const lonRange = maxLon - minLon || 0.1;
-            const paddedMinLat = minLat - latRange * 0.2;
-            const paddedMaxLat = maxLat + latRange * 0.2;
-            const paddedMinLon = minLon - lonRange * 0.2;
-            const paddedMaxLon = maxLon + lonRange * 0.2;
-            
-            const toMapX = (lon) => mapX + ((lon - paddedMinLon) / (paddedMaxLon - paddedMinLon)) * mapWidth;
-            const toMapY = (lat) => mapY + mapHeight - ((lat - paddedMinLat) / (paddedMaxLat - paddedMinLat)) * mapHeight;
-            
-            // Ligne pointillée
-            ctx.strokeStyle = '#113f7a';
-            ctx.lineWidth = 4;
-            ctx.setLineDash([8, 8]);
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.beginPath();
-            coords.forEach((step, idx) => {
-              const x = toMapX(step.lon);
-              const y = toMapY(step.lat);
-              if (idx === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-            ctx.setLineDash([]);
-            
-            // Points avec noms
-            coords.forEach((step, idx) => {
-              const x = toMapX(step.lon);
-              const y = toMapY(step.lat);
-              
-              // Couleur
-              if (idx === 0) ctx.fillStyle = '#2ecc71';
-              else if (idx === coords.length - 1) ctx.fillStyle = '#e74c3c';
-              else ctx.fillStyle = '#3498db';
-              
-              // Point
-              ctx.beginPath();
-              ctx.arc(x, y, 10, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.strokeStyle = '#fff';
-              ctx.lineWidth = 3;
-              ctx.stroke();
-              
-              // Nom de la ville
-              const cityName = step.name || step.place_id?.split('::')[1] || '';
-              if (cityName) {
-                ctx.fillStyle = '#000';
-                ctx.font = 'bold 16px system-ui';
-                ctx.textAlign = 'center';
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 4;
-                ctx.strokeText(cityName, x, y - 18);
-                ctx.fillText(cityName, x, y - 18);
-              }
-            });
-          }
-        }
-        
-        function drawTextContent() {
-          console.log('[TEXTE] 📝 Début drawTextContent()');
-          // Calcul correct de la position Y de départ du texte
-          // Header: 100px, Photos: 120px + 610px = 730px
-          // Carte: 730px + 20px + 200px = 950px
-          // Texte commence à: 950px + 40px (marge) = 990px
-          const mapY = photoY + (totalPhotos > 2 ? 2 * (photoSize + 10) : photoSize + 10) + 20;
-          const mapHeight = 200;
-          const textStartY = mapY + mapHeight + 40; // Augmenté de 20 à 40px
-          
-          console.log('[TEXTE] 📐 Position texte Y:', textStartY);
-          
-          // Texte d'accroche en haut (personnalisé ou par défaut)
-          const lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
-          const L = I18N[lang] || I18N.fr;
-          const introText = customIntroText || (L.shareImage?.intro || 'Et voici notre prochain voyage ! Plus d\'informations très prochainement !');
-          
-          // Dessine le texte d'accroche (peut être sur plusieurs lignes si long)
-          ctx.fillStyle = '#113f7a';
-          ctx.font = 'bold 28px system-ui'; // Augmenté de 24 à 28px
-          ctx.textAlign = 'center';
-          
-          // Découpe le texte en lignes si trop long
-          const maxIntroWidth = width - 60;
-          const introLines = wrapText(ctx, introText, maxIntroWidth);
-          let introY = textStartY;
-          introLines.forEach((line, idx) => {
-            ctx.fillText(line, width / 2, introY + idx * 34); // Espacement 34px au lieu de 30px
-          });
-          
-          // Titre du voyage (décalé vers le bas selon nombre de lignes d'intro)
-          let currentY = introY + (introLines.length * 34) + 45;
-          ctx.fillStyle = '#113f7a';
-          ctx.font = 'bold 44px system-ui';
-          ctx.textAlign = 'center';
-          
-          const title = rt.title || 'Mon voyage';
-          const maxTitleWidth = width - 80;
-          let fontSize = 44;
-          ctx.font = `bold ${fontSize}px system-ui`;
-          
-          while (ctx.measureText(title).width > maxTitleWidth && fontSize > 24) {
-            fontSize -= 2;
-            ctx.font = `bold ${fontSize}px system-ui`;
-          }
-          
-          ctx.fillText(title, width / 2, currentY);
-          
-          // Dates avec format "Du X au Y"
-          currentY += 60;
-          ctx.font = '28px system-ui';
-          ctx.fillStyle = '#555555';
-          
-          if (rt.start_date || rt.end_date) {
-            const startDate = rt.start_date ? new Date(rt.start_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long' }) : '?';
-            const endDate = rt.end_date ? new Date(rt.end_date).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) : '?';
-            ctx.fillText(`📅 Du ${startDate} au ${endDate}`, width / 2, currentY);
-            currentY += 60;
-          }
-          
-          // Étapes en multi-colonnes selon le nombre
-          ctx.font = 'bold 32px system-ui';
-          ctx.fillStyle = '#113f7a';
-          ctx.fillText('📍 Nos étapes :', width / 2, currentY);
-          
-          currentY += 50;
-          ctx.font = '24px system-ui'; // Réduit pour tenir plus d'étapes
-          ctx.fillStyle = '#333333';
-          
-          const steps = rt.steps || [];
-          const stepCount = steps.length;
-          
-          // Déterminer le nombre de colonnes selon le nombre d'étapes (max 5 colonnes)
-          let numCols = 1;
-          if (stepCount >= 25) numCols = 5;       // 25+ étapes → 5 colonnes
-          else if (stepCount >= 17) numCols = 4;  // 17-24 étapes → 4 colonnes
-          else if (stepCount >= 9) numCols = 3;   // 9-16 étapes → 3 colonnes
-          else if (stepCount >= 5) numCols = 2;   // 5-8 étapes → 2 colonnes
-          
-          const colWidth = (width - 80) / numCols; // Largeur de chaque colonne
-          const stepHeight = 32; // Hauteur entre chaque étape
-          const stepsPerCol = Math.ceil(stepCount / numCols);
-          
-          console.log(`[ÉTAPES] ${stepCount} étapes → ${numCols} colonnes (${stepsPerCol} par colonne)`);
-          
-          steps.forEach((step, idx) => {
-            const stepName = step.name || step.place_id?.split('::')[1] || `Étape ${idx+1}`;
-            
-            // Calculer colonne et position dans la colonne
-            const colIdx = Math.floor(idx / stepsPerCol);
-            const rowInCol = idx % stepsPerCol;
-            
-            // Position X : centrer les colonnes
-            const totalWidth = numCols * colWidth;
-            const startX = (width - totalWidth) / 2 + colWidth / 2;
-            const x = startX + colIdx * colWidth;
-            
-            // Position Y
-            const y = currentY + rowInCol * stepHeight;
-            
-            ctx.textAlign = 'center';
-            ctx.fillText(`• ${stepName}`, x, y);
-          });
-          
-          // Stats finales avec calcul des km
-          const statsY = height - 100; // Position fixe en bas
-          ctx.font = 'bold 30px system-ui';
-          ctx.fillStyle = '#113f7a';
-          ctx.textAlign = 'center';
-          
-          const nights = rt.nights || rt.nb_nights || 0;
-          // Calculer les km si rt.kms est vide ou 0
-          let kms = rt.kms || 0;
-          if (!kms && steps.length >= 2) {
-            kms = calculateTotalKm(steps);
-          }
-          ctx.fillText(`🌙 ${nights} nuits · 🚗 ${kms} km`, width / 2, statsY);
-          
-          console.log('[TEXTE] ✅ Rendu terminé, génération image...');
-          // Retourner l'image
-          const imageData = canvas.toDataURL('image/png');
-          console.log('[IMAGE] ✅ Image générée, taille:', imageData.length, 'caractères');
-          resolve(imageData);
-        }
-      };
-      
-      logoImg.onerror = () => reject(new Error('Logo introuvable'));
-      logoImg.src = '../assets/symbol.webp';
+    return out;
+  }
+
+  // Optimise une URL photo via wsrv.nl (CORS ok pour html2canvas)
+  function shareProxyPhoto(url, w){
+    if (!url) return '';
+    w = w || 1080;
+    if (url.indexOf('wsrv.nl') >= 0) return url;
+    return 'https://wsrv.nl/?url=' + encodeURIComponent(url) + '&w=' + w + '&q=80&output=webp';
+  }
+
+  // Construit le SVG du tracé à partir des coordonnées des étapes
+  function buildRouteSvg(steps){
+    const pts = (steps || [])
+      .map(s => ({ lat: s.lat, lon: (s.lon != null ? s.lon : s.lng) }))
+      .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon));
+
+    const W = 1080, H = 300, padX = 70, padTop = 56, padBot = 40;
+    if (pts.length < 2){
+      return '<svg viewBox="0 0 '+W+' '+H+'" style="position:absolute;inset:0;width:100%;height:100%"></svg>';
+    }
+
+    // Projection Mercator, aspect géographique respecté (plus d'écrasement)
+    const RAD = Math.PI/180;
+    const merc = pts.map(p => ({
+      x: p.lon * RAD,
+      y: Math.log(Math.tan(Math.PI/4 + (p.lat*RAD)/2))
+    }));
+    const xs = merc.map(p=>p.x), ys = merc.map(p=>p.y);
+    const minX = Math.min.apply(null,xs), maxX = Math.max.apply(null,xs);
+    const minY = Math.min.apply(null,ys), maxY = Math.max.apply(null,ys);
+    const spanX = (maxX-minX)||1e-6, spanY = (maxY-minY)||1e-6;
+    const availW = W - 2*padX, availH = H - padTop - padBot;
+    const scale = Math.min(availW/spanX, availH/spanY);
+    const offX = padX + (availW - spanX*scale)/2;
+    const offY = padTop + (availH - spanY*scale)/2;
+
+    const xy = merc.map(p => ({
+      x: offX + (p.x - minX)*scale,
+      y: offY + (maxY - p.y)*scale
+    }));
+
+    // Chemin lissé
+    let d = 'M ' + xy[0].x.toFixed(1) + ' ' + xy[0].y.toFixed(1);
+    for (let i = 1; i < xy.length; i++){
+      const prev = xy[i-1], cur = xy[i];
+      const mx = (prev.x + cur.x) / 2, my = (prev.y + cur.y) / 2;
+      d += ' Q ' + prev.x.toFixed(1) + ' ' + prev.y.toFixed(1) + ' ' + mx.toFixed(1) + ' ' + my.toFixed(1);
+    }
+    d += ' T ' + xy[xy.length-1].x.toFixed(1) + ' ' + xy[xy.length-1].y.toFixed(1);
+
+    // Points numérotés (callés sur la liste "Nos étapes"), aucun label texte -> zéro chevauchement
+    let dots = '';
+    xy.forEach((p, i) => {
+      const isEnd = (i === 0 || i === xy.length - 1);
+      dots += '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="13" fill="#fff" stroke="#113f7a" stroke-width="3"/>';
+      dots += '<text x="'+p.x.toFixed(1)+'" y="'+(p.y+4.6).toFixed(1)+'" text-anchor="middle" font-family="Mulish,sans-serif" font-size="13" font-weight="800" fill="'+(isEnd?'#b8860b':'#113f7a')+'">'+(i+1)+'</text>';
     });
+
+    return ''
+      + '<svg viewBox="0 0 '+W+' '+H+'" style="position:absolute;inset:0;width:100%;height:100%">'
+      + '<path d="'+d+'" fill="none" stroke="#113f7a" stroke-width="4.5" stroke-linecap="round" stroke-opacity="0.16"/>'
+      + '<path d="'+d+'" fill="none" stroke="#113f7a" stroke-width="3.5" stroke-linecap="round" stroke-dasharray="2 12"/>'
+      + dots
+      + '</svg>';
+  }
+
+  // URL de la carte webp préfabriquée à partir de _originalItinId (null si custom/temp).
+  // Reproduit la slugification de generate-v3.js, puis retire le préfixe code pays.
+  function ortMapUrlFromItin(rt){
+    const itinId = (rt && rt._originalItinId) || '';
+    if (!itinId || /custom|^temp|^\d{10,}/.test(itinId)) return null;
+    const cc = itinId.split('::')[0].toLowerCase();
+    let s = itinId.toLowerCase().replace(/::/g,'-').replace(/[^a-z0-9-]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+    if (cc && s.indexOf(cc+'-') === 0) s = s.slice(cc.length+1);
+    if (!cc || !s) return null;
+    return 'https://photos.oneroadtrip.com/'+cc.toUpperCase()+'/maps/'+s+'.webp';
+  }
+
+  // Teste qu'une image se charge vraiment (sinon repli SVG). Renvoie l'URL ou null.
+  function ortProbeImg(url){
+    return new Promise(function(res){
+      if (!url) return res(null);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      let done = false;
+      const fin = (ok) => { if(!done){ done = true; res(ok ? url : null); } };
+      img.onload = () => fin(img.naturalWidth > 0);
+      img.onerror = () => fin(false);
+      setTimeout(() => fin(false), 6000);
+      img.src = url;
+    });
+  }
+
+  // Résout la carte préfa (avec cache par URL) : URL si elle charge, sinon null -> SVG.
+  const _ortMapCache = {};
+  function resolveShareMap(rt){
+    const raw = ortMapUrlFromItin(rt);
+    if (!raw) return Promise.resolve(null);
+    // Passe par le proxy wsrv.nl (comme les photos) : photos.oneroadtrip.com n'envoie pas
+    // d'en-tête CORS, donc l'image brute est refusée par html2canvas. Le proxy ajoute le CORS.
+    const url = shareProxyPhoto(raw, 1080);
+    if (!_ortMapCache[url]) _ortMapCache[url] = ortProbeImg(url);
+    return _ortMapCache[url];
+  }
+
+  function escHtml(s){
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Construit le noeud HTML du visuel (1080x1080) prêt pour html2canvas
+  function buildShareCard(rt, photo, opts){
+    opts = opts || {};
+    const lang = localStorage.getItem('lang') || 'fr';
+    const SC_I18N = {
+      fr:{by:'Itinéraire généré par',route:'Le tracé',steps:'Nos étapes',cities:'villes',nights:'nuits',duration:'Durée du voyage',distance:'Distance'},
+      en:{by:'Itinerary generated by',route:'The route',steps:'Our stops',cities:'cities',nights:'nights',duration:'Trip duration',distance:'Distance'},
+      es:{by:'Itinerario generado por',route:'La ruta',steps:'Nuestras etapas',cities:'ciudades',nights:'noches',duration:'Duración del viaje',distance:'Distancia'},
+      pt:{by:'Itinerário gerado por',route:'O percurso',steps:'Nossas etapas',cities:'cidades',nights:'noites',duration:'Duração da viagem',distance:'Distância'},
+      it:{by:'Itinerario generato da',route:'Il percorso',steps:'Le nostre tappe',cities:'città',nights:'notti',duration:'Durata del viaggio',distance:'Distanza'},
+      ar:{by:'خط سير تم إنشاؤه بواسطة',route:'المسار',steps:'محطاتنا',cities:'مدن',nights:'ليالٍ',duration:'مدة الرحلة',distance:'المسافة'}
+    };
+    const SC = SC_I18N[lang] || SC_I18N.fr;
+    const title = rt.title || 'Mon voyage';
+    const country = rt.country || rt.cc || '';
+    const nights = rt.nights || rt.nb_nights || 0;
+    const kms = rt.kms || 0;
+    const steps = (rt.steps || []);
+    const names = steps.map(s => s.name).filter(Boolean);
+    // dédoublonne les noms d'étapes en gardant l'ordre
+    const uniqNames = [];
+    const seenN = {};
+    names.forEach(n => { if (!seenN[n]){ seenN[n] = true; uniqNames.push(n); } });
+
+    // brand image en fond des bandeaux
+    const brandImg = '../assets/image_index.webp';
+    const logo = '../assets/symbol.webp';
+
+    // Mise en page adaptative selon le nombre d'étapes
+    const nbEt = uniqNames.length;
+    let etColumns = 2, etFont = 19, etRowGap = 11, etapesH = 166, heroH = 320, mapH = 400;
+    if (nbEt > 12){ etColumns = 3; etFont = 15; etRowGap = 7; etapesH = 236; heroH = 280; mapH = 370; }
+    else if (nbEt > 8){ etColumns = 3; etFont = 16; etRowGap = 9; etapesH = 216; heroH = 290; mapH = 380; }
+    else if (nbEt > 6){ etColumns = 2; etFont = 17; etRowGap = 10; etapesH = 196; heroH = 300; mapH = 390; }
+
+    // étapes en colonnes adaptatives
+    let etapesHtml = '';
+    uniqNames.forEach((n, i) => {
+      etapesHtml += ''
+        + '<div style="display:flex;align-items:center;gap:10px">'
+        +   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:0 0 16px"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#113f7a"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg>'
+        +   '<span style="flex:1;font-size:'+etFont+'px;font-weight:600;color:#1f2a3a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+        +     '<span style="color:#b8860b;font-weight:800;margin-right:6px">'+String(i+1).padStart(2,'0')+'</span>'+escHtml(n)
+        +   '</span>'
+        + '</div>';
+    });
+
+    const routeSvg = buildRouteSvg(steps);
+    const mapImg = opts.mapImg || '';
+    const mapSrc = mapImg ? shareProxyPhoto(mapImg, 1200) : '';
+    const mapInner = mapImg
+      ? '<img src="'+mapSrc+'" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center"/>'
+        + '<div style="position:absolute;top:14px;left:32px;font-size:13px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#113f7a;background:rgba(246,241,231,.85);padding:4px 9px;border-radius:5px">'+SC.route+'</div>'
+      : '<div style="position:absolute;top:18px;left:40px;font-size:13px;font-weight:800;letter-spacing:.24em;text-transform:uppercase;color:#113f7a">'+SC.route+'</div>' + routeSvg;
+    const photoUrl = photo ? shareProxyPhoto(photo.url, 1080) : '';
+    const kicker = country ? escHtml(country) : '';
+    const stepsCount = uniqNames.length;
+
+    const card = document.createElement('div');
+    card.id = 'ortShareCard';
+    card.style.cssText = 'width:1080px;height:1080px;position:relative;overflow:hidden;background:#f6f1e7;display:flex;flex-direction:column;font-family:Mulish,sans-serif';
+
+    card.innerHTML = ''
+      // 1. BANNER (brand image en fond)
+      + '<div style="height:92px;flex:0 0 92px;position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 38px;overflow:hidden">'
+      +   '<div style="position:absolute;inset:0;background:#113f7a"></div>'
+      +   '<img src="'+shareProxyPhoto(brandImg,1080)+'" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.30"/>'
+      +   '<div style="position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#b8860b,#c99a2e 50%,transparent)"></div>'
+      +   '<div style="position:relative;height:80px;background:#fff;border-radius:14px;display:flex;align-items:center;padding:7px 22px;box-shadow:0 5px 20px rgba(0,0,0,.28)">'
+      +     '<img src="'+logo+'" crossorigin="anonymous" style="height:100%;width:auto;object-fit:contain"/>'
+      +   '</div>'
+      +   '<div style="position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:3px">'
+      +     '<div style="font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.62);font-weight:600">'+SC.by+'</div>'
+      +     '<div style="font-size:19px;color:#fff;font-weight:700">OneRoadTrip<b style="color:#c99a2e">.com</b></div>'
+      +   '</div>'
+      + '</div>'
+      // 2. HERO = photo de l'étape sélectionnée
+      + '<div style="position:relative;flex:0 0 '+heroH+'px;height:'+heroH+'px;overflow:hidden;background:#0c2e59">'
+      +   (photoUrl ? '<img src="'+photoUrl+'" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 45%"/>' : '')
+      +   '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(12,46,89,.28) 0%,rgba(8,24,48,0) 45%,rgba(8,24,48,.62) 80%,rgba(7,20,40,.9) 100%)"></div>'
+      +   '<div style="position:absolute;left:40px;right:40px;bottom:34px">'
+      +     (kicker ? '<div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:14px"><span style="width:30px;height:2px;background:#c99a2e"></span><span style="color:#fff;font-size:15px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.4)">'+kicker+'</span></div>' : '')
+      +     '<div style="font-family:\'Playfair Display\',serif;color:#fff;font-weight:600;font-size:52px;line-height:1.05;text-shadow:0 4px 24px rgba(0,0,0,.45)">'+escHtml(title)+'</div>'
+      +   '</div>'
+      + '</div>'
+      // 3. MAP (tracé réel)
+      + '<div style="position:relative;flex:0 0 '+mapH+'px;height:'+mapH+'px;background:radial-gradient(120% 90% at 78% 18%, #eaf1f4 0%, transparent 55%),linear-gradient(180deg,#f3eddf 0%, #efe7d4 100%);overflow:hidden;border-top:1px solid rgba(17,63,122,.08)">'
+      +   '<div style="position:absolute;inset:0;background-image:radial-gradient(rgba(17,63,122,.10) 1.4px, transparent 1.6px);background-size:26px 26px;opacity:.5"></div>'
+      +   mapInner
+      + '</div>'
+      // 4. ÉTAPES
+      + '<div style="flex:0 0 '+etapesH+'px;height:'+etapesH+'px;background:#fff;padding:20px 40px 16px;display:flex;flex-direction:column;border-top:1px solid rgba(17,63,122,.10)">'
+      +   '<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">'
+      +     '<span style="width:4px;height:18px;background:#b8860b;border-radius:2px"></span>'
+      +     '<span style="font-family:\'Playfair Display\',serif;font-size:24px;font-weight:700;color:#113f7a">'+SC.steps+'</span>'
+      +     '<span style="margin-left:auto;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#5d6b7e">'+stepsCount+' '+SC.cities+'</span>'
+      +   '</div>'
+      +   '<div style="display:grid;grid-template-columns:repeat('+etColumns+',1fr);column-gap:32px;row-gap:'+etRowGap+'px;align-content:start;overflow:hidden">'+etapesHtml+'</div>'
+      + '</div>'
+      // 5. STATS (brand image en fond)
+      + '<div style="flex:0 0 102px;height:102px;position:relative;display:flex;align-items:stretch;color:#fff;overflow:hidden">'
+      +   '<div style="position:absolute;inset:0;background:#113f7a"></div>'
+      +   '<img src="'+shareProxyPhoto(brandImg,1080)+'" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.22"/>'
+      +   '<div style="position:absolute;left:50%;top:24px;bottom:24px;width:1px;background:rgba(255,255,255,.18)"></div>'
+      +   '<div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:18px;padding:0 26px">'
+      +     '<div style="width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#c99a2e;flex:0 0 46px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" fill="currentColor"/></svg></div>'
+      +     '<div style="display:flex;flex-direction:column;line-height:1">'
+      +       '<div style="font-family:\'Playfair Display\',serif;font-size:38px;font-weight:700">'+nights+'<small style="font-size:18px;font-weight:600;margin-left:4px;color:rgba(255,255,255,.7);font-family:Mulish">'+SC.nights+'</small></div>'
+      +       '<div style="font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:7px">'+SC.duration+'</div>'
+      +     '</div>'
+      +   '</div>'
+      +   (kms > 0 ?
+          '<div style="position:relative;flex:1;display:flex;align-items:center;justify-content:center;gap:18px;padding:0 26px">'
+      +     '<div style="width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:#c99a2e;flex:0 0 46px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 3 L3 21 M19 3 L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>'
+      +     '<div style="display:flex;flex-direction:column;line-height:1">'
+      +       '<div style="font-family:\'Playfair Display\',serif;font-size:38px;font-weight:700">'+kms+'<small style="font-size:18px;font-weight:600;margin-left:4px;color:rgba(255,255,255,.7);font-family:Mulish">km</small></div>'
+      +       '<div style="font-size:13px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.6);margin-top:7px">'+SC.distance+'</div>'
+      +     '</div>'
+      +   '</div>' : '')
+      + '</div>';
+
+    return card;
+  }
+
+  // Génère le PNG à partir d'une card déjà dans le DOM
+  async function renderCardToPng(card){
+    if (!window.html2canvas) throw new Error('html2canvas absent');
+    try {
+      if (document.fonts && document.fonts.ready) {
+        await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 1500))]);
+      }
+    } catch(e){}
+    const h2c = window.html2canvas(card, {
+      width: 1080, height: 1080,
+      windowWidth: 1080, windowHeight: 1080,
+      x: 0, y: 0, scrollX: 0, scrollY: 0,
+      scale: 1, useCORS: true, allowTaint: false, backgroundColor: '#f6f1e7',
+      logging: false, imageTimeout: 8000
+    });
+    const canvas = await Promise.race([
+      h2c,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('html2canvas timeout')), 15000))
+    ]);
+    return canvas.toDataURL('image/png');
+  }
+
+  // Capture une card neuve hors écran, à taille native 1080x1080 (sans transform hérité)
+  async function captureCardOffscreen(rt, photo){
+    const mapImg = await resolveShareMap(rt);
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:absolute;left:-99999px;top:0;width:1080px;height:1080px;background:#f6f1e7;z-index:-1';
+    const card = buildShareCard(rt, photo, { mapImg: mapImg });
+    holder.appendChild(card);
+    document.body.appendChild(holder);
+    try {
+      await waitImages(card);
+      await new Promise(r => setTimeout(r, 120));
+      return await renderCardToPng(card);
+    } finally {
+      document.body.removeChild(holder);
+    }
+  }
+
+  // Attend le chargement des images d'un noeud, avec timeout par image
+  function waitImages(node){
+    const imgs = Array.prototype.slice.call(node.querySelectorAll('img'));
+    return Promise.all(imgs.map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(res => {
+        let done = false;
+        const finish = () => { if(!done){ done = true; res(); } };
+        img.onload = finish;
+        img.onerror = finish;
+        setTimeout(finish, 6000);
+      });
+    }));
+  }
+
+  // Compat : même nom que l'ancienne fonction (utilisé par shareSocial)
+  // Génère directement le PNG avec la 1ère photo du voyage.
+  async function generateViralImagePro(rt, customIntroText){
+    await loadPhotosLieuxOnce();
+    const photos = collectTripPhotos(rt);
+    const photo = photos.length ? photos[0] : null;
+    const mapImg = await resolveShareMap(rt);
+    const holder = document.createElement('div');
+    holder.style.cssText = 'position:absolute;left:-99999px;top:0;width:1080px;height:1080px;z-index:-1';
+    const card = buildShareCard(rt, photo, { mapImg: mapImg });
+    holder.appendChild(card);
+    document.body.appendChild(holder);
+    try {
+      await waitImages(card);
+      await new Promise(r => setTimeout(r, 120));
+      return await renderCardToPng(card);
+    } finally {
+      document.body.removeChild(holder);
+    }
+  }
+
+  // Composer interactif : prévisualisation + flèches + téléchargement
+  async function openShareComposer(rt){
+    await loadPhotosLieuxOnce();
+    const photos = collectTripPhotos(rt);
+    let idx = 0;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(8,16,32,.78);z-index:100050;display:flex;align-items:center;justify-content:center;padding:20px';
+
+    const panel = document.createElement('div');
+    panel.style.cssText = 'background:#fff;border-radius:16px;max-width:560px;width:100%;max-height:94vh;overflow-y:auto;padding:20px';
+
+    // zone preview (card scalée)
+    const previewWrap = document.createElement('div');
+    previewWrap.style.cssText = 'position:relative;width:100%;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#f6f1e7;box-shadow:0 12px 40px rgba(0,0,0,.25)';
+
+    const scaler = document.createElement('div');
+    scaler.style.cssText = 'position:absolute;top:0;left:0;width:1080px;height:1080px;transform-origin:top left';
+    previewWrap.appendChild(scaler);
+
+    function fitScale(){
+      const w = previewWrap.clientWidth || 520;
+      scaler.style.transform = 'scale(' + (w/1080) + ')';
+    }
+
+    let currentCard = null;
+    async function renderPreview(){
+      const mapImg = await resolveShareMap(rt);
+      scaler.innerHTML = '';
+      currentCard = buildShareCard(rt, photos[idx] || null, { mapImg: mapImg });
+      scaler.appendChild(currentCard);
+      fitScale();
+      await waitImages(currentCard);
+    }
+
+    // flèches
+    const navText = document.createElement('div');
+    navText.style.cssText = 'text-align:center;font-size:13px;color:#5d6b7e;margin:12px 0 4px';
+
+    const arrows = document.createElement('div');
+    arrows.style.cssText = 'display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:14px';
+    const btnPrev = document.createElement('button');
+    btnPrev.type = 'button';
+    btnPrev.textContent = '‹';
+    btnPrev.style.cssText = 'width:44px;height:44px;border-radius:50%;border:1px solid #d0d8e4;background:#f4f7fb;font-size:24px;color:#113f7a;cursor:pointer;line-height:1';
+    const btnNext = btnPrev.cloneNode(true);
+    btnNext.textContent = '›';
+    const photoLabel = document.createElement('div');
+    photoLabel.style.cssText = 'min-width:160px;text-align:center;font-size:14px;font-weight:600;color:#113f7a';
+
+    function updateLabel(){
+      const p = photos[idx];
+      photoLabel.textContent = photos.length ? ((idx+1)+' / '+photos.length + (p && p.place ? ' · '+p.place : '')) : 'Aucune photo';
+    }
+
+    arrows.appendChild(btnPrev);
+    arrows.appendChild(photoLabel);
+    arrows.appendChild(btnNext);
+
+    btnPrev.addEventListener('click', async () => { if(!photos.length) return; idx = (idx - 1 + photos.length) % photos.length; updateLabel(); await renderPreview(); });
+    btnNext.addEventListener('click', async () => { if(!photos.length) return; idx = (idx + 1) % photos.length; updateLabel(); await renderPreview(); });
+
+    // boutons action
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:10px;margin-top:6px';
+    const btnDl = document.createElement('button');
+    btnDl.type = 'button';
+    btnDl.textContent = 'Télécharger l\'image';
+    btnDl.style.cssText = 'flex:1;padding:13px;border:none;border-radius:10px;background:#113f7a;color:#fff;font-weight:700;font-size:15px;cursor:pointer';
+    const btnClose = document.createElement('button');
+    btnClose.type = 'button';
+    btnClose.textContent = 'Fermer';
+    btnClose.style.cssText = 'padding:13px 20px;border:1px solid #d0d8e4;border-radius:10px;background:#fff;color:#5d6b7e;font-weight:600;font-size:15px;cursor:pointer';
+
+    actions.appendChild(btnDl);
+    actions.appendChild(btnClose);
+
+    btnClose.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+
+    btnDl.addEventListener('click', async () => {
+      if (!photos.length && !currentCard) return;
+      btnDl.disabled = true;
+      const old = btnDl.textContent;
+      btnDl.textContent = 'Génération...';
+      try {
+        const dataUrl = await captureCardOffscreen(rt, photos[idx] || null);
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = (rt.title || 'mon-voyage').replace(/[^a-z0-9]/gi,'-').toLowerCase() + '-oneroadtrip.png';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        btnDl.textContent = '✅ Téléchargée';
+        setTimeout(() => { btnDl.textContent = old; btnDl.disabled = false; }, 1500);
+      } catch (e){
+        console.error('[SHARE] génération échouée:', e);
+        btnDl.textContent = '❌ Erreur';
+        setTimeout(() => { btnDl.textContent = old; btnDl.disabled = false; }, 1500);
+      }
+    });
+
+    panel.appendChild(previewWrap);
+    panel.appendChild(arrows);
+    panel.appendChild(actions);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    updateLabel();
+    await renderPreview();
+    window.addEventListener('resize', fitScale);
   }
   
   // Affiche la modal avec l'image complète à télécharger
