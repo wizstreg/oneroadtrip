@@ -4,9 +4,9 @@ echo               ONE ROAD TRIP - PUSH TEST ONLY (PWA)
 echo ================================================================
 echo.
 
-echo [1/3] Verification et scraping des hotels manquants...
+echo [1/2] Hotels : nettoyage + divide vers Ort test (sans recherche ni photos)...
 echo ----------------------------------------------------------------
-node "C:\OneRoadTrip\data\Roadtripsprefabriques\tools\script\check-and-scrape-hotels.js"
+node "C:\OneRoadTrip\data\Roadtripsprefabriques\tools\script\fix-hotels-all-in-one.js" --no-replace --no-enrich --no-distance --divide=test
 
 if errorlevel 1 (
     echo.
@@ -16,19 +16,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/3] Decoupe des hotels par pays/initiale...
-echo ----------------------------------------------------------------
-node "C:\OneRoadTrip\data\Roadtripsprefabriques\tools\script\divide-hotels.js"
-
-if errorlevel 1 (
-    echo.
-    echo [ERREUR] Probleme lors du decoupe des hotels
-    pause
-    exit /b 1
-)
-
-echo.
-echo [2.5/3] Injection du snippet PWA dans les HTML (TEST ONLY)...
+echo [1.5/2] Injection du snippet PWA dans les HTML (TEST ONLY)...
 echo ----------------------------------------------------------------
 node "C:\OneRoadTrip\data\Roadtripsprefabriques\tools\script\inject-pwa-snippet.mjs" --test
 
@@ -38,7 +26,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/3] Push UNIQUEMENT vers Ort test...
+echo [2/2] Push UNIQUEMENT vers Ort test...
 echo ----------------------------------------------------------------
 
 echo.
