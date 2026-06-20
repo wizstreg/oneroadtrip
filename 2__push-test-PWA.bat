@@ -45,7 +45,7 @@ if errorlevel 1 (
     echo [WARN] Pas de remote configure - skip push
 ) else (
     git add .
-    git commit -m "PWA test %date% %time%"
+    git commit -m "update %date% %time%"
     git push
     if errorlevel 1 (
         echo [WARN] Erreur push Ort test
