@@ -627,6 +627,7 @@ main{padding-block:40px 64px}
     <button id="lilia-go" type="button"></button>
   </div>
   <p id="lilia-status" class="lilia-status" hidden></p>
+  <p id="lilia-intro" class="lilia-intro" hidden></p>
   <div id="lilia-results" class="lilia-results"></div>
 </div>
 
@@ -645,13 +646,15 @@ main{padding-block:40px 64px}
 #lilia-go:hover{background:#a4884f}
 #lilia-go:disabled{opacity:.6;cursor:default}
 .lilia-status{margin:12px 2px 0;font-size:13px;color:#7a7466}
+.lilia-intro{margin:12px 2px 4px;font-size:14px;color:#3a352e;line-height:1.45}
 .lilia-results{margin-top:12px;display:flex;flex-direction:column;gap:10px}
 .lilia-card{display:block;padding:12px 14px;border:1px solid #ece8e0;border-radius:11px;
   background:#fff;text-decoration:none;color:inherit;transition:border-color .15s}
 .lilia-card:hover{border-color:#b79b6b}
 .lilia-card .lc-title{font-weight:600;font-size:14px;color:#2c2822}
+.lilia-card .lc-sub{font-size:12.5px;color:#6b6557;margin-top:2px}
 .lilia-card .lc-meta{font-size:12px;color:#8a8475;margin-top:3px}
-.lilia-card .lc-why{font-size:13px;color:#55504699;color:#5a544a;margin-top:6px;font-style:italic}
+.lilia-card .lc-why{font-size:13px;color:#5a544a;margin-top:6px;font-style:italic}
 [dir="rtl"] #lilia-box{text-align:right}
 </style>
 
@@ -693,9 +696,11 @@ window.addEventListener('DOMContentLoaded', function(){
   var input=document.getElementById('lilia-input'); input.placeholder=d.ph;
   var go=document.getElementById('lilia-go'); go.textContent=d.go;
   var status=document.getElementById('lilia-status');
+  var intro=document.getElementById('lilia-intro');
   var results=document.getElementById('lilia-results');
 
   function setStatus(msg){ if(msg){status.textContent=msg;status.hidden=false;} else {status.hidden=true;} }
+  function setIntro(msg){ if(msg){intro.textContent=msg;intro.hidden=false;} else {intro.textContent='';intro.hidden=true;} }
 
   function render(list){
     results.innerHTML='';
@@ -707,8 +712,9 @@ window.addEventListener('DOMContentLoaded', function(){
       var meta=[r.country];
       if(r.days) meta.push(r.days+' '+d.days);
       if(r.heures_vol!=null) meta.push(r.heures_vol+' '+d.flight);
-      a.innerHTML='<div class="lc-title"></div><div class="lc-meta"></div>'+(r.raison?'<div class="lc-why"></div>':'');
+      a.innerHTML='<div class="lc-title"></div>'+(r.subtitle?'<div class="lc-sub"></div>':'')+'<div class="lc-meta"></div>'+(r.raison?'<div class="lc-why"></div>':'');
       a.querySelector('.lc-title').textContent=r.title||r.slug;
+      if(r.subtitle) a.querySelector('.lc-sub').textContent=r.subtitle;
       a.querySelector('.lc-meta').textContent=meta.filter(Boolean).join('  \u00b7  ');
       if(r.raison) a.querySelector('.lc-why').textContent=r.raison;
       results.appendChild(a);
@@ -717,7 +723,7 @@ window.addEventListener('DOMContentLoaded', function(){
 
   function search(){
     var q=input.value.trim(); if(!q) return;
-    results.innerHTML=''; setStatus(d.searching); go.disabled=true;
+    results.innerHTML=''; setIntro(null); setStatus(d.searching); go.disabled=true;
     fetch('/.netlify/functions/recherche-itineraires',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({query:q,lang:lang})
@@ -726,8 +732,8 @@ window.addEventListener('DOMContentLoaded', function(){
     .then(function(data){
       go.disabled=false;
       if(!data.success){ setStatus(d.err); return; }
-      if(!data.results||!data.results.length){ setStatus(d.none); return; }
-      setStatus(null); render(data.results);
+      if(!data.results||!data.results.length){ setStatus(data.intro||d.none); return; }
+      setStatus(null); setIntro(data.intro); render(data.results);
     })
     .catch(function(){ go.disabled=false; setStatus(d.err); });
   }

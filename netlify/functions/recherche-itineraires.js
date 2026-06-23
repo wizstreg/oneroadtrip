@@ -183,9 +183,12 @@ function promptClasser(query, crit, courte, lang) {
 Demande : "${query}"
 Criteres compris : ${JSON.stringify(crit)}
 Itineraires : ${JSON.stringify(compact)}
-Garde uniquement ceux qui collent VRAIMENT a la demande (soleil/plage/public via le climat et les themes). Classe du meilleur au moins bon.
-Reponds UNIQUEMENT en JSON (pas de texte, pas de backticks), langue ${lang} :
-[{"id":"...","raison":"une phrase courte expliquant pourquoi ca colle"}]`;
+Garde uniquement ceux qui collent VRAIMENT a la demande, en t'appuyant sur le climat et les themes.
+Si la demande parle de baignade ou de soleil a un mois donne, ECARTE les cotes froides a cette saison (lis le champ climat) et privilegie les destinations chaudes/ensoleillees au mois demande.
+Tiens compte du public et de la duree si la demande les precise. Classe du meilleur au moins bon.
+Ecris aussi "intro" : UNE phrase chaleureuse et HONNETE qui resume. Si la demande est difficile a satisfaire (ex: se baigner en fevrier pres du depart, impossible cote meteo), dis-le franchement et annonce que voici des alternatives proches. Sinon, resume simplement ce que tu proposes.
+Reponds UNIQUEMENT en JSON valide (pas de texte, pas de backticks), langue ${lang}, sous cette forme exacte :
+{"intro":"une phrase","resultats":[{"id":"...","raison":"une phrase courte expliquant pourquoi ca colle"}]}`;
 }
 
 // ===== HANDLER =====
@@ -228,20 +231,24 @@ export default async (request, context) => {
     let classe = [];
     try { classe = await askAi(promptClasser(query, crit, courte, lang)); }
     catch (e) { console.warn('classement:', e.message); }
-    // L'IA peut repondre par un tableau, ou un objet {results:[...]} : on recupere le tableau dans tous les cas
-    if (!Array.isArray(classe)) {
-      const arr = classe && typeof classe === 'object' ? Object.values(classe).find(v => Array.isArray(v)) : null;
-      classe = arr || [];
+    // L'IA repond par un objet {intro, resultats}. On recupere la phrase et le tableau.
+    let intro = '';
+    let liste = classe;
+    if (!Array.isArray(liste)) {
+      if (liste && typeof liste === 'object') {
+        intro = liste.intro || liste.message || '';
+        liste = Object.values(liste).find(v => Array.isArray(v)) || [];
+      } else { liste = []; }
     }
 
     // Fusion : on garde l'ordre et la selection de l'IA si dispo, sinon le tri par distance
     const parId = new Map(courte.map(x => [x.r.id, x]));
-    const ordre = (classe.length ? classe : courte.map(x => ({ id: x.r.id, raison: '' })));
+    const ordre = (liste.length ? liste : courte.map(x => ({ id: x.r.id, raison: '' })));
     const results = ordre
-      .map(o => { const x = parId.get(o.id); return x ? { id: x.r.id, slug: x.r.slug, title: x.r.title, country: x.r.country, days: x.r.days, heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null, raison: o.raison || '' } : null; })
+      .map(o => { const x = parId.get(o.id); return x ? { id: x.r.id, slug: x.r.slug, title: x.r.title, subtitle: x.r.subtitle || '', country: x.r.country, days: x.r.days, heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null, raison: o.raison || '' } : null; })
       .filter(Boolean);
 
-    return new Response(JSON.stringify({ success: true, criteres: crit, depart, results }), { status: 200, headers });
+    return new Response(JSON.stringify({ success: true, intro, criteres: crit, depart, results }), { status: 200, headers });
 
   } catch (e) {
     console.error('search:', e.message);
