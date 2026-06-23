@@ -158,10 +158,17 @@ function trier(rows, crit, depart) {
   }
   // Filtre duree
   if (crit.duree_max_jours) out = out.filter(x => !x.r.days || x.r.days <= crit.duree_max_jours);
-  // Tri : par proximite si depart, sinon par nombre de mois qui collent
-  out.sort((a, b) => (a.heures ?? 1e9) - (b.heures ?? 1e9));
-  // On envoie une liste large a l'IA (pas seulement les plus proches) : sinon, pour une demande
-  // "soleil/plage", les itins de montagne plus proches evinceraient les plages un peu plus loin.
+  // Tri : si la demande veut du soleil, on remonte les destinations les plus proches de l'equateur
+  // (donc les plus chaudes) dans le rayon, sinon les plus proches en distance.
+  const versSoleil = crit.soleil === true;
+  out.sort((a, b) => {
+    if (versSoleil) {
+      const la = Array.isArray(a.r.arrival) ? Math.abs(a.r.arrival[0]) : 999;
+      const lb = Array.isArray(b.r.arrival) ? Math.abs(b.r.arrival[0]) : 999;
+      if (la !== lb) return la - lb;
+    }
+    return (a.heures ?? 1e9) - (b.heures ?? 1e9);
+  });
   return out.slice(0, 25);
 }
 
