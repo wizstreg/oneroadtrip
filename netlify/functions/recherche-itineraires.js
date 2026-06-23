@@ -166,16 +166,30 @@ function trier(rows, crit, depart) {
     }
     return { r, heures, nbLieux };
   });
+  // Si la personne cite des lieux precis, LE LIEU PRIME. On garde les itins qui contiennent
+  // ces lieux meme s'ils depassent un peu le rayon (l'IA mentionnera la distance reelle),
+  // plutot que de noyer la reponse sous des alternatives sans rapport.
+  if (lieux.length) {
+    const avecLieu = out.filter(x => x.nbLieux > 0);
+    if (avecLieu.length) {
+      const dansRayon = x => (!depart || !crit.max_heures_vol) ? true : (x.heures != null && x.heures <= crit.max_heures_vol);
+      avecLieu.sort((a, b) => {
+        if (a.nbLieux !== b.nbLieux) return b.nbLieux - a.nbLieux;   // plus de lieux trouves d'abord
+        const ar = dansRayon(a) ? 0 : 1, br = dansRayon(b) ? 0 : 1;  // ceux dans le rayon d'abord
+        if (ar !== br) return ar - br;
+        return (a.heures ?? 1e9) - (b.heures ?? 1e9);               // puis les plus proches
+      });
+      return avecLieu.slice(0, 25);
+    }
+    // Aucun itin ne contient ces lieux (absents des donnees) : on continue en mode normal,
+    // l'intro de l'IA expliquera honnetement qu'on ne les a pas.
+  }
+
   // Filtre distance (contrainte dure si demandee)
   if (depart && crit.max_heures_vol) out = out.filter(x => x.heures != null && x.heures <= crit.max_heures_vol);
-  // Filtre lieux : si la personne cite des lieux precis, on ne garde que les itins qui en contiennent.
-  if (lieux.length) {
-    const filtre = out.filter(x => x.nbLieux > 0);
-    if (filtre.length) out = filtre;
-  }
-  // Filtre themes seulement si AUCUN lieu precis n'est demande (sinon le lieu prime).
+  // Filtre themes (si pas de lieux precis)
   const themesVoulus = (crit.themes || []).filter(Boolean);
-  if (!lieux.length && themesVoulus.length) {
+  if (themesVoulus.length) {
     const filtre = out.filter(x => (x.r.themes || []).some(t => themesVoulus.includes(t)));
     if (filtre.length) out = filtre;
   }
@@ -184,11 +198,9 @@ function trier(rows, crit, depart) {
   if (crit.duree_min_jours) out = out.filter(x => !x.r.days || x.r.days >= crit.duree_min_jours);
   // Pas de filtre dur sur le mois : la saison est jugee plus finement par l'IA (climat + mois conseilles).
 
-  // Tri : les lieux demandes d'abord (plus de correspondances = mieux), puis soleil (vers l'equateur)
-  // si demande, puis proximite.
+  // Tri : soleil (vers l'equateur) si demande, sinon proximite.
   const versSoleil = crit.soleil === true;
   out.sort((a, b) => {
-    if (lieux.length && a.nbLieux !== b.nbLieux) return b.nbLieux - a.nbLieux;
     if (versSoleil) {
       const la = Array.isArray(a.r.arrival) ? Math.abs(a.r.arrival[0]) : 999;
       const lb = Array.isArray(b.r.arrival) ? Math.abs(b.r.arrival[0]) : 999;
@@ -204,7 +216,6 @@ function promptClasser(query, crit, courte, lang) {
   const compact = courte.map(x => ({
     id: x.r.id, titre: x.r.title, sous_titre: x.r.subtitle || '', pays: x.r.country, jours: x.r.days,
     themes: x.r.themes, public: x.r.audience, climat: (x.r.climate || '').slice(0, 160),
-    villes: x.r.cities || [],
     mois_conseilles: x.r.months || [],
     mots_cles: (x.r.keywords || []).slice(0, 6),
     heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null
