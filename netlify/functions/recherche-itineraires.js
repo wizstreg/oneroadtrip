@@ -132,7 +132,7 @@ function promptParse(query, lang, themesDispo) {
 Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"lieux":[],"mois":[],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[],"duree_min_jours":nombre ou null,"duree_max_jours":nombre ou null}
 - "depart" : la ville de depart du voyageur (d'ou il part), sinon null.
 - "max_heures_vol" : UNIQUEMENT un temps de trajet/vol en HEURES (ex "moins de 3h", "5 heures de vol"), sinon null.
-- "lieux" : toutes les villes, regions, sites ou monuments PRECIS que la personne veut VOIR ou VISITER (ex "Colisee", "Pompei", "Kyoto", "Petra", "Machu Picchu", "Sagrada Familia"). Ne mets PAS ici la ville de depart. [] si rien.
+- "lieux" : toutes les villes, regions, sites ou monuments PRECIS que la personne veut VOIR ou VISITER. IMPORTANT : pour chaque monument ou site, ajoute AUSSI la ville ou region qui le contient. Ex "Colisee" -> ["Colisee","Rome"] ; "Sagrada Familia" -> ["Sagrada Familia","Barcelone"] ; "Machu Picchu" -> ["Machu Picchu","Cusco"]. Ne mets PAS ici la ville de depart. [] si rien.
 - "mois" : mois evoques, en minuscules sans accent, dans la langue ${lang}. [] si rien.
 - "soleil" : true si la personne veut du soleil/chaud/se baigner, false si elle veut du froid/neige, null si non precise.
 - "public" : famille, couple, solo ou amis si precise, sinon null.
@@ -142,12 +142,13 @@ Ne devine pas ce qui n'est pas dit (null ou []).
 Demande : "${query}"`;
 }
 
-// Normalise un texte et coupe en mots significatifs (pour matcher des lieux).
-function motsCles(s) { return norm(s).split(/[^a-z0-9]+/).filter(w => w.length > 3); }
-// Un lieu est present dans un itin si tous ses mots significatifs sont dans son texte.
-function lieuPresent(blob, lieu) {
-  const mots = motsCles(lieu);
-  return mots.length > 0 && mots.every(m => blob.includes(m));
+// Normalise un texte en ensemble de mots (pour matcher des lieux par mot entier, pas par sous-chaine :
+// evite que "Rome" attrape "Drome").
+function ensembleMots(s) { return new Set(norm(s).split(/[^a-z0-9]+/).filter(Boolean)); }
+// Un lieu est present si tous ses mots significatifs sont des mots de l'itin.
+function lieuPresent(setMots, lieu) {
+  const mots = norm(lieu).split(/[^a-z0-9]+/).filter(w => w.length > 3);
+  return mots.length > 0 && mots.every(m => setMots.has(m));
 }
 
 // ===== ETAGE 2 (sans IA) : geo + filtres =====
@@ -161,8 +162,8 @@ function trier(rows, crit, depart) {
     // Nombre de lieux demandes que cet itin contient (titre + sous-titre + villes + mots-cles).
     let nbLieux = 0;
     if (lieux.length) {
-      const blob = norm([r.title, r.subtitle, (r.cities || []).join(' '), (r.keywords || []).join(' ')].join(' '));
-      nbLieux = lieux.filter(l => lieuPresent(blob, l)).length;
+      const setMots = ensembleMots([r.title, r.subtitle, (r.cities || []).join(' '), (r.keywords || []).join(' ')].join(' '));
+      nbLieux = lieux.filter(l => lieuPresent(setMots, l)).length;
     }
     return { r, heures, nbLieux };
   });
