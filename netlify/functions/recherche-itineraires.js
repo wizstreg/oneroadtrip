@@ -128,40 +128,67 @@ async function askAi(prompt) {
 
 // ===== ETAGE 1 : phrase -> criteres =====
 function promptParse(query, lang, themesDispo) {
-  return `Tu analyses une demande de voyage. Reponds UNIQUEMENT en JSON (pas de texte, pas de backticks).
-Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"mois":["fevrier"] ou [],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[] ,"duree_max_jours":nombre ou null}
-Pour "themes", choisis 0 a 2 valeurs EXACTEMENT dans cette liste (recopie le libelle a l'identique), selon la demande : ${JSON.stringify(themesDispo)}.
-Exemple : "a la mer", "plage", "baignade" -> le theme de cote/mer de la liste. "rando", "montagne" -> le theme montagne. Si rien de clair, mets [].
-Regles : "max_heures_vol" = UNIQUEMENT un temps de trajet/vol en HEURES (ex: "moins de 3h", "5 heures de vol", "2h de train"). "duree_max_jours" = UNIQUEMENT une duree de SEJOUR en JOURS (ex: "une semaine", "max 10 jours", "un week-end" = 3). NE CONFONDS JAMAIS un temps de trajet en heures avec une duree de sejour en jours. "mois" en minuscules sans accent, dans la langue ${lang}. Ne devine pas ce qui n'est pas dit (null ou []).
+  return `Tu analyses une demande de voyage. Tu dois capter TOUT ce qui est exprime. Reponds UNIQUEMENT en JSON (pas de texte, pas de backticks).
+Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"lieux":[],"mois":[],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[],"duree_min_jours":nombre ou null,"duree_max_jours":nombre ou null}
+- "depart" : la ville de depart du voyageur (d'ou il part), sinon null.
+- "max_heures_vol" : UNIQUEMENT un temps de trajet/vol en HEURES (ex "moins de 3h", "5 heures de vol"), sinon null.
+- "lieux" : toutes les villes, regions, sites ou monuments PRECIS que la personne veut VOIR ou VISITER (ex "Colisee", "Pompei", "Kyoto", "Petra", "Machu Picchu", "Sagrada Familia"). Ne mets PAS ici la ville de depart. [] si rien.
+- "mois" : mois evoques, en minuscules sans accent, dans la langue ${lang}. [] si rien.
+- "soleil" : true si la personne veut du soleil/chaud/se baigner, false si elle veut du froid/neige, null si non precise.
+- "public" : famille, couple, solo ou amis si precise, sinon null.
+- "themes" : 0 a 3 valeurs EXACTEMENT dans cette liste (recopie a l'identique) : ${JSON.stringify(themesDispo)}. "mer/plage/baignade" -> theme cote/mer ; "rando/sommets" -> montagne ; etc. [] si rien.
+- "duree_min_jours" / "duree_max_jours" : duree de SEJOUR en JOURS (ex "une semaine"=7, "un week-end"=3, "au moins 3 semaines" -> min 21, "max 10 jours" -> max 10). Ne confonds JAMAIS heures de trajet et jours de sejour.
+Ne devine pas ce qui n'est pas dit (null ou []).
 Demande : "${query}"`;
+}
+
+// Normalise un texte et coupe en mots significatifs (pour matcher des lieux).
+function motsCles(s) { return norm(s).split(/[^a-z0-9]+/).filter(w => w.length > 3); }
+// Un lieu est present dans un itin si tous ses mots significatifs sont dans son texte.
+function lieuPresent(blob, lieu) {
+  const mots = motsCles(lieu);
+  return mots.length > 0 && mots.every(m => blob.includes(m));
 }
 
 // ===== ETAGE 2 (sans IA) : geo + filtres =====
 function trier(rows, crit, depart) {
+  const lieux = (crit.lieux || []).filter(Boolean);
   let out = rows.map(r => {
     let heures = null;
     if (depart && Array.isArray(r.arrival) && r.arrival.length >= 2) {
       heures = heuresVolApprox(haversineKm(depart.lat, depart.lon, r.arrival[0], r.arrival[1]));
     }
-    return { r, heures };
+    // Nombre de lieux demandes que cet itin contient (titre + sous-titre + villes + mots-cles).
+    let nbLieux = 0;
+    if (lieux.length) {
+      const blob = norm([r.title, r.subtitle, (r.cities || []).join(' '), (r.keywords || []).join(' ')].join(' '));
+      nbLieux = lieux.filter(l => lieuPresent(blob, l)).length;
+    }
+    return { r, heures, nbLieux };
   });
-  // Filtre distance (si on a un depart et un plafond d'heures)
+  // Filtre distance (contrainte dure si demandee)
   if (depart && crit.max_heures_vol) out = out.filter(x => x.heures != null && x.heures <= crit.max_heures_vol);
-  // Pas de filtre dur sur le mois : "meilleurs mois" n'est pas "seuls mois possibles".
-  // La saison est jugee plus finement par l'IA (climat + mois conseilles).
-  // Filtre themes : si la demande cible des themes, on ne garde que les itins qui en portent au moins un.
-  // Filtre fiable (themes remplis a 100%). Si ca vide tout, on relache pour ne pas renvoyer une page blanche.
+  // Filtre lieux : si la personne cite des lieux precis, on ne garde que les itins qui en contiennent.
+  if (lieux.length) {
+    const filtre = out.filter(x => x.nbLieux > 0);
+    if (filtre.length) out = filtre;
+  }
+  // Filtre themes seulement si AUCUN lieu precis n'est demande (sinon le lieu prime).
   const themesVoulus = (crit.themes || []).filter(Boolean);
-  if (themesVoulus.length) {
+  if (!lieux.length && themesVoulus.length) {
     const filtre = out.filter(x => (x.r.themes || []).some(t => themesVoulus.includes(t)));
     if (filtre.length) out = filtre;
   }
-  // Filtre duree
+  // Filtre duree (mini et maxi)
   if (crit.duree_max_jours) out = out.filter(x => !x.r.days || x.r.days <= crit.duree_max_jours);
-  // Tri : si la demande veut du soleil, on remonte les destinations les plus proches de l'equateur
-  // (donc les plus chaudes) dans le rayon, sinon les plus proches en distance.
+  if (crit.duree_min_jours) out = out.filter(x => !x.r.days || x.r.days >= crit.duree_min_jours);
+  // Pas de filtre dur sur le mois : la saison est jugee plus finement par l'IA (climat + mois conseilles).
+
+  // Tri : les lieux demandes d'abord (plus de correspondances = mieux), puis soleil (vers l'equateur)
+  // si demande, puis proximite.
   const versSoleil = crit.soleil === true;
   out.sort((a, b) => {
+    if (lieux.length && a.nbLieux !== b.nbLieux) return b.nbLieux - a.nbLieux;
     if (versSoleil) {
       const la = Array.isArray(a.r.arrival) ? Math.abs(a.r.arrival[0]) : 999;
       const lb = Array.isArray(b.r.arrival) ? Math.abs(b.r.arrival[0]) : 999;
@@ -177,6 +204,7 @@ function promptClasser(query, crit, courte, lang) {
   const compact = courte.map(x => ({
     id: x.r.id, titre: x.r.title, sous_titre: x.r.subtitle || '', pays: x.r.country, jours: x.r.days,
     themes: x.r.themes, public: x.r.audience, climat: (x.r.climate || '').slice(0, 160),
+    villes: x.r.cities || [],
     mois_conseilles: x.r.months || [],
     mots_cles: (x.r.keywords || []).slice(0, 6),
     heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null
