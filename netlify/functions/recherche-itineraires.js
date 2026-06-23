@@ -132,13 +132,12 @@ function promptParse(query, lang, themesDispo) {
 Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"mois":["fevrier"] ou [],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[] ,"duree_max_jours":nombre ou null}
 Pour "themes", choisis 0 a 2 valeurs EXACTEMENT dans cette liste (recopie le libelle a l'identique), selon la demande : ${JSON.stringify(themesDispo)}.
 Exemple : "a la mer", "plage", "baignade" -> le theme de cote/mer de la liste. "rando", "montagne" -> le theme montagne. Si rien de clair, mets [].
-Regles : "max_heures_vol" = nombre d'heures si un temps de trajet/vol est donne, sinon null. "mois" en minuscules sans accent, dans la langue ${lang}. Ne devine pas ce qui n'est pas dit (null ou []).
+Regles : "max_heures_vol" = UNIQUEMENT un temps de trajet/vol en HEURES (ex: "moins de 3h", "5 heures de vol", "2h de train"). "duree_max_jours" = UNIQUEMENT une duree de SEJOUR en JOURS (ex: "une semaine", "max 10 jours", "un week-end" = 3). NE CONFONDS JAMAIS un temps de trajet en heures avec une duree de sejour en jours. "mois" en minuscules sans accent, dans la langue ${lang}. Ne devine pas ce qui n'est pas dit (null ou []).
 Demande : "${query}"`;
 }
 
 // ===== ETAGE 2 (sans IA) : geo + filtres =====
 function trier(rows, crit, depart) {
-  const moisVoulus = (crit.mois || []).map(norm);
   let out = rows.map(r => {
     let heures = null;
     if (depart && Array.isArray(r.arrival) && r.arrival.length >= 2) {
@@ -148,13 +147,8 @@ function trier(rows, crit, depart) {
   });
   // Filtre distance (si on a un depart et un plafond d'heures)
   if (depart && crit.max_heures_vol) out = out.filter(x => x.heures != null && x.heures <= crit.max_heures_vol);
-  // Filtre mois : on garde si le mois colle OU si l'itin n'a pas de mois renseigne (l'IA tranchera)
-  if (moisVoulus.length) {
-    out = out.filter(x => {
-      const m = (x.r.months || []).map(norm);
-      return m.length === 0 || moisVoulus.some(v => m.includes(v));
-    });
-  }
+  // Pas de filtre dur sur le mois : "meilleurs mois" n'est pas "seuls mois possibles".
+  // La saison est jugee plus finement par l'IA (climat + mois conseilles).
   // Filtre themes : si la demande cible des themes, on ne garde que les itins qui en portent au moins un.
   // Filtre fiable (themes remplis a 100%). Si ca vide tout, on relache pour ne pas renvoyer une page blanche.
   const themesVoulus = (crit.themes || []).filter(Boolean);
@@ -176,6 +170,7 @@ function promptClasser(query, crit, courte, lang) {
   const compact = courte.map(x => ({
     id: x.r.id, titre: x.r.title, sous_titre: x.r.subtitle || '', pays: x.r.country, jours: x.r.days,
     themes: x.r.themes, public: x.r.audience, climat: (x.r.climate || '').slice(0, 160),
+    mois_conseilles: x.r.months || [],
     mots_cles: (x.r.keywords || []).slice(0, 6),
     heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null
   }));
