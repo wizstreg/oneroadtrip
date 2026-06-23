@@ -1,0 +1,126 @@
+<!-- =========================================================================
+     ASSISTANT LILIA — boite de recherche conversationnelle
+     A coller dans index.html (et les pages statiques) la ou tu veux l'afficher,
+     par exemple juste sous le hero, avant la liste des itineraires.
+     - Utilise la variable globale currentLang si elle existe (sinon detecte).
+     - Appelle la fonction Netlify /.netlify/functions/recherche-itineraires
+     ========================================================================= -->
+<div id="lilia-box" dir="auto">
+  <div class="lilia-head">
+    <span class="lilia-spark">✨</span>
+    <p class="lilia-title" data-lilia="title"></p>
+  </div>
+  <div class="lilia-row">
+    <input id="lilia-input" type="text" autocomplete="off" />
+    <button id="lilia-go" type="button"></button>
+  </div>
+  <p id="lilia-status" class="lilia-status" hidden></p>
+  <div id="lilia-results" class="lilia-results"></div>
+</div>
+
+<style>
+#lilia-box{max-width:760px;margin:18px auto;padding:16px 18px;border:1px solid #e6e2da;
+  border-radius:14px;background:#fbfaf7;box-shadow:0 1px 4px rgba(0,0,0,.05);font-family:inherit}
+.lilia-head{display:flex;align-items:center;gap:8px;margin:0 0 10px}
+.lilia-spark{font-size:18px;line-height:1}
+.lilia-title{margin:0;font-size:15px;font-weight:600;color:#3a352e}
+.lilia-row{display:flex;gap:8px}
+#lilia-input{flex:1;min-width:0;padding:11px 13px;border:1px solid #d9d4cb;border-radius:10px;
+  font-size:14px;background:#fff;color:#2c2822}
+#lilia-input:focus{outline:none;border-color:#b79b6b;box-shadow:0 0 0 3px rgba(183,155,107,.18)}
+#lilia-go{flex:0 0 auto;padding:11px 18px;border:none;border-radius:10px;cursor:pointer;
+  font-size:14px;font-weight:600;color:#fff;background:#b79b6b}
+#lilia-go:hover{background:#a4884f}
+#lilia-go:disabled{opacity:.6;cursor:default}
+.lilia-status{margin:12px 2px 0;font-size:13px;color:#7a7466}
+.lilia-results{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.lilia-card{display:block;padding:12px 14px;border:1px solid #ece8e0;border-radius:11px;
+  background:#fff;text-decoration:none;color:inherit;transition:border-color .15s}
+.lilia-card:hover{border-color:#b79b6b}
+.lilia-card .lc-title{font-weight:600;font-size:14px;color:#2c2822}
+.lilia-card .lc-meta{font-size:12px;color:#8a8475;margin-top:3px}
+.lilia-card .lc-why{font-size:13px;color:#55504699;color:#5a544a;margin-top:6px;font-style:italic}
+[dir="rtl"] #lilia-box{text-align:right}
+</style>
+
+<script>
+window.addEventListener('DOMContentLoaded', function(){
+  var LILIA_FOLDERS={fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
+  var L={
+    fr:{title:"Dites-nous ce que vous cherchez, Lilia trouve l'itin\u00e9raire id\u00e9al.",
+        ph:"Ex : un itin\u00e9raire nature et aventure \u00e0 moins de 5 h de vol de Londres, pour un couple",
+        go:"Trouver",searching:"Lilia cherche\u2026",none:"Aucun itin\u00e9raire ne correspond. Essayez d'\u00e9largir la demande.",
+        err:"Lilia n'a pas pu r\u00e9pondre, r\u00e9essayez dans un instant.",flight:"h de vol",days:"j"},
+    en:{title:"Tell us what you're after \u2014 Lilia finds your ideal itinerary.",
+        ph:"E.g. a nature and adventure trip under 5 h flight from London, for a couple",
+        go:"Find",searching:"Lilia is searching\u2026",none:"No itinerary matches. Try widening your request.",
+        err:"Lilia couldn't answer, please try again shortly.",flight:"h flight",days:"d"},
+    es:{title:"Dinos qu\u00e9 buscas y Lilia encontrar\u00e1 la ruta ideal.",
+        ph:"Ej.: una ruta de naturaleza y aventura a menos de 5 h de vuelo de Londres, para una pareja",
+        go:"Buscar",searching:"Lilia est\u00e1 buscando\u2026",none:"Ninguna ruta coincide. Prueba a ampliar la b\u00fasqueda.",
+        err:"Lilia no pudo responder, int\u00e9ntalo de nuevo.",flight:"h de vuelo",days:"d"},
+    it:{title:"Dicci cosa cerchi e Lilia trover\u00e0 l'itinerario ideale.",
+        ph:"Es.: un itinerario natura e avventura a meno di 5 h di volo da Londra, per una coppia",
+        go:"Trova",searching:"Lilia sta cercando\u2026",none:"Nessun itinerario corrisponde. Prova ad ampliare la richiesta.",
+        err:"Lilia non ha potuto rispondere, riprova tra poco.",flight:"h di volo",days:"g"},
+    pt:{title:"Diga-nos o que procura e a Lilia encontra o roteiro ideal.",
+        ph:"Ex.: um roteiro de natureza e aventura a menos de 5 h de voo de Londres, para um casal",
+        go:"Encontrar",searching:"A Lilia est\u00e1 a procurar\u2026",none:"Nenhum roteiro corresponde. Tente alargar o pedido.",
+        err:"A Lilia n\u00e3o conseguiu responder, tente de novo.",flight:"h de voo",days:"d"},
+    ar:{title:"\u0623\u062E\u0628\u0631\u0646\u0627 \u0639\u0645\u0651\u0627 \u062A\u0628\u062D\u062B \u0648\u0633\u062A\u062C\u062F \u0644\u0643 \u0644\u064A\u0644\u064A\u0627 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0645\u062B\u0627\u0644\u064A.",
+        ph:"\u0645\u062B\u0627\u0644: \u0645\u0633\u0627\u0631 \u0637\u0628\u064A\u0639\u0629 \u0648\u0645\u063A\u0627\u0645\u0631\u0629 \u0639\u0644\u0649 \u0628\u064F\u0639\u062F \u0623\u0642\u0644 \u0645\u0646 5 \u0633\u0627\u0639\u0627\u062A \u0637\u064A\u0631\u0627\u0646 \u0645\u0646 \u0644\u0646\u062F\u0646\u060C \u0644\u0632\u0648\u062C\u064A\u0646",
+        go:"\u0627\u0628\u062D\u062B",searching:"\u0644\u064A\u0644\u064A\u0627 \u062A\u0628\u062D\u062B\u2026",none:"\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0633\u0627\u0631 \u0645\u0637\u0627\u0628\u0642. \u062D\u0627\u0648\u0644 \u062A\u0648\u0633\u064A\u0639 \u0627\u0644\u0637\u0644\u0628.",
+        err:"\u062A\u0639\u0630\u0651\u0631 \u0639\u0644\u0649 \u0644\u064A\u0644\u064A\u0627 \u0627\u0644\u0631\u062F\u060C \u062D\u0627\u0648\u0644 \u0644\u0627\u062D\u0642\u064B\u0627.",flight:"\u0633\u0627\u0639\u0629 \u0637\u064A\u0631\u0627\u0646",days:"\u064A\u0648\u0645"}
+  };
+
+  var lang=(typeof currentLang!=='undefined'&&L[currentLang])?currentLang:'fr';
+  var d=L[lang];
+  var box=document.getElementById('lilia-box');
+  if(lang==='ar') box.setAttribute('dir','rtl');
+  box.querySelector('[data-lilia="title"]').textContent=d.title;
+  var input=document.getElementById('lilia-input'); input.placeholder=d.ph;
+  var go=document.getElementById('lilia-go'); go.textContent=d.go;
+  var status=document.getElementById('lilia-status');
+  var results=document.getElementById('lilia-results');
+
+  function setStatus(msg){ if(msg){status.textContent=msg;status.hidden=false;} else {status.hidden=true;} }
+
+  function render(list){
+    results.innerHTML='';
+    var folder=LILIA_FOLDERS[lang]||'itineraries';
+    list.forEach(function(r){
+      var a=document.createElement('a');
+      a.className='lilia-card';
+      a.href='/'+folder+'/'+r.slug+'.html';
+      var meta=[r.country];
+      if(r.days) meta.push(r.days+' '+d.days);
+      if(r.heures_vol!=null) meta.push(r.heures_vol+' '+d.flight);
+      a.innerHTML='<div class="lc-title"></div><div class="lc-meta"></div>'+(r.raison?'<div class="lc-why"></div>':'');
+      a.querySelector('.lc-title').textContent=r.title||r.slug;
+      a.querySelector('.lc-meta').textContent=meta.filter(Boolean).join('  \u00b7  ');
+      if(r.raison) a.querySelector('.lc-why').textContent=r.raison;
+      results.appendChild(a);
+    });
+  }
+
+  function search(){
+    var q=input.value.trim(); if(!q) return;
+    results.innerHTML=''; setStatus(d.searching); go.disabled=true;
+    fetch('/.netlify/functions/recherche-itineraires',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({query:q,lang:lang})
+    })
+    .then(function(res){return res.json();})
+    .then(function(data){
+      go.disabled=false;
+      if(!data.success){ setStatus(d.err); return; }
+      if(!data.results||!data.results.length){ setStatus(d.none); return; }
+      setStatus(null); render(data.results);
+    })
+    .catch(function(){ go.disabled=false; setStatus(d.err); });
+  }
+
+  go.addEventListener('click',search);
+  input.addEventListener('keydown',function(e){ if(e.key==='Enter') search(); });
+});
+</script>
