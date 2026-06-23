@@ -127,10 +127,12 @@ async function askAi(prompt) {
 }
 
 // ===== ETAGE 1 : phrase -> criteres =====
-function promptParse(query, lang) {
+function promptParse(query, lang, themesDispo) {
   return `Tu analyses une demande de voyage. Reponds UNIQUEMENT en JSON (pas de texte, pas de backticks).
-Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"mois":["fevrier"] ou [],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":["plage","nature"] ou [],"duree_max_jours":nombre ou null}
-Regles : "max_heures_vol" = nombre d'heures si la personne donne un temps de trajet/vol, sinon null. "mois" en minuscules sans accent, dans la langue ${lang}. Ne devine pas ce qui n'est pas dit (mets null ou []).
+Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"mois":["fevrier"] ou [],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[] ,"duree_max_jours":nombre ou null}
+Pour "themes", choisis 0 a 2 valeurs EXACTEMENT dans cette liste (recopie le libelle a l'identique), selon la demande : ${JSON.stringify(themesDispo)}.
+Exemple : "a la mer", "plage", "baignade" -> le theme de cote/mer de la liste. "rando", "montagne" -> le theme montagne. Si rien de clair, mets [].
+Regles : "max_heures_vol" = nombre d'heures si un temps de trajet/vol est donne, sinon null. "mois" en minuscules sans accent, dans la langue ${lang}. Ne devine pas ce qui n'est pas dit (null ou []).
 Demande : "${query}"`;
 }
 
@@ -152,6 +154,13 @@ function trier(rows, crit, depart) {
       const m = (x.r.months || []).map(norm);
       return m.length === 0 || moisVoulus.some(v => m.includes(v));
     });
+  }
+  // Filtre themes : si la demande cible des themes, on ne garde que les itins qui en portent au moins un.
+  // Filtre fiable (themes remplis a 100%). Si ca vide tout, on relache pour ne pas renvoyer une page blanche.
+  const themesVoulus = (crit.themes || []).filter(Boolean);
+  if (themesVoulus.length) {
+    const filtre = out.filter(x => (x.r.themes || []).some(t => themesVoulus.includes(t)));
+    if (filtre.length) out = filtre;
   }
   // Filtre duree
   if (crit.duree_max_jours) out = out.filter(x => !x.r.days || x.r.days <= crit.duree_max_jours);
@@ -196,17 +205,20 @@ export default async (request, context) => {
     const lang = (body.lang || 'fr').toLowerCase();
     if (!query) return new Response(JSON.stringify({ success: false, error: 'query vide' }), { status: 400, headers });
 
-    // Etage 1 : phrase -> criteres
+    // Catalogue charge en premier : on en extrait la liste exacte des themes (deja dans la bonne langue)
+    const origin = (() => { try { return new URL(request.url).origin; } catch { return SITE; } })();
+    const rows = await loadCatalog(lang, origin);
+    const themesDispo = [...new Set(rows.flatMap(r => r.themes || []))].sort();
+
+    // Etage 1 : phrase -> criteres (les themes sont choisis PARMI ceux du catalogue)
     let crit;
-    try { crit = await askAi(promptParse(query, lang)); }
+    try { crit = await askAi(promptParse(query, lang, themesDispo)); }
     catch (e) { return new Response(JSON.stringify({ success: false, error: 'ia_parse', message: e.message }), { status: 503, headers }); }
 
     // Geocodage du depart (sans IA)
     const depart = crit.depart ? await geocodeVille(crit.depart, lang) : null;
 
-    // Etage 2 : tri sans IA
-    const origin = (() => { try { return new URL(request.url).origin; } catch { return SITE; } })();
-    const rows = await loadCatalog(lang, origin);
+    // Etage 2 : tri sans IA (distance + mois + themes)
     const courte = trier(rows, crit, depart);
     if (!courte.length) {
       return new Response(JSON.stringify({ success: true, criteres: crit, depart, results: [], message: 'aucun itineraire dans ces criteres' }), { status: 200, headers });
@@ -216,10 +228,15 @@ export default async (request, context) => {
     let classe = [];
     try { classe = await askAi(promptClasser(query, crit, courte, lang)); }
     catch (e) { console.warn('classement:', e.message); }
+    // L'IA peut repondre par un tableau, ou un objet {results:[...]} : on recupere le tableau dans tous les cas
+    if (!Array.isArray(classe)) {
+      const arr = classe && typeof classe === 'object' ? Object.values(classe).find(v => Array.isArray(v)) : null;
+      classe = arr || [];
+    }
 
-    // Fusion : on rattache la raison IA aux entrees, en gardant l'ordre IA si dispo
+    // Fusion : on garde l'ordre et la selection de l'IA si dispo, sinon le tri par distance
     const parId = new Map(courte.map(x => [x.r.id, x]));
-    const ordre = (Array.isArray(classe) && classe.length ? classe : courte.map(x => ({ id: x.r.id, raison: '' })));
+    const ordre = (classe.length ? classe : courte.map(x => ({ id: x.r.id, raison: '' })));
     const results = ordre
       .map(o => { const x = parId.get(o.id); return x ? { id: x.r.id, slug: x.r.slug, title: x.r.title, country: x.r.country, days: x.r.days, heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null, raison: o.raison || '' } : null; })
       .filter(Boolean);
