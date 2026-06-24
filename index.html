@@ -631,31 +631,59 @@ main{padding-block:40px 64px}
   <div id="lilia-results" class="lilia-results"></div>
 </div>
 
+<!-- Fenetre resultats Lilia (fermable) -->
+<div id="lilia-modal" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="lm-backdrop" data-lm-close></div>
+  <div class="lm-panel">
+    <div class="lm-head">
+      <div class="lm-titles">
+        <p class="lm-title" id="lm-title"></p>
+        <p class="lm-intro" id="lm-intro"></p>
+      </div>
+      <button type="button" class="lm-close" id="lm-close" aria-label="Fermer">&times;</button>
+    </div>
+    <div class="lm-grid" id="lm-grid"></div>
+  </div>
+</div>
+
 <style>
-#lilia-box{max-width:760px;margin:18px auto;padding:16px 18px;border:1px solid #e6e2da;
-  border-radius:14px;background:#fbfaf7;box-shadow:0 1px 4px rgba(0,0,0,.05);font-family:inherit}
-.lilia-head{display:flex;align-items:center;gap:8px;margin:0 0 10px}
-.lilia-spark{font-size:18px;line-height:1}
-.lilia-title{margin:0;font-size:15px;font-weight:600;color:#3a352e}
-.lilia-row{display:flex;gap:8px}
-#lilia-input{flex:1;min-width:0;padding:11px 13px;border:1px solid #d9d4cb;border-radius:10px;
-  font-size:14px;background:#fff;color:#2c2822}
-#lilia-input:focus{outline:none;border-color:#b79b6b;box-shadow:0 0 0 3px rgba(183,155,107,.18)}
-#lilia-go{flex:0 0 auto;padding:11px 18px;border:none;border-radius:10px;cursor:pointer;
-  font-size:14px;font-weight:600;color:#fff;background:#b79b6b}
-#lilia-go:hover{background:#a4884f}
+#lilia-box{max-width:820px;margin:24px auto;padding:22px 24px;border:0;
+  border-radius:16px;background:linear-gradient(135deg,#113F7A,#0A2A57);
+  box-shadow:0 10px 34px rgba(10,42,87,.28);font-family:inherit}
+.lilia-head{display:flex;align-items:center;gap:10px;margin:0 0 14px}
+.lilia-spark{font-size:22px;line-height:1}
+.lilia-title{margin:0;font-size:18px;font-weight:700;color:#fff;letter-spacing:.1px}
+.lilia-row{display:flex;gap:10px}
+#lilia-input{flex:1;min-width:0;padding:13px 15px;border:1px solid rgba(255,255,255,.25);border-radius:10px;
+  font-size:15px;background:#fff;color:#1A1A2E}
+#lilia-input::placeholder{color:#8a93a3}
+#lilia-input:focus{outline:none;border-color:#C2410C;box-shadow:0 0 0 3px rgba(194,65,12,.25)}
+#lilia-go{flex:0 0 auto;padding:13px 22px;border:none;border-radius:10px;cursor:pointer;
+  font-size:15px;font-weight:700;color:#fff;background:#C2410C}
+#lilia-go:hover{background:#9A330A}
 #lilia-go:disabled{opacity:.6;cursor:default}
-.lilia-status{margin:12px 2px 0;font-size:13px;color:#7a7466}
-.lilia-intro{margin:12px 2px 4px;font-size:14px;color:#3a352e;line-height:1.45}
-.lilia-results{margin-top:12px;display:flex;flex-direction:column;gap:10px}
-.lilia-card{display:block;padding:12px 14px;border:1px solid #ece8e0;border-radius:11px;
-  background:#fff;text-decoration:none;color:inherit;transition:border-color .15s}
-.lilia-card:hover{border-color:#b79b6b}
-.lilia-card .lc-title{font-weight:600;font-size:14px;color:#2c2822}
-.lilia-card .lc-sub{font-size:12.5px;color:#6b6557;margin-top:2px}
-.lilia-card .lc-meta{font-size:12px;color:#8a8475;margin-top:3px}
-.lilia-card .lc-why{font-size:13px;color:#5a544a;margin-top:6px;font-style:italic}
+.lilia-status{margin:14px 2px 0;font-size:13.5px;color:#dbe6f5}
+.lilia-intro{margin:14px 2px 4px;font-size:14px;color:#eef3fa;line-height:1.45}
 [dir="rtl"] #lilia-box{text-align:right}
+
+/* ===== FENETRE RESULTATS LILIA (fermable) ===== */
+#lilia-modal{position:fixed;inset:0;z-index:9999;display:none}
+#lilia-modal.open{display:block}
+#lilia-modal .lm-backdrop{position:absolute;inset:0;background:rgba(10,42,87,.55);backdrop-filter:blur(2px)}
+#lilia-modal .lm-panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(1100px,94vw);max-height:88vh;overflow-y:auto;background:#FAFBFC;border-radius:16px;
+  box-shadow:0 24px 70px rgba(10,42,87,.4);padding:22px 24px}
+#lilia-modal .lm-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:0 0 14px}
+#lilia-modal .lm-titles{min-width:0}
+#lilia-modal .lm-title{margin:0;font-size:19px;font-weight:700;color:#113F7A}
+#lilia-modal .lm-intro{margin:6px 0 0;font-size:14px;color:#5C6470;line-height:1.45}
+#lilia-modal .lm-close{flex:0 0 auto;width:38px;height:38px;border:1px solid #E5E7EB;border-radius:10px;
+  background:#fff;color:#1A1A2E;font-size:20px;line-height:1;cursor:pointer}
+#lilia-modal .lm-close:hover{background:#EBF2FA;border-color:#C2410C;color:#C2410C}
+#lilia-modal .lm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+#lilia-modal .lc-why{margin:0;padding:10px 14px;font-size:13px;color:#5C6470;font-style:italic;
+  border-top:1px solid #E5E7EB;background:#F4F8FD}
+@media(max-width:560px){#lilia-modal .lm-panel{padding:16px}#lilia-modal .lm-grid{grid-template-columns:1fr}}
 </style>
 
 <script>
@@ -663,27 +691,27 @@ window.addEventListener('DOMContentLoaded', function(){
   var LILIA_FOLDERS={fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
   var L={
     fr:{title:"Dites-nous ce que vous cherchez, Lilia trouve l'itin\u00e9raire id\u00e9al.",
-        ph:"Ex : un itin\u00e9raire nature et aventure \u00e0 moins de 5 h de vol de Londres, pour un couple",
+        ex:["un itinéraire nature et montagne à moins de 3 h de Genève, en septembre","des plages au soleil à moins de 4 h de Paris, en famille","voir le Colisée et Pompéi, à moins de 3 h de Paris","vin et gastronomie autour de Lyon, entre amis","Pétra et le Wadi Rum, à moins de 6 h de Paris","un week-end culturel à moins de 2 h de Bruxelles"],
         go:"Trouver",searching:"Lilia cherche\u2026",none:"Aucun itin\u00e9raire ne correspond. Essayez d'\u00e9largir la demande.",
         err:"Lilia n'a pas pu r\u00e9pondre, r\u00e9essayez dans un instant.",flight:"h de vol",days:"j"},
     en:{title:"Tell us what you're after \u2014 Lilia finds your ideal itinerary.",
-        ph:"E.g. a nature and adventure trip under 5 h flight from London, for a couple",
+        ex:["nature and mountains under 3 h from Geneva, in September","sunny beaches under 4 h from Paris, with family","see the Colosseum and Pompeii, under 3 h from Paris","wine and food around Lyon, with friends","Petra and Wadi Rum, under 6 h from Paris","a culture weekend under 2 h from Brussels"],
         go:"Find",searching:"Lilia is searching\u2026",none:"No itinerary matches. Try widening your request.",
         err:"Lilia couldn't answer, please try again shortly.",flight:"h flight",days:"d"},
     es:{title:"Dinos qu\u00e9 buscas y Lilia encontrar\u00e1 la ruta ideal.",
-        ph:"Ej.: una ruta de naturaleza y aventura a menos de 5 h de vuelo de Londres, para una pareja",
+        ex:["naturaleza y montaña a menos de 3 h de Ginebra, en septiembre","playas con sol a menos de 4 h de París, en familia","ver el Coliseo y Pompeya, a menos de 3 h de París","vino y gastronomía cerca de Lyon, con amigos","Petra y Wadi Rum, a menos de 6 h de París","una escapada cultural a menos de 2 h de Bruselas"],
         go:"Buscar",searching:"Lilia est\u00e1 buscando\u2026",none:"Ninguna ruta coincide. Prueba a ampliar la b\u00fasqueda.",
         err:"Lilia no pudo responder, int\u00e9ntalo de nuevo.",flight:"h de vuelo",days:"d"},
     it:{title:"Dicci cosa cerchi e Lilia trover\u00e0 l'itinerario ideale.",
-        ph:"Es.: un itinerario natura e avventura a meno di 5 h di volo da Londra, per una coppia",
+        ex:["natura e montagna a meno di 3 h da Ginevra, a settembre","spiagge al sole a meno di 4 h da Parigi, in famiglia","vedere il Colosseo e Pompei, a meno di 3 h da Parigi","vino e gastronomia vicino a Lione, con gli amici","Petra e il Wadi Rum, a meno di 6 h da Parigi","un weekend culturale a meno di 2 h da Bruxelles"],
         go:"Trova",searching:"Lilia sta cercando\u2026",none:"Nessun itinerario corrisponde. Prova ad ampliare la richiesta.",
         err:"Lilia non ha potuto rispondere, riprova tra poco.",flight:"h di volo",days:"g"},
     pt:{title:"Diga-nos o que procura e a Lilia encontra o roteiro ideal.",
-        ph:"Ex.: um roteiro de natureza e aventura a menos de 5 h de voo de Londres, para um casal",
+        ex:["natureza e montanha a menos de 3 h de Genebra, em setembro","praias com sol a menos de 4 h de Paris, em família","ver o Coliseu e Pompeia, a menos de 3 h de Paris","vinho e gastronomia perto de Lyon, com amigos","Petra e o Wadi Rum, a menos de 6 h de Paris","um fim de semana cultural a menos de 2 h de Bruxelas"],
         go:"Encontrar",searching:"A Lilia est\u00e1 a procurar\u2026",none:"Nenhum roteiro corresponde. Tente alargar o pedido.",
         err:"A Lilia n\u00e3o conseguiu responder, tente de novo.",flight:"h de voo",days:"d"},
     ar:{title:"\u0623\u062E\u0628\u0631\u0646\u0627 \u0639\u0645\u0651\u0627 \u062A\u0628\u062D\u062B \u0648\u0633\u062A\u062C\u062F \u0644\u0643 \u0644\u064A\u0644\u064A\u0627 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0645\u062B\u0627\u0644\u064A.",
-        ph:"\u0645\u062B\u0627\u0644: \u0645\u0633\u0627\u0631 \u0637\u0628\u064A\u0639\u0629 \u0648\u0645\u063A\u0627\u0645\u0631\u0629 \u0639\u0644\u0649 \u0628\u064F\u0639\u062F \u0623\u0642\u0644 \u0645\u0646 5 \u0633\u0627\u0639\u0627\u062A \u0637\u064A\u0631\u0627\u0646 \u0645\u0646 \u0644\u0646\u062F\u0646\u060C \u0644\u0632\u0648\u062C\u064A\u0646",
+        ex:["طبيعة وجبال على بُعد أقل من 3 ساعات من جنيف، في سبتمبر","شواطئ مشمسة على بُعد أقل من 4 ساعات من باريس، مع العائلة","زيارة الكولوسيوم وبومبي، على بُعد أقل من 3 ساعات من باريس","نبيذ وطعام حول ليون، مع الأصدقاء","البتراء ووادي رم، على بُعد أقل من 6 ساعات من باريس","عطلة ثقافية على بُعد أقل من ساعتين من بروكسل"],
         go:"\u0627\u0628\u062D\u062B",searching:"\u0644\u064A\u0644\u064A\u0627 \u062A\u0628\u062D\u062B\u2026",none:"\u0644\u0627 \u064A\u0648\u062C\u062F \u0645\u0633\u0627\u0631 \u0645\u0637\u0627\u0628\u0642. \u062D\u0627\u0648\u0644 \u062A\u0648\u0633\u064A\u0639 \u0627\u0644\u0637\u0644\u0628.",
         err:"\u062A\u0639\u0630\u0651\u0631 \u0639\u0644\u0649 \u0644\u064A\u0644\u064A\u0627 \u0627\u0644\u0631\u062F\u060C \u062D\u0627\u0648\u0644 \u0644\u0627\u062D\u0642\u064B\u0627.",flight:"\u0633\u0627\u0639\u0629 \u0637\u064A\u0631\u0627\u0646",days:"\u064A\u0648\u0645"}
   };
@@ -693,7 +721,11 @@ window.addEventListener('DOMContentLoaded', function(){
   var box=document.getElementById('lilia-box');
   if(lang==='ar') box.setAttribute('dir','rtl');
   box.querySelector('[data-lilia="title"]').textContent=d.title;
-  var input=document.getElementById('lilia-input'); input.placeholder=d.ph;
+  var input=document.getElementById('lilia-input');
+  var exs=d.ex||[]; var exi=0;
+  if(exs.length){ input.placeholder=exs[0];
+    setInterval(function(){ exi=(exi+1)%exs.length; input.placeholder=exs[exi]; },2000);
+  }
   var go=document.getElementById('lilia-go'); go.textContent=d.go;
   var status=document.getElementById('lilia-status');
   var intro=document.getElementById('lilia-intro');
@@ -702,28 +734,70 @@ window.addEventListener('DOMContentLoaded', function(){
   function setStatus(msg){ if(msg){status.textContent=msg;status.hidden=false;} else {status.hidden=true;} }
   function setIntro(msg){ if(msg){intro.textContent=msg;intro.hidden=false;} else {intro.textContent='';intro.hidden=true;} }
 
-  function render(list){
-    results.innerHTML='';
-    var folder=LILIA_FOLDERS[lang]||'itineraries';
-    list.forEach(function(r){
-      var a=document.createElement('a');
-      a.className='lilia-card';
-      a.href='/'+folder+'/'+r.slug+'.html';
-      var meta=[r.country];
-      if(r.days) meta.push(r.days+' '+d.days);
-      if(r.heures_vol!=null) meta.push(r.heures_vol+' '+d.flight);
-      a.innerHTML='<div class="lc-title"></div>'+(r.subtitle?'<div class="lc-sub"></div>':'')+'<div class="lc-meta"></div>'+(r.raison?'<div class="lc-why"></div>':'');
-      a.querySelector('.lc-title').textContent=r.title||r.slug;
-      if(r.subtitle) a.querySelector('.lc-sub').textContent=r.subtitle;
-      a.querySelector('.lc-meta').textContent=meta.filter(Boolean).join('  \u00b7  ');
-      if(r.raison) a.querySelector('.lc-why').textContent=r.raison;
-      results.appendChild(a);
-    });
+  // ----- Fenetre resultats -----
+  var modal=document.getElementById('lilia-modal');
+  var grid=document.getElementById('lm-grid');
+  var lmTitle=document.getElementById('lm-title');
+  var lmIntro=document.getElementById('lm-intro');
+
+  function openModal(){ modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; }
+  function closeModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+  document.getElementById('lm-close').addEventListener('click',closeModal);
+  modal.querySelector('[data-lm-close]').addEventListener('click',closeModal);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&modal.classList.contains('open')) closeModal(); });
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  // Index du catalogue (deja en memoire) par slug, pour retrouver la photo
+  function catIndex(){
+    var map={};
+    var arr=(typeof allData!=='undefined'&&allData&&allData.length)?allData:[];
+    for(var i=0;i<arr.length;i++){ if(arr[i]&&arr[i].slug) map[arr[i].slug]=arr[i]; }
+    return map;
   }
+
+  function fallbackCard(r,folder){
+    var meta=[r.country];
+    if(r.days) meta.push(r.days+' '+d.days);
+    var h='<a href="/'+folder+'/'+escapeHtml(r.slug)+'.html" class="card" target="_blank" rel="noopener">';
+    h+='<div class="card-body"><h3 class="card-title">'+escapeHtml(r.title||r.slug)+'</h3>';
+    h+='<div class="card-meta"><span>'+escapeHtml(meta.filter(Boolean).join('  \u00b7  '))+'</span></div></div>';
+    if(r.raison) h+='<p class="lc-why">'+escapeHtml(r.raison)+'</p>';
+    h+='</a>';
+    return h;
+  }
+
+  function render(list){
+    var folder=LILIA_FOLDERS[lang]||'itineraries';
+    var idx=catIndex();
+    var html='';
+    list.forEach(function(r){
+      var item=idx[r.slug];
+      if(item&&typeof buildCard==='function'){
+        var card=buildCard(item);
+        // ouvrir dans un nouvel onglet
+        card=card.replace('class="card">','class="card" target="_blank" rel="noopener">');
+        // retirer le badge meteo (script meteo non actif dans la fenetre)
+        card=card.replace(/<span class="card-meteo[^>]*>[^<]*<\/span>/,'');
+        // ajouter le pourquoi de Lilia avant la fermeture du lien
+        if(r.raison){
+          var cut=card.lastIndexOf('</a>');
+          card=card.slice(0,cut)+'<p class="lc-why">'+escapeHtml(r.raison)+'</p>'+card.slice(cut);
+        }
+        html+=card;
+      } else {
+        html+=fallbackCard(r,folder);
+      }
+    });
+    grid.innerHTML=html;
+    openModal();
+  }
+
+  var LH={fr:'Itinéraires proposés',en:'Suggested itineraries',es:'Rutas propuestas',it:'Itinerari proposti',pt:'Roteiros propostos',ar:'\u0627\u0644\u0645\u0633\u0627\u0631\u0627\u062a \u0627\u0644\u0645\u0642\u062a\u0631\u062d\u0629'};
 
   function search(){
     var q=input.value.trim(); if(!q) return;
-    results.innerHTML=''; setIntro(null); setStatus(d.searching); go.disabled=true;
+    setIntro(null); setStatus(d.searching); go.disabled=true;
     fetch('/.netlify/functions/recherche-itineraires',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({query:q,lang:lang})
@@ -733,7 +807,11 @@ window.addEventListener('DOMContentLoaded', function(){
       go.disabled=false;
       if(!data.success){ setStatus(d.err); return; }
       if(!data.results||!data.results.length){ setStatus(data.intro||d.none); return; }
-      setStatus(null); setIntro(data.intro); render(data.results);
+      setStatus(null);
+      lmTitle.textContent=LH[lang]||LH.en;
+      lmIntro.textContent=data.intro||'';
+      lmIntro.style.display=data.intro?'':'none';
+      render(data.results);
     })
     .catch(function(){ go.disabled=false; setStatus(d.err); });
   }
