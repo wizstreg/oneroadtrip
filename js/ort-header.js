@@ -681,7 +681,7 @@
       const st = document.createElement('style');
       st.id = 'ort-nav-style';
       st.textContent = `
-        .ort-nav-link{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
+        .brandlink img{height:56px;width:auto;display:block} .ort-nav-link{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;
           border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;
           text-decoration:none;font-size:14px;white-space:nowrap;flex:0 0 auto;}
         .ort-nav-link:hover{background:#ffffff2b;}
@@ -695,7 +695,6 @@
       <div class="header-row-1">
         <a class="brandlink" id="homeLink" href="/index.html">
           <img src="/assets/symbol.webp" alt="Logo">
-          <div class="brand">OneRoadTrip</div>
         </a>
         <div class="spacer"></div>
         <a class="ort-nav-link" id="catalogLink" href="/index.html" aria-label="${catalogLabel}">

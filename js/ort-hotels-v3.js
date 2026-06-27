@@ -51,7 +51,8 @@
     premium: { fr: 'Premium', en: 'Premium', es: 'Premium', pt: 'Premium', it: 'Premium', ar: 'فاخر' },
     seeOnBooking: { fr: 'Voir sur Booking', en: 'See on Booking', es: 'Ver en Booking', pt: 'Ver no Booking', it: 'Vedi su Booking', ar: 'عرض على Booking' },
     prev: { fr: 'Précédent', en: 'Previous', es: 'Anterior', pt: 'Anterior', it: 'Precedente', ar: 'السابق' },
-    next: { fr: 'Suivant', en: 'Next', es: 'Next', pt: 'Seguinte', it: 'Successivo', ar: 'التالي' }
+    next: { fr: 'Suivant', en: 'Next', es: 'Next', pt: 'Seguinte', it: 'Successivo', ar: 'التالي' },
+    eliteBadge: { fr: '★ Coup de cœur', en: '★ Top pick', es: '★ Nuestra favorita', pt: '★ Nosso favorito', it: '★ La nostra preferita', ar: '★ المفضل لدينا' }
   };
 
   function t(key) {
@@ -150,10 +151,17 @@
   }
 
   // === SÉLECTION DES 3 HÔTELS ($/$$/$$$) ===
+  // Si un hotel a "elite:true", il prend son slot prix et passe en premier dans le retour.
   function pickThreeHotels(hotels) {
     if (!hotels || !hotels.length) return [];
+    let eliteHotel = null;
+    for (let k = 0; k < hotels.length; k++) {
+      if (hotels[k] && hotels[k].elite === true) { eliteHotel = hotels[k]; break; }
+    }
+    const eliteLevel = eliteHotel ? (eliteHotel.priceLevel || 2) : null;
     const byLevel = { 1: [], 2: [], 3: [] };
     hotels.forEach(h => {
+      if (h === eliteHotel) return;
       const lvl = h.priceLevel || 2;
       if (!byLevel[lvl]) byLevel[lvl] = [];
       byLevel[lvl].push(h);
@@ -162,22 +170,48 @@
       if (!arr || !arr.length) return null;
       return arr.slice().sort((a, b) => (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0))[0];
     };
-    const result = [];
-    const h1 = bestOf(byLevel[1]);
-    const h2 = bestOf(byLevel[2]);
-    const h3 = bestOf(byLevel[3]);
-    if (h1) result.push({ hotel: h1, level: 1 });
-    if (h2) result.push({ hotel: h2, level: 2 });
-    if (h3) result.push({ hotel: h3, level: 3 });
-    if (result.length < 3) {
-      const used = result.map(r => r.hotel);
+    const slot1 = (eliteLevel === 1) ? eliteHotel : bestOf(byLevel[1]);
+    const slot2 = (eliteLevel === 2) ? eliteHotel : bestOf(byLevel[2]);
+    const slot3 = (eliteLevel === 3) ? eliteHotel : bestOf(byLevel[3]);
+    const bag = [];
+    if (slot1) bag.push({ hotel: slot1, level: 1, elite: slot1 === eliteHotel });
+    if (slot2) bag.push({ hotel: slot2, level: 2, elite: slot2 === eliteHotel });
+    if (slot3) bag.push({ hotel: slot3, level: 3, elite: slot3 === eliteHotel });
+    if (bag.length < 3) {
+      const used = bag.map(r => r.hotel);
       const remaining = hotels.filter(h => used.indexOf(h) === -1);
       remaining.sort((a, b) => (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0));
-      for (let i = 0; i < remaining.length && result.length < 3; i++) {
-        result.push({ hotel: remaining[i], level: remaining[i].priceLevel || 2 });
+      for (let i = 0; i < remaining.length && bag.length < 3; i++) {
+        bag.push({ hotel: remaining[i], level: remaining[i].priceLevel || 2, elite: remaining[i].elite === true });
       }
     }
-    return result;
+    bag.sort((a, b) => {
+      if (a.elite && !b.elite) return -1;
+      if (!a.elite && b.elite) return 1;
+      return 0;
+    });
+    return bag;
+  }
+
+  // Collecte ordonnée des photos d'un hotel : imageUrl, imageUrl2, imageUrl3, imageUrl4, ...
+  function collectPhotos(hotel) {
+    if (!hotel) return [];
+    const out = [];
+    const seen = {};
+    const push = u => {
+      if (!u) return;
+      const big = bigImg(u);
+      if (seen[big]) return;
+      seen[big] = 1;
+      out.push(big);
+    };
+    push(hotel.imageUrl);
+    for (let i = 2; i <= 20; i++) {
+      const key = 'imageUrl' + i;
+      if (hotel[key]) push(hotel[key]);
+      else if (i > 3) break;
+    }
+    return out;
   }
 
   // === CHARGEMENT DES DONNÉES (depuis les shards) ===
@@ -215,46 +249,53 @@
   function renderDesktopAccordion(picked, modalContainer) {
     const lang = getLang();
 
-    // Détermine quelle carte est expanded au démarrage : la mieux notée (info objective).
+    // Carte ouverte par défaut : élite si présent, sinon mieux notée
     let initialExpanded = 0;
-    let bestScore = parseFloat(picked[0].hotel.score) || 0;
-    for (let i = 1; i < picked.length; i++) {
-      const s = parseFloat(picked[i].hotel.score) || 0;
-      if (s > bestScore) { bestScore = s; initialExpanded = i; }
+    const eliteIdx = picked.findIndex(p => p.elite);
+    if (eliteIdx >= 0) {
+      initialExpanded = eliteIdx;
+    } else {
+      let bestScore = parseFloat(picked[0].hotel.score) || 0;
+      for (let i = 1; i < picked.length; i++) {
+        const s = parseFloat(picked[i].hotel.score) || 0;
+        if (s > bestScore) { bestScore = s; initialExpanded = i; }
+      }
     }
 
-    // Génère le HTML d'une carte (compacte ou expanded — les 2 sont dans le DOM,
-    // c'est le CSS qui bascule selon la classe ohv3-acc-on de la carte)
     function renderCard(entry, idx) {
       const h = entry.hotel;
+      const isElite = !!entry.elite;
       const name = h.name || '';
       const score = h.score || '';
-      const img1 = bigImg(h.imageUrl);
-      const img2 = bigImg(h.imageUrl2 || h.imageUrl);
-      const hasTwo = img2 && img2 !== img1;
+      const photos = collectPhotos(h);
+      const photoList = photos.length ? photos : [''];
+      const hasMulti = photoList.length > 1;
       const url = buildBookingAffiliateUrl(h.bookingUrl);
       const desc = pickDescription(h, lang);
       const fbColor = colorFromName(name);
       const initial = (name.charAt(0) || '?').toUpperCase();
       const lvLabel = levelLabel(entry.level);
 
-      // L'image (avec auto-rotation si 2 photos disponibles)
+      const imgsH = photoList.map((src, i) =>
+        '<img class="ohv3-img' + (i === 0 ? ' ohv3-img-on' : '') + '" data-ohv3-pidx="' + i +
+        '" src="' + esc(src) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">'
+      ).join('');
+
+      const badgeH = isElite
+        ? '<div class="ohv3-elite-badge">' + esc(t('eliteBadge')) + '</div>'
+        : '';
+
       const imgH =
         '<div class="ohv3-acc-img" style="background:' + fbColor + '"' +
-            (hasTwo ? ' data-ohv3-rotate="1"' : '') + '>' +
+            (hasMulti ? ' data-ohv3-rotate="1"' : '') + '>' +
           '<div class="ohv3-img-fallback"><span>' + esc(initial) + '</span></div>' +
-          '<img class="ohv3-img ohv3-img-1" src="' + esc(img1) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">' +
-          (hasTwo
-            ? '<img class="ohv3-img ohv3-img-2" src="' + esc(img2) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">'
-            : '') +
+          imgsH +
+          badgeH +
           '<div class="ohv3-acc-price">' + priceSymbol(entry.level) + '</div>' +
         '</div>';
 
-      // V3 : la carte est un <a> qui mène directement à Booking. Le survol gère l'expand
-      // (sans réécrire le DOM). La description complète apparaît sur la carte expanded
-      // grâce au CSS qui filtre via data-ohv3-active.
       return (
-        '<a class="ohv3-acc-card" ' +
+        '<a class="ohv3-acc-card' + (isElite ? ' ohv3-elite' : '') + '" ' +
           'data-ohv3-idx="' + idx + '" ' +
           'href="' + esc(url) + '" target="_blank" rel="noopener sponsored">' +
           imgH +
@@ -278,40 +319,34 @@
 
     const wrap = modalContainer.querySelector('.ohv3-acc-wrap');
 
-    // Bascule de la carte expanded
     function setExpanded(newIdx) {
       if (newIdx < 0 || newIdx >= picked.length) return;
       wrap.setAttribute('data-ohv3-active', String(newIdx));
     }
 
-    // V3 : la carte ÉTANT un <a href=Booking>, le clic ouvre Booking naturellement.
-    // Seul le survol gère l'expand visuel.
     modalContainer.querySelectorAll('.ohv3-acc-card').forEach(card => {
       const idx = parseInt(card.getAttribute('data-ohv3-idx'), 10);
       card.addEventListener('mouseenter', () => setExpanded(idx));
-      // Pas de gestionnaire de clic : on laisse le navigateur suivre le href.
-      // Pas de gestionnaire keydown non plus : Enter/Space sur un <a> active déjà le lien.
     });
 
-    // Auto-rotation des 2 photos : on l'active sur TOUTES les cartes (chacune
-    // a son propre interval). Pause au hover sur cette carte précise.
+    // Auto-rotation des photos : cycle N images via classe .ohv3-img-on
     modalContainer.querySelectorAll('.ohv3-acc-img[data-ohv3-rotate="1"]').forEach((imgEl, idx) => {
+      const imgs = imgEl.querySelectorAll('.ohv3-img');
+      if (imgs.length < 2) return;
+      let cur = 0;
       let paused = false;
       const card = imgEl.closest('.ohv3-acc-card');
       if (card) {
-        // On met en pause uniquement la carte active (sinon le défilement
-        // sur les minis pendant qu'on regarde la grande peut distraire)
-        // → en pratique : pause au mouseenter de la carte
         card.addEventListener('mouseenter', () => { paused = true; });
         card.addEventListener('mouseleave', () => { paused = false; });
       }
-      // Décalage pour ne pas synchroniser les flips entre cartes
       setTimeout(() => {
         const interval = setInterval(() => {
           if (!document.body.contains(imgEl)) { clearInterval(interval); return; }
           if (paused) return;
-          const on = imgEl.getAttribute('data-ohv3-flip') === '1';
-          imgEl.setAttribute('data-ohv3-flip', on ? '0' : '1');
+          imgs[cur].classList.remove('ohv3-img-on');
+          cur = (cur + 1) % imgs.length;
+          imgs[cur].classList.add('ohv3-img-on');
         }, CONFIG.rotationInterval);
       }, idx * 900);
     });
@@ -322,30 +357,45 @@
     const lang = getLang();
     const total = picked.length;
 
-    // Une fonction interne qui peint l'écran
+    // Si un élite existe et que l'index initial n'est pas spécifié, on ouvre sur l'élite
+    const eliteIdx = picked.findIndex(p => p.elite);
+    if (eliteIdx >= 0 && (activeIdx == null || activeIdx === 0)) {
+      activeIdx = eliteIdx;
+    }
+
     function paint(idx) {
       const cur = picked[idx];
       const h = cur.hotel;
+      const isElite = !!cur.elite;
       const name = h.name || '';
       const score = h.score || '';
-      const img1 = bigImg(h.imageUrl);
-      const img2 = bigImg(h.imageUrl2 || h.imageUrl);
-      const hasTwo = img2 && img2 !== img1;
+      const photos = collectPhotos(h);
+      const photoList = photos.length ? photos : [''];
+      const hasMulti = photoList.length > 1;
       const url = buildBookingAffiliateUrl(h.bookingUrl);
       const desc = pickDescription(h, lang);
       const fbColor = colorFromName(name);
       const initial = (name.charAt(0) || '?').toUpperCase();
       const lvLabel = levelLabel(cur.level);
-      const badgeH = '';
-      const dotsH = picked.map((_, i) =>
-        '<span class="ohv3-dot' + (i === idx ? ' ohv3-dot-on' : '') + '" data-ohv3-go="' + i + '"></span>'
+      const badgeH = isElite
+        ? '<div class="ohv3-elite-badge ohv3-elite-badge-m">' + esc(t('eliteBadge')) + '</div>'
+        : '';
+      const imgsH = photoList.map((src, i) =>
+        '<img class="ohv3-mimg' + (i === 0 ? ' ohv3-img-on' : '') + '" data-ohv3-pidx="' + i +
+        '" src="' + esc(src) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">'
       ).join('');
+      const dotsH = picked.map((p, i) => {
+        let cls = 'ohv3-dot';
+        if (i === idx) cls += ' ohv3-dot-on';
+        if (p.elite) cls += ' ohv3-dot-elite';
+        return '<span class="' + cls + '" data-ohv3-go="' + i + '"></span>';
+      }).join('');
 
       modalContainer.innerHTML =
         '<div class="ohv3-mwrap">' +
-          '<div class="ohv3-mtrack" style="background:' + fbColor + '">' +
+          '<div class="ohv3-mtrack' + (hasMulti ? '" data-ohv3-rotate="1"' : '"') + ' style="background:' + fbColor + '">' +
             '<div class="ohv3-img-fallback"><span>' + esc(initial) + '</span></div>' +
-            '<img class="ohv3-mimg" src="' + esc(img1) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">' +
+            imgsH +
             '<div class="ohv3-moverlay">' +
               badgeH +
               '<div class="ohv3-mprice">' + priceSymbol(cur.level) + '</div>' +
@@ -382,6 +432,20 @@
           if (!isNaN(go)) setActive(go);
         });
       });
+
+      // Auto-rotation des photos dans la carte affichée
+      if (hasMulti) {
+        const imgs = modalContainer.querySelectorAll('.ohv3-mimg');
+        let cur2 = 0;
+        const interval = setInterval(() => {
+          if (!document.body.contains(modalContainer.querySelector('.ohv3-mtrack'))) {
+            clearInterval(interval); return;
+          }
+          imgs[cur2].classList.remove('ohv3-img-on');
+          cur2 = (cur2 + 1) % imgs.length;
+          imgs[cur2].classList.add('ohv3-img-on');
+        }, CONFIG.rotationInterval);
+      }
 
       // Swipe latéral
       const track = modalContainer.querySelector('.ohv3-mtrack');
@@ -536,11 +600,19 @@
       '.ohv3-acc-wrap[data-ohv3-active="1"] .ohv3-acc-card[data-ohv3-idx="1"] .ohv3-acc-img,',
       '.ohv3-acc-wrap[data-ohv3-active="2"] .ohv3-acc-card[data-ohv3-idx="2"] .ohv3-acc-img{aspect-ratio:16/9}',
 
-      '.ohv3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .8s ease;will-change:opacity}',
-      '.ohv3-img-1{opacity:1;z-index:2}',
-      '.ohv3-img-2{opacity:0;z-index:1}',
-      '.ohv3-acc-img[data-ohv3-flip="1"] .ohv3-img-1{opacity:0}',
-      '.ohv3-acc-img[data-ohv3-flip="1"] .ohv3-img-2{opacity:1}',
+      '.ohv3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease;will-change:opacity;z-index:1}',
+      '.ohv3-img.ohv3-img-on{opacity:1;z-index:2}',
+      '.ohv3-mimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease;z-index:1}',
+      '.ohv3-mimg.ohv3-img-on{opacity:1;z-index:2}',
+      // Badge "Coup de coeur" (élite)
+      '.ohv3-elite-badge{position:absolute;top:10px;left:10px;z-index:5;background:linear-gradient(135deg,#f4c430,#d4a017);color:#fff;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.02em;box-shadow:0 2px 6px rgba(212,160,23,0.45)}',
+      '.ohv3-elite-badge-m{top:10px;left:10px}',
+      // Carte élite : bordure dorée
+      '.ohv3-acc-card.ohv3-elite{border-color:#d4a017;box-shadow:0 2px 8px rgba(212,160,23,0.18)}',
+      '.ohv3-acc-card.ohv3-elite:hover{border-color:#d4a017;box-shadow:0 6px 16px rgba(212,160,23,0.28)}',
+      // Dot élite (mobile)
+      '.ohv3-dot.ohv3-dot-elite{background:linear-gradient(135deg,#f4c430,#d4a017)}',
+      '.ohv3-dot.ohv3-dot-elite.ohv3-dot-on{transform:scale(1.4)}',
 
       '.ohv3-acc-price{position:absolute;bottom:10px;right:10px;z-index:3;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:0.95rem;padding:4px 10px;border-radius:8px;letter-spacing:.02em}',
 
@@ -566,7 +638,6 @@
       // === MOBILE ===
       '.ohv3-mwrap{position:relative;padding:12px}',
       '.ohv3-mtrack{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden}',
-      '.ohv3-mimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}',
       '.ohv3-moverlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 14px 14px 14px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.3) 50%,rgba(0,0,0,0) 100%);z-index:2}',
       '.ohv3-mprice{position:absolute;top:10px;right:10px;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:1rem;padding:4px 12px;border-radius:8px}',
       '.ohv3-badge-m{top:10px;left:10px}',
