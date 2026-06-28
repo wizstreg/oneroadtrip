@@ -2663,5 +2663,51 @@ gtag('config', 'GT-WF83FMCX');
 </script>
 <!-- Vérification AvantLink (à supprimer une fois la propriété du site validée) -->
 <script type="text/javascript" src="https://classic.avantlink.com/affiliate_app_confirm.php?mode=js&authResponse=53efd08e41ed932e295bb0b9b1402c7608957321"></script>
+
+<!-- ===== POPUP CSE DIOT SIACI ===== -->
+<div id="cseDiotSiaciOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;max-width:480px;width:100%;border-radius:16px;padding:32px 28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.3);position:relative;">
+    <button id="cseClose" aria-label="Fermer" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;cursor:pointer;color:#666;line-height:1;padding:4px 8px;">×</button>
+    <div style="text-align:center;margin-bottom:16px;"><span style="font-size:42px;">👋</span></div>
+    <h2 id="cseTitle" style="margin:0 0 12px;font-size:22px;text-align:center;color:#1a1a2e;">Bienvenue !</h2>
+    <p id="cseMsg" style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#333;text-align:center;"></p>
+    <p id="cseFoot" style="margin:0;font-size:13px;color:#666;text-align:center;"></p>
+    <div style="text-align:center;margin-top:22px;">
+      <button id="cseOk" style="background:#C8102E;color:#fff;border:none;padding:12px 32px;border-radius:30px;font-size:15px;font-weight:600;cursor:pointer;">OK</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  var params = new URLSearchParams(location.search);
+  if(params.get('src') !== 'cse-diotsiaci') return;
+  try { if(localStorage.getItem('ort_cse_diotsiaci_seen') === '1') return; } catch(e){}
+  var lang = (typeof currentLang !== 'undefined') ? currentLang : 'fr';
+  var T = {
+    fr: { title:"Bienvenue !", msg:"Vous arrivez via le CSE Diot Siaci. N'hésitez pas à nous faire part de vos commentaires ou questions en écrivant à <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"Bon voyage 👋", ok:"OK" },
+    en: { title:"Welcome!", msg:"You're coming from the CSE Diot Siaci. Feel free to share your feedback or questions at <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"Have a great trip 👋", ok:"OK" },
+    es: { title:"¡Bienvenido!", msg:"Llegas a través del CSE Diot Siaci. No dudes en enviarnos tus comentarios o preguntas a <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"¡Buen viaje! 👋", ok:"OK" },
+    it: { title:"Benvenuto!", msg:"Arrivi tramite il CSE Diot Siaci. Non esitare a inviarci i tuoi commenti o domande a <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"Buon viaggio 👋", ok:"OK" },
+    pt: { title:"Bem-vindo!", msg:"Você chega através do CSE Diot Siaci. Não hesite em enviar seus comentários ou perguntas para <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"Boa viagem 👋", ok:"OK" },
+    ar: { title:"مرحباً!", msg:"أنت قادم عبر CSE Diot Siaci. لا تتردد في إرسال تعليقاتك أو أسئلتك إلى <a href=\"mailto:contact@oneroadtrip.com\" style=\"color:#C8102E;\">contact@oneroadtrip.com</a>.", foot:"رحلة سعيدة 👋", ok:"حسناً" }
+  };
+  var t = T[lang] || T.fr;
+  document.getElementById('cseTitle').textContent = t.title;
+  document.getElementById('cseMsg').innerHTML = t.msg;
+  document.getElementById('cseFoot').textContent = t.foot;
+  document.getElementById('cseOk').textContent = t.ok;
+  var overlay = document.getElementById('cseDiotSiaciOverlay');
+  overlay.style.display = 'flex';
+  function closePopup(){
+    overlay.style.display = 'none';
+    try { localStorage.setItem('ort_cse_diotsiaci_seen', '1'); } catch(e){}
+  }
+  document.getElementById('cseClose').addEventListener('click', closePopup);
+  document.getElementById('cseOk').addEventListener('click', closePopup);
+  overlay.addEventListener('click', function(e){ if(e.target === overlay) closePopup(); });
+})();
+</script>
+<!-- ===== FIN POPUP CSE DIOT SIACI ===== -->
+
 </body>
 </html>

@@ -401,7 +401,8 @@ body.layout-stack .main>section{order:1}
   }
 }
 
-.step-row[draggable="true"]{cursor:grab}
+.step-row[draggable="true"]{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='black' stroke='white' stroke-width='1.2'><path d='M9 11V6.5a1.5 1.5 0 1 1 3 0V11M12 11V5.5a1.5 1.5 0 1 1 3 0V11M15 11V6.5a1.5 1.5 0 1 1 3 0V14M9 11V8.5a1.5 1.5 0 1 0-3 0v6c0 4 3 7 6.5 7s6.5-3 6.5-7V11'/></svg>") 12 12, grab}
+.step-row[draggable="true"]:active{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='black' stroke='white' stroke-width='1.2'><path d='M18 11V8a1 1 0 0 0-2 0M16 10V6a1 1 0 0 0-2 0v4M14 10V5.5a1 1 0 0 0-2 0V10M12 10V6.5a1 1 0 0 0-2 0V14M10 14l-1.5-2a1 1 0 0 0-1.7 1l3 5c1 2 3 3 5 3s5-2 5-5v-5'/></svg>") 12 12, grabbing}
 .step-row.dragging{opacity:.6;border-style:dashed}
 .cell{padding:4px}
 .hotel-thumb-lg{width:48px;height:48px;border-radius:8px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,0.12);transition:transform .2s ease,box-shadow .2s ease;cursor:pointer;position:relative;z-index:1}
@@ -10230,6 +10231,25 @@ window.initSaveSourceButton = function(){
     
     console.log('[SAVE SOURCE] 📦 Métadonnées incluses:', itinToSave.seo ? 'SEO ✓' : 'SEO ✗', itinToSave.practical_context ? 'practical_context ✓' : '', itinToSave.essential_tips ? 'essential_tips ✓' : '', itinToSave.summary ? 'summary ✓' : '');
     
+    // AUDIT: champs présents dans le JSON importé mais absents de itinToSave (= perdus au save)
+    if(state._rawImportedItin){
+      const rawKeys = Object.keys(state._rawImportedItin).filter(k => !k.startsWith('__'));
+      const savedKeys = new Set(Object.keys(itinToSave));
+      const lost = rawKeys.filter(k => !savedKeys.has(k) && state._rawImportedItin[k] !== null && state._rawImportedItin[k] !== '');
+      
+      if(lost.length){
+        const list = lost.map(k => {
+          let v = state._rawImportedItin[k];
+          try { v = JSON.stringify(v); } catch(e){ v = String(v); }
+          if(v && v.length > 80) v = v.slice(0, 80) + '…';
+          return `  • ${k}: ${v}`;
+        }).join('\n');
+        const msg = `⚠️ ATTENTION — Champs présents dans le JSON importé qui NE SERONT PAS sauvegardés :\n\n${list}\n\nContinuer quand même ?`;
+        console.warn('[SAVE SOURCE] Champs perdus au save:', lost);
+        if(!confirm(msg)) return;
+      }
+    }
+    
     // Confirmation avec message adapté
     const action = isTemp ? '🆕 AJOUTER' : '✏️ MODIFIER';
     const confirmMsg = `${action} l'itinéraire dans :\n${filePath}\n\nID: ${originalId}\nLangue: ${lang.toUpperCase()}\nTitre: ${state.title}\n${days_plan.length} étapes, ${totalNights} nuits → ${estimatedDays} jours\n\nBackup automatique créé.\n\nContinuer ?`;
@@ -10482,6 +10502,9 @@ if(itinsObj){
   if(Array.isArray(itinsObj.days_plan)||Array.isArray(itinsObj.places))toUse=itinsObj;
   else if(itinsObj.itineraries&&itinsObj.itineraries[0])toUse=itinsObj.itineraries[0];
   else if(itinsObj.itins&&itinsObj.itins[0])toUse=itinsObj.itins[0];
+  
+  // Stocker une copie brute du JSON importé pour audit au moment de "Écrire source"
+  if(toUse) state._rawImportedItin = JSON.parse(JSON.stringify(toUse));
   
   console.log('🔍 [8] toUse exists:', !!toUse);
   console.log('🔍 [19] toUse selected:', !!toUse);
