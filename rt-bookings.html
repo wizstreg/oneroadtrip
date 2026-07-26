@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OneRoadTrip - Mes réservations</title>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');</script>
+<style>
+:root{--bg:#113f7a;--card:#fff;--ink:#113f7a;--mut:#6b7a99;--ok:#22c55e;--danger:#dc2626}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(rgba(17,63,122,0.85),rgba(17,63,122,0.85)),url("/assets/image_index.webp") center/cover fixed;background-color:#113f7a;color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
+header{background:rgba(17,63,122,0.95);border-bottom:2px solid rgba(255,255,255,0.2);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+.brandlink img{width:36px;height:36px}
+.brand{font-weight:800;font-size:1.1rem}
+header .sp{flex:1}
+.hdr-btn{padding:8px 14px;border-radius:8px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer;font-weight:600;transition:all .2s}
+.hdr-btn:hover{background:rgba(255,255,255,0.15)}
+.wrap{max-width:800px;margin:0 auto;padding:20px 16px 100px}
+h1{margin:0 0 8px;font-size:1.5rem;text-align:center}
+.subtitle{text-align:center;opacity:0.8;margin-bottom:24px}
+.section{margin-bottom:24px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;cursor:pointer;padding:8px 0}
+.section-title{font-size:1.1rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.section-toggle{font-size:1rem;transition:transform .2s}
+.section-toggle.collapsed{transform:rotate(-90deg)}
+.section-content.collapsed{display:none}
+.travel-section{background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:12px;padding:16px;margin-bottom:24px}
+.travel-section .section-title{color:#92400e}
+.step-section{background:var(--card);border-radius:12px;padding:16px;margin-bottom:16px;color:var(--ink)}
+.step-section .section-title{color:var(--ink)}
+.booking-item{display:flex;align-items:center;gap:12px;padding:12px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .2s}
+.booking-item:hover{background:#eff6ff;border-color:var(--bg)}
+.booking-icon{font-size:1.5rem;width:40px;text-align:center}
+.booking-info{flex:1}
+.booking-name{font-weight:600;font-size:0.95rem;color:var(--ink)}
+.booking-details{font-size:0.8rem;color:var(--mut);margin-top:2px}
+.booking-price{font-weight:700;color:var(--ok);font-size:0.95rem}
+.empty-state{text-align:center;padding:32px;color:var(--mut)}
+.empty-state .icon{font-size:3rem;margin-bottom:12px;opacity:0.5}
+.budget-card{background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%);border-radius:12px;padding:20px;margin-top:24px;color:#166534}
+.budget-title{font-size:1rem;font-weight:600;margin-bottom:8px}
+.budget-total{font-size:2rem;font-weight:800}
+.btn-add{position:fixed;bottom:24px;right:24px;width:60px;height:60px;border-radius:50%;background:var(--ok);color:#fff;border:none;font-size:2rem;cursor:pointer;box-shadow:0 4px 20px rgba(34,197,94,0.4);transition:all .2s;z-index:50}
+.btn-add:hover{transform:scale(1.1);background:#16a34a}
+.footer-actions{position:fixed;bottom:0;left:0;right:0;background:rgba(17,63,122,0.95);backdrop-filter:blur(8px);padding:16px;display:flex;gap:12px;justify-content:center;border-top:2px solid rgba(255,255,255,0.2)}
+.btn-back{padding:14px 24px;background:transparent;color:#fff;border:2px solid #fff;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer}
+.btn-back:hover{background:rgba(255,255,255,0.1)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal.show{display:flex}
+.modal-box{background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;color:var(--ink)}
+.modal-title{font-size:1.2rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.modal-field{margin-bottom:12px}
+.modal-field .label{font-size:0.8rem;color:var(--mut);margin-bottom:2px}
+.modal-field .value{font-weight:600}
+.modal-actions{display:flex;gap:8px;margin-top:20px}
+.btn{padding:10px 18px;border-radius:8px;border:none;cursor:pointer;font-weight:600;transition:all .2s;flex:1;text-align:center}
+.btn-primary{background:var(--bg);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-secondary{background:#e5e7eb;color:var(--ink)}
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:2000;display:none}
+.toast.show{display:block}
+.toast.error{background:#dc2626}
+.loading-overlay{position:fixed;inset:0;background:rgba(17,63,122,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3000}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:16px;font-size:1.1rem}
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" class="brandlink">
+    <img src="/assets/symbol.webp" alt="Logo">
+    <span class="brand">OneRoadTrip</span>
+  </a>
+  <span class="sp"></span>
+  <button class="hdr-btn" id="btnBackToTrip">← <span data-i18n="backToTrip">Retour</span></button>
+</header>
+<div class="wrap">
+  <h1 data-i18n="bookingsPageTitle">📋 Mes réservations</h1>
+  <p class="subtitle" id="tripName"></p>
+  
+  <div class="travel-section" id="travelSection">
+    <div class="section-header" onclick="toggleSection('travel')">
+      <div class="section-title">🌍 <span data-i18n="travelBookings">Réservations voyage</span></div>
+      <span class="section-toggle" id="toggleTravel">▼</span>
+    </div>
+    <div class="section-content" id="travelContent">
+      <div id="travelList"></div>
+    </div>
+  </div>
+  
+  <div class="section">
+    <div class="section-title" style="margin-bottom:16px">📍 <span data-i18n="stepBookings">Réservations par étape</span></div>
+    <div id="stepsContainer"></div>
+  </div>
+  
+  <div class="budget-card" id="budgetCard" style="display:none">
+    <div class="budget-title" data-i18n="totalBudget">Budget total</div>
+    <div class="budget-total" id="budgetTotal">0 €</div>
+  </div>
+</div>
+
+<button class="btn-add" id="btnAdd" data-title-i18n="addBooking" title="Ajouter une réservation">+</button>
+
+<div class="footer-actions">
+  <button class="btn-back" id="btnCancel">← <span data-i18n="backToTrip">Retour au voyage</span></button>
+</div>
+
+<div class="modal" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-title" id="modalTitle">📋 <span data-i18n="details">Détails</span></div>
+    <div id="modalContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" id="btnCloseModal" data-i18n="close">Fermer</button>
+      <button class="btn btn-danger" id="btnDeleteBooking">🗑 <span data-i18n="delete">Supprimer</span></button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" data-i18n="loading">Chargement...</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-i18n.js"></script>
+<script src="/js/ort-tripid.js"></script>
+<script src="/js/ort-trip-data.js"></script>
+<script>
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  if (safe && safe.apiKey && !firebase.apps.length) firebase.initializeApp(safe);
+})();
+</script>
+<script>
+(async function() {
+  'use strict';
+  
+  const I18N_LOCAL = {
+    bookingsPageTitle: { fr: '📋 Mes réservations', en: '📋 My bookings', es: '📋 Mis reservas', it: '📋 Le mie prenotazioni', pt: '📋 Minhas reservas', ar: '📋 حجوزاتي' },
+    travelBookings: { fr: 'Réservations voyage', en: 'Travel bookings', es: 'Reservas de viaje', it: 'Prenotazioni viaggio', pt: 'Reservas de viagem', ar: 'حجوزات السفر' },
+    stepBookings: { fr: 'Réservations par étape', en: 'Bookings by step', es: 'Reservas por etapa', it: 'Prenotazioni per tappa', pt: 'Reservas por etapa', ar: 'الحجوزات حسب المرحلة' },
+    totalBudget: { fr: 'Budget total', en: 'Total budget', es: 'Presupuesto total', it: 'Budget totale', pt: 'Orçamento total', ar: 'الميزانية الإجمالية' },
+    noBookings: { fr: 'Aucune réservation', en: 'No bookings', es: 'Sin reservas', it: 'Nessuna prenotazione', pt: 'Sem reservas', ar: 'لا توجد حجوزات' },
+    addFirst: { fr: 'Ajoutez votre première réservation', en: 'Add your first booking', es: 'Añade tu primera reserva', it: 'Aggiungi la tua prima prenotazione', pt: 'Adicione sua primeira reserva', ar: 'أضف حجزك الأول' },
+    backToTrip: { fr: 'Retour au voyage', en: 'Back to trip', es: 'Volver al viaje', it: 'Torna al viaggio', pt: 'Voltar à viagem', ar: 'العودة للرحلة' },
+    close: { fr: 'Fermer', en: 'Close', es: 'Cerrar', it: 'Chiudi', pt: 'Fechar', ar: 'إغلاق' },
+    delete: { fr: 'Supprimer', en: 'Delete', es: 'Eliminar', it: 'Elimina', pt: 'Excluir', ar: 'حذف' },
+    confirmDelete: { fr: 'Supprimer cette réservation ?', en: 'Delete this booking?', es: '¿Eliminar esta reserva?', it: 'Eliminare questa prenotazione?', pt: 'Excluir esta reserva?', ar: 'حذف هذا الحجز؟' },
+    deleted: { fr: 'Réservation supprimée', en: 'Booking deleted', es: 'Reserva eliminada', it: 'Prenotazione eliminata', pt: 'Reserva excluída', ar: 'تم حذف الحجز' },
+    loading: { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', it: 'Caricamento...', pt: 'Carregando...', ar: 'جار التحميل...' },
+    noTrip: { fr: 'Voyage non trouvé', en: 'Trip not found', es: 'Viaje no encontrado', it: 'Viaggio non trovato', pt: 'Viagem não encontrada', ar: 'الرحلة غير موجودة' },
+    step: { fr: 'Étape', en: 'Step', es: 'Etapa', it: 'Tappa', pt: 'Etapa', ar: 'مرحلة' },
+    viewStep: { fr: 'Voir l\'étape', en: 'View step', es: 'Ver etapa', it: 'Vedi tappa', pt: 'Ver etapa', ar: 'عرض المرحلة' },
+    loginRequired: { fr: 'Connexion requise', en: 'Login required', es: 'Inicio de sesión requerido', it: 'Accesso richiesto', pt: 'Login necessário', ar: 'تسجيل الدخول مطلوب' },
+    loginRequiredMsg: { fr: 'Vous devez être connecté.', en: 'You must be logged in.', es: 'Debes iniciar sesión.', it: 'Devi effettuare l\'accesso.', pt: 'Você precisa estar logado.', ar: 'يجب تسجيل الدخول.' },
+    tripNotSaved: { fr: 'Voyage non sauvegardé', en: 'Trip not saved', es: 'Viaje no guardado', it: 'Viaggio non salvato', pt: 'Viagem não salva', ar: 'الرحلة غير محفوظة' },
+    tripNotSavedMsg: { fr: 'Sauvegardez d\'abord le voyage.', en: 'Save the trip first.', es: 'Guarde el viaje primero.', it: 'Salva prima il viaggio.', pt: 'Salve a viagem primeiro.', ar: 'احفظ الرحلة أولاً.' },
+    goBack: { fr: 'Retour', en: 'Back', es: 'Volver', it: 'Indietro', pt: 'Voltar', ar: 'رجوع' },
+    addBooking: { fr: 'Ajouter une réservation', en: 'Add a booking', es: 'Añadir una reserva', it: 'Aggiungi una prenotazione', pt: 'Adicionar uma reserva', ar: 'إضافة حجز' },
+    details: { fr: 'Détails', en: 'Details', es: 'Detalles', it: 'Dettagli', pt: 'Detalhes', ar: 'تفاصيل' },
+    nights: { fr: 'nuits', en: 'nights', es: 'noches', it: 'notti', pt: 'noites', ar: 'ليال' },
+    steps: { fr: 'Étapes', en: 'Steps', es: 'Etapas', it: 'Tappe', pt: 'Etapas', ar: 'مراحل' }
+  };
+  
+  let lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang')?.slice(0,2) || 'fr';
+  if (!['fr','en','es','it','pt','ar'].includes(lang)) lang = 'en';
+  
+  const t = key => window.ORT_I18N?.[key]?.[lang] || I18N_LOCAL[key]?.[lang] || I18N_LOCAL[key]?.fr || key;
+  const $ = id => document.getElementById(id);
+  const ICONS = { hotel:'🏨', activity:'🎯', flight:'✈️', car_rental:'🚗', insurance:'🛡️', visit:'🏛️', show:'🎭', other:'📋' };
+  
+  const params = new URLSearchParams(location.search);
+  let tripId = params.get('tripId') || params.get('id');
+  const cc = params.get('cc') || '';
+  const itin = params.get('itin') || '';
+  let trip = null;
+  let currentBooking = null;
+  
+  function applyI18N() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const text = t(el.getAttribute('data-i18n'));
+      if (text) el.textContent = text;
+    });
+  }
+  
+  async function init() {
+    applyI18N();
+    if (window.ORT_TRIPID) tripId = ORT_TRIPID.init();
+    if (!tripId) { showToast(t('noTrip'), 'error'); $('loadingOverlay').style.display = 'none'; return; }
+    
+    const user = await waitForAuth();
+    if (!user) { showBlockingMessage('login'); return; }
+    
+    const tripSaved = await checkTripSaved(user.uid, tripId);
+    if (!tripSaved) { showBlockingMessage('tripNotSaved'); return; }
+    
+    await loadTrip();
+    if (window.ORT_TRIP_DATA) await ORT_TRIP_DATA.loadTrip(tripId);
+    
+    renderBookings();
+    setupEventListeners();
+    $('loadingOverlay').style.display = 'none';
+  }
+  
+  async function waitForAuth() {
+    return new Promise(resolve => {
+      const check = () => {
+        if (window.firebase?.auth) firebase.auth().onAuthStateChanged(user => resolve(user));
+        else setTimeout(check, 100);
+      };
+      check();
+    });
+  }
+  
+  async function checkTripSaved(uid, tripId) {
+    try {
+      const doc = await firebase.firestore().collection('users').doc(uid).collection('trips').doc(tripId).get();
+      return doc.exists;
+    } catch { return false; }
+  }
+  
+  function showBlockingMessage(type) {
+    $('loadingOverlay').style.display = 'none';
+    const m = type === 'login' 
+      ? { title: t('loginRequired'), msg: t('loginRequiredMsg'), btn: t('goBack') }
+      : { title: t('tripNotSaved'), msg: t('tripNotSavedMsg'), btn: t('goBack') };
+    const c = document.createElement('div');
+    c.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#1e3a5f,#2d5a87);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+    c.innerHTML = `<div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">🔒</div><h2 style="color:#1e3a5f;margin:0 0 12px;">${m.title}</h2><p style="color:#64748b;margin:0 0 24px;">${m.msg}</p><button onclick="history.back()" style="background:#3b82f6;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-weight:600;cursor:pointer;">${m.btn}</button></div>`;
+    document.body.appendChild(c);
+  }
+  
+  async function loadTrip() {
+    const stored = localStorage.getItem(`ort_trip_${tripId}`);
+    if (stored) { try { trip = JSON.parse(stored); $('tripName').textContent = trip.title || ''; return; } catch {} }
+    const user = firebase.auth().currentUser;
+    if (user) {
+      try {
+        const doc = await firebase.firestore().collection('users').doc(user.uid).collection('trips').doc(tripId).get();
+        if (doc.exists) { trip = doc.data(); $('tripName').textContent = trip.title || ''; }
+      } catch {}
+    }
+  }
+  
+  function renderBookings() {
+    const travelBookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getTravelBookings() : [];
+    const travelList = $('travelList');
+    
+    if (travelBookings.length === 0) {
+      travelList.innerHTML = `<div class="empty-state"><div class="icon">✈️</div><div>${t('noBookings')}</div></div>`;
+    } else {
+      travelList.innerHTML = travelBookings.map((b, i) => renderBookingItem(b, 'travel', i)).join('');
+    }
+    
+    const stepsContainer = $('stepsContainer');
+    stepsContainer.innerHTML = '';
+    let totalBudget = 0;
+    
+    travelBookings.forEach(b => { 
+      const p = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : 0;
+      totalBudget += parseFloat(p) || 0; 
+    });
+    
+    // Collecter TOUTES les résas et dédupliquer par ID
+    const allBookings = new Map(); // id -> { booking, steps: [stepIndex, ...], firstStepIndex }
+    const seenIds = new Set();
+    
+    console.log('[RT-BOOKINGS] === DEBUG RENDER ===');
+    console.log('[RT-BOOKINGS] trip.steps:', trip?.steps?.length);
+    
+    if (trip?.steps) {
+      trip.steps.forEach((step, stepIndex) => {
+        const stepBookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(stepIndex) : [];
+        
+        if (stepBookings.length > 0) {
+          console.log(`[RT-BOOKINGS] Étape ${stepIndex} (${step.name}): ${stepBookings.length} bookings`);
+          stepBookings.forEach(b => {
+            console.log(`  - ${b.id}: ${b.name} (stepIndexes: ${JSON.stringify(b.stepIndexes)})`);
+          });
+        }
+        
+        stepBookings.forEach(b => {
+          const bookingId = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+          
+          if (!allBookings.has(bookingId)) {
+            allBookings.set(bookingId, {
+              booking: b,
+              steps: [stepIndex],
+              firstStepIndex: stepIndex
+            });
+          } else {
+            // Ajouter cette étape à la liste
+            const existing = allBookings.get(bookingId);
+            if (!existing.steps.includes(stepIndex)) {
+              existing.steps.push(stepIndex);
+            }
+          }
+        });
+      });
+    }
+    
+    console.log('[RT-BOOKINGS] allBookings (dédoublonnés):', allBookings.size);
+    allBookings.forEach((data, id) => {
+      console.log(`  - ${id}: ${data.booking.name}, firstStep=${data.firstStepIndex}, steps=${JSON.stringify(data.steps)}`);
+    });
+    
+    // Grouper les résas par première étape pour l'affichage
+    const bookingsByFirstStep = new Map();
+    allBookings.forEach((data, bookingId) => {
+      const firstStep = data.firstStepIndex;
+      if (!bookingsByFirstStep.has(firstStep)) {
+        bookingsByFirstStep.set(firstStep, []);
+      }
+      bookingsByFirstStep.get(firstStep).push(data);
+    });
+    
+    // Calculer le budget total (prix global, pas dupliqué)
+    allBookings.forEach((data) => {
+      const p = data.booking.price ? (typeof data.booking.price === 'object' ? data.booking.price.amount : data.booking.price) : 0;
+      totalBudget += parseFloat(p) || 0;
+    });
+    
+    // Afficher par première étape
+    if (trip?.steps) {
+      trip.steps.forEach((step, stepIndex) => {
+        const stepData = bookingsByFirstStep.get(stepIndex) || [];
+        
+        if (stepData.length > 0) {
+          const section = document.createElement('div');
+          section.className = 'step-section';
+          section.innerHTML = `
+            <div class="section-header" onclick="toggleSection('step${stepIndex}')">
+              <div class="section-title"><span style="background:var(--bg);color:#fff;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.8rem;margin-right:4px;">${stepIndex + 1}</span> ${step.name || t('step') + ' ' + (stepIndex + 1)}</div>
+              <span class="section-toggle" id="toggleStep${stepIndex}">▼</span>
+            </div>
+            <div class="section-content" id="stepContent${stepIndex}">
+              ${stepData.map((data, i) => renderBookingItemWithSteps(data.booking, data.steps, i, stepIndex)).join('')}
+            </div>
+          `;
+          stepsContainer.appendChild(section);
+        }
+      });
+    }
+    
+    if (stepsContainer.innerHTML === '') {
+      stepsContainer.innerHTML = `<div class="empty-state" style="background:#fff;border-radius:12px;padding:32px;color:var(--ink);"><div class="icon">📍</div><div>${t('noBookings')}</div><div style="font-size:0.9rem;margin-top:8px;color:var(--mut);">${t('addFirst')}</div></div>`;
+    }
+    
+    if (totalBudget > 0) {
+      $('budgetCard').style.display = 'block';
+      $('budgetTotal').textContent = totalBudget.toFixed(2) + ' €';
+    }
+  }
+  
+  function renderBookingItemWithSteps(booking, steps, index, stepIndex) {
+    const icon = ICONS[booking.category] || ICONS.other;
+    const ref = booking.reference || booking.confirmation_number;
+    
+    // Afficher les nuits si plusieurs étapes
+    const nightsInfo = steps.length > 1 ? `${steps.length} ${t('nights') || 'nuits'}` : '';
+    const stepsInfo = steps.length > 1 ? `📍 ${t('steps') || 'Étapes'} ${steps.map(s => s + 1).join(', ')}` : '';
+    
+    const details = [booking.date_start, nightsInfo, ref, booking.provider, booking.address].filter(Boolean).join(' • ');
+    const priceVal = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : null;
+    const priceCur = booking.price && typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+    const price = priceVal ? `${parseFloat(priceVal).toFixed(2)} ${priceCur}` : '';
+    const dataAttr = `data-type="step" data-step="${stepIndex}" data-index="${index}" data-id="${booking.id || ''}"`;
+    
+    return `<div class="booking-item" ${dataAttr}>
+      <div class="booking-icon">${icon}</div>
+      <div class="booking-info">
+        <div class="booking-name">${booking.name || 'Réservation'}</div>
+        ${details ? `<div class="booking-details">${details}</div>` : ''}
+        ${stepsInfo ? `<div class="booking-details" style="color:#3b82f6">${stepsInfo}</div>` : ''}
+      </div>
+      ${price ? `<div class="booking-price">${price}</div>` : ''}
+    </div>`;
+  }
+  
+  // Pour les travel bookings (vols, assurance, etc.)
+  function renderBookingItem(booking, type, index, stepIndex = null) {
+    const icon = ICONS[booking.category] || ICONS.other;
+    const ref = booking.reference || booking.confirmation_number;
+    const details = [booking.date_start, ref, booking.provider, booking.address].filter(Boolean).join(' • ');
+    const priceVal = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : null;
+    const priceCur = booking.price && typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+    const price = priceVal ? `${parseFloat(priceVal).toFixed(2)} ${priceCur}` : '';
+    const dataAttr = type === 'travel' 
+      ? `data-type="travel" data-index="${index}" data-id="${booking.id || ''}"` 
+      : `data-type="step" data-step="${stepIndex}" data-index="${index}" data-id="${booking.id || ''}"`;
+    
+    return `<div class="booking-item" ${dataAttr}>
+      <div class="booking-icon">${icon}</div>
+      <div class="booking-info">
+        <div class="booking-name">${booking.name || 'Réservation'}</div>
+        ${details ? `<div class="booking-details">${details}</div>` : ''}
+      </div>
+      ${price ? `<div class="booking-price">${price}</div>` : ''}
+    </div>`;
+  }
+  
+  function setupEventListeners() {
+    $('btnBackToTrip').addEventListener('click', goBack);
+    $('btnCancel').addEventListener('click', goBack);
+    $('btnAdd').addEventListener('click', () => {
+      if (window.ORT_TRIPID) ORT_TRIPID.navigateTo('rt-booking-import.html', { cc, itin });
+      else location.href = `rt-booking-import.html?tripId=${tripId}&cc=${cc}&itin=${itin}`;
+    });
+    
+    document.addEventListener('click', e => {
+      const item = e.target.closest('.booking-item');
+      if (item) {
+        const type = item.dataset.type;
+        const index = parseInt(item.dataset.index);
+        const stepIndex = item.dataset.step !== undefined ? parseInt(item.dataset.step) : null;
+        const dataId = item.dataset.id || null; // Récupérer l'ID du DOM
+        
+        let booking;
+        if (type === 'travel') {
+          booking = ORT_TRIP_DATA.getTravelBookings()[index];
+          currentBooking = { type: 'travel', index, booking, id: dataId || booking?.id };
+        } else {
+          booking = ORT_TRIP_DATA.getStepBookings(stepIndex)[index];
+          currentBooking = { type: 'step', stepIndex, index, booking, id: dataId || booking?.id };
+        }
+        console.log('[RT-BOOKINGS] Booking sélectionné:', currentBooking);
+        showDetailModal(booking);
+      }
+    });
+    
+    $('btnCloseModal').addEventListener('click', closeModal);
+    $('detailModal').addEventListener('click', e => { if (e.target === $('detailModal')) closeModal(); });
+    $('btnDeleteBooking').addEventListener('click', deleteCurrentBooking);
+    
+    // Refresh automatique quand on revient sur la page
+    let lastVisibilityTime = Date.now();
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible') {
+        const timeSinceHidden = Date.now() - lastVisibilityTime;
+        if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA) {
+          console.log('[RT-BOOKINGS] Retour sur la page, refresh...');
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderBookings();
+        }
+      } else {
+        lastVisibilityTime = Date.now();
+      }
+    });
+  }
+  
+  function showDetailModal(booking) {
+    const icon = ICONS[booking.category] || ICONS.other;
+    $('modalTitle').innerHTML = `${icon} ${booking.name || 'Détails'}`;
+    
+    const fields = [];
+    if (booking.category) fields.push({ label: 'Catégorie', value: booking.category });
+    if (booking.date_start) fields.push({ label: 'Date début', value: booking.date_start });
+    if (booking.date_end) fields.push({ label: 'Date fin', value: booking.date_end });
+    if (booking.reference || booking.confirmation_number) fields.push({ label: 'Référence', value: booking.reference || booking.confirmation_number });
+    if (booking.price) {
+      const pVal = typeof booking.price === 'object' ? booking.price.amount : booking.price;
+      const pCur = typeof booking.price === 'object' ? (booking.price.currency || '€') : '€';
+      fields.push({ label: 'Prix', value: parseFloat(pVal).toFixed(2) + ' ' + pCur });
+    }
+    if (booking.provider) fields.push({ label: 'Fournisseur', value: booking.provider });
+    if (booking.address) fields.push({ label: 'Adresse', value: booking.address });
+    if (booking.notes) fields.push({ label: 'Notes', value: booking.notes });
+    
+    $('modalContent').innerHTML = fields.map(f => `<div class="modal-field"><div class="label">${f.label}</div><div class="value">${f.value}</div></div>`).join('');
+    $('detailModal').classList.add('show');
+  }
+  
+  function closeModal() {
+    $('detailModal').classList.remove('show');
+    currentBooking = null;
+  }
+  
+  async function deleteCurrentBooking() {
+    if (!currentBooking) return;
+    if (!confirm(t('confirmDelete'))) return;
+    
+    const bookingId = currentBooking.id || currentBooking.booking?.id;
+    console.log('[RT-BOOKINGS] Suppression - currentBooking:', currentBooking);
+    console.log('[RT-BOOKINGS] Suppression - bookingId:', bookingId);
+    console.log('[RT-BOOKINGS] Suppression - trip?.steps:', trip?.steps?.length);
+    
+    let removed = false;
+    
+    if (currentBooking.type === 'travel') {
+      // Supprimer par ID ou par index
+      if (bookingId) {
+        removed = ORT_TRIP_DATA.removeTravelBooking(bookingId);
+        console.log('[RT-BOOKINGS] removeTravelBooking par ID:', removed);
+      }
+      if (!removed) {
+        removed = ORT_TRIP_DATA.removeTravelBooking(currentBooking.index);
+        console.log('[RT-BOOKINGS] removeTravelBooking par index:', removed);
+      }
+    } else {
+      // D'abord essayer de supprimer de TOUTES les étapes par ID
+      if (bookingId && trip?.steps) {
+        const stepIndexesToRemove = [];
+        trip.steps.forEach((step, idx) => {
+          const bookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+          if (bookings.some(b => b.id === bookingId)) {
+            stepIndexesToRemove.push(idx);
+          }
+        });
+        
+        console.log(`[RT-BOOKINGS] Suppression du booking ${bookingId} de ${stepIndexesToRemove.length} étapes:`, stepIndexesToRemove);
+        stepIndexesToRemove.forEach(idx => {
+          const result = ORT_TRIP_DATA.removeStepBooking(idx, bookingId);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${idx}, ID=${bookingId}):`, result);
+          if (result) removed = true;
+        });
+      }
+      
+      // Si pas de suppression par ID, essayer par index direct sur l'étape
+      if (!removed && currentBooking.stepIndex !== null) {
+        console.log(`[RT-BOOKINGS] Tentative suppression par index: step=${currentBooking.stepIndex}, index=${currentBooking.index}`);
+        
+        // Essayer avec l'ID d'abord
+        if (bookingId) {
+          removed = ORT_TRIP_DATA.removeStepBooking(currentBooking.stepIndex, bookingId);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${currentBooking.stepIndex}, ID):`, removed);
+        }
+        
+        // Puis avec l'index
+        if (!removed) {
+          removed = ORT_TRIP_DATA.removeStepBooking(currentBooking.stepIndex, currentBooking.index);
+          console.log(`[RT-BOOKINGS] removeStepBooking(${currentBooking.stepIndex}, index):`, removed);
+        }
+      }
+    }
+    
+    if (!removed) {
+      console.warn('[RT-BOOKINGS] ⚠️ Aucun booking supprimé!');
+      showToast(t('deleteError') || 'Erreur lors de la suppression', 'error');
+      return;
+    }
+    
+    console.log('[RT-BOOKINGS] Appel forceSave...');
+    try {
+      await ORT_TRIP_DATA.forceSave();
+      console.log('[RT-BOOKINGS] ✅ forceSave OK');
+      showToast(t('deleted'));
+    } catch (e) {
+      console.error('[RT-BOOKINGS] ❌ forceSave ERREUR:', e);
+      showToast(t('deleteError') || 'Erreur de sauvegarde', 'error');
+    }
+    
+    closeModal();
+    renderBookings();
+  }
+  
+  function goBack() {
+    if (window.ORT_TRIPID) ORT_TRIPID.navigateTo('roadtrip_detail.html', { cc, itin });
+    else location.href = `roadtrip_detail.html?tripId=${tripId}&cc=${cc}&itin=${itin}`;
+  }
+  
+  window.toggleSection = function(id) {
+    const toggle = $('toggle' + id.charAt(0).toUpperCase() + id.slice(1));
+    const content = $(id + 'Content') || $('stepContent' + id.replace('step', ''));
+    if (toggle && content) {
+      toggle.classList.toggle('collapsed');
+      content.classList.toggle('collapsed');
+    }
+  };
+  
+  function showToast(msg, type = 'success') {
+    const toast = $('toast');
+    toast.textContent = msg;
+    toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+  
+  init();
+})();
+</script>
+<footer id="footer-legal"></footer>
+<script src="/js/ort-footer.js"></script>
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"rt-bookings"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+</body>
+</html>

@@ -1,0 +1,226 @@
+/* ====== OneRoadTrip — styles communs (repris de questionnaire.html) ====== */
+:root{
+  --bg:#075e72; --panel:#0b6b8f; --card:#fff; --ink:#0a2a33;
+  --chip:#0b6b8f; --primary:#0e829a; --accent:#7b66d6; --muted:#5b7a86;
+  --bd:#e5e7eb;
+}
+
+/* reset léger + couleurs de fond comme Questionnaire */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:#e7f6fb;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  line-height:1.5;
+}
+
+/* ----- Layout général / cartes / éléments réutilisables ----- */
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+.notice{margin:10px 0 0;background:#fff3cd;color:#7a5d00;border:1px solid #ffe08a;border-radius:10px;padding:10px 12px}
+
+.grid{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:992px){ .grid{grid-template-columns:1fr 1fr 1fr} }
+
+.card{background:var(--card);color:var(--ink);border-radius:14px;border:1px solid rgba(0,0,0,.08);padding:14px}
+.card h3{margin:0 0 10px 0;font-size:1.05rem}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+.chip{
+  border:1px solid rgba(0,0,0,.12);border-radius:999px;padding:9px 12px;
+  background:#fff;color:#0b6b8f;font-weight:700;cursor:pointer;
+  transition:transform .12s ease, background-color .18s ease
+}
+.chip.on{background:var(--chip);color:#fff;border-color:transparent;transform:translateY(-1px)}
+.chip.neg{background:#eaeef1;color:#8aa;text-decoration:line-through}
+
+.seg{display:flex;border:1px solid rgba(0,0,0,.12);border-radius:12px;overflow:hidden}
+.seg>label{flex:1;padding:8px 10px;text-align:center;cursor:pointer;background:#fff;color:var(--ink)}
+.seg>input{display:none}
+.seg>input:checked+label{background:var(--accent);color:#fff}
+
+input[type="date"],input[type="number"],select{
+  padding:9px 10px;border:1px solid rgba(0,0,0,.12);border-radius:10px;background:#fff;color:#0a2a33
+}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(0,0,0,.12);background:#fff;color:#0a2a33;padding:6px 10px;border-radius:999px}
+.sep{height:1px;background:rgba(0,0,0,.08);margin:10px 0}
+
+/* ----- Double range (durées) ----- */
+.range-wrap{position:relative;width:100%;height:36px;margin:6px 0 2px}
+.range-track{position:absolute;left:6px;right:6px;top:16px;height:6px;border-radius:6px;background:#e7eef1}
+.range-fill{position:absolute;top:16px;height:6px;border-radius:6px;background:var(--accent)}
+.range-wrap input[type=range]{
+  position:absolute;left:0;right:0;top:0;bottom:0;margin:0;width:100%;
+  background:transparent;pointer-events:none;-webkit-appearance:none;appearance:none
+}
+.range-wrap input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;height:18px;width:18px;border-radius:50%;
+  background:#6c6f78;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.15);pointer-events:auto;cursor:pointer
+}
+.range-wrap input[type=range]::-moz-range-thumb{
+  height:18px;width:18px;border:none;border-radius:50%;background:#6c6f78;pointer-events:auto;cursor:pointer
+}
+
+/* ----- CTA collante en bas ----- */
+.sticky{
+  position:sticky;bottom:0;z-index:50;
+  background:linear-gradient(to top, rgba(7,94,114,.95), rgba(7,94,114,.7) 70%, transparent);
+  padding:10px 0;margin-top:14px
+}
+.cta{display:flex;gap:10px;justify-content:flex-end;align-items:center}
+.cta .btn[disabled]{opacity:.5;cursor:not-allowed}
+.pulse{animation:pulse 1.6s ease-in-out infinite;box-shadow:0 0 0 0 rgba(255,255,255,.45)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.45)}70%{box-shadow:0 0 0 12px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+/* Ordre desktop + pastille requis */
+#cardDates{order:1} #cardParty{order:2} #cardWeather{order:3}
+#cardArrival{order:4} #cardLocalSteps{order:5} #cardLocalVisits{order:6}
+#cardSteps{order:7} #cardLodging{order:8} #cardInterests{order:9}
+.req-pill{display:inline-block;margin-left:8px;background:#ffe0e0;color:#8a1f1f;border:1px solid #ffbdbd;border-radius:999px;padding:4px 8px;font-size:.85rem;font-weight:800}
+
+/* ----- Footer (liens en clair sur fond bleu) ----- */
+footer{margin:18px 0 28px;text-align:center;font-size:14px;opacity:.9}
+footer a, footer button.link{color:#cfefff;text-decoration:none;background:none;border:0;cursor:pointer}
+footer a:hover, footer button.link:hover{text-decoration:underline}
+
+/* ----- Bannière cookies ----- */
+#cookieBanner{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:9999;display:none}
+#cookieBanner .panel{
+  max-width:520px;background:#fff;border:1px solid var(--bd);border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.12);padding:10px;color:#0f172a
+}
+#cookiePrefs{display:none;margin-top:6px;text-align:left}
+#cookiePrefs label{display:flex;align-items:center;gap:8px;margin:4px 0}
+#cookieBanner .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px}
+
+/* ----- Header OneRoadTrip (identique Questionnaire) ----- */
+header.ort-hdr{
+  position:sticky;top:0;z-index:10;background:#0b6b8f;color:#fff;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #096485
+}
+header.ort-hdr .brandlink{display:flex;align-items:center;gap:10px;color:#fff;text-decoration:none}
+header.ort-hdr .brandlink img{width:80px;height:80px}
+header.ort-hdr .brand{font-weight:800;font-size:20px}
+header.ort-hdr .spacer{flex:1}
+header.ort-hdr .langpick{
+  appearance:none;background:#fff;border:1px solid #cfd8e3;border-radius:10px;
+  padding:8px 10px;cursor:pointer;color:#0f172a
+}
+header.ort-hdr .auth{position:relative}
+header.ort-hdr .hdr-btn{
+  padding:8px 12px;border-radius:10px;border:1px solid #ffffff80;background:#ffffff1a;color:#fff;cursor:pointer
+}
+header.ort-hdr .hdr-btn:hover{background:#ffffff2b}
+header.ort-hdr .auth-pop{
+  position:absolute;right:0;top:44px;background:#fff;color:#0f172a;border:1px solid var(--bd);
+  border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.15);padding:8px;display:none;min-width:260px
+}
+header.ort-hdr .auth-pop .hdr-btn{display:block;width:100%;margin:6px 0;background:#0b6b8f;border:1px solid #0b6b8f;color:#fff}
+header.ort-hdr .auth-pop .hdr-btn.out{background:#fff;color:#0b6b8f}
+
+/* ----- A11y & mobile (identiques) ----- */
+:focus-visible{outline:3px solid #7b66d6;outline-offset:2px;border-radius:10px}
+.chip:focus-visible,.btn:focus-visible,.hdr-btn:focus-visible{outline:3px solid #7b66d6}
+@media (max-width:600px){
+  .chip{min-height:44px;padding:10px 14px}
+  .range-wrap{height:44px}
+  .range-track{top:20px;height:10px}
+  .range-wrap input[type=range]::-webkit-slider-thumb{height:26px;width:26px}
+  .range-wrap input[type=range]::-moz-range-thumb{height:26px;width:26px}
+}
+/* ====== Header global ====== */
+header.ort-hdr {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #0b6b8f;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #096485;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header.ort-hdr .brandlink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 20px;
+}
+header.ort-hdr .brandlink:hover { opacity: 0.9; }
+header.ort-hdr .brandlink img { width: 40px; height: 40px; border-radius: 8px; }
+
+header.ort-hdr .spacer { flex: 1; }
+
+header.ort-hdr .langpick {
+  appearance: none;
+  background: #fff;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+header.ort-hdr .auth { position: relative; }
+header.ort-hdr .hdr-btn {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #ffffff80;
+  background: #ffffff1a;
+  color: #fff;
+  cursor: pointer;
+}
+header.ort-hdr .hdr-btn:hover { background: #ffffff2b; }
+header.ort-hdr .auth-pop {
+  position: absolute;
+  right: 0;
+  top: 44px;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  padding: 8px;
+  display: none;
+  min-width: 260px;
+}
+header.ort-hdr .auth-pop .hdr-btn {
+  display: block;
+  width: 100%;
+  margin: 6px 0;
+  background: #0b6b8f;
+  border: 1px solid #0b6b8f;
+  color: #fff;
+}
+header.ort-hdr .auth-pop .hdr-btn.out {
+  background: #fff;
+  color: #0b6b8f;
+}
+
+/* ====== Footer global ====== */
+footer {
+  margin: 26px 0 20px;
+  text-align: center;
+  font-size: 14px;
+  opacity: .9;
+}
+footer a,
+footer button.link {
+  color: #0b6b8f;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+footer a:hover,
+footer button.link:hover {
+  text-decoration: underline;
+}
+

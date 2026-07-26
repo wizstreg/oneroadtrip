@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Top 10 des road trips les plus populaires en Europe | OneRoadTrip</title>
+<meta name="description" content="De la Bourgogne à la Galice, les 10 itinéraires road trip les plus consultés sur OneRoadTrip. Ce qu&#x27;on vient y chercher, ce qu&#x27;on y trouve, et le lien pour partir.">
+<link rel="canonical" href="https://www.oneroadtrip.com/blog/fr/top-10-road-trips-populaires-europe.html">
+<link rel="alternate" hreflang="fr" href="https://www.oneroadtrip.com/blog/fr/top-10-road-trips-populaires-europe.html">
+<link rel="alternate" hreflang="en" href="https://www.oneroadtrip.com/blog/en/top-10-most-popular-road-trips-europe.html">
+<link rel="alternate" hreflang="es" href="https://www.oneroadtrip.com/blog/es/top-10-road-trips-populares-europa.html">
+<link rel="alternate" hreflang="it" href="https://www.oneroadtrip.com/blog/it/top-10-road-trip-piu-amati-europa.html">
+<link rel="alternate" hreflang="pt" href="https://www.oneroadtrip.com/blog/pt/top-10-road-trips-populares-europa.html">
+<meta property="og:title" content="Top 10 des road trips les plus populaires en Europe">
+<meta property="og:description" content="De la Bourgogne à la Galice, les 10 itinéraires les plus consultés sur OneRoadTrip.">
+<meta property="og:image" content="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fchablis.webp&w=1200&q=80&output=webp">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.oneroadtrip.com/blog/fr/top-10-road-trips-populaires-europe.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Top 10 des road trips les plus populaires en Europe",
+  "description": "De la Bourgogne à la Galice, les 10 itinéraires les plus consultés sur OneRoadTrip.",
+  "image": "https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fchablis.webp&w=1200&q=80&output=webp",
+  "datePublished": "2026-07-14",
+  "dateModified": "2026-07-14",
+  "author": {
+    "@type": "Organization",
+    "name": "OneRoadTrip"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "OneRoadTrip"
+  },
+  "inLanguage": "fr"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Comment ce classement est-il établi ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Il reprend les dix itinéraires les plus consultés sur OneRoadTrip. L'ordre suit le nombre de consultations, du plus vu au moins vu."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Les itinéraires sont-ils gratuits ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui. Chaque itinéraire est gratuit, consultable en entier et personnalisable : vous pouvez modifier les étapes, l'ordre et la durée, et ajouter vos hébergements."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la meilleure période pour partir ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pour la plupart de ces destinations, la fin du printemps et le début de l'automne offrent le meilleur compromis entre météo et affluence. Chaque itinéraire précise sa propre fenêtre idéale."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il une voiture pour ces road trips ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La voiture reste le moyen le plus souple. Certains parcours, comme la Suède ou le Danemark, se prêtent aussi aux transports combinés (trains, bus et ferries)."
+      }
+    }
+  ]
+}
+</script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5efe4;color:#221c14;font-family:'Archivo',sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
+a{color:inherit}
+::selection{background:#c1502e;color:#f5efe4}
+img{display:block;max-width:100%}
+.hero{position:relative;height:86vh;min-height:560px;overflow:hidden;display:flex;align-items:flex-end}
+.hero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-grad{position:absolute;inset:0;background:linear-gradient(15deg,rgba(20,14,8,.92) 5%,rgba(20,14,8,.35) 55%,rgba(20,14,8,.05) 85%)}
+.hero-edition{position:absolute;top:2.2rem;right:2.4rem;z-index:2;writing-mode:vertical-rl;color:#f5efe4;opacity:.55;font-size:.85rem;letter-spacing:.18em;text-transform:uppercase}
+.hero-inner{position:relative;z-index:2;padding:0 2.4rem 4.5rem;max-width:1180px;margin:0 auto;width:100%}
+.badge{display:inline-block;background:#c1502e;color:#f5efe4;font-weight:700;font-size:.85rem;letter-spacing:.06em;text-transform:uppercase;padding:.5rem 1.1rem;border-radius:99px;margin-bottom:1.3rem;transform:rotate(-2deg)}
+h1{font-family:'Instrument Serif',serif;font-style:italic;font-weight:400;color:#f5efe4;font-size:clamp(2.6rem,7vw,5.6rem);line-height:.98;max-width:16ch;margin:0 0 1.2rem;text-shadow:0 4px 30px rgba(0,0,0,.4)}
+.hero-meta{color:#f5efe4;opacity:.8;font-size:1rem;margin:0;border-left:2px solid #c1502e;padding-left:.9rem}
+main{max-width:1180px;margin:0 auto;padding:0 2.4rem}
+.intro{display:grid;grid-template-columns:auto 1fr;gap:3rem;padding:5rem 0 2rem;align-items:start}
+.intro-num{font-family:'Instrument Serif',serif;font-style:italic;font-size:clamp(6rem,14vw,10rem);line-height:.75;color:#c1502e;opacity:.9;transform:translateY(-.5rem)}
+.intro-txt{max-width:640px;padding-top:1.6rem}
+.intro-txt p:first-child{font-size:1.35rem;margin:0 0 1.2rem;font-weight:500}
+.intro-txt p:last-child{font-size:1.05rem;opacity:.8;margin:0}
+.toc{display:flex;flex-wrap:wrap;gap:.7rem;padding:1.6rem 0;margin:1rem 0 3rem;border-top:2px solid #221c14;border-bottom:2px solid #221c14}
+.toc a{display:flex;align-items:baseline;gap:.4rem;background:#ece3d2;border-radius:99px;padding:.5rem 1rem;font-size:.9rem;font-weight:600;text-decoration:none;color:#221c14;transition:background .15s ease}
+.toc a:hover{background:#c1502e;color:#f5efe4}
+.toc a:hover span{color:#f5efe4!important}
+.toc a .n{color:#c1502e;font-weight:800}
+.dest{position:relative;padding:4.5rem 0;border-bottom:1px solid rgba(34,28,20,.12)}
+.dest-grid{display:grid;gap:3.2rem;align-items:center}
+.dest-grid.txt-right{grid-template-columns:1.05fr .95fr}
+.dest-grid.txt-left{grid-template-columns:.95fr 1.05fr}
+.media{position:relative}
+.media-box{position:relative;height:420px}
+.media-box img{position:absolute;border-radius:6px;object-fit:cover;border:6px solid #f5efe4}
+.img-a{width:78%;height:78%;top:0;box-shadow:0 20px 45px rgba(20,14,8,.28)}
+.img-b{width:52%;height:52%;bottom:0;box-shadow:0 16px 34px rgba(20,14,8,.3);z-index:2}
+.txt-right .media{padding-right:1.5rem}
+.txt-right .img-a{right:0;transform:rotate(2deg)}
+.txt-right .img-b{left:0;transform:rotate(-4deg)}
+.txt-left .media{padding-left:1.5rem;order:2}
+.txt-left .txt{order:1}
+.txt-left .img-a{left:0;transform:rotate(-2deg)}
+.txt-left .img-b{right:0;transform:rotate(4deg)}
+.txt{position:relative}
+.watermark{position:absolute;top:-3.6rem;font-family:'Instrument Serif',serif;font-size:9rem;line-height:1;color:#c1502e;opacity:.14;font-style:italic;pointer-events:none}
+.txt-right .watermark{right:-.5rem}
+.txt-left .watermark{left:-.5rem}
+.eyebrow{font-size:.85rem;text-transform:uppercase;letter-spacing:.1em;color:#c1502e;font-weight:700;margin:0 0 .6rem}
+.dest h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.08;margin:0 0 1.1rem}
+.lead{font-size:1.12rem;font-weight:500;margin:0 0 1rem}
+.body{opacity:.82;margin:0 0 1.3rem}
+.pills{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.4rem}
+.pills span{border:1.5px solid #221c14;border-radius:99px;padding:.4rem .9rem;font-size:.85rem;font-weight:600}
+.cta{display:inline-flex;align-items:center;gap:.5rem;background:#221c14;color:#f5efe4;font-weight:700;padding:.9rem 1.6rem;border-radius:99px;text-decoration:none;transition:transform .15s ease,background .15s ease}
+.cta:hover{background:#c1502e;transform:translateY(-2px)}
+.period{font-size:.85rem;opacity:.6;margin:1rem 0 0}
+.faq{padding:4rem 0 2rem}
+.faq-head{display:flex;align-items:baseline;gap:1rem;margin-bottom:2rem}
+.faq-head .q{font-family:'Instrument Serif',serif;font-style:italic;font-size:2.6rem;color:#c1502e}
+.faq-head h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(1.6rem,3vw,2.2rem);margin:0}
+details.faq-item{border-top:1px solid rgba(34,28,20,.18);padding:1.3rem 0}
+details.faq-item summary{list-style:none;cursor:pointer;font-weight:700;font-size:1.08rem;display:flex;justify-content:space-between;align-items:center;gap:1rem}
+details.faq-item summary::-webkit-details-marker{display:none}
+details.faq-item summary .plus{color:#c1502e;font-size:1.3rem;flex:none}
+details.faq-item[open] summary .plus{transform:rotate(45deg)}
+details.faq-item p{opacity:.8;margin:1rem 0 0;max-width:70ch}
+.comments{padding:4rem 0}
+.comments h2{font-family:'Instrument Serif',serif;font-weight:400;font-size:clamp(1.6rem,3vw,2.2rem);margin:0 0 1.6rem}
+.c-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start}
+.c-form{background:#ece3d2;border-radius:18px;padding:1.6rem;transform:rotate(-.4deg)}
+.c-form input,.c-form textarea{width:100%;background:#f5efe4;border:none;border-radius:10px;padding:.9rem 1.1rem;margin-bottom:.8rem;font-family:inherit;font-size:1rem;color:#221c14}
+.c-form textarea{min-height:110px;resize:vertical}
+.c-form button{background:#c1502e;color:#f5efe4;font-weight:700;border:none;border-radius:99px;padding:.85rem 1.8rem;cursor:pointer;font-size:1rem}
+.c-item{background:#ece3d2;border-radius:14px;padding:1.1rem 1.3rem;margin:0 0 .8rem}
+.c-item .c-name{font-weight:700}
+.c-item .c-date{font-size:.8rem;opacity:.6;margin-bottom:.5rem}
+.c-empty{opacity:.6;font-style:italic}
+.back{text-align:center;padding:2.5rem 0}
+.back a{font-weight:700;text-decoration:none;color:#c1502e}
+footer#footer-legal{padding:2rem 2.4rem;text-align:center;opacity:.6;font-size:.85rem;border-top:1px solid rgba(34,28,20,.15)}
+@media(max-width:760px){
+  main{padding:0 1.3rem}
+  .intro{grid-template-columns:1fr;gap:1rem;padding:3rem 0 1rem}
+  .intro-num{font-size:5rem}
+  .dest-grid,.dest-grid.txt-right,.dest-grid.txt-left{grid-template-columns:1fr;gap:1.6rem}
+  .txt-left .media,.txt-left .txt{order:0}
+  .txt-right .media,.txt-left .media{padding:0}
+  .media-box{height:300px}
+  .watermark{display:none}
+  .c-grid{grid-template-columns:1fr;gap:1.6rem}
+  .hero-inner{padding:0 1.3rem 3rem}
+}
+</style>
+</head>
+<body>
+<header id="site-header" class="ort-hdr"></header>
+
+
+<header class="hero">
+  <img src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fchablis.webp&w=1600&q=80&output=webp" alt="La basilique de Vézelay dominant la colline">
+  <div class="hero-grad"></div>
+  <div class="hero-edition">Édition 2026</div>
+  <div class="hero-inner">
+    <span class="badge">Classement · 10 itinéraires</span>
+    <h1>Top 10 des road trips les plus populaires</h1>
+    <p class="hero-meta">Publié le 14 juillet 2026 &nbsp;·&nbsp; Lecture : 12 min &nbsp;·&nbsp; Photo : OneRoadTrip</p>
+  </div>
+</header>
+
+<main>
+
+  <section class="intro">
+    <div class="intro-num">10</div>
+    <div class="intro-txt">
+      <p>Chaque mois, des milliers de voyageurs ouvrent nos itinéraires pour préparer leur route. Certains reviennent plus que d&#x27;autres.</p>
+      <p>Voici les dix les plus consultés, dans l&#x27;ordre. Pour chacun : ce que les voyageurs viennent y chercher, ce qu&#x27;ils y trouvent vraiment, et le lien direct pour ouvrir l&#x27;itinéraire complet — gratuit et personnalisable.</p>
+    </div>
+  </section>
+
+  <nav class="toc"><a href="#d1"><span class="n">1</span><span>Bourgogne</span></a><a href="#d2"><span class="n">2</span><span>Eubée</span></a><a href="#d3"><span class="n">3</span><span>Occitanie</span></a><a href="#d4"><span class="n">4</span><span>Grosseto</span></a><a href="#d5"><span class="n">5</span><span>Bologne</span></a><a href="#d6"><span class="n">6</span><span>Suède</span></a><a href="#d7"><span class="n">7</span><span>Autriche</span></a><a href="#d8"><span class="n">8</span><span>East Anglia</span></a><a href="#d9"><span class="n">9</span><span>Galice</span></a><a href="#d10"><span class="n">10</span><span>Danemark</span></a></nav>
+
+  <article class="dest" id="d1">
+    <div class="dest-grid txt-left">
+      <div class="txt">
+      <span class="watermark">1</span>
+      <p class="eyebrow">France · Bourgogne · 5 jours · 15 étapes · 525 km</p>
+      <h2>Les 15 plus beaux villages de Bourgogne</h2>
+      <p class="lead">On vient en Bourgogne pour deux choses qui vont ensemble : la pierre et le vin. Des villages classés, des abbayes romanes, et la route des Grands Crus qui relie les climats les plus célèbres du monde.</p>
+      <p class="body">L&#x27;itinéraire traverse la région du nord au sud, de Chablis à Cluny. On y trouve la basilique de Vézelay classée à l&#x27;UNESCO, les toits polychromes des Hospices de Beaune, le village de Noyers-sur-Serein et ses 78 monuments historiques, et l&#x27;abbaye de Cluny, plus grande église de la chrétienté jusqu&#x27;à la reconstruction de Saint-Pierre de Rome. Entre chaque étape, des caves séculaires et des collines de chardonnay et de pinot noir.</p>
+      <div class="pills"><span>Vézelay et son tympan roman</span><span>La route des Grands Crus</span><span>L&#x27;abbaye de Cluny</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/fr-bfc-bourgogne-15-villages-de-caractere.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai-juin et septembre-octobre.</p>
+    </div><div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fvezelay.webp&w=1200&q=80&output=webp" alt="La basilique de Vézelay dominant la colline" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fbeaune.webp&w=1200&q=80&output=webp" alt="Les toits vernissés des Hospices de Beaune" loading="lazy">
+    </div></div>
+    </div>
+  </article>
+  <article class="dest" id="d2">
+    <div class="dest-grid txt-right">
+      <div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FGR%2Fedipsos.webp&w=1200&q=80&output=webp" alt="Les sources thermales d&#x27;Édipsos sur l&#x27;île d&#x27;Eubée" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FGR%2Fkarystos.webp&w=1200&q=80&output=webp" alt="La baie de Karystos au sud de l&#x27;Eubée" loading="lazy">
+    </div></div><div class="txt">
+      <span class="watermark">2</span>
+      <p class="eyebrow">Grèce · Eubée · 6 jours · 5 étapes · 368 km</p>
+      <h2>Circuit Eubée : thermes antiques et villages</h2>
+      <p class="lead">L&#x27;Eubée, c&#x27;est la grande île grecque que les circuits classiques ignorent. On y vient pour une Grèce sans foule, entre thermes antiques et villages de montagne.</p>
+      <p class="body">Le parcours part d&#x27;Édipsos et ses 80 sources thermales, fréquentées depuis Aristote et les généraux romains. Il traverse Chalcis et son détroit aux courants qui s&#x27;inversent toutes les six heures, remonte vers Érétrie, cité antique détruite par les Perses, et se termine à Karystos, où des colonnes de marbre vert attendaient d&#x27;être expédiées à Rome. Au-dessus, sur le mont Ochi, les Drakospita, des maisons mégalithiques que personne n&#x27;a encore expliquées.</p>
+      <div class="pills"><span>Les bains naturels d&#x27;Édipsos</span><span>Le détroit de l&#x27;Euripe</span><span>Les maisons des dragons du mont Ochi</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/gr-eubee-1.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : avril-juin et septembre-octobre.</p>
+    </div>
+    </div>
+  </article>
+  <article class="dest" id="d3">
+    <div class="dest-grid txt-left">
+      <div class="txt">
+      <span class="watermark">3</span>
+      <p class="eyebrow">France · Occitanie · 8 jours · 13 étapes · 1 693 km</p>
+      <h2>Les 13 plus beaux villages d&#x27;Occitanie</h2>
+      <p class="lead">Ici, on vient chercher des villages perchés et des gorges. Treize Plus Beaux Villages de France en un seul parcours, du Tarn aux Pyrénées.</p>
+      <p class="body">On y trouve Cordes-sur-Ciel suspendu dans les nuages, Saint-Cirq-Lapopie accroché à une falaise à 100 mètres au-dessus du Lot, Larressingle le plus petit village fortifié de France, les remparts templiers de La Couvertoirade sur le Larzac. Entre les villages, les gorges du Tarn en canoë, les thermes pyrénéens, et trois sites UNESCO : Saint-Bertrand-de-Comminges, Saint-Guilhem-le-Désert et le Pont du Gard.</p>
+      <div class="pills"><span>Cordes-sur-Ciel au petit matin</span><span>Saint-Cirq-Lapopie et la vallée du Lot</span><span>Les gorges du Tarn</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/fr-occit-occitanie-13-plus-beaux-villages-route-des-joyaux.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : avril-juin et septembre-octobre.</p>
+    </div><div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fcordes-sur-ciel.webp&w=1200&q=80&output=webp" alt="Cordes-sur-Ciel émergeant de la brume" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FFR%2Fsaint-cirq-lapopie.webp&w=1200&q=80&output=webp" alt="Saint-Cirq-Lapopie accroché à sa falaise au-dessus du Lot" loading="lazy">
+    </div></div>
+    </div>
+  </article>
+  <article class="dest" id="d4">
+    <div class="dest-grid txt-right">
+      <div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FIT%2Fpitigliano.webp&w=1200&q=80&output=webp" alt="Pitigliano bâti sur son éperon de tuf volcanique" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FIT%2Fsaturnia.webp&w=1200&q=80&output=webp" alt="Les cascades thermales de Saturnia" loading="lazy">
+    </div></div><div class="txt">
+      <span class="watermark">4</span>
+      <p class="eyebrow">Italie · Toscane · 4 jours · 10 étapes · 348 km</p>
+      <h2>Les plus beaux villages de la province de Grosseto</h2>
+      <p class="lead">C&#x27;est la Toscane que peu de voyageurs osent : la Maremme profonde, loin des cyprès de carte postale. On y vient pour des villages de tuf et des thermes en pleine nature.</p>
+      <p class="body">Le circuit relie Massa Marittima et sa cathédrale gothique, le trio Pitigliano-Sorano-Sovana dans le pays du tuf avec ses Vie Cave étrusques, et les cascades de Saturnia où l&#x27;eau jaillit à 37 °C, gratuite toute l&#x27;année. Il descend ensuite vers Porto Ercole et ses forteresses espagnoles, là où mourut le Caravage, avant de finir sur l&#x27;île du Giglio, granit et maquis au milieu de la mer.</p>
+      <div class="pills"><span>Les bassins de Saturnia</span><span>Pitigliano, la « Petite Jérusalem »</span><span>L&#x27;île du Giglio</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/it-toscana-5-borghi-grosseto.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : avril-juin et septembre-octobre.</p>
+    </div>
+    </div>
+  </article>
+  <article class="dest" id="d5">
+    <div class="dest-grid txt-left">
+      <div class="txt">
+      <span class="watermark">5</span>
+      <p class="eyebrow">Italie · Émilie-Romagne · 5 jours · 13 étapes · 301 km</p>
+      <h2>Les 10 sites naturels autour de Bologne</h2>
+      <p class="lead">On connaît Bologne pour ses portiques et sa cuisine. Cet itinéraire cherche autre chose : la nature secrète de son arrière-pays, à quelques kilomètres de la ville rouge.</p>
+      <p class="body">Le parcours va des zones humides de la plaine du Pô aux cascades du Dardagna, sur les flancs du Corno alle Scale. On y trouve Brisighella et ses trois pitons de gypse rose, la Rocchetta Mattei, château mauresque perdu dans l&#x27;Apennin, le silence de Monte Sole chargé de mémoire, et des lacs glaciaires en altitude.</p>
+      <div class="pills"><span>La Vena del Gesso</span><span>La Rocchetta Mattei</span><span>Les cascades du Dardagna</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/it-bologna-natura-10-incontournables.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai-juin et septembre-octobre.</p>
+    </div><div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FIT%2Fbrisighella.webp&w=1200&q=80&output=webp" alt="Brisighella et ses trois pitons de gypse rose" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FIT%2Fcorno-alle-scale.webp&w=1200&q=80&output=webp" alt="Les hauteurs du Corno alle Scale dans l&#x27;Apennin bolonais" loading="lazy">
+    </div></div>
+    </div>
+  </article>
+  <article class="dest" id="d6">
+    <div class="dest-grid txt-right">
+      <div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FSE%2Fvisby.webp&w=1200&q=80&output=webp" alt="Les remparts médiévaux de Visby sur l&#x27;île de Gotland" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FSE%2Fstockholm.webp&w=1200&q=80&output=webp" alt="La vieille ville de Stockholm au bord de l&#x27;eau" loading="lazy">
+    </div></div><div class="txt">
+      <span class="watermark">6</span>
+      <p class="eyebrow">Suède · 10 jours · 10 étapes · 675 km</p>
+      <h2>Le Grand Sud suédois : de Malmö à Stockholm par les îles</h2>
+      <p class="lead">Ce road trip relie Malmö à Stockholm en longeant la Baltique et en traversant deux îles au caractère opposé. On y vient pour l&#x27;histoire viking et médiévale, au bord de l&#x27;eau.</p>
+      <p class="body">La route passe par Ystad et son cercle mégalithique d&#x27;Ales Stenar, dressé sur une falaise face à la mer. Elle traverse Öland, plate et ventée, classée UNESCO pour ses steppes calcaires, puis Gotland et Visby, dont les 3,4 km de remparts médiévaux sont presque intacts. Entre les deux, Karlskrona et sa base navale baroque, Kalmar et son château Renaissance, puis Stockholm et son musée Vasa.</p>
+      <div class="pills"><span>Ales Stenar, le « navire de pierre »</span><span>Les remparts de Visby</span><span>Le navire Vasa</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/se-se-skane-abisko-10j.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai à septembre.</p>
+    </div>
+    </div>
+  </article>
+  <article class="dest" id="d7">
+    <div class="dest-grid txt-left">
+      <div class="txt">
+      <span class="watermark">7</span>
+      <p class="eyebrow">Autriche · 12 jours · 15 étapes · 1 190 km</p>
+      <h2>L&#x27;Autriche en 12 jours : Wachau, Alpes et Salzbourg</h2>
+      <p class="lead">Douze jours pour voir l&#x27;Autriche en grand format. On y vient chercher le contraste : les vignobles du Danube, les glaciers du Tyrol, et le baroque de Salzbourg.</p>
+      <p class="body">Le parcours démarre à Vienne, descend la vallée de la Wachau classée UNESCO, entre les ruines de Dürnstein et l&#x27;abbaye de Melk. Il franchit ensuite la route du Grossglockner, ses 48 km et 36 virages, longe les lacs turquoise du Tyrol, monte à la Zugspitze et au Formarinsee. Innsbruck relie sa vieille ville habsbourgeoise à 2 256 mètres d&#x27;altitude en trente minutes. Salzbourg ferme la boucle sur Mozart.</p>
+      <div class="pills"><span>La vallée de la Wachau</span><span>La route du Grossglockner</span><span>Salzbourg baroque</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/at-autriche-two-weeks-explorers.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : juin à septembre.</p>
+    </div><div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FAT%2Fdurnstein.webp&w=1200&q=80&output=webp" alt="Le village de Dürnstein et sa tour bleue dans la vallée de la Wachau" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FAT%2Fsalzburg.webp&w=1200&q=80&output=webp" alt="Salzbourg et sa forteresse baroque" loading="lazy">
+    </div></div>
+    </div>
+  </article>
+  <article class="dest" id="d8">
+    <div class="dest-grid txt-right">
+      <div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FGB%2Flavenham.webp&w=1200&q=80&output=webp" alt="Les maisons médiévales penchées de Lavenham" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FGB%2Fely.webp&w=1200&q=80&output=webp" alt="La cathédrale d&#x27;Ely dressée au-dessus des marais" loading="lazy">
+    </div></div><div class="txt">
+      <span class="watermark">8</span>
+      <p class="eyebrow">Angleterre · 10 jours · 10 étapes · 598 km</p>
+      <h2>East Anglia : Norfolk, Suffolk et Cambridge</h2>
+      <p class="lead">On vient dans l&#x27;East Anglia pour l&#x27;Angleterre oubliée : celle des villages lainiers, des marais infinis et des colleges de Cambridge, loin des circuits touristiques.</p>
+      <p class="body">Le road trip part des colleges de Cambridge et de la Wren Library, passe par les ruines de l&#x27;abbaye de Bury St Edmunds, berceau de la Magna Carta, et Lavenham, le village médiéval le mieux préservé d&#x27;Angleterre. Il rejoint la côte du Norfolk pour observer les phoques de Blakeney Point, puis les Broads, et finit devant la cathédrale d&#x27;Ely, dressée comme un navire au-dessus des marécages.</p>
+      <div class="pills"><span>Cambridge et ses colleges</span><span>Lavenham à colombages</span><span>Les phoques de Blakeney Point</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/gb-est-anglia-10j.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai à septembre.</p>
+    </div>
+    </div>
+  </article>
+  <article class="dest" id="d9">
+    <div class="dest-grid txt-left">
+      <div class="txt">
+      <span class="watermark">9</span>
+      <p class="eyebrow">Espagne · Galice · 10 jours · 10 étapes · 550 km</p>
+      <h2>Galice : le tour complet en 10 jours</h2>
+      <p class="lead">La Galice, c&#x27;est l&#x27;Espagne atlantique et verte, à l&#x27;opposé des clichés du sud. On y vient pour le pèlerinage, les fruits de mer et une viticulture accrochée aux falaises.</p>
+      <p class="body">La boucle part de Saint-Jacques-de-Compostelle et de sa cathédrale, sanctuaire chrétien depuis le IXe siècle. Elle descend à La Corogne et sa Tour d&#x27;Hercule, seul phare romain encore en service, traverse la Costa da Morte jusqu&#x27;au cap Finisterre, plonge dans les Rías Baixas viticoles, puis remonte par les canyons de la Ribeira Sacra vers Lugo et son rempart romain.</p>
+      <div class="pills"><span>La cathédrale de Saint-Jacques</span><span>Les canyons de la Ribeira Sacra</span><span>Le rempart romain de Lugo</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/es-galice-tour-complet-10j.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai à septembre.</p>
+    </div><div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FES%2Fsantiago-de-compostela.webp&w=1200&q=80&output=webp" alt="La cathédrale de Saint-Jacques-de-Compostelle" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FES%2Ffisterra.webp&w=1200&q=80&output=webp" alt="Le cap Finisterre, bout du monde des Romains" loading="lazy">
+    </div></div>
+    </div>
+  </article>
+  <article class="dest" id="d10">
+    <div class="dest-grid txt-right">
+      <div class="media"><div class="media-box">
+      <img class="img-a" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FDK%2Fskagen.webp&w=1200&q=80&output=webp" alt="La pointe de Grenen à Skagen, où deux mers se rencontrent" loading="lazy">
+      <img class="img-b" src="https://wsrv.nl/?url=https%3A%2F%2Fphotos.oneroadtrip.com%2FDK%2Faarhus-2.webp&w=1200&q=80&output=webp" alt="L&#x27;arc-en-ciel panoramique d&#x27;Eliasson sur le toit d&#x27;ARoS à Aarhus" loading="lazy">
+    </div></div><div class="txt">
+      <span class="watermark">10</span>
+      <p class="eyebrow">Danemark · 13 jours · 13 étapes · 1 214 km</p>
+      <h2>Danemark : de Copenhague à Skagen</h2>
+      <p class="lead">Ce grand tour du Danemark surprend à chaque étape. On y vient pour les châteaux, les Vikings, le design, et deux mers qui se heurtent au bout du pays.</p>
+      <p class="body">De Copenhague et ses canaux, la route rejoint les châteaux de Frederiksborg et de Kronborg, le Hamlet de Shakespeare, puis les cinq bateaux vikings de Roskilde et Odense. À Aarhus, l&#x27;arc-en-ciel panoramique d&#x27;Eliasson couronne le musée ARoS. Plus au nord, le cimetière viking de Lindholm Høje, Skagen et ses peintres, la pointe de Grenen où mer du Nord et Baltique se rencontrent.</p>
+      <div class="pills"><span>Kronborg, le château d&#x27;Hamlet</span><span>L&#x27;arc-en-ciel d&#x27;Eliasson</span><span>Grenen, la rencontre des deux mers</span></div>
+      <a class="cta" href="https://www.oneroadtrip.com/itineraires/dk-roadtrip-danemark.html">Voir l&#x27;itinéraire complet <span>&rarr;</span></a>
+      <p class="period">Meilleure période : mai à septembre.</p>
+    </div>
+    </div>
+  </article>
+
+  <section class="faq">
+    <div class="faq-head"><span class="q">?</span><h2>Questions fréquentes</h2></div>
+    <details class="faq-item"><summary><span>Comment ce classement est-il établi ?</span><span class="plus">+</span></summary><p>Il reprend les dix itinéraires les plus consultés sur OneRoadTrip. L&#x27;ordre suit le nombre de consultations, du plus vu au moins vu.</p></details><details class="faq-item"><summary><span>Les itinéraires sont-ils gratuits ?</span><span class="plus">+</span></summary><p>Oui. Chaque itinéraire est gratuit, consultable en entier et personnalisable : vous pouvez modifier les étapes, l&#x27;ordre et la durée, et ajouter vos hébergements.</p></details><details class="faq-item"><summary><span>Quelle est la meilleure période pour partir ?</span><span class="plus">+</span></summary><p>Pour la plupart de ces destinations, la fin du printemps et le début de l&#x27;automne offrent le meilleur compromis entre météo et affluence. Chaque itinéraire précise sa propre fenêtre idéale.</p></details><details class="faq-item"><summary><span>Faut-il une voiture pour ces road trips ?</span><span class="plus">+</span></summary><p>La voiture reste le moyen le plus souple. Certains parcours, comme la Suède ou le Danemark, se prêtent aussi aux transports combinés (trains, bus et ferries).</p></details>
+  </section>
+
+  <section class="comments">
+    <h2>Commentaires</h2>
+    <div class="c-grid">
+      <div class="c-form">
+        <input type="text" id="c-name" placeholder="Votre nom" maxlength="60">
+        <textarea id="c-text" placeholder="Votre commentaire" maxlength="1500"></textarea>
+        <button id="c-submit">Publier</button>
+      </div>
+      <div id="c-list"><p class="c-empty">Soyez le premier à commenter !</p></div>
+    </div>
+  </section>
+
+  <div class="back"><a href="/">← OneRoadTrip.com</a></div>
+
+</main>
+
+<footer id="footer-legal"></footer>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-header.js"></script>
+<script src="/js/ort-footer.js"></script>
+
+<script>
+/* ---- Commentaires Firestore ----
+   À REMPLIR : colle ta vraie config Firebase (apiKey, appId...). Je ne l'invente pas. */
+const FIREBASE_CONFIG = {
+  apiKey: "A_REMPLIR",
+  authDomain: "oneroadtrip-21daf.firebaseapp.com",
+  projectId: "oneroadtrip-21daf",
+  storageBucket: "oneroadtrip-21daf.appspot.com",
+  messagingSenderId: "A_REMPLIR",
+  appId: "A_REMPLIR"
+};
+const SLUG="top-10-road-trips-populaires", LANG="fr", LOCALE="fr-FR";
+const EMPTY_MSG="Soyez le premier à commenter !";
+(function(){
+  var listEl=document.getElementById("c-list");
+  if(FIREBASE_CONFIG.apiKey==="A_REMPLIR"||!window.firebase){
+    console.warn("Firebase non configuré : remplis FIREBASE_CONFIG pour activer les commentaires.");return;
+  }
+  if(!firebase.apps||!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  var db=firebase.firestore();
+  function fmt(ts){ if(!ts) return ""; var d=ts.toDate?ts.toDate():new Date(ts);
+    return d.toLocaleDateString(LOCALE,{day:"numeric",month:"long",year:"numeric"}); }
+  function load(){
+    db.collection("blog-comments").where("slug","==",SLUG).orderBy("date","desc").get()
+    .then(function(snap){
+      if(snap.empty){ listEl.innerHTML='<p class="c-empty">'+EMPTY_MSG+'</p>'; return; }
+      listEl.innerHTML="";
+      snap.forEach(function(doc){
+        var c=doc.data(),el=document.createElement("div");el.className="c-item";
+        var n=document.createElement("div");n.className="c-name";n.textContent=c.name||"Anonyme";
+        var dt=document.createElement("div");dt.className="c-date";dt.textContent=fmt(c.date);
+        var p=document.createElement("p");p.style.margin="0";p.textContent=c.text||"";
+        el.appendChild(n);el.appendChild(dt);el.appendChild(p);listEl.appendChild(el);
+      });
+    }).catch(function(e){console.error("Lecture commentaires:",e);});
+  }
+  document.getElementById("c-submit").addEventListener("click",function(){
+    var name=document.getElementById("c-name").value.trim();
+    var text=document.getElementById("c-text").value.trim();
+    if(!name||!text) return;
+    db.collection("blog-comments").add({slug:SLUG,name:name,text:text,lang:LANG,
+      date:firebase.firestore.FieldValue.serverTimestamp()})
+    .then(function(){document.getElementById("c-name").value="";document.getElementById("c-text").value="";load();})
+    .catch(function(e){console.error("Envoi commentaire:",e);});
+  });
+  load();
+})();
+</script>
+
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"top-10-road-trips-populaires-europe"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+</body>
+</html>

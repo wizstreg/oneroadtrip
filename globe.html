@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>OneRoadTrip — Globe des itinéraires</title>
+<script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
+<script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
+<style>
+  :root{
+    --navy:#0d2c54; --navy-deep:#081c38; --orange:#e8590c; --orange-dark:#c94a08;
+    --ink:#1c2b3a; --muted:#5a6b7d;
+  }
+  html,body{margin:0;height:100%;background:#050d1c;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;overflow:hidden}
+  #globe-wrap{position:relative;width:100%;height:100%;touch-action:none}
+  #globeViz{width:100%;height:100%;touch-action:none}
+
+  /* ---------- pastilles ---------- */
+  .ort-dot{position:relative;transform:translate(-50%,-50%);cursor:pointer;pointer-events:auto;user-select:none;padding:20px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+  .ort-dot .bubble{
+    display:flex;align-items:center;justify-content:center;border-radius:50%;
+    background:var(--orange);color:#fff;font-weight:700;
+    border:1.5px solid rgba(255,255,255,.92);
+    box-shadow:0 1px 6px rgba(0,0,0,.55);
+    transition:transform .12s ease;
+  }
+  .ort-dot:hover .bubble{transform:scale(1.18)}
+  .ort-dot .cname{
+    position:absolute;top:calc(100% - 7px);left:50%;transform:translateX(-50%);
+    font-size:10.5px;font-weight:600;color:#fff;white-space:nowrap;
+    text-shadow:0 1px 3px rgba(0,0,0,.9);pointer-events:none;
+  }
+
+  /* ---------- tooltip ---------- */
+  #tip{
+    position:absolute;z-index:9999;pointer-events:none;display:none;max-width:280px;
+    background:rgba(13,44,84,.95);color:#fff;border:1px solid rgba(255,255,255,.15);
+    border-radius:8px;padding:8px 11px;font-size:12.5px;line-height:1.45;
+    box-shadow:0 4px 18px rgba(0,0,0,.4);
+  }
+  #tip b{display:block;font-size:12px;letter-spacing:.02em}
+
+  /* ---------- recherche ---------- */
+  #search{position:absolute;top:16px;left:16px;z-index:20;width:280px}
+  #search input{
+    width:100%;box-sizing:border-box;padding:11px 14px 11px 38px;border-radius:10px;
+    border:1px solid rgba(255,255,255,.18);background:rgba(8,28,56,.88);color:#fff;
+    font-size:14px;outline:none;backdrop-filter:blur(6px);
+  }
+  #search input::placeholder{color:rgba(255,255,255,.55)}
+  #search input:focus{border-color:var(--orange)}
+  #search .icon{position:absolute;left:13px;top:11px;opacity:.6}
+  #search ul{
+    list-style:none;margin:6px 0 0;padding:4px;max-height:260px;overflow:auto;display:none;
+    background:rgba(8,28,56,.96);border:1px solid rgba(255,255,255,.15);border-radius:10px;
+    backdrop-filter:blur(6px);
+  }
+  #search li{padding:8px 10px;border-radius:6px;color:#fff;font-size:13.5px;cursor:pointer;display:flex;justify-content:space-between;gap:10px}
+  #search li:hover,#search li.sel{background:rgba(232,89,12,.85)}
+  #search li .n{opacity:.55;font-size:12px}
+
+  /* ---------- fiche ---------- */
+  #card{
+    position:absolute;top:16px;right:16px;z-index:9998;width:320px;max-width:calc(100vw - 32px);
+    max-height:calc(100% - 32px);overflow:auto;display:none;touch-action:pan-y;-webkit-overflow-scrolling:touch;
+    background:#fff;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.5);
+  }
+  #card .imgwrap{position:relative;background:#eef2f6}
+  #card img{display:block;width:100%;height:170px;object-fit:cover}
+  #card .close{
+    position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;border-radius:50%;
+    background:rgba(13,44,84,.8);color:#fff;font-size:16px;line-height:1;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  #card .body{padding:16px 18px 18px}
+  #card .country{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);margin:0 0 6px}
+  #card h2{font-family:Georgia,"Times New Roman",serif;font-size:19px;line-height:1.3;color:var(--ink);margin:0 0 14px;font-weight:700}
+  #card .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:0 0 16px}
+  #card .stat{display:flex;flex-direction:column;gap:2px}
+  #card .stat .v{font-size:17px;font-weight:700;color:var(--navy)}
+  #card .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  #card a.cta{
+    display:block;text-align:center;background:var(--orange);color:#fff;text-decoration:none;
+    font-weight:700;font-size:14.5px;padding:12px;border-radius:9px;
+  }
+  #card a.cta:hover{background:var(--orange-dark)}
+
+  #hint{
+    position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:15;
+    color:rgba(255,255,255,.55);font-size:12px;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.8);
+    white-space:nowrap;
+  }
+
+  @media (max-width:640px){
+    #search{left:12px;right:12px;width:auto;top:12px}
+    #card{
+      top:auto;bottom:0;left:0;right:0;width:100%;max-width:100%;
+      border-radius:16px 16px 0 0;max-height:72%;
+    }
+    #hint{display:none}
+  }
+</style>
+</head>
+<body>
+<div id="globe-wrap">
+  <a href="/index.html" id="ortBack" style="position:absolute;top:16px;right:16px;z-index:25;display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:999px;background:rgba(8,28,56,.88);color:#fff;text-decoration:none;font:600 14px -apple-system,Segoe UI,sans-serif;border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(6px)"><span style="font-size:17px">‹</span> <span id="ortBackTxt">Accueil</span></a>
+  <div id="globeViz"></div>
+
+  <div id="search">
+    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+    <input id="searchInput" type="text" placeholder="Rechercher un pays…" autocomplete="off">
+    <ul id="searchList"></ul>
+  </div>
+
+  <div id="card">
+    <div class="imgwrap">
+      <img id="cardPhoto" alt="Photo du voyage" loading="lazy">
+      <img id="cardImg" alt="Tracé de l'itinéraire" loading="lazy">
+      <button class="close" id="cardClose" aria-label="Fermer">✕</button>
+    </div>
+    <div class="body">
+      <p class="country" id="cardCountry"></p>
+      <h2 id="cardTitle"></h2>
+      <div class="stats">
+        <div class="stat"><span class="v" id="stDays"></span><span class="l" id="lDays">jours</span></div>
+        <div class="stat"><span class="v" id="stKm"></span><span class="l" id="lKm">km</span></div>
+        <div class="stat"><span class="v" id="stStops"></span><span class="l" id="lStops">étapes</span></div>
+        <div class="stat"><span class="v" id="stNights"></span><span class="l" id="lNights">nuits conseillées</span></div>
+      </div>
+      <p id="cardStops" style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#4a5568"></p>
+      <a class="cta" id="cardLink" target="_top">Voir l'itinéraire</a>
+    </div>
+  </div>
+
+  <div id="tip"></div>
+  <div id="hint">Glissez pour explorer · molette pour zoomer · cliquez un groupe pour le scinder</div>
+</div>
+
+<script>
+(async function(){
+  'use strict';
+  try {
+  const $ = id => document.getElementById(id);
+  const wrap = $('globe-wrap'), tip = $('tip');
+
+  // ---------- i18n ----------
+  // langue du site : variable globale currentLang, repli sur l'anglais
+  const I18N = {
+    fr: {search:'Rechercher un pays…', none:'Aucun pays trouvé', hint:'Glissez pour explorer · molette pour zoomer · cliquez un groupe pour le scinder', itins:'itinéraires', zoomClick:'cliquez pour zoomer', days:'jours', km:'km', stops:'étapes', nights:'nuits conseillées', cta:"Voir l'itinéraire", catalog:'/itineraires/search-catalog-fr.json'},
+    en: {search:'Search a country…', none:'No country found', hint:'Drag to explore · scroll to zoom · click a group to split it', itins:'road trips', zoomClick:'click to zoom in', days:'days', km:'km', stops:'stops', nights:'suggested nights', cta:'View itinerary', catalog:'/itineraries/search-catalog-en.json'},
+    es: {search:'Buscar un país…', none:'Ningún país encontrado', hint:'Arrastra para explorar · rueda para hacer zoom · haz clic en un grupo para dividirlo', itins:'rutas', zoomClick:'haz clic para acercar', days:'días', km:'km', stops:'etapas', nights:'noches recomendadas', cta:'Ver la ruta', catalog:'/rutas/search-catalog-es.json'},
+    it: {search:'Cerca un paese…', none:'Nessun paese trovato', hint:'Trascina per esplorare · rotella per lo zoom · clicca un gruppo per dividerlo', itins:'itinerari', zoomClick:'clicca per ingrandire', days:'giorni', km:'km', stops:'tappe', nights:'notti consigliate', cta:"Vedi l'itinerario", catalog:'/itinerari/search-catalog-it.json'},
+    pt: {search:'Pesquisar um país…', none:'Nenhum país encontrado', hint:'Arraste para explorar · roda para ampliar · clique num grupo para o dividir', itins:'roteiros', zoomClick:'clique para ampliar', days:'dias', km:'km', stops:'etapas', nights:'noites recomendadas', cta:'Ver o roteiro', catalog:'/roteiros/search-catalog-pt.json'},
+    ar: {search:'ابحث عن بلد…', none:'لم يتم العثور على بلد', hint:'اسحب للاستكشاف · العجلة للتكبير · انقر على مجموعة لتقسيمها', itins:'رحلات', zoomClick:'انقر للتكبير', days:'أيام', km:'كم', stops:'محطات', nights:'ليالٍ مقترحة', cta:'عرض المسار', catalog:'/masar/search-catalog-ar.json'}
+  };
+  let _urlLang=''; try{ _urlLang=new URLSearchParams(location.search).get('lang')||''; }catch(e){}
+  let lang = String(_urlLang || window.currentLang || 'en').toLowerCase().slice(0, 2);
+  if (!I18N[lang]) lang = 'en';
+  const T = I18N[lang];
+
+  // textes statiques
+  $('searchInput').placeholder = T.search;
+  $('hint').textContent = T.hint;
+  var _bk={fr:'Accueil',en:'Home',es:'Inicio',it:'Home',pt:'Início',ar:'الرئيسية'};
+  $('ortBackTxt').textContent = _bk[lang]||_bk.en;
+  $('ortBack').href = '/index.html?lang=' + lang;
+  $('cardLink').textContent = T.cta;
+  $('lDays').textContent = T.days; $('lKm').textContent = T.km;
+  $('lStops').textContent = T.stops; $('lNights').textContent = T.nights;
+  if (lang === 'ar') {
+    $('searchInput').dir = 'rtl';
+    document.querySelector('#card .body').dir = 'rtl';
+    tip.dir = 'rtl';
+  }
+
+  let regionNames;
+  try { regionNames = new Intl.DisplayNames([lang], {type:'region'}); }
+  catch(e){ regionNames = new Intl.DisplayNames(['en'], {type:'region'}); }
+  const countryName = cc => { try { return regionNames.of(cc) || cc; } catch(e){ return cc; } };
+
+  // ---------- data ----------
+  // catalogue de la langue courante ; repli sur le fichier local si absent
+  console.log('[GLOBE] langue =', lang, '| catalogue visé =', T.catalog);
+  const raw = await fetch(T.catalog)
+    .then(r => { console.log('[GLOBE] réponse catalogue :', r.status, r.ok ? 'OK' : 'ÉCHEC'); if (!r.ok) throw new Error(r.status); return r.json(); })
+    .catch((e) => { console.warn('[GLOBE] catalogue principal introuvable (', e.message, '), repli sur search-catalog-fr.json'); return fetch('search-catalog-fr.json').then(r => r.json()); });
+  console.log('[GLOBE] trips reçus du fichier :', raw.length);
+  const trips = [];
+  let _sansCoord = 0;
+  raw.forEach(t => {
+    if (Array.isArray(t.arrival) && Array.isArray(t.departure)) {
+      t._lat = (t.arrival[0] + t.departure[0]) / 2;
+      t._lng = (t.arrival[1] + t.departure[1]) / 2;
+    } else if (Array.isArray(t.center)) {
+      t._lat = t.center[0]; t._lng = t.center[1];
+    } else { _sansCoord++; return; } // pas de coordonnées exploitables
+    if (isFinite(t._lat) && isFinite(t._lng)) trips.push(t); else _sansCoord++;
+  });
+  console.log('[GLOBE] trips placés sur le globe :', trips.length, '| écartés sans coordonnées :', _sansCoord);
+
+  // group by country
+  const byCC = new Map();
+  trips.forEach(t => {
+    if (!byCC.has(t.cc)) byCC.set(t.cc, []);
+    byCC.get(t.cc).push(t);
+  });
+
+  // one supercluster index per country → clusters never mix countries,
+  // and at low zoom each country collapses to a single point.
+  const indexes = new Map();
+  const countries = []; // for search
+  byCC.forEach((list, cc) => {
+    const idx = new Supercluster({radius: 120, maxZoom: 16, minPoints: 2});
+    idx.load(list.map(t => ({
+      type:'Feature',
+      geometry:{type:'Point', coordinates:[t._lng, t._lat]},
+      properties:{trip:t}
+    })));
+    indexes.set(cc, idx);
+    let minLat=90,maxLat=-90,minLng=180,maxLng=-180,sLat=0,sLng=0;
+    list.forEach(t => {
+      minLat=Math.min(minLat,t._lat); maxLat=Math.max(maxLat,t._lat);
+      minLng=Math.min(minLng,t._lng); maxLng=Math.max(maxLng,t._lng);
+      sLat+=t._lat; sLng+=t._lng;
+    });
+    const span = Math.max(maxLat-minLat, (maxLng-minLng)*Math.cos((sLat/list.length)*Math.PI/180));
+    countries.push({
+      cc, name: countryName(cc), count: list.length,
+      lat: sLat/list.length, lng: sLng/list.length,
+      alt: Math.min(2, Math.max(0.3, span/22 + 0.18))
+    });
+  });
+  countries.sort((a,b) => a.name.localeCompare(b.name, lang));
+  const totalsByCC = new Map(countries.map(c => [c.cc, c.count]));
+
+  // ---------- altitude <-> supercluster zoom ----------
+  const A0 = 2.8, K = 1.8;
+  const altToZoom = alt => Math.max(0, Math.min(16, Math.round(Math.log2(A0/Math.max(alt,0.008))*K)));
+  const zoomToAlt = z => A0 / Math.pow(2, z/K);
+
+  // ---------- globe ----------
+  const globe = Globe()
+    (document.getElementById('globeViz'))
+    .backgroundColor('#050d1c')
+    .showAtmosphere(true)
+    .atmosphereColor('#3a6ea5')
+    .atmosphereAltitude(0.18)
+    .globeTileEngineUrl((x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`)
+    .htmlAltitude(0.008);
+  if (typeof globe.htmlElementVisibilityModifier === 'function') {
+    globe.htmlElementVisibilityModifier((el, isVisible) => {
+      el.style.opacity = isVisible ? 1 : 0;
+      el.style.pointerEvents = isVisible ? 'auto' : 'none';
+    });
+  }
+
+  globe.controls().zoomSpeed = 6;
+  globe.controls().enableDamping = false;
+  globe.controls().minDistance = 101.6;
+  globe.controls().maxDistance = 480;
+  globe.controls().autoRotate = false;
+  globe.controls().autoRotateSpeed = 0;
+
+  // initial POV: pays déduit du fuseau horaire, sinon région de la locale, sinon Europe
+  const TZ_CC = {'Europe/Paris':'FR','Europe/London':'GB','Europe/Madrid':'ES','Europe/Lisbon':'PT','Europe/Rome':'IT','Europe/Berlin':'DE','Europe/Vienna':'AT','Europe/Zurich':'CH','Europe/Brussels':'BE','Europe/Amsterdam':'NL','Europe/Dublin':'IE','Europe/Copenhagen':'DK','Europe/Oslo':'NO','Europe/Stockholm':'SE','Europe/Helsinki':'FI','Europe/Warsaw':'PL','Europe/Prague':'CZ','Europe/Budapest':'HU','Europe/Bucharest':'RO','Europe/Sofia':'BG','Europe/Athens':'GR','Europe/Istanbul':'TR','Europe/Kiev':'UA','Europe/Kyiv':'UA','Europe/Moscow':'RU','Europe/Belgrade':'RS','Europe/Zagreb':'HR','Europe/Sarajevo':'BA','Europe/Skopje':'MK','Europe/Tirane':'AL','Europe/Ljubljana':'SI','Europe/Bratislava':'SK','Europe/Vilnius':'LT','Europe/Riga':'LV','Europe/Tallinn':'EE','Europe/Luxembourg':'LU','Europe/Malta':'MT','Atlantic/Reykjavik':'IS','Atlantic/Canary':'ES','Atlantic/Madeira':'PT','Atlantic/Azores':'PT','America/New_York':'US','America/Chicago':'US','America/Denver':'US','America/Phoenix':'US','America/Los_Angeles':'US','America/Anchorage':'US','Pacific/Honolulu':'US','America/Detroit':'US','America/Toronto':'CA','America/Vancouver':'CA','America/Edmonton':'CA','America/Winnipeg':'CA','America/Halifax':'CA','America/St_Johns':'CA','America/Montreal':'CA','America/Mexico_City':'MX','America/Cancun':'MX','America/Tijuana':'MX','America/Monterrey':'MX','America/Bogota':'CO','America/Lima':'PE','America/Santiago':'CL','America/Argentina/Buenos_Aires':'AR','America/Argentina/Cordoba':'AR','America/Argentina/Mendoza':'AR','America/Sao_Paulo':'BR','America/Bahia':'BR','America/Fortaleza':'BR','America/Recife':'BR','America/Manaus':'BR','America/Cuiaba':'BR','America/Belem':'BR','America/Caracas':'VE','America/La_Paz':'BO','America/Asuncion':'PY','America/Montevideo':'UY','America/Guayaquil':'EC','America/Panama':'PA','America/Costa_Rica':'CR','America/Guatemala':'GT','America/Havana':'CU','America/Santo_Domingo':'DO','America/Puerto_Rico':'PR','America/Jamaica':'JM','America/Nassau':'BS','America/Barbados':'BB','America/Belize':'BZ','Africa/Casablanca':'MA','Africa/Algiers':'DZ','Africa/Tunis':'TN','Africa/Cairo':'EG','Africa/Tripoli':'LY','Africa/Lagos':'NG','Africa/Accra':'GH','Africa/Dakar':'SN','Africa/Abidjan':'CI','Africa/Nairobi':'KE','Africa/Addis_Ababa':'ET','Africa/Dar_es_Salaam':'TZ','Africa/Kampala':'UG','Africa/Johannesburg':'ZA','Africa/Windhoek':'NA','Africa/Gaborone':'BW','Africa/Harare':'ZW','Africa/Lusaka':'ZM','Africa/Maputo':'MZ','Indian/Antananarivo':'MG','Indian/Mauritius':'MU','Indian/Reunion':'RE','Asia/Dubai':'AE','Asia/Riyadh':'SA','Asia/Qatar':'QA','Asia/Kuwait':'KW','Asia/Bahrain':'BH','Asia/Muscat':'OM','Asia/Amman':'JO','Asia/Beirut':'LB','Asia/Jerusalem':'IL','Asia/Baghdad':'IQ','Asia/Tehran':'IR','Asia/Baku':'AZ','Asia/Yerevan':'AM','Asia/Tbilisi':'GE','Asia/Karachi':'PK','Asia/Kolkata':'IN','Asia/Calcutta':'IN','Asia/Colombo':'LK','Asia/Dhaka':'BD','Asia/Kathmandu':'NP','Asia/Bangkok':'TH','Asia/Ho_Chi_Minh':'VN','Asia/Saigon':'VN','Asia/Phnom_Penh':'KH','Asia/Vientiane':'LA','Asia/Yangon':'MM','Asia/Singapore':'SG','Asia/Kuala_Lumpur':'MY','Asia/Jakarta':'ID','Asia/Makassar':'ID','Asia/Manila':'PH','Asia/Hong_Kong':'HK','Asia/Taipei':'TW','Asia/Shanghai':'CN','Asia/Chongqing':'CN','Asia/Urumqi':'CN','Asia/Seoul':'KR','Asia/Tokyo':'JP','Asia/Ulaanbaatar':'MN','Asia/Almaty':'KZ','Asia/Tashkent':'UZ','Asia/Bishkek':'KG','Australia/Sydney':'AU','Australia/Melbourne':'AU','Australia/Brisbane':'AU','Australia/Perth':'AU','Australia/Adelaide':'AU','Australia/Darwin':'AU','Australia/Hobart':'AU','Pacific/Auckland':'NZ','Pacific/Fiji':'FJ','Pacific/Tahiti':'PF','Pacific/Noumea':'NC'};
+  (function initView(){
+    let target = {lat: 47, lng: 9, altitude: 2.4}; // Europe par défaut
+    let cc = null;
+    try { cc = TZ_CC[Intl.DateTimeFormat().resolvedOptions().timeZone] || null; } catch(e){}
+    if (!cc) {
+      const m = (navigator.language || '').match(/-([A-Z]{2})$/i);
+      if (m) cc = m[1].toUpperCase();
+    }
+    if (cc) {
+      const c = countries.find(x => x.cc === cc);
+      if (c) target = {lat: c.lat, lng: c.lng, altitude: 2.4};
+    }
+    globe.pointOfView(target, 0);
+  })();
+
+  // auto-rotation stops on hover / first interaction
+  let interacted = false;
+  wrap.addEventListener('mouseenter', () => { globe.controls().autoRotate = false; });
+  wrap.addEventListener('mouseleave', () => {});
+  globe.controls().addEventListener('start', () => { interacted = true; globe.controls().autoRotate = false; });
+
+  // ---------- invisible country polygons (hover name, no borders) ----------
+  fetch('https://globe.gl/example/datasets/ne_110m_admin_0_countries.geojson')
+    .then(r => r.json())
+    .then(geo => {
+      globe
+        .polygonsData(geo.features.filter(f => f.properties.ISO_A2 !== 'AQ'))
+        .polygonAltitude(0.001)
+        .polygonCapColor(() => 'rgba(0,0,0,0)')
+        .polygonSideColor(() => 'rgba(0,0,0,0)')
+        .polygonStrokeColor(() => 'rgba(255,255,255,0.35)')
+        .polygonsTransitionDuration(0)
+        .onPolygonHover(p => {
+          hoveredPolygon = p;
+          if (p) {
+            const cc = p.properties.ISO_A2;
+            const name = (cc && cc !== '-99') ? countryName(cc) : (p.properties.ADMIN || '');
+            showTip('<b>' + esc(name) + '</b>');
+          } else if (!hoveredDot) hideTip();
+        });
+    }).catch(() => {/* pas bloquant */});
+
+  // ---------- tooltip ----------
+  let hoveredPolygon = null, hoveredDot = false;
+  let mx = 0, my = 0;
+  function showTip(html){ tip.innerHTML = html; tip.style.display = 'block'; placeTip(); }
+  function hideTip(){ tip.style.display = 'none'; }
+  function placeTip(){
+    const r = wrap.getBoundingClientRect();
+    let x = mx + 14, y = my + 14;
+    if (x + tip.offsetWidth > r.width - 8) x = mx - tip.offsetWidth - 14;
+    if (y + tip.offsetHeight > r.height - 8) y = my - tip.offsetHeight - 14;
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  wrap.addEventListener('mousemove', e => {
+    const r = wrap.getBoundingClientRect();
+    mx = e.clientX - r.left; my = e.clientY - r.top;
+    if (tip.style.display === 'block') placeTip();
+  });
+  wrap.addEventListener('touchstart', e => {
+    const t = e.touches[0]; if (!t) return;
+    const r = wrap.getBoundingClientRect();
+    mx = t.clientX - r.left; my = t.clientY - r.top;
+    globe.controls().autoRotate = false;
+  }, {passive:true});
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // ---------- clustering → html elements ----------
+  const WORLD = [-180, -85, 180, 85];
+  let lastSig = '';
+
+  function computeItems(){
+    const z = altToZoom(globe.pointOfView().altitude);
+    const items = [];
+    indexes.forEach((idx, cc) => {
+      idx.getClusters(WORLD, z).forEach(c => {
+        const [lng, lat] = c.geometry.coordinates;
+        if (c.properties.cluster) {
+          items.push({lat, lng, cc, cluster:true, count:c.properties.point_count, clusterId:c.id, idx});
+        } else {
+          items.push({lat, lng, cc, cluster:false, trip:c.properties.trip});
+        }
+      });
+    });
+    return items;
+  }
+
+  function sig(items){
+    return items.length + '|' + items.map(i => i.cluster ? ('c'+i.cc+i.clusterId) : i.trip.id).join(',');
+  }
+
+  let _dessinN = 0;
+  function refresh(force){
+    const _t0 = performance.now();
+    const items = computeItems();
+    const _t1 = performance.now();
+    const s = sig(items);
+    if (!force && s === lastSig) { console.log('[ZOOM] recalcul ignoré (rien changé) | calcul', (_t1-_t0).toFixed(1), 'ms'); return; }
+    lastSig = s;
+    _dessinN = 0;
+    globe.htmlElementsData(items);
+    const _t2 = performance.now();
+    requestAnimationFrame(() => {
+      const _t3 = performance.now();
+      console.log('[ZOOM] points demandés :', items.length, '| pastilles fabriquées :', _dessinN, '| calcul', (_t1-_t0).toFixed(1), 'ms | envoi', (_t2-_t1).toFixed(1), 'ms | dessin réel', (_t3-_t2).toFixed(1), 'ms');
+    });
+  }
+
+  globe.htmlElement(d => {
+    _dessinN++;
+    const el = document.createElement('div');
+    el.className = 'ort-dot';
+    el.addEventListener('wheel', ev => {
+      ev.preventDefault();
+      const cv = document.querySelector('#globeViz canvas');
+      if (cv) cv.dispatchEvent(new WheelEvent('wheel', {deltaY: ev.deltaY, clientX: ev.clientX, clientY: ev.clientY, bubbles: true}));
+    }, {passive: false});
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    if (d.cluster) {
+      const size = Math.round(Math.min(34, 20 + Math.sqrt(d.count) * 1.8));
+      b.style.width = b.style.height = size + 'px';
+      b.style.fontSize = (d.count > 99 ? 11 : 13) + 'px';
+      b.textContent = d.count;
+      el.appendChild(b);
+      // full-country cluster → show country name beneath ("France, 40")
+      if (d.count === totalsByCC.get(d.cc)) {
+        const n = document.createElement('div');
+        n.className = 'cname';
+        n.textContent = countryName(d.cc);
+        el.appendChild(n);
+      }
+    } else {
+      b.style.width = b.style.height = '18px';
+      el.appendChild(b);
+    }
+
+    el.addEventListener('mouseenter', () => {
+      hoveredDot = true;
+      if (d.cluster) {
+        showTip('<b>' + esc(countryName(d.cc)) + '</b>' + d.count + ' ' + T.itins + ' — ' + T.zoomClick);
+      } else {
+        showTip('<b>' + esc(countryName(d.cc)) + '</b>' + esc(d.trip.title));
+      }
+    });
+    el.addEventListener('mouseleave', () => { hoveredDot = false; hideTip(); });
+    el.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (d.cluster) {
+        console.log('[GLOBE] clic sur un groupe de', d.count, 'trips, on le scinde');
+        let zx;
+        try { zx = d.idx.getClusterExpansionZoom(d.clusterId); } catch(e){ zx = altToZoom(globe.pointOfView().altitude) + 2; }
+        globe.pointOfView({lat: d.lat, lng: d.lng, altitude: Math.max(0.02, zoomToAlt(zx + 0.4))}, 500);
+      } else {
+        console.log('[GLOBE] clic sur un trip :', d.trip && d.trip.title);
+        openCard(d.trip);
+      }
+    });
+    return el;
+  });
+
+  // refresh clusters while zooming (throttled to animation frames)
+  let rafPending = false;
+  let _zoomN = 0;
+  let _lastFrame = performance.now();
+  let _frameN = 0;
+  globe.onZoom(() => {
+    _zoomN++;
+    const _now = performance.now();
+    const _gap = _now - _lastFrame;
+    _lastFrame = _now;
+    _frameN++;
+    if (_gap > 50) console.log('[LAG] image', _frameN, ':', _gap.toFixed(0), 'ms entre deux rendus (au-dessus de 50ms = saccade)');
+    if (rafPending) { return; }
+    rafPending = true;
+    requestAnimationFrame(() => { rafPending = false; refresh(false); });
+  });
+  refresh(true);
+
+  // ---------- fiche ----------
+  const card = $('card');
+  function slugForImage(t){
+    let s = t.slug.replace(new RegExp('^' + t.cc.toLowerCase() + '-'), '');
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+  function openCard(t){
+    const mapUrl = 'https://photos.oneroadtrip.com/' + t.cc + '/maps/' + slugForImage(t) + '.webp';
+    console.log('[GLOBE] ouverture fiche :', t.title, '| photo =', t.photo || 'aucune', '| carte tentée =', mapUrl);
+    console.log('[GLOBE] villes du trip :', t.cities || 'champ absent');
+    const photo = $('cardPhoto'), map = $('cardImg');
+    map.onerror = () => { console.warn('[GLOBE] carte du tracé introuvable pour', t.title); map.style.display = 'none'; };
+    photo.onerror = () => { console.warn('[GLOBE] photo introuvable pour', t.title); photo.style.display = 'none'; };
+    if (t.photo) {
+      photo.src = t.photo; photo.style.display = '';
+    } else {
+      photo.removeAttribute('src'); photo.style.display = 'none';
+    }
+    map.src = mapUrl; map.style.display = '';
+    $('cardCountry').textContent = countryName(t.cc);
+    $('cardTitle').textContent = t.title;
+    $('stDays').textContent = t.days;
+    $('stKm').textContent = (t.km || 0).toLocaleString(lang);
+    $('stStops').textContent = t.stops;
+    $('stNights').textContent = Math.max(0, t.days - 1);
+    var _c=(t.cities||[]).filter(function(v,i,a){return v&&a.indexOf(v)===i;}).map(function(v){return v.charAt(0).toUpperCase()+v.slice(1);});
+    $('cardStops').textContent = _c.join(' › ');
+    var _folders={fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
+    var _folder=_folders[lang]||'itineraries';
+    $('cardLink').href = '/' + _folder + '/' + t.slug + '.html';
+    card.style.display = 'block';
+  }
+  $('cardImg').addEventListener('error', function(){ this.style.display = 'none'; });
+  $('cardPhoto').addEventListener('error', function(){ this.style.display = 'none'; });
+  $('cardClose').addEventListener('click', () => { card.style.display = 'none'; });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') card.style.display = 'none'; });
+  globe.onGlobeClick(() => { card.style.display = 'none'; });
+
+  // ---------- recherche pays ----------
+  const input = $('searchInput'), list = $('searchList');
+  let selIdx = -1, current = [];
+  function renderList(q){
+    const needle = q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    current = needle
+      ? countries.filter(c => c.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(needle))
+      : countries;
+    selIdx = -1;
+    if (!current.length || !q.trim()) { list.style.display = q.trim() ? 'block' : 'none'; }
+    list.innerHTML = current.slice(0, 60).map((c, i) =>
+      '<li data-i="' + i + '">' + esc(c.name) + '<span class="n">' + c.count + '</span></li>').join('') ||
+      '<li style="opacity:.6;cursor:default">' + esc(T.none) + '</li>';
+    list.style.display = 'block';
+  }
+  function goCountry(c){
+    list.style.display = 'none';
+    input.value = c.name;
+    input.blur();
+    interacted = true;
+    globe.controls().autoRotate = false;
+    globe.pointOfView({lat: c.lat, lng: c.lng, altitude: c.alt}, 900);
+  }
+  input.addEventListener('input', () => renderList(input.value));
+  input.addEventListener('focus', () => { if (input.value.trim()) renderList(input.value); });
+  input.addEventListener('keydown', e => {
+    if (list.style.display !== 'block') return;
+    const max = Math.min(current.length, 60) - 1;
+    if (e.key === 'ArrowDown') { selIdx = Math.min(max, selIdx + 1); markSel(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { selIdx = Math.max(0, selIdx - 1); markSel(); e.preventDefault(); }
+    else if (e.key === 'Enter') { if (current.length) goCountry(current[Math.max(0, selIdx)]); }
+    else if (e.key === 'Escape') { list.style.display = 'none'; }
+  });
+  function markSel(){
+    [...list.children].forEach((li, i) => li.classList.toggle('sel', i === selIdx));
+    const li = selIdx >= 0 && list.children[selIdx];
+    if (li) {
+      if (li.offsetTop < list.scrollTop) list.scrollTop = li.offsetTop;
+      else if (li.offsetTop + li.offsetHeight > list.scrollTop + list.clientHeight)
+        list.scrollTop = li.offsetTop + li.offsetHeight - list.clientHeight;
+    }
+  }
+  list.addEventListener('click', e => {
+    const li = e.target.closest('li[data-i]');
+    if (li) goCountry(current[+li.dataset.i]);
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#search')) list.style.display = 'none';
+  });
+
+  // resize
+  window.addEventListener('resize', () => {
+    globe.width(wrap.clientWidth).height(wrap.clientHeight);
+  });
+  } catch(err) { console.error('Globe init failed:', err); }
+})();
+</script>
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"globe"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+</body>
+</html>

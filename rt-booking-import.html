@@ -1,0 +1,2787 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-JK3QGQGDDL');gtag('config','GT-WF83FMCX');</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OneRoadTrip - Import</title>
+<style>
+:root{--bg:#113f7a;--card:#fff;--ink:#113f7a;--bd:#c3d6b6;--mut:#6b7a99;--ok:#22c55e;--warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(rgba(17,63,122,0.85),rgba(17,63,122,0.85)),url("/assets/image_index.webp") center/cover fixed;background-color:#113f7a;color:#fff;font-family:system-ui,sans-serif;min-height:100vh}
+header{background:rgba(17,63,122,0.95);border-bottom:2px solid rgba(255,255,255,0.2);padding:8px 12px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.brandlink{display:flex;align-items:center;gap:8px;color:#fff;text-decoration:none}
+.brandlink img{width:28px;height:28px}
+.brand{font-weight:800;font-size:1rem}
+header .sp{flex:1}
+.hdr-btn{padding:6px 12px;border-radius:6px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer;font-weight:600;font-size:0.85rem;transition:all .2s}
+.hdr-btn:hover{background:rgba(255,255,255,0.15)}
+.wrap{max-width:1400px;margin:0 auto;padding:10px 12px 60px}
+h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
+.subtitle{text-align:center;opacity:0.8;margin-bottom:12px;font-size:0.9rem}
+
+/* Card */
+.card{background:var(--card);color:var(--ink);border-radius:16px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.2);margin-bottom:16px}
+.card-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* Type selector */
+.type-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.type-btn{padding:16px;border:2px solid #e5e7eb;border-radius:12px;background:#fff;cursor:pointer;text-align:center;transition:all .2s}
+.type-btn:hover{border-color:var(--bg);background:#eff6ff}
+.type-btn.active{border-color:var(--bg);background:#dbeafe}
+.type-btn .icon{font-size:2rem;margin-bottom:8px}
+.type-btn .label{font-weight:600;font-size:0.95rem}
+.type-btn .hint{font-size:0.75rem;color:var(--mut);margin-top:4px}
+
+/* Step selector */
+.step-selector{margin-bottom:20px}
+.step-selector label{display:block;font-weight:600;margin-bottom:8px}
+.step-selector select{width:100%;padding:12px;border:2px solid #e5e7eb;border-radius:8px;font-size:1rem;background:#fff;cursor:pointer}
+.step-selector select:focus{outline:none;border-color:var(--bg)}
+
+/* Textarea */
+.email-input{margin-bottom:20px}
+.email-input label{display:block;font-weight:600;margin-bottom:8px}
+.email-input textarea{width:100%;height:150px;padding:12px;border:2px solid #e5e7eb;border-radius:8px;font-size:0.9rem;font-family:inherit;resize:vertical}
+.email-input textarea:focus{outline:none;border-color:var(--bg)}
+.email-input .hint{font-size:0.8rem;color:var(--mut);margin-top:6px}
+
+/* Buttons */
+.btn-row{display:flex;gap:12px;flex-wrap:wrap}
+.btn{padding:12px 24px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:1rem;transition:all .2s;display:flex;align-items:center;gap:8px}
+.btn-primary{background:var(--bg);color:#fff}
+.btn-primary:hover{background:#0d3166}
+.btn-secondary{background:#e5e7eb;color:var(--ink)}
+.btn-secondary:hover{background:#d1d5db}
+.btn-success{background:var(--ok);color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+
+/* Manual form */
+.manual-form{display:none}
+.manual-form.show{display:block}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-weight:600;margin-bottom:6px;font-size:0.9rem}
+.form-group input, .form-group select{width:100%;padding:10px 12px;border:2px solid #e5e7eb;border-radius:8px;font-size:0.95rem}
+.form-group input:focus, .form-group select:focus{outline:none;border-color:var(--bg)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Result preview */
+.result-preview{display:none;background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:16px;margin-bottom:16px}
+.result-preview.show{display:block}
+.result-preview.error{background:#fef2f2;border-color:#fca5a5}
+.result-title{font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.result-field{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e5e7eb}
+.result-field:last-child{border-bottom:none}
+.result-field .label{color:var(--mut);font-size:0.85rem}
+.result-field .value{font-weight:600}
+
+/* Category icons */
+.category-selector{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.cat-btn{padding:12px 8px;border:2px solid #e5e7eb;border-radius:8px;background:#fff;cursor:pointer;text-align:center;transition:all .2s}
+.cat-btn:hover{border-color:var(--bg)}
+.cat-btn.active{border-color:var(--bg);background:#dbeafe}
+.cat-btn .icon{font-size:1.5rem}
+.cat-btn .label{font-size:0.7rem;margin-top:4px;display:block}
+
+/* Footer actions */
+.footer-actions{position:sticky;bottom:0;background:rgba(17,63,122,0.95);backdrop-filter:blur(8px);padding:16px;margin:20px -16px -20px;display:flex;gap:12px;justify-content:center;border-top:2px solid rgba(255,255,255,0.2)}
+.btn-danger-outline{padding:12px 24px;background:transparent;color:#fca5a5;border:2px solid #fca5a5;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-danger-outline:hover{background:#dc2626;color:#fff;border-color:#dc2626}
+.btn-back{padding:14px 24px;background:transparent;color:#fff;border:2px solid #fff;border-radius:10px;font-size:1rem;font-weight:600;cursor:pointer}
+.btn-back:hover{background:rgba(255,255,255,0.1)}
+
+/* Toast */
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#22c55e;color:#fff;padding:12px 24px;border-radius:8px;font-weight:600;z-index:2000;display:none}
+.toast.show{display:block}
+.toast.error{background:#dc2626}
+
+/* Loading */
+.loading-overlay{position:fixed;inset:0;background:rgba(17,63,122,0.9);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:3000}
+.loading-spinner{width:48px;height:48px;border:4px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{margin-top:16px;font-size:1.1rem}
+
+/* Analyzing */
+.analyzing{display:none;text-align:center;padding:20px}
+.analyzing.show{display:block}
+.analyzing .spinner{width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:var(--bg);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 12px}
+
+@media(max-width:500px){
+  .form-row{grid-template-columns:1fr}
+  .category-selector{grid-template-columns:repeat(3,1fr)}
+}
+
+/* === LAYOUT 3 COLONNES === */
+.main-layout{display:grid;grid-template-columns:250px 1fr 220px;gap:12px;align-items:start}
+@media(max-width:1000px){.main-layout{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.main-layout{grid-template-columns:1fr}}
+
+/* Colonnes latérales - Réservations existantes */
+.col-existing{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 120px);position:sticky;top:70px}
+.existing-section{background:var(--card);color:var(--ink);border-radius:10px;padding:10px;box-shadow:0 4px 16px rgba(0,0,0,0.15);display:flex;flex-direction:column;max-height:100%;overflow:hidden}
+.existing-title{font-size:0.85rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;flex-shrink:0}
+.existing-title .icon{font-size:1rem}
+.existing-empty{text-align:center;color:var(--mut);padding:12px;font-size:0.8rem}
+.existing-section.travel-theme{background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%)}
+.existing-section.travel-theme .existing-title{color:#92400e;border-bottom-color:#fbbf24}
+.steps-scroll{flex:1;overflow-y:auto;max-height:calc(100vh - 220px)}
+.travel-scroll{flex:1;overflow-y:auto;max-height:calc(100vh - 220px)}
+
+/* Liste des réservations */
+.booking-list{display:flex;flex-direction:column;gap:6px}
+.booking-item{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;display:flex;align-items:center;gap:8px;transition:all .2s}
+.booking-item:hover{background:#eff6ff;border-color:var(--bg)}
+.booking-item .cat-icon{font-size:1.1rem;flex-shrink:0}
+.booking-item .info{flex:1;min-width:0}
+.booking-item .name{font-weight:600;font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.booking-item .details{font-size:0.7rem;color:var(--mut);display:flex;gap:6px;flex-wrap:wrap}
+.booking-item .price{font-weight:700;color:#16a34a;font-size:0.8rem;flex-shrink:0}
+.booking-item .price-split{font-size:0.65rem;color:#64748b;font-weight:normal}
+.booking-item .btn-delete{width:20px;height:20px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:10px;flex-shrink:0;opacity:0;transition:opacity .2s}
+.booking-item:hover .btn-delete{opacity:1}
+.booking-item .btn-edit{width:20px;height:20px;background:#dbeafe;color:#3b82f6;border:none;border-radius:4px;cursor:pointer;font-size:10px;flex-shrink:0;opacity:0;transition:opacity .2s;margin-right:2px}
+.booking-item:hover .btn-edit{opacity:1}
+
+/* Étapes accordion */
+.step-group{margin-bottom:6px}
+.step-header{background:#f1f5f9;border-radius:6px;padding:8px 10px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+.step-header:hover{background:#e2e8f0}
+.step-header .step-num{width:20px;height:20px;background:var(--bg);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700}
+.step-header .step-name{flex:1;font-weight:600;font-size:0.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step-header .count{background:#dbeafe;color:var(--bg);padding:2px 6px;border-radius:10px;font-size:0.7rem;font-weight:600}
+.step-header .arrow{transition:transform .2s;font-size:0.8rem}
+.step-header.open .arrow{transform:rotate(90deg)}
+.step-bookings{display:none;padding:6px 0 0 26px}
+.step-bookings.open{display:block}
+
+/* Colonne centrale - Formulaire */
+.col-form{position:sticky;top:70px}
+
+/* Multi-step selector */
+.multi-step-selector{margin-bottom:16px}
+.multi-step-selector label{display:block;font-weight:600;margin-bottom:8px;font-size:0.9rem}
+.step-chips{display:flex;flex-wrap:wrap;gap:6px}
+.step-chip{padding:6px 12px;border:2px solid #e5e7eb;border-radius:20px;background:#fff;cursor:pointer;font-size:0.85rem;font-weight:500;transition:all .2s;display:flex;align-items:center;gap:4px}
+.step-chip:hover{border-color:var(--bg);background:#eff6ff}
+.step-chip.selected{border-color:var(--bg);background:#dbeafe;color:var(--bg)}
+.step-chip .chip-num{width:18px;height:18px;background:#e5e7eb;color:var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700}
+.step-chip.selected .chip-num{background:var(--bg);color:#fff}
+
+/* Modal d'édition compacte */
+.edit-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:2000;padding:10px}
+.edit-modal.show{display:flex}
+.edit-modal-content{background:#fff;border-radius:12px;width:100%;max-width:420px;max-height:95vh;overflow-y:auto;color:var(--ink)}
+.edit-modal-header{background:var(--bg);color:#fff;padding:10px 14px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1}
+.edit-modal-header h2{margin:0;font-size:1rem;display:flex;align-items:center;gap:6px}
+.edit-modal-close{background:none;border:none;color:#fff;font-size:1.3rem;cursor:pointer;padding:2px 6px;opacity:0.8}
+.edit-modal-close:hover{opacity:1}
+.edit-modal-body{padding:12px}
+.edit-modal-footer{padding:10px 12px;border-top:1px solid #e5e7eb;display:flex;gap:8px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;border-radius:0 0 12px 12px}
+
+/* Modal parsing - preview */
+.parse-preview{background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:12px;margin-bottom:12px}
+.parse-preview-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #bbf7d0}
+.parse-preview-icon{font-size:2rem}
+.parse-preview-title{font-weight:700;font-size:1.05rem}
+.parse-preview-subtitle{color:#15803d;font-size:0.8rem}
+.parse-preview-fields{display:flex;flex-direction:column;gap:4px}
+.parse-preview-field{display:flex;align-items:center;gap:8px;font-size:0.85rem}
+.parse-preview-field .icon{width:20px;text-align:center}
+.parse-preview-field .value{color:#166534}
+
+/* Type mini buttons */
+.type-mini{padding:6px 14px;border:2px solid #e5e7eb;border-radius:16px;background:#fff;cursor:pointer;font-size:0.85rem;font-weight:600;transition:all .2s}
+.type-mini:hover{border-color:var(--bg);background:#eff6ff}
+.type-mini.active{border-color:var(--bg);background:#dbeafe;color:var(--bg)}
+
+/* Category mini */
+.cat-mini{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:2px solid #e5e7eb;border-radius:8px;cursor:pointer;font-size:1.1rem;transition:all .2s}
+.cat-mini:hover{border-color:var(--bg);background:#eff6ff}
+.cat-mini.active{border-color:var(--bg);background:#dbeafe}
+
+/* ══════════════════════════════════════════════════════════════ */
+/* MOBILE RESPONSIVE                                                */
+/* ══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Layout mobile: tout en une colonne */
+  .main-layout {
+    grid-template-columns: 1fr !important;
+    gap: 0;
+  }
+  
+  /* Masquer les colonnes latérales par défaut */
+  .col-existing {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1500;
+    max-height: 100vh;
+    background: rgba(17,63,122,0.95);
+    padding: 60px 12px 80px;
+    overflow-y: auto;
+  }
+  .col-existing.mobile-show {
+    display: block;
+  }
+  .col-existing .existing-section {
+    max-height: none;
+    height: auto;
+  }
+  .col-existing .steps-scroll,
+  .col-existing .travel-scroll {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  /* Bouton fermer pour les panneaux mobile */
+  .mobile-close-btn {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    background: #fff;
+    color: var(--bg);
+    border: none;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    z-index: 1600;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .col-existing.mobile-show .mobile-close-btn {
+    display: flex;
+  }
+  
+  /* Navigation mobile par onglets */
+  .mobile-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    background: rgba(255,255,255,0.1);
+    padding: 6px;
+    border-radius: 10px;
+  }
+  .mobile-tab {
+    flex: 1;
+    padding: 10px 8px;
+    background: transparent;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .mobile-tab.active {
+    background: #fff;
+    color: var(--bg);
+  }
+  .mobile-tab .badge {
+    background: rgba(255,255,255,0.3);
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+  .mobile-tab.active .badge {
+    background: var(--bg);
+    color: #fff;
+  }
+  
+  /* Colonne formulaire: pleine largeur */
+  .col-form {
+    position: static;
+  }
+  
+  /* Cards plus compactes */
+  .card {
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+  }
+  .card-title {
+    font-size: 1rem;
+    margin-bottom: 12px;
+  }
+  
+  /* Type selector en ligne */
+  .type-selector {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .type-btn {
+    padding: 12px 8px;
+  }
+  .type-btn .icon {
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+  }
+  .type-btn .label {
+    font-size: 0.85rem;
+  }
+  .type-btn .hint {
+    font-size: 0.7rem;
+  }
+  
+  /* Textarea plus grand pour mobile */
+  .email-input textarea {
+    height: 120px;
+    font-size: 16px; /* Empêche le zoom iOS */
+  }
+  
+  /* Boutons plus grands et tactiles */
+  .btn {
+    padding: 14px 20px;
+    font-size: 1rem;
+    min-height: 48px;
+  }
+  .btn-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .btn-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Catégories: grille adaptée */
+  .category-selector {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .cat-btn {
+    padding: 10px 6px;
+  }
+  .cat-btn .icon {
+    font-size: 1.3rem;
+  }
+  .cat-btn .label {
+    font-size: 0.65rem;
+  }
+  
+  /* Form fields */
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .form-group input,
+  .form-group select {
+    font-size: 16px; /* Empêche zoom iOS */
+    padding: 12px;
+  }
+  
+  /* Footer sticky */
+  .footer-actions {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 12px;
+    background: rgba(17,63,122,0.98);
+    border-radius: 0;
+    gap: 8px;
+    z-index: 100;
+  }
+  .wrap {
+    padding-bottom: 100px;
+  }
+  
+  /* Modal plein écran sur mobile */
+  .edit-modal {
+    padding: 0;
+    align-items: stretch;
+  }
+  .edit-modal-content {
+    max-width: 100%;
+    max-height: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  .edit-modal-header {
+    border-radius: 0;
+    padding: 14px 16px;
+    position: sticky;
+    top: 0;
+  }
+  .edit-modal-body {
+    padding: 16px;
+    flex: 1;
+    overflow-y: auto;
+  }
+  .edit-modal-footer {
+    position: sticky;
+    bottom: 0;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+  .edit-modal-footer .btn {
+    flex: 1;
+    padding: 14px;
+  }
+  
+  /* Grille dates/prix adaptée */
+  .edit-modal-body [style*="grid-template-columns: 1fr 1fr 100px"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+  .edit-modal-body [style*="grid-template-columns: 120px 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  .edit-modal-body input,
+  .edit-modal-body select {
+    font-size: 16px !important;
+    padding: 12px !important;
+  }
+  
+  /* Header mobile */
+  header {
+    padding: 8px 10px;
+  }
+  .brand {
+    font-size: 0.9rem;
+  }
+  .hdr-btn {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  h1 {
+    font-size: 1rem;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+  }
+  
+  /* Bouton FAB pour ajouter (sur mobile) */
+  .mobile-fab {
+    display: flex;
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    width: 56px;
+    height: 56px;
+    background: var(--ok);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 1.8rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.4);
+    z-index: 90;
+  }
+  
+  /* Step chips adaptés */
+  .step-chips {
+    max-height: 150px;
+    overflow-y: auto;
+  }
+  .step-chip {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  /* Parse preview compact */
+  .parse-preview {
+    padding: 10px;
+  }
+  .parse-preview-header {
+    gap: 8px;
+  }
+  .parse-preview-icon {
+    font-size: 1.5rem;
+  }
+  .parse-preview-title {
+    font-size: 0.95rem;
+  }
+  
+  /* Toast repositionné */
+  .toast {
+    bottom: 100px;
+    left: 16px;
+    right: 16px;
+    transform: none;
+    text-align: center;
+  }
+}
+
+/* Desktop: cacher les éléments mobile-only */
+@media (min-width: 769px) {
+  .mobile-tabs,
+  .mobile-fab,
+  .mobile-close-btn {
+    display: none !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="brandlink">
+    <img src="/assets/symbol.webp" alt="Logo">
+    <span class="brand">OneRoadTrip</span>
+  </a>
+  <span class="sp"></span>
+  <button class="hdr-btn" id="btnBackToTrip">← <span data-i18n="backToTrip">Retour</span></button>
+</header>
+
+<div class="wrap" style="max-width:1100px">
+  <h1 data-i18n="bookingsPageTitle">📋 Réservations du voyage</h1>
+  <p class="subtitle" id="tripName"></p>
+  
+  <!-- Navigation mobile par onglets -->
+  <div class="mobile-tabs" id="mobileTabs">
+    <button class="mobile-tab active" data-tab="form">
+      ➕ <span data-i18n="addBooking">Ajouter</span>
+    </button>
+    <button class="mobile-tab" data-tab="steps">
+      📍 <span data-i18n="typeStep">Étapes</span>
+      <span class="badge" id="stepsCount">0</span>
+    </button>
+    <button class="mobile-tab" data-tab="travel">
+      🌍 <span data-i18n="typeTravel">Voyage</span>
+      <span class="badge" id="travelCount">0</span>
+    </button>
+  </div>
+  
+  <div class="main-layout">
+    
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- COLONNE GAUCHE: Réservations par étape -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="col-existing" id="colSteps">
+      <button class="mobile-close-btn" onclick="closeMobilePanel('colSteps')">×</button>
+      <div class="existing-section">
+        <div class="existing-title"><span class="icon">📍</span> <span data-i18n="stepBookingsTitle">Réservations par étape</span></div>
+        <div class="steps-scroll" id="stepBookingsList">
+          <div class="existing-empty" data-i18n="loading">Chargement...</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- COLONNE CENTRALE: Formulaire d'ajout -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="col-form">
+  
+  <!-- Step 1: Type selection -->
+  <div class="card" id="cardType">
+    <div class="card-title">1️⃣ <span data-i18n="selectType">Type de réservation</span></div>
+    <div class="type-selector">
+      <div class="type-btn active" data-type="step">
+        <div class="icon">📍</div>
+        <div class="label" data-i18n="typeStep">Étape</div>
+        <div class="hint" data-i18n="typeStepHint">Hôtel, activité, visite</div>
+      </div>
+      <div class="type-btn" data-type="travel">
+        <div class="icon">🌍</div>
+        <div class="label" data-i18n="typeTravel">Voyage</div>
+        <div class="hint" data-i18n="typeTravelHint">Vol, voiture, assurance</div>
+      </div>
+    </div>
+    
+    <!-- Step selector (only for step type) -->
+    <div class="step-selector" id="stepSelectorWrap">
+      <label data-i18n="selectStep">Sélectionner l'étape</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="stepSelector" style="flex:1">
+          <option value="">-- Choisir --</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Step 2: Import method -->
+  <div class="card" id="cardImport">
+    <div class="card-title">2️⃣ <span data-i18n="importMethod">Méthode d'import</span></div>
+    
+    <!-- Email paste -->
+    <div class="email-input" id="emailInputWrap">
+      <label data-i18n="pasteEmail">Collez l'email de confirmation</label>
+      <textarea id="emailText" placeholder="Copiez-collez ici le contenu de votre email de confirmation de réservation..."></textarea>
+      <div class="hint" data-i18n="emailHint">Nous analyserons automatiquement les informations</div>
+    </div>
+    
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btnAnalyze">
+        ✨ <span data-i18n="analyze">Analyser</span>
+      </button>
+      <button class="btn btn-secondary" id="btnManual">
+        ✏️ <span data-i18n="manualEntry">Saisie manuelle</span>
+      </button>
+    </div>
+    
+    <!-- Analyzing spinner -->
+    <div class="analyzing" id="analyzing">
+      <div class="spinner"></div>
+      <div data-i18n="analyzing">Analyse en cours...</div>
+    </div>
+  </div>
+  
+  <!-- Step 3: Manual form / Result -->
+  <div class="card" id="cardForm" style="display:none">
+    <div class="card-title">3️⃣ <span data-i18n="bookingDetails">Détails de la réservation</span></div>
+    
+    <!-- Result preview -->
+    <div class="result-preview" id="resultPreview">
+      <div class="result-title">✅ <span data-i18n="extractedInfo">Informations extraites</span></div>
+      <div id="resultFields"></div>
+    </div>
+    
+    <!-- Category selector -->
+    <div class="form-group">
+      <label data-i18n="category">Catégorie</label>
+      <div class="category-selector" id="categorySelector">
+        <div class="cat-btn" data-cat="hotel"><div class="icon">🏨</div><div class="label" data-i18n="catHotel">Hôtel</div></div>
+        <div class="cat-btn" data-cat="activity"><div class="icon">🎯</div><div class="label" data-i18n="catActivity">Activité</div></div>
+        <div class="cat-btn" data-cat="flight"><div class="icon">✈️</div><div class="label" data-i18n="catFlight">Vol</div></div>
+        <div class="cat-btn" data-cat="car_rental"><div class="icon">🚗</div><div class="label" data-i18n="catCar">Voiture</div></div>
+        <div class="cat-btn" data-cat="insurance"><div class="icon">🛡️</div><div class="label" data-i18n="catInsurance">Assurance</div></div>
+        <div class="cat-btn" data-cat="visit"><div class="icon">🏛️</div><div class="label" data-i18n="catVisit">Visite</div></div>
+        <div class="cat-btn" data-cat="show"><div class="icon">🎭</div><div class="label" data-i18n="catShow">Spectacle</div></div>
+        <div class="cat-btn" data-cat="other"><div class="icon">📋</div><div class="label" data-i18n="catOther">Autre</div></div>
+      </div>
+    </div>
+    
+    <!-- Form fields -->
+    <div class="form-group">
+      <label data-i18n="bookingName">Nom de la réservation</label>
+      <input type="text" id="fieldName" placeholder="Ex: Hôtel Marriott Paris">
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="dateStart">Date début</label>
+        <input type="date" id="fieldDateStart">
+      </div>
+      <div class="form-group">
+        <label data-i18n="dateEnd">Date fin</label>
+        <input type="date" id="fieldDateEnd">
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label data-i18n="reference">Référence</label>
+        <input type="text" id="fieldRef" placeholder="N° de confirmation">
+      </div>
+      <div class="form-group">
+        <label data-i18n="price">Prix</label>
+        <input type="number" id="fieldPrice" placeholder="0.00" step="0.01">
+      </div>
+      <div class="form-group">
+        <label>Devise</label>
+        <select id="fieldCurrency"></select>
+      </div>
+    </div>
+    
+    <div class="form-group">
+      <label data-i18n="address">Adresse / Lieu</label>
+      <input type="text" id="fieldAddress" placeholder="Adresse ou lieu">
+    </div>
+    
+    <div class="form-group">
+      <label data-i18n="notes">Notes</label>
+      <input type="text" id="fieldNotes" placeholder="Informations supplémentaires">
+    </div>
+    
+    <div class="btn-row" style="margin-top:20px">
+      <button class="btn btn-success" id="btnSaveBooking">
+        ✅ <span data-i18n="saveBooking">Enregistrer la réservation</span>
+      </button>
+      <button class="btn btn-secondary" id="btnReset">
+        🔄 <span data-i18n="reset">Recommencer</span>
+      </button>
+    </div>
+  </div>
+  
+    </div><!-- fin col-form -->
+    
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- COLONNE DROITE: Réservations voyage -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <div class="col-existing" id="colTravel">
+      <button class="mobile-close-btn" onclick="closeMobilePanel('colTravel')">×</button>
+      <div class="existing-section travel-theme">
+        <div class="existing-title"><span class="icon">🌍</span> <span data-i18n="travelBookingsTitle">Réservations voyage</span></div>
+        <div class="travel-scroll" id="travelBookingsList">
+          <div class="existing-empty" data-i18n="loading">Chargement...</div>
+        </div>
+      </div>
+    </div>
+    
+  </div><!-- fin main-layout -->
+  
+  <!-- Footer -->
+  <div class="footer-actions">
+    <button class="btn-danger-outline" id="btnResetAll">🗑️ <span data-i18n="resetAll">Tout réinitialiser</span></button>
+  </div>
+</div>
+
+<!-- Modal d'édition / parsing (réutilisée) -->
+<div class="edit-modal" id="editModal">
+  <div class="edit-modal-content">
+    <div class="edit-modal-header" id="editModalHeader">
+      <h2 id="editModalTitle">✏️ <span data-i18n="editBooking">Modifier la réservation</span></h2>
+      <button class="edit-modal-close" onclick="closeEditModal()">×</button>
+    </div>
+    <div class="edit-modal-body">
+      <!-- Preview (affiché seulement en mode parsing) -->
+      <div class="parse-preview" id="editPreviewBox" style="display:none">
+        <!-- Rempli dynamiquement -->
+      </div>
+      
+      <!-- Type (compact) -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button type="button" class="type-mini" data-type="step" id="editTypeStep" data-i18n-title="typeStepHint" title="Hôtel, activité, visite">📍 <span data-i18n="typeStep">Étape</span></button>
+        <button type="button" class="type-mini" data-type="travel" id="editTypeTravel" data-i18n-title="typeTravelHint" title="Vol, voiture, assurance">🌍 <span data-i18n="typeTravel">Voyage</span></button>
+      </div>
+      
+      <!-- Sélecteur d'étapes -->
+      <div id="editStepSelectorWrap" style="margin-bottom:12px">
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px">
+          <select id="editStepSelector" style="flex:1;padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.9rem">
+            <option value="">-- Étape --</option>
+          </select>
+          <button type="button" onclick="addStepToSelection()" style="padding:8px 12px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700">+</button>
+        </div>
+        <div id="selectedStepsList" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+        <div id="pricePerStepInfo" style="margin-top:4px;font-size:0.8rem;color:#3b82f6;font-weight:600"></div>
+      </div>
+      
+      <!-- Catégorie (compact) -->
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px" id="editCategorySelector">
+        <span class="cat-mini" data-cat="hotel" data-i18n-title="catHotel" title="Hôtel">🏨</span>
+        <span class="cat-mini" data-cat="activity" data-i18n-title="catActivity" title="Activité">🎯</span>
+        <span class="cat-mini" data-cat="flight" data-i18n-title="catFlight" title="Vol">✈️</span>
+        <span class="cat-mini" data-cat="car_rental" data-i18n-title="catCar" title="Voiture">🚗</span>
+        <span class="cat-mini" data-cat="insurance" data-i18n-title="catInsurance" title="Assurance">🛡️</span>
+        <span class="cat-mini" data-cat="visit" data-i18n-title="catVisit" title="Visite">🏛️</span>
+        <span class="cat-mini" data-cat="show" data-i18n-title="catShow" title="Spectacle">🎭</span>
+        <span class="cat-mini" data-cat="other" data-i18n-title="catOther" title="Autre">📋</span>
+      </div>
+      
+      <!-- Nom -->
+      <input type="text" id="editFieldName" placeholder="Nom de la réservation" style="width:100%;padding:8px 10px;border:2px solid #e5e7eb;border-radius:6px;margin-bottom:8px;font-size:0.9rem">
+      
+      <!-- Dates + Prix sur une ligne -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 100px;gap:6px;margin-bottom:8px">
+        <input type="date" id="editFieldDateStart" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <input type="date" id="editFieldDateEnd" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <input type="number" id="editFieldPrice" placeholder="Prix" step="0.01" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <select id="editFieldCurrency" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem"></select>
+      </div>
+      
+      <!-- Ref + Adresse -->
+      <div style="display:grid;grid-template-columns:120px 1fr;gap:6px;margin-bottom:8px">
+        <input type="text" id="editFieldRef" placeholder="Réf." style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+        <input type="text" id="editFieldAddress" placeholder="Adresse" style="padding:8px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+      </div>
+      
+      <!-- Notes -->
+      <input type="text" id="editFieldNotes" placeholder="Notes" style="width:100%;padding:8px 10px;border:2px solid #e5e7eb;border-radius:6px;font-size:0.85rem">
+    </div>
+    <div class="edit-modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()" data-i18n="cancelAndReturn">Annuler</button>
+      <button class="btn btn-success" id="editModalSaveBtn" onclick="saveEditedBooking()">✅ <span data-i18n="saveChanges">Enregistrer</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" data-i18n="loading">Chargement...</div>
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-i18n.js"></script>
+<script src="/js/ort-tripid.js"></script>
+<script src="/js/ort-trip-data.js"></script>
+<script src="/js/ort-currency.js"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// GESTION MOBILE - Onglets et panneaux
+// ══════════════════════════════════════════════════════════════
+(function() {
+  'use strict';
+  
+  // Détecter si on est sur mobile
+  function isMobile() {
+    return window.innerWidth <= 768;
+  }
+  
+  // Navigation par onglets mobile
+  document.getElementById('mobileTabs')?.addEventListener('click', function(e) {
+    const tab = e.target.closest('.mobile-tab');
+    if (!tab) return;
+    
+    const tabType = tab.dataset.tab;
+    
+    // Mettre à jour l'onglet actif
+    document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    
+    // Afficher/masquer le panneau correspondant
+    if (tabType === 'form') {
+      closeMobilePanel('colSteps');
+      closeMobilePanel('colTravel');
+    } else if (tabType === 'steps') {
+      document.getElementById('colSteps')?.classList.add('mobile-show');
+      closeMobilePanel('colTravel');
+    } else if (tabType === 'travel') {
+      document.getElementById('colTravel')?.classList.add('mobile-show');
+      closeMobilePanel('colSteps');
+    }
+  });
+  
+  // Fermer un panneau mobile
+  window.closeMobilePanel = function(panelId) {
+    document.getElementById(panelId)?.classList.remove('mobile-show');
+    // Remettre l'onglet "Ajouter" actif
+    if (isMobile()) {
+      document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.mobile-tab[data-tab="form"]')?.classList.add('active');
+    }
+  };
+  
+  // Mettre à jour les compteurs dans les onglets
+  window.updateMobileCounts = function(stepsCount, travelCount) {
+    const stepsEl = document.getElementById('stepsCount');
+    const travelEl = document.getElementById('travelCount');
+    if (stepsEl) stepsEl.textContent = stepsCount || 0;
+    if (travelEl) travelEl.textContent = travelCount || 0;
+  };
+  
+  // Fermer les panneaux mobile quand on clique en dehors
+  document.addEventListener('click', function(e) {
+    if (!isMobile()) return;
+    
+    const colSteps = document.getElementById('colSteps');
+    const colTravel = document.getElementById('colTravel');
+    
+    if (colSteps?.classList.contains('mobile-show')) {
+      if (!colSteps.contains(e.target) && !e.target.closest('.mobile-tab')) {
+        closeMobilePanel('colSteps');
+      }
+    }
+    if (colTravel?.classList.contains('mobile-show')) {
+      if (!colTravel.contains(e.target) && !e.target.closest('.mobile-tab')) {
+        closeMobilePanel('colTravel');
+      }
+    }
+  });
+  
+  // Fermer avec Escape
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isMobile()) {
+      closeMobilePanel('colSteps');
+      closeMobilePanel('colTravel');
+    }
+  });
+})();
+</script>
+
+<script>
+// Init Firebase
+(function(){
+  const host = location.hostname;
+  const isPreprod = /oneroadtrip-preprod|localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
+  const cfg = isPreprod ? (window.ORT_CONFIG?.PREPROD || {}) : (window.ORT_CONFIG?.PROD || {});
+  const safe = (cfg && cfg.apiKey) ? cfg : (window.ORT_CONFIG?.PREPROD || {});
+  if (safe && safe.apiKey && !firebase.apps.length) {
+    firebase.initializeApp(safe);
+    console.log('[RT-BOOKING-IMPORT] Firebase initialisé');
+  }
+})();
+</script>
+
+<script>
+(async function() {
+  'use strict';
+  
+  // ══════════════════════════════════════════════════════════════
+  // I18N
+  // ══════════════════════════════════════════════════════════════
+  const I18N_LOCAL = {
+    importBookingTitle: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' },
+    selectType: { fr: 'Type de réservation', en: 'Booking type', es: 'Tipo de reserva', it: 'Tipo di prenotazione', pt: 'Tipo de reserva', ar: 'نوع الحجز' },
+    typeStep: { fr: 'Étape', en: 'Step', es: 'Etapa', it: 'Tappa', pt: 'Etapa', ar: 'مرحلة' },
+    typeStepHint: { fr: 'Hôtel, activité, visite', en: 'Hotel, activity, visit', es: 'Hotel, actividad, visita', it: 'Hotel, attività, visita', pt: 'Hotel, atividade, visita', ar: 'فندق، نشاط، زيارة' },
+    typeTravel: { fr: 'Voyage', en: 'Travel', es: 'Viaje', it: 'Viaggio', pt: 'Viagem', ar: 'سفر' },
+    typeTravelHint: { fr: 'Vol, voiture, assurance', en: 'Flight, car, insurance', es: 'Vuelo, coche, seguro', it: 'Volo, auto, assicurazione', pt: 'Voo, carro, seguro', ar: 'طيران، سيارة، تأمين' },
+    selectStep: { fr: 'Sélectionner l\'étape', en: 'Select step', es: 'Seleccionar etapa', it: 'Seleziona tappa', pt: 'Selecionar etapa', ar: 'اختر المرحلة' },
+    importMethod: { fr: 'Méthode d\'import', en: 'Import method', es: 'Método de importación', it: 'Metodo di importazione', pt: 'Método de importação', ar: 'طريقة الاستيراد' },
+    pasteEmail: { fr: 'Collez l\'email de confirmation', en: 'Paste the confirmation email', es: 'Pegue el email de confirmación', it: 'Incolla l\'email di conferma', pt: 'Cole o email de confirmação', ar: 'الصق بريد التأكيد' },
+    emailHint: { fr: 'Nous analyserons automatiquement les informations', en: 'We will automatically analyze the information', es: 'Analizaremos automáticamente la información', it: 'Analizzeremo automaticamente le informazioni', pt: 'Analisaremos automaticamente as informações', ar: 'سنحلل المعلومات تلقائياً' },
+    analyze: { fr: 'Analyser', en: 'Analyze', es: 'Analizar', it: 'Analizza', pt: 'Analisar', ar: 'تحليل' },
+    manualEntry: { fr: 'Saisie manuelle', en: 'Manual entry', es: 'Entrada manual', it: 'Inserimento manuale', pt: 'Entrada manual', ar: 'إدخال يدوي' },
+    analyzing: { fr: 'Analyse en cours...', en: 'Analyzing...', es: 'Analizando...', it: 'Analisi in corso...', pt: 'Analisando...', ar: 'جار التحليل...' },
+    bookingDetails: { fr: 'Détails de la réservation', en: 'Booking details', es: 'Detalles de la reserva', it: 'Dettagli prenotazione', pt: 'Detalhes da reserva', ar: 'تفاصيل الحجز' },
+    extractedInfo: { fr: 'Informations extraites', en: 'Extracted information', es: 'Información extraída', it: 'Informazioni estratte', pt: 'Informações extraídas', ar: 'المعلومات المستخرجة' },
+    category: { fr: 'Catégorie', en: 'Category', es: 'Categoría', it: 'Categoria', pt: 'Categoria', ar: 'الفئة' },
+    catHotel: { fr: 'Hôtel', en: 'Hotel', es: 'Hotel', it: 'Hotel', pt: 'Hotel', ar: 'فندق' },
+    catActivity: { fr: 'Activité', en: 'Activity', es: 'Actividad', it: 'Attività', pt: 'Atividade', ar: 'نشاط' },
+    catFlight: { fr: 'Vol', en: 'Flight', es: 'Vuelo', it: 'Volo', pt: 'Voo', ar: 'طيران' },
+    catCar: { fr: 'Voiture', en: 'Car', es: 'Coche', it: 'Auto', pt: 'Carro', ar: 'سيارة' },
+    catInsurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'تأمين' },
+    catVisit: { fr: 'Visite', en: 'Visit', es: 'Visita', it: 'Visita', pt: 'Visita', ar: 'زيارة' },
+    catShow: { fr: 'Spectacle', en: 'Show', es: 'Espectáculo', it: 'Spettacolo', pt: 'Espetáculo', ar: 'عرض' },
+    catOther: { fr: 'Autre', en: 'Other', es: 'Otro', it: 'Altro', pt: 'Outro', ar: 'آخر' },
+    bookingName: { fr: 'Nom de la réservation', en: 'Booking name', es: 'Nombre de la reserva', it: 'Nome prenotazione', pt: 'Nome da reserva', ar: 'اسم الحجز' },
+    dateStart: { fr: 'Date début', en: 'Start date', es: 'Fecha inicio', it: 'Data inizio', pt: 'Data início', ar: 'تاريخ البدء' },
+    dateEnd: { fr: 'Date fin', en: 'End date', es: 'Fecha fin', it: 'Data fine', pt: 'Data fim', ar: 'تاريخ الانتهاء' },
+    reference: { fr: 'Référence', en: 'Reference', es: 'Referencia', it: 'Riferimento', pt: 'Referência', ar: 'المرجع' },
+    price: { fr: 'Prix (€)', en: 'Price (€)', es: 'Precio (€)', it: 'Prezzo (€)', pt: 'Preço (€)', ar: 'السعر (€)' },
+    address: { fr: 'Adresse / Lieu', en: 'Address / Location', es: 'Dirección / Lugar', it: 'Indirizzo / Luogo', pt: 'Endereço / Local', ar: 'العنوان / الموقع' },
+    notes: { fr: 'Notes', en: 'Notes', es: 'Notas', it: 'Note', pt: 'Notas', ar: 'ملاحظات' },
+    saveBooking: { fr: 'Enregistrer la réservation', en: 'Save booking', es: 'Guardar reserva', it: 'Salva prenotazione', pt: 'Salvar reserva', ar: 'حفظ الحجز' },
+    reset: { fr: 'Recommencer', en: 'Reset', es: 'Reiniciar', it: 'Ricomincia', pt: 'Recomeçar', ar: 'إعادة' },
+    backToTrip: { fr: 'Retour', en: 'Back', es: 'Volver', it: 'Indietro', pt: 'Voltar', ar: 'رجوع' },
+    cancelAndReturn: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' },
+    loading: { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', it: 'Caricamento...', pt: 'Carregando...', ar: 'جار التحميل...' },
+    saved: { fr: 'Réservation enregistrée !', en: 'Booking saved!', es: '¡Reserva guardada!', it: 'Prenotazione salvata!', pt: 'Reserva salva!', ar: 'تم حفظ الحجز!' },
+    errorSaving: { fr: 'Erreur lors de l\'enregistrement', en: 'Error saving', es: 'Error al guardar', it: 'Errore durante il salvataggio', pt: 'Erro ao salvar', ar: 'خطأ في الحفظ' },
+    noTrip: { fr: 'Voyage non trouvé', en: 'Trip not found', es: 'Viaje no encontrado', it: 'Viaggio non trovato', pt: 'Viagem não encontrada', ar: 'الرحلة غير موجودة' },
+    selectStepFirst: { fr: 'Sélectionnez une étape', en: 'Select a step first', es: 'Seleccione una etapa', it: 'Seleziona una tappa', pt: 'Selecione uma etapa', ar: 'اختر مرحلة أولاً' },
+    enterName: { fr: 'Entrez un nom', en: 'Enter a name', es: 'Ingrese un nombre', it: 'Inserisci un nome', pt: 'Digite um nome', ar: 'أدخل اسماً' },
+    pasteEmailFirst: { fr: 'Collez d\'abord un email', en: 'Paste an email first', es: 'Pegue un email primero', it: 'Incolla prima un\'email', pt: 'Cole um email primeiro', ar: 'الصق بريداً أولاً' },
+    analysisError: { fr: 'Erreur d\'analyse. Essayez la saisie manuelle.', en: 'Analysis error. Try manual entry.', es: 'Error de análisis. Pruebe la entrada manual.', it: 'Errore di analisi. Prova l\'inserimento manuale.', pt: 'Erro de análise. Tente entrada manual.', ar: 'خطأ في التحليل. جرب الإدخال اليدوي.' },
+    // Réservations existantes
+    stepBookingsTitle: { fr: 'Réservations par étape', en: 'Bookings by step', es: 'Reservas por etapa', it: 'Prenotazioni per tappa', pt: 'Reservas por etapa', ar: 'الحجوزات حسب المرحلة' },
+    travelBookingsTitle: { fr: 'Réservations voyage', en: 'Travel bookings', es: 'Reservas de viaje', it: 'Prenotazioni viaggio', pt: 'Reservas de viagem', ar: 'حجوزات السفر' },
+    noSteps: { fr: 'Aucune étape', en: 'No steps', es: 'Sin etapas', it: 'Nessuna tappa', pt: 'Nenhuma etapa', ar: 'لا توجد مراحل' },
+    addBooking: { fr: 'Ajouter', en: 'Add', es: 'Añadir', it: 'Aggiungi', pt: 'Adicionar', ar: 'إضافة' },
+    noBookings: { fr: 'Aucune réservation', en: 'No bookings', es: 'Sin reservas', it: 'Nessuna prenotazione', pt: 'Nenhuma reserva', ar: 'لا توجد حجوزات' },
+    noTravelBookings: { fr: 'Aucune réservation voyage', en: 'No travel bookings', es: 'Sin reservas de viaje', it: 'Nessuna prenotazione viaggio', pt: 'Nenhuma reserva de viagem', ar: 'لا توجد حجوزات سفر' },
+    confirmDelete: { fr: 'Supprimer cette réservation ?', en: 'Delete this booking?', es: '¿Eliminar esta reserva?', it: 'Eliminare questa prenotazione?', pt: 'Excluir esta reserva?', ar: 'حذف هذا الحجز؟' },
+    bookingDeleted: { fr: 'Réservation supprimée', en: 'Booking deleted', es: 'Reserva eliminada', it: 'Prenotazione eliminata', pt: 'Reserva excluída', ar: 'تم حذف الحجز' },
+    deleteError: { fr: 'Erreur lors de la suppression', en: 'Error deleting', es: 'Error al eliminar', it: 'Errore durante l\'eliminazione', pt: 'Erro ao excluir', ar: 'خطأ في الحذف' },
+    editMode: { fr: 'Mode édition activé', en: 'Edit mode enabled', es: 'Modo edición activado', it: 'Modalità modifica attivata', pt: 'Modo edição ativado', ar: 'تم تفعيل وضع التحرير' },
+    bookingUpdated: { fr: 'Réservation mise à jour !', en: 'Booking updated!', es: '¡Reserva actualizada!', it: 'Prenotazione aggiornata!', pt: 'Reserva atualizada!', ar: 'تم تحديث الحجز!' },
+    updateBooking: { fr: 'Mettre à jour', en: 'Update', es: 'Actualizar', it: 'Aggiorna', pt: 'Atualizar', ar: 'تحديث' },
+    bookingNotFound: { fr: 'Réservation non trouvée', en: 'Booking not found', es: 'Reserva no encontrada', it: 'Prenotazione non trovata', pt: 'Reserva não encontrada', ar: 'الحجز غير موجود' },
+    noName: { fr: 'Sans nom', en: 'No name', es: 'Sin nombre', it: 'Senza nome', pt: 'Sem nome', ar: 'بدون اسم' },
+    bookingsPageTitle: { fr: '📋 Réservations du voyage', en: '📋 Trip bookings', es: '📋 Reservas del viaje', it: '📋 Prenotazioni del viaggio', pt: '📋 Reservas da viagem', ar: '📋 حجوزات الرحلة' },
+    resetAll: { fr: 'Tout réinitialiser', en: 'Reset all', es: 'Restablecer todo', it: 'Reimposta tutto', pt: 'Redefinir tudo', ar: 'إعادة تعيين الكل' },
+    confirmResetAll: { fr: 'Supprimer TOUTES les réservations de ce voyage ? Cette action est irréversible.', en: 'Delete ALL bookings for this trip? This action cannot be undone.', es: '¿Eliminar TODAS las reservas de este viaje? Esta acción es irreversible.', it: 'Eliminare TUTTE le prenotazioni di questo viaggio? Questa azione è irreversibile.', pt: 'Excluir TODAS as reservas desta viagem? Esta ação é irreversível.', ar: 'حذف جميع الحجوزات لهذه الرحلة؟ لا يمكن التراجع عن هذا الإجراء.' },
+    allBookingsDeleted: { fr: 'Toutes les réservations ont été supprimées', en: 'All bookings have been deleted', es: 'Todas las reservas han sido eliminadas', it: 'Tutte le prenotazioni sono state eliminate', pt: 'Todas as reservas foram excluídas', ar: 'تم حذف جميع الحجوزات' },
+    editBooking: { fr: 'Modifier la réservation', en: 'Edit booking', es: 'Editar reserva', it: 'Modifica prenotazione', pt: 'Editar reserva', ar: 'تعديل الحجز' },
+    saveChanges: { fr: 'Enregistrer', en: 'Save', es: 'Guardar', it: 'Salva', pt: 'Salvar', ar: 'حفظ' },
+    bookingType: { fr: 'Type', en: 'Type', es: 'Tipo', it: 'Tipo', pt: 'Tipo', ar: 'النوع' },
+    // Multi-step
+    selectSteps: { fr: 'Affecter aux étapes', en: 'Assign to steps', es: 'Asignar a etapas', it: 'Assegna alle tappe', pt: 'Atribuir às etapas', ar: 'تعيين للمراحل' },
+    multiStepHint: { fr: 'Cliquez sur plusieurs étapes pour partager (ex: hôtel 2 nuits)', en: 'Click multiple steps to share (e.g. hotel 2 nights)', es: 'Haga clic en varias etapas para compartir (ej: hotel 2 noches)', it: 'Clicca su più tappe per condividere (es: hotel 2 notti)', pt: 'Clique em várias etapas para compartilhar (ex: hotel 2 noites)', ar: 'انقر على عدة مراحل للمشاركة (مثال: فندق ليلتين)' },
+    selectAtLeastOneStep: { fr: 'Sélectionnez au moins une étape', en: 'Select at least one step', es: 'Seleccione al menos una etapa', it: 'Seleziona almeno una tappa', pt: 'Selecione pelo menos uma etapa', ar: 'اختر مرحلة واحدة على الأقل' },
+    sharedOn: { fr: 'partagé sur {n} étapes', en: 'shared on {n} steps', es: 'compartido en {n} etapas', it: 'condiviso su {n} tappe', pt: 'compartilhado em {n} etapas', ar: 'مشترك على {n} مراحل' },
+    noStepSelected: { fr: 'Aucune étape sélectionnée', en: 'No step selected', es: 'Ninguna etapa seleccionada', it: 'Nessuna tappa selezionata', pt: 'Nenhuma etapa selecionada', ar: 'لم يتم تحديد أي مرحلة' },
+    // Parsing IA
+    contentTooShort: { fr: 'Contenu trop court (min 50 caractères)', en: 'Content too short (min 50 characters)', es: 'Contenido demasiado corto (mín 50 caracteres)', it: 'Contenuto troppo corto (min 50 caratteri)', pt: 'Conteúdo muito curto (mín 50 caracteres)', ar: 'المحتوى قصير جداً (50 حرف كحد أدنى)' },
+    loginRequired: { fr: 'Connexion requise', en: 'Login required', es: 'Inicio de sesión requerido', it: 'Accesso richiesto', pt: 'Login necessário', ar: 'تسجيل الدخول مطلوب' },
+    quotaExceeded: { fr: 'Quota atteint ({n}/mois). Réessayez le mois prochain.', en: 'Quota exceeded ({n}/month). Try again next month.', es: 'Cuota alcanzada ({n}/mes). Intente el próximo mes.', it: 'Quota raggiunta ({n}/mese). Riprova il mese prossimo.', pt: 'Cota atingida ({n}/mês). Tente novamente no próximo mês.', ar: 'تم تجاوز الحصة ({n}/شهر). حاول الشهر المقبل.' },
+    analysisSuccess: { fr: 'Analyse réussie ! ({n} analyses restantes ce mois)', en: 'Analysis successful! ({n} analyses left this month)', es: '¡Análisis exitoso! ({n} análisis restantes este mes)', it: 'Analisi riuscita! ({n} analisi rimanenti questo mese)', pt: 'Análise bem-sucedida! ({n} análises restantes este mês)', ar: 'تم التحليل بنجاح! ({n} تحليلات متبقية هذا الشهر)' },
+    analysisErrorFallback: { fr: 'Erreur IA, analyse locale utilisée', en: 'AI error, using local analysis', es: 'Error IA, usando análisis local', it: 'Errore IA, usando analisi locale', pt: 'Erro IA, usando análise local', ar: 'خطأ في الذكاء الاصطناعي، استخدام التحليل المحلي' },
+    aiUnavailable: { fr: 'L\'IA n\'est pas disponible. Nous utilisons des IA gratuites pour vous permettre d\'utiliser ce site gratuitement. Merci de rentrer manuellement la réservation ou de revenir plus tard.', en: 'AI is not available. We use free AI services to keep this site free. Please enter the booking manually or try again later.', es: 'La IA no está disponible. Usamos servicios de IA gratuitos para mantener este sitio gratuito. Por favor, ingrese la reserva manualmente o intente más tarde.', it: 'L\'IA non è disponibile. Utilizziamo servizi IA gratuiti per mantenere questo sito gratuito. Inserisci la prenotazione manualmente o riprova più tardi.', pt: 'A IA não está disponível. Usamos serviços de IA gratuitos para manter este site gratuito. Por favor, insira a reserva manualmente ou tente novamente mais tarde.', ar: 'الذكاء الاصطناعي غير متاح. نستخدم خدمات ذكاء اصطناعي مجانية للحفاظ على هذا الموقع مجانياً. يرجى إدخال الحجز يدوياً أو المحاولة لاحقاً.' },
+    // Disclaimer IA
+    aiDisclaimer: { fr: '⚠️ L\'IA peut faire des erreurs. Vérifiez les informations avant d\'enregistrer. OneRoadTrip ne peut être tenu responsable d\'éventuelles erreurs d\'extraction.', en: '⚠️ AI may make mistakes. Please verify the information before saving. OneRoadTrip cannot be held responsible for any extraction errors.', es: '⚠️ La IA puede cometer errores. Verifique la información antes de guardar. OneRoadTrip no se responsabiliza de posibles errores de extracción.', it: '⚠️ L\'IA può commettere errori. Verificare le informazioni prima di salvare. OneRoadTrip non può essere ritenuto responsabile di eventuali errori di estrazione.', pt: '⚠️ A IA pode cometer erros. Verifique as informações antes de salvar. OneRoadTrip não pode ser responsabilizado por erros de extração.', ar: '⚠️ قد يخطئ الذكاء الاصطناعي. يرجى التحقق من المعلومات قبل الحفظ. لا يمكن تحميل OneRoadTrip مسؤولية أي أخطاء في الاستخراج.' },
+    aiDisclaimerAccept: { fr: 'J\'ai compris, ne plus afficher', en: 'I understand, don\'t show again', es: 'Entendido, no mostrar de nuevo', it: 'Ho capito, non mostrare più', pt: 'Entendi, não mostrar novamente', ar: 'فهمت، لا تعرض مرة أخرى' },
+    aiDisclaimerContinue: { fr: 'Continuer', en: 'Continue', es: 'Continuar', it: 'Continua', pt: 'Continuar', ar: 'متابعة' },
+    // Vols éditables
+    flightOutbound: { fr: 'ALLER', en: 'OUTBOUND', es: 'IDA', it: 'ANDATA', pt: 'IDA', ar: 'ذهاب' },
+    flightReturn: { fr: 'RETOUR', en: 'RETURN', es: 'VUELTA', it: 'RITORNO', pt: 'VOLTA', ar: 'عودة' },
+    flightSegment: { fr: 'Segment', en: 'Segment', es: 'Segmento', it: 'Segmento', pt: 'Segmento', ar: 'مقطع' },
+    flightNumber: { fr: 'N° vol', en: 'Flight #', es: 'N° vuelo', it: 'N° volo', pt: 'N° voo', ar: 'رقم الرحلة' },
+    airline: { fr: 'Compagnie', en: 'Airline', es: 'Aerolínea', it: 'Compagnia', pt: 'Companhia', ar: 'شركة الطيران' },
+    departure: { fr: 'Départ', en: 'Departure', es: 'Salida', it: 'Partenza', pt: 'Partida', ar: 'المغادرة' },
+    arrival: { fr: 'Arrivée', en: 'Arrival', es: 'Llegada', it: 'Arrivo', pt: 'Chegada', ar: 'الوصول' },
+    duration: { fr: 'Durée', en: 'Duration', es: 'Duración', it: 'Durata', pt: 'Duração', ar: 'المدة' },
+    durationHint: { fr: 'ex: 2h30', en: 'e.g. 2h30', es: 'ej: 2h30', it: 'es: 2h30', pt: 'ex: 2h30', ar: 'مثال: 2h30' },
+    airport: { fr: 'Aéroport', en: 'Airport', es: 'Aeropuerto', it: 'Aeroporto', pt: 'Aeroporto', ar: 'المطار' },
+    city: { fr: 'Ville', en: 'City', es: 'Ciudad', it: 'Città', pt: 'Cidade', ar: 'المدينة' },
+    addSegment: { fr: '+ Ajouter un segment', en: '+ Add segment', es: '+ Añadir segmento', it: '+ Aggiungi segmento', pt: '+ Adicionar segmento', ar: '+ إضافة مقطع' },
+    removeSegment: { fr: 'Supprimer', en: 'Remove', es: 'Eliminar', it: 'Elimina', pt: 'Remover', ar: 'إزالة' },
+    // Location voiture
+    carPickup: { fr: 'Prise en charge', en: 'Pickup', es: 'Recogida', it: 'Ritiro', pt: 'Retirada', ar: 'الاستلام' },
+    carDropoff: { fr: 'Restitution', en: 'Dropoff', es: 'Devolución', it: 'Riconsegna', pt: 'Devolução', ar: 'التسليم' },
+    vehicleType: { fr: 'Type véhicule', en: 'Vehicle type', es: 'Tipo vehículo', it: 'Tipo veicolo', pt: 'Tipo veículo', ar: 'نوع المركبة' },
+    vehicleModel: { fr: 'Modèle', en: 'Model', es: 'Modelo', it: 'Modello', pt: 'Modelo', ar: 'الطراز' },
+    mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' },
+    fuelPolicy: { fr: 'Carburant', en: 'Fuel policy', es: 'Política combustible', it: 'Politica carburante', pt: 'Política combustível', ar: 'سياسة الوقود' },
+    tripSaveRequired: { fr: 'Voyage non sauvegardé', en: 'Trip not saved', es: 'Viaje no guardado', it: 'Viaggio non salvato', pt: 'Viagem não guardada', ar: 'الرحلة غير محفوظة' },
+    tripSaveRequiredMsg: { fr: 'Vous devez d\'abord enregistrer ce voyage dans votre Dashboard pour pouvoir ajouter des photos et réservations.', en: 'You must first save this trip to your Dashboard to add photos and bookings.', es: 'Debe guardar primero este viaje en su Dashboard para añadir fotos y reservas.', it: 'Devi prima salvare questo viaggio nella tua Dashboard per aggiungere foto e prenotazioni.', pt: 'Deve primeiro guardar esta viagem no seu Dashboard para adicionar fotos e reservas.', ar: 'يجب أولاً حفظ هذه الرحلة في لوحة التحكم لإضافة الصور والحجوزات.' },
+    loginRequiredMsg: { fr: 'Vous devez être connecté pour accéder à cette page.', en: 'You must be signed in to access this page.', es: 'Debe iniciar sesión para acceder a esta página.', it: 'Devi accedere per accedere a questa pagina.', pt: 'Deve iniciar sessão para aceder a esta página.', ar: 'يجب تسجيل الدخول للوصول إلى هذه الصفحة.' },
+    goBack: { fr: 'Retour', en: 'Back', es: 'Volver', it: 'Indietro', pt: 'Voltar', ar: 'رجوع' },
+    edit: { fr: 'Modifier', en: 'Edit', es: 'Editar', it: 'Modifica', pt: 'Editar', ar: 'تعديل' },
+    delete: { fr: 'Supprimer', en: 'Delete', es: 'Eliminar', it: 'Elimina', pt: 'Excluir', ar: 'حذف' }
+  };
+  
+  let lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang')?.slice(0,2) || navigator.language?.slice(0,2) || 'fr';
+  if (!['fr','en','es','it','pt','ar'].includes(lang)) lang = 'en';
+  
+  function t(key) {
+    return window.ORT_I18N?.[key]?.[lang] || I18N_LOCAL[key]?.[lang] || I18N_LOCAL[key]?.fr || key;
+  }
+  
+  function applyI18N() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      const text = t(key);
+      if (text && text !== key) el.textContent = text;
+    });
+    // Tooltips
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.getAttribute('data-i18n-title');
+      const text = t(key);
+      if (text && text !== key) el.setAttribute('title', text);
+    });
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // STATE
+  // ══════════════════════════════════════════════════════════════
+  const params = new URLSearchParams(location.search);
+  let tripId = params.get('tripId') || params.get('id');
+  const cc = params.get('cc') || '';
+  const itin = params.get('itin') || '';
+  
+  let trip = null;
+  let bookingType = 'step'; // 'step' or 'travel'
+  let selectedCategory = 'hotel';
+  
+  const $ = id => document.getElementById(id);
+  const loadingOverlay = $('loadingOverlay');
+  const toast = $('toast');
+  
+  // ══════════════════════════════════════════════════════════════
+  // INIT
+  // ══════════════════════════════════════════════════════════════
+  async function init() {
+    console.log('[RT-BOOKING-IMPORT] Init...', { tripId, cc, itin });
+    applyI18N();
+    
+    if (window.ORT_TRIPID) {
+      tripId = ORT_TRIPID.init();
+    }
+    
+    if (!tripId) {
+      showToast(t('noTrip'), 'error');
+      loadingOverlay.style.display = 'none';
+      return;
+    }
+    
+    const user = await waitForAuth();
+    if (!user) {
+      showBlockingMessage('login');
+      return;
+    }
+    
+    const tripSaved = await checkTripSaved(user.uid, tripId);
+    if (!tripSaved) {
+      showBlockingMessage('tripNotSaved');
+      return;
+    }
+    
+    await loadTrip();
+    if (!trip) {
+      showToast(t('noTrip'), 'error');
+      loadingOverlay.style.display = 'none';
+      return;
+    }
+    
+    if (window.ORT_TRIP_DATA) {
+      await ORT_TRIP_DATA.loadTrip(tripId);
+    }
+    
+    populateStepSelector();
+    renderExistingBookings(); // Afficher les réservations existantes
+    setupEventListeners();
+    
+    loadingOverlay.style.display = 'none';
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // DISCLAIMER IA
+  // ══════════════════════════════════════════════════════════════
+  let disclaimerAccepted = false;
+  
+  async function checkDisclaimerAccepted() {
+    // Vérifier dans Firestore si l'utilisateur a accepté
+    const user = firebase.auth().currentUser;
+    if (!user) return false;
+    
+    try {
+      const doc = await firebase.firestore()
+        .collection('users')
+        .doc(user.uid)
+        .get();
+      
+      if (doc.exists && doc.data()?.aiDisclaimerAccepted) {
+        disclaimerAccepted = true;
+        return true;
+      }
+    } catch (e) {
+      console.warn('[DISCLAIMER] Erreur lecture:', e);
+    }
+    return false;
+  }
+  
+  async function saveDisclaimerAccepted() {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    
+    try {
+      await firebase.firestore()
+        .collection('users')
+        .doc(user.uid)
+        .set({ aiDisclaimerAccepted: true, aiDisclaimerAcceptedAt: Date.now() }, { merge: true });
+      disclaimerAccepted = true;
+      console.log('[DISCLAIMER] ✅ Acceptation enregistrée');
+    } catch (e) {
+      console.error('[DISCLAIMER] Erreur sauvegarde:', e);
+    }
+  }
+  
+  function showDisclaimerModal(onAccept) {
+    const modalId = 'aiDisclaimerModal';
+    let modal = document.getElementById(modalId);
+    if (modal) modal.remove();
+    
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:16px;max-width:450px;width:100%;padding:24px;text-align:center">
+        <div style="font-size:3rem;margin-bottom:16px">🤖</div>
+        <h2 style="margin:0 0 16px 0;color:#113f7a;font-size:1.2rem">${t('extractedInfo')}</h2>
+        <p style="color:#666;font-size:0.95rem;line-height:1.5;margin-bottom:24px">${t('aiDisclaimer')}</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <button id="disclaimerAcceptBtn" style="padding:12px 24px;background:#16a34a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.95rem">
+            ✅ ${t('aiDisclaimerAccept')}
+          </button>
+          <button id="disclaimerContinueBtn" style="padding:10px 20px;background:#e5e7eb;color:#374151;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem">
+            ${t('aiDisclaimerContinue')}
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Accepter et ne plus afficher
+    document.getElementById('disclaimerAcceptBtn').addEventListener('click', async () => {
+      await saveDisclaimerAccepted();
+      modal.remove();
+      if (onAccept) onAccept();
+    });
+    
+    // Continuer sans accepter définitivement
+    document.getElementById('disclaimerContinueBtn').addEventListener('click', () => {
+      modal.remove();
+      if (onAccept) onAccept();
+    });
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // AFFICHAGE DES RÉSERVATIONS EXISTANTES
+  // ══════════════════════════════════════════════════════════════
+  const CATEGORY_ICONS = {
+    hotel: '🏨', activity: '🎯', flight: '✈️', car_rental: '🚗',
+    insurance: '🛡️', visit: '🏛️', show: '🎭', transfer: '🚐', other: '📋'
+  };
+  
+  function renderExistingBookings() {
+    renderStepBookings();
+    renderTravelBookings();
+    
+    // Mettre à jour les compteurs mobile
+    if (typeof updateMobileCounts === 'function') {
+      // Compter les résas par étape
+      let stepsCount = 0;
+      if (trip?.steps) {
+        const seen = new Set();
+        trip.steps.forEach((step, idx) => {
+          const bookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(idx) : (step.bookings || []);
+          bookings.forEach(b => {
+            const key = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              stepsCount++;
+            }
+          });
+        });
+      }
+      
+      // Compter les résas voyage
+      const travelBookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getTravelBookings() : (trip?.travelBookings || []);
+      const travelCount = travelBookings?.length || 0;
+      
+      updateMobileCounts(stepsCount, travelCount);
+    }
+  }
+  
+  function renderStepBookings() {
+    const container = $('stepBookingsList');
+    
+    if (!trip?.steps || trip.steps.length === 0) {
+      container.innerHTML = `<div class="existing-empty">${t('noSteps')}</div>`;
+      return;
+    }
+    
+    // Collecter TOUTES les résas de toutes les étapes
+    const allStepBookings = [];
+    trip.steps.forEach((step, idx) => {
+      const bookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getStepBookings(idx) : (step.bookings || []);
+      bookings.forEach(b => {
+        if (!allStepBookings.find(ab => ab.id === b.id)) {
+          allStepBookings.push({ ...b, _originalStepIdx: idx });
+        }
+      });
+    });
+    
+    let html = '';
+    let hasAnyBooking = false;
+    
+    trip.steps.forEach((step, idx) => {
+      // Résas qui appartiennent à cette étape (via stepIndexes ou _originalStepIdx)
+      const bookingsForStep = allStepBookings.filter(b => {
+        if (b.stepIndexes && b.stepIndexes.length > 0) {
+          return b.stepIndexes.includes(idx);
+        }
+        return b._originalStepIdx === idx;
+      });
+      
+      const count = bookingsForStep.length;
+      if (count > 0) hasAnyBooking = true;
+      
+      html += `
+        <div class="step-group">
+          <div class="step-header ${count > 0 ? 'has-bookings' : ''}" onclick="toggleStepBookings(${idx})">
+            <span class="step-num">${idx + 1}</span>
+            <span class="step-name">${escHtml(step.name || t('step') + ' ' + (idx + 1))}</span>
+            ${count > 0 ? `<span class="count">${count}</span>` : ''}
+            <span class="arrow">›</span>
+          </div>
+          <div class="step-bookings" id="stepBookings${idx}">
+            ${count > 0 ? renderBookingList(bookingsForStep, 'step', idx) : `<div class="existing-empty" style="padding:8px">${t('noBookings')}</div>`}
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html || `<div class="existing-empty">${t('noSteps')}</div>`;
+  }
+  
+  function renderTravelBookings() {
+    const container = $('travelBookingsList');
+    const bookings = window.ORT_TRIP_DATA ? ORT_TRIP_DATA.getTravelBookings() : (trip?.travelBookings || []);
+    
+    if (!bookings || bookings.length === 0) {
+      container.innerHTML = `<div class="existing-empty">${t('noTravelBookings')}</div>`;
+      return;
+    }
+    
+    container.innerHTML = `<div class="booking-list">${renderBookingList(bookings, 'travel')}</div>`;
+  }
+  
+  function renderBookingList(bookings, type, stepIdx = -1) {
+    // Dédoublonner par ID ou par nom+date
+    const seen = new Set();
+    const uniqueBookings = bookings.filter(b => {
+      const key = b.id || `${b.name}-${b.date_start || ''}-${b.category}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    
+    return uniqueBookings.map((b, i) => {
+      const icon = CATEGORY_ICONS[b.category] || '📋';
+      const totalPrice = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : null;
+      const dateStr = b.date_start || b.dateStart || '';
+      const bookingId = b.id || `idx_${i}`;
+      
+      // Calculer le prix divisé si multi-step
+      const stepCount = b.stepIndexes?.length || 1;
+      const displayPrice = totalPrice ? (totalPrice / stepCount) : null;
+      const isShared = stepCount > 1;
+      
+      // Utiliser _originalStepIdx pour les opérations (là où la résa est vraiment stockée)
+      const actualStepIdx = b._originalStepIdx !== undefined ? b._originalStepIdx : stepIdx;
+      
+      return `
+        <div class="booking-item" data-id="${bookingId}">
+          <span class="cat-icon">${icon}</span>
+          <div class="info">
+            <div class="name">${escHtml(b.name || t('noName'))}</div>
+            <div class="details">
+              ${dateStr ? `<span>📅 ${formatDate(dateStr)}</span>` : ''}
+              ${b.reference ? `<span>🔖 ${escHtml(b.reference)}</span>` : ''}
+              ${isShared ? `<span style="color:#3b82f6">🔗 ${stepCount}</span>` : ''}
+            </div>
+          </div>
+          ${displayPrice ? `<span class="price">${Math.round(displayPrice)} €${isShared ? `<span class="price-split">/${stepCount}</span>` : ''}</span>` : ''}
+          <button class="btn-edit" onclick="editBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('edit')}">✏️</button>
+          <button class="btn-delete" onclick="deleteBooking('${type}', ${actualStepIdx}, '${bookingId}')" title="${t('delete')}">×</button>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  // Variables pour l'édition
+  let editingBooking = null;
+  let editingType = null;
+  let editingStepIdx = -1;
+  let editingBookingId = null;
+  let editNewType = 'step';
+  let editNewCategory = 'hotel';
+  
+  window.editBooking = function(type, stepIdx, bookingId) {
+    // Trouver la réservation
+    let booking = null;
+    if (type === 'travel') {
+      const bookings = ORT_TRIP_DATA.getTravelBookings() || [];
+      booking = bookings.find(b => b.id === bookingId) || bookings.find((b, i) => `idx_${i}` === bookingId);
+    } else {
+      const bookings = ORT_TRIP_DATA.getStepBookings(stepIdx) || [];
+      booking = bookings.find(b => b.id === bookingId) || bookings.find((b, i) => `idx_${i}` === bookingId);
+    }
+    
+    if (!booking) {
+      showToast(t('bookingNotFound'), 'error');
+      return;
+    }
+    
+    // Stocker pour la sauvegarde
+    editingBooking = booking;
+    editingType = type;
+    editingStepIdx = stepIdx;
+    editingBookingId = bookingId;
+    editNewType = booking.bookingType || type;
+    editNewCategory = booking.category || 'hotel';
+    
+    // Sélectionner le type (mini buttons)
+    $('editTypeStep').classList.toggle('active', editNewType === 'step');
+    $('editTypeTravel').classList.toggle('active', editNewType === 'travel');
+    $('editStepSelectorWrap').style.display = editNewType === 'step' ? 'block' : 'none';
+    
+    // Remplir le select d'étapes
+    populateEditStepSelector();
+    
+    // Initialiser les étapes sélectionnées
+    editSelectedSteps = booking.stepIndexes ? [...booking.stepIndexes] : (type === 'step' ? [stepIdx] : []);
+    renderSelectedSteps();
+    
+    // Catégorie (mini icons)
+    document.querySelectorAll('#editCategorySelector .cat-mini').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === editNewCategory);
+    });
+    
+    // Champs
+    $('editFieldName').value = booking.name || '';
+    $('editFieldDateStart').value = booking.date_start || booking.dateStart || '';
+    $('editFieldDateEnd').value = booking.date_end || booking.dateEnd || '';
+    $('editFieldRef').value = booking.reference || '';
+    $('editFieldPrice').value = booking.price ? (typeof booking.price === 'object' ? booking.price.amount : booking.price) : '';
+    populateCurrencySelect('editFieldCurrency', booking.currency || (booking.price && booking.price.currency));
+    $('editFieldAddress').value = booking.address || '';
+    $('editFieldNotes').value = booking.notes || '';
+    
+    // Afficher l'éditeur spécifique si vol ou location voiture
+    const previewBox = $('editPreviewBox');
+    if (editNewCategory === 'flight' && booking.flights && booking.flights.length > 0) {
+      previewBox.style.display = 'block';
+      previewBox.innerHTML = generateFlightsEditor(booking.flights, booking.provider);
+      parsedData = booking; // Pour avoir accès aux données
+    } else if (editNewCategory === 'car_rental' && booking.car_rental) {
+      previewBox.style.display = 'block';
+      previewBox.innerHTML = generateCarRentalEditor(booking.car_rental);
+      parsedData = booking;
+    } else {
+      previewBox.style.display = 'none';
+      parsedData = null;
+    }
+    
+    // Mettre à jour le prix par étape
+    updatePricePerStep();
+    
+    // Afficher la modal
+    $('editModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+  
+  window.closeEditModal = function() {
+    $('editModal').classList.remove('show');
+    document.body.style.overflow = '';
+    editingBooking = null;
+    editingType = null;
+    editingStepIdx = -1;
+    editingBookingId = null;
+  };
+  
+  // ══════════════════════════════════════════════════════════════
+  // MODAL PARSING (réutilise editModal)
+  // ══════════════════════════════════════════════════════════════
+  let editMode = 'edit'; // 'edit' ou 'parse'
+  let parsedData = null; // Données parsées par l'IA (pour les flights, etc.)
+  
+  // Remplit un <select> de devises depuis ORT_CURRENCY et sélectionne une valeur
+  function populateCurrencySelect(id, selected) {
+    const sel = document.getElementById(id);
+    if (!sel || !window.ORT_CURRENCY) return;
+    const tripCur = ORT_CURRENCY.getTripCurrency() || 'EUR';
+    const val = String(selected || tripCur).toUpperCase();
+    sel.innerHTML = ORT_CURRENCY.orderedCodes().map(c => {
+      const cur = ORT_CURRENCY.CURRENCIES[c];
+      const label = c + (cur && cur.symbol && cur.symbol !== c ? ' (' + cur.symbol + ')' : '');
+      return '<option value="' + c + '"' + (c === val ? ' selected' : '') + '>' + label + '</option>';
+    }).join('');
+    sel.value = val;
+  }
+
+  async function openParseModal(data, preview = null) {
+    // Vérifier si le disclaimer a été accepté
+    if (!disclaimerAccepted) {
+      const accepted = await checkDisclaimerAccepted();
+      if (!accepted) {
+        // Afficher le disclaimer puis ouvrir la modale
+        showDisclaimerModal(() => doOpenParseModal(data, preview));
+        return;
+      }
+    }
+    doOpenParseModal(data, preview);
+  }
+  
+  function doOpenParseModal(data, preview = null) {
+    // Passer en mode parsing
+    editMode = 'parse';
+    parsedData = data; // Stocker les données complètes (avec flights si vol)
+    editingBooking = null;
+    editingType = null;
+    editingStepIdx = -1;
+    editingBookingId = null;
+    
+    // Reprendre le type et l'étape sélectionnés dans le formulaire principal
+    editNewType = bookingType;
+    editNewCategory = data.category || 'hotel';
+    editSelectedSteps = [];
+    
+    const mainStepIdx = parseInt($('stepSelector').value);
+    if (editNewType === 'step' && !isNaN(mainStepIdx) && mainStepIdx >= 0) {
+      editSelectedSteps = [mainStepIdx];
+    }
+    
+    // Changer le header (vert + titre)
+    const header = $('editModalHeader');
+    header.style.background = '#16a34a';
+    $('editModalTitle').innerHTML = '✅ ' + t('extractedInfo');
+    
+    // Afficher et remplir la preview avec champs éditables
+    const previewBox = $('editPreviewBox');
+    previewBox.style.display = 'block';
+    
+    // Générer le contenu éditable selon le type
+    if (data.category === 'flight' && data.flights && data.flights.length > 0) {
+      // === VOLS ÉDITABLES ===
+      previewBox.innerHTML = generateFlightsEditor(data.flights, data.provider);
+    } else if (data.category === 'car_rental' && data.car_rental) {
+      // === LOCATION VOITURE ÉDITABLE ===
+      previewBox.innerHTML = generateCarRentalEditor(data.car_rental);
+    } else if (preview && preview.fields) {
+      // Autres catégories : preview classique
+      previewBox.innerHTML = `
+        <div class="parse-preview-header">
+          <span class="parse-preview-icon">${preview.icon || '📋'}</span>
+          <div>
+            <div class="parse-preview-title">${escHtml(preview.title)}</div>
+            ${preview.subtitle ? `<div class="parse-preview-subtitle">${escHtml(preview.subtitle)}</div>` : ''}
+          </div>
+        </div>
+        <div class="parse-preview-fields">
+          ${preview.fields.map(f => {
+            if (f.isHeader) {
+              return `<div class="parse-preview-field" style="margin-top:8px;font-weight:700;color:#1e40af;border-top:1px solid #bbf7d0;padding-top:8px">${escHtml(f.value)}</div>`;
+            }
+            return `<div class="parse-preview-field"><span class="icon">${f.icon}</span><span class="value">${escHtml(f.value)}</span></div>`;
+          }).join('')}
+        </div>
+      `;
+    } else {
+      previewBox.innerHTML = '';
+    }
+    
+    // Type selector
+    $('editTypeStep').classList.toggle('active', editNewType === 'step');
+    $('editTypeTravel').classList.toggle('active', editNewType === 'travel');
+    $('editStepSelectorWrap').style.display = editNewType === 'step' ? 'block' : 'none';
+    
+    // Remplir le select d'étapes
+    populateEditStepSelector();
+    renderSelectedSteps();
+    
+    // Catégorie
+    document.querySelectorAll('#editCategorySelector .cat-mini').forEach(b => {
+      b.classList.toggle('active', b.dataset.cat === editNewCategory);
+    });
+    
+    // Champs
+    $('editFieldName').value = data.name || '';
+    $('editFieldDateStart').value = data.date_start || '';
+    $('editFieldDateEnd').value = data.date_end || '';
+    $('editFieldPrice').value = data.price || '';
+    populateCurrencySelect('editFieldCurrency', data.currency);
+    $('editFieldRef').value = data.reference || '';
+    $('editFieldAddress').value = data.address || '';
+    $('editFieldNotes').value = data.notes || '';
+    
+    // Ouvrir
+    $('editModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+    
+    updatePricePerStep();
+  }
+  
+  // Générer l'éditeur de vols
+  function generateFlightsEditor(flights, provider) {
+    const inputStyle = 'padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:100%';
+    const labelStyle = 'font-size:0.75rem;color:#6b7280;margin-bottom:2px;display:block';
+    
+    let html = `<div class="flights-editor" style="font-size:0.9rem">`;
+    
+    // Compagnie aérienne (global)
+    html += `
+      <div style="margin-bottom:12px">
+        <label style="${labelStyle}">🏢 ${t('airline')}</label>
+        <input type="text" id="flightProvider" value="${escHtml(provider || flights[0]?.airline || '')}" style="${inputStyle}" placeholder="${t('airline')}">
+      </div>
+    `;
+    
+    flights.forEach((flight, idx) => {
+      const typeLabel = flight.type === 'outbound' ? t('flightOutbound') : (flight.type === 'return' ? t('flightReturn') : t('flightSegment') + ' ' + (idx + 1));
+      const typeColor = flight.type === 'outbound' ? '#16a34a' : (flight.type === 'return' ? '#dc2626' : '#3b82f6');
+      
+      html += `
+        <div class="flight-segment" data-idx="${idx}" style="background:#f8fafc;border:2px solid ${typeColor};border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-weight:700;color:${typeColor}">✈️ ${typeLabel}</span>
+            <select id="flightType${idx}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:0.8rem">
+              <option value="outbound" ${flight.type === 'outbound' ? 'selected' : ''}>${t('flightOutbound')}</option>
+              <option value="return" ${flight.type === 'return' ? 'selected' : ''}>${t('flightReturn')}</option>
+            </select>
+          </div>
+          
+          <!-- N° vol -->
+          <div style="margin-bottom:8px">
+            <label style="${labelStyle}">🔢 ${t('flightNumber')}</label>
+            <input type="text" id="flightNumber${idx}" value="${escHtml(flight.flight_number || '')}" style="${inputStyle}" placeholder="ex: AF1234">
+          </div>
+          
+          <!-- Départ -->
+          <div style="background:#e0f2fe;border-radius:8px;padding:10px;margin-bottom:8px">
+            <div style="font-weight:600;color:#0369a1;margin-bottom:8px">🛫 ${t('departure')}</div>
+            <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px">
+              <input type="text" id="flightDepCity${idx}" value="${escHtml(flight.departure_city || '')}" style="${inputStyle}" placeholder="${t('city')}">
+              <input type="text" id="flightDepAirport${idx}" value="${escHtml(flight.departure_airport || '')}" style="${inputStyle}" placeholder="Code">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+              <input type="date" id="flightDepDate${idx}" value="${flight.departure_date || ''}" style="${inputStyle}">
+              <input type="time" id="flightDepTime${idx}" value="${flight.departure_time || ''}" style="${inputStyle}">
+            </div>
+          </div>
+          
+          <!-- Arrivée -->
+          <div style="background:#fef3c7;border-radius:8px;padding:10px;margin-bottom:8px">
+            <div style="font-weight:600;color:#b45309;margin-bottom:8px">🛬 ${t('arrival')}</div>
+            <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px">
+              <input type="text" id="flightArrCity${idx}" value="${escHtml(flight.arrival_city || '')}" style="${inputStyle}" placeholder="${t('city')}">
+              <input type="text" id="flightArrAirport${idx}" value="${escHtml(flight.arrival_airport || '')}" style="${inputStyle}" placeholder="Code">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+              <input type="date" id="flightArrDate${idx}" value="${flight.arrival_date || ''}" style="${inputStyle}">
+              <input type="time" id="flightArrTime${idx}" value="${flight.arrival_time || ''}" style="${inputStyle}">
+            </div>
+          </div>
+          
+          <!-- Durée -->
+          <div style="display:grid;grid-template-columns:1fr;gap:6px">
+            <div>
+              <label style="${labelStyle}">⏱️ ${t('duration')}</label>
+              <input type="text" id="flightDuration${idx}" value="${formatDurationFromMinutes(flight.duration_minutes)}" style="${inputStyle}" placeholder="${t('durationHint')}">
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    // Bouton ajouter segment
+    html += `
+      <button type="button" onclick="addFlightSegment()" style="width:100%;padding:10px;border:2px dashed #9ca3af;border-radius:8px;background:none;color:#6b7280;cursor:pointer;font-size:0.9rem">
+        ${t('addSegment')}
+      </button>
+    </div>`;
+    
+    return html;
+  }
+  
+  // Générer l'éditeur de location voiture
+  function generateCarRentalEditor(carRental) {
+    const inputStyle = 'padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:100%';
+    const labelStyle = 'font-size:0.75rem;color:#6b7280;margin-bottom:2px;display:block';
+    const car = carRental || {};
+    
+    return `
+      <div class="car-rental-editor" style="font-size:0.9rem">
+        <!-- Véhicule -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div>
+            <label style="${labelStyle}">🚗 ${t('vehicleType')}</label>
+            <input type="text" id="carVehicleType" value="${escHtml(car.vehicle_type || '')}" style="${inputStyle}" placeholder="SUV, Berline...">
+          </div>
+          <div>
+            <label style="${labelStyle}">${t('vehicleModel')}</label>
+            <input type="text" id="carVehicleModel" value="${escHtml(car.vehicle_model || '')}" style="${inputStyle}" placeholder="Peugeot 208...">
+          </div>
+        </div>
+        
+        <!-- Prise en charge -->
+        <div style="background:#dcfce7;border:2px solid #16a34a;border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="font-weight:700;color:#16a34a;margin-bottom:10px">📍 ${t('carPickup')}</div>
+          <div style="margin-bottom:8px">
+            <label style="${labelStyle}">${t('address')}</label>
+            <input type="text" id="carPickupLocation" value="${escHtml(car.pickup_location || '')}" style="${inputStyle}" placeholder="Aéroport, agence...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+            <input type="date" id="carPickupDate" value="${car.pickup_date || ''}" style="${inputStyle}">
+            <input type="time" id="carPickupTime" value="${car.pickup_time || ''}" style="${inputStyle}">
+          </div>
+        </div>
+        
+        <!-- Restitution -->
+        <div style="background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:12px;margin-bottom:12px">
+          <div style="font-weight:700;color:#dc2626;margin-bottom:10px">📍 ${t('carDropoff')}</div>
+          <div style="margin-bottom:8px">
+            <label style="${labelStyle}">${t('address')}</label>
+            <input type="text" id="carDropoffLocation" value="${escHtml(car.dropoff_location || '')}" style="${inputStyle}" placeholder="Aéroport, agence...">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+            <input type="date" id="carDropoffDate" value="${car.dropoff_date || ''}" style="${inputStyle}">
+            <input type="time" id="carDropoffTime" value="${car.dropoff_time || ''}" style="${inputStyle}">
+          </div>
+        </div>
+        
+        <!-- Options -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label style="${labelStyle}">🛣️ ${t('mileage')}</label>
+            <input type="text" id="carMileage" value="${escHtml(car.included_km || '')}" style="${inputStyle}" placeholder="Illimité...">
+          </div>
+          <div>
+            <label style="${labelStyle}">⛽ ${t('fuelPolicy')}</label>
+            <input type="text" id="carFuelPolicy" value="${escHtml(car.fuel_policy || '')}" style="${inputStyle}" placeholder="Plein/Plein...">
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Formater durée en minutes vers format lisible
+  function formatDurationFromMinutes(minutes) {
+    if (!minutes) return '';
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${h}h`;
+  }
+  
+  // Parser durée format "2h30" vers minutes
+  function parseDurationToMinutes(str) {
+    if (!str) return null;
+    const match = str.match(/(\d+)\s*h\s*(\d*)/i);
+    if (match) {
+      const h = parseInt(match[1]) || 0;
+      const m = parseInt(match[2]) || 0;
+      return h * 60 + m;
+    }
+    // Essayer format nombre seul (minutes)
+    const num = parseInt(str);
+    return isNaN(num) ? null : num;
+  }
+  
+  // Ajouter un segment de vol
+  window.addFlightSegment = function() {
+    const container = document.querySelector('.flights-editor');
+    if (!container) return;
+    
+    const segments = container.querySelectorAll('.flight-segment');
+    const newIdx = segments.length;
+    
+    // Déterminer le type (alterner aller/retour)
+    const lastType = segments.length > 0 ? (document.getElementById(`flightType${newIdx - 1}`)?.value || 'outbound') : 'outbound';
+    const newType = lastType === 'outbound' ? 'return' : 'outbound';
+    
+    const inputStyle = 'padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:100%';
+    const labelStyle = 'font-size:0.75rem;color:#6b7280;margin-bottom:2px;display:block';
+    const typeColor = newType === 'outbound' ? '#16a34a' : '#dc2626';
+    const typeLabel = newType === 'outbound' ? t('flightOutbound') : t('flightReturn');
+    
+    const html = `
+      <div class="flight-segment" data-idx="${newIdx}" style="background:#f8fafc;border:2px solid ${typeColor};border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-weight:700;color:${typeColor}">✈️ ${typeLabel}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <select id="flightType${newIdx}" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:0.8rem">
+              <option value="outbound" ${newType === 'outbound' ? 'selected' : ''}>${t('flightOutbound')}</option>
+              <option value="return" ${newType === 'return' ? 'selected' : ''}>${t('flightReturn')}</option>
+            </select>
+            <button type="button" onclick="removeFlightSegment(${newIdx})" style="padding:4px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;cursor:pointer;font-size:0.75rem">${t('removeSegment')}</button>
+          </div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label style="${labelStyle}">🔢 ${t('flightNumber')}</label>
+          <input type="text" id="flightNumber${newIdx}" value="" style="${inputStyle}" placeholder="ex: AF1234">
+        </div>
+        <div style="background:#e0f2fe;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:600;color:#0369a1;margin-bottom:8px">🛫 ${t('departure')}</div>
+          <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px">
+            <input type="text" id="flightDepCity${newIdx}" value="" style="${inputStyle}" placeholder="${t('city')}">
+            <input type="text" id="flightDepAirport${newIdx}" value="" style="${inputStyle}" placeholder="Code">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+            <input type="date" id="flightDepDate${newIdx}" value="" style="${inputStyle}">
+            <input type="time" id="flightDepTime${newIdx}" value="" style="${inputStyle}">
+          </div>
+        </div>
+        <div style="background:#fef3c7;border-radius:8px;padding:10px;margin-bottom:8px">
+          <div style="font-weight:600;color:#b45309;margin-bottom:8px">🛬 ${t('arrival')}</div>
+          <div style="display:grid;grid-template-columns:1fr 80px;gap:6px;margin-bottom:6px">
+            <input type="text" id="flightArrCity${newIdx}" value="" style="${inputStyle}" placeholder="${t('city')}">
+            <input type="text" id="flightArrAirport${newIdx}" value="" style="${inputStyle}" placeholder="Code">
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+            <input type="date" id="flightArrDate${newIdx}" value="" style="${inputStyle}">
+            <input type="time" id="flightArrTime${newIdx}" value="" style="${inputStyle}">
+          </div>
+        </div>
+        <div>
+          <label style="${labelStyle}">⏱️ ${t('duration')}</label>
+          <input type="text" id="flightDuration${newIdx}" value="" style="${inputStyle}" placeholder="${t('durationHint')}">
+        </div>
+      </div>
+    `;
+    
+    // Insérer avant le bouton "ajouter"
+    const addBtn = container.querySelector('button[onclick*="addFlightSegment"]');
+    if (addBtn) {
+      addBtn.insertAdjacentHTML('beforebegin', html);
+    }
+  };
+  
+  window.removeFlightSegment = function(idx) {
+    const segment = document.querySelector(`.flight-segment[data-idx="${idx}"]`);
+    if (segment) segment.remove();
+  };
+  
+  // Collecter les données des vols depuis l'éditeur
+  function collectFlightsFromEditor() {
+    const flights = [];
+    const segments = document.querySelectorAll('.flight-segment');
+    
+    segments.forEach((segment, i) => {
+      const idx = segment.dataset.idx;
+      flights.push({
+        type: document.getElementById(`flightType${idx}`)?.value || 'outbound',
+        flight_number: document.getElementById(`flightNumber${idx}`)?.value || null,
+        airline: document.getElementById('flightProvider')?.value || null,
+        departure_city: document.getElementById(`flightDepCity${idx}`)?.value || null,
+        departure_airport: document.getElementById(`flightDepAirport${idx}`)?.value || null,
+        departure_date: document.getElementById(`flightDepDate${idx}`)?.value || null,
+        departure_time: document.getElementById(`flightDepTime${idx}`)?.value || null,
+        arrival_city: document.getElementById(`flightArrCity${idx}`)?.value || null,
+        arrival_airport: document.getElementById(`flightArrAirport${idx}`)?.value || null,
+        arrival_date: document.getElementById(`flightArrDate${idx}`)?.value || null,
+        arrival_time: document.getElementById(`flightArrTime${idx}`)?.value || null,
+        duration_minutes: parseDurationToMinutes(document.getElementById(`flightDuration${idx}`)?.value)
+      });
+    });
+    
+    return flights;
+  }
+  
+  // Collecter les données de location depuis l'éditeur
+  function collectCarRentalFromEditor() {
+    return {
+      vehicle_type: document.getElementById('carVehicleType')?.value || null,
+      vehicle_model: document.getElementById('carVehicleModel')?.value || null,
+      pickup_location: document.getElementById('carPickupLocation')?.value || null,
+      pickup_date: document.getElementById('carPickupDate')?.value || null,
+      pickup_time: document.getElementById('carPickupTime')?.value || null,
+      dropoff_location: document.getElementById('carDropoffLocation')?.value || null,
+      dropoff_date: document.getElementById('carDropoffDate')?.value || null,
+      dropoff_time: document.getElementById('carDropoffTime')?.value || null,
+      included_km: document.getElementById('carMileage')?.value || null,
+      fuel_policy: document.getElementById('carFuelPolicy')?.value || null
+    };
+  }
+
+  function resetEditModalToEditMode() {
+    // Remettre le header bleu
+    const header = $('editModalHeader');
+    header.style.background = '';
+    $('editModalTitle').innerHTML = '✏️ ' + t('editBooking');
+    
+    // Cacher la preview
+    $('editPreviewBox').style.display = 'none';
+    
+    editMode = 'edit';
+    parsedData = null;
+  }
+  
+  // Modifier closeEditModal pour gérer les deux modes
+  const originalCloseEditModal = window.closeEditModal;
+  window.closeEditModal = function() {
+    $('editModal').classList.remove('show');
+    document.body.style.overflow = '';
+    
+    // Si c'était un parsing, vider le textarea
+    if (editMode === 'parse') {
+      $('emailText').value = '';
+    }
+    
+    // Reset
+    resetEditModalToEditMode();
+    editingBooking = null;
+    editingType = null;
+    editingStepIdx = -1;
+    editingBookingId = null;
+  };
+  
+  window.saveEditedBooking = async function() {
+    const name = $('editFieldName').value.trim();
+    if (!name) {
+      showToast(t('enterName'), 'error');
+      return;
+    }
+    
+    // Validation selon le type
+    if (editNewType === 'step' && editSelectedSteps.length === 0) {
+      showToast(t('selectAtLeastOneStep'), 'error');
+      return;
+    }
+    
+    const totalPrice = $('editFieldPrice').value ? parseFloat($('editFieldPrice').value) : null;
+
+    // === DEVISE & CONVERSION vers la devise du voyage ===
+    const tripCur = (window.ORT_CURRENCY && ORT_CURRENCY.getTripCurrency()) || 'EUR';
+    const fromCur = String($('editFieldCurrency')?.value || tripCur).toUpperCase();
+    let finalPrice = totalPrice;
+    let priceOriginal = null;
+    if (totalPrice != null && fromCur !== tripCur.toUpperCase() && window.ORT_CURRENCY && ORT_CURRENCY.convert) {
+      const conv = await ORT_CURRENCY.convert(totalPrice, fromCur, tripCur);
+      if (conv != null) {
+        finalPrice = Math.round(conv * 100) / 100;
+        priceOriginal = { amount: totalPrice, currency: fromCur };
+      } else {
+        showToast('Conversion indisponible, montant gardé en ' + fromCur, 'error');
+      }
+    }
+    
+    if (editMode === 'parse') {
+      // Mode PARSING : créer une nouvelle réservation
+      const booking = {
+        id: `booking_${Date.now()}`,
+        category: editNewCategory,
+        name: name,
+        date_start: $('editFieldDateStart').value || null,
+        date_end: $('editFieldDateEnd').value || null,
+        reference: $('editFieldRef').value.trim() || null,
+        price: finalPrice,
+        currency: tripCur,
+        price_original: priceOriginal,
+        address: $('editFieldAddress').value.trim() || null,
+        notes: $('editFieldNotes').value.trim() || null,
+        addedAt: Date.now(),
+        updatedAt: Date.now(),
+        bookingType: editNewType
+      };
+      
+      // Ajouter les infos de vol si c'est un vol (collecter depuis l'éditeur)
+      if (editNewCategory === 'flight') {
+        const editorFlights = collectFlightsFromEditor();
+        if (editorFlights.length > 0) {
+          booking.flights = editorFlights;
+          booking.provider = document.getElementById('flightProvider')?.value || null;
+        } else if (parsedData?.flights) {
+          booking.flights = parsedData.flights;
+          booking.provider = parsedData.provider || null;
+        }
+      }
+      
+      // Ajouter les infos de location si c'est une voiture (collecter depuis l'éditeur)
+      if (editNewCategory === 'car_rental') {
+        const editorCarRental = collectCarRentalFromEditor();
+        if (editorCarRental.pickup_location || editorCarRental.dropoff_location) {
+          booking.car_rental = editorCarRental;
+        } else if (parsedData?.car_rental) {
+          booking.car_rental = parsedData.car_rental;
+        }
+        booking.provider = parsedData?.provider || null;
+      }
+      
+      // Multi-step
+      if (editNewType === 'step' && editSelectedSteps.length > 0) {
+        booking.stepIndexes = [...editSelectedSteps];
+      }
+      
+      let success = false;
+      
+      if (window.ORT_TRIP_DATA) {
+        if (editNewType === 'travel') {
+          success = ORT_TRIP_DATA.addTravelBooking(booking);
+        } else {
+          // Ajouter à TOUTES les étapes sélectionnées (même ID, même stepIndexes)
+          // Ainsi la résa apparaît dans chaque étape mais avec le prix divisé
+          for (const stepIdx of editSelectedSteps) {
+            success = ORT_TRIP_DATA.addStepBooking(stepIdx, booking);
+          }
+        }
+        
+        if (success) {
+          await ORT_TRIP_DATA.forceSave();
+        }
+      }
+      
+      if (success) {
+        showToast(t('saved'));
+        renderExistingBookings();
+        closeEditModal();
+      } else {
+        showToast(t('errorSaving'), 'error');
+      }
+      
+    } else {
+      // Mode EDIT : modifier une réservation existante
+      const updatedBooking = {
+        id: editingBooking?.id || editingBookingId,
+        category: editNewCategory,
+        name: name,
+        date_start: $('editFieldDateStart').value || null,
+        date_end: $('editFieldDateEnd').value || null,
+        reference: $('editFieldRef').value.trim() || null,
+        price: finalPrice,
+        currency: tripCur,
+        price_original: priceOriginal,
+        address: $('editFieldAddress').value.trim() || null,
+        notes: $('editFieldNotes').value.trim() || null,
+        addedAt: editingBooking?.addedAt || Date.now(),
+        updatedAt: Date.now(),
+        bookingType: editNewType
+      };
+      
+      // Collecter les vols depuis l'éditeur si présent
+      if (editNewCategory === 'flight') {
+        const editorFlights = collectFlightsFromEditor();
+        if (editorFlights.length > 0) {
+          updatedBooking.flights = editorFlights;
+          updatedBooking.provider = document.getElementById('flightProvider')?.value || editingBooking?.provider || null;
+        } else if (editingBooking?.flights) {
+          updatedBooking.flights = editingBooking.flights;
+          updatedBooking.provider = editingBooking.provider;
+        }
+      }
+      
+      // Collecter la location voiture depuis l'éditeur si présent
+      if (editNewCategory === 'car_rental') {
+        const editorCarRental = collectCarRentalFromEditor();
+        if (editorCarRental.pickup_location || editorCarRental.dropoff_location) {
+          updatedBooking.car_rental = editorCarRental;
+        } else if (editingBooking?.car_rental) {
+          updatedBooking.car_rental = editingBooking.car_rental;
+        }
+        updatedBooking.provider = editingBooking?.provider || null;
+      }
+      
+      // Multi-step
+      if (editNewType === 'step' && editSelectedSteps.length > 0) {
+        updatedBooking.stepIndexes = [...editSelectedSteps];
+      }
+      
+      try {
+        // Supprimer l'ancienne de toutes les étapes où elle était
+        if (editingType === 'travel') {
+          ORT_TRIP_DATA.removeTravelBooking(editingBookingId);
+        } else {
+          // Supprimer des anciennes étapes
+          const oldStepIndexes = editingBooking?.stepIndexes || [editingStepIdx];
+          for (const stepIdx of oldStepIndexes) {
+            ORT_TRIP_DATA.removeStepBooking(stepIdx, editingBookingId);
+          }
+        }
+        
+        // Ajouter la nouvelle à toutes les étapes sélectionnées
+        let success = false;
+        if (editNewType === 'travel') {
+          success = ORT_TRIP_DATA.addTravelBooking(updatedBooking);
+        } else {
+          for (const stepIdx of editSelectedSteps) {
+            success = ORT_TRIP_DATA.addStepBooking(stepIdx, updatedBooking);
+          }
+        }
+        
+        if (success) {
+          await ORT_TRIP_DATA.forceSave();
+          renderExistingBookings();
+          closeEditModal();
+          showToast(t('bookingUpdated'));
+        } else {
+          showToast(t('errorSaving'), 'error');
+        }
+      } catch (e) {
+        console.error('[EDIT SAVE]', e);
+        showToast(t('errorSaving'), 'error');
+      }
+    }
+  };
+  
+  // Event listeners pour la modal d'édition
+  document.addEventListener('DOMContentLoaded', () => {
+    // Type selector mini dans modal
+    $('editTypeStep')?.addEventListener('click', () => {
+      editNewType = 'step';
+      $('editTypeStep').classList.add('active');
+      $('editTypeTravel').classList.remove('active');
+      $('editStepSelectorWrap').style.display = 'block';
+    });
+    
+    $('editTypeTravel')?.addEventListener('click', () => {
+      editNewType = 'travel';
+      $('editTypeTravel').classList.add('active');
+      $('editTypeStep').classList.remove('active');
+      $('editStepSelectorWrap').style.display = 'none';
+    });
+    
+    // Category selector mini dans modal
+    document.querySelectorAll('#editCategorySelector .cat-mini').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#editCategorySelector .cat-mini').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        editNewCategory = btn.dataset.cat;
+      });
+    });
+    
+    // Mettre à jour le prix par étape quand on change le prix
+    $('editFieldPrice')?.addEventListener('input', updatePricePerStep);
+    
+    // Fermer modal avec Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && $('editModal').classList.contains('show')) {
+        closeEditModal();
+      }
+    });
+    
+    // Fermer modal en cliquant à l'extérieur
+    $('editModal')?.addEventListener('click', (e) => {
+      if (e.target === $('editModal')) {
+        closeEditModal();
+      }
+    });
+  });
+  
+  window.toggleStepBookings = function(idx) {
+    const header = document.querySelector(`.step-group:nth-child(${idx + 1}) .step-header`);
+    const content = $('stepBookings' + idx);
+    if (header && content) {
+      header.classList.toggle('open');
+      content.classList.toggle('open');
+    }
+  };
+  
+  window.deleteBooking = async function(type, stepIdx, bookingId) {
+    if (!confirm(t('confirmDelete'))) return;
+    
+    let success = false;
+    if (window.ORT_TRIP_DATA) {
+      if (type === 'travel') {
+        success = ORT_TRIP_DATA.removeTravelBooking(bookingId);
+      } else {
+        // Supprimer le booking de TOUTES les étapes où il apparaît
+        // D'abord trouver toutes les étapes qui ont ce booking
+        const stepIndexesToRemove = [];
+        if (trip?.steps) {
+          trip.steps.forEach((step, idx) => {
+            const bookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+            const hasBooking = bookings.some(b => b.id === bookingId);
+            if (hasBooking) {
+              stepIndexesToRemove.push(idx);
+            }
+          });
+        }
+        
+        // Supprimer de toutes les étapes trouvées
+        if (stepIndexesToRemove.length > 0) {
+          console.log(`[DELETE] Suppression du booking ${bookingId} de ${stepIndexesToRemove.length} étapes:`, stepIndexesToRemove);
+          stepIndexesToRemove.forEach(idx => {
+            ORT_TRIP_DATA.removeStepBooking(idx, bookingId);
+          });
+          success = true;
+        } else {
+          // Fallback: essayer juste l'étape spécifiée
+          success = ORT_TRIP_DATA.removeStepBooking(stepIdx, bookingId);
+        }
+      }
+      
+      if (success) {
+        await ORT_TRIP_DATA.forceSave();
+        // Rafraîchir l'affichage
+        renderExistingBookings();
+        showToast(t('bookingDeleted'));
+      }
+    }
+    
+    if (!success) {
+      showToast(t('deleteError'), 'error');
+    }
+  };
+  
+  function formatDate(dateStr) {
+    if (!dateStr) return '';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    } catch (e) {
+      return dateStr;
+    }
+  }
+  
+  function escHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  
+  async function waitForAuth() {
+    return new Promise(resolve => {
+      const check = () => {
+        if (window.firebase?.auth) {
+          firebase.auth().onAuthStateChanged(user => resolve(user));
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  }
+  
+  async function checkTripSaved(uid, tripId) {
+    if (!uid || !tripId) return false;
+    try {
+      const db = firebase.firestore();
+      const doc = await db.collection('users').doc(uid).collection('trips').doc(tripId).get();
+      return doc.exists;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  function showBlockingMessage(type) {
+    loadingOverlay.style.display = 'none';
+    const messages = {
+      login: { title: t('loginRequired'), msg: t('loginRequiredMsg'), btn: t('goBack') },
+      tripNotSaved: { title: t('tripSaveRequired'), msg: t('tripSaveRequiredMsg'), btn: t('goBack') }
+    };
+    const m = messages[type] || messages.login;
+    
+    const container = document.createElement('div');
+    container.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#1e3a5f,#2d5a87);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
+    container.innerHTML = `
+      <div style="background:#fff;border-radius:16px;padding:32px;max-width:400px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+        <div style="font-size:48px;margin-bottom:16px;">🔒</div>
+        <h2 style="color:#1e3a5f;margin:0 0 12px;">${m.title}</h2>
+        <p style="color:#64748b;margin:0 0 24px;">${m.msg}</p>
+        <button onclick="history.back()" style="background:#3b82f6;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-weight:600;cursor:pointer;">${m.btn}</button>
+      </div>
+    `;
+    document.body.appendChild(container);
+  }
+  
+  async function loadTrip() {
+    const stored = localStorage.getItem(`ort_trip_${tripId}`);
+    if (stored) {
+      try {
+        trip = JSON.parse(stored);
+        $('tripName').textContent = trip.title || '';
+        return;
+      } catch (e) {}
+    }
+    
+    const user = firebase.auth().currentUser;
+    if (user) {
+      try {
+        const doc = await firebase.firestore().collection('users').doc(user.uid).collection('trips').doc(tripId).get();
+        if (doc.exists) {
+          trip = doc.data();
+          $('tripName').textContent = trip.title || '';
+        }
+      } catch (e) {}
+    }
+  }
+  
+  function populateStepSelector() {
+    const select = $('stepSelector');
+    select.innerHTML = '<option value="">-- ' + t('selectStep') + ' --</option>';
+    
+    if (trip?.steps) {
+      trip.steps.forEach((step, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${i + 1}. ${step.name || step.location || t('step') + ' ' + (i + 1)}`;
+        select.appendChild(opt);
+      });
+    }
+  }
+  
+  // Pour la modal d'édition - remplir le select
+  function populateEditStepSelector() {
+    const select = $('editStepSelector');
+    select.innerHTML = '<option value="">-- ' + t('selectStep') + ' --</option>';
+    
+    if (trip?.steps) {
+      trip.steps.forEach((step, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${i + 1}. ${step.name || step.location || t('step') + ' ' + (i + 1)}`;
+        select.appendChild(opt);
+      });
+    }
+  }
+  
+  // Variable pour l'édition multi-step
+  let editSelectedSteps = [];
+  
+  // Ajouter une étape à la sélection
+  window.addStepToSelection = function() {
+    const select = $('editStepSelector');
+    const idx = parseInt(select.value);
+    if (isNaN(idx) || idx < 0) return;
+    
+    // Éviter les doublons
+    if (editSelectedSteps.includes(idx)) return;
+    
+    editSelectedSteps.push(idx);
+    editSelectedSteps.sort((a, b) => a - b);
+    
+    renderSelectedSteps();
+    updatePricePerStep();
+    
+    // Reset le select
+    select.value = '';
+  };
+  
+  // Retirer une étape de la sélection
+  window.removeStepFromSelection = function(idx) {
+    editSelectedSteps = editSelectedSteps.filter(i => i !== idx);
+    renderSelectedSteps();
+    updatePricePerStep();
+  };
+  
+  // Afficher les étapes sélectionnées
+  function renderSelectedSteps() {
+    const container = $('selectedStepsList');
+    if (!container) return;
+    
+    if (editSelectedSteps.length === 0) {
+      container.innerHTML = '<span style="color:#94a3b8;font-size:0.85rem">' + (t('noStepSelected')) + '</span>';
+      return;
+    }
+    
+    container.innerHTML = editSelectedSteps.map(idx => {
+      const step = trip?.steps?.[idx];
+      const name = step?.name || step?.location || t('step') + ' ' + (idx + 1);
+      return `
+        <span style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;background:#dbeafe;color:#1e40af;border-radius:16px;font-size:0.85rem;font-weight:500">
+          <span style="background:#3b82f6;color:#fff;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem">${idx + 1}</span>
+          ${escHtml(name)}
+          <button onclick="removeStepFromSelection(${idx})" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:1rem;padding:0;margin-left:2px">×</button>
+        </span>
+      `;
+    }).join('');
+  }
+  
+  // Calculer et afficher le prix par étape
+  function updatePricePerStep() {
+    const priceInput = $('editFieldPrice');
+    const infoEl = $('pricePerStepInfo');
+    if (!infoEl) return;
+    
+    const totalPrice = parseFloat(priceInput?.value) || 0;
+    const stepCount = editSelectedSteps.length;
+    
+    if (stepCount > 1 && totalPrice > 0) {
+      const perStep = (totalPrice / stepCount).toFixed(2);
+      infoEl.textContent = `💰 ${perStep} € par étape (${stepCount} étapes)`;
+    } else {
+      infoEl.textContent = '';
+    }
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // EVENT LISTENERS
+  // ══════════════════════════════════════════════════════════════
+  function setupEventListeners() {
+    // Type selector (formulaire principal)
+    document.querySelectorAll('#cardType .type-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#cardType .type-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        bookingType = btn.dataset.type;
+        $('stepSelectorWrap').style.display = bookingType === 'step' ? 'block' : 'none';
+      });
+    });
+    
+    // Category selector
+    document.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedCategory = btn.dataset.cat;
+      });
+    });
+    
+    // Analyze button
+    $('btnAnalyze').addEventListener('click', analyzeEmail);
+    
+    // Manual button
+    $('btnManual').addEventListener('click', showManualForm);
+    
+    // Save button
+    $('btnSaveBooking').addEventListener('click', saveBooking);
+    
+    // Reset button
+    $('btnReset').addEventListener('click', resetForm);
+    
+    // Back buttons
+    $('btnBackToTrip').addEventListener('click', goBack);
+    
+    // Reset all button
+    $('btnResetAll').addEventListener('click', resetAllBookings);
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // ANALYZE EMAIL (SIMPLE EXTRACTION)
+  // ══════════════════════════════════════════════════════════════
+  async function analyzeEmail() {
+    const text = $('emailText').value.trim();
+    if (!text) {
+      showToast(t('pasteEmailFirst'), 'error');
+      return;
+    }
+    
+    if (text.length < 50) {
+      showToast(t('contentTooShort'), 'error');
+      return;
+    }
+    
+    $('analyzing').classList.add('show');
+    $('btnAnalyze').disabled = true;
+    
+    try {
+      // Appel à l'API de parsing IA
+      const user = firebase.auth().currentUser;
+      if (!user) {
+        showToast(t('loginRequired'), 'error');
+        $('analyzing').classList.remove('show');
+        $('btnAnalyze').disabled = false;
+        return;
+      }
+      
+      const token = await user.getIdToken();
+      
+      // En local, pas d'accès à l'API (CORS) → utiliser le parsing local
+      const host = location.hostname;
+      const isLocal = /localhost|127\.0\.0\.1|0\.0\.0\.0/.test(host);
+      
+      if (isLocal) {
+        console.log('[PARSE-BOOKING] Mode local → parsing regex');
+        $('analyzing').classList.remove('show');
+        $('btnAnalyze').disabled = false;
+        showToast('Mode local : analyse simplifiée (sans IA)', 'error');
+        const extracted = extractFromText(text);
+        if (extracted.name || extracted.date_start || extracted.reference) {
+          showFormWithData(extracted);
+        } else {
+          showManualForm();
+        }
+        return;
+      }
+      
+      // Devise du voyage : demandée une fois (modale), puis réutilisée
+      const tripCurrency = window.ORT_CURRENCY
+        ? await ORT_CURRENCY.ensureTripCurrency(tripId, lang)
+        : null;
+
+      const response = await fetch('/.netlify/functions/parse-booking', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content: text, targetCurrency: tripCurrency })
+      });
+      
+      const result = await response.json();
+      
+      $('analyzing').classList.remove('show');
+      $('btnAnalyze').disabled = false;
+      
+      if (!response.ok || !result.success) {
+        // Afficher le quota si dépassé
+        if (response.status === 429) {
+          showToast(t('quotaExceeded').replace('{n}', result.usage?.limit || 20), 'error');
+        } else if (response.status >= 500) {
+          // Erreur serveur / IA indisponible
+          showToast(t('aiUnavailable'), 'error');
+        } else {
+          showToast(result.error || t('analysisError'), 'error');
+        }
+        // Fallback sur parsing regex
+        const extracted = extractFromText(text);
+        if (extracted.name || extracted.date_start || extracted.reference) {
+          showFormWithData(extracted);
+        } else {
+          showManualForm();
+        }
+        return;
+      }
+      
+      // Succès ! Afficher les données parsées par l'IA
+      console.log('[PARSE-BOOKING] Succès:', result._meta?.model, result.data);
+      
+      // Afficher le quota restant
+      if (result.usage) {
+        showToast(t('analysisSuccess').replace('{n}', result.usage.remaining), 'success');
+      }
+      
+      // Convertir le format API vers le format du formulaire
+      const data = {
+        category: result.data.category || 'other',
+        name: result.data.name || '',
+        date_start: result.data.date_start || '',
+        date_end: result.data.date_end || '',
+        reference: result.data.confirmation_number || '',
+        price: result.data.price?.amount || null,
+        currency: result.data.price?.currency || null,
+        address: [result.data.address, result.data.city, result.data.country].filter(Boolean).join(', '),
+        notes: result.data.notes || '',
+        // Garder les infos supplémentaires
+        provider: result.data.provider,
+        time_start: result.data.time_start,
+        time_end: result.data.time_end,
+        guests: result.data.guests,
+        // Infos spécifiques
+        flights: result.data.flights || null,
+        car_rental: result.data.car_rental || null
+      };
+      
+      showFormWithData(data, result.preview);
+      
+    } catch (e) {
+      console.error('[PARSE-BOOKING] Erreur:', e);
+      $('analyzing').classList.remove('show');
+      $('btnAnalyze').disabled = false;
+      
+      // Fallback sur parsing regex local
+      showToast(t('aiUnavailable'), 'error');
+      const extracted = extractFromText(text);
+      if (extracted.name || extracted.date_start || extracted.reference) {
+        showFormWithData(extracted);
+      } else {
+        showManualForm();
+      }
+    }
+  }
+  
+  // Parsing regex local (fallback)
+  function extractFromText(text) {
+    const result = {};
+    
+    // Extract dates (various formats)
+    const dateRegex = /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/g;
+    const dates = [...text.matchAll(dateRegex)].map(m => {
+      const d = parseInt(m[1]), mo = parseInt(m[2]), y = parseInt(m[3]);
+      const year = y < 100 ? 2000 + y : y;
+      return `${year}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    });
+    if (dates.length > 0) result.date_start = dates[0];
+    if (dates.length > 1) result.date_end = dates[1];
+    
+    // Extract price
+    const priceMatch = text.match(/(\d+[.,]?\d*)\s*[€$EUR]/i) || text.match(/[€$]\s*(\d+[.,]?\d*)/);
+    if (priceMatch) result.price = parseFloat(priceMatch[1].replace(',', '.'));
+    
+    // Extract reference number
+    const refMatch = text.match(/(?:réf|ref|confirmation|booking|réservation)[.:\s#]*([A-Z0-9]{6,})/i);
+    if (refMatch) result.reference = refMatch[1];
+    
+    // Try to extract hotel/place name
+    const hotelMatch = text.match(/(?:hôtel|hotel|hébergement|accommodation)[:\s]*([^\n,]{5,50})/i);
+    if (hotelMatch) result.name = hotelMatch[1].trim();
+    
+    // Detect category
+    if (/vol|flight|avion|plane/i.test(text)) result.category = 'flight';
+    else if (/voiture|car|rental|location/i.test(text)) result.category = 'car_rental';
+    else if (/assurance|insurance/i.test(text)) result.category = 'insurance';
+    else if (/hôtel|hotel|hébergement|accommodation|booking\.com|airbnb/i.test(text)) result.category = 'hotel';
+    else if (/activité|activity|visite|visit|tour|excursion/i.test(text)) result.category = 'activity';
+    
+    return result;
+  }
+  
+  function showFormWithData(data, preview = null) {
+    // Ouvrir la modale de parsing au lieu du formulaire en bas
+    openParseModal(data, preview);
+  }
+  
+  function showManualForm() {
+    $('cardForm').style.display = 'block';
+    $('resultPreview').classList.remove('show');
+    populateCurrencySelect('fieldCurrency');
+    $('fieldName').focus();
+  }
+  
+  function resetForm() {
+    $('cardForm').style.display = 'none';
+    $('resultPreview').classList.remove('show');
+    $('emailText').value = '';
+    $('fieldName').value = '';
+    $('fieldDateStart').value = '';
+    $('fieldDateEnd').value = '';
+    $('fieldRef').value = '';
+    $('fieldPrice').value = '';
+    $('fieldAddress').value = '';
+    $('fieldNotes').value = '';
+    selectedCategory = 'hotel';
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.toggle('active', b.dataset.cat === 'hotel'));
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // SAVE
+  // ══════════════════════════════════════════════════════════════
+  async function saveBooking() {
+    // Validation
+    const selectedStep = parseInt($('stepSelector').value);
+    if (bookingType === 'step' && (isNaN(selectedStep) || selectedStep < 0)) {
+      showToast(t('selectStepFirst'), 'error');
+      return;
+    }
+    
+    const name = $('fieldName').value.trim();
+    if (!name) {
+      showToast(t('enterName'), 'error');
+      $('fieldName').focus();
+      return;
+    }
+    
+    const totalPrice = $('fieldPrice').value ? parseFloat($('fieldPrice').value) : null;
+
+    // === DEVISE & CONVERSION vers la devise du voyage ===
+    const tripCur = (window.ORT_CURRENCY && ORT_CURRENCY.getTripCurrency()) || 'EUR';
+    const fromCur = String($('fieldCurrency')?.value || tripCur).toUpperCase();
+    let finalPrice = totalPrice;
+    let priceOriginal = null;
+    if (totalPrice != null && fromCur !== tripCur.toUpperCase() && window.ORT_CURRENCY && ORT_CURRENCY.convert) {
+      const conv = await ORT_CURRENCY.convert(totalPrice, fromCur, tripCur);
+      if (conv != null) {
+        finalPrice = Math.round(conv * 100) / 100;
+        priceOriginal = { amount: totalPrice, currency: fromCur };
+      } else {
+        showToast('Conversion indisponible, montant gardé en ' + fromCur, 'error');
+      }
+    }
+    
+    const booking = {
+      id: `booking_${Date.now()}`,
+      category: selectedCategory,
+      name: name,
+      date_start: $('fieldDateStart').value || null,
+      date_end: $('fieldDateEnd').value || null,
+      reference: $('fieldRef').value.trim() || null,
+      price: finalPrice,
+      currency: tripCur,
+      price_original: priceOriginal,
+      address: $('fieldAddress').value.trim() || null,
+      notes: $('fieldNotes').value.trim() || null,
+      addedAt: Date.now(),
+      updatedAt: Date.now(),
+      bookingType: bookingType
+    };
+    
+    let success = false;
+    
+    if (window.ORT_TRIP_DATA) {
+      if (bookingType === 'travel') {
+        success = ORT_TRIP_DATA.addTravelBooking(booking);
+      } else {
+        success = ORT_TRIP_DATA.addStepBooking(selectedStep, booking);
+      }
+      
+      if (success) {
+        await ORT_TRIP_DATA.forceSave();
+      }
+    }
+    
+    if (success) {
+      showToast(t('saved'));
+      renderExistingBookings();
+      resetForm();
+    } else {
+      showToast(t('errorSaving'), 'error');
+    }
+  }
+  
+  function goBack(skipConfirm = false) {
+    if (window.ORT_TRIPID) {
+      ORT_TRIPID.navigateTo('roadtrip_detail.html', { cc, itin });
+    } else {
+      location.href = `roadtrip_detail.html?tripId=${tripId}&cc=${cc}&itin=${itin}`;
+    }
+  }
+  
+  async function resetAllBookings() {
+    if (!confirm(t('confirmResetAll'))) return;
+    
+    if (!window.ORT_TRIP_DATA) {
+      showToast(t('errorSaving'), 'error');
+      return;
+    }
+    
+    try {
+      // Supprimer toutes les réservations voyage
+      const travelBookings = ORT_TRIP_DATA.getTravelBookings() || [];
+      for (const b of [...travelBookings]) {
+        ORT_TRIP_DATA.removeTravelBooking(b.id);
+      }
+      
+      // Supprimer toutes les réservations par étape
+      if (trip?.steps) {
+        trip.steps.forEach((step, idx) => {
+          const stepBookings = ORT_TRIP_DATA.getStepBookings(idx) || [];
+          for (const b of [...stepBookings]) {
+            ORT_TRIP_DATA.removeStepBooking(idx, b.id);
+          }
+        });
+      }
+      
+      // Sauvegarder
+      await ORT_TRIP_DATA.forceSave();
+      
+      // Rafraîchir l'affichage
+      renderExistingBookings();
+      resetForm();
+      
+      showToast(t('allBookingsDeleted'));
+    } catch (e) {
+      console.error('[RESET ALL]', e);
+      showToast(t('errorSaving'), 'error');
+    }
+  }
+  
+  // ══════════════════════════════════════════════════════════════
+  // UTILS
+  // ══════════════════════════════════════════════════════════════
+  function showToast(msg, type = 'success') {
+    toast.textContent = msg;
+    toast.className = 'toast show' + (type === 'error' ? ' error' : '');
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+  
+  // Refresh automatique quand on revient sur la page
+  let lastVisibilityTime = Date.now();
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible') {
+      const timeSinceHidden = Date.now() - lastVisibilityTime;
+      if (timeSinceHidden > 2000 && window.ORT_TRIP_DATA && tripId) {
+        console.log('[RT-BOOKING-IMPORT] Retour sur la page, refresh...');
+        try {
+          await ORT_TRIP_DATA.loadTrip(tripId);
+          renderExistingBookings();
+        } catch (e) {
+          console.warn('[RT-BOOKING-IMPORT] Erreur refresh:', e);
+        }
+      }
+    } else {
+      lastVisibilityTime = Date.now();
+    }
+  });
+  
+  // Start
+  init();
+})();
+</script>
+
+<footer id="footer-legal"></footer>
+<script src="/js/ort-footer.js"></script>
+
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"rt-booking-import"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+</body>
+</html>

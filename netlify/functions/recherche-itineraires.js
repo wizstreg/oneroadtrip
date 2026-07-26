@@ -1,0 +1,305 @@
+/**
+ * ORT - Recherche conversationnelle (Netlify Function)
+ * Flux a deux etages :
+ *   1) IA parse la phrase libre -> criteres (depart, heures max, mois, soleil, public, themes)
+ *   2) Geocodage du depart (Photon) + tri SANS IA (distance vers point d'arrivee + mois)
+ *   3) IA classe et explique la dizaine restante
+ * IA en cascade : Gemini Flash -> Groq -> OpenRouter (modeles gratuits), comme parse-summary.
+ *
+ * Entree  (POST) : { "query": "phrase libre du visiteur", "lang": "fr" }
+ * Sortie         : { success, criteres, results:[{id,slug,title,country,days,heures_vol,raison}] }
+ */
+
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+const SITE = 'https://www.oneroadtrip.com';
+const LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', it: 'itinerari', pt: 'roteiros', ar: 'masar' };
+const UA = 'OneRoadTrip/2.0 (https://oneroadtrip.com)';
+
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+const GROQ_KEY = process.env.GROQ_API_KEY;
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY;
+
+// ===== CACHE CATALOGUE (memoire chaude) =====
+const catCache = new Map(); // lang -> { rows, ts }
+const CAT_TTL = 30 * 60 * 1000;
+
+async function loadCatalog(lang, origin) {
+  const key = lang;
+  const hit = catCache.get(key);
+  if (hit && Date.now() - hit.ts < CAT_TTL) return hit.rows;
+  const folder = LANG_FOLDERS[lang] || LANG_FOLDERS.fr;
+  const filePath = join(process.cwd(), folder, `search-catalog-${lang}.json`);
+  let txt;
+  try {
+    txt = await readFile(filePath, 'utf-8');
+  } catch (e) {
+    throw new Error(`catalogue ${lang} introuvable sur le disque (${filePath})`);
+  }
+  const rows = JSON.parse(txt);
+  catCache.set(key, { rows, ts: Date.now() });
+  return rows;
+}
+
+// ===== GEO =====
+function norm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim(); }
+
+// Distance a vol d'oiseau en km (Haversine).
+function haversineKm(aLat, aLon, bLat, bLon) {
+  const R = 6371, toRad = x => x * Math.PI / 180;
+  const dLat = toRad(bLat - aLat), dLon = toRad(bLon - aLon);
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
+}
+// Estimation d'un temps de vol DIRECT (approx) : 1h30 fixe (taxi/montee/descente) + croisiere ~750 km/h.
+// C'est un ordre de grandeur pour le tri, pas un horaire reel (une escale rallonge).
+function heuresVolApprox(km) { return 1.5 + km / 750; }
+
+// Geocode une ville via Photon (meme source que citysearch).
+async function geocodeVille(query, lang) {
+  if (!query) return null;
+  const params = new URLSearchParams({ q: query, limit: '1', lang: lang || 'fr' });
+  try {
+    const res = await fetch(`https://photon.komoot.io/api/?${params}`, { headers: { 'User-Agent': UA } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const f = (data.features || [])[0];
+    const c = f && f.geometry && f.geometry.coordinates;
+    if (!c || c.length < 2) return null;
+    return { lat: c[1], lon: c[0], nom: (f.properties && f.properties.name) || query };
+  } catch { return null; }
+}
+
+// ===== IA : cascade =====
+function parseAiJson(text) {
+  let t = String(text || '').trim().replace(/```json|```/g, '').trim();
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  const a2 = t.indexOf('['), b2 = t.lastIndexOf(']');
+  if (a2 >= 0 && (a < 0 || a2 < a)) return JSON.parse(t.slice(a2, b2 + 1));
+  return JSON.parse(t.slice(a, b + 1));
+}
+
+async function callGemini(prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+  const res = await fetch(url, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.4, responseMimeType: 'application/json' } })
+  });
+  if (!res.ok) throw new Error('gemini ' + res.status);
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('gemini vide');
+  return parseAiJson(text);
+}
+async function callGroq(prompt) {
+  for (const model of GROQ_MODELS) {
+    try {
+      const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST', headers: { 'Authorization': `Bearer ${GROQ_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.4, max_tokens: 2000, response_format: { type: 'json_object' } })
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (text) return parseAiJson(text);
+    } catch { /* modele suivant */ }
+  }
+  throw new Error('groq echec');
+}
+async function callOpenRouter(prompt) {
+  const models = ['meta-llama/llama-3.1-8b-instruct:free', 'mistralai/mistral-7b-instruct:free', 'google/gemma-2-9b-it:free'];
+  for (const model of models) {
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST', headers: { 'Authorization': `Bearer ${OPENROUTER_KEY}`, 'Content-Type': 'application/json', 'HTTP-Referer': SITE },
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: prompt }], temperature: 0.4, max_tokens: 2000 })
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content;
+      if (text) return parseAiJson(text);
+    } catch { /* modele suivant */ }
+  }
+  throw new Error('openrouter echec');
+}
+async function askAi(prompt) {
+  if (GEMINI_KEY) { try { return await callGemini(prompt); } catch (e) { console.warn('gemini:', e.message); } }
+  if (GROQ_KEY) { try { return await callGroq(prompt); } catch (e) { console.warn('groq:', e.message); } }
+  if (OPENROUTER_KEY) { try { return await callOpenRouter(prompt); } catch (e) { console.warn('or:', e.message); } }
+  throw new Error('aucune IA disponible');
+}
+
+// ===== ETAGE 1 : phrase -> criteres =====
+function promptParse(query, lang, themesDispo) {
+  return `Tu analyses une demande de voyage. Tu dois capter TOUT ce qui est exprime. Reponds UNIQUEMENT en JSON (pas de texte, pas de backticks).
+Format exact : {"depart":"ville ou null","max_heures_vol":nombre ou null,"lieux":[],"mois":[],"soleil":true/false/null,"public":"famille|couple|solo|amis|null","themes":[],"duree_min_jours":nombre ou null,"duree_max_jours":nombre ou null}
+- "depart" : la ville de depart du voyageur (d'ou il part), sinon null.
+- "max_heures_vol" : UNIQUEMENT un temps de trajet/vol en HEURES (ex "moins de 3h", "5 heures de vol"), sinon null.
+- "lieux" : toutes les villes, regions, sites ou monuments PRECIS que la personne veut VOIR ou VISITER. IMPORTANT : pour chaque monument ou site, ajoute AUSSI la ville ou region qui le contient. Ex "Colisee" -> ["Colisee","Rome"] ; "Sagrada Familia" -> ["Sagrada Familia","Barcelone"] ; "Machu Picchu" -> ["Machu Picchu","Cusco"]. Ne mets PAS ici la ville de depart. [] si rien.
+- "mois" : mois evoques, en minuscules sans accent, dans la langue ${lang}. [] si rien.
+- "soleil" : true si la personne veut du soleil/chaud/se baigner, false si elle veut du froid/neige, null si non precise.
+- "public" : famille, couple, solo ou amis si precise, sinon null.
+- "themes" : 0 a 3 valeurs EXACTEMENT dans cette liste (recopie a l'identique) : ${JSON.stringify(themesDispo)}. "mer/plage/baignade" -> theme cote/mer ; "rando/sommets" -> montagne ; etc. [] si rien.
+- "duree_min_jours" / "duree_max_jours" : duree de SEJOUR en JOURS (ex "une semaine"=7, "un week-end"=3, "au moins 3 semaines" -> min 21, "max 10 jours" -> max 10). Ne confonds JAMAIS heures de trajet et jours de sejour.
+Ne devine pas ce qui n'est pas dit (null ou []).
+Demande : "${query}"`;
+}
+
+// Normalise un texte en ensemble de mots (pour matcher des lieux par mot entier, pas par sous-chaine :
+// evite que "Rome" attrape "Drome").
+function ensembleMots(s) { return new Set(norm(s).split(/[^a-z0-9]+/).filter(Boolean)); }
+// Un lieu est present si tous ses mots significatifs sont des mots de l'itin.
+function lieuPresent(setMots, lieu) {
+  const mots = norm(lieu).split(/[^a-z0-9]+/).filter(w => w.length > 3);
+  return mots.length > 0 && mots.every(m => setMots.has(m));
+}
+
+// ===== ETAGE 2 (sans IA) : geo + filtres =====
+function trier(rows, crit, depart) {
+  const lieux = (crit.lieux || []).filter(Boolean);
+  let out = rows.map(r => {
+    let heures = null;
+    if (depart && Array.isArray(r.arrival) && r.arrival.length >= 2) {
+      heures = heuresVolApprox(haversineKm(depart.lat, depart.lon, r.arrival[0], r.arrival[1]));
+    }
+    // Nombre de lieux demandes que cet itin contient (titre + sous-titre + villes + mots-cles).
+    let nbLieux = 0;
+    if (lieux.length) {
+      const setMots = ensembleMots([r.title, r.subtitle, (r.cities || []).join(' '), (r.keywords || []).join(' ')].join(' '));
+      nbLieux = lieux.filter(l => lieuPresent(setMots, l)).length;
+    }
+    return { r, heures, nbLieux };
+  });
+  // Si la personne cite des lieux precis, LE LIEU PRIME. On garde les itins qui contiennent
+  // ces lieux meme s'ils depassent un peu le rayon (l'IA mentionnera la distance reelle),
+  // plutot que de noyer la reponse sous des alternatives sans rapport.
+  if (lieux.length) {
+    const avecLieu = out.filter(x => x.nbLieux > 0);
+    if (avecLieu.length) {
+      const dansRayon = x => (!depart || !crit.max_heures_vol) ? true : (x.heures != null && x.heures <= crit.max_heures_vol);
+      avecLieu.sort((a, b) => {
+        if (a.nbLieux !== b.nbLieux) return b.nbLieux - a.nbLieux;   // plus de lieux trouves d'abord
+        const ar = dansRayon(a) ? 0 : 1, br = dansRayon(b) ? 0 : 1;  // ceux dans le rayon d'abord
+        if (ar !== br) return ar - br;
+        return (a.heures ?? 1e9) - (b.heures ?? 1e9);               // puis les plus proches
+      });
+      return avecLieu.slice(0, 25);
+    }
+    // Aucun itin ne contient ces lieux (absents des donnees) : on continue en mode normal,
+    // l'intro de l'IA expliquera honnetement qu'on ne les a pas.
+  }
+
+  // Filtre distance (contrainte dure si demandee)
+  if (depart && crit.max_heures_vol) out = out.filter(x => x.heures != null && x.heures <= crit.max_heures_vol);
+  // Filtre themes (si pas de lieux precis)
+  const themesVoulus = (crit.themes || []).filter(Boolean);
+  if (themesVoulus.length) {
+    const filtre = out.filter(x => (x.r.themes || []).some(t => themesVoulus.includes(t)));
+    if (filtre.length) out = filtre;
+  }
+  // Filtre duree (mini et maxi)
+  if (crit.duree_max_jours) out = out.filter(x => !x.r.days || x.r.days <= crit.duree_max_jours);
+  if (crit.duree_min_jours) out = out.filter(x => !x.r.days || x.r.days >= crit.duree_min_jours);
+  // Pas de filtre dur sur le mois : la saison est jugee plus finement par l'IA (climat + mois conseilles).
+
+  // Tri : soleil (vers l'equateur) si demande, sinon proximite.
+  const versSoleil = crit.soleil === true;
+  out.sort((a, b) => {
+    if (versSoleil) {
+      const la = Array.isArray(a.r.arrival) ? Math.abs(a.r.arrival[0]) : 999;
+      const lb = Array.isArray(b.r.arrival) ? Math.abs(b.r.arrival[0]) : 999;
+      if (la !== lb) return la - lb;
+    }
+    return (a.heures ?? 1e9) - (b.heures ?? 1e9);
+  });
+  return out.slice(0, 25);
+}
+
+// ===== ETAGE 3 : classer/expliquer la liste courte =====
+function promptClasser(query, crit, courte, lang) {
+  const compact = courte.map(x => ({
+    id: x.r.id, titre: x.r.title, sous_titre: x.r.subtitle || '', pays: x.r.country, jours: x.r.days,
+    themes: x.r.themes, public: x.r.audience, climat: (x.r.climate || '').slice(0, 160),
+    mois_conseilles: x.r.months || [],
+    mots_cles: (x.r.keywords || []).slice(0, 6)
+  }));
+  return `Tu es un conseiller voyage. Voici la demande et une liste presaisie d'itineraires deja filtres par distance et saison.
+Demande : "${query}"
+Criteres compris : ${JSON.stringify(crit)}
+Itineraires : ${JSON.stringify(compact)}
+Garde uniquement ceux qui collent VRAIMENT a la demande, en t'appuyant sur le climat et les themes.
+Si la demande parle de baignade ou de soleil a un mois donne, ECARTE les cotes froides a cette saison (lis le champ climat) et privilegie les destinations chaudes/ensoleillees au mois demande.
+Tiens compte du public et de la duree si la demande les precise. Classe du meilleur au moins bon.
+Ne donne JAMAIS de duree de vol ou de trajet chiffree (ex: pas de "a 3h de vol", "2h30 de vol", "vol de 4 heures"). Tu peux dire "proche", "voisin", "facilement accessible", mais aucun chiffre d'heures de vol.
+Ecris aussi "intro" : UNE phrase chaleureuse et HONNETE qui resume. Si la demande est difficile a satisfaire (ex: se baigner en fevrier pres du depart, impossible cote meteo), dis-le franchement et annonce que voici des alternatives proches. Sinon, resume simplement ce que tu proposes.
+Reponds UNIQUEMENT en JSON valide (pas de texte, pas de backticks), langue ${lang}, sous cette forme exacte :
+{"intro":"une phrase","resultats":[{"id":"...","raison":"une phrase courte expliquant pourquoi ca colle"}]}`;
+}
+
+// ===== HANDLER =====
+export default async (request, context) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json; charset=utf-8'
+  };
+  if (request.method === 'OPTIONS') return new Response('', { status: 204, headers });
+  if (request.method !== 'POST') return new Response(JSON.stringify({ success: false, error: 'method' }), { status: 405, headers });
+
+  try {
+    const body = await request.json();
+    const query = (body.query || '').trim();
+    const lang = (body.lang || 'fr').toLowerCase();
+    if (!query) return new Response(JSON.stringify({ success: false, error: 'query vide' }), { status: 400, headers });
+
+    // Catalogue charge en premier : on en extrait la liste exacte des themes (deja dans la bonne langue)
+    const origin = (() => { try { return new URL(request.url).origin; } catch { return SITE; } })();
+    const rows = await loadCatalog(lang, origin);
+    const themesDispo = [...new Set(rows.flatMap(r => r.themes || []))].sort();
+
+    // Etage 1 : phrase -> criteres (les themes sont choisis PARMI ceux du catalogue)
+    let crit;
+    try { crit = await askAi(promptParse(query, lang, themesDispo)); }
+    catch (e) { return new Response(JSON.stringify({ success: false, error: 'ia_parse', message: e.message }), { status: 503, headers }); }
+
+    // Geocodage du depart (sans IA)
+    const depart = crit.depart ? await geocodeVille(crit.depart, lang) : null;
+
+    // Etage 2 : tri sans IA (distance + mois + themes)
+    const courte = trier(rows, crit, depart);
+    if (!courte.length) {
+      return new Response(JSON.stringify({ success: true, criteres: crit, depart, results: [], message: 'aucun itineraire dans ces criteres' }), { status: 200, headers });
+    }
+
+    // Etage 3 : classement IA sur la liste courte
+    let classe = [];
+    try { classe = await askAi(promptClasser(query, crit, courte, lang)); }
+    catch (e) { console.warn('classement:', e.message); }
+    // L'IA repond par un objet {intro, resultats}. On recupere la phrase et le tableau.
+    let intro = '';
+    let liste = classe;
+    if (!Array.isArray(liste)) {
+      if (liste && typeof liste === 'object') {
+        intro = liste.intro || liste.message || '';
+        liste = Object.values(liste).find(v => Array.isArray(v)) || [];
+      } else { liste = []; }
+    }
+
+    // Fusion : on garde l'ordre et la selection de l'IA si dispo, sinon le tri par distance
+    const parId = new Map(courte.map(x => [x.r.id, x]));
+    const ordre = (liste.length ? liste : courte.map(x => ({ id: x.r.id, raison: '' })));
+    const results = ordre
+      .map(o => { const x = parId.get(o.id); return x ? { id: x.r.id, slug: x.r.slug, title: x.r.title, subtitle: x.r.subtitle || '', country: x.r.country, days: x.r.days, heures_vol: x.heures != null ? Math.round(x.heures * 10) / 10 : null, raison: o.raison || '' } : null; })
+      .filter(Boolean);
+
+    return new Response(JSON.stringify({ success: true, intro, criteres: crit, depart, results }), { status: 200, headers });
+
+  } catch (e) {
+    console.error('search:', e.message);
+    return new Response(JSON.stringify({ success: false, error: e.message }), { status: 500, headers });
+  }
+};
