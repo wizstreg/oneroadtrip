@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <script>(function(s,t,a,y,tw,to){s.Stay22=s.Stay22||{};s.Stay22.params={lmaID:"692f0c75b2478d16bb9b22fa"};tw=t.createElement(a);to=t.getElementsByTagName(a)[0];tw.async=1;tw.src=y;to.parentNode.insertBefore(tw,to);})(window,document,"script","https://scripts.stay22.com/letmeallez.js");</script>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -403,7 +422,7 @@ function ortSendCustom(){var cm=document.getElementById("ortCm");var n=(document
 <div class="vb-wrap"><div class="vb-card" id="vbCard" role="button" tabindex="0" onclick="vbToggle(event)" onkeydown="if(event.key==='Enter'||event.key===' '){vbToggle(event)}"><div class="vb-ico">✓</div><div class="vb-text">Itinerario verificato</div><span class="vb-toggle">▾</span><button class="vb-close" onclick="vbHide(event)" title="Chiudi" aria-label="Chiudi">×</button></div><div class="vb-detail" id="vbDetail">Questo itinerario è stato verificato più volte prima della pubblicazione. Se trovi un errore, <a href="mailto:contact@oneroadtrip.com">segnalalo</a>. È completamente modificabile in questa pagina (tappe, durate, ordine) e potrai aggiungere hotel, foto e prenotazioni nella pagina successiva.</div></div>
 <footer id="footer-legal"></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="/js/ort-routing.js?v=1785221144295" defer></script>
+<script src="/js/ort-routing.js?v=1785255874500" defer></script>
 <script>
 (function(){'use strict';
 if(!('speechSynthesis' in window)){
@@ -455,9 +474,10 @@ function wkLoad(img,url,attempt,fallbacks){attempt=attempt||0;fallbacks=fallback
 (function(){var imgs=document.querySelectorAll('img.wk-lazy');if(!imgs.length)return;var idx=0;function loadNext(){if(idx>=imgs.length)return;var img=imgs[idx];var url=img.getAttribute('data-src');var fb=img.getAttribute('data-fallbacks');var fallbacks=fb?fb.split('|'):[];if(url){wkLoad(img,url,0,fallbacks);idx++;setTimeout(loadNext,250);}else{idx++;loadNext();}}loadNext();})();
 (function(){function initCar(el){var imgs=el.querySelectorAll('.car-img');if(imgs.length<2)return;imgs[0].classList.add('car-active');var cur=0;setInterval(function(){imgs[cur].classList.remove('car-active');cur=(cur+1)%imgs.length;imgs[cur].classList.add('car-active');},4000);}document.querySelectorAll('.car').forEach(initCar);})();
 function goMap(){document.getElementById('mapPanel').scrollIntoView({behavior:'smooth',block:'start'});}
-function ortSnTop(){var d=document.documentElement,b=document.body;if(window.innerWidth>900){d.style.removeProperty('--snBase');return;}var hdr=b.classList.contains('hdr-off')?50:(parseInt(getComputedStyle(d).getPropertyValue('--hh'))||0);var ip=document.querySelector('.ip-bar');var ipH=ip?ip.offsetHeight:0;var mp=document.getElementById('mapPanel');var mpH=(mp&&!b.classList.contains('map-off'))?mp.offsetHeight:0;d.style.setProperty('--snBase',(hdr+Math.max(ipH,mpH))+'px');}
+function ortSnTop(){var d=document.documentElement,b=document.body;if(window.innerWidth>900){d.style.removeProperty('--snBase');return;}function edge(el){if(!el)return 0;var t=0;try{t=parseFloat(getComputedStyle(el).top);}catch(e){}if(isNaN(t))t=0;return t+el.offsetHeight;}var ip=document.querySelector('.ip-bar');var mp=document.getElementById('mapPanel');var base=edge(ip);if(mp&&!b.classList.contains('map-off')){var me=edge(mp);if(me>base)base=me;}if(!ip&&!mp){var hh=0;try{hh=parseInt(getComputedStyle(d).getPropertyValue('--hh'))||0;}catch(e){}base=b.classList.contains('hdr-off')?0:hh;}d.style.setProperty('--snBase',base+'px');}
 var _snQ=false;function ortSnQueue(){if(_snQ)return;_snQ=true;requestAnimationFrame(function(){_snQ=false;ortSnTop();});}
 window.addEventListener('load',ortSnTop);window.addEventListener('resize',ortSnQueue);window.addEventListener('scroll',ortSnQueue,{passive:true});ortSnTop();setTimeout(ortSnTop,600);setTimeout(ortSnTop,1500);
+if(window.ResizeObserver){(function(){var e=document.querySelector('.ip-bar');if(e)new ResizeObserver(ortSnQueue).observe(e);})();}
 function ortMapOff(v){var b=document.body;if(v){b.classList.add('map-off');}else{b.classList.remove('map-off');}if(!v){setTimeout(function(){if(window.map&&window.map.invalidateSize)window.map.invalidateSize();},320);}if(window.ortSnTop){ortSnTop();setTimeout(ortSnTop,320);}}
 function toggleMap(){ortMapOff(!document.body.classList.contains('map-off'));}
 (function(){if(window.innerWidth>900)return;var done=false,hasFolded=false;var _mo=window.ortMapOff;window.ortMapOff=function(v){if(v){hasFolded=true;}else if(hasFolded){done=true;}if(_mo)_mo(v);};function onScroll(){if(done)return;var y=window.scrollY||0;if(y>120&&!document.body.classList.contains('map-off')){done=true;window.ortMapOff(true);}}window.addEventListener('scroll',onScroll,{passive:true});})();
@@ -619,10 +639,10 @@ function addPlaceFromMap(pid){if(map)map.closePopup();if(!window.ORT_ITIN_EDITOR
 })();
 </script>
 <div id="supportBox" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);align-items:center;justify-content:center;padding:20px"><div style="background:#fff;border-radius:18px;max-width:480px;width:100%;padding:32px 28px 24px;box-shadow:0 12px 40px rgba(0,0,0,.28);position:relative;text-align:center"><button onclick="closeSupportBox()" style="position:absolute;top:12px;right:16px;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#bbb;line-height:1">×</button><p style="font-family:'Playfair Display',Georgia,serif;font-size:1.05rem;line-height:1.65;color:#1a1a1a;margin:6px 0 22px;letter-spacing:.01em">Prenotare un hotel tramite un link dal nostro sito (quello suggerito o qualunque altro) è il nostro <strong>unico modo di guadagnare qualche euro</strong>, <strong>senza alcun costo aggiuntivo per te</strong>. Ricordalo prima di prenotare!</p><a href="https://www.booking.com/searchresults.it.html?ss=Italia&latitude=41.1171&longitude=16.8719&radius=50" target="_blank" rel="noopener sponsored" style="display:inline-block;background:#113f7a;color:#fff;padding:12px 28px;border-radius:26px;font-size:.95rem;font-weight:700;text-decoration:none;margin-bottom:14px;letter-spacing:.02em;box-shadow:0 4px 12px rgba(17,63,122,.3)">Prenota un hotel →</a><br><button onclick="closeSupportBox()" style="background:none;border:none;color:#888;font-size:.85rem;cursor:pointer;text-decoration:underline">Capito!</button></div></div>
-<script src="/js/ort-config.js?v=1785221144295"></script>
-<script src="/js/ort-i18n-auth.js?v=1785221144295"></script>
-<script src="/js/ort-header.js?v=1785221144295"></script>
-<script src="/js/ort-footer.js?v=1785221144295"></script>
+<script src="/js/ort-config.js?v=1785255874500"></script>
+<script src="/js/ort-i18n-auth.js?v=1785255874500"></script>
+<script src="/js/ort-header.js?v=1785255874500"></script>
+<script src="/js/ort-footer.js?v=1785255874500"></script>
 <script>
 (function(){
   var langUrls={};
@@ -665,11 +685,11 @@ function addPlaceFromMap(pid){if(map)map.closePopup();if(!window.ORT_ITIN_EDITOR
   },2000);
 })();
 </script>
-<script src="/js/ort-itin-editor.js?v=1785221144295" defer></script>
-<script src="/js/ort-merge.js?v=1785221144295" defer></script>
+<script src="/js/ort-itin-editor.js?v=1785255874500" defer></script>
+<script src="/js/ort-merge.js?v=1785255874500" defer></script>
 <style>.ip-ic svg{height:1.05em;width:auto;display:block;color:var(--ort-anim-color,var(--p,#113f7a))}.ip-ic{display:inline-flex;align-items:center}.ip-ic.ort-hide{opacity:0}.ort-anim{position:fixed;left:0;top:0;z-index:9998;pointer-events:none;opacity:0;color:var(--ort-anim-color,var(--p,#113f7a))}.ort-anim svg{width:100%;height:100%;display:block}#ortPlane{offset-anchor:center;offset-rotate:auto 18deg;will-change:offset-distance,opacity;backface-visibility:hidden}#ortPlane.go{animation:ortFly 8s cubic-bezier(.45,0,.2,1) 1 forwards}@keyframes ortFly{0%{offset-distance:0%;opacity:0}8%{opacity:1}92%{opacity:1}100%{offset-distance:100%;opacity:1}}#ortCar{will-change:transform,opacity;backface-visibility:hidden}.ip-pill.ort-pulse{animation:ortPulse 1.4s ease}@keyframes ortPulse{0%,100%{box-shadow:0 0 0 0 rgba(17,63,122,0)}30%{box-shadow:0 0 0 4px rgba(17,63,122,.35)}}@media(prefers-reduced-motion:reduce){.ort-anim{display:none!important}}</style>
 <script>(function(){if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;function ic(id){var p=document.getElementById(id);return p?p.querySelector('.ip-ic'):null;}function make(id,src){var e=document.getElementById(id);if(e)return e;e=document.createElement('span');e.id=id;e.className='ort-anim';e.innerHTML=src.innerHTML;document.body.appendChild(e);return e;}var plane=null,car=null,busy={plane:false,car:false};function flyPlane(){if(busy.plane)return;var icon=ic('pill-flight');if(!icon)return;var r=icon.getBoundingClientRect();if(!r.width)return;busy.plane=true;plane=make('ortPlane',icon);plane.style.width=r.width+'px';plane.style.height=r.height+'px';var cx=r.left+r.width/2,cy=r.top+r.height/2,W=innerWidth,H=innerHeight;var p='M '+cx+' '+cy+' C '+(cx+0.20*W)+' '+(cy-30)+', '+(0.60*W)+' '+(0.04*H)+', '+(0.86*W)+' '+(0.14*H)+' C '+(1.06*W)+' '+(0.26*H)+', '+(0.98*W)+' '+(0.72*H)+', '+(0.58*W)+' '+(0.82*H)+' C '+(0.28*W)+' '+(0.90*H)+', '+(0.04*W)+' '+(0.66*H)+', '+cx+' '+cy;plane.style.offsetPath='path("'+p+'")';icon.classList.add('ort-hide');plane.classList.remove('go');void plane.offsetWidth;plane.classList.add('go');plane.addEventListener('animationend',function h(){plane.removeEventListener('animationend',h);var pill=document.getElementById('pill-flight');if(pill){pill.classList.remove('ort-pulse');void pill.offsetWidth;pill.classList.add('ort-pulse');}plane.classList.remove('go');plane.style.opacity=0;icon.classList.remove('ort-hide');busy.plane=false;});}function driveCar(){if(busy.car)return;var icon=ic('pill-car');if(!icon)return;var r=icon.getBoundingClientRect();if(!r.width)return;busy.car=true;car=make('ortCar',icon);car.style.width=r.width+'px';car.style.height=r.height+'px';car.style.transform='none';car.style.opacity=1;car.style.left=(r.left+r.width/2-car.offsetWidth/2)+'px';car.style.top=(r.top+r.height/2-car.offsetHeight/2)+'px';icon.classList.add('ort-hide');var out=innerWidth-r.left+80,back=r.left+80;var kf=[{transform:'translateX(0)',opacity:1,offset:0},{transform:'translateX('+(out-60)+'px)',opacity:1,offset:.36},{transform:'translateX('+out+'px)',opacity:0,offset:.44},{transform:'translateX('+(-back)+'px)',opacity:0,offset:.45},{transform:'translateX('+(-back+60)+'px)',opacity:1,offset:.53},{transform:'translateX(0)',opacity:1,offset:1}];var a=car.animate(kf,{duration:8000,easing:'linear',fill:'forwards'});a.onfinish=function(){a.cancel();car.style.opacity=0;icon.classList.remove('ort-hide');busy.car=false;};}window.ortFlyPlane=flyPlane;window.ortDriveCar=driveCar;var S=1000;setTimeout(driveCar,33*S);setTimeout(flyPlane,100*S);setTimeout(driveCar,105*S);setTimeout(flyPlane,210*S);})();</script>
-<script src="/js/ort-state-manager.js?v=1785221144295" defer></script>
+<script src="/js/ort-state-manager.js?v=1785255874500" defer></script>
 <script>
 (function(){
   var ITIN_ID='IT::sud::pouilles-noires-bari-naples';

@@ -1,6 +1,25 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <script>(function(s,t,a,y,tw,to){s.Stay22=s.Stay22||{};s.Stay22.params={lmaID:"692f0c75b2478d16bb9b22fa"};tw=t.createElement(a);to=t.getElementsByTagName(a)[0];tw.async=1;tw.src=y;to.parentNode.insertBefore(tw,to);})(window,document,"script","https://scripts.stay22.com/letmeallez.js");</script>
@@ -140,15 +159,16 @@ header.ort-hdr .auth-pop .btn.out{background:#fff;color:var(--pd);border:1px sol
 <button class="btm" id="backToMap" onclick="showMapAgain()"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>Torna alla mappa</button>
 <footer id="footer-legal"></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="/js/ort-routing.js?v=1785221144271" defer></script>
+<script src="/js/ort-routing.js?v=1785255874476" defer></script>
 <script>
 var MP=[];var OP=[];
 var map,mk={},pl,isFs=false;
 function wkLoad(img,url,attempt,fallbacks){attempt=attempt||0;fallbacks=fallbacks||[];function tryNext(){if(attempt<2){var delay=attempt===0?2000:5000;setTimeout(function(){wkLoad(img,url,attempt+1,fallbacks);},delay);}else if(fallbacks.length>0){var next=fallbacks.shift();wkLoad(img,next,0,fallbacks);}else{img.style.display='none';}}img.onload=function(){if(img.naturalWidth<2){tryNext();return;}img.classList.add('wk-loaded');};img.onerror=function(){tryNext();};img.src=url;}
 function goMap(){document.getElementById('mapPanel').scrollIntoView({behavior:'smooth',block:'start'});}
-function ortSnTop(){var d=document.documentElement,b=document.body;if(window.innerWidth>900){d.style.removeProperty('--snBase');return;}var hdr=b.classList.contains('hdr-off')?50:(parseInt(getComputedStyle(d).getPropertyValue('--hh'))||0);var ip=document.querySelector('.ip-bar');var ipH=ip?ip.offsetHeight:0;var mp=document.getElementById('mapPanel');var mpH=(mp&&!b.classList.contains('map-off'))?mp.offsetHeight:0;d.style.setProperty('--snBase',(hdr+Math.max(ipH,mpH))+'px');}
+function ortSnTop(){var d=document.documentElement,b=document.body;if(window.innerWidth>900){d.style.removeProperty('--snBase');return;}function edge(el){if(!el)return 0;var t=0;try{t=parseFloat(getComputedStyle(el).top);}catch(e){}if(isNaN(t))t=0;return t+el.offsetHeight;}var ip=document.querySelector('.ip-bar');var mp=document.getElementById('mapPanel');var base=edge(ip);if(mp&&!b.classList.contains('map-off')){var me=edge(mp);if(me>base)base=me;}if(!ip&&!mp){var hh=0;try{hh=parseInt(getComputedStyle(d).getPropertyValue('--hh'))||0;}catch(e){}base=b.classList.contains('hdr-off')?0:hh;}d.style.setProperty('--snBase',base+'px');}
 var _snQ=false;function ortSnQueue(){if(_snQ)return;_snQ=true;requestAnimationFrame(function(){_snQ=false;ortSnTop();});}
 window.addEventListener('load',ortSnTop);window.addEventListener('resize',ortSnQueue);window.addEventListener('scroll',ortSnQueue,{passive:true});ortSnTop();setTimeout(ortSnTop,600);setTimeout(ortSnTop,1500);
+if(window.ResizeObserver){(function(){var e=document.querySelector('.ip-bar');if(e)new ResizeObserver(ortSnQueue).observe(e);})();}
 function ortMapOff(v){var b=document.body;if(v){b.classList.add('map-off');}else{b.classList.remove('map-off');}if(!v){setTimeout(function(){if(window.map&&window.map.invalidateSize)window.map.invalidateSize();},320);}if(window.ortSnTop){ortSnTop();setTimeout(ortSnTop,320);}}
 function toggleMap(){ortMapOff(!document.body.classList.contains('map-off'));}
 (function(){if(window.innerWidth>900)return;var done=false,hasFolded=false;var _mo=window.ortMapOff;window.ortMapOff=function(v){if(v){hasFolded=true;}else if(hasFolded){done=true;}if(_mo)_mo(v);};function onScroll(){if(done)return;var y=window.scrollY||0;if(y>120&&!document.body.classList.contains('map-off')){done=true;window.ortMapOff(true);}}window.addEventListener('scroll',onScroll,{passive:true});})();
@@ -218,10 +238,10 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
   else document.addEventListener('DOMContentLoaded',function(){var t2=document.getElementById('site-header');if(t2)mo.observe(t2,{childList:true,subtree:true});});
 })();
 </script>
-<script src="/js/ort-config.js?v=1785221144271"></script>
-<script src="/js/ort-i18n-auth.js?v=1785221144271"></script>
-<script src="/js/ort-header.js?v=1785221144271"></script>
-<script src="/js/ort-footer.js?v=1785221144271"></script>
+<script src="/js/ort-config.js?v=1785255874476"></script>
+<script src="/js/ort-i18n-auth.js?v=1785255874476"></script>
+<script src="/js/ort-header.js?v=1785255874476"></script>
+<script src="/js/ort-footer.js?v=1785255874476"></script>
 <script>
 (function(){
   var langUrls={};
@@ -250,8 +270,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
   });
 })();
 </script>
-<script src="/js/ort-itin-editor.js?v=1785221144271" defer></script>
-<script src="/js/ort-state-manager.js?v=1785221144271" defer></script>
+<script src="/js/ort-itin-editor.js?v=1785255874476" defer></script>
+<script src="/js/ort-state-manager.js?v=1785255874476" defer></script>
 <script>
 (function(){
   var ITIN_ID='';
@@ -456,5 +476,32 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
 function on(){var y=window.pageYOffset||document.documentElement.scrollTop||0;if(y<=10){h.classList.remove('hdr-hide');document.body.classList.remove('hdr-off');if(window.ortSnTop)ortSnTop();}else if(y>ly+4){h.classList.add('hdr-hide');document.body.classList.add('hdr-off');if(window.ortSnTop)ortSnTop();}else if(y<ly-4){h.classList.remove('hdr-hide');document.body.classList.remove('hdr-off');if(window.ortSnTop)ortSnTop();}ly=y;tk=false;}
 window.addEventListener('scroll',function(){if(!tk){tk=true;requestAnimationFrame(on);}},{passive:true});})();
 </script>
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"custom"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
 </body>
 </html>
