@@ -158,7 +158,8 @@ h1,h2,h3{line-height:1.2;text-wrap:balance}
 .input:focus,.select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px var(--tint)}
 .input-search{padding-left:42px}
 .field-search{position:relative}
-.field-search .ico{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-soft);pointer-events:none}
+.field-search{position:relative}
+.field-search .ico{position:absolute;left:14px;bottom:13px;color:var(--ink-soft);pointer-events:none}
 
 /* checkbox */
 .check{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-soft);cursor:pointer;user-select:none}
@@ -558,13 +559,14 @@ main{padding-block:40px 64px}
         <div class="module-panel is-active" data-panel="search">
           <div class="search-row">
             <div class="field field-search">
+              <label id="critSearchLbl" for="searchInput">Mot-clé</label>
               <span data-icon="search"></span>
               <input class="input input-search" id="searchInput" type="text" placeholder="Rechercher un itinéraire...">
             </div>
-            <select class="select" id="countryFilter"></select>
-            <select class="select" id="themeFilter"></select>
-            <select class="select" id="durationFilter"></select>
-            <select class="select" id="distanceFilter"></select>
+            <div class="field"><label id="critCountryLbl" for="countryFilter">Pays</label><select class="select" id="countryFilter"></select></div>
+            <div class="field"><label id="critThemeLbl" for="themeFilter">Thème</label><select class="select" id="themeFilter"></select></div>
+            <div class="field"><label id="critDurationLbl" for="durationFilter">Durée</label><select class="select" id="durationFilter"></select></div>
+            <div class="field"><label id="critDistanceLbl" for="distanceFilter">Distance</label><select class="select" id="distanceFilter"></select></div>
             <button class="btn btn-accent" type="button" id="desktopValidateBtn">Rechercher</button>
           </div>
           <div class="chips" id="quickThemesDesktop" style="margin-top:14px">
@@ -961,7 +963,7 @@ var langFolder = LANG_FOLDERS[currentLang];
    5 MODES D'ENTREE (onglets du module) — libelles i18n
    ======================================================== */
 var T5 = {
-  fr:{h1:"5 façons de créer ou trouver votre prochain itinéraire",
+  fr:{crit:["Mot-clé","Pays","Thème","Durée","Distance"],h1:"5 façons de créer ou trouver votre prochain itinéraire",
       lede:"Choisissez votre point d'entrée : nos parcours prêts à l'emploi, un tracé entre deux villes, une sélection de lieux, le planisphère, ou simplement une phrase.",
       tripsLbl:"road trips",
       tabs:{search:["Par critères","Pays, thème, durée, distance"],generate:["Entre deux points","On construit le tracé A → B"],places:["À partir des lieux","Vos incontournables d'abord"],globe:["Planisphère","Explorer le monde à la carte"],lilia:["Demander à Lilia","Décrivez le voyage en une phrase"]},
@@ -971,7 +973,7 @@ var T5 = {
       globeTitle:"Le monde entier sur une carte",
       globeText:"Zoomez sur une région, voyez les itinéraires disponibles et ouvrez celui qui vous parle.",
       globeBtn:"Ouvrir le planisphère"},
-  en:{h1:"5 ways to create or find your next itinerary",
+  en:{crit:["Keyword","Country","Theme","Duration","Distance"],h1:"5 ways to create or find your next itinerary",
       lede:"Pick your entry point: our ready-made routes, a route between two cities, a selection of places, the world map, or just one sentence.",
       tripsLbl:"road trips",
       tabs:{search:["By criteria","Country, theme, duration, distance"],generate:["Between two points","We build the A → B route"],places:["From the places","Your must-sees first"],globe:["World map","Explore the world on a map"],lilia:["Ask Lilia","Describe your trip in one sentence"]},
@@ -981,7 +983,7 @@ var T5 = {
       globeTitle:"The whole world on one map",
       globeText:"Zoom into a region, see the available itineraries and open the one you like.",
       globeBtn:"Open the world map"},
-  es:{h1:"5 formas de crear o encontrar tu próxima ruta",
+  es:{crit:["Palabra clave","País","Tema","Duración","Distancia"],h1:"5 formas de crear o encontrar tu próxima ruta",
       lede:"Elige tu punto de entrada: nuestras rutas listas, un trazado entre dos ciudades, una selección de lugares, el planisferio o una simple frase.",
       tripsLbl:"road trips",
       tabs:{search:["Por criterios","País, tema, duración, distancia"],generate:["Entre dos puntos","Construimos el trazado A → B"],places:["A partir de los lugares","Tus imprescindibles primero"],globe:["Planisferio","Explorar el mundo en el mapa"],lilia:["Preguntar a Lilia","Describe el viaje en una frase"]},
@@ -991,7 +993,7 @@ var T5 = {
       globeTitle:"El mundo entero en un mapa",
       globeText:"Haz zoom en una región, mira las rutas disponibles y abre la que te guste.",
       globeBtn:"Abrir el planisferio"},
-  it:{h1:"5 modi per creare o trovare il tuo prossimo itinerario",
+  it:{crit:["Parola chiave","Paese","Tema","Durata","Distanza"],h1:"5 modi per creare o trovare il tuo prossimo itinerario",
       lede:"Scegli il tuo punto di partenza: i nostri percorsi pronti, un tracciato tra due città, una selezione di luoghi, il planisfero o una semplice frase.",
       tripsLbl:"road trips",
       tabs:{search:["Per criteri","Paese, tema, durata, distanza"],generate:["Tra due punti","Costruiamo il percorso A → B"],places:["Dai luoghi","Prima le tue tappe imperdibili"],globe:["Planisfero","Esplora il mondo sulla mappa"],lilia:["Chiedi a Lilia","Descrivi il viaggio in una frase"]},
@@ -1001,7 +1003,7 @@ var T5 = {
       globeTitle:"Il mondo intero su una mappa",
       globeText:"Ingrandisci una regione, guarda gli itinerari disponibili e apri quello che ti piace.",
       globeBtn:"Apri il planisfero"},
-  pt:{h1:"5 formas de criar ou encontrar o seu próximo roteiro",
+  pt:{crit:["Palavra-chave","País","Tema","Duração","Distância"],h1:"5 formas de criar ou encontrar o seu próximo roteiro",
       lede:"Escolha o seu ponto de entrada: os nossos percursos prontos, um traçado entre duas cidades, uma seleção de lugares, o planisfério ou apenas uma frase.",
       tripsLbl:"road trips",
       tabs:{search:["Por critérios","País, tema, duração, distância"],generate:["Entre dois pontos","Construímos o traçado A → B"],places:["A partir dos lugares","Os seus imperdíveis primeiro"],globe:["Planisfério","Explorar o mundo no mapa"],lilia:["Perguntar à Lilia","Descreva a viagem numa frase"]},
@@ -1011,7 +1013,7 @@ var T5 = {
       globeTitle:"O mundo inteiro num mapa",
       globeText:"Amplie uma região, veja os roteiros disponíveis e abra o que lhe agradar.",
       globeBtn:"Abrir o planisfério"},
-  ar:{h1:"٥ طرق لإنشاء أو إيجاد مسارك القادم",
+  ar:{crit:["كلمة مفتاحية","الدولة","الموضوع","المدة","المسافة"],h1:"٥ طرق لإنشاء أو إيجاد مسارك القادم",
       lede:"اختر نقطة البداية: مساراتنا الجاهزة، أو مسار بين مدينتين، أو مجموعة أماكن، أو خريطة العالم، أو جملة واحدة فقط.",
       tripsLbl:"رحلات برية",
       tabs:{search:["حسب المعايير","الدولة، الموضوع، المدة، المسافة"],generate:["بين نقطتين","نبني المسار من أ إلى ب"],places:["انطلاقًا من الأماكن","أماكنك المفضلة أولاً"],globe:["خريطة العالم","استكشف العالم على الخريطة"],lilia:["اسأل ليليا","صف رحلتك في جملة واحدة"]},
@@ -1225,6 +1227,11 @@ injectIcons();
     var s2  = document.querySelector('[data-tab-sub="' + key + '"]');
     if(lbl) lbl.textContent = L5.tabs[key][0];
     if(s2)  s2.textContent  = L5.tabs[key][1];
+  }
+  var critIds = ['critSearchLbl','critCountryLbl','critThemeLbl','critDurationLbl','critDistanceLbl'];
+  for(var q=0;q<critIds.length;q++){
+    var ce = document.getElementById(critIds[q]);
+    if(ce && L5.crit) ce.textContent = L5.crit[q];
   }
   var ids = [['jpPlacesTitle','placesTitle'],['jpPlacesText','placesText'],['jpPlacesBtn','placesBtn'],
              ['jpGlobeTitle','globeTitle'],['jpGlobeText','globeText'],['jpGlobeBtn','globeBtn']];
