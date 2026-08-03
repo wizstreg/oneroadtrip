@@ -469,9 +469,11 @@ main{padding-block:40px 64px}
 }
 @media(max-width:600px){
   .heroB-copy h1{font-size:24px}
-  .heroB-stats{gap:10px 20px}
+  .heroB-copy .lede{margin-top:12px;font-size:13.5px}
+  /* 5 chiffres : 3 + 2 sur deux lignes propres */
+  .heroB-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px;width:100%}
   .heroB-stats .s b{font-size:18px}
-  .heroB-copy .lede{margin-top:12px}
+  .heroB-stats .s span{font-size:10.5px;letter-spacing:.02em}
 }
 /* module compact dans le split — desktop seulement, pour ne pas
    écraser les règles mobiles (1 colonne sous 480px) */
@@ -1688,7 +1690,7 @@ function buildCard(item){
   var mapUrl = 'https://photos.oneroadtrip.com/' + (item.cc || '').toUpperCase() + '/maps/' + mapSlug + '.webp';
 
   var html = '<a href="' + href + '" class="card">';
-  html += '<div class="card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '" style="' + bgStyle + '">';
+  html += '<div class="card-photo" data-photo-bg="' + bgStyle + '" data-map-url="' + mapUrl + '">';
   html += '<span class="card-badge">' + cc + '</span>';
   html += '<span class="card-flag">' + getFlag(item.cc) + '</span>';
   html += '<span class="card-meteo is-loading" data-cc="' + (item.cc||'') + '" data-slug="' + (item.slug||'') + '" aria-label="Météo">\u26C5</span>';
@@ -1791,6 +1793,7 @@ function render(){
   }
 
   main.innerHTML = html;
+  if(typeof observeCardPhotos === 'function') observeCardPhotos();
 
   var nrBtn = document.getElementById('nrReset');
   if(nrBtn){
@@ -2037,22 +2040,39 @@ document.getElementById('desktopValidateBtn').addEventListener('click', function
    TOGGLE PHOTOS / CARTES (ancré dans la barre d'outils)
    ======================================================== */
 var currentView = 'photo';
+
+/* Les visuels ne se chargent qu'a l'approche de l'ecran : sinon 900+ images
+   d'un coup saturent la memoire et le navigateur mobile ferme l'onglet. */
+function paintCard(c){
+  if(currentView === 'map'){
+    var mu = c.getAttribute('data-map-url');
+    if(mu){ c.style.backgroundImage = "url('" + mu + "')"; c.classList.add('is-map'); }
+  } else {
+    var ph = c.getAttribute('data-photo-bg') || '';
+    var match = ph.match(/url\(['"]?(.*?)['"]?\)/);
+    c.style.backgroundImage = match ? "url('" + match[1] + "')" : '';
+    c.classList.remove('is-map');
+  }
+}
+var photoIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function(entries){
+  for(var i=0;i<entries.length;i++){
+    if(entries[i].isIntersecting){ paintCard(entries[i].target); photoIO.unobserve(entries[i].target); }
+  }
+}, {rootMargin:'400px'}) : null;
+
+function observeCardPhotos(){
+  var cards = document.querySelectorAll('.card-photo');
+  for(var i=0;i<cards.length;i++){
+    if(photoIO) photoIO.observe(cards[i]); else paintCard(cards[i]);
+  }
+}
+
 function applyView(){
   var cards = document.querySelectorAll('.card-photo');
   for(var i=0;i<cards.length;i++){
-    var c = cards[i];
-    if(currentView === 'map'){
-      var mu = c.getAttribute('data-map-url');
-      if(mu){
-        c.style.backgroundImage = 'url(\'' + mu + '\')';
-        c.classList.add('is-map');
-      }
-    } else {
-      var ph = c.getAttribute('data-photo-bg') || '';
-      var match = ph.match(/url\(['"]?(.*?)['"]?\)/);
-      c.style.backgroundImage = match ? 'url(\'' + match[1] + '\')' : '';
-      c.classList.remove('is-map');
-    }
+    cards[i].style.backgroundImage = '';
+    cards[i].classList.remove('is-map');
+    if(photoIO) photoIO.observe(cards[i]); else paintCard(cards[i]);
   }
   var bp = document.getElementById('vtPhoto'), bm = document.getElementById('vtMap');
   bp.classList.toggle('active', currentView === 'photo');
