@@ -1,6 +1,76 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<!-- ===== JOURNAL D'ECRAN MOBILE : ajouter ?debug=1 a l'URL ===== -->
+<script>
+(function(){
+  try {
+    var q = new URLSearchParams(location.search);
+    var on = q.get('debug') === '1' || localStorage.getItem('ORT_DEBUG_PANEL') === '1';
+    if (q.get('debug') === '1') localStorage.setItem('ORT_DEBUG_PANEL','1');
+    if (q.get('debug') === '0') { localStorage.removeItem('ORT_DEBUG_PANEL'); return; }
+    if (!on) return;
+  } catch(e) { return; }
+
+  var lines = [];
+  var t0 = Date.now();
+  function push(kind, args){
+    var t = ((Date.now()-t0)/1000).toFixed(2);
+    var txt = Array.prototype.map.call(args, function(a){
+      if (a instanceof Error) return a.message + ' | ' + (a.stack||'').split('\n')[1];
+      if (typeof a === 'object') { try { return JSON.stringify(a); } catch(e){ return String(a); } }
+      return String(a);
+    }).join(' ');
+    lines.push('[' + t + '] ' + kind + ' ' + txt);
+    if (lines.length > 400) lines.shift();
+    render();
+  }
+  ['log','warn','error','info'].forEach(function(k){
+    var orig = console[k].bind(console);
+    console[k] = function(){ push(k.toUpperCase(), arguments); orig.apply(null, arguments); };
+  });
+  window.addEventListener('error', function(e){ push('JS-ERR', [e.message + ' @ ' + (e.filename||'') + ':' + (e.lineno||'')]); });
+  window.addEventListener('unhandledrejection', function(e){ push('PROMISE', [String(e.reason)]); });
+
+  var box, pre, ready = false;
+  function build(){
+    box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;height:42vh;z-index:2147483647;background:rgba(10,14,22,.94);color:#d7ffd7;font:11px/1.35 monospace;display:flex;flex-direction:column;';
+    var bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:6px;padding:6px;background:#111827;flex:0 0 auto;';
+    bar.innerHTML = '<span style="flex:1;color:#93c5fd;font-weight:bold;">Journal ORT</span>';
+    ['Copier','Vider','Fermer'].forEach(function(lab){
+      var b = document.createElement('button');
+      b.textContent = lab;
+      b.style.cssText = 'background:#1f2937;color:#e5e7eb;border:1px solid #374151;border-radius:6px;padding:4px 9px;font-size:11px;';
+      b.onclick = function(){
+        if (lab === 'Copier') {
+          var t = lines.join('\n');
+          if (navigator.clipboard) navigator.clipboard.writeText(t);
+          else { var ta=document.createElement('textarea'); ta.value=t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+          b.textContent = 'Copie !'; setTimeout(function(){ b.textContent='Copier'; }, 1200);
+        }
+        if (lab === 'Vider') { lines.length = 0; render(); }
+        if (lab === 'Fermer') { localStorage.removeItem('ORT_DEBUG_PANEL'); box.remove(); }
+      };
+      bar.appendChild(b);
+    });
+    pre = document.createElement('pre');
+    pre.style.cssText = 'margin:0;padding:8px;overflow:auto;flex:1;white-space:pre-wrap;word-break:break-word;';
+    box.appendChild(bar); box.appendChild(pre);
+    document.body.appendChild(box);
+    ready = true;
+  }
+  function render(){
+    if (!ready) return;
+    pre.textContent = lines.join('\n');
+    pre.scrollTop = pre.scrollHeight;
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ build(); render(); });
+  else { build(); render(); }
+  push('INIT', ['Journal actif — ' + location.href]);
+})();
+</script>
 <!-- ort-pwa-injected-v1 -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#ffffff">
@@ -46,6 +116,12 @@
 }catch(e){}})();
 </script>
 <!-- /ort-page-tracking-v1 -->
+
+
+
+
+
+
 
 
 
@@ -3776,7 +3852,7 @@ async function init() {
   // Si on vient d'une rotation depuis RT Detail, récupérer le tripId du handoff
   const handoffTripId = localStorage.getItem('ORT_MOBILE_HANDOFF');
   const effectiveTripId = tripId || handoffTripId;
-  const effectiveDashboardMode = effectiveTripId && (effectiveTripId.startsWith('trip_') || effectiveTripId.startsWith('user::'));
+  const effectiveDashboardMode = !!effectiveTripId && !fromTemp && !rtKey && (effectiveTripId.startsWith('trip_') || effectiveTripId.startsWith('user::') || effectiveTripId.includes('::custom-'));
   
   debugLog('======= INIT MOBILE =======');
   debugLog('URL tripId: ' + tripId);
@@ -8761,8 +8837,9 @@ if ('serviceWorker' in navigator) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', steps: [{ name: 'x', nights: 1 }], language: lang, cacheOnly: true })
-      }).then(function(res) { return res.json(); })
+      }).then(function(res) { if (!res.ok) return null; return res.json(); })
       .then(function(data) {
+        if (!data) { console.log('[AI-SUMMARY] Service indisponible (pas de cache)'); return; }
         console.log('[AI-SUMMARY] Cache response:', JSON.stringify(data).substring(0, 200));
         if (data.success && data.data && data.data.fromCache) {
           console.log('[AI-SUMMARY] Cache loaded!');

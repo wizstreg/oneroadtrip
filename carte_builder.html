@@ -1412,7 +1412,7 @@ body.fullscreen-mode.selection-open .map-container {
 /* Preview popup - PLEINE HAUTEUR depuis le haut de la page */
 .place-preview {
   position: fixed;
-  top: 0;
+  top: var(--site-header-h, 0px);
   right: 0;
   bottom: 0;
   width: 360px;
@@ -1611,6 +1611,77 @@ body.fullscreen-mode .place-preview {
   cursor: pointer;
 }
 .add-place-btn:hover { background: #0d3461; }
+
+/* ===== Éditeur de visites et activités (mobile d'abord) ===== */
+.ve-open-btn{
+  display:block;width:100%;margin-top:14px;padding:12px 14px;
+  background:#fff;color:#113f7a;border:1.5px solid #113f7a;border-radius:999px;
+  font-weight:700;font-size:13px;line-height:1.35;cursor:pointer;text-align:center;
+}
+.ve-open-btn:hover{background:#113f7a;color:#fff;}
+.ve-open-btn[hidden]{display:none;}
+.ve-overlay{
+  position:fixed;inset:0;z-index:100060;background:rgba(8,16,32,.55);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+.ve-panel{
+  background:#fff;width:100%;max-width:980px;max-height:92vh;
+  border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden;
+}
+.ve-head{
+  display:flex;align-items:center;gap:10px;padding:14px 16px;
+  border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;
+}
+.ve-title{flex:1;font-weight:700;font-size:15px;color:#113f7a;}
+.ve-close{
+  background:#f1f5f9;border:none;border-radius:999px;width:34px;height:34px;
+  font-size:15px;cursor:pointer;color:#334155;flex:0 0 auto;
+}
+.ve-actions{padding:10px 16px;border-bottom:1px solid #e5e7eb;background:#fff;}
+.ve-save{
+  width:100%;padding:13px;background:#113f7a;color:#fff;border:none;
+  border-radius:999px;font-weight:700;font-size:15px;cursor:pointer;
+}
+.ve-save:hover{background:#0d3461;}
+.ve-body{overflow-y:auto;padding:14px 16px 24px;-webkit-overflow-scrolling:touch;}
+.ve-col + .ve-col{margin-top:22px;}
+.ve-col-title{
+  margin:0 0 10px;font-size:13px;font-weight:700;color:#334155;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.ve-group-label{
+  margin:14px 0 6px;font-size:12px;font-weight:700;color:#64748b;
+}
+.ve-item{
+  display:flex;gap:8px;align-items:flex-start;
+  border:1px solid #e5e7eb;border-radius:12px;padding:8px;margin-bottom:8px;background:#fff;
+}
+.ve-item textarea{
+  flex:1;border:none;resize:vertical;min-height:64px;font:inherit;font-size:13.5px;
+  line-height:1.45;color:#1f2937;outline:none;background:transparent;
+}
+.ve-del,.ve-add{
+  flex:0 0 auto;width:32px;height:32px;border:none;border-radius:999px;
+  font-size:15px;cursor:pointer;line-height:1;
+}
+.ve-del{background:#fee2e2;color:#b91c1c;}
+.ve-add{background:#dcfce7;color:#15803d;}
+.ve-cand{
+  border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin-bottom:8px;
+  display:flex;gap:8px;align-items:flex-start;background:#f8fafc;
+}
+.ve-cand-txt{flex:1;font-size:13.5px;line-height:1.45;color:#1f2937;}
+.ve-cand-src{display:block;margin-top:6px;font-size:11.5px;color:#64748b;font-style:italic;}
+.ve-empty{padding:14px;color:#64748b;font-size:13px;font-style:italic;text-align:center;}
+@media (min-width:900px){
+  .ve-overlay{align-items:center;}
+  .ve-panel{border-radius:18px;max-height:86vh;}
+  .ve-body{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .ve-col + .ve-col{margin-top:0;}
+  .ve-save{width:auto;padding:11px 26px;}
+  .ve-actions{text-align:right;}
+}
+
 .add-place-btn.remove { background: #e11d48; }
 .add-place-btn.remove:hover { background: #be123c; }
 
@@ -2261,14 +2332,16 @@ body.fullscreen-mode .place-preview {
     font-size: 14px;
   }
   
-  /* Bouton ajouter visible dans la popup sur mobile */
+  /* Bouton ajouter visible EN HAUT de la fiche sur mobile */
   .add-place-btn {
     display: block;
     position: sticky;
-    bottom: 0;
-    margin-top: 16px;
+    top: 0;
+    z-index: 5;
+    margin: 0 0 14px;
     font-size: 16px;
     padding: 14px 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,.15);
   }
   
   /* Masquer les contrôles inutiles sur mobile */
@@ -2571,11 +2644,11 @@ body.fullscreen-mode .place-preview {
     <div class="preview-rating">
       <span class="rating-stars" id="previewStars">★★★★★</span>
     </div>
+    <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
     <div class="preview-photos" id="previewPhotos">
       <!-- 4 photos ici -->
     </div>
     <div class="preview-duration" id="previewDuration">⏱️ Durée estimée: 0 min</div>
-    <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
     <div class="preview-section">
       <h4 id="visitsLabel">🏛️ Visites possibles</h4>
       <ul class="preview-list" id="previewVisits"></ul>
@@ -2583,6 +2656,32 @@ body.fullscreen-mode .place-preview {
     <div class="preview-section">
       <h4 id="activitiesLabel">🎯 Activités</h4>
       <ul class="preview-list" id="previewActivities"></ul>
+    </div>
+    <button id="openVisitEditorBtn" class="ve-open-btn" onclick="openVisitEditor()" hidden></button>
+  </div>
+
+  <!-- Éditeur de visites et activités (autres itinéraires) -->
+  <div id="visitEditor" class="ve-overlay" hidden>
+    <div class="ve-panel">
+      <div class="ve-head">
+        <div class="ve-title" id="veTitle"></div>
+        <button class="ve-close" onclick="closeVisitEditor()">&#10005;</button>
+      </div>
+      <div class="ve-actions">
+        <button class="ve-save" id="veSaveBtn" onclick="saveVisitEditor()"></button>
+      </div>
+      <div class="ve-body">
+        <div class="ve-col">
+          <h4 class="ve-col-title" id="veCurrentTitle"></h4>
+          <div id="veCurrentList"></div>
+          <button class="ve-add-blank" onclick="veAddBlank('visits')" id="veAddVisitBtn"></button>
+          <button class="ve-add-blank" onclick="veAddBlank('activities')" id="veAddActBtn"></button>
+        </div>
+        <div class="ve-col">
+          <h4 class="ve-col-title" id="veOthersTitle"></h4>
+          <div id="veOthersList"><div class="ve-empty" id="veLoading"></div></div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -4283,6 +4382,10 @@ async function showPlacePreview(place) {
   
   // Mettre à jour le bouton d'ajout
   updateAddPlaceButton();
+
+  // Bouton d'édition des visites : affiché seulement si ce lieu a d'autres versions.
+  // Le premier lieu ouvert déclenche le chargement du pays, une fois pour toutes.
+  try { veUpdateOpenButton(place); } catch(e) { /* l'éditeur n'est pas encore chargé */ }
   
   // Gérer le survol de la popup pour ne pas la fermer
   preview.onmouseenter = () => {
@@ -4458,14 +4561,13 @@ async function onMapClickPickCity(e) {
       box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepNoCity || 'Aucune ville trouvée'}</div>`;
     } else {
       const city = { name, countryCode: cc, admin1, lat, lon: lng };
-      // Clic carte = ajout direct, sans validation. Point ORT trouvé -> avec visites, sinon ville seule.
+      // Clic carte = on OUVRE LA FICHE, jamais d'ajout direct.
+      // L'ajout ne se fait que par le bouton de validation en haut de la fiche.
       const match = findMasterMatch(city);
-      if (match && match.place) {
-        addStepToItinerary(match.place, true);
-      } else {
-        addStepToItinerary(makeBrutPlace(city), true);
-      }
+      const target = (match && match.place) ? match.place : makeBrutPlace(city);
       resetStepSearch();
+      isPreviewPinned = true;
+      showPlacePreview(target);
     }
   } catch (err) {
     box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepSearchUnavailable || 'Recherche indisponible'}</div>`;
@@ -5718,6 +5820,8 @@ function submitItinerary() {
         visits: place.visits || [],
         activities: place.activities || [],
         rating: place.rating || 0,
+        map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
+        _mapKeywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
         suggested_days: (typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1))
       }))
     }]
@@ -5743,6 +5847,7 @@ function submitItinerary() {
       hotels: place.hotels || [],
       images: getPhotosForPlace(place.place_id),
       rating: place.rating || 0,
+      map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
       suggested_days: (typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1))
     }))
   };
@@ -5803,6 +5908,8 @@ async function submitToCarnet(ctx) {
     lon: place.lon,
     lng: place.lon,
     cc: place.cc || ctx.cc,
+    map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
+    _mapKeywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
     suggested_days: (typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1))
   }));
 
@@ -5873,6 +5980,28 @@ document.addEventListener('DOMContentLoaded', () => {
 <script src="js/ort-header.js"></script>
 <script src="js/ort-footer.js"></script>
 
+
+<script>
+/* Cale le haut du panneau de droite juste sous la barre de menu du site,
+   pour que le nom du lieu et sa note ne soient plus cachés dessous. */
+(function () {
+  function syncHeaderHeight() {
+    var h = document.getElementById('site-header');
+    var hh = (h && h.offsetHeight) ? h.offsetHeight : 0;
+    document.documentElement.style.setProperty('--site-header-h', hh + 'px');
+  }
+  window.addEventListener('load', syncHeaderHeight);
+  window.addEventListener('resize', syncHeaderHeight);
+  document.addEventListener('DOMContentLoaded', syncHeaderHeight);
+  var hdr = document.getElementById('site-header');
+  if (hdr && window.MutationObserver) {
+    new MutationObserver(syncHeaderHeight).observe(hdr, { childList: true, subtree: true });
+  }
+  syncHeaderHeight();
+  setTimeout(syncHeaderHeight, 500);
+  setTimeout(syncHeaderHeight, 1500);
+})();
+</script>
 <!-- ort-page-tracking-v1 -->
 <script>
 (function(){try{
@@ -5900,5 +6029,294 @@ document.addEventListener('DOMContentLoaded', () => {
 }catch(e){}})();
 </script>
 <!-- /ort-page-tracking-v1 -->
+
+<script>
+// =====================================================================
+// ÉDITEUR DE VISITES ET ACTIVITÉS
+// Le master ne garde que le bloc de l'itinéraire le plus riche.
+// Ici on va rechercher, dans le fichier itins du pays, tous les autres
+// blocs écrits pour le MÊME place_id, et on laisse l'utilisateur composer.
+// Les modifications ne concernent que SON voyage : ni le master ni les
+// fichiers itins ne sont touchés.
+// =====================================================================
+const VE_T = {
+  fr: { open:"Ces visites ne vous conviennent pas ? Modifiez-les ou cherchez-en d'autres",
+        title:"Visites et activités", current:"Dans votre étape", others:"Proposées par d'autres itinéraires",
+        save:"Enregistrer", addVisit:"+ Ajouter une visite", addAct:"+ Ajouter une activité",
+        loading:"Recherche dans les autres itinéraires…", none:"Aucune autre version trouvée pour ce lieu.",
+        error:"Impossible de charger les itinéraires de ce pays.", visits:"Visites", acts:"Activités", from:"D'après" },
+  en: { open:"These suggestions don't suit you? Edit them or look for others",
+        title:"Visits and activities", current:"In your stop", others:"Offered by other itineraries",
+        save:"Save", addVisit:"+ Add a visit", addAct:"+ Add an activity",
+        loading:"Searching other itineraries…", none:"No other version found for this place.",
+        error:"Could not load this country's itineraries.", visits:"Visits", acts:"Activities", from:"From" },
+  es: { open:"¿Estas visitas no le convienen? Modifíquelas o busque otras",
+        title:"Visitas y actividades", current:"En su etapa", others:"Propuestas por otras rutas",
+        save:"Guardar", addVisit:"+ Añadir una visita", addAct:"+ Añadir una actividad",
+        loading:"Buscando en otras rutas…", none:"No se encontró otra versión para este lugar.",
+        error:"No se pudieron cargar las rutas de este país.", visits:"Visitas", acts:"Actividades", from:"Según" },
+  pt: { open:"Estas visitas não lhe convêm? Modifique-as ou procure outras",
+        title:"Visitas e atividades", current:"Na sua etapa", others:"Propostas por outros roteiros",
+        save:"Guardar", addVisit:"+ Adicionar uma visita", addAct:"+ Adicionar uma atividade",
+        loading:"A procurar noutros roteiros…", none:"Nenhuma outra versão encontrada para este local.",
+        error:"Não foi possível carregar os roteiros deste país.", visits:"Visitas", acts:"Atividades", from:"Segundo" },
+  it: { open:"Queste visite non fanno per te? Modificale o cercane altre",
+        title:"Visite e attività", current:"Nella tua tappa", others:"Proposte da altri itinerari",
+        save:"Salva", addVisit:"+ Aggiungi una visita", addAct:"+ Aggiungi un'attività",
+        loading:"Ricerca in altri itinerari…", none:"Nessun'altra versione trovata per questo luogo.",
+        error:"Impossibile caricare gli itinerari di questo paese.", visits:"Visite", acts:"Attività", from:"Da" },
+  ar: { open:"هل هذه الزيارات لا تناسبك؟ عدّلها أو ابحث عن غيرها",
+        title:"الزيارات والأنشطة", current:"في محطتك", others:"مقترحة من مسارات أخرى",
+        save:"حفظ", addVisit:"+ إضافة زيارة", addAct:"+ إضافة نشاط",
+        loading:"جارٍ البحث في المسارات الأخرى…", none:"لم يتم العثور على نسخة أخرى لهذا المكان.",
+        error:"تعذّر تحميل مسارات هذا البلد.", visits:"زيارات", acts:"أنشطة", from:"من" }
+};
+function veTxt(){ return VE_T[currentLang] || VE_T.fr; }
+
+const veItinsCache = {};   // "CC|lang" -> données du fichier itins
+const veIndexCache = {};   // "CC|lang" -> { place_id: [candidats] }
+const veIndexPending = {}; // "CC|lang" -> promesse de chargement en cours
+let veWorkVisits = [];     // visites en cours d'édition
+let veWorkActs = [];       // activités en cours d'édition
+let vePlace = null;        // lieu concerné
+
+function veNorm(t){
+  return (t||'').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,' ').trim();
+}
+
+// Charge le fichier itins du pays, une seule fois par pays et par langue
+async function veLoadCountryItins(cc){
+  const key = cc + '|' + currentLang;
+  if (veItinsCache[key]) return veItinsCache[key];
+  const CC = (cc||'').toUpperCase(), low = CC.toLowerCase(), lang = currentLang;
+  const paths = [
+    `data/Roadtripsprefabriques/countries/${CC}/${CC}.itins.modules-${lang}.json`,
+    `./data/Roadtripsprefabriques/countries/${CC}/${CC}.itins.modules-${lang}.json`,
+    `data/Roadtripsprefabriques/countries/${low}/${CC}.itins.modules-${lang}.json`,
+    `data/Roadtripsprefabriques/countries/${CC}/${low}.itins.modules-${lang}.json`,
+    `data/Roadtripsprefabriques/countries/${low}/${low}.itins.modules-${lang}.json`
+  ];
+  for (const path of paths){
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      const data = await res.json();
+      veItinsCache[key] = data;
+      return data;
+    } catch(e){ /* on essaie le chemin suivant */ }
+  }
+  return null;
+}
+
+// Récupère tous les blocs écrits pour ce place_id dans les autres itinéraires
+function veCollectCandidates(data, placeId){
+  const out = [];
+  if (!data) return out;
+  const itins = data.itineraries || data.itins || [];
+  itins.forEach(it => {
+    const label = it.title || it.itin_id || it.id || '';
+    (it.days_plan || []).forEach(day => {
+      const pid = (day.night && day.night.place_id) || day.place_id;
+      if (pid !== placeId) return;
+      (day.visits || []).forEach(v => { if (v && v.text) out.push({ kind:'visits', text:v.text, dur:v.visit_duration_min, src:label }); });
+      (day.activities || []).forEach(a => { if (a && a.text) out.push({ kind:'activities', text:a.text, dur:a.visit_duration_min, src:label }); });
+    });
+  });
+  return out;
+}
+
+// Construit une fois pour toutes l'index des autres versions du pays.
+// Appelé en tâche de fond dès le premier lieu ouvert : ensuite tout est instantané,
+// et on sait quels lieux ont réellement des variantes.
+function veEnsureCountryIndex(cc){
+  const CC = (cc||'').toUpperCase();
+  if (!CC) return Promise.resolve(null);
+  const key = CC + '|' + currentLang;
+  if (veIndexCache[key]) return Promise.resolve(veIndexCache[key]);
+  if (veIndexPending[key]) return veIndexPending[key];
+
+  veIndexPending[key] = veLoadCountryItins(CC).then(data => {
+    const index = {};
+    if (data) {
+      const itins = data.itineraries || data.itins || [];
+      itins.forEach(it => {
+        const label = it.title || it.itin_id || it.id || '';
+        (it.days_plan || []).forEach(day => {
+          const pid = (day.night && day.night.place_id) || day.place_id;
+          if (!pid) return;
+          if (!index[pid]) index[pid] = [];
+          (day.visits || []).forEach(v => { if (v && v.text) index[pid].push({ kind:'visits', text:v.text, dur:v.visit_duration_min, src:label }); });
+          (day.activities || []).forEach(a => { if (a && a.text) index[pid].push({ kind:'activities', text:a.text, dur:a.visit_duration_min, src:label }); });
+        });
+      });
+      console.log('[VE] Index ' + CC + ' : ' + Object.keys(index).length + ' lieu(x) avec des versions alternatives');
+    } else {
+      console.warn('[VE] Fichier itins introuvable pour ' + CC);
+    }
+    veIndexCache[key] = index;
+    delete veIndexPending[key];
+    return index;
+  }).catch(e => {
+    console.warn('[VE] Index ' + CC + ' en echec', e);
+    veIndexCache[key] = {};
+    delete veIndexPending[key];
+    return {};
+  });
+  return veIndexPending[key];
+}
+
+// Le bouton n'a de sens que si ce lieu a des textes ailleurs que ceux deja affiches
+function veUpdateOpenButton(place){
+  const btn = document.getElementById('openVisitEditorBtn');
+  if (!btn) return;
+  btn.hidden = true;
+  if (!place || !place.place_id) return;
+  const cc = place.cc || (place.place_id || '').split('::')[0];
+  veEnsureCountryIndex(cc).then(index => {
+    // Le lieu affiche a pu changer entre-temps
+    if (!currentPreviewPlace || currentPreviewPlace.place_id !== place.place_id) return;
+    const cands = (index && index[place.place_id]) || [];
+    const cur = new Set([].concat(place.visits || [], place.activities || []).map(x => veNorm(x && x.text)));
+    const nouveaux = cands.filter(c => !cur.has(veNorm(c.text)));
+    if (nouveaux.length > 0) {
+      btn.textContent = (VE_T[currentLang] || VE_T.fr).open;
+      btn.hidden = false;
+    }
+  });
+}
+
+function openVisitEditor(){
+  if (!currentPreviewPlace) return;
+  vePlace = currentPreviewPlace;
+  const TXT = veTxt();
+  veWorkVisits = (vePlace.visits || []).map(v => ({ text:v.text, dur:v.visit_duration_min }));
+  veWorkActs   = (vePlace.activities || []).map(a => ({ text:a.text, dur:a.visit_duration_min }));
+
+  document.getElementById('veTitle').textContent = TXT.title + ' — ' + (vePlace.name || '');
+  document.getElementById('veCurrentTitle').textContent = TXT.current;
+  document.getElementById('veOthersTitle').textContent = TXT.others;
+  document.getElementById('veSaveBtn').textContent = TXT.save;
+  document.getElementById('veAddVisitBtn').textContent = TXT.addVisit;
+  document.getElementById('veAddActBtn').textContent = TXT.addAct;
+  document.getElementById('veOthersList').innerHTML = `<div class="ve-empty">${TXT.loading}</div>`;
+  document.getElementById('visitEditor').hidden = false;
+  veRenderCurrent();
+
+  veEnsureCountryIndex(vePlace.cc || (vePlace.place_id||'').split('::')[0])
+    .then(index => {
+      if (!index) { document.getElementById('veOthersList').innerHTML = `<div class="ve-empty">${TXT.error}</div>`; return; }
+      veRenderCandidates(index[vePlace.place_id] || []);
+    })
+    .catch(() => { document.getElementById('veOthersList').innerHTML = `<div class="ve-empty">${TXT.error}</div>`; });
+}
+
+function closeVisitEditor(){
+  document.getElementById('visitEditor').hidden = true;
+  vePlace = null;
+}
+
+function veRenderCurrent(){
+  const TXT = veTxt();
+  const box = document.getElementById('veCurrentList');
+  box.innerHTML = '';
+  [['visits', TXT.visits, veWorkVisits], ['activities', TXT.acts, veWorkActs]].forEach(([kind, label, list]) => {
+    const h = document.createElement('div');
+    h.className = 've-group-label';
+    h.textContent = label + ' (' + list.length + ')';
+    box.appendChild(h);
+    list.forEach((item, i) => {
+      const row = document.createElement('div');
+      row.className = 've-item';
+      const ta = document.createElement('textarea');
+      ta.value = item.text || '';
+      ta.addEventListener('input', () => { item.text = ta.value; });
+      const del = document.createElement('button');
+      del.className = 've-del';
+      del.textContent = '\u2715';
+      del.addEventListener('click', () => {
+        (kind === 'visits' ? veWorkVisits : veWorkActs).splice(i, 1);
+        veRenderCurrent();
+        veRefreshCandidateState();
+      });
+      row.appendChild(ta); row.appendChild(del);
+      box.appendChild(row);
+    });
+  });
+}
+
+let veCandidates = [];
+function veRenderCandidates(cands){
+  const TXT = veTxt();
+  veCandidates = cands;
+  const box = document.getElementById('veOthersList');
+  box.innerHTML = '';
+  const shown = cands.filter(c => !veAlreadyIn(c));
+  if (shown.length === 0){ box.innerHTML = `<div class="ve-empty">${TXT.none}</div>`; return; }
+  [['visits', TXT.visits], ['activities', TXT.acts]].forEach(([kind, label]) => {
+    const group = shown.filter(c => c.kind === kind);
+    if (group.length === 0) return;
+    const h = document.createElement('div');
+    h.className = 've-group-label';
+    h.textContent = label + ' (' + group.length + ')';
+    box.appendChild(h);
+    group.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 've-cand';
+      const txt = document.createElement('div');
+      txt.className = 've-cand-txt';
+      txt.textContent = c.text;
+      const src = document.createElement('span');
+      src.className = 've-cand-src';
+      src.textContent = TXT.from + ' : ' + c.src;
+      txt.appendChild(src);
+      const add = document.createElement('button');
+      add.className = 've-add';
+      add.textContent = '+';
+      add.addEventListener('click', () => {
+        (c.kind === 'visits' ? veWorkVisits : veWorkActs).push({ text:c.text, dur:c.dur });
+        veRenderCurrent();
+        veRefreshCandidateState();
+      });
+      row.appendChild(txt); row.appendChild(add);
+      box.appendChild(row);
+    });
+  });
+}
+
+// Un texte déjà présent dans l'étape n'est pas reproposé
+function veAlreadyIn(c){
+  const list = c.kind === 'visits' ? veWorkVisits : veWorkActs;
+  const n = veNorm(c.text);
+  return list.some(x => veNorm(x.text) === n);
+}
+function veRefreshCandidateState(){ veRenderCandidates(veCandidates); }
+
+function veAddBlank(kind){
+  (kind === 'visits' ? veWorkVisits : veWorkActs).push({ text:'', dur:null });
+  veRenderCurrent();
+}
+
+function saveVisitEditor(){
+  if (!vePlace) { closeVisitEditor(); return; }
+  const clean = arr => arr
+    .filter(x => (x.text || '').trim().length > 0)
+    .map(x => ({ text:x.text.trim(), visit_duration_min: (typeof x.dur === 'number' ? x.dur : null) }));
+  const visits = clean(veWorkVisits);
+  const acts = clean(veWorkActs);
+
+  vePlace.visits = visits;
+  vePlace.activities = acts;
+  // Répercuter sur l'étape déjà présente dans l'itinéraire (le même lieu peut y figurer deux fois)
+  selectedPlaces.forEach(p => {
+    if (p.place_id === vePlace.place_id) { p.visits = visits.slice(); p.activities = acts.slice(); }
+  });
+  try { updateItineraryList(); } catch(e){ console.warn('updateItineraryList', e); }
+  closeVisitEditor();
+  try { showPlacePreview(vePlace); } catch(e){ console.warn('showPlacePreview', e); }
+}
+</script>
+
 </body>
 </html>

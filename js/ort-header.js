@@ -224,6 +224,16 @@
     if (btnEmail) btnEmail.textContent = T.email || 'E-mail';
     if (btnLogout) btnLogout.textContent = T.logout || 'Déconnexion';
 
+    // Force la lisibilité dans le popup (fond blanc) :
+    // les boutons héritent du style .btn du header (texte clair sur fond sombre),
+    // donc invisibles sur fond blanc. Le style inline gagne toujours sur le CSS.
+    [btnGoogle, btnEmail, btnLogout].forEach((b) => {
+      if (!b) return;
+      b.style.color = '#113f7a';
+      b.style.background = '#fff';
+      b.style.border = '1px solid #113f7a';
+    });
+
     // Toggle popup
     btnOpen.addEventListener('click', (e) => {
       e.stopPropagation();
