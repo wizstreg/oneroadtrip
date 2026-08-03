@@ -36,8 +36,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="https://www.oneroadtrip.com/apple-touch-icon.png">
 <link rel="shortcut icon" href="https://www.oneroadtrip.com/favicon.ico">
 <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-<title id="pageTitle">OneRoadTrip | 895+ road trips prêts à l'emploi à personnaliser</title>
-<meta name="description" id="metaDesc" content="Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 895+ parcours et 6000+ lieux testés.">
+<title id="pageTitle">OneRoadTrip | 910+ road trips prêts à l'emploi à personnaliser</title>
+<meta name="description" id="metaDesc" content="Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 910+ parcours et 6500+ lieux testés.">
 <link rel="canonical" id="canonicalLink" href="https://www.oneroadtrip.com/index.html">
 <link rel="alternate" hreflang="fr" href="https://www.oneroadtrip.com/index.html?lang=fr">
 <link rel="alternate" hreflang="en" href="https://www.oneroadtrip.com/index.html?lang=en">
@@ -172,26 +172,52 @@ h1,h2,h3{line-height:1.2;text-wrap:balance}
   box-shadow:var(--shadow-soft);
   overflow:hidden;
 }
-.module-tabs{display:flex;border-bottom:1px solid var(--border)}
+.module-tabs{display:grid;grid-template-columns:repeat(5,1fr);border-bottom:1px solid var(--border);background:#F5F8FC}
 .module-tab{
-  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
-  padding:14px 16px;background:none;border:0;
-  font-size:14px;font-weight:600;color:var(--ink-soft);
+  display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  padding:13px 16px;background:none;border:0;text-align:left;cursor:pointer;
+  border-right:1px solid var(--border);
   border-bottom:2px solid transparent;margin-bottom:-1px;
-  transition:color .16s var(--ease),border-color .16s var(--ease);
+  transition:background .16s var(--ease),border-color .16s var(--ease);
 }
-.module-tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--navy)}
-.module-tab:hover{color:var(--navy)}
+.module-tab:last-child{border-right:0}
+.module-tab .tt{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink-soft);line-height:1.2}
+.module-tab .tt .ico{width:17px;height:17px;flex:none}
+.module-tab .ts{font-size:12px;color:var(--ink-soft);opacity:.85;line-height:1.3}
+.module-tab .tbadge{font-size:10px;font-weight:700;letter-spacing:.03em;background:var(--accent);color:#fff;border-radius:var(--r-pill);padding:2px 7px}
+.module-tab:hover{background:#EDF3FA}
+.module-tab[aria-selected="true"]{background:var(--surface);border-bottom-color:var(--accent)}
+.module-tab[aria-selected="true"] .tt{color:var(--navy)}
+.module-tab[aria-selected="true"] .ts{color:var(--navy);opacity:.8}
+@media(max-width:880px){
+  .module-tabs{grid-template-columns:1fr 1fr}
+  .module-tab{padding:11px 13px;border-bottom:1px solid var(--border);margin-bottom:0;border-bottom-width:1px}
+  .module-tab:nth-child(5){grid-column:1/-1}
+  .module-tab:nth-child(2n){border-right:0}
+  .module-tab .ts{display:none}
+  .module-tab[aria-selected="true"]{background:var(--tint);border-bottom-color:var(--accent);border-bottom-width:2px}
+}
+
+/* Panneaux "raccourci" (lieux, planisphere) */
+.jump{display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.jump h3{font-size:16px;font-weight:700;color:var(--navy)}
+.jump p{font-size:14px;color:var(--ink-soft);line-height:1.55;max-width:62ch}
+/* Lilia integree dans le module */
+.module-panel #lilia-box{background:none;box-shadow:none;padding:0;margin:0;max-width:none}
+.module-panel .lilia-title{color:var(--navy);font-size:16px}
+.module-panel .lilia-status,.module-panel .lilia-intro{color:var(--ink-soft)}
+.module-panel #lilia-input{border:1px solid var(--border);color:var(--ink)}
+@media(max-width:560px){.module-panel .lilia-row{flex-direction:column}.module-panel #lilia-go{width:100%}}
 .module-body{padding:20px}
 .module-panel{display:none}
 .module-panel.is-active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-.search-row{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
+.search-row{display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr 1fr auto;gap:10px;align-items:end}
 @media(max-width:860px){.search-row{grid-template-columns:1fr 1fr;gap:10px}.search-row .btn{grid-column:1/-1}}
 @media(max-width:480px){.search-row{grid-template-columns:1fr}}
 
-.gen-row{display:grid;grid-template-columns:1fr 1fr .7fr auto;gap:10px;align-items:end}
+.gen-row{display:grid;grid-template-columns:1.2fr 1.2fr .7fr .8fr auto;gap:10px;align-items:end}
 @media(max-width:860px){.gen-row{grid-template-columns:1fr 1fr}.gen-row .btn{grid-column:1/-1}}
 @media(max-width:480px){.gen-row{grid-template-columns:1fr}}
 
@@ -414,13 +440,14 @@ main{padding-block:40px 64px}
    ============================================================ */
 .heroB{position:relative;color:#fff;overflow:hidden;background:var(--navy-dark)}
 .heroB-bg{position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,42,87,.55),rgba(17,63,122,.45)),url('https://www.oneroadtrip.com/assets/image_index.webp') center/cover no-repeat}
-.heroB .wrap{position:relative;z-index:1;display:grid;grid-template-columns:1fr 460px;gap:40px;align-items:center;padding-block:44px}
-.heroB-copy h1{font-family:'Playfair Display',serif;font-weight:700;font-size:38px;line-height:1.1;max-width:13ch;text-wrap:balance}
-.heroB-stats{display:flex;flex-wrap:wrap;gap:14px 26px;margin-top:22px}
+.heroB .wrap{position:relative;z-index:1;padding-block:40px}
+.heroB-top{display:flex;justify-content:space-between;align-items:flex-end;gap:34px;margin-bottom:26px}
+.heroB-copy h1{font-family:'Playfair Display',serif;font-weight:700;font-size:38px;line-height:1.12;max-width:20ch;text-wrap:balance}
+.heroB-stats{display:flex;flex-wrap:wrap;gap:14px 26px;flex:none}
 .heroB-stats .s{display:flex;flex-direction:column;gap:2px}
 .heroB-stats .s b{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;color:#fff;line-height:1}
 .heroB-stats .s span{font-size:12px;font-weight:500;color:rgba(255,255,255,.66);text-transform:uppercase;letter-spacing:.04em}
-.heroB-copy .lede{margin-top:20px;font-size:15px;color:rgba(255,255,255,.86);max-width:46ch;line-height:1.6}
+.heroB-copy .lede{margin-top:16px;font-size:15px;color:rgba(255,255,255,.86);max-width:62ch;line-height:1.6}
 .heroB-copy .lede-args{margin-top:10px;font-size:15px;font-weight:600;color:#fff;max-width:46ch;line-height:1.5}
 .hero-entries{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
 .hero-entry{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.30);border-radius:12px;padding:12px 16px;color:#fff;transition:background .15s var(--ease),border-color .15s var(--ease),transform .15s var(--ease);min-width:218px;flex:1}
@@ -434,23 +461,20 @@ main{padding-block:40px 64px}
 .hero-entry .go .ico{width:16px;height:16px}
 .heroB .module{align-self:stretch}
 @media(max-width:920px){
-  .heroB .wrap{grid-template-columns:1fr;gap:26px;padding-block:34px}
-  .heroB-copy h1{font-size:30px}
+  .heroB .wrap{padding-block:28px}
+  .heroB-top{flex-direction:column;align-items:flex-start;gap:18px;margin-bottom:18px}
+  .heroB-copy h1{font-size:28px;max-width:none}
+  .heroB-copy .lede{font-size:14px}
 }
 @media(max-width:600px){
-  .heroB-copy h1{font-size:26px}
-  .heroB-stats{gap:18px}
-  .heroB-stats .s b{font-size:19px}
+  .heroB-copy h1{font-size:24px}
+  .heroB-stats{gap:10px 20px}
+  .heroB-stats .s b{font-size:18px}
+  .heroB-copy .lede{margin-top:12px}
 }
 /* module compact dans le split — desktop seulement, pour ne pas
    écraser les règles mobiles (1 colonne sous 480px) */
-@media(min-width:921px){
-  .heroB .search-row{grid-template-columns:1fr 1fr;gap:10px}
-  .heroB .search-row .field-search{grid-column:1/-1}
-  .heroB .search-row .btn{grid-column:1/-1}
-  .heroB .gen-row{grid-template-columns:1fr 1fr}
-  .heroB .gen-row .btn{grid-column:1/-1}
-}
+
 
 /* ============================================================
    Spécifique ORT (logique métier conservée)
@@ -507,23 +531,27 @@ main{padding-block:40px 64px}
 <section class="heroB">
   <div class="heroB-bg"></div>
   <div class="wrap">
-    <div class="heroB-copy">
-      <h1 id="heroTitle"><span id="heroCount">895</span> <span id="heroSuffix">road trips prêts à l'emploi</span></h1>
-      <div class="heroB-stats">
-        <div class="s"><b id="statCountries">97</b><span id="statCountriesLabel">pays</span></div>
-        <div class="s"><b id="statPlaces">6149</b><span id="statPlacesLabel">lieux</span></div>
-        <div class="s"><b id="statVisits">29900</b><span id="statVisitsLabel">visites</span></div>
-        <div class="s"><b id="statActivities">17778</b><span id="statActivitiesLabel">activités</span></div>
+    <div class="heroB-top">
+      <div class="heroB-copy">
+        <h1 id="heroTitle">5 façons de créer ou trouver votre prochain itinéraire</h1>
+        <p class="lede" id="heroSub"></p>
       </div>
-      <p class="lede" id="heroSub"></p>
-      <p class="lede-args" id="heroArgs"></p>
-      <div class="hero-entries" id="actionGrid"></div>
+      <div class="heroB-stats">
+        <div class="s"><b id="heroCount">910</b><span id="statTripsLabel">road trips</span></div>
+        <div class="s"><b id="statCountries">100</b><span id="statCountriesLabel">pays</span></div>
+        <div class="s"><b id="statPlaces">6500</b><span id="statPlacesLabel">lieux</span></div>
+        <div class="s"><b id="statVisits">30000</b><span id="statVisitsLabel">visites</span></div>
+        <div class="s"><b id="statActivities">18000</b><span id="statActivitiesLabel">activités</span></div>
+      </div>
     </div>
 
     <div class="module">
-      <div class="module-tabs">
-        <button class="module-tab" type="button" data-tab="search" aria-selected="true"><span data-icon="search"></span><span id="tabSearchLbl">Rechercher</span></button>
-        <button class="module-tab" type="button" data-tab="generate" aria-selected="false"><span data-icon="route"></span><span id="tabGuideLbl">Laissez-vous guider</span></button>
+      <div class="module-tabs" role="tablist">
+        <button class="module-tab" type="button" data-tab="search" aria-selected="true"><span class="tt"><span data-icon="search"></span><span data-tab-lbl="search">Par critères</span></span><span class="ts" data-tab-sub="search"></span></button>
+        <button class="module-tab" type="button" data-tab="generate" aria-selected="false"><span class="tt"><span data-icon="route"></span><span data-tab-lbl="generate">Entre deux points</span></span><span class="ts" data-tab-sub="generate"></span></button>
+        <button class="module-tab" type="button" data-tab="places" aria-selected="false"><span class="tt"><span data-icon="pin"></span><span data-tab-lbl="places">À partir des lieux</span></span><span class="ts" data-tab-sub="places"></span></button>
+        <button class="module-tab" type="button" data-tab="globe" aria-selected="false"><span class="tt"><span data-icon="globe"></span><span data-tab-lbl="globe">Planisphère</span></span><span class="ts" data-tab-sub="globe"></span></button>
+        <button class="module-tab" type="button" data-tab="lilia" aria-selected="false"><span class="tt"><span data-icon="star"></span><span data-tab-lbl="lilia">Demander à Lilia</span><span class="tbadge">IA</span></span><span class="ts" data-tab-sub="lilia"></span></button>
       </div>
       <div class="module-body">
 
@@ -586,6 +614,38 @@ main{padding-block:40px 64px}
           </div>
         </div>
 
+        <div class="module-panel" data-panel="places">
+          <div class="jump">
+            <h3 id="jpPlacesTitle"></h3>
+            <p id="jpPlacesText"></p>
+            <a class="btn btn-accent" id="jpPlacesBtn" href="/carte_builder.html?mode=expert"></a>
+          </div>
+        </div>
+
+        <div class="module-panel" data-panel="globe">
+          <div class="jump">
+            <h3 id="jpGlobeTitle"></h3>
+            <p id="jpGlobeText"></p>
+            <a class="btn btn-accent" id="jpGlobeBtn" href="/globe.html"></a>
+          </div>
+        </div>
+
+        <div class="module-panel" data-panel="lilia">
+<div id="lilia-box" dir="auto">
+  <div class="lilia-head">
+    <span class="lilia-spark">✨</span>
+    <p class="lilia-title" data-lilia="title"></p>
+  </div>
+  <div class="lilia-row">
+    <input id="lilia-input" type="text" autocomplete="off" />
+    <button id="lilia-go" type="button"></button>
+  </div>
+  <p id="lilia-status" class="lilia-status" hidden></p>
+  <p id="lilia-intro" class="lilia-intro" hidden></p>
+  <div id="lilia-results" class="lilia-results"></div>
+</div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -600,19 +660,6 @@ main{padding-block:40px 64px}
      - Utilise la variable globale currentLang si elle existe (sinon detecte).
      - Appelle la fonction Netlify /.netlify/functions/recherche-itineraires
      ========================================================================= -->
-<div id="lilia-box" dir="auto">
-  <div class="lilia-head">
-    <span class="lilia-spark">✨</span>
-    <p class="lilia-title" data-lilia="title"></p>
-  </div>
-  <div class="lilia-row">
-    <input id="lilia-input" type="text" autocomplete="off" />
-    <button id="lilia-go" type="button"></button>
-  </div>
-  <p id="lilia-status" class="lilia-status" hidden></p>
-  <p id="lilia-intro" class="lilia-intro" hidden></p>
-  <div id="lilia-results" class="lilia-results"></div>
-</div>
 
 <!-- Fenetre resultats Lilia (fermable) -->
 <div id="lilia-modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -909,6 +956,73 @@ var t = LANG_META[currentLang];
 var langFolder = LANG_FOLDERS[currentLang];
 
 
+
+/* ========================================================
+   5 MODES D'ENTREE (onglets du module) — libelles i18n
+   ======================================================== */
+var T5 = {
+  fr:{h1:"5 façons de créer ou trouver votre prochain itinéraire",
+      lede:"Choisissez votre point d'entrée : nos parcours prêts à l'emploi, un tracé entre deux villes, une sélection de lieux, le planisphère, ou simplement une phrase.",
+      tripsLbl:"road trips",
+      tabs:{search:["Par critères","Pays, thème, durée, distance"],generate:["Entre deux points","On construit le tracé A → B"],places:["À partir des lieux","Vos incontournables d'abord"],globe:["Planisphère","Explorer le monde à la carte"],lilia:["Demander à Lilia","Décrivez le voyage en une phrase"]},
+      placesTitle:"Partez de ce que vous voulez voir",
+      placesText:"Choisissez vos lieux un par un sur la carte. On relie les points, on calcule la route et on répartit les étapes jour par jour.",
+      placesBtn:"Ouvrir le constructeur",
+      globeTitle:"Le monde entier sur une carte",
+      globeText:"Zoomez sur une région, voyez les itinéraires disponibles et ouvrez celui qui vous parle.",
+      globeBtn:"Ouvrir le planisphère"},
+  en:{h1:"5 ways to create or find your next itinerary",
+      lede:"Pick your entry point: our ready-made routes, a route between two cities, a selection of places, the world map, or just one sentence.",
+      tripsLbl:"road trips",
+      tabs:{search:["By criteria","Country, theme, duration, distance"],generate:["Between two points","We build the A → B route"],places:["From the places","Your must-sees first"],globe:["World map","Explore the world on a map"],lilia:["Ask Lilia","Describe your trip in one sentence"]},
+      placesTitle:"Start from what you want to see",
+      placesText:"Pick your places one by one on the map. We connect the dots, compute the route and split it day by day.",
+      placesBtn:"Open the builder",
+      globeTitle:"The whole world on one map",
+      globeText:"Zoom into a region, see the available itineraries and open the one you like.",
+      globeBtn:"Open the world map"},
+  es:{h1:"5 formas de crear o encontrar tu próxima ruta",
+      lede:"Elige tu punto de entrada: nuestras rutas listas, un trazado entre dos ciudades, una selección de lugares, el planisferio o una simple frase.",
+      tripsLbl:"road trips",
+      tabs:{search:["Por criterios","País, tema, duración, distancia"],generate:["Entre dos puntos","Construimos el trazado A → B"],places:["A partir de los lugares","Tus imprescindibles primero"],globe:["Planisferio","Explorar el mundo en el mapa"],lilia:["Preguntar a Lilia","Describe el viaje en una frase"]},
+      placesTitle:"Empieza por lo que quieres ver",
+      placesText:"Elige tus lugares uno a uno en el mapa. Unimos los puntos, calculamos la ruta y repartimos las etapas día a día.",
+      placesBtn:"Abrir el constructor",
+      globeTitle:"El mundo entero en un mapa",
+      globeText:"Haz zoom en una región, mira las rutas disponibles y abre la que te guste.",
+      globeBtn:"Abrir el planisferio"},
+  it:{h1:"5 modi per creare o trovare il tuo prossimo itinerario",
+      lede:"Scegli il tuo punto di partenza: i nostri percorsi pronti, un tracciato tra due città, una selezione di luoghi, il planisfero o una semplice frase.",
+      tripsLbl:"road trips",
+      tabs:{search:["Per criteri","Paese, tema, durata, distanza"],generate:["Tra due punti","Costruiamo il percorso A → B"],places:["Dai luoghi","Prima le tue tappe imperdibili"],globe:["Planisfero","Esplora il mondo sulla mappa"],lilia:["Chiedi a Lilia","Descrivi il viaggio in una frase"]},
+      placesTitle:"Parti da ciò che vuoi vedere",
+      placesText:"Scegli i tuoi luoghi uno per uno sulla mappa. Uniamo i punti, calcoliamo il percorso e distribuiamo le tappe giorno per giorno.",
+      placesBtn:"Apri il costruttore",
+      globeTitle:"Il mondo intero su una mappa",
+      globeText:"Ingrandisci una regione, guarda gli itinerari disponibili e apri quello che ti piace.",
+      globeBtn:"Apri il planisfero"},
+  pt:{h1:"5 formas de criar ou encontrar o seu próximo roteiro",
+      lede:"Escolha o seu ponto de entrada: os nossos percursos prontos, um traçado entre duas cidades, uma seleção de lugares, o planisfério ou apenas uma frase.",
+      tripsLbl:"road trips",
+      tabs:{search:["Por critérios","País, tema, duração, distância"],generate:["Entre dois pontos","Construímos o traçado A → B"],places:["A partir dos lugares","Os seus imperdíveis primeiro"],globe:["Planisfério","Explorar o mundo no mapa"],lilia:["Perguntar à Lilia","Descreva a viagem numa frase"]},
+      placesTitle:"Comece pelo que quer ver",
+      placesText:"Escolha os seus lugares um a um no mapa. Ligamos os pontos, calculamos a rota e dividimos as etapas dia a dia.",
+      placesBtn:"Abrir o construtor",
+      globeTitle:"O mundo inteiro num mapa",
+      globeText:"Amplie uma região, veja os roteiros disponíveis e abra o que lhe agradar.",
+      globeBtn:"Abrir o planisfério"},
+  ar:{h1:"٥ طرق لإنشاء أو إيجاد مسارك القادم",
+      lede:"اختر نقطة البداية: مساراتنا الجاهزة، أو مسار بين مدينتين، أو مجموعة أماكن، أو خريطة العالم، أو جملة واحدة فقط.",
+      tripsLbl:"رحلات برية",
+      tabs:{search:["حسب المعايير","الدولة، الموضوع، المدة، المسافة"],generate:["بين نقطتين","نبني المسار من أ إلى ب"],places:["انطلاقًا من الأماكن","أماكنك المفضلة أولاً"],globe:["خريطة العالم","استكشف العالم على الخريطة"],lilia:["اسأل ليليا","صف رحلتك في جملة واحدة"]},
+      placesTitle:"ابدأ مما تريد رؤيته",
+      placesText:"اختر أماكنك واحدًا تلو الآخر على الخريطة. نصل النقاط ونحسب الطريق ونوزع المراحل يومًا بيوم.",
+      placesBtn:"افتح أداة البناء",
+      globeTitle:"العالم كله على خريطة واحدة",
+      globeText:"قرّب منطقة، شاهد المسارات المتاحة وافتح ما يعجبك.",
+      globeBtn:"افتح خريطة العالم"}
+};
+
 window.ICON = {
   search:'<svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>',
   route:'<svg class="ico" viewBox="0 0 24 24"><circle cx="6" cy="19" r="2.4"/><circle cx="18" cy="5" r="2.4"/><path d="M8.4 19H14a3.5 3.5 0 0 0 0-7h-4a3.5 3.5 0 0 1 0-7h5.6"/></svg>',
@@ -1002,12 +1116,12 @@ document.documentElement.lang = currentLang;
 if(currentLang === 'ar') document.documentElement.dir = 'rtl';
 (function(){
   var META = {
-    fr:{title:"OneRoadTrip | 895+ road trips prêts à l'emploi à personnaliser",desc:"Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 895+ parcours et 6000+ lieux testés."},
-    en:{title:"OneRoadTrip | 895+ ready-made road trips to customize",desc:"Plan your road trip your way: pick your starting point, duration and the area to explore. OneRoadTrip builds your itinerary from 895+ routes and 6000+ tested places."},
-    es:{title:"OneRoadTrip | 895+ rutas listas para personalizar",desc:"Planifica tu road trip a medida: elige tu punto de partida, la duración y la zona a explorar. OneRoadTrip genera tu ruta entre 895+ recorridos y 6000+ lugares probados."},
-    it:{title:"OneRoadTrip | 895+ itinerari pronti da personalizzare",desc:"Pianifica il tuo road trip su misura: scegli il punto di partenza, la durata e la zona da esplorare. OneRoadTrip genera il tuo itinerario tra 895+ percorsi e 6000+ luoghi testati."},
-    pt:{title:"OneRoadTrip | 895+ roteiros prontos para personalizar",desc:"Planeie a sua road trip à medida: escolha o ponto de partida, a duração e a zona a explorar. A OneRoadTrip gera o seu roteiro entre 895+ percursos e 6000+ lugares testados."},
-    ar:{title:"OneRoadTrip | أكثر من 895 مسارًا جاهزًا للتخصيص",desc:"خطط لرحلتك البرية كما تريد: اختر نقطة الانطلاق والمدة والمنطقة. ينشئ OneRoadTrip مسارك من بين أكثر من 895 مسارًا و6000 مكان مُختبَر."}
+    fr:{title:"OneRoadTrip | 910+ road trips prêts à l'emploi à personnaliser",desc:"Planifiez votre road trip sur mesure : choisissez votre point de départ, votre durée et la zone à explorer. OneRoadTrip génère votre itinéraire parmi 910+ parcours et 6500+ lieux testés."},
+    en:{title:"OneRoadTrip | 910+ ready-made road trips to customize",desc:"Plan your road trip your way: pick your starting point, duration and the area to explore. OneRoadTrip builds your itinerary from 910+ routes and 6500+ tested places."},
+    es:{title:"OneRoadTrip | 910+ rutas listas para personalizar",desc:"Planifica tu road trip a medida: elige tu punto de partida, la duración y la zona a explorar. OneRoadTrip genera tu ruta entre 910+ recorridos y 6500+ lugares probados."},
+    it:{title:"OneRoadTrip | 910+ itinerari pronti da personalizzare",desc:"Pianifica il tuo road trip su misura: scegli il punto di partenza, la durata e la zona da esplorare. OneRoadTrip genera il tuo itinerario tra 910+ percorsi e 6500+ luoghi testati."},
+    pt:{title:"OneRoadTrip | 910+ roteiros prontos para personalizar",desc:"Planeie a sua road trip à medida: escolha o ponto de partida, a duração e a zona a explorar. A OneRoadTrip gera o seu roteiro entre 910+ percursos e 6500+ lugares testados."},
+    ar:{title:"OneRoadTrip | أكثر من 910 مسارًا جاهزًا للتخصيص",desc:"خطط لرحلتك البرية كما تريد: اختر نقطة الانطلاق والمدة والمنطقة. ينشئ OneRoadTrip مسارك من بين أكثر من 910 مسارًا و6500 مكان مُختبَر."}
   };
   var m = META[currentLang] || META.fr;
   document.getElementById('pageTitle').textContent = m.title;
@@ -1017,7 +1131,6 @@ if(currentLang === 'ar') document.documentElement.dir = 'rtl';
 
 /* Langue : c'est /js/ort-header.js qui affiche le selecteur. */
 
-document.getElementById('heroSuffix').textContent = T2.heroH1;
 document.getElementById('heroSub').textContent = T2.lede;
 (function(){
   var ARGS = {
@@ -1031,8 +1144,6 @@ document.getElementById('heroSub').textContent = T2.lede;
   var el = document.getElementById('heroArgs');
   if(el) el.textContent = ARGS[currentLang] || ARGS.fr;
 })();
-document.getElementById('tabSearchLbl').textContent = T2.tabSearch;
-document.getElementById('tabGuideLbl').textContent = T2.tabGuide;
 document.getElementById('searchInput').placeholder = t.searchPh;
 document.getElementById('desktopValidateBtn').textContent = T2.searchBtn;
 document.getElementById('loadingText').textContent = t.loading;
@@ -1049,6 +1160,7 @@ document.getElementById('advLabel').textContent = T2.advanced;
 document.getElementById('rbStepsLabel').textContent = T3.stepsLabel;
 document.getElementById('rbSteps').placeholder = T3.stepsAuto;
 
+var _stl = document.getElementById('statTripsLabel'); if(_stl) _stl.textContent = (T5[currentLang]||T5.fr).tripsLbl;
 document.getElementById('statCountriesLabel').textContent = t.countries;
 document.getElementById('statPlacesLabel').textContent = t.placesLabel;
 document.getElementById('statVisitsLabel').textContent = t.visitsLabel;
@@ -1101,20 +1213,50 @@ injectIcons();
    Onglets du module
    ======================================================== */
 (function(){
-  var tabS = document.querySelector('.module-tab[data-tab="search"]');
-  var tabG = document.querySelector('.module-tab[data-tab="generate"]');
-  var panS = document.querySelector('.module-panel[data-panel="search"]');
-  var panG = document.querySelector('.module-panel[data-panel="generate"]');
-  if(!tabS || !tabG || !panS || !panG) return;
-  function show(which){
-    var isS = (which === 'search');
-    tabS.setAttribute('aria-selected', isS ? 'true' : 'false');
-    tabG.setAttribute('aria-selected', isS ? 'false' : 'true');
-    panS.classList.toggle('is-active', isS);
-    panG.classList.toggle('is-active', !isS);
+  var L5 = T5[currentLang] || T5.fr;
+
+  /* Titre, accroche et libelles des 5 entrees */
+  var h1 = document.getElementById('heroTitle'); if(h1) h1.textContent = L5.h1;
+  var sub = document.getElementById('heroSub'); if(sub) sub.textContent = L5.lede;
+  var keys = ['search','generate','places','globe','lilia'];
+  for(var k=0;k<keys.length;k++){
+    var key = keys[k];
+    var lbl = document.querySelector('[data-tab-lbl="' + key + '"]');
+    var s2  = document.querySelector('[data-tab-sub="' + key + '"]');
+    if(lbl) lbl.textContent = L5.tabs[key][0];
+    if(s2)  s2.textContent  = L5.tabs[key][1];
   }
-  tabS.addEventListener('click', function(e){ e.preventDefault(); show('search'); });
-  tabG.addEventListener('click', function(e){ e.preventDefault(); show('generate'); });
+  var ids = [['jpPlacesTitle','placesTitle'],['jpPlacesText','placesText'],['jpPlacesBtn','placesBtn'],
+             ['jpGlobeTitle','globeTitle'],['jpGlobeText','globeText'],['jpGlobeBtn','globeBtn']];
+  for(var i=0;i<ids.length;i++){
+    var el = document.getElementById(ids[i][0]);
+    if(el) el.textContent = L5[ids[i][1]];
+  }
+  var pb = document.getElementById('jpPlacesBtn');
+  if(pb) pb.href = '/carte_builder.html?mode=expert&lang=' + currentLang;
+  var gb = document.getElementById('jpGlobeBtn');
+  if(gb) gb.href = '/globe.html?lang=' + currentLang;
+
+  /* Bascule des panneaux */
+  var tabs = document.querySelectorAll('.module-tab');
+  var panels = document.querySelectorAll('.module-panel');
+  function show(which){
+    for(var a=0;a<tabs.length;a++){
+      tabs[a].setAttribute('aria-selected', tabs[a].getAttribute('data-tab') === which ? 'true' : 'false');
+    }
+    for(var b=0;b<panels.length;b++){
+      panels[b].classList.toggle('is-active', panels[b].getAttribute('data-panel') === which);
+    }
+    if(which === 'lilia'){
+      var li = document.getElementById('lilia-input');
+      if(li && window.matchMedia('(min-width:881px)').matches) li.focus();
+    }
+  }
+  for(var c=0;c<tabs.length;c++){
+    (function(btn){
+      btn.addEventListener('click', function(e){ e.preventDefault(); show(btn.getAttribute('data-tab')); });
+    })(tabs[c]);
+  }
 })();
 
 /* ========================================================
@@ -2819,7 +2961,6 @@ gtag('config', 'GT-WF83FMCX');
 })();
 </script>
 <!-- /ort-aide -->
-
 
 <!-- ort-page-tracking-v1 -->
 <script>
