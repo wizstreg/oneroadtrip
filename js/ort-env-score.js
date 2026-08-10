@@ -482,8 +482,24 @@
     gap: 10px;
     margin-left: 12px;
     vertical-align: middle;
-    flex-wrap: wrap;
+    /* Une seule ligne, toujours. Sinon les trois elements s empilent et la
+       barre qui les contient triple de hauteur des que le score est calcule. */
+    flex-wrap: nowrap;
     overflow: visible !important;
+}
+
+/* Aucun des trois elements ne se comprime ni ne passe a la ligne. */
+.ort-env-wrap > * { flex: 0 0 auto; }
+
+/* Tablette et petits ecrans larges : on reduit pour tenir sur la ligne. */
+@media (min-width: 601px) and (max-width: 1400px) {
+    .ort-env-wrap { gap: 6px; margin-left: 8px; }
+    .ort-env-carbon { font-size: 12px; padding: 3px 8px; }
+    .ort-env-carbon .ort-env-grade { font-size: 14px; }
+    .ort-env-carbon .ort-env-mode { font-size: 10px; }
+    .ort-env-nature { font-size: 12px; }
+    .ort-env-slider-track { width: 50px; height: 8px; }
+    .ort-env-slider-thumb { width: 12px; height: 12px; }
 }
 
 /* Force overflow visible sur les parents du bandeau */
