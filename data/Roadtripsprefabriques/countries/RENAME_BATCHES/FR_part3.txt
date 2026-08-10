@@ -1,0 +1,347 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "FR" → la langue locale (fr) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays FR, partie 3/4)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+FR::lourdes	Lourdes	Lourdes	Lourdes
+FR::lourmarin	Lourmarin	Lourmarin	Lourmarin
+FR::lumio	Lumio		
+FR::luneville	Luneville	Lunéville	Lunéville
+FR::lure	Lure	Lure	Lure
+FR::lurs	Lurs	Lurs	Lurs
+FR::lusigny-sur-barse	Lusigny Sur Barse	Lusigny-sur-Barse	Lusigny-sur-Barse
+FR::luxeuil-les-bains	Luxeuil Les Bains	Luxeuil-les-Bains	Luxeuil-les-Bains
+FR::luz-saint-sauveur	Luz Saint Sauveur	Luz-Saint-Sauveur	Luz-Saint-Sauveur
+FR::lyon	Lyon		
+FR::lyons-la-foret	Lyons La Foret	Lyons-la-Forêt	Lyons-la-Forêt
+FR::macinaggio	Macinaggio		
+FR::macon	Macon	Mâcon	Mâcon
+FR::maillane	Maillane	Maillane	Maillane
+FR::maillezais	Maillezais	Maillezais	Maillezais
+FR::maintenon	Maintenon	Maintenon	Maintenon
+FR::maisons-alfort	Maisons Alfort		
+FR::malbuisson	Malbuisson	Malbuisson	Malbuisson
+FR::malicorne-sur-sarthe	Malicorne Sur Sarthe	Malicorne-sur-Sarthe	Malicorne-sur-Sarthe
+FR::mamers	Mamers	Mamers	Mamers
+FR::mane	Mane	Mane	Mane
+FR::manosque	Manosque	Manosque	Manosque
+FR::mantes-la-jolie	Mantes La Jolie	Mantes-la-Jolie	Mantes-la-Jolie
+FR::marche-enfants-rouges	Marche Enfants Rouges		
+FR::marciac	Marciac		
+FR::marennes	Marennes		
+FR::margaux	Margaux	Margaux	Margaux
+FR::marigny	Marigny	Marigny	Marigny
+FR::marlenheim	Marlenheim		
+FR::marmande	Marmande	Marmande	Marmande
+FR::maroilles	Maroilles		
+FR::marseille	Marseille	Marseille	Marseille
+FR::marseilleveyre	Marseilleveyre		
+FR::martel	Martel	Martel	Martel
+FR::massat	Massat	Massat	Massat
+FR::maubeuge	Maubeuge	Maubeuge	Maubeuge
+FR::mauriac	Mauriac	Mauriac	Mauriac
+FR::maussane-les-alpilles	Maussane Les Alpilles	Maussane-les-Alpilles	Maussane-les-Alpilles
+FR::mayenne	Mayenne	Mayenne	Mayenne
+FR::mazamet	Mazamet	Mazamet	Mazamet
+FR::meaudre	Meaudre	Méaudre	Méaudre
+FR::meaux	Meaux	Meaux	Meaux
+FR::megeve	Megeve	Megève	Megève
+FR::mehun-sur-yevre	Mehun Sur Yevre	Mehun-sur-Yèvre	Mehun-sur-Yèvre
+FR::mende	Mende	Mende	Mende
+FR::menerbes	Menerbes	Ménerbes	Ménerbes
+FR::menton	Menton		
+FR::merens-les-vals	Merens Les Vals	Mérens-les-Vals	Mérens-les-Vals
+FR::mereville	Mereville	Méréville	Méréville
+FR::metz	Metz	Metz	Metz
+FR::meung-sur-loire	Meung Sur Loire	Meung-sur-Loire	Meung-sur-Loire
+FR::meursault	Meursault	Meursault	Meursault
+FR::meyrueis	Meyrueis	Meyrueis	Meyrueis
+FR::millau	Millau	Millau	Millau
+FR::milly-la-foret	Milly La Foret	Milly-la-Forêt	Milly-la-Forêt
+FR::mimizan	Mimizan	Mimizan	Mimizan
+FR::minerve	Minerve	Minerve	Minerve
+FR::mirande	Mirande	Mirande	Mirande
+FR::mirepoix	Mirepoix	Mirepoix	Mirepoix
+FR::mirmande	Mirmande	Mirmande	Mirmande
+FR::mittelbergheim	Mittelbergheim	Mittelbergheim	Mittelbergheim
+FR::modane	Modane	Modane	Modane
+FR::moirans-en-montagne	Moirans En Montagne	Moirans-en-Montagne	Moirans-en-Montagne
+FR::moissac	Moissac	Moissac	Moissac
+FR::molleges	Molleges	Mollégès	Mollégès
+FR::monaco	Monaco		
+FR::moncontour	Moncontour	Moncontour	Moncontour
+FR::monflanquin	Monflanquin	Monflanquin	Monflanquin
+FR::monpazier	Monpazier	Monpazier	Monpazier
+FR::mont-de-marsan	Mont De Marsan	Mont-de-Marsan	Mont-de-Marsan
+FR::mont-louis	Mont Louis	Mont-Louis	Mont-Louis
+FR::mont-saint-michel	Mont Saint Michel	Mont Saint-Michel De Coulon	Mont Saint-Michel
+FR::montagny-rhone	Montagny Rhone	Montagny	Montagny
+FR::montargis	Montargis	Montargis	Montargis
+FR::montauban	Montauban	Montauban	Montauban
+FR::montbard	Montbard	Montbard	Montbard
+FR::montbeliard	Montbeliard	Montbéliard	Montbéliard
+FR::montbrison	Montbrison	Montbrison	Montbrison
+FR::montclus	Montclus	Montclus	Montclus
+FR::montelimar	Montelimar	Montélimar	Montélimar
+FR::montferrier	Montferrier	Montferrier	Montferrier
+FR::montfort-l-amaury	Montfort L Amaury	Montfort-l'Amaury	Montfort-l'Amaury
+FR::montfuron	Montfuron	Montfuron	Montfuron
+FR::montgenevre	Montgenevre	Montgenèvre	Montgenèvre
+FR::monthermé	Monthermé		
+FR::montlhery	Montlhery	Montlhéry	Montlhéry
+FR::montlucon	Montlucon	Montluçon	Montluçon
+FR::montmedy	Montmedy	Montmédy	Montmédy
+FR::montmorency	Montmorency		
+FR::montmorillon	Montmorillon	Montmorillon	Montmorillon
+FR::montoire-sur-le-loir	Montoire Sur Le Loir	Montoire-sur-le-Loir	Montoire-sur-le-Loir
+FR::montpellier	Montpellier		
+FR::montpeyroux	Montpeyroux	Montpeyroux	Montpeyroux
+FR::montpezat-de-quercy	Montpezat De Quercy	Montpezat-de-Quercy	Montpezat-de-Quercy
+FR::montreal-ardeche	Montreal Ardeche	Montréal	Montréal
+FR::montreal-du-gers	Montreal Du Gers	Montréal	MONTREAL
+FR::montrejeau	Montrejeau	Montréjeau	Montréjeau
+FR::montreuil-sur-mer	Montreuil Sur Mer	Montreuil-sur-Mer	Montreuil-sur-Mer
+FR::montsegur	Montsegur	Monségur	Monségur
+FR::moret-sur-loing	Moret Sur Loing	Moret-sur-Loing	Moret-sur-Loing
+FR::mortagne-au-perche	Mortagne Au Perche	Mortagne-au-Perche	Mortagne-au-Perche
+FR::morteau	Morteau	Morteau	Morteau
+FR::mougins	Mougins	Mougins	Mougins
+FR::moulins	Moulins	Moulins	Moulins
+FR::mouries	Mouries	Mouriès	Mouriès
+FR::moustiers-sainte-marie	Moustiers Sainte Marie	Moustiers-Sainte-Marie	Moustiers-Sainte-Marie
+FR::mouzon	Mouzon	Mouzon	Mouzon
+FR::moyenmoutier	Moyenmoutier	Moyenmoutier	Moyenmoutier
+FR::mulhouse	Mulhouse	Mulhouse	Mulhouse
+FR::munster	Munster		
+FR::murat	Murat	Murat	Murat
+FR::muret	Muret	Muret	Muret
+FR::murol	Murol	Murol	Murol
+FR::murs	Murs	Murs	Murs
+FR::musee-art-moderne-paris	Musee Art Moderne Paris		
+FR::musee-arts-decoratifs-paris	Musee Arts Decoratifs Paris		
+FR::musee-arts-metiers-paris	Musee Arts Metiers Paris		
+FR::musee-cluny	Musee Cluny		
+FR::musee-guimet	Musee Guimet		
+FR::musee-louvre	Musee Louvre		
+FR::musee-montmartre	Musee Montmartre		
+FR::musee-orangerie	Musee Orangerie		
+FR::musee-orsay	Musee Orsay		
+FR::musee-picasso-paris	Musee Picasso Paris		
+FR::musee-quai-branly	Musee Quai Branly		
+FR::musee-rodin-paris	Musee Rodin Paris		
+FR::museum-histoire-naturelle-paris	Museum Histoire Naturelle Paris		
+FR::najac	Najac	Najac	Najac
+FR::nancy	Nancy		
+FR::nans-sous-sainte-anne	Nans Sous Sainte Anne	Nans-sous-Sainte-Anne	Nans-sous-Sainte-Anne
+FR::nanterre	Nanterre		
+FR::nantes	Nantes		
+FR::nantua	Nantua	Nantua	Nantua
+FR::narbonne	Narbonne	Narbonne	Narbonne
+FR::navacelles	Navacelles	Navacelles	Navacelles
+FR::navarrenx	Navarrenx	Navarrenx	Navarrenx
+FR::naves	Naves	Naves	Naves
+FR::nemours	Nemours	Nemours	Nemours
+FR::nerac	Nerac	Nérac	Nérac
+FR::neris-les-bains	Neris Les Bains	Néris-les-Bains	Néris-les-Bains
+FR::neuf-brisach	Neuf Brisach	Neuf-Brisach	Neuf-Brisach
+FR::neufchateau	Neufchateau	Neufchâteau	Neufchâteau
+FR::neuilly-sur-seine	Neuilly Sur Seine		
+FR::neuvy-saint-sepulchre	Neuvy Saint Sepulchre	Neuvy-Saint-Sépulchre	Neuvy-Saint-Sépulchre
+FR::nevache	Nevache	Névache	Névache
+FR::nevers	Nevers	Nevers	Nevers
+FR::nice	Nice	Nice	Nice
+FR::nimes	Nimes		
+FR::niort	Niort	Niort	Niort
+FR::nogent	Nogent	Nogent	Nogent
+FR::nogent-sur-marne	Nogent Sur Marne		
+FR::noirmoutier-en-l-ile	Noirmoutier En L Ile	Noirmoutier-en-l'Île	Noirmoutier-en-l'Île
+FR::nonza-tour	Nonza Tour	Torra di Nonza	tour de Nonza
+FR::noyers-sur-serein	Noyers Sur Serein	Noyers	Route de Noyers
+FR::noyon	Noyon	Noyon	Noyon
+FR::nyons	Nyons	Nyons	Nyons
+FR::obernai	Obernai	Obernai	Obernai
+FR::oingt	Oingt	Oingt	Oingt
+FR::oiron	Oiron	Oiron	Oiron
+FR::oloron-sainte-marie	Oloron Sainte Marie	Oloron-Sainte-Marie	Oloron-Sainte-Marie
+FR::oppede-le-vieux	Oppede Le Vieux	Oppède	Oppède
+FR::oradour-sur-glane	Oradour Sur Glane	Oradour-sur-Glane	Oradour-sur-Glane
+FR::orange	Orange	Orange	Orange
+FR::orcieres-merlette	Orcieres Merlette	Orcières Merlette 1850	Orcières Merlette 1850
+FR::orcival	Orcival	Orcival	Orcival
+FR::orleans	Orleans	Orléans	Orléans
+FR::ornans	Ornans	Ornans	Ornans
+FR::ospedale	Ospedale		
+FR::paimboeuf	Paimboeuf		
+FR::paimpol	Paimpol	Paimpol	Paimpol
+FR::paimpont	Paimpont		
+FR::palais-decouverte	Palais Decouverte		
+FR::pantin	Pantin		
+FR::paray-le-monial	Paray Le Monial	Paray-le-Monial	Paray-le-Monial
+FR::parentis-en-born	Parentis En Born	Parentis-en-Born	Parentis-en-Born
+FR::paris	Paris		
+FR::paris-12e	Paris 12e		
+FR::paris-16e	Paris 16e		
+FR::paris-18e	Paris 18e		
+FR::paris-1er	Paris 1er		
+FR::paris-20e	Paris 20e		
+FR::paris-4e	Paris 4e		
+FR::paris-5e	Paris 5e		
+FR::paris-6e	Paris 6e		
+FR::paris-7e	Paris 7e		
+FR::paris-8e	Paris 8e		
+FR::parthenay	Parthenay	Parthenay	Parthenay
+FR::pau	Pau	Pau	Pau
+FR::pauillac	Pauillac	Pauillac	Pauillac
+FR::penne-d-agenais	Penne D Agenais	Penne-d'Agenais	Penne-d'Agenais
+FR::perigueux	Perigueux	Périgueux	Périgueux
+FR::peronne	Peronne	Péronne	Péronne
+FR::perouges	Perouges	Pérouges	Pérouges
+FR::perpignan	Perpignan	Perpignan	Perpignan
+FR::perros-guirec	Perros Guirec		
+FR::petit-palais	Petit Palais		
+FR::pezenas	Pezenas	Pézenas	Pézenas
+FR::phalsbourg	Phalsbourg	Phalsbourg	Phalsbourg
+FR::piana	Piana	Piana	Piana
+FR::picquigny	Picquigny	Picquigny	Picquigny
+FR::pierrefonds	Pierrefonds	Pierrefonds	Pierrefonds
+FR::pigna	Pigna	Pigna	Pigna
+FR::piriac-sur-mer	Piriac Sur Mer		
+FR::ploermel	Ploermel	Ploërmel	Ploërmel
+FR::plombieres-les-bains	Plombieres Les Bains	Plombières-les-Bains	Plombières-les-Bains
+FR::plougastel-daoulas	Plougastel Daoulas	Plougastel-Daoulas	Plougastel-Daoulas
+FR::ploumanach	Ploumanach	Ploumanach Natural Harbor	Rade de Ploumanach
+FR::poissy	Poissy		
+FR::poitiers	Poitiers	Poitiers	Poitiers
+FR::polignac	Polignac	Polignac	Polignac
+FR::poligny	Poligny	Poligny	Poligny
+FR::pompadour	Pompadour	Arnac-Pompadour	Arnac-Pompadour
+FR::pont-a-mousson	Pont A Mousson		
+FR::pont-audemer	Pont Audemer		
+FR::pont-aven	Pont Aven		
+FR::pont-en-royans	Pont En Royans		
+FR::pontarlier	Pontarlier	Pontarlier	Pontarlier
+FR::pontivy	Pontivy	Pontivy	Pontivy
+FR::pontoise	Pontoise		
+FR::pornic	Pornic	Pornic	Pornic
+FR::porquerolles	Porquerolles	Porquerolles	Porquerolles
+FR::port-en-bessin-huppain	Port En Bessin Huppain	Port-en-Bessin-Huppain	Port-en-Bessin-Huppain
+FR::port-grimaud	Port Grimaud	Port Grimaud	Port Grimaud
+FR::porticcio	Porticcio	Porticcio	Porticcio
+FR::porto	Porto		
+FR::porto-vecchio	Porto Vecchio	Porto-Vecchio	Porto-Vecchio
+FR::pradelles	Pradelles	Pradelles	Pradelles
+FR::prats-de-mollo-la-preste	Prats De Mollo La Preste	Prats-de-Mollo-la-Preste	Prats-de-Mollo-la-Preste
+FR::propriano	Propriano	Propriano	Propriano
+FR::provins	Provins	Provins	Provins
+FR::pujols	Pujols	Pujols	Pujols
+FR::puy-de-dome	Puy De Dome	Puy-de-Dôme	Puy-de-Dôme
+FR::puy-l-eveque	Puy L Eveque	Puy-l'Évêque	Puy-l'Évêque
+FR::quiberon	Quiberon	Quiberon	Quiberon
+FR::quillan	Quillan	Quillan	Quillan
+FR::quimper	Quimper		
+FR::rambouillet	Rambouillet	Rambouillet	Rambouillet
+FR::realmont	Realmont	Réalmont	Réalmont
+FR::reims	Reims	Reims	Reims
+FR::relanges	Relanges	Relanges	Relanges
+FR::remiremont	Remiremont	Remiremont	Remiremont
+FR::rencurel	Rencurel	Rencurel	Rencurel
+FR::rennes	Rennes	Rennes	Rennes
+FR::rennes-le-chateau	Rennes Le Chateau	Rennes-le-Château	Rennes-le-Château
+FR::rethel	Rethel	Rethel	Rethel
+FR::revin	Revin	Revin	Revin
+FR::ribeauville	Ribeauville	Ribeauville	Ribeauville
+FR::richelieu	Richelieu	Richelieu	Richelieu
+FR::rieux-volvestre	Rieux Volvestre	Rieux-Volvestre	Rieux-Volvestre
+FR::riez	Riez	Riez	Riez
+FR::riom-es-montagnes	Riom Es Montagnes	Riom-ès-Montagnes	Riom-ès-Montagnes
+FR::riquewihr	Riquewihr	Riquewihr	Riquewihr
+FR::riverie	Riverie	Riverie	Riverie
+FR::roanne	Roanne	Roanne	Roanne
+FR::rocamadour	Rocamadour	Rocamadour	Rocamadour
+FR::rochechouart	Rochechouart	Rochechouart	Rochechouart
+FR::rochecolombe	Rochecolombe	Rochecolombe	Rochecolombe
+FR::rochefort	Rochefort	Rochefort	Rochefort
+FR::rochefort-en-terre	Rochefort En Terre	Rochefort-en-Terre	Rochefort-en-Terre
+FR::rocroi	Rocroi	Rocroi	Rocroi
+FR::rodez	Rodez	Rodez	Rodez
+FR::rogliano	Rogliano	Rogliano	Rogliano
+FR::romans-sur-isere	Romans Sur Isere	Romans-sur-Isère	Romans-sur-Isère
+FR::romorantin-lanthenay	Romorantin Lanthenay	Romorantin-Lanthenay	Romorantin-Lanthenay
+FR::ronchamp	Ronchamp	Ronchamp	Ronchamp
+FR::roquebrune-cap-martin	Roquebrune Cap Martin	Roquebrune-Cap-Martin	Roquebrune-Cap-Martin
+FR::roquefort-sur-soulzon	Roquefort Sur Soulzon	Roquefort-sur-Soulzon	Roquefort-sur-Soulzon
+FR::roscoff	Roscoff	Roscoff	Roscoff
+FR::rosheim	Rosheim	Rosheim	Rosheim
+FR::roubaix	Roubaix		
+FR::rouen	Rouen		
+FR::rouffach	Rouffach	Rouffach	Rouffach
+FR::rougemont-le-chateau	Rougemont Le Chateau	Rougemont-le-Château	Rougemont-le-Château
+FR::roussillon	Roussillon	Roussillon	Roussillon
+FR::royan	Royan	Royan	Royan
+FR::rue	Rue	Rue	Rue
+FR::rueil-malmaison	Rueil Malmaison		
+FR::ruoms	Ruoms	Ruoms	Ruoms
+FR::sable-sur-sarthe	Sable Sur Sarthe	Sablé-sur-Sarthe	Sablé-sur-Sarthe
+FR::sabres	Sabres	Sabres	Sabres
+FR::saignon	Saignon	Saignon	Saignon
+FR::saint-affrique	Saint Affrique	Saint-Affrique	Saint-Affrique
+FR::saint-amand-les-eaux	Saint Amand Les Eaux		
+FR::saint-amand-montrond	Saint Amand Montrond	Saint-Amand-Montrond	Saint-Amand-Montrond
+FR::saint-andiol	Saint Andiol	Saint-Andiol	Saint-Andiol
+FR::saint-antoine-l-abbaye	Saint Antoine L Abbaye	Saint Antoine l'Abbaye	Saint-Antoine l'Abbaye
+FR::saint-antonin-noble-val	Saint Antonin Noble Val	Saint-Antonin-Noble-Val	Saint-Antonin-Noble-Val
+FR::saint-avold	Saint Avold	Saint-Avold	Saint-Avold
+FR::saint-beat	Saint Beat	Saint-Béat	Saint-Béat
+FR::saint-benoit-du-sault	Saint Benoit Du Sault	Saint-Benoît-du-Sault	Saint-Benoît-du-Sault
+FR::saint-bertrand-de-comminges	Saint Bertrand De Comminges	Saint-Bertrand-de-Comminges	Saint-Bertrand-de-Comminges
+FR::saint-bonnet-le-chateau	Saint Bonnet Le Chateau	Saint-Bonnet-le-Château	Saint-Bonnet-le-Château
+FR::saint-brieuc	Saint Brieuc		
+FR::saint-ceneri-le-gerei	Saint Ceneri Le Gerei	Saint-Céneri-le-Gérei	Saint-Céneri-le-Gérei
+FR::saint-cirq-lapopie	Saint Cirq Lapopie	Saint-Cirq-Lapopie	Saint-Cirq-Lapopie
+FR::saint-clar	Saint Clar		
+FR::saint-claude	Saint Claude	Saint-Claude	Saint-Claude
+FR::saint-cloud	Saint Cloud		
+FR::saint-cyprien	Saint Cyprien	Saint-Cyprien	Saint-Cyprien
+FR::saint-cyr-au-mont-dor	Saint Cyr Au Mont Dor		

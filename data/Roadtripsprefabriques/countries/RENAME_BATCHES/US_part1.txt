@@ -1,0 +1,347 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "US" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays US, partie 1/2)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+US::abilene	Abilene		
+US::ah-shi-sle-pah	Ah Shi Sle Pah		
+US::aiken	Aiken		
+US::alamogordo	Alamogordo	Alamogordo	Alamogordo
+US::alamosa-co	Alamosa Co		
+US::albuquerque	Albuquerque		
+US::alliance	Alliance		
+US::alpine-tx	Alpine Tx		
+US::altoona	Altoona		
+US::amana	Amana		
+US::amarillo	Amarillo		
+US::amelia-island	Amelia Island		
+US::amicalola-falls	Amicalola Falls		
+US::anaheim	Anaheim		
+US::anchorage	Anchorage	Anchorage	Anchorage
+US::ann-arbor	Ann Arbor		
+US::annapolis-md	Annapolis Md		
+US::anza-borrego	Anza Borrego		
+US::apalachicola	Apalachicola		
+US::apgar	Apgar	Apgar	Apgar
+US::arco	Arco		
+US::arrow-rock-mo	Arrow Rock Mo		
+US::asheville	Asheville	Asheville	Asheville
+US::aspen-co	Aspen Co		
+US::athens-ga	Athens Ga		
+US::athens-oh	Athens Oh		
+US::atlanta	Atlanta		
+US::augusta	Augusta		
+US::augusta-me	Augusta Me		
+US::austin	Austin		
+US::babb	Babb		
+US::baker	Baker	Baker Island	Baker Island
+US::baker-nv	Baker Nv		
+US::baltimore-md	Baltimore Md		
+US::bandelier	Bandelier		
+US::bangor	Bangor		
+US::bar-harbor	Bar Harbor	Bar Harbor	Bar Harbor
+US::baraboo	Baraboo		
+US::barstow	Barstow		
+US::baton-rouge	Baton Rouge	Baton Rouge	Baton Rouge
+US::bayfield	Bayfield	Bayfield County	Bayfield County
+US::beatty	Beatty	Beatty	Beatty
+US::beaufort	Beaufort		
+US::bend	Bend	Bend	Bend
+US::bentonville	Bentonville		
+US::berlin-holmes-county	Berlin Holmes County		
+US::bethlehem-pa	Bethlehem Pa		
+US::bettles	Bettles		
+US::big-bend	Big Bend		
+US::big-sky	Big Sky	Big Sky	Big Sky
+US::big-sur	Big Sur	Big Sur	Big Sur
+US::billings	Billings		
+US::birmingham	Birmingham		
+US::bisbee	Bisbee		
+US::bismarck	Bismarck		
+US::bloomington	Bloomington		
+US::blowing-rock	Blowing Rock		
+US::blue-mounds	Blue Mounds		
+US::bluff	Bluff	Bluff	Bluff
+US::boise	Boise		
+US::boone	Boone	Boone County	Boone County
+US::boston	Boston	Boston	Boston
+US::boulder-co	Boulder Co		
+US::boxley-valley	Boxley Valley		
+US::bozeman	Bozeman	Bozeman	Bozeman
+US::branson-mo	Branson Mo		
+US::brasstown-bald	Brasstown Bald		
+US::breaux-bridge	Breaux Bridge		
+US::brooks-camp-katmai	Brooks Camp Katmai		
+US::brunswick	Brunswick		
+US::bryce-canyon	Bryce Canyon		
+US::buffalo	Buffalo	Buffalo	Buffalo
+US::burlington-vt	Burlington Vt		
+US::cambria	Cambria		
+US::cannon-beach	Cannon Beach	Cannon County	Cannon County
+US::canton	Canton		
+US::cape-canaveral	Cape Canaveral		
+US::cape-cod	Cape Cod		
+US::capulin-volcano	Capulin Volcano		
+US::carlsbad	Carlsbad	Carlsbad	Carlsbad
+US::carlsbad-caverns	Carlsbad Caverns		
+US::carmel-by-the	Carmel By The		
+US::carthage	Carthage		
+US::casper	Casper		
+US::cave-city-ky	Cave City Ky		
+US::cedar-rapids	Cedar Rapids	Cedar Rapids	Cedar Rapids
+US::cedarburg	Cedarburg		
+US::chaco-culture	Chaco Culture		
+US::chamberlain-sd	Chamberlain Sd		
+US::chanhassen	Chanhassen		
+US::charleston	Charleston		
+US::charlotte-nc	Charlotte Nc		
+US::charlottesville-va	Charlottesville Va		
+US::chattanooga	Chattanooga	Chattanooga	Chattanooga
+US::chauvin	Chauvin		
+US::cheyenne	Cheyenne		
+US::chicago	Chicago		
+US::cincinnati	Cincinnati		
+US::claremore	Claremore		
+US::clarksdale	Clarksdale		
+US::clearwater	Clearwater		
+US::clemson	Clemson		
+US::cleveland	Cleveland		
+US::cocoa-beach	Cocoa Beach		
+US::cody	Cody		
+US::colorado-springs-co	Colorado Springs Co		
+US::columbia-sc	Columbia Sc		
+US::columbus-ga	Columbus Ga		
+US::columbus-oh	Columbus Oh		
+US::cooper-landing	Cooper Landing		
+US::copper	Copper		
+US::corpus-christi	Corpus Christi		
+US::cortez-co	Cortez Co		
+US::cottonwood-falls	Cottonwood Falls	Cottonwood Falls	Cottonwood Falls
+US::council-bluffs	Council Bluffs		
+US::crater-lake	Crater Lake	Crater Lake	Crater Lake
+US::crawfordsville	Crawfordsville		
+US::crystal-river	Crystal River		
+US::cumberland-island	Cumberland Island		
+US::custer-sd	Custer Sd		
+US::cuyahoga-valley-peninsula	Cuyahoga Valley Peninsula		
+US::dallas	Dallas		
+US::davis-wv	Davis Wv		
+US::daytona-beach	Daytona Beach		
+US::deadwood-sd	Deadwood Sd		
+US::death-valley	Death Valley		
+US::decorah	Decorah	Decorah	Decorah
+US::delaware-water-gap	Delaware Water Gap		
+US::demopolis	Demopolis		
+US::denali	Denali		
+US::denver	Denver		
+US::denver-co	Denver Co		
+US::des-moines	Des Moines		
+US::destin	Destin		
+US::detroit	Detroit		
+US::dickinson-enchanted-highway	Dickinson Enchanted Highway		
+US::dodge	Dodge		
+US::door-county-fish-creek	Door County Fish Creek		
+US::dry-tortugas	Dry Tortugas		
+US::dubuque	Dubuque		
+US::duluth	Duluth	Duluth	Duluth
+US::duluth-mn	Duluth Mn		
+US::eagle-river	Eagle River		
+US::edenton	Edenton		
+US::el-paso	El Paso	El Paso	El Paso
+US::elkhart	Elkhart		
+US::ellison-bay	Ellison Bay		
+US::ely-mn	Ely Mn		
+US::ely-nv	Ely Nv		
+US::ephraim	Ephraim		
+US::essex	Essex		
+US::estes-park	Estes Park		
+US::eureka-springs	Eureka Springs		
+US::everglades	Everglades		
+US::fairbanks	Fairbanks	Fairbanks	Fairbanks
+US::farmington	Farmington		
+US::fayetteville-wv	Fayetteville Wv	Fayetteville	Fayetteville
+US::firenze	Firenze		
+US::flagstaff	Flagstaff		
+US::folly-beach	Folly Beach		
+US::fort-benton	Fort Benton		
+US::fort-davis	Fort Davis	Fort Davis	Fort Davis
+US::fort-lauderdale	Fort Lauderdale		
+US::fort-myers	Fort Myers		
+US::fort-peck-mt	Fort Peck Mt		
+US::fort-smith	Fort Smith		
+US::fort-wayne	Fort Wayne	Fort Wayne	Fort Wayne
+US::fort-worth	Fort Worth		
+US::four-corners	Four Corners		
+US::fredericksburg-tx	Fredericksburg Tx		
+US::fresno	Fresno	Fresno	Fresno
+US::friday-harbor	Friday Harbor	Friday Harbor	Friday Harbor
+US::furnace-creek	Furnace Creek	Furnace Creek	Furnace Creek
+US::gainesville	Gainesville		
+US::galena	Galena	Galena	Galena
+US::galveston	Galveston		
+US::gardiner	Gardiner	Gardiner	Gardiner
+US::gary-indiana	Gary Indiana		
+US::gatlinburg	Gatlinburg	Gatlinburg	Gatlinburg
+US::georgetown	Georgetown		
+US::gettysburg	Gettysburg		
+US::girdwood	Girdwood		
+US::glendive	Glendive		
+US::gonzales	Gonzales		
+US::grand-canyon	Grand Canyon		
+US::grand-canyon-south-rim	Grand Canyon South Rim		
+US::grand-island	Grand Island		
+US::grand-junction	Grand Junction	Grand Junction	Grand Junction
+US::grand-lake	Grand Lake		
+US::grand-marais-mn	Grand Marais Mn		
+US::great-bend	Great Bend		
+US::great-falls	Great Falls		
+US::green-bay	Green Bay		
+US::green-river	Green River	Green River	Green River
+US::greenville	Greenville		
+US::greenville-me	Greenville Me		
+US::greenville-ms	Greenville Ms		
+US::greenwich	Greenwich		
+US::guadalupe-mountains	Guadalupe Mountains		
+US::gulf-shores	Gulf Shores		
+US::gustavus	Gustavus		
+US::guthrie	Guthrie		
+US::hagerman	Hagerman		
+US::hanksville	Hanksville	Hanksville	Hanksville
+US::hardin	Hardin		
+US::harpers-ferry	Harpers Ferry		
+US::hartford	Hartford		
+US::healdsburg	Healdsburg		
+US::healy	Healy	Healy	Healy
+US::helen	Helen		
+US::henderson	Henderson		
+US::hendersonville	Hendersonville		
+US::hilton-head-island	Hilton Head Island		
+US::hocking-hills-sp	Hocking Hills Sp		
+US::holbrook	Holbrook	Holbrook	Holbrook
+US::homer	Homer		
+US::honolulu	Honolulu		
+US::hood-river	Hood River	Hood River County	Hood River County
+US::horicon	Horicon		
+US::hot-springs	Hot Springs		
+US::houghton-mi	Houghton Mi		
+US::houma	Houma	Houma	Houma
+US::houma-la	Houma La		
+US::houston	Houston		
+US::humboldt	Humboldt		
+US::huntsville	Huntsville		
+US::hutchinson	Hutchinson		
+US::hyde-park	Hyde Park		
+US::idaho	Idaho		
+US::indiana-dunes	Indiana Dunes		
+US::indianapolis	Indianapolis	Indianapolis	Indianapolis
+US::international-falls-mn	International Falls Mn		
+US::iowa	Iowa		
+US::islamorada	Islamorada	Islamorada	Islamorada
+US::ithaca	Ithaca	Town of Ithaca	Town of Ithaca
+US::jackson	Jackson	Jackson	Jackson
+US::jackson-ms	Jackson Ms	Jackson	Jackson
+US::jackson-wy	Jackson Wy		
+US::jacksonport	Jacksonport		
+US::jacksonville	Jacksonville		
+US::jasper-ar	Jasper Ar		
+US::jekyll-island	Jekyll Island		
+US::jim-thorpe	Jim Thorpe		
+US::joshua-tree	Joshua Tree	Joshua Tree	Joshua Tree
+US::julian	Julian		
+US::juneau	Juneau		
+US::kailua-kona	Kailua Kona	Kailua	Kailua
+US::kalamazoo	Kalamazoo		
+US::kanab	Kanab	Kanab	Kanab
+US::kansas	Kansas		
+US::kayenta	Kayenta	Kayenta	Kayenta
+US::ketchum	Ketchum		
+US::key-largo	Key Largo	Key Largo	Key Largo
+US::key-west	Key West	Key	Key
+US::kiawah-island	Kiawah Island		
+US::kingman	Kingman		
+US::knoxville	Knoxville	Knoxville	Knoxville
+US::kotzebue	Kotzebue		
+US::lafayette	Lafayette	Lafayette	Lafayette
+US::laguna-beach	Laguna Beach		
+US::lahaina	Lahaina	Lahaina	Lahaina
+US::lake-allatoona	Lake Allatoona		
+US::lake-geneva	Lake Geneva		
+US::lake-mead	Lake Mead		
+US::lake-ouachita	Lake Ouachita		
+US::lake-tahoe	Lake Tahoe	Lake Tahoe	Lake Tahoe
+US::lancaster	Lancaster		
+US::lander	Lander		
+US::lander-wy	Lander Wy		
+US::landrum	Landrum		
+US::laramie	Laramie		
+US::larned	Larned		
+US::las-vegas	Las Vegas		
+US::lassen-volcanic	Lassen Volcanic		
+US::lawrence	Lawrence		
+US::lawton	Lawton		
+US::leavenworth	Leavenworth	Leavenworth	Leavenworth
+US::lewisburg-wv	Lewisburg Wv		
+US::lexington	Lexington		
+US::liberal	Liberal		
+US::lincoln	Lincoln		
+US::lindsborg	Lindsborg		
+US::litchfield-hills	Litchfield Hills		
+US::little-rock	Little Rock	Little Rock	Little Rock
+US::lone-pine	Lone Pine	Lone Pine	Lone Pine
+US::lookout-mountain	Lookout Mountain		
+US::los-angeles	Los Angeles	Los Angeles	Los Angeles
+US::loudonville-oh	Loudonville Oh		
+US::louisville	Louisville		
+US::ludington	Ludington		
+US::luray-va	Luray Va		
+US::mackinac	Mackinac		
+US::macon	Macon		
+US::madison	Madison		
+US::magic-bus-142	Magic Bus 142		
+US::malibu	Malibu	Malibu	Malibu
+US::mammoth-lakes	Mammoth Lakes		
+US::mammoth-spring	Mammoth Spring		
+US::manhattan	Manhattan		
+US::marathon	Marathon	Marathon County	Marathon County

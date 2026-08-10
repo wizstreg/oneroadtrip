@@ -1,0 +1,279 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "FR" → la langue locale (fr) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays FR, partie 4/4)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+FR::saint-denis	Saint Denis		
+FR::saint-die-des-vosges	Saint Die Des Vosges	Saint-Dié-des-Vosges	Saint-Dié-des-Vosges
+FR::saint-dizier	Saint Dizier	Saint-Dizier	Saint-Dizier
+FR::saint-emilion	Saint Emilion	Saint-Émilion	Saint-Émilion
+FR::saint-etienne	Saint Etienne	Saint-Étienne	Saint-Étienne
+FR::saint-etienne-du-gres	Saint Etienne Du Gres	Saint-Étienne-du-Grès	Saint-Étienne-du-Grès
+FR::saint-fargeau	Saint Fargeau	Saint-Fargeau	Saint-Fargeau
+FR::saint-florent	Saint Florent	Saint-Florent	Saint-Florent
+FR::saint-floret	Saint Floret	Saint-Floret	Saint-Floret
+FR::saint-flour	Saint Flour	Saint-Flour-l'Étang	Saint-Flour-l'Étang
+FR::saint-gaudens	Saint Gaudens	Saint-Gaudens	Saint-Gaudens
+FR::saint-germain-en-laye	Saint Germain En Laye	Saint-Germain-en-Laye	Saint-Germain-en-Laye
+FR::saint-gilles-croix-de	Saint Gilles Croix De		
+FR::saint-girons	Saint Girons	Saint-Girons	Saint-Girons
+FR::saint-guilhem-le-desert	Saint Guilhem Le Desert	Saint-Guilhem-le-Désert	Saint-Guilhem-le-Désert
+FR::saint-haon-le-chatel	Saint Haon Le Chatel	Saint-Haon-le-Châtel	Saint-Haon-le-Châtel
+FR::saint-hippolyte	Saint Hippolyte		
+FR::saint-honore-les-bains	Saint Honore Les Bains	Saint-Honoré-les-Bains	Saint-Honoré-les-Bains
+FR::saint-jean-cap-ferrat	Saint Jean Cap Ferrat	Saint-Jean-Cap-Ferrat	Saint-Jean-Cap-Ferrat
+FR::saint-jean-de-cole	Saint Jean De Cole	Saint-Jean-de-Côle	Saint-Jean-de-Côle
+FR::saint-jean-de-luz	Saint Jean De Luz	Saint-Jean-de-Luz	Saint-Jean-de-Luz
+FR::saint-jean-de-maurienne	Saint Jean De Maurienne	Saint-Jean-de-Maurienne	Saint-Jean-de-Maurienne
+FR::saint-jean-du-gard	Saint Jean Du Gard	Saint-Jean-du-Gard	Saint-Jean-du-Gard
+FR::saint-jean-pied-de-port	Saint Jean Pied De Port	Citadel of Saint-Jean-Pied-de-Port	Citadelle de Saint Jean Pied de Port
+FR::saint-jean-saint-maurice-sur-loire	Saint Jean Saint Maurice Sur Loire	Saint-Jean-Saint-Maurice-sur-Loire	Saint-Jean-Saint-Maurice-sur-Loire
+FR::saint-jeannet	Saint Jeannet	Saint-Jeannet	Saint-Jeannet
+FR::saint-junien	Saint Junien	Saint-Junien	Saint-Junien
+FR::saint-lary-soulan	Saint Lary Soulan	Saint-Lary-Soulan	Saint-Lary-Soulan
+FR::saint-laurent-sous-coiron	Saint Laurent Sous Coiron	Saint-Laurent-sous-Coiron	Saint-Laurent-sous-Coiron
+FR::saint-leon-sur-vezere	Saint Leon Sur Vezere	Saint-Léon-sur-Vézère	Saint-Léon-sur-Vézère
+FR::saint-leonard-de-noblat	Saint Leonard De Noblat	Saint-Léonard-de-Noblat	Saint-Léonard-de-Noblat
+FR::saint-lizier	Saint Lizier	Saint-Lizier	Saint-Lizier
+FR::saint-maixent-l-ecole	Saint Maixent L Ecole	Saint-Maixent-l'École	Saint-Maixent-l'École
+FR::saint-malo	Saint Malo		
+FR::saint-marcellin	Saint Marcellin	Saint-Marcellin	Saint-Marcellin
+FR::saint-martin-d-ardeche	Saint Martin D Ardeche	Saint-Martin-d'Ardèche	Saint-Martin-d'Ardèche
+FR::saint-martin-de-bromes	Saint Martin De Bromes	Saint-Martin-de-Brômes	Saint-Martin-de-Brômes
+FR::saint-martin-de-crau	Saint Martin De Crau	Saint-Martin-de-Crau	Saint-Martin-de-Crau
+FR::saint-martin-de-re	Saint Martin De Re		
+FR::saint-martin-en-vercors	Saint Martin En Vercors	Saint-Martin-en-Vercors	Saint-Martin-en-Vercors
+FR::saint-martin-vesubie	Saint Martin Vesubie	Saint-Martin-Vésubie	Saint-Martin-Vésubie
+FR::saint-maur-des-fosses	Saint Maur Des Fosses		
+FR::saint-michel-l-observatoire	Saint Michel L Observatoire	Saint-Michel-l'Observatoire	Saint-Michel-l'Observatoire
+FR::saint-mihiel	Saint Mihiel	Saint-Mihiel	Saint-Mihiel
+FR::saint-montan	Saint Montan	Saint-Montan	Saint-Montan
+FR::saint-nazaire	Saint Nazaire		Saint-Nazaire
+FR::saint-nazaire-en-royans	Saint Nazaire En Royans	Saint-Nazaire-en-Royans	Saint-Nazaire-en-Royans
+FR::saint-nectaire	Saint Nectaire	Saint-Nectaire	Saint-Nectaire
+FR::saint-omer	Saint Omer	Saint-Omer	Saint-Omer
+FR::saint-ours-les-roches	Saint Ours Les Roches	Saint-Ours	Saint-Ours
+FR::saint-paul-de-vence	Saint Paul De Vence	Saint-Paul-de-Vence	Saint-Paul-de-Vence
+FR::saint-paulet-de-caisson	Saint Paulet De Caisson		
+FR::saint-pierre-de-mezoargues	Saint Pierre De Mezoargues	Saint-Pierre-de-Mézoargues	Saint-Pierre-de-Mézoargues
+FR::saint-pourcain-sur-sioule	Saint Pourcain Sur Sioule	Saint-Pourçain-sur-Sioule	Saint-Pourçain-sur-Sioule
+FR::saint-quentin	Saint Quentin	Saint-Quentin	Saint-Quentin
+FR::saint-quirin	Saint Quirin	Saint-Quirin	Saint-Quirin
+FR::saint-raphael	Saint Raphael	Saint-Raphaël	Saint-Raphaël
+FR::saint-remy-de-provence	Saint Remy De Provence	Saint-Rémy-de-Provence	Saint-Rémy-de-Provence
+FR::saint-saturnin	Saint Saturnin		
+FR::saint-saturnin-les-apt	Saint Saturnin Les Apt	Saint-Saturnin-lès-Apt	Saint-Saturnin-lès-Apt
+FR::saint-sauveur-en-puisaye	Saint Sauveur En Puisaye	Saint-Sauveur-en-Puisaye	Saint-Sauveur-en-Puisaye
+FR::saint-savin	Saint Savin	Saint-Savin	Saint-Savin
+FR::saint-suliac	Saint Suliac	Saint-Suliac	Saint-Suliac
+FR::saint-symphorien-sur-coise	Saint Symphorien Sur Coise	Saint-Symphorien-sur-Coise	Saint-Symphorien-sur-Coise
+FR::saint-trojan-les-bains	Saint Trojan Les Bains		
+FR::saint-tropez	Saint Tropez	Saint-Tropez	Saint-Tropez
+FR::saint-vaast-la-hougue	Saint Vaast La Hougue	Saint-Vaast-la-Hougue	Saint-Vaast-la-Hougue
+FR::saint-valery-sur-somme	Saint Valery Sur Somme	Saint-Valery-sur-Somme	Saint-Valery-sur-Somme
+FR::saint-veran	Saint Veran	Saint-Véran	Saint-Véran
+FR::saint-yrieix-la-perche	Saint Yrieix La Perche	Saint-Yrieix-la-Perche	Saint-Yrieix-la-Perche
+FR::sainte-agnes	Sainte Agnes	Sainte-Agnès	Sainte-Agnès
+FR::sainte-croix-du-verdon	Sainte Croix Du Verdon	Sainte-Croix-du-Verdon	Sainte-Croix-du-Verdon
+FR::sainte-croix-en-jarez	Sainte Croix En Jarez	Sainte-Croix-en-Jarez	Sainte-Croix-en-Jarez
+FR::sainte-enimie	Sainte Enimie	Sainte-Enimie	Sainte-Enimie
+FR::sainte-genevieve-des-bois	Sainte Genevieve Des Bois	Sainte-Geneviève-des-Bois	Sainte-Geneviève-des-Bois
+FR::sainte-maure-de-touraine	Sainte Maure De Touraine		
+FR::sainte-suzanne	Sainte Suzanne	Sainte-Suzanne	Sainte-Suzanne
+FR::saintes	Saintes	Saintes	Saintes
+FR::salernes	Salernes	Salernes	Salernes
+FR::salers	Salers	Salers	Salers
+FR::salies-de-bearn	Salies De Bearn		Salies-de-Béarn
+FR::salins-les-bains	Salins Les Bains	Salins-les-Bains	Salins-les-Bains
+FR::salles-arbuissonnas-en-beaujolais	Salles Arbuissonnas En Beaujolais	Salles-Arbuissonnas-en-Beaujolais	Salles-Arbuissonnas-en-Beaujolais
+FR::samoens	Samoens	Samoëns	Samoëns
+FR::sancerre	Sancerre	Sancerre	Sancerre
+FR::sanry-sur-nied	Sanry Sur Nied	Sanry-sur-Nied	Sanry-sur-Nied
+FR::santenay	Santenay	Santenay	Santenay
+FR::saorge	Saorge	Saorge	Saorge
+FR::sare	Sare	Sare	Sare
+FR::sarlat-la-caneda	Sarlat La Caneda	Sarlat-la-Canéda	Sarlat-la-Canéda
+FR::sarrebourg	Sarrebourg	Sarrebourg	Sarrebourg
+FR::sarreguemines	Sarreguemines	Sarreguemines	Sarreguemines
+FR::sartene	Sartene	Sartène	Sartène
+FR::saulges	Saulges	Saulges	Saulges
+FR::saumur	Saumur	Saumur	Saumur
+FR::saverne	Saverne	Saverne	Saverne
+FR::savines-le-lac	Savines Le Lac	Savines-le-Lac	Savines-le-Lac
+FR::sceaux	Sceaux		
+FR::sedan	Sedan	Sedan	Sedan
+FR::sees	Sees	Sées	Sées
+FR::segre	Segre	Segré	Segré
+FR::seguret	Seguret	Séguret	Séguret
+FR::selestat	Selestat	Sélestat	Sélestat
+FR::semur-en-auxois	Semur En Auxois	Semur-en-Auxois	Semur-en-Auxois
+FR::semur-en-brionnais	Semur En Brionnais	Semur-en-Brionnais	Semur-en-Brionnais
+FR::senlis	Senlis	Senlis	Senlis
+FR::senones	Senones	Senones	Senones
+FR::sens	Sens	Sens	Sens
+FR::sete	Sete	Sète	Sète
+FR::sevres	Sevres		
+FR::seyne-les-alpes	Seyne Les Alpes	Seyne	Seyne
+FR::sillans-la-cascade	Sillans La Cascade	Sillans-la-Cascade	Sillans-la-Cascade
+FR::simiane-la-rotonde	Simiane La Rotonde	Simiane-la-Rotonde	Simiane-la-Rotonde
+FR::sisteron	Sisteron	Sisteron	Sisteron
+FR::soissons	Soissons	Soissons	Soissons
+FR::solenzara	Solenzara		
+FR::solesmes	Solesmes	Solesmes	Solesmes
+FR::solignac	Solignac	Solignac	Solignac
+FR::solutre-pouilly	Solutre Pouilly		
+FR::sospel	Sospel	Sospel	Sospel
+FR::souillac	Souillac	Souillac	Souillac
+FR::soulac-sur-mer	Soulac Sur Mer	Soulac-sur-Mer	Soulac-sur-Mer
+FR::souvigny	Souvigny	Souvigny	Souvigny
+FR::steene	Steene		
+FR::stenay	Stenay	Stenay	Stenay
+FR::strasbourg	Strasbourg		
+FR::sully-sur-loire	Sully Sur Loire	Sully-sur-Loire	Sully-sur-Loire
+FR::suresnes	Suresnes		
+FR::talloires	Talloires	Talloires	Talloires
+FR::talmont-sur-gironde	Talmont Sur Gironde	Talmont-sur-Gironde	Talmont-sur-Gironde
+FR::tannay	Tannay	Tannay	Tannay
+FR::tarascon	Tarascon	Tarascon-sur-Ariège	Tarascon-sur-Ariège
+FR::tarascon-sur-ariege	Tarascon Sur Ariege	Tarascon-sur-Ariège	Tarascon-sur-Ariège
+FR::tarbes	Tarbes	Tarbes	Tarbes
+FR::tende	Tende	Tende	Tende
+FR::thann	Thann	Thann	Thann
+FR::thiers	Thiers	Thiers	Thiers
+FR::thines	Thines	Marco Thines	
+FR::thionville	Thionville	Thionville	Thionville
+FR::thoirette	Thoirette	Thoirette	Thoirette
+FR::thoiry	Thoiry	Thoiry	Thoiry
+FR::thones	Thones	Thônes	Thônes
+FR::thorenc	Thorenc	Thorenc Head (Margaret Morris, 1891–1980)	
+FR::thouars	Thouars	Thouars	Thouars
+FR::thueyts	Thueyts	Thueyts	Thueyts
+FR::tonnerre	Tonnerre	Tonnerre	Tonnerre
+FR::toul	Toul	Toul	Toul
+FR::toulon	Toulon	Toulon	Toulon
+FR::toulouse	Toulouse		
+FR::tournemire	Tournemire		
+FR::tournus	Tournus	Tournus	Tournus
+FR::tourrette-levens	Tourrette Levens		
+FR::tourrettes-sur-loup	Tourrettes Sur Loup	Tourrettes-sur-Loup	Tourrettes-sur-Loup
+FR::tours	Tours		
+FR::tourtour	Tourtour	Tourtour	Tourtour
+FR::treguier	Treguier	Tréguier	Tréguier
+FR::trevoux	Trevoux	Trévoux	Trévoux
+FR::troo	Troo	Troo	Trôo
+FR::troyes	Troyes	Troyes	Troyes
+FR::tulle	Tulle	Tulle	Tulle
+FR::turckheim	Turckheim	Turckheim	Turckheim
+FR::turenne	Turenne	Turenne	Turenne
+FR::utah-beach	Utah Beach	Utah Beach Museum	musée du débarquement Utah Beach
+FR::uzerche	Uzerche	Uzerche	Uzerche
+FR::uzes	Uzes	Uzès	Uzès
+FR::vaison-la-romaine	Vaison La Romaine	Vaison-la-Romaine	Vaison-la-Romaine
+FR::val-d-ajol	Val D Ajol	Église Notre-Dame du Val-d'Ajol	église Notre-Dame du Val-d'Ajol
+FR::val-disere	Val Disere		
+FR::valberg	Valberg	Valberg	Valberg
+FR::valencay	Valencay	Valençay	Valençay
+FR::valence	Valence	Valence	Valence
+FR::valence-d-agen	Valence D Agen	Gare de Valence-d'Agen	Valence d'Agen
+FR::valenciennes	Valenciennes	Valenciennes	Valenciennes
+FR::vallon-pont-d-arc	Vallon Pont D Arc		
+FR::vannes	Vannes	Vannes	Vannes
+FR::vassieux-en-vercors	Vassieux En Vercors	Vassieux-en-Vercors	Vassieux-en-Vercors
+FR::vaucouleurs	Vaucouleurs	Vaucouleurs	Vaucouleurs
+FR::vaudreching	Vaudreching	Vaudreching	Vaudreching
+FR::vaux-en-beaujolais	Vaux En Beaujolais	Vaux-en-Beaujolais	Vaux-en-Beaujolais
+FR::vaux-en-bugey	Vaux En Bugey	Vaux-en-Bugey	Vaux-en-Bugey
+FR::vaux-le-vicomte	Vaux Le Vicomte	Vaux-le-Vicomte	château de Vaux-le-Vicomte
+FR::vence	Vence		
+FR::vendome	Vendome	Vendôme	Vendôme
+FR::venelles	Venelles	Venelles	Venelles
+FR::verdun	Verdun	Verdun	Verdun
+FR::vernon	Vernon	Vernon	Vernon
+FR::vers-pont-du-gard	Vers Pont Du Gard		
+FR::versailles	Versailles	Versailles	Versailles
+FR::verteuil-sur-charente	Verteuil Sur Charente	Verteuil-sur-Charente	Verteuil-sur-Charente
+FR::vertus	Vertus	Vertus	Vertus
+FR::vervins	Vervins	Vervins	Vervins
+FR::verzenay	Verzenay	Verzenay	Verzenay
+FR::vesoul	Vesoul	Vesoul	Vesoul
+FR::veules-les-roses	Veules Les Roses	Veules-les-Roses	Veules-les-Roses
+FR::vezelay	Vezelay	Vézelay	Vézelay
+FR::vic-sur-cere	Vic Sur Cere	Vic-sur-Cère	Vic-sur-Cère
+FR::vic-sur-seille	Vic Sur Seille	Vic-sur-Seille	Vic-sur-Seille
+FR::vichy	Vichy	Vichy	Vichy
+FR::viens	Viens	Viens	Viens
+FR::vieux-boucau-les-bains	Vieux Boucau Les Bains	Vieux-Boucau-les-Bains	Vieux-Boucau-les-Bains
+FR::villard-de-lans	Villard De Lans	Villard-de-Lans	Villard-de-Lans
+FR::villars	Villars	Villars	Villars
+FR::villars-les-dombes	Villars Les Dombes		
+FR::villebois-lavalette	Villebois Lavalette	Villebois-Lavalette	Villebois-Lavalette
+FR::villecroze	Villecroze	Villecroze	Villecroze
+FR::villedieu-les-poeles	Villedieu Les Poeles	Villedieu-les-Poêles	Villedieu-les-Poêles
+FR::villefort	Villefort	Villefort	Villefort
+FR::villefranche-de-conflent	Villefranche De Conflent	Villefranche-de-Conflent	Villefranche-de-Conflent
+FR::villefranche-sur-mer	Villefranche Sur Mer	Villefranche-sur-Mer	Villefranche-sur-Mer
+FR::villefranche-sur-saone	Villefranche Sur Saone	Villefranche-sur-Saône	Villefranche-sur-Saône
+FR::villejuif	Villejuif		
+FR::villenauxe-la-grande	Villenauxe La Grande	Villenauxe-la-Grande	Villenauxe-la-Grande
+FR::villeneuve-d-ascq	Villeneuve D Ascq		
+FR::villeneuve-les-avignon	Villeneuve Les Avignon	Villeneuve-lès-Avignon	Villeneuve-lès-Avignon
+FR::villeneuve-sur-lot	Villeneuve Sur Lot	Villeneuve-sur-Lot	Villeneuve-sur-Lot
+FR::villers-cotterets	Villers Cotterets	Villers-Cotterêts	Villers-Cotterêts
+FR::villersexel	Villersexel	Villersexel	Villersexel
+FR::vimy	Vimy	Vimy	Vimy
+FR::vincennes	Vincennes		
+FR::vitre	Vitre	Vitré	Vitré
+FR::vittel	Vittel	Vittel	Vittel
+FR::vogue	Vogue	Vogüé	Vogüé
+FR::vouvant	Vouvant	Vouvant	Vouvant
+FR::wassy	Wassy	Wassy	Wassy
+FR::wimereux	Wimereux	Wimereux	Wimereux
+FR::wissant	Wissant	Wissant	Wissant
+FR::wissembourg	Wissembourg	Wissembourg	Wissembourg
+FR::xonrupt-longemer	Xonrupt Longemer	Xonrupt-Longemer	Xonrupt-Longemer
+FR::yenne	Yenne	Yenne	Yenne
+FR::yvoire	Yvoire	Yvoire	Yvoire
+FR::zellenberg	Zellenberg	Zellenberg	Zellenberg
+FR::zonza	Zonza	Zonza	Zonza

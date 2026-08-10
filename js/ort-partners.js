@@ -19,7 +19,7 @@
       fr: 'https://tidd.ly/43y5Ajw',
       es: 'https://tidd.ly/4aKeqyk'
       // en, it, pt : à compléter quand les accords seront validés
-    }
+    , nl: 'https://tidd.ly/43y5Ajw', de: 'https://tidd.ly/43y5Ajw'}
   };
 
   // Stay22 Config
@@ -41,17 +41,17 @@
       fr: '🚕 Véhicules & Transferts', en: '🚕 Vehicles & Transfers',
       es: '🚕 Vehículos y Traslados', it: '🚕 Veicoli e Trasferimenti',
       pt: '🚕 Veículos e Transfers', ar: '🚕 المركبات والنقل'
-    },
+    , nl: '🚕 Voertuigen & transfers', de: '🚕 Fahrzeuge & Transfers'},
     vehicleText: {
       fr: 'Que recherchez-vous pour votre voyage ?', en: 'What are you looking for?',
       es: '¿Qué necesitas para tu viaje?', it: 'Di cosa hai bisogno per il tuo viaggio?',
       pt: 'O que você precisa para sua viagem?', ar: 'ماذا تحتاج لرحلتك؟'
-    },
-    carTitle: { fr: 'Location de voiture', en: 'Car Rental', es: 'Alquiler de coches', it: 'Noleggio auto', pt: 'Aluguel de carros', ar: 'تأجير السيارات' },
-    carDesc: { fr: 'Louez un véhicule et explorez en liberté', en: 'Rent a car and explore freely', es: 'Alquila un coche y explora libremente', it: 'Noleggia un\'auto ed esplora liberamente', pt: 'Alugue um carro e explore livremente', ar: 'استأجر سيارة واستكشف بحرية' },
-    transferTitle: { fr: 'Transfert aéroport', en: 'Airport Transfer', es: 'Traslado aeropuerto', it: 'Trasferimento aeroporto', pt: 'Transfer aeroporto', ar: 'النقل من المطار' },
-    transferDesc: { fr: 'Chauffeur privé, prix fixe garanti', en: 'Private driver, fixed price', es: 'Conductor privado, precio fijo', it: 'Autista privato, prezzo fisso', pt: 'Motorista particular, preço fixo', ar: 'سائق خاص، سعر ثابت' },
-    carRedirectTitle: { fr: '🚗 Location de voiture', en: '🚗 Car Rental', es: '🚗 Alquiler de coches', it: '🚗 Noleggio auto', pt: '🚗 Aluguel de carros', ar: '🚗 تأجير السيارات' },
+    , nl: 'Waar ben je naar op zoek voor je reis?', de: 'Wonach suchst du für deine Reise?'},
+    carTitle: { fr: 'Location de voiture', en: 'Car Rental', es: 'Alquiler de coches', it: 'Noleggio auto', pt: 'Aluguel de carros', ar: 'تأجير السيارات' , nl: 'Autoverhuur', de: 'Mietwagen'},
+    carDesc: { fr: 'Louez un véhicule et explorez en liberté', en: 'Rent a car and explore freely', es: 'Alquila un coche y explora libremente', it: 'Noleggia un\'auto ed esplora liberamente', pt: 'Alugue um carro e explore livremente', ar: 'استأجر سيارة واستكشف بحرية' , nl: 'Huur een auto en ontdek alles in alle vrijheid', de: 'Miete ein Auto und erkunde alles in Freiheit'},
+    transferTitle: { fr: 'Transfert aéroport', en: 'Airport Transfer', es: 'Traslado aeropuerto', it: 'Trasferimento aeroporto', pt: 'Transfer aeroporto', ar: 'النقل من المطار' , nl: 'Luchthaventransfer', de: 'Flughafentransfer'},
+    transferDesc: { fr: 'Chauffeur privé, prix fixe garanti', en: 'Private driver, fixed price', es: 'Conductor privado, precio fijo', it: 'Autista privato, prezzo fisso', pt: 'Motorista particular, preço fixo', ar: 'سائق خاص، سعر ثابت' , nl: 'Privéchauffeur, gegarandeerde vaste prijs', de: 'Privatfahrer, garantierter Festpreis'},
+    carRedirectTitle: { fr: '🚗 Location de voiture', en: '🚗 Car Rental', es: '🚗 Alquiler de coches', it: '🚗 Noleggio auto', pt: '🚗 Aluguel de carros', ar: '🚗 تأجير السيارات' , nl: '🚗 Autoverhuur', de: '🚗 Mietwagen'},
     carRedirectText: {
       fr: 'Nous travaillons avec <strong>QEEQ.com</strong>, leader mondial de la location de véhicules.<br><br>🏆 <strong>Meilleurs prix garantis</strong> — Comparaison de +500 loueurs<br>🔄 <strong>Annulation gratuite</strong> — Flexibilité totale<br>🚗 <strong>+7 millions de véhicules</strong> — Du compact au SUV<br>🌍 <strong>Présent dans 170+ pays</strong>',
       en: 'We partner with <strong>QEEQ.com</strong>, the world leader in car rental.<br><br>🏆 <strong>Best prices guaranteed</strong> — Comparing 500+ suppliers<br>🔄 <strong>Free cancellation</strong> — Total flexibility<br>🚗 <strong>+7 million vehicles</strong> — From compact to SUV<br>🌍 <strong>Available in 170+ countries</strong>',
@@ -59,8 +59,8 @@
       it: 'Collaboriamo con <strong>QEEQ.com</strong>, leader mondiale nel noleggio veicoli.<br><br>🏆 <strong>Miglior prezzo garantito</strong> — Confronto di +500 fornitori<br>🔄 <strong>Cancellazione gratuita</strong> — Flessibilità totale<br>🚗 <strong>+7 milioni di veicoli</strong> — Dalla compatta al SUV<br>🌍 <strong>Presente in 170+ paesi</strong>',
       pt: 'Trabalhamos com <strong>QEEQ.com</strong>, líder mundial em aluguel de veículos.<br><br>🏆 <strong>Melhores preços garantidos</strong> — Comparação de +500 fornecedores<br>🔄 <strong>Cancelamento gratuito</strong> — Flexibilidade total<br>🚗 <strong>+7 milhões de veículos</strong> — Do compacto ao SUV<br>🌍 <strong>Presente em 170+ países</strong>',
       ar: 'نتعاون مع <strong>QEEQ.com</strong>، الرائد العالمي في تأجير السيارات.<br><br>🏆 <strong>أفضل الأسعار مضمونة</strong> — مقارنة +500 مورد<br>🔄 <strong>إلغاء مجاني</strong> — مرونة كاملة<br>🚗 <strong>+7 مليون مركبة</strong> — من المدمجة إلى SUV<br>🌍 <strong>متوفر في 170+ دولة</strong>'
-    },
-    transferRedirectTitle: { fr: '🚐 Transfert aéroport', en: '🚐 Airport Transfer', es: '🚐 Traslado aeropuerto', it: '🚐 Trasferimento aeroporto', pt: '🚐 Transfer aeroporto', ar: '🚐 النقل من المطار' },
+    , nl: 'We werken samen met <strong>QEEQ.com</strong>, wereldleider in autoverhuur.<br><br>🏆 <strong>Laagste prijs gegarandeerd</strong> — Vergelijking van 500+ verhuurders<br>🔄 <strong>Gratis annuleren</strong> — Volledige flexibiliteit<br>🚗 <strong>+7 miljoen voertuigen</strong> — Van compact tot SUV<br>🌍 <strong>Aanwezig in 170+ landen</strong>', de: 'Wir arbeiten mit <strong>QEEQ.com</strong> zusammen, dem Weltmarktführer für Mietwagen.<br><br>🏆 <strong>Bestpreisgarantie</strong> — Vergleich von über 500 Anbietern<br>🔄 <strong>Kostenlose Stornierung</strong> — Volle Flexibilität<br>🚗 <strong>+7 Millionen Fahrzeuge</strong> — Vom Kleinwagen bis zum SUV<br>🌍 <strong>In über 170 Ländern vertreten</strong>'},
+    transferRedirectTitle: { fr: '🚐 Transfert aéroport', en: '🚐 Airport Transfer', es: '🚐 Traslado aeropuerto', it: '🚐 Trasferimento aeroporto', pt: '🚐 Transfer aeroporto', ar: '🚐 النقل من المطار' , nl: '🚐 Luchthaventransfer', de: '🚐 Flughafentransfer'},
     transferRedirectText: {
       fr: 'Nous travaillons avec <strong>GetTransfer</strong>, spécialiste des transferts privés.<br><br>🚘 <strong>Chauffeur professionnel</strong> — Accueil personnalisé à l\'arrivée<br>💰 <strong>Prix fixe garanti</strong> — Pas de surprise, pas de compteur<br>⏰ <strong>Disponible 24h/24</strong> — Même pour les vols tardifs<br>📱 <strong>Suivi en temps réel</strong> — Localisation du chauffeur',
       en: 'We partner with <strong>GetTransfer</strong>, the private transfer specialist.<br><br>🚘 <strong>Professional driver</strong> — Personalized welcome on arrival<br>💰 <strong>Fixed price guaranteed</strong> — No surprises, no meter<br>⏰ <strong>Available 24/7</strong> — Even for late flights<br>📱 <strong>Real-time tracking</strong> — Driver location',
@@ -68,8 +68,8 @@
       it: 'Collaboriamo con <strong>GetTransfer</strong>, specialista nei trasferimenti privati.<br><br>🚘 <strong>Autista professionale</strong> — Accoglienza personalizzata all\'arrivo<br>💰 <strong>Prezzo fisso garantito</strong> — Nessuna sorpresa, nessun tassametro<br>⏰ <strong>Disponibile 24/7</strong> — Anche per voli in ritardo<br>📱 <strong>Tracciamento in tempo reale</strong> — Posizione dell\'autista',
       pt: 'Trabalhamos com <strong>GetTransfer</strong>, especialista em transfers privados.<br><br>🚘 <strong>Motorista profissional</strong> — Recepção personalizada na chegada<br>💰 <strong>Preço fixo garantido</strong> — Sem surpresas, sem taxímetro<br>⏰ <strong>Disponível 24h</strong> — Mesmo para voos atrasados<br>📱 <strong>Rastreamento em tempo real</strong> — Localização do motorista',
       ar: 'نتعاون مع <strong>GetTransfer</strong>، المتخصص في النقل الخاص.<br><br>🚘 <strong>سائق محترف</strong> — استقبال شخصي عند الوصول<br>💰 <strong>سعر ثابت مضمون</strong> — بدون مفاجآت، بدون عداد<br>⏰ <strong>متاح 24/7</strong> — حتى للرحلات المتأخرة<br>📱 <strong>تتبع في الوقت الحقيقي</strong> — موقع السائق'
-    },
-    insuranceTitle: { fr: '🛡 Assurance voyage', en: '🛡 Travel Insurance', es: '🛡 Seguro de viaje', it: '🛡 Assicurazione viaggio', pt: '🛡 Seguro viagem', ar: '🛡 تأمين السفر' },
+    , nl: 'We werken samen met <strong>GetTransfer</strong>, specialist in privétransfers.<br><br>🚘 <strong>Professionele chauffeur</strong> — Persoonlijke ontvangst bij aankomst<br>💰 <strong>Gegarandeerde vaste prijs</strong> — Geen verrassingen, geen taximeter<br>⏰ <strong>24/7 beschikbaar</strong> — Ook bij late vluchten<br>📱 <strong>Realtime volgen</strong> — Locatie van de chauffeur', de: 'Wir arbeiten mit <strong>GetTransfer</strong> zusammen, dem Spezialisten für Privattransfers.<br><br>🚘 <strong>Professioneller Fahrer</strong> — Persönlicher Empfang bei der Ankunft<br>💰 <strong>Garantierter Festpreis</strong> — Keine Überraschungen, kein Taxameter<br>⏰ <strong>Rund um die Uhr verfügbar</strong> — Auch bei späten Flügen<br>📱 <strong>Verfolgung in Echtzeit</strong> — Standort des Fahrers'},
+    insuranceTitle: { fr: '🛡 Assurance voyage', en: '🛡 Travel Insurance', es: '🛡 Seguro de viaje', it: '🛡 Assicurazione viaggio', pt: '🛡 Seguro viagem', ar: '🛡 تأمين السفر' , nl: '🛡 Reisverzekering', de: '🛡 Reiseversicherung'},
     insuranceText: {
       fr: 'Nous vous dirigeons vers <strong>Ekta Traveling</strong>.<br><br>✅ Couverture médicale mondiale<br>✅ Annulation & bagages<br>✅ Assistance 24h/24',
       en: 'Redirecting to <strong>Ekta Traveling</strong>.<br><br>✅ Worldwide medical coverage<br>✅ Cancellation & baggage<br>✅ 24/7 assistance',
@@ -77,13 +77,13 @@
       it: 'Ti reindirizziamo a <strong>Ekta Traveling</strong>.<br><br>✅ Copertura medica mondiale<br>✅ Cancellazione e bagagli<br>✅ Assistenza 24/7',
       pt: 'Redirecionando para <strong>Ekta Traveling</strong>.<br><br>✅ Cobertura médica mundial<br>✅ Cancelamento e bagagem<br>✅ Assistência 24h',
       ar: 'نوجهك إلى <strong>Ekta Traveling</strong>.<br><br>✅ تغطية طبية عالمية<br>✅ الإلغاء والأمتعة<br>✅ مساعدة 24/7'
-    },
-    cancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' },
-    continue: { fr: 'Continuer', en: 'Continue', es: 'Continuar', it: 'Continua', pt: 'Continuar', ar: 'متابعة' },
-    redirecting: { fr: 'Redirection dans', en: 'Redirecting in', es: 'Redirigiendo en', it: 'Reindirizzamento tra', pt: 'Redirecionando em', ar: 'إعادة التوجيه في' },
-    loading: { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', it: 'Caricamento...', pt: 'Carregando...', ar: 'جار التحميل...' },
-    flightTabSearch: { fr: '🔍 Rechercher un vol', en: '🔍 Search flights', es: '🔍 Buscar vuelos', it: '🔍 Cerca voli', pt: '🔍 Pesquisar voos', ar: '🔍 البحث عن رحلات' },
-    flightTabCompensation: { fr: '💰 Compensation retard', en: '💰 Delay compensation', es: '💰 Compensación retraso', it: '💰 Rimborso ritardo', pt: '💰 Compensação atraso', ar: '💰 تعويض التأخير' }
+    , nl: 'We sturen je door naar <strong>Ekta Traveling</strong>.<br><br>✅ Wereldwijde medische dekking<br>✅ Annulering & bagage<br>✅ Hulp 24/7', de: 'Wir leiten dich zu <strong>Ekta Traveling</strong> weiter.<br><br>✅ Weltweiter medizinischer Schutz<br>✅ Stornierung & Gepäck<br>✅ Hilfe rund um die Uhr'},
+    cancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' , nl: 'Annuleren', de: 'Abbrechen'},
+    continue: { fr: 'Continuer', en: 'Continue', es: 'Continuar', it: 'Continua', pt: 'Continuar', ar: 'متابعة' , nl: 'Doorgaan', de: 'Weiter'},
+    redirecting: { fr: 'Redirection dans', en: 'Redirecting in', es: 'Redirigiendo en', it: 'Reindirizzamento tra', pt: 'Redirecionando em', ar: 'إعادة التوجيه في' , nl: 'Doorsturen over', de: 'Weiterleitung in'},
+    loading: { fr: 'Chargement...', en: 'Loading...', es: 'Cargando...', it: 'Caricamento...', pt: 'Carregando...', ar: 'جار التحميل...' , nl: 'Laden...', de: 'Wird geladen...'},
+    flightTabSearch: { fr: '🔍 Rechercher un vol', en: '🔍 Search flights', es: '🔍 Buscar vuelos', it: '🔍 Cerca voli', pt: '🔍 Pesquisar voos', ar: '🔍 البحث عن رحلات' , nl: '🔍 Een vlucht zoeken', de: '🔍 Flug suchen'},
+    flightTabCompensation: { fr: '💰 Compensation retard', en: '💰 Delay compensation', es: '💰 Compensación retraso', it: '💰 Rimborso ritardo', pt: '💰 Compensação atraso', ar: '💰 تعويض التأخير' , nl: '💰 Vertragingscompensatie', de: '💰 Verspätungsentschädigung'}
   };
 
   // État interne
@@ -98,7 +98,7 @@
 
   function pt(key) {
     const lang = getPartnerLang();
-    return PARTNER_I18N[key]?.[lang] || PARTNER_I18N[key]?.fr || key;
+    return PARTNER_I18N[key]?.[lang] || PARTNER_I18N[key]?.en || key;
   }
 
   // === GÉNÉRATEURS DE LIENS ===
@@ -124,7 +124,7 @@
     
     // Assurance Ekta avec langue
     insurance: (lang) => {
-      const insLang = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang || getPartnerLang()] || 'en';
+      const insLang = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' , nl: 'nl', de: 'de'}[lang || getPartnerLang()] || 'en';
       return `${AFFILIATE_LINKS.ekta}/${insLang}/?sub_id=8d611d0d167741c58fdfe9e61-${TRAVELPAYOUTS.shmarker}&utm_source=travelpayouts`;
     },
     
@@ -244,8 +244,8 @@
       if (widgetContainer) {
         widgetContainer.style.display = 'block';
         
-        const locale = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang] || 'en';
-        const currency = { fr:'EUR', en:'USD', es:'EUR', it:'EUR', pt:'EUR', ar:'USD' }[lang] || 'EUR';
+        const locale = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' , nl: 'nl', de: 'de'}[lang] || 'en';
+        const currency = { fr:'EUR', en:'USD', es:'EUR', it:'EUR', pt:'EUR', ar:'USD' , nl: 'EUR', de: 'EUR'}[lang] || 'EUR';
         
         const searchWidgetUrl = `https://trpwdg.com/content?trs=${TRAVELPAYOUTS.trs}&shmarker=${TRAVELPAYOUTS.shmarker}&locale=${locale}&curr=${currency}&powered_by=true&border_radius=0&plain=true&color_button=%232681ff&color_button_text=%23ffffff&color_border=%232681ff&promo_id=4132&campaign_id=121`;
         const compensationWidgetUrl = `https://trpwdg.com/content?trs=${TRAVELPAYOUTS.trs}&shmarker=${TRAVELPAYOUTS.shmarker}&locale=${locale}&width=100&powered_by=true&campaign_id=86&promo_id=2110`;

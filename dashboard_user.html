@@ -11,6 +11,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <script>
+
+/* Format de date et de nombre : suit la langue du site, replie sur l anglais. */
+function ortDateLocale(){
+  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
+  return M[l] || 'en-GB';
+}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -146,11 +154,27 @@
 <script src="/js/ort-config.js"></script>
 
 <!-- I18N Auth (nécessaire pour ort-header.js) -->
+<script src="/js/ort-i18n-socle.js"></script>
+<script src="/js/ort-i18n-dashboard.js"></script>
 <script src="/js/ort-i18n-auth.js"></script>
 
 <!-- STATE MANAGER -->
 <script src="/js/ort-state-manager.js"></script>
 <script src="/js/ort-dashboard-adapter.js"></script>
+<script>
+// Cette page a son propre affichage des voyages (photos, onglets pays, carte).
+// L'adaptateur vide #list et le remplace par des cartes basiques : selon l'ordre
+// d'execution, il effacait les photos et les onglets. On desactive son affichage
+// et on garde uniquement ses actions utilitaires.
+(function(){
+  if (!window.ORT_DASHBOARD_ADAPTER) return;
+  const rien = async function(){ console.log('[DASHBOARD] Affichage de l\'adaptateur ignore (la page gere le sien)'); return []; };
+  window.ORT_DASHBOARD_ADAPTER.init = rien;
+  window.ORT_DASHBOARD_ADAPTER.loadTrips = rien;
+  window.ORT_DASHBOARD_ADAPTER.refresh = rien;
+  window.ORT_DASHBOARD_ADAPTER.displayStats = rien;
+})();
+</script>
 
 <script>
 // === Firebase config (préprod / prod) — via ORT_CONFIG (copié de quest_simple) ===
@@ -198,158 +222,20 @@
 
 <script>
 // ================= I18N minimal =================
-const I18N={
-  fr:{title:'Mon tableau de bord', new:'Nouveau voyage', import:'Importer', export:'Exporter tout', deleteAll:'Tout supprimer',
-      hint:'Conseil : vos voyages sont sauvegardés automatiquement dans votre espace.',
-      empty:'Aucun voyage enregistré pour le moment.', start:'Démarrer un voyage',
-      metas:(n,k)=>`${n} nuits · ${k} km`, needLogin:'Connectez-vous pour voir vos voyages.',
-      confirmDel:'Supprimer ce voyage ?', confirmDelAll:'Vous êtes sur le point de tout supprimer. Cette action est irréversible. Continuer ?', needLoginAction:'Vous devez être connecté.',
-      share:'Lien copié dans le presse-papiers',
-      count:(n)=> n>1 ? `${n} voyages enregistrés` : `${n} voyage enregistré`,
-      btn:{open:'↗ Ouvrir', openEditor:'🛠️ Éditeur', openStatic:'🗺️ Visualiser', rename:'✏️ Renommer', settings:'⚙️ Paramètres', del:'🗑 Supprimer',
-           link:'🔗 Lien', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Valider', cancel:'Annuler',
-           addPhotoUrl:'Ajouter une photo (URL)', replaceWhich:'Quelle photo remplacer ?', add:'Ajouter', replace:'Remplacer'},
-      toast:{deleted:'✅ Voyage supprimé', saved:'✅ Voyage enregistré', copied:'🔗 Lien copié', 
-             renamed:'✅ Voyage renommé', photosSaved:'📸 Photos enregistrées', noPhotos:'Aucune photo disponible', 
-             maxPhotos:'Maximum 4 photos', invalidUrl:'❌ URL invalide', photoAdded:'✅ Photo ajoutée',
-             photoReplaced:'✅ Photo remplacée', enterUrl:'Entrez une URL', clickToReplace:'Cliquez sur une photo à remplacer',
-             imageLoadError:'❌ Cette image ne peut pas être chargée.<br>Raisons possibles :<br>• URL incorrecte<br>• Image Google (CORS bloqué)<br>• Site qui bloque le partage<br><br>💡 Hébergez votre photo sur Imgur ou Dropbox'},
-labels:{steps:'étapes', pace:'Rythme'},
-untitled:'Sans titre',
-btn_extra:{share:'📤 Partager'},
-shareModal:{title:'📸 Votre image est prête !', 
-           text:'Nous avons généré une image complète de votre voyage. Téléchargez-la et partagez-la sur vos réseaux sociaux préférés !',
-           download:'⬇️ Télécharger l\'image', close:'Fermer', generating:'🎨 Génération de votre image...'},
-shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très prochainement !'}
-  },
-  en:{title:'My dashboard', new:'New trip', import:'Import', export:'Export all', deleteAll:'Delete all',
-      hint:'Tip: trips are auto-saved.',
-      empty:'No saved trips yet.', start:'Start a trip',
-      metas:(n,k)=>`${n} nights · ${k} km`, needLogin:'Sign in to see your trips.',
-      confirmDel:'Delete this trip?', confirmDelAll:'You are about to delete everything. This cannot be undone. Continue?', needLoginAction:'You must be signed in.',
-      share:'Share link copied to clipboard',
-      count:(n)=> n>1 ? `${n} trips saved` : `${n} trip saved`,
-      btn:{open:'↗ Open', openEditor:'🛠️ Editor', openStatic:'🗺️ View', rename:'✏️ Rename', settings:'⚙️ Settings', del:'🗑 Delete',
-           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Photos', save:'Save', cancel:'Cancel',
-           addPhotoUrl:'Add a photo (URL)', replaceWhich:'Which photo to replace?', add:'Add', replace:'Replace'},
-      toast:{deleted:'✅ Trip deleted', saved:'✅ Trip saved', copied:'🔗 Link copied',
-             renamed:'✅ Trip renamed', photosSaved:'📸 Photos saved', noPhotos:'No photos available', 
-             maxPhotos:'Maximum 4 photos', invalidUrl:'❌ Invalid URL', photoAdded:'✅ Photo added',
-             photoReplaced:'✅ Photo replaced', enterUrl:'Enter a URL', clickToReplace:'Click on a photo to replace',
-             imageLoadError:'❌ Cannot load this image. Check the URL or CORS permissions.'},
-      labels:{steps:'steps', pace:'Pace'},
-      untitled:'Untitled',
-      btn_extra:{share:'📤 Share'},
-      shareModal:{title:'📸 Your image is ready!', 
-                 text:'We have generated a complete image of your trip. Download it and share it on your favorite social networks!',
-                 download:'⬇️ Download image', close:'Close', generating:'🎨 Generating your image...'},
-      shareImage:{intro:'And here is our next trip! More information coming soon!'}
-  },
-  it:{title:'La mia dashboard', new:'Nuovo viaggio', import:'Importa', export:'Esporta tutto', deleteAll:'Elimina tutto',
-      hint:'Suggerimento: i viaggi sono salvati automaticamente.',
-      empty:'Nessun viaggio salvato.', start:'Inizia col questionario',
-      metas:(n,k)=>`${n} notti · ${k} km`, needLogin:'Accedi per vedere i tuoi viaggi.',
-      confirmDel:'Eliminare questo viaggio?', confirmDelAll:'Stai per eliminare tutto. Questa azione è irreversibile. Continuare?', needLoginAction:'Devi essere connesso.',
-      share:'Link copiato',
-      count:(n)=> n>1 ? `${n} viaggi salvati` : `${n} viaggio salvato`,
-      btn:{open:'↗ Apri', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizza', rename:'✏️ Rinomina', settings:'⚙️ Impostazioni', del:'🗑 Elimina',
-           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Foto', save:'Salva', cancel:'Annulla',
-           addPhotoUrl:'Aggiungi una foto (URL)', replaceWhich:'Quale foto sostituire?', add:'Aggiungi', replace:'Sostituisci'},
-      toast:{deleted:'✅ Viaggio eliminato', saved:'✅ Viaggio salvato', copied:'🔗 Link copiato',
-             renamed:'✅ Viaggio rinominato', photosSaved:'📸 Foto salvate', noPhotos:'Nessuna foto disponibile',
-             maxPhotos:'Massimo 4 foto', invalidUrl:'❌ URL non valido', photoAdded:'✅ Foto aggiunta',
-             photoReplaced:'✅ Foto sostituita', enterUrl:'Inserisci un URL', clickToReplace:'Fai clic su una foto da sostituire',
-             imageLoadError:'❌ Impossibile caricare questa immagine.<br>Motivi possibili:<br>• URL non corretto<br>• CORS bloccato<br>• Sito che blocca la condivisione<br><br>💡 Ospita la tua foto su Imgur o Dropbox'},
-      labels:{steps:'tappe', pace:'Ritmo'},
-      untitled:'Senza titolo',
-      btn_extra:{share:'📤 Condividi'},
-      shareModal:{title:'📸 La tua immagine è pronta!', 
-                 text:'Abbiamo generato un\'immagine completa del tuo viaggio. Scaricala e condividila sui tuoi social network preferiti!',
-                 download:'⬇️ Scarica immagine', close:'Chiudi', generating:'🎨 Generazione della tua immagine...'},
-      shareImage:{intro:'Ed ecco il nostro prossimo viaggio! Maggiori informazioni presto!'}
-  },
-  es:{title:'Mi panel', new:'Nuevo viaje', import:'Importar', export:'Exportar todo', deleteAll:'Borrar todo',
-      hint:'Truco: los viajes se guardan automáticamente.',
-      empty:'Aún no hay viajes guardados.', start:'Empezar con el cuestionario',
-      metas:(n,k)=>`${n} noches · ${k} km`, needLogin:'Inicie sesión para ver sus viajes.',
-      confirmDel:'¿Borrar este viaje?', confirmDelAll:'Está a punto de borrar todo. Esta acción es irreversible. ¿Continuar?', needLoginAction:'Debe haber iniciado sesión.',
-      share:'Enlace copiado',
-      count:(n)=> n>1 ? `${n} viajes guardados` : `${n} viaje guardado`,
-      btn:{open:'↗ Abrir', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizar', rename:'✏️ Renombrar', settings:'⚙️ Ajustes', del:'🗑 Borrar',
-           link:'🔗 Enlace', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Fotos', save:'Guardar', cancel:'Cancelar',
-           addPhotoUrl:'Añadir una foto (URL)', replaceWhich:'¿Qué foto reemplazar?', add:'Añadir', replace:'Reemplazar'},
-      toast:{deleted:'✅ Viaje eliminado', saved:'✅ Viaje guardado', copied:'🔗 Enlace copiado',
-             renamed:'✅ Viaje renombrado', photosSaved:'📸 Fotos guardadas', noPhotos:'No hay fotos disponibles',
-             maxPhotos:'Máximo 4 fotos', invalidUrl:'❌ URL no válida', photoAdded:'✅ Foto añadida',
-             photoReplaced:'✅ Foto reemplazada', enterUrl:'Ingresa una URL', clickToReplace:'Haz clic en una foto para reemplazar',
-             imageLoadError:'❌ No se puede cargar esta imagen.<br>Razones posibles:<br>• URL incorrecta<br>• CORS bloqueado<br>• Sitio que bloquea el uso compartido<br><br>💡 Aloja tu foto en Imgur o Dropbox'},
-      labels:{steps:'etapas', pace:'Ritmo'},
-      untitled:'Sin título',
-      btn_extra:{share:'📤 Compartir'},
-      shareModal:{title:'📸 ¡Tu imagen está lista!', 
-                 text:'Hemos generado una imagen completa de tu viaje. ¡Descárgala y compártela en tus redes sociales favoritas!',
-                 download:'⬇️ Descargar imagen', close:'Cerrar', generating:'🎨 Generando tu imagen...'},
-      shareImage:{intro:'¡Y aquí está nuestro próximo viaje! ¡Más información próximamente!'}
-  },
-  pt:{title:'Meu painel', new:'Nova viagem', import:'Importar', export:'Exportar tudo', deleteAll:'Excluir tudo',
-      hint:'Dica: as viagens são salvas automaticamente.',
-      empty:'Nenhuma viagem salva.', start:'Comece com o questionário',
-      metas:(n,k)=>`${n} noites · ${k} km`, needLogin:'Entre para ver suas viagens.',
-      confirmDel:'Excluir esta viagem?', confirmDelAll:'Você está prestes a excluir tudo. Esta ação é irreversível. Continuar?', needLoginAction:'Você precisa estar conectado.',
-      share:'Link copiado',
-      count:(n)=> n>1 ? `${n} viagens salvas` : `${n} viagem salva`,
-      btn:{open:'↗ Abrir', openEditor:'🛠️ Editor', openStatic:'🗺️ Visualizar', rename:'✏️ Renomear', settings:'⚙️ Definições', del:'🗑 Excluir',
-           link:'🔗 Link', mail:'✉️ E-mail', x:'𝕏', fb:'f', photos:'Fotos', save:'Guardar', cancel:'Cancelar',
-           addPhotoUrl:'Adicionar uma foto (URL)', replaceWhich:'Qual foto substituir?', add:'Adicionar', replace:'Substituir'},
-      toast:{deleted:'✅ Viagem excluída', saved:'✅ Viagem salva', copied:'🔗 Link copiado',
-             renamed:'✅ Viagem renomeada', photosSaved:'📸 Fotos salvas', noPhotos:'Nenhuma foto disponível',
-             maxPhotos:'Máximo 4 fotos', invalidUrl:'❌ URL inválida', photoAdded:'✅ Foto adicionada',
-             photoReplaced:'✅ Foto substituída', enterUrl:'Digite uma URL', clickToReplace:'Clique em uma foto para substituir',
-             imageLoadError:'❌ Não é possível carregar esta imagem.<br>Motivos possíveis:<br>• URL incorreta<br>• CORS bloqueado<br>• Site que bloqueia o compartilhamento<br><br>💡 Hospede sua foto no Imgur ou Dropbox'},
-      labels:{steps:'etapas', pace:'Ritmo'},
-      untitled:'Sem título',
-      btn_extra:{share:'📤 Partilhar'},
-      shareModal:{title:'📸 A sua imagem está pronta!', 
-                 text:'Geramos uma imagem completa da sua viagem. Descarregue-a e partilhe-a nas suas redes sociais favoritas!',
-                 download:'⬇️ Descarregar imagem', close:'Fechar', generating:'🎨 A gerar a sua imagem...'},
-      shareImage:{intro:'E aqui está a nossa próxima viagem! Mais informações em breve!'}
-  },
-  ar:{title:'لوحة التحكم الخاصة بي', new:'رحلة جديدة', import:'استيراد', export:'تصدير الكل', deleteAll:'حذف الكل',
-      hint:'تلميح: تُحفَظ الرحلات تلقائيًا.',
-      empty:'لا رحلات محفوظة بعد.', start:'ابدأ بالاستبيان',
-      metas:(n,k)=>`${n} ليالٍ · ${k} كم`, needLogin:'سجّل الدخول لعرض رحلاتك.',
-      confirmDel:'حذف هذه الرحلة؟', confirmDelAll:'أنت على وشك حذف كل شيء. هذا الإجراء لا يمكن التراجع عنه. متابعة؟', needLoginAction:'يجب أن تكون مسجلاً.',
-      share:'تم نسخ الرابط',
-      count:(n)=> n>1 ? `تم حفظ ${n} رحلات` : `تم حفظ رحلة واحدة`,
-      btn:{open:'↗ فتح', openEditor:'🛠️ المحرر', openStatic:'🗺️ عرض', rename:'✏️ إعادة تسمية', settings:'⚙️ الإعدادات', del:'🗑 حذف',
-           link:'🔗 رابط', mail:'✉️ بريد', x:'𝕏', fb:'f', photos:'الصور', save:'حفظ', cancel:'إلغاء',
-           addPhotoUrl:'إضافة صورة (رابط URL)', replaceWhich:'أي صورة تريد استبدالها؟', add:'إضافة', replace:'استبدال'},
-      toast:{deleted:'✅ تم الحذف', saved:'✅ تم الحفظ', copied:'🔗 تم النسخ',
-             renamed:'✅ تم إعادة التسمية', photosSaved:'📸 تم حفظ الصور', noPhotos:'لا توجد صور متاحة',
-             maxPhotos:'الحد الأقصى 4 صور', invalidUrl:'❌ رابط URL غير صحيح', photoAdded:'✅ تمت إضافة الصورة',
-             photoReplaced:'✅ تم استبدال الصورة', enterUrl:'أدخل رابط URL', clickToReplace:'انقر على صورة لاستبدالها',
-             imageLoadError:'❌ لا يمكن تحميل هذه الصورة.<br>الأسباب المحتملة:<br>• رابط URL غير صحيح<br>• CORS محظور<br>• موقع يحظر المشاركة<br><br>💡 استضف صورتك على Imgur أو Dropbox'},
-      labels:{steps:'مراحل', pace:'الإيقاع'},
-      untitled:'بدون عنوان',
-      btn_extra:{share:'📤 مشاركة'},
-      shareModal:{title:'📸 صورتك جاهزة!', 
-                 text:'لقد قمنا بإنشاء صورة كاملة لرحلتك. قم بتنزيلها ومشاركتها على شبكات التواصل الاجتماعي المفضلة لديك!',
-                 download:'⬇️ تنزيل الصورة', close:'إغلاق', generating:'🎨 جارٍ إنشاء صورتك...'},
-      shareImage:{intro:'وإليكم رحلتنا القادمة! المزيد من المعلومات قريبًا!'}
-  }
-};
+const I18N = ORT_I18N_DASHBOARD.I18N;
 
 
 // ================= Langue & navigation =================
 (function(){
   // 1) lecture tolérante (URL → ORT_LANG → lang → <html>)
   const p   = new URLSearchParams(location.search).get('lang');
-  const had = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang');
+  const had = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG');
   const htmlAttr = document.documentElement.lang || 'fr';
   const lang = (p || had || htmlAttr || 'fr').slice(0,2).toLowerCase();
 
   // 2) persistance unifiée
-  localStorage.setItem('ORT_LANG', lang);
+  localStorage.setItem('lang', lang);
+  localStorage.setItem('ORT_LANG', lang); // compatibilite ancienne cle
   localStorage.setItem('lang', lang);
 
   // 3) applique lang + sens d'écriture
@@ -357,7 +243,7 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   document.documentElement.dir  = (lang === 'ar') ? 'rtl' : 'ltr';
 
   // 4) dictionnaire pour UI dashboard
-  const L = I18N[lang] || I18N.fr;
+  const L = I18N[lang] || I18N.en;
   window._DASH_L = L; // accessible aux handlers de boutons
 
   // 5) UI labels (les éléments du header sont gérés par ort-header.js)
@@ -369,6 +255,9 @@ shareImage:{intro:'Et voici notre prochain voyage ! Plus d\'informations très p
   document.getElementById('lblEmpty').textContent = L.empty;
   document.getElementById('btnStart').textContent = L.start;
   document.title = 'OneRoadTrip — ' + L.title;
+  // Bouton reserve a l administrateur : etait le seul texte jamais traduit
+  var _em = document.querySelector('#btnExportModules span');
+  if (_em && L.exportModules) _em.textContent = L.exportModules;
   const hint = document.getElementById('hint');
   hint.textContent = L.hint; hint.style.display='block';
 })();
@@ -434,7 +323,7 @@ let PHOTOS_LIEUX = null;
 async function loadPhotosLieuxOnce(){
   if (PHOTOS_LIEUX) return PHOTOS_LIEUX;
   try{
-    const r = await fetch('/data/photos-json/photos_lieux.json', { cache: 'no-store' });
+    const r = await fetch('/data/photos-json/photos_lieux.json');
     PHOTOS_LIEUX = r.ok ? (await r.json()) : {};
   }catch(_){ PHOTOS_LIEUX = {}; }
   return PHOTOS_LIEUX;
@@ -499,7 +388,7 @@ const Dashboard = (()=>{
   const listEl = document.getElementById('list');
   const emptyEl= document.getElementById('emptyState');
   const lang = localStorage.getItem('lang') || document.documentElement.lang || 'fr';
-  const L = I18N[lang] || I18N.fr;
+  const L = I18N[lang] || I18N.en;
   let currentUser = null;
 
   // Utilise le State Manager au lieu de localStorage direct
@@ -536,9 +425,14 @@ async function trTitleIfNeeded(txt){
   async function render(){
     listEl.innerHTML='';
     if(!currentUser){ emptyEl.style.display='block'; document.getElementById('lblEmpty').textContent=L.needLogin; return; }
-    
+
+    // Les photos DOIVENT etre la avant de dessiner les cartes : sinon
+    // getPhotosForPlace renvoie vide et les vignettes manquent au hasard.
+    const photosPretes = loadPhotosLieuxOnce();
+
     // Charge les voyages depuis le State Manager (Firestore UNIQUEMENT)
     const allTrips = await window.ORT_STATE.getAllTrips();
+    await photosPretes;
     // Filtrer UNIQUEMENT les voyages sauvegardés (saved === true)
     const data = allTrips.filter(t => t.saved === true);
     console.log('[DASHBOARD] Trips total:', allTrips.length, '| Saved:', data.length);
@@ -689,6 +583,9 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
       const staticBtn = btn(L.btn.openStatic || '🗺️ Visualiser', ()=> { location.href = staticUrlWithTrip; });
       actions.appendChild(staticBtn);
     }
+// 🛠️ Reprendre le voyage dans le constructeur de carte
+const builderBtn = btn('🛠️ ' + ((L.btn && L.btn.openBuilder) || 'Modifier sur la carte'), ()=> openBuilder(rt));
+actions.appendChild(builderBtn);
 const renameBtn = btn(L.btn.rename, ()=> renameRT(rt)); actions.appendChild(renameBtn);
 const photosBtn = btn('📸 ' + (L.btn.photos || 'Photos'), ()=> selectPhotos(rt)); actions.appendChild(photosBtn);
 // const editBtn = btn(L.btn.settings, ()=> editParams(rt)); actions.appendChild(editBtn); // TODO: réactiver
@@ -703,6 +600,12 @@ const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> openShareCompos
   }
 
   function btn(lbl, onclick, danger=false){ const b=document.createElement('button'); b.className='btn'+(danger?' danger':''); b.type='button'; b.textContent=lbl; b.onclick=onclick; return b; }
+
+// Renvoie vers le constructeur de carte, qui rechargera les etapes de ce voyage
+function openBuilder(rt){
+  const lang = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || 'fr';
+  location.href = `carte_builder.html?tripId=${encodeURIComponent(rt.id)}&lang=${lang}`;
+}
 
 function openRT(rt){
     const lang = localStorage.getItem('lang') || 'fr';
@@ -727,7 +630,7 @@ function openRT(rt){
     if (itinId && !/custom|^temp|^\d{10,}/.test(itinId)) {
       // Slugifier comme generate-v2.js : "84::vaucluse" → "84-vaucluse", "KH::phnom-penh" → "kh-phnom-penh"
       var slug = itinId.toLowerCase().replace(/::/g, '-').replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
+      var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar', nl:'routes', de:'routen'};
       var langSlug = LSLUG[lang] || 'itineraries';
       return '/' + langSlug + '/' + slug + '.html';
     }
@@ -735,7 +638,7 @@ function openRT(rt){
     // Pas d'itinéraire catalogue → page coquille custom.html
     // Le voyage sera chargé depuis Firestore via tripId dans l'URL
     if (rt.steps && rt.steps.length > 0) {
-      var LSLUG2 = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar'};
+      var LSLUG2 = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar', nl:'routes', de:'routen'};
       var langSlug2 = LSLUG2[lang] || 'itineraries';
       return '/' + langSlug2 + '/custom.html';
     }
@@ -1347,8 +1250,8 @@ function openRT(rt){
         const endDate = end ? new Date(end) : startDate;
         
         const options = { day: '2-digit', month: 'short' };
-        const startStr = startDate.toLocaleDateString('fr-FR', options);
-        const endStr = endDate.toLocaleDateString('fr-FR', options);
+        const startStr = startDate.toLocaleDateString(ortDateLocale(), options);
+        const endStr = endDate.toLocaleDateString(ortDateLocale(), options);
         
         if (startStr === endStr) return startStr;
         return `Du ${startStr} au ${endStr}`;
@@ -1584,15 +1487,8 @@ function openRT(rt){
   function buildShareCard(rt, photo, opts){
     opts = opts || {};
     const lang = localStorage.getItem('lang') || 'fr';
-    const SC_I18N = {
-      fr:{by:'Itinéraire généré par',route:'Le tracé',steps:'Nos étapes',cities:'villes',nights:'nuits',duration:'Durée du voyage',distance:'Distance'},
-      en:{by:'Itinerary generated by',route:'The route',steps:'Our stops',cities:'cities',nights:'nights',duration:'Trip duration',distance:'Distance'},
-      es:{by:'Itinerario generado por',route:'La ruta',steps:'Nuestras etapas',cities:'ciudades',nights:'noches',duration:'Duración del viaje',distance:'Distancia'},
-      pt:{by:'Itinerário gerado por',route:'O percurso',steps:'Nossas etapas',cities:'cidades',nights:'noites',duration:'Duração da viagem',distance:'Distância'},
-      it:{by:'Itinerario generato da',route:'Il percorso',steps:'Le nostre tappe',cities:'città',nights:'notti',duration:'Durata del viaggio',distance:'Distanza'},
-      ar:{by:'خط سير تم إنشاؤه بواسطة',route:'المسار',steps:'محطاتنا',cities:'مدن',nights:'ليالٍ',duration:'مدة الرحلة',distance:'المسافة'}
-    };
-    const SC = SC_I18N[lang] || SC_I18N.fr;
+    const SC_I18N = ORT_I18N_DASHBOARD.SC_I18N;
+    const SC = SC_I18N[lang] || SC_I18N.en;
     const title = rt.title || 'Mon voyage';
     const country = rt.country || rt.cc || '';
     const nights = rt.nights || rt.nb_nights || 0;
@@ -1895,7 +1791,7 @@ function openRT(rt){
   // Générer le texte viral pour le post
   function generateViralText(rt, publicUrl) {
     const lang = localStorage.getItem('lang') || 'fr';
-    const L = I18N[lang] || I18N.fr;
+    const L = I18N[lang] || I18N.en;
     
     const title = rt.title || (L?.untitled || 'Mon roadtrip');
     const nights = rt.nights || rt.nb_nights || 0;
@@ -1946,8 +1842,8 @@ function openRT(rt){
       const endDate = end ? new Date(end) : startDate;
       
       const options = { day: 'numeric', month: 'long', year: 'numeric' };
-      const startStr = startDate.toLocaleDateString('fr-FR', options);
-      const endStr = endDate.toLocaleDateString('fr-FR', options);
+      const startStr = startDate.toLocaleDateString(ortDateLocale(), options);
+      const endStr = endDate.toLocaleDateString(ortDateLocale(), options);
       
       if (startDate.toDateString() === endDate.toDateString()) {
         return `Le ${startStr}`;
@@ -2032,56 +1928,13 @@ ${roUrl}`
 
   // Affiche une box de confirmation avant génération
   async function generateAndShowImage(rt) {
-    const lang = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
-    const L = I18N[lang] || I18N.fr;
+    const lang = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || 'fr';
+    const L = I18N[lang] || I18N.en;
     
     // Textes de confirmation par langue
-    const confirmTexts = {
-      fr: {
-        title: '📸 Générer une image de partage ?',
-        text: 'Cliquer ci-dessous pour générer le détail de votre voyage et le partager sur les réseaux sociaux. Vous pouvez générer un texte de présentation avant de créer l\'image.',
-        placeholder: 'Message personnalisé (optionnel, 300 caractères max)...',
-        generate: 'Générer l\'image',
-        cancel: 'Annuler'
-      },
-      en: {
-        title: '📸 Generate share image?',
-        text: 'Click below to generate your trip details and share them on social networks. You can generate a presentation text before creating the image.',
-        placeholder: 'Custom message (optional, 300 characters max)...',
-        generate: 'Generate image',
-        cancel: 'Cancel'
-      },
-      it: {
-        title: '📸 Generare immagine di condivisione?',
-        text: 'Clicca qui sotto per generare i dettagli del tuo viaggio e condividerli sui social network. Puoi generare un testo di presentazione prima di creare l\'immagine.',
-        placeholder: 'Messaggio personalizzato (facoltativo, 300 caratteri max)...',
-        generate: 'Genera immagine',
-        cancel: 'Annulla'
-      },
-      es: {
-        title: '📸 ¿Generar imagen para compartir?',
-        text: 'Haz clic a continuación para generar los detalles de tu viaje y compartirlos en las redes sociales. Puedes generar un texto de presentación antes de crear la imagen.',
-        placeholder: 'Mensaje personalizado (opcional, 300 caracteres máx)...',
-        generate: 'Generar imagen',
-        cancel: 'Cancelar'
-      },
-      pt: {
-        title: '📸 Gerar imagem de partilha?',
-        text: 'Clique abaixo para gerar os detalhes da sua viagem e partilhá-los nas redes sociais. Pode gerar um texto de apresentação antes de criar a imagem.',
-        placeholder: 'Mensagem personalizada (opcional, 300 caracteres máx)...',
-        generate: 'Gerar imagem',
-        cancel: 'Cancelar'
-      },
-      ar: {
-        title: '📸 إنشاء صورة للمشاركة؟',
-        text: 'انقر أدناه لإنشاء تفاصيل رحلتك ومشاركتها على الشبكات الاجتماعية. يمكنك إنشاء نص تقديمي قبل إنشاء الصورة.',
-        placeholder: 'رسالة مخصصة (اختياري، 300 حرف كحد أقصى)...',
-        generate: 'إنشاء الصورة',
-        cancel: 'إلغاء'
-      }
-    };
+    const confirmTexts = ORT_I18N_DASHBOARD.CONFIRM_TEXTS;
     
-    const texts = confirmTexts[lang] || confirmTexts.fr;
+    const texts = confirmTexts[lang] || confirmTexts.en;
     
     // Créer modal de confirmation avec zone de texte
     return new Promise((resolve) => {
@@ -2157,15 +2010,8 @@ ${roUrl}`
           document.body.removeChild(link);
           
           // Toast de succès
-          const successTexts = {
-            fr: '✅ Image téléchargée !',
-            en: '✅ Image downloaded!',
-            it: '✅ Immagine scaricata!',
-            es: '✅ ¡Imagen descargada!',
-            pt: '✅ Imagem descarregada!',
-            ar: '✅ تم تنزيل الصورة!'
-          };
-          toast(successTexts[lang] || successTexts.fr);
+          const successTexts = ORT_I18N_DASHBOARD.SUCCESS_TEXTS;
+          toast(successTexts[lang] || successTexts.en);
           resolve(true);
           
         } catch (error) {
@@ -2224,7 +2070,7 @@ ${roUrl}`
       toast('🎨 Génération de votre post Instagram...');
       
       try {
-        const L = I18N[lang] || I18N.fr;
+        const L = I18N[lang] || I18N.en;
         const captionTpl = L?.insta?.caption || 'Mon voyage ORT : {title} — {nights} nuits · {kms} km · {steps} {stepsLbl}';
         const caption = captionTpl
           .replace('{title}', rt.title || (L?.untitled || 'Sans titre'))
@@ -2500,11 +2346,11 @@ function ensureSeed(){
 // ===== Boutons barre haute =====
 (function(){
 document.getElementById('btnNew').addEventListener('click',()=>{
-  const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+  const code = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || 'fr';
   location.href = 'index.html?lang=' + code;
 });
 document.getElementById('btnStart').addEventListener('click',()=>{
-  const code = localStorage.getItem('ORT_LANG') || localStorage.getItem('lang') || 'fr';
+  const code = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || 'fr';
   location.href = 'index.html?lang=' + code;
 });
   document.getElementById('btnImport').addEventListener('click',async()=>{
@@ -2566,7 +2412,7 @@ document.getElementById('btnStart').addEventListener('click',()=>{
   });
   
   document.getElementById('btnDeleteAll')?.addEventListener('click',async()=>{
-    const DL = window._DASH_L || I18N.fr;
+    const DL = window._DASH_L || I18N.en;
     if(!firebase.auth().currentUser) {
       alert(DL.needLoginAction || 'Vous devez être connecté');
       return;
@@ -2595,7 +2441,7 @@ document.getElementById('btnStart').addEventListener('click',()=>{
 toast(`${deleted} voyage(s) supprimé(s)`);
     // Rafraîchir l'affichage sans recharger la page
     setTimeout(async () => {
-      await window.ORT_DASHBOARD_ADAPTER.loadTrips();
+      await render();
     }, 1000);
   });
 })();
@@ -2649,7 +2495,10 @@ console.log('ℹ️ [MIGRATION] Migration localStorage désactivée');
   // Charger les photos des lieux pour le carrousel
   await loadPhotosLieuxOnce();
 
-  await window.ORT_DASHBOARD_ADAPTER.init();
+  // L'adaptateur vidait #list et reconstruisait des cartes simplifiees,
+  // sans photos ni onglets, en ecrasant l'affichage de cette page.
+  // On ne garde que ses utilitaires, plus son affichage.
+  // await window.ORT_DASHBOARD_ADAPTER.init();
   
   console.log('✅ [DASHBOARD] Prêt');
 })();

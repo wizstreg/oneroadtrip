@@ -1,0 +1,163 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "JP" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays JP)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+JP::abashiri	Abashiri		
+JP::asahidake-onsen	Asahidake Onsen		
+JP::asahikawa	Asahikawa	Asahikawa	Asahikawa
+JP::ashikaga	Ashikaga		
+JP::aso	Aso		
+JP::beppu	Beppu		
+JP::biei	Biei	Biei	Biei
+JP::chatan	Chatan		
+JP::chichibu	Chichibu		
+JP::daigo	Daigo		
+JP::fujinomiya	Fujinomiya		
+JP::fukaura	Fukaura		
+JP::fukuoka	Fukuoka	Fukuoka Prefecture	Fukuoka Prefecture
+JP::furano	Furano	Furano	Furano
+JP::futtsu	Futtsu		
+JP::ginzan-onsen	Ginzan Onsen		
+JP::hachimantai	Hachimantai		
+JP::hakodate	Hakodate		
+JP::hakone	Hakone	Hakone	Hakone
+JP::hamada	Hamada		
+JP::hiraizumi	Hiraizumi		
+JP::hirosaki	Hirosaki		
+JP::hiroshima	Hiroshima	Hiroshima	Hiroshima
+JP::hitachinaka	Hitachinaka		
+JP::hokuryu	Hokuryu		
+JP::inabe	Inabe		
+JP::ise	Ise		
+JP::ishigaki	Ishigaki		
+JP::itoman	Itoman		
+JP::itoshima	Itoshima		
+JP::iwaizumi	Iwaizumi		
+JP::iwakuni	Iwakuni		
+JP::izumo	Izumo		
+JP::kagoshima	Kagoshima		
+JP::kakunodate	Kakunodate		
+JP::kamakura	Kamakura		
+JP::kamikochi	Kamikochi		
+JP::kamishihoro	Kamishihoro		
+JP::kanazawa	Kanazawa		
+JP::kansai	Kansai		
+JP::karatsu	Karatsu		
+JP::kasama	Kasama		
+JP::kawaguchiko	Kawaguchiko		
+JP::kawanehon	Kawanehon		
+JP::kisarazu	Kisarazu		
+JP::kitakyushu	Kitakyushu		
+JP::kitakyushu-kawachi	Kitakyushu Kawachi		
+JP::kumamoto	Kumamoto		
+JP::kurashiki	Kurashiki		
+JP::kurayoshi	Kurayoshi		
+JP::kushiro	Kushiro		
+JP::kyoto	Kyoto		
+JP::maebashi	Maebashi		
+JP::matsue	Matsue		
+JP::matsumoto	Matsumoto		
+JP::matsushima	Matsushima		
+JP::miharu	Miharu		
+JP::minamiizu	Minamiizu		
+JP::miyajima	Miyajima	Itsukushima	Itsukushima
+JP::miyakojima	Miyakojima		
+JP::motobu	Motobu		
+JP::nabari	Nabari		
+JP::nagasaki	Nagasaki		
+JP::nagato	Nagato		
+JP::nago	Nago		
+JP::naha	Naha		
+JP::nakanojo	Nakanojo		
+JP::nanjo	Nanjo		
+JP::nara	Nara	Nara	Nara
+JP::naruko-onsen	Naruko Onsen		
+JP::nikko	Nikko		
+JP::nunobiki-kogen	Nunobiki Kogen		
+JP::okayama	Okayama		
+JP::onna	Onna		
+JP::osaka	Osaka		
+JP::otaru	Otaru		
+JP::oze	Oze		
+JP::rebun	Rebun		
+JP::rishiri	Rishiri		
+JP::sakaiminato	Sakaiminato		
+JP::sapporo	Sapporo	Sapporo	Sapporo
+JP::saroma	Saroma		
+JP::sasebo	Sasebo		
+JP::seki	Seki		
+JP::shakotan	Shakotan		
+JP::shima	Shima		
+JP::shirakawa-go	Shirakawa Go		
+JP::shiretoko	Shiretoko		
+JP::sounkyo	Sounkyo		
+JP::tachikawa	Tachikawa		
+JP::tahara	Tahara		
+JP::takachiho	Takachiho		
+JP::takahashi	Takahashi		
+JP::takayama	Takayama		
+JP::tazawako	Tazawako		
+JP::teshikaga	Teshikaga		
+JP::tokyo	Tokyo		
+JP::tomamu	Tomamu		
+JP::tottori	Tottori		
+JP::towada	Towada		
+JP::toyonemura	Toyonemura		
+JP::toyota	Toyota		
+JP::tsushima	Tsushima		
+JP::tsuta-onsen	Tsuta Onsen		
+JP::urabandai	Urabandai		
+JP::uruma	Uruma		
+JP::wakkanai	Wakkanai		
+JP::yakushima	Yakushima		
+JP::yamaguchi	Yamaguchi		
+JP::yasugi	Yasugi		
+JP::yokohama	Yokohama		
+JP::yokohama-port	Yokohama Port		
+JP::yokote	Yokote		
+JP::yoro	Yoro		
+JP::zao-okama	Zao Okama		
+JP::zao-onsen	Zao Onsen		

@@ -1,0 +1,347 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "FR" → la langue locale (fr) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays FR, partie 2/4)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+FR::condom	Condom	Condom	Condom
+FR::condrieu	Condrieu		
+FR::confolens	Confolens	Confolens	Confolens
+FR::conques	Conques	Conques	Conques
+FR::conques-en-rouergue	Conques En Rouergue	Conques-en-Rouergue	Conques-en-Rouergue
+FR::contrexeville	Contrexeville	Contrexéville	Contrexéville
+FR::corbeil-essonnes	Corbeil Essonnes	Corbeil-Essonnes	Corbeil-Essonnes
+FR::corbie	Corbie	Corbie	Corbie
+FR::corbigny	Corbigny	Corbigny	Corbigny
+FR::cordes-sur-ciel	Cordes Sur Ciel	Cordes-sur-Ciel	Cordes-sur-Ciel
+FR::cormatin	Cormatin		
+FR::cornillon	Cornillon	Cornillon	Cornillon
+FR::correncon-en-vercors	Correncon En Vercors	Corrençon-en-Vercors	Corrençon-en-Vercors
+FR::correns	Correns	Correns	Correns
+FR::corte	Corte	Corte	Corte
+FR::cosne-cours-sur-loire	Cosne Cours Sur Loire	Cosne-Cours-sur-Loire	Cosne-Cours-sur-Loire
+FR::cotignac	Cotignac	Cotignac	Cotignac
+FR::coucy-le-chateau-auffrique	Coucy Le Chateau Auffrique	Coucy-le-Château-Auffrique	Coucy-le-Château-Auffrique
+FR::coulommiers	Coulommiers	Coulommiers	Coulommiers
+FR::coulon	Coulon	Coulon	Coulon
+FR::courances	Courances	Courances	Courances
+FR::coutances	Coutances	Coutances	Coutances
+FR::craon	Craon	Craon	Craon
+FR::creil	Creil	Creil	Creil
+FR::cremieu	Cremieu	Crémieu	Crémieu
+FR::crest	Crest	Crest	Crest
+FR::creteil	Creteil		
+FR::crozant	Crozant	Crozant	Crozant
+FR::crozon	Crozon	Crozon	Crozon
+FR::cruis	Cruis	Cruis	Cruis
+FR::darney	Darney	Darney	Darney
+FR::dauphin	Dauphin	Dauphin	Dauphin
+FR::dax	Dax	Dax	Dax
+FR::deauville	Deauville	Deauville	Deauville
+FR::decize	Decize	Decize	Decize
+FR::delle	Delle	Delle	Delle
+FR::die	Die		Die
+FR::dieppe	Dieppe	Dieppe	Dieppe
+FR::dieulefit	Dieulefit	Dieulefit	Dieulefit
+FR::digne-les-bains	Digne Les Bains	Digne-les-Bains	Digne-les-Bains
+FR::dijon	Dijon	Dijon	Dijon
+FR::dinan	Dinan	Dinan	Dinan
+FR::dinard	Dinard	Dinard	Dinard
+FR::disneyland-paris	Disneyland Paris	Disneyland Paris	Disneyland Paris
+FR::dol-de-bretagne	Dol De Bretagne		Dol-de-Bretagne
+FR::dole	Dole	Dole	Dole
+FR::domfront	Domfront	Domfront	Domfront
+FR::domme	Domme	Domme	Domme
+FR::domremy-la-pucelle	Domremy La Pucelle	Domrémy-la-Pucelle	Domrémy-la-Pucelle
+FR::douarnenez	Douarnenez	Douarnenez	Douarnenez
+FR::dourdan	Dourdan	Dourdan	Dourdan
+FR::dourgne	Dourgne	Dourgne	Dourgne
+FR::draguignan	Draguignan	Draguignan	Draguignan
+FR::drancy	Drancy		
+FR::dreux	Dreux	Dreux	Dreux
+FR::dun-sur-auron	Dun Sur Auron	Dun-sur-Auron	Dun-sur-Auron
+FR::dun-sur-meuse	Dun Sur Meuse	Dun-sur-Meuse	Dun-sur-Meuse
+FR::duras	Duras	Duras	Duras
+FR::ecouen	Ecouen		
+FR::eguilles	Eguilles	Éguilles	Éguilles
+FR::eguisheim	Eguisheim	Eguisheim	Eguisheim
+FR::elne	Elne	Elne	Elne
+FR::embrun	Embrun	Embrun	Embrun
+FR::enghien-les-bains	Enghien Les Bains		
+FR::entraygues-sur-truyere	Entraygues Sur Truyere	Entraygues-sur-Truyère	Entraygues-sur-Truyère
+FR::entrecasteaux	Entrecasteaux	Entrecasteaux	Entrecasteaux
+FR::entrevaux	Entrevaux	Entrevaux	Entrevaux
+FR::epernay	Epernay	Épernay	Épernay
+FR::epinal	Epinal	Épinal	Épinal
+FR::ermenonville	Ermenonville	Ermenonville	Ermenonville
+FR::espelette	Espelette	Espelette	Espelette
+FR::esquelbecq	Esquelbecq		
+FR::essoyes	Essoyes	Essoyes	Essoyes
+FR::estaing	Estaing	Estaing	Estaing
+FR::etampes	Etampes	Étampes	Étampes
+FR::etanche	Etanche	L'Étanche Abbey	abbaye de l'Étanche
+FR::etival-clairefontaine	Etival Clairefontaine	Étival-Clairefontaine	Étival-Clairefontaine
+FR::etretat	Etretat	Étretat	Étretat
+FR::eu	Eu	Eu	Eu
+FR::evaux-les-bains	Evaux Les Bains	Évaux-les-Bains	Évaux-les-Bains
+FR::evian-les-bains	Evian Les Bains	Évian-les-Bains	Évian-les-Bains
+FR::evisa	Evisa		
+FR::evreux	Evreux	Évreux	Évreux
+FR::evron	Evron	Évron	Évron
+FR::evry-courcouronnes	Evry Courcouronnes	Évry-Courcouronnes	Évry-Courcouronnes
+FR::eygalieres	Eygalieres	Eygalières	Eygalières
+FR::eyguieres	Eyguieres	Eyguières	Eyguières
+FR::eyragues	Eyragues	Eyragues	Eyragues
+FR::eze	Eze	Èze	Èze
+FR::falaise	Falaise	Falaise	Falaise
+FR::fecamp	Fecamp	Fécamp	Fécamp
+FR::felletin	Felletin	Felletin	Felletin
+FR::fere-en-tardenois	Fere En Tardenois	Fère-en-Tardenois	Fère-en-Tardenois
+FR::ferrette	Ferrette	Ferrette	Ferrette
+FR::figeac	Figeac	Figeac	Figeac
+FR::firminy	Firminy	Firminy	Firminy
+FR::flavigny-sur-ozerain	Flavigny Sur Ozerain	Flavigny-sur-Ozerain	Flavigny-sur-Ozerain
+FR::fleurance	Fleurance	Fleurance	Fleurance
+FR::fleurie	Fleurie	Fleurie	Fleurie
+FR::florac	Florac	Florac	Florac
+FR::foix	Foix	Foix	Foix
+FR::fondation-louis-vuitton	Fondation Louis Vuitton		
+FR::font-romeu	Font Romeu	Font-Romeu-Odeillo-Via	Font-Romeu-Odeillo-Via
+FR::fontaine-de-vaucluse	Fontaine De Vaucluse	Fontaine-de-Vaucluse	Fontaine-de-Vaucluse
+FR::fontainebleau	Fontainebleau	Fontainebleau	Fontainebleau
+FR::fontenay-le-comte	Fontenay Le Comte	Fontenay-le-Comte	Fontenay-le-Comte
+FR::fontevraud-l-abbaye	Fontevraud L Abbaye	Fontevraud-l'Abbaye	Fontevraud-l'Abbaye
+FR::fontvieille	Fontvieille	Fontvieille	Fontvieille
+FR::forcalquier	Forcalquier	Forcalquier	Forcalquier
+FR::forteresse-de-montbazon	Forteresse De Montbazon		
+FR::forteresse-royale-de-chinon	Forteresse Royale De Chinon		
+FR::fougeres	Fougeres	Fougères	Fougères
+FR::fougerolles	Fougerolles	Fougerolles	Fougerolles
+FR::fources	Fources	Fourcès	Fourcès
+FR::fox-amphoux	Fox Amphoux	Fox-Amphoux	Fox-Amphoux
+FR::frejus	Frejus	Fréjus	Fréjus
+FR::fresnay-sur-sarthe	Fresnay Sur Sarthe	Fresnay-sur-Sarthe	Fresnay-sur-Sarthe
+FR::fresnes	Fresnes		
+FR::fresselines	Fresselines	Fresselines	Fresselines
+FR::gaillac	Gaillac	Gaillac	Gaillac
+FR::galeria	Galeria		
+FR::gap	Gap	Gap	Gap
+FR::gargilesse-dampierre	Gargilesse Dampierre	Gargilesse-Dampierre	Gargilesse-Dampierre
+FR::gavarnie	Gavarnie	Gavarnie	Gavarnie
+FR::genets	Genets		
+FR::genos-loudenvielle	Genos Loudenvielle	Génos-Loudenvielle Lake	lac de Génos-Loudenvielle
+FR::gerardmer	Gerardmer	Gérardmer	Gérardmer
+FR::gerberoy	Gerberoy	Gerberoy	Gerberoy
+FR::gien	Gien	Gien	Gien
+FR::gimel-les-cascades	Gimel Les Cascades	Gimel-les-Cascades	Gimel-les-Cascades
+FR::giromagny	Giromagny	Giromagny	Giromagny
+FR::giverny	Giverny	Giverny	Giverny
+FR::givet	Givet	Givet	Givet
+FR::givry	Givry	Givry	Givry
+FR::gordes	Gordes	Gordes	Gordes
+FR::gorron	Gorron	Gorron	Gorron
+FR::goudargues	Goudargues	Goudargues	Goudargues
+FR::goult	Goult	Goult	Goult
+FR::goumois	Goumois		
+FR::gourdon	Gourdon	Gourdon	Gourdon
+FR::goury-cap-de-la-hague	Goury Cap De La Hague		
+FR::goussainville-vieux-pays	Goussainville Vieux Pays		
+FR::gouville-sur-mer	Gouville Sur Mer	Gouville-sur-Mer	Gouville-sur-Mer
+FR::grand-palais	Grand Palais		
+FR::granville	Granville	Granville	Granville
+FR::grasse	Grasse		
+FR::gravelines	Gravelines	Gravelines	Gravelines
+FR::gray	Gray	Gray	Gray
+FR::grenoble	Grenoble	Grenoble	Grenoble
+FR::grignan	Grignan	Grignan	Grignan
+FR::grimaud	Grimaud	Grimaud	Grimaud
+FR::gruissan	Gruissan	Gruissan	Gruissan
+FR::guebwiller	Guebwiller	Guebwiller	Guebwiller
+FR::guerande	Guerande	Guérande	Guérande
+FR::gueret	Gueret	Guéret	Guéret
+FR::guillaumes	Guillaumes		
+FR::guillestre	Guillestre	Guillestre	Guillestre
+FR::guingamp	Guingamp		
+FR::haguenau	Haguenau		
+FR::haroue	Haroue	Haroué	Haroué
+FR::haroué	Haroué		
+FR::hartmannswillerkopf	Hartmannswillerkopf	Hartmannswillerkopf	Vieil Armand
+FR::hattonchatel	Hattonchatel	Hattonchâtel	Hattonchâtel
+FR::haut-koenigsbourg	Haut Koenigsbourg	Château du Haut-Koenigsbourg	Château du Haut-Kœnigsbourg
+FR::hauteville-lompnes	Hauteville Lompnes	Hauteville-Lompnes	Hauteville-Lompnes
+FR::hautvillers	Hautvillers	Hautvillers	Hautvillers
+FR::hennebont	Hennebont	Hennebont	Hennebont
+FR::henrichemont	Henrichemont	Henrichemont	Henrichemont
+FR::hericourt	Hericourt	Héricourt	Héricourt
+FR::herisson	Herisson	Hérisson	Hérisson
+FR::hesdin	Hesdin	Hesdin	Hesdin
+FR::honfleur	Honfleur	Honfleur	Honfleur
+FR::hossegor	Hossegor	Soorts-Hossegor	Soorts-Hossegor
+FR::houdan	Houdan	Houdan	Houdan
+FR::hunawihr	Hunawihr	Hunawihr	Hunawihr
+FR::hunspach	Hunspach	Hunspach	Hunspach
+FR::hyeres	Hyeres	Hyères	Hyères
+FR::ile-rousse	Ile Rousse		
+FR::illiers-combray	Illiers Combray	Illiers-Combray	Illiers-Combray
+FR::issoire	Issoire	Issoire	Issoire
+FR::issoudun	Issoudun	Issoudun	Issoudun
+FR::jarnac	Jarnac	Jarnac	Jarnac
+FR::joigny	Joigny	Joigny	Joigny
+FR::joinville	Joinville	Joinville	Joinville
+FR::joinville-le-pont	Joinville Le Pont		
+FR::josselin	Josselin	Josselin	Josselin
+FR::joyeuse	Joyeuse	Joyeuse	Joyeuse
+FR::jublains	Jublains	Jublains	Jublains
+FR::jujurieux	Jujurieux	Jujurieux	Jujurieux
+FR::julienas	Julienas	Juliénas	Juliénas
+FR::jumieges	Jumieges	Jumièges	Jumièges
+FR::jussey	Jussey	Jussey	Jussey
+FR::kaysersberg	Kaysersberg	Kaysersberg	Kaysersberg
+FR::l-aigle	L Aigle	L'Aigle	L'Aigle
+FR::l-arbresle	L Arbresle	L'Arbresle	L'Arbresle
+FR::l-epine	L Epine	L'Épine	L'Épine
+FR::l-hay-les-roses	L Hay Les Roses		
+FR::l-ile-d-ouessant	L Ile D Ouessant	Ouessant, Chaussée Keller	L'île d'Ouessant, la chaussée Keller
+FR::l-ile-d-yeu	L Ile D Yeu	L'Île-d'Yeu	L'Île-d'Yeu
+FR::l-isle-adam	L Isle Adam	L'Isle-Adam	L'Isle-Adam
+FR::l-isle-jourdain	L Isle Jourdain	L'Isle-Jourdain	L'Isle-Jourdain
+FR::l-isle-sur-la-sorgue	L Isle Sur La Sorgue	L'Isle-sur-la-Sorgue	L'Isle-sur-la-Sorgue
+FR::la-baule	La Baule	La Baule-Escoublac	La Baule-Escoublac
+FR::la-borne	La Borne	Borne	Borne
+FR::la-bourboule	La Bourboule	La Bourboule	La Bourboule
+FR::la-bresse	La Bresse	La Bresse	La Bresse
+FR::la-chaise-dieu	La Chaise Dieu	La Chaise-Dieu	La Chaise-Dieu
+FR::la-chapelle-en-vercors	La Chapelle En Vercors	La Chapelle-en-Vercors	La Chapelle-en-Vercors
+FR::la-charite-sur-loire	La Charite Sur Loire	La Charité-sur-Loire	La Charité-sur-Loire
+FR::la-chatre	La Chatre	La Châtre	La Châtre
+FR::la-ciotat	La Ciotat	La Ciotat	La Ciotat
+FR::la-clusaz	La Clusaz	La Clusaz	La Clusaz
+FR::la-colle-sur-loup	La Colle Sur Loup		
+FR::la-courneuve	La Courneuve		
+FR::la-couvertoirade	La Couvertoirade	La Couvertoirade	La Couvertoirade
+FR::la-defense	La Defense		
+FR::la-fleche	La Fleche	La Flèche	La Flèche
+FR::la-flotte	La Flotte		
+FR::la-grande-motte	La Grande Motte	La Grande-Motte	La Grande-Motte
+FR::la-malene	La Malene	La Malène	La Malène
+FR::la-palud-sur-verdon	La Palud Sur Verdon	La Palud-sur-Verdon	La Palud-sur-Verdon
+FR::la-petite-pierre	La Petite Pierre	La Petite-Pierre	La Petite-Pierre
+FR::la-reole	La Reole	La Réole	La Réole
+FR::la-roche-bernard	La Roche Bernard	La Roche-Bernard	La Roche-Bernard
+FR::la-roche-guyon	La Roche Guyon	La Roche-Guyon	La Roche-Guyon
+FR::la-roche-sur-yon	La Roche Sur Yon	La Roche-sur-Yon	La Roche-sur-Yon
+FR::la-rochefoucauld	La Rochefoucauld	La Rochefoucauld	La Rochefoucauld
+FR::la-rochelle	La Rochelle	La Rochelle	La Rochelle
+FR::la-rochepot	La Rochepot	La Rochepot	La Rochepot
+FR::la-romieu	La Romieu		
+FR::la-roque-gageac	La Roque Gageac	La Roque-Gageac	La Roque-Gageac
+FR::la-roque-sur-ceze	La Roque Sur Ceze	La Roque-sur-Cèze	La Roque-sur-Cèze
+FR::la-sone	La Sone	La Sône	La Sône
+FR::la-souterraine	La Souterraine	La Souterraine	La Souterraine
+FR::labeaume	Labeaume	Labeaume	Labeaume
+FR::labergement-sainte-marie	Labergement Sainte Marie	Labergement-Sainte-Marie	Labergement-Sainte-Marie
+FR::lac-guerledan	Lac Guerledan		
+FR::lacaune	Lacaune	Lacaune	Lacaune
+FR::lacoste	Lacoste	Lacoste	Lacoste
+FR::lagrasse	Lagrasse	Lagrasse	Lagrasse
+FR::laguiole	Laguiole	Laguiole	Laguiole
+FR::lambesc	Lambesc	Lambesc	Lambesc
+FR::langeais	Langeais	Langeais	Langeais
+FR::langogne	Langogne	Langogne	Langogne
+FR::langres	Langres	Langres	Langres
+FR::lans-en-vercors	Lans En Vercors	Lans-en-Vercors	Lans-en-Vercors
+FR::lantosque	Lantosque		
+FR::laon	Laon	Laon	Laon
+FR::larressingle	Larressingle	Larressingle	Larressingle
+FR::lassay-les-chateaux	Lassay Les Chateaux	Lassay-les-Châteaux	Lassay-les-Châteaux
+FR::lastours	Lastours	Lastours	Lastours
+FR::laudun-l-ardoise	Laudun L Ardoise		
+FR::lautrec	Lautrec	Lautrec	Lautrec
+FR::lauzerte	Lauzerte	Lauzerte	Lauzerte
+FR::laval	Laval	Laval	Laval
+FR::lavaudieu	Lavaudieu	Lavaudieu	Lavaudieu
+FR::lavaur	Lavaur	Lavaur	Lavaur
+FR::lavoute-chilhac	Lavoute Chilhac	Lavoûte-Chilhac	Lavoûte-Chilhac
+FR::le-bec-hellouin	Le Bec Hellouin		
+FR::le-castellet	Le Castellet		
+FR::le-cateau-cambresis	Le Cateau Cambresis	Le Cateau-Cambrésis	Le Cateau-Cambrésis
+FR::le-chambon-sur-lignon	Le Chambon Sur Lignon	Le Chambon-sur-Lignon	Le Chambon-sur-Lignon
+FR::le-croisic	Le Croisic		
+FR::le-crotoy	Le Crotoy	Le Crotoy	Le Crotoy
+FR::le-frasnois	Le Frasnois	Le Frasnois	Le Frasnois
+FR::le-havre	Le Havre		
+FR::le-mans	Le Mans		
+FR::le-mont-dore	Le Mont Dore	Mont-Dore	Mont-Dore
+FR::le-neubourg	Le Neubourg	Le Neubourg	Le Neubourg
+FR::le-palais	Le Palais		
+FR::le-paradou	Le Paradou	Paradou	Paradou
+FR::le-poet-laval	Le Poet Laval	Le Poët-Laval	Le Poët-Laval
+FR::le-raincy	Le Raincy		
+FR::le-treport	Le Treport	Le Tréport	Le Tréport
+FR::lectoure	Lectoure	Lectoure	Lectoure
+FR::lens	Lens	Lens	Lens
+FR::les-andelys	Les Andelys	Les Andelys	Les Andelys
+FR::les-baux-de-provence	Les Baux De Provence	Les Baux-de-Provence	Les Baux-de-Provence
+FR::les-epesses	Les Epesses		
+FR::les-eyzies	Les Eyzies		
+FR::les-riceys	Les Riceys	Les Riceys	Les Riceys
+FR::les-sables-d-olonne	Les Sables D Olonne		
+FR::les-salles-sur-verdon	Les Salles Sur Verdon	Les Salles-sur-Verdon	Les Salles-sur-Verdon
+FR::les-thons	Les Thons	Les Thons	Les Thons
+FR::les-vans	Les Vans	Les Vans	Les Vans
+FR::leucate	Leucate	Leucate	Leucate
+FR::levens	Levens		
+FR::lille	Lille		
+FR::limoges	Limoges		
+FR::limoux	Limoux	Limoux	Limoux
+FR::liverdun	Liverdun	Liverdun	Liverdun
+FR::livry-gargan	Livry Gargan		
+FR::loches	Loches	Loches	Loches
+FR::locmariaquer	Locmariaquer	Locmariaquer	Locmariaquer
+FR::locronan	Locronan	Locronan	Locronan
+FR::lodeve	Lodeve	Lodève	Lodève
+FR::longwy	Longwy	Longwy	Longwy
+FR::lorient	Lorient	Lorient	Lorient
+FR::loudun	Loudun	Loudun	Loudun
+FR::louhans	Louhans	Louhans	Louhans

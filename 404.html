@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,follow">
+<title>Page introuvable | OneRoadTrip</title>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{--p:#113f7a;--pd:#0a2a57;--s:#00b2ff;--a:#ff6b35;--t:#2c3e50;--tl:#7f8c8d;--bl:#f8f9fa;--bd:#e1e8ed}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Inter,system-ui,sans-serif;color:var(--t);background:var(--bl);line-height:1.6;
+     min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.box{background:#fff;border:1px solid var(--bd);border-radius:14px;box-shadow:0 8px 25px rgba(0,0,0,.08);
+     max-width:560px;width:100%;padding:40px 32px;text-align:center}
+.logo{font-family:Playfair Display,serif;font-size:1.15rem;font-weight:700;color:var(--pd);margin-bottom:28px;
+      text-decoration:none;display:inline-block}
+.code{font-family:Playfair Display,serif;font-size:4rem;line-height:1;color:var(--p);margin-bottom:8px}
+h1{font-size:1.35rem;font-weight:600;margin-bottom:12px;color:var(--pd)}
+p{font-size:.95rem;color:var(--tl);margin-bottom:28px}
+.btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+a.btn{display:inline-block;padding:11px 22px;border-radius:24px;text-decoration:none;font-size:.9rem;font-weight:600}
+a.primary{background:var(--p);color:#fff}
+a.primary:hover{background:var(--pd)}
+a.ghost{background:#fff;color:var(--p);border:1px solid var(--bd)}
+a.ghost:hover{background:var(--bl)}
+.langs{margin-top:26px;font-size:.8rem;color:var(--tl)}
+.langs a{color:var(--p);text-decoration:none;margin:0 5px}
+.langs a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+<div class="box">
+  <a href="/index.html" class="logo">OneRoadTrip</a>
+  <div class="code">404</div>
+  <h1 id="t">Cette page n'existe pas</h1>
+  <p id="d">Le lien est peut-être ancien, ou l'adresse comporte une erreur.</p>
+  <div class="btns">
+    <a class="btn primary" id="b1" href="/index.html">Retour à l'accueil</a>
+    <a class="btn ghost" id="b2" href="/itineraires/index.html">Voir les itinéraires</a>
+  </div>
+  <div class="langs">
+    <a href="/itineraires/index.html">Français</a>·
+    <a href="/itineraries/index.html">English</a>·
+    <a href="/rutas/index.html">Español</a>·
+    <a href="/roteiros/index.html">Português</a>·
+    <a href="/itinerari/index.html">Italiano</a>
+  </div>
+</div>
+
+<script>
+/* Affiche le texte dans la langue du navigateur. Par défaut : français. */
+(function(){
+  var T={
+    fr:{t:"Cette page n'existe pas",d:"Le lien est peut-être ancien, ou l'adresse comporte une erreur.",b1:"Retour à l'accueil",b2:"Voir les itinéraires",f:"itineraires"},
+    en:{t:"This page doesn't exist",d:"The link may be outdated, or the address contains a mistake.",b1:"Back to home",b2:"Browse itineraries",f:"itineraries"},
+    es:{t:"Esta página no existe",d:"El enlace puede ser antiguo o la dirección contiene un error.",b1:"Volver al inicio",b2:"Ver las rutas",f:"rutas"},
+    pt:{t:"Esta página não existe",d:"O link pode estar desatualizado ou o endereço contém um erro.",b1:"Voltar ao início",b2:"Ver os roteiros",f:"roteiros"},
+    it:{t:"Questa pagina non esiste",d:"Il link potrebbe essere vecchio o l'indirizzo contiene un errore.",b1:"Torna alla home",b2:"Vedi gli itinerari",f:"itinerari"}
+  };
+  /* 1) langue déduite du dossier de l'URL demandée, sinon 2) langue du navigateur */
+  var p=location.pathname.toLowerCase(), l=null;
+  var MAP={itineraires:"fr",itineraries:"en",rutas:"es",roteiros:"pt",itinerari:"it"};
+  for(var k in MAP){ if(p.indexOf("/"+k+"/")===0||p.indexOf("/"+k+"/")>-1){ l=MAP[k]; break; } }
+  if(!l){ l=(navigator.language||"fr").slice(0,2).toLowerCase(); }
+  var x=T[l]||T.fr;
+  document.documentElement.lang=T[l]?l:"fr";
+  document.getElementById("t").textContent=x.t;
+  document.getElementById("d").textContent=x.d;
+  document.getElementById("b1").textContent=x.b1;
+  var b2=document.getElementById("b2");
+  b2.textContent=x.b2;
+  b2.href="/"+x.f+"/index.html";
+  document.title=x.t+" | OneRoadTrip";
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "GB" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays GB)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+GB::aberaeron	Aberaeron		
+GB::aberystwyth	Aberystwyth		
+GB::aldeburgh	Aldeburgh	Aldeburgh	Aldeburgh
+GB::alnwick	Alnwick	Alnwick	Alnwick
+GB::anglesey	Anglesey	Anglesey	Anglesey
+GB::applecross	Applecross		
+GB::arrochar	Arrochar	Arrochar	Arrochar
+GB::assynt	Assynt		
+GB::aviemore	Aviemore		
+GB::bakewell	Bakewell	Bakewell CP	Bakewell CP
+GB::bamburgh	Bamburgh	Bamburgh	Bamburgh
+GB::bath	Bath	Bath	Bath
+GB::beverley	Beverley		
+GB::big-ben	Big Ben		
+GB::birmingham	Birmingham		
+GB::bodmin	Bodmin	Bodmin	Bodmin
+GB::bournemouth	Bournemouth		
+GB::brecon	Brecon	Brecon	Brecon
+GB::brighton	Brighton	Brighton	Brighton
+GB::bristol	Bristol	Bristol	Bristol
+GB::british-library	British Library		
+GB::british-museum	British Museum		
+GB::buckingham-palace	Buckingham Palace	Buckingham Palace	Buckingham Palace
+GB::burnham-market	Burnham Market	Burnham Market	Burnham Market
+GB::bury-st-edmunds	Bury St Edmunds	Bury St Edmunds	Bury St Edmunds
+GB::buxton	Buxton	Buxton	Buxton
+GB::caernarfon	Caernarfon		
+GB::cambridge	Cambridge		
+GB::camden	Camden		
+GB::canterbury	Canterbury	Canterbury	Canterbury
+GB::carbost	Carbost		
+GB::cardiff	Cardiff	Cardiff	Cardiff
+GB::castlebay	Castlebay		
+GB::castleton	Castleton	Castleton	Castleton
+GB::christchurch	Christchurch		
+GB::conwy	Conwy		
+GB::corfe-castle	Corfe Castle		
+GB::courtauld-gallery	Courtauld Gallery		
+GB::covent-garden	Covent Garden		
+GB::coventry	Coventry	Coventry	Coventry
+GB::cromarty	Cromarty		
+GB::deal	Deal	Deal	Deal
+GB::dedham	Dedham		
+GB::design-museum	Design Museum		
+GB::dorchester	Dorchester		
+GB::dornoch	Dornoch		
+GB::dover	Dover	Dover	Dover
+GB::drumnadrochit	Drumnadrochit		
+GB::durham	Durham	County Durham	County Durham
+GB::durness	Durness		
+GB::edale	Edale	Edale	Edale
+GB::edinburgh	Edinburgh		
+GB::ely	Ely	Ely	Ely
+GB::exeter	Exeter		
+GB::filey	Filey		
+GB::fort-william	Fort William	Fort William	Fort William
+GB::gairloch	Gairloch	Gairloch	Gairloch
+GB::glasgow	Glasgow		
+GB::glencoe	Glencoe		
+GB::goathland	Goathland		
+GB::golspie	Golspie		
+GB::grantown-on-spey	Grantown On Spey	Grantown-on-Spey	Grantown-on-Spey
+GB::harlech	Harlech		
+GB::hastings	Hastings	Hastings	Hastings
+GB::hawes	Hawes	Hawes	Hawes
+GB::haworth	Haworth	Haworth	Haworth
+GB::hereford	Hereford	Hereford	Hereford
+GB::holt	Holt	Holt	Holt
+GB::hutton-le-hole	Hutton Le Hole		
+GB::hyde-park	Hyde Park		
+GB::inveraray	Inveraray		
+GB::inverness	Inverness	Inverness	Inverness
+GB::ipswich	Ipswich	Ipswich	Ipswich
+GB::ironbridge	Ironbridge		
+GB::keswick	Keswick	Keswick	Keswick
+GB::kings-lynn	Kings Lynn		
+GB::kingston-upon-hull	Kingston Upon Hull	Kingston upon Hull	Kingston upon Hull
+GB::kirkwall	Kirkwall		
+GB::lavenham	Lavenham	Lavenham	Lavenham
+GB::lealholm	Lealholm		
+GB::leeds	Leeds		
+GB::leicester	Leicester	Leicester	Leicester
+GB::lincoln	Lincoln		
+GB::liverpool	Liverpool	Liverpool	Liverpool
+GB::llandudno	Llandudno	Llandudno	Llandudno
+GB::lochboisdale	Lochboisdale		
+GB::lochinver	Lochinver		
+GB::lochmaddy	Lochmaddy		
+GB::london	London		
+GB::london-eye	London Eye	London Eye	London Eye
+GB::london-museum	London Museum		
+GB::london-reform-club	London Reform Club		
+GB::ludlow	Ludlow	Ludlow	Ludlow
+GB::lybster	Lybster		
+GB::madame-tussauds	Madame Tussauds		
+GB::malham	Malham	Malham	Malham
+GB::manchester	Manchester	Manchester	Manchester
+GB::marazion	Marazion		
+GB::mevagissey	Mevagissey		
+GB::mumbles	Mumbles	Mumbles	Mumbles
+GB::nairn	Nairn		
+GB::national-gallery	National Gallery		
+GB::national-maritime-museum	National Maritime Museum		
+GB::national-portrait-gallery	National Portrait Gallery		
+GB::natural-history-museum	Natural History Museum		
+GB::newcastle	Newcastle	Newcastle upon Tyne	Newcastle upon Tyne
+GB::newcastle-upon-tyne	Newcastle Upon Tyne		
+GB::newquay	Newquay	Newquay	Newquay
+GB::norwich	Norwich		
+GB::notting-hill	Notting Hill		
+GB::nottingham	Nottingham	Nottingham	Nottingham
+GB::oban	Oban		
+GB::oxford-street	Oxford Street		
+GB::padstow	Padstow	Padstow	Padstow
+GB::penzance	Penzance	Penzance	Penzance
+GB::piccadilly-circus	Piccadilly Circus	Piccadilly Circus	Piccadilly Circus
+GB::pitlochry	Pitlochry	Pitlochry	Pitlochry
+GB::plockton	Plockton	Plockton	Plockton
+GB::plymouth	Plymouth	Plymouth	Plymouth
+GB::poole	Poole		
+GB::port-isaac	Port Isaac		
+GB::porthleven	Porthleven		
+GB::portland	Portland		
+GB::portmeirion	Portmeirion		
+GB::portree	Portree		
+GB::regents-park	Regents Park		
+GB::rhossili	Rhossili	Rhossili	Rhossili
+GB::richmond	Richmond	London Borough of Richmond upon Thames	London Borough of Richmond upon Thames
+GB::royal-academy-arts	Royal Academy Arts		
+GB::rye	Rye	Rye	Rye
+GB::saltburn-by-the	Saltburn By The		
+GB::sandringham	Sandringham	Sandringham	Sandringham
+GB::scarborough	Scarborough	Scarborough	Scarborough
+GB::science-museum	Science Museum		
+GB::shrewsbury	Shrewsbury	Shrewsbury	Shrewsbury
+GB::sir-john-soanes-museum	Sir John Soanes Museum		
+GB::skipton	Skipton	Skipton	Skipton
+GB::snowdonia	Snowdonia		
+GB::soho	Soho	Soho	Soho
+GB::southwold	Southwold	Southwold	Southwold
+GB::st-austell	St Austell		
+GB::st-davids	St Davids		
+GB::st-ives	St Ives	St. Ives	St. Ives
+GB::st-katharine-docks	St Katharine Docks	St Katharine Docks	St Katharine Docks
+GB::stornoway	Stornoway		
+GB::stow-on-the-wold	Stow On The Wold	Stow-on-the-Wold	Stow-on-the-Wold
+GB::stratford-upon-avon	Stratford Upon Avon	Stratford-upon-Avon	Stratford-upon-Avon
+GB::stromness	Stromness		
+GB::swanage	Swanage		
+GB::tarbert-harris	Tarbert Harris		
+GB::tate-britain	Tate Britain	Tate Britain	Tate Britain
+GB::tate-modern	Tate Modern	Tate Modern	Tate Modern
+GB::tenby	Tenby	Tenby	Tenby
+GB::the-shard	The Shard	The Shard	The Shard
+GB::thornton-le-dale	Thornton Le Dale	Thornton-le-Dale	Thornton-le-Dale
+GB::thurso	Thurso		
+GB::tintagel	Tintagel	Tintagel	Tintagel
+GB::tobermory	Tobermory		
+GB::tongue	Tongue		
+GB::torridon	Torridon		
+GB::tower-bridge	Tower Bridge		
+GB::tower-of-london	Tower Of London		
+GB::trafalgar-square	Trafalgar Square		
+GB::truro	Truro		
+GB::tunbridge-wells	Tunbridge Wells		
+GB::tywyn	Tywyn	Tywyn	Tywyn
+GB::ullapool	Ullapool	Ullapool	Ullapool
+GB::victoria-albert-museum	Victoria Albert Museum		
+GB::wallace-collection	Wallace Collection		
+GB::warwick	Warwick	Warwick	Warwick
+GB::wells-next-the	Wells Next The		
+GB::west-lulworth	West Lulworth		
+GB::westminster-abbey	Westminster Abbey	Westminster Abbey	Westminster Abbey
+GB::weymouth	Weymouth		
+GB::whitby	Whitby	Whitby	Whitby
+GB::whitstable	Whitstable	Whitstable	Whitstable
+GB::wick	Wick		
+GB::winchester	Winchester	Winchester	Winchester
+GB::windermere	Windermere	Windermere	Windermere
+GB::wroxham	Wroxham	Wroxham	Wroxham
+GB::york	York		

@@ -1,0 +1,170 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "GR" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays GR)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+GR::agios-nikolaos	Agios Nikolaos	Agios Nikolaos	Agios Nikolaos
+GR::agrinio	Agrinio		
+GR::akrotiri	Akrotiri	Akrotiri	Akrotiri
+GR::alexandroupoli	Alexandroupoli	Alexandroupolis	Alexandroupolis
+GR::almopia-municipality	Almopia Municipality		
+GR::alonissos	Alonissos	Alonissos	Alonissos
+GR::amorgos-katapola	Amorgos Katapola	Katapola	Katapola
+GR::amphipolis	Amphipolis	Amfipoli	Amfipoli
+GR::antiparos	Antiparos	Antiparos	Antiparos
+GR::arachova	Arachova	Arachova	Arachova
+GR::areopoli	Areopoli		
+GR::argostoli	Argostoli	Argostoli	Argostoli
+GR::astypalea	Astypalea	Astypalea	Astypalea
+GR::athenes	Athenes		
+GR::chalcis	Chalcis	Chalkida	Chalkida
+GR::chania	Chania	Chania	Chania
+GR::corfou	Corfou		
+GR::corinto	Corinto		
+GR::delphes	Delphes		
+GR::dikella	Dikella	Dikella	Dikella
+GR::distomo	Distomo		
+GR::edessa	Edessa	Edessa	Edessa
+GR::edipsos	Edipsos	Aidipsos	Aidipsos
+GR::elafonisi	Elafonisi	Elafonisi	Elafonisi
+GR::elounda	Elounda	Elounda	Elounda
+GR::epanomi	Epanomi	Epanomi	Epanomi
+GR::epidaure	Epidaure	Municipality of Epidaurus	Municipality of Epidaurus
+GR::epidauro	Epidauro		
+GR::eretria	Eretria	Eretria	Eretria
+GR::fira	Fira	Fira	Fira
+GR::folegandros-agkali	Folegandros Agkali		
+GR::frangokastello	Frangokastello		
+GR::galaxidi	Galaxidi		
+GR::gerolimenas	Gerolimenas		
+GR::gytheio	Gytheio	Gytheio	Gytheio
+GR::heraklion	Heraklion		
+GR::ierapetra	Ierapetra	Municipality of Ierapetra	Municipality of Ierapetra
+GR::ioannina	Ioannina	Ioannina	Ioannina
+GR::ios-mylopotas	Ios Mylopotas		
+GR::iraklia-livadi	Iraklia Livadi		
+GR::ithaque	Ithaque	Ithaca	Ithaca
+GR::kalamata	Kalamata	Municipality of Kalamata	Municipality of Kalamata
+GR::kalambaka	Kalambaka	Kalambaka	Kalambaka
+GR::kalamitsi	Kalamitsi	Kalamitsi	Kalamitsi
+GR::kalavrita	Kalavrita	Kalavryta	Kalavryta
+GR::kalymnos	Kalymnos	Kalymnos	Kalymnos
+GR::kamari	Kamari	Kamari	Kamari
+GR::karditsa	Karditsa		
+GR::karpathos	Karpathos	Karpathos	Karpathos
+GR::karystos	Karystos	Karystos	Karystos
+GR::kassandra	Kassandra		
+GR::kavala	Kavala	Kavala	Kavala
+GR::kimolos-rema	Kimolos Rema		
+GR::kissamos	Kissamos	Kissamos	Kissamos
+GR::konitsa	Konitsa		
+GR::kos	Kos	Kos	Kos
+GR::koufonisia-pori	Koufonisia Pori		
+GR::kymi	Kymi		
+GR::kythnos-kolona	Kythnos Kolona	Ormos Kolona	Ormos Kolona
+GR::lassithi	Lassithi	Lasithi Regional Unit	Lasithi Regional Unit
+GR::leros	Leros	Municipality of Leros	Municipality of Leros
+GR::leucade	Leucade	Lefkada	Lefkada
+GR::litochoro	Litochoro	Litochoro	Litochoro
+GR::loutro	Loutro		
+GR::makrinitsa	Makrinitsa		
+GR::marathias	Marathias	Marathias	Marathias
+GR::matala	Matala	Mátala	Mátala
+GR::messolonghi	Messolonghi		
+GR::methoni	Methoni		
+GR::milos-adamas	Milos Adamas	Milos	Milos
+GR::monemvasia	Monemvasia	Monemvasia	Monemvasia
+GR::monodendri	Monodendri		
+GR::mykonos	Mykonos	Mykonos	Mykonos
+GR::mystras	Mystras	Archaeological Site of Mystras	Archaeological Site of Mystras
+GR::naousa-paros	Naousa Paros		
+GR::naupacte	Naupacte		
+GR::nauplie	Nauplie	Nafplio	Nafplio
+GR::naxos	Naxos	Naxos	Naxos
+GR::naxos-chora	Naxos Chora		
+GR::nisyros	Nisyros	Nisyros	Nisyros
+GR::oia	Oia	Oia	Oia
+GR::olympie	Olympie	Olympia	Olympia
+GR::ouranoupoli	Ouranoupoli	Ouranoupoli	Ouranoupoli
+GR::paleochora	Paleochora		
+GR::papigo	Papigo		
+GR::parikia-paros	Parikia Paros	Paros	Paros
+GR::paros	Paros	Paros	Paros
+GR::patmos	Patmos	Patmos	Patmos
+GR::patras	Patras	Patras	Patras
+GR::paxos	Paxos	Paxos	Paxos
+GR::plakias	Plakias		
+GR::possidi	Possidi	Poseidi	Poseidi
+GR::preveza	Preveza	Preveza	Preveza
+GR::pylos	Pylos		
+GR::pyrgos	Pyrgos	Municipality of Pyrgos	Municipality of Pyrgos
+GR::rethymnon	Rethymnon	Rethymno	Rethymno
+GR::rhodes	Rhodes	Rhodes	Rhodes
+GR::riza-beach	Riza Beach	Riza Ierapetras	Riza Ierapetras
+GR::sami	Sami	Sami	Sami
+GR::santorin	Santorin	Santorini	Santorini
+GR::santorini-vlychada	Santorini Vlychada		
+GR::schinoussa-tsigouri	Schinoussa Tsigouri	Tsigouri	Tsigouri
+GR::serifos-megalo-livadi	Serifos Megalo Livadi	Megalo Livadi	Megalo Livadi
+GR::sifnos-platys-gialos	Sifnos Platys Gialos	Sifnos	Sifnos
+GR::sifnos-vathy	Sifnos Vathy	Sifnos	Sifnos
+GR::sikinos-alopronia	Sikinos Alopronia	Alopronia	Alopronia
+GR::sitia	Sitia	Sitia	Sitia
+GR::skiathos	Skiathos	Skiathos	Skiathos
+GR::skopelos	Skopelos	Skopelos	Skopelos
+GR::sounion	Sounion	Cape Sounion	Cape Sounion
+GR::sparte	Sparte	Sparta	Sparta
+GR::symi	Symi	Symi	Symi
+GR::thasos	Thasos	Thasos	Thasos
+GR::thebes	Thebes		
+GR::thessalonique	Thessalonique		
+GR::tolo	Tolo	Tolo	Tolo
+GR::trikala	Trikala		
+GR::tripoli	Tripoli	Tripoli	Tripoli
+GR::vassiliki	Vassiliki	Vasiliki	Vasiliki
+GR::vergina	Vergina	Vergina	Vergina
+GR::volos	Volos		
+GR::xanthi	Xanthi	Xanthi	Xanthi
+GR::zakynthos	Zakynthos	Zakynthos	Zakynthos

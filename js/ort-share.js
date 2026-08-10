@@ -205,7 +205,26 @@ window.ORT_SHARE = {
         copied: 'Copied!',
         close: 'Close'
       }
-    }[lang] || {
+    ,
+    nl: {
+      title: '🔗 Deze route delen',
+      description: 'Maak een alleen-lezen link om te delen',
+      creating: '⏳ Link wordt gemaakt...',
+      success: '✅ Link aangemaakt!',
+      copy: 'Link kopiëren',
+      copied: 'Gekopieerd!',
+      close: 'Sluiten'
+    },
+    de: {
+      title: '🔗 Diese Route teilen',
+      description: 'Erstelle einen Nur-Lese-Link zum Teilen',
+      creating: '⏳ Link wird erstellt...',
+      success: '✅ Link erstellt!',
+      copy: 'Link kopieren',
+      copied: 'Kopiert!',
+      close: 'Schließen'
+    }
+  }[lang] || {
       title: '🔗 Share this itinerary',
       description: 'Create a read-only link to share',
       creating: '⏳ Creating link...',

@@ -1,0 +1,121 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "ID" → langue locale non lisible (alphabet non latin ou difficile à prononcer). Utilise l'anglais.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays ID)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+ID::ambon	Ambon		
+ID::amed	Amed	Diyarbakır	Diyarbakır
+ID::bajawa	Bajawa		
+ID::balikpapan	Balikpapan		
+ID::banda-aceh	Banda Aceh		
+ID::banda-neira	Banda Neira		
+ID::bandung	Bandung		
+ID::banjarmasin	Banjarmasin		
+ID::banyuwangi	Banyuwangi		
+ID::bengkulu	Bengkulu		
+ID::berastagi	Berastagi		
+ID::berau	Berau		
+ID::bontang	Bontang		
+ID::bukit-lawang	Bukit Lawang		
+ID::bukittinggi	Bukittinggi		
+ID::bunaken	Bunaken		
+ID::cemoro-lawang	Cemoro Lawang	Cemoro Lawang	Cemoro Lawang
+ID::derawan	Derawan		
+ID::ende	Ende		
+ID::garut	Garut		
+ID::gili-air	Gili Air	Gili Air	Gili Air
+ID::gorontalo	Gorontalo		
+ID::harau-valley	Harau Valley		
+ID::jakarta	Jakarta	Special Capital Region of Jakarta	Special Capital Region of Jakarta
+ID::jambi	Jambi		
+ID::kuta-lombok	Kuta Lombok		
+ID::labuan-bajo	Labuan Bajo	Labuan Bajo	Labuan Bajo
+ID::licin	Licin		
+ID::makassar	Makassar		
+ID::manado	Manado		
+ID::maumere	Maumere		
+ID::medan	Medan		
+ID::misool	Misool		
+ID::moni	Moni		
+ID::munduk	Munduk	Munduk	Munduk
+ID::nusa-lembongan	Nusa Lembongan	Nusa Lembongan	Nusa Lembongan
+ID::padang	Padang		
+ID::pagaralam	Pagaralam		
+ID::palu	Palu		
+ID::pangandaran	Pangandaran		
+ID::parapat	Parapat		
+ID::pelaihari	Pelaihari		
+ID::pianemo	Pianemo		
+ID::pontianak	Pontianak		
+ID::probolinggo	Probolinggo	Probolinggo	Probolinggo
+ID::putussibau	Putussibau		
+ID::ruteng	Ruteng		
+ID::samarinda	Samarinda		
+ID::samosir	Samosir		
+ID::sangata	Sangata		
+ID::selayar	Selayar		
+ID::seminyak	Seminyak	Seminyak	Seminyak
+ID::siberut	Siberut		
+ID::sidemen	Sidemen	Sidemen	Sidemen
+ID::solo	Solo		
+ID::sorong	Sorong		
+ID::tambolaka	Tambolaka		
+ID::tana-toraja	Tana Toraja		
+ID::tangkoko	Tangkoko		
+ID::tarakan	Tarakan		
+ID::togean	Togean		
+ID::tomohon	Tomohon		
+ID::tual	Tual		
+ID::tuk-tuk	Tuk Tuk		
+ID::ubud	Ubud	Ubud	Ubud
+ID::ujung-kulon	Ujung Kulon		
+ID::uluwatu	Uluwatu	Pura Luhur	Pura Luhur
+ID::waikabubak	Waikabubak		
+ID::waingapu	Waingapu		
+ID::waisai	Waisai		
+ID::wakatobi	Wakatobi		
+ID::wayag	Wayag		
+ID::wonosobo	Wonosobo		
+ID::yogyakarta	Yogyakarta		

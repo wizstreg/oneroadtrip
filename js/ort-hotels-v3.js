@@ -42,16 +42,25 @@
 
   // === I18N ===
   const I18N = {
-    topHotels: { fr: 'Meilleurs hôtels', en: 'Top hotels', es: 'Mejores hoteles', pt: 'Melhores hotéis', it: 'Migliori hotel', ar: 'أفضل الفنادق' },
-    chooseOnMap: { fr: 'Choisir sur la carte', en: 'Choose on map', es: 'Elegir en el mapa', pt: 'Escolher no mapa', it: 'Scegli sulla mappa', ar: 'اختر على الخريطة' },
-    loading: { fr: 'Chargement des hôtels...', en: 'Loading hotels...', es: 'Cargando hoteles...', pt: 'Carregando hotéis...', it: 'Caricamento hotel...', ar: 'جار تحميل الفنادق...' },
-    noHotels: { fr: 'Aucun hôtel disponible', en: 'No hotels available', es: 'No hay hoteles disponibles', pt: 'Nenhum hotel disponível', it: 'Nessun hotel disponibile', ar: 'لا توجد فنادق متاحة' },
-    midRange: { fr: 'Milieu de gamme', en: 'Mid-range', es: 'Gama media', pt: 'Gama média', it: 'Fascia media', ar: 'متوسط' },
-    economic: { fr: 'Économique', en: 'Budget', es: 'Económico', pt: 'Económico', it: 'Economico', ar: 'اقتصادي' },
-    premium: { fr: 'Premium', en: 'Premium', es: 'Premium', pt: 'Premium', it: 'Premium', ar: 'فاخر' },
-    seeOnBooking: { fr: 'Voir sur Booking', en: 'See on Booking', es: 'Ver en Booking', pt: 'Ver no Booking', it: 'Vedi su Booking', ar: 'عرض على Booking' },
-    prev: { fr: 'Précédent', en: 'Previous', es: 'Anterior', pt: 'Anterior', it: 'Precedente', ar: 'السابق' },
-    next: { fr: 'Suivant', en: 'Next', es: 'Next', pt: 'Seguinte', it: 'Successivo', ar: 'التالي' }
+    topHotels: { fr: 'Meilleurs hôtels', en: 'Top hotels', es: 'Mejores hoteles', pt: 'Melhores hotéis', it: 'Migliori hotel', ar: 'أفضل الفنادق' , nl: 'Beste hotels', de: 'Top-Hotels'},
+    chooseOnMap: { fr: 'Choisir sur la carte', en: 'Choose on map', es: 'Elegir en el mapa', pt: 'Escolher no mapa', it: 'Scegli sulla mappa', ar: 'اختر على الخريطة' , nl: 'Kiezen op de kaart', de: 'Auf der Karte auswählen'},
+    loading: { fr: 'Chargement des hôtels...', en: 'Loading hotels...', es: 'Cargando hoteles...', pt: 'Carregando hotéis...', it: 'Caricamento hotel...', ar: 'جار تحميل الفنادق...' , nl: 'Hotels laden...', de: 'Hotels werden geladen...'},
+    noHotels: { fr: 'Aucun hôtel disponible', en: 'No hotels available', es: 'No hay hoteles disponibles', pt: 'Nenhum hotel disponível', it: 'Nessun hotel disponibile', ar: 'لا توجد فنادق متاحة' , nl: 'Geen hotels beschikbaar', de: 'Keine Hotels verfügbar'},
+    midRange: { fr: 'Milieu de gamme', en: 'Mid-range', es: 'Gama media', pt: 'Gama média', it: 'Fascia media', ar: 'متوسط' , nl: 'Middenklasse', de: 'Mittelklasse'},
+    economic: { fr: 'Économique', en: 'Budget', es: 'Económico', pt: 'Económico', it: 'Economico', ar: 'اقتصادي' , nl: 'Voordelig', de: 'Günstig'},
+    premium: { fr: 'Premium', en: 'Premium', es: 'Premium', pt: 'Premium', it: 'Premium', ar: 'فاخر' , nl: 'Premium', de: 'Premium'},
+    seeOnBooking: { fr: 'Voir sur Booking', en: 'See on Booking', es: 'Ver en Booking', pt: 'Ver no Booking', it: 'Vedi su Booking', ar: 'عرض على Booking' , nl: 'Bekijken op Booking', de: 'Auf Booking ansehen'},
+    prev: { fr: 'Précédent', en: 'Previous', es: 'Anterior', pt: 'Anterior', it: 'Precedente', ar: 'السابق' , nl: 'Vorige', de: 'Zurück'},
+    next: { fr: 'Suivant', en: 'Next', es: 'Next', pt: 'Seguinte', it: 'Successivo', ar: 'التالي' , nl: 'Volgende', de: 'Weiter'},
+    eliteBadge: { fr: '★ Coup de cœur', en: '★ Top pick', es: '★ Nuestra favorita', pt: '★ Nosso favorito', it: '★ La nostra preferita', ar: '★ المفضل لدينا' , nl: '★ Onze favoriet', de: '★ Unser Favorit'},
+    sePitch: {
+      fr: 'Et si vous vous laissiez tenter par un des hôtels que nous proposons ? Même si vous prenez un autre hôtel par la suite, cliquer sur nos liens permet de gagner quelques $ et nous permettre de conserver le site gratuit.',
+      en: 'What if you treated yourself to one of the hotels we suggest? Even if you book a different hotel later, clicking our links earns us a few $ and helps keep this site free.',
+      es: '¿Y si se deja tentar por uno de los hoteles que le proponemos? Aunque luego elija otro hotel, hacer clic en nuestros enlaces nos aporta unos $ y nos permite mantener el sitio gratuito.',
+      pt: 'E se se deixasse tentar por um dos hotéis que propomos? Mesmo que depois escolha outro hotel, clicar nos nossos links rende-nos alguns $ e permite-nos manter o site gratuito.',
+      it: 'E se vi lasciaste tentare da uno degli hotel che vi proponiamo? Anche se poi sceglierete un altro hotel, cliccare sui nostri link ci fa guadagnare qualche $ e ci permette di mantenere il sito gratuito.',
+      ar: 'ماذا لو جرّبتم أحد الفنادق التي نقترحها؟ حتى لو اخترتم فندقًا آخر لاحقًا، فإن النقر على روابطنا يمنحنا بضعة دولارات ويساعدنا على إبقاء الموقع مجانيًا.'
+    , nl: 'Waarom niet een van de hotels die wij voorstellen? Ook als je later een ander hotel boekt, levert een klik op onze links ons een paar dollar op en houdt de site gratis.', de: 'Wie wäre es mit einem der Hotels, die wir vorschlagen? Auch wenn du später ein anderes Hotel buchst, bringt ein Klick auf unsere Links ein paar Dollar ein und hält die Seite kostenlos.'}
   };
 
   function t(key) {
@@ -66,7 +75,7 @@
 
   function getBookingLangSuffix() {
     const lang = getLang();
-    return ({ fr: 'fr', en: 'en-gb', es: 'es', pt: 'pt-pt', it: 'it', ar: 'ar' })[lang] || 'en-gb';
+    return ({ fr: 'fr', en: 'en-gb', es: 'es', pt: 'pt-pt', it: 'it', ar: 'ar' , nl: 'nl', de: 'de'})[lang] || 'en-gb';
   }
 
   function getCountryCode() {
@@ -150,10 +159,17 @@
   }
 
   // === SÉLECTION DES 3 HÔTELS ($/$$/$$$) ===
+  // Si un hotel a "elite:true", il prend son slot prix et passe en premier dans le retour.
   function pickThreeHotels(hotels) {
     if (!hotels || !hotels.length) return [];
+    let eliteHotel = null;
+    for (let k = 0; k < hotels.length; k++) {
+      if (hotels[k] && hotels[k].elite === true) { eliteHotel = hotels[k]; break; }
+    }
+    const eliteLevel = eliteHotel ? (eliteHotel.priceLevel || 2) : null;
     const byLevel = { 1: [], 2: [], 3: [] };
     hotels.forEach(h => {
+      if (h === eliteHotel) return;
       const lvl = h.priceLevel || 2;
       if (!byLevel[lvl]) byLevel[lvl] = [];
       byLevel[lvl].push(h);
@@ -162,22 +178,70 @@
       if (!arr || !arr.length) return null;
       return arr.slice().sort((a, b) => (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0))[0];
     };
-    const result = [];
-    const h1 = bestOf(byLevel[1]);
-    const h2 = bestOf(byLevel[2]);
-    const h3 = bestOf(byLevel[3]);
-    if (h1) result.push({ hotel: h1, level: 1 });
-    if (h2) result.push({ hotel: h2, level: 2 });
-    if (h3) result.push({ hotel: h3, level: 3 });
-    if (result.length < 3) {
-      const used = result.map(r => r.hotel);
+    const slot1 = (eliteLevel === 1) ? eliteHotel : bestOf(byLevel[1]);
+    const slot2 = (eliteLevel === 2) ? eliteHotel : bestOf(byLevel[2]);
+    const slot3 = (eliteLevel === 3) ? eliteHotel : bestOf(byLevel[3]);
+    const bag = [];
+    if (slot1) bag.push({ hotel: slot1, level: 1, elite: slot1 === eliteHotel });
+    if (slot2) bag.push({ hotel: slot2, level: 2, elite: slot2 === eliteHotel });
+    if (slot3) bag.push({ hotel: slot3, level: 3, elite: slot3 === eliteHotel });
+    if (bag.length < 3) {
+      const used = bag.map(r => r.hotel);
       const remaining = hotels.filter(h => used.indexOf(h) === -1);
       remaining.sort((a, b) => (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0));
-      for (let i = 0; i < remaining.length && result.length < 3; i++) {
-        result.push({ hotel: remaining[i], level: remaining[i].priceLevel || 2 });
+      for (let i = 0; i < remaining.length && bag.length < 3; i++) {
+        bag.push({ hotel: remaining[i], level: remaining[i].priceLevel || 2, elite: remaining[i].elite === true });
       }
     }
-    return result;
+    bag.sort((a, b) => {
+      if (a.elite && !b.elite) return -1;
+      if (!a.elite && b.elite) return 1;
+      return 0;
+    });
+    return bag;
+  }
+
+  // Collecte ordonnée des photos d'un hotel : imageUrl, imageUrl2, imageUrl3, imageUrl4, ...
+  function collectPhotos(hotel) {
+    if (!hotel) return [];
+    const out = [];
+    const seen = {};
+    const push = u => {
+      if (!u) return;
+      const big = bigImg(u);
+      if (seen[big]) return;
+      seen[big] = 1;
+      out.push(big);
+    };
+    push(hotel.imageUrl);
+    const nums = [];
+    for (const key in hotel) {
+      if (!Object.prototype.hasOwnProperty.call(hotel, key)) continue;
+      const m = key.match(/^imageUrl(\d+)$/);
+      if (m && hotel[key]) nums.push(parseInt(m[1], 10));
+    }
+    nums.sort((a, b) => a - b);
+    nums.forEach(n => push(hotel['imageUrl' + n]));
+    return out;
+  }
+
+  // Ordre d'affichage : l'hotel mis en avant d'abord, les autres en secours invisibles.
+  function orderHotels(hotels) {
+    if (!hotels || !hotels.length) return [];
+    const list = hotels.filter(h => h && (h.name || h.bookingUrl));
+    if (!list.length) return [];
+    const featured = pickFeaturedHotel(list);
+    const rest = list.filter(h => h !== featured).sort((a, b) => {
+      const pa = collectPhotos(a).length, pb = collectPhotos(b).length;
+      if (pb !== pa) return pb - pa;
+      return (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0);
+    });
+    return [featured].concat(rest).map(h => ({
+      hotel: h,
+      level: h.priceLevel || 2,
+      elite: h.elite === true,
+      photos: collectPhotos(h)
+    }));
   }
 
   // === CHARGEMENT DES DONNÉES (depuis les shards) ===
@@ -209,146 +273,42 @@
     }
   }
 
-  // === RENDU DESKTOP : 3 cartes côte à côte avec accordéon horizontal ===
-  // Chaque carte garde sa position. Au survol/clic, elle s'élargit (les autres se compriment).
-  // L'expansion par défaut est sur le $$$ (haut de gamme = plus belle photo).
-  function renderDesktopAccordion(picked, modalContainer) {
+  // === RENDU : UN SEUL HOTEL VISIBLE (desktop + mobile) ===
+  // Les autres hotels du lieu restent en secours, invisibles. Si une photo casse
+  // on passe a la suivante ; si toutes cassent, on bascule sur l'hotel de secours.
+  function renderSingleHotel(ordered, modalContainer) {
     const lang = getLang();
+    const backups = ordered.slice(1);
+    let timer = null;
+    let paused = false;
 
-    // Détermine quelle carte est expanded au démarrage : la mieux notée (info objective).
-    let initialExpanded = 0;
-    let bestScore = parseFloat(picked[0].hotel.score) || 0;
-    for (let i = 1; i < picked.length; i++) {
-      const s = parseFloat(picked[i].hotel.score) || 0;
-      if (s > bestScore) { bestScore = s; initialExpanded = i; }
-    }
-
-    // Génère le HTML d'une carte (compacte ou expanded — les 2 sont dans le DOM,
-    // c'est le CSS qui bascule selon la classe ohv3-acc-on de la carte)
-    function renderCard(entry, idx) {
+    function paint(entry) {
       const h = entry.hotel;
+      const isElite = !!entry.elite;
       const name = h.name || '';
       const score = h.score || '';
-      const img1 = bigImg(h.imageUrl);
-      const img2 = bigImg(h.imageUrl2 || h.imageUrl);
-      const hasTwo = img2 && img2 !== img1;
+      const photos = (entry.photos && entry.photos.length) ? entry.photos : [];
       const url = buildBookingAffiliateUrl(h.bookingUrl);
       const desc = pickDescription(h, lang);
       const fbColor = colorFromName(name);
       const initial = (name.charAt(0) || '?').toUpperCase();
       const lvLabel = levelLabel(entry.level);
-
-      // L'image (avec auto-rotation si 2 photos disponibles)
-      const imgH =
-        '<div class="ohv3-acc-img" style="background:' + fbColor + '"' +
-            (hasTwo ? ' data-ohv3-rotate="1"' : '') + '>' +
-          '<div class="ohv3-img-fallback"><span>' + esc(initial) + '</span></div>' +
-          '<img class="ohv3-img ohv3-img-1" src="' + esc(img1) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">' +
-          (hasTwo
-            ? '<img class="ohv3-img ohv3-img-2" src="' + esc(img2) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">'
-            : '') +
-          '<div class="ohv3-acc-price">' + priceSymbol(entry.level) + '</div>' +
-        '</div>';
-
-      // V3 : la carte est un <a> qui mène directement à Booking. Le survol gère l'expand
-      // (sans réécrire le DOM). La description complète apparaît sur la carte expanded
-      // grâce au CSS qui filtre via data-ohv3-active.
-      return (
-        '<a class="ohv3-acc-card" ' +
-          'data-ohv3-idx="' + idx + '" ' +
-          'href="' + esc(url) + '" target="_blank" rel="noopener sponsored">' +
-          imgH +
-          '<div class="ohv3-acc-body">' +
-            '<div class="ohv3-acc-head">' +
-              '<div class="ohv3-acc-name">' + esc(name) + '</div>' +
-              (score ? '<span class="ohv3-score">' + esc(score) + '</span>' : '') +
-            '</div>' +
-            '<div class="ohv3-acc-level">' + esc(lvLabel) + '</div>' +
-            '<div class="ohv3-acc-detail">' +
-              (desc ? '<p class="ohv3-acc-desc">' + esc(desc) + '</p>' : '') +
-            '</div>' +
-          '</div>' +
-        '</a>'
-      );
-    }
-
-    const cardsH = picked.map((entry, idx) => renderCard(entry, idx)).join('');
-
-    modalContainer.innerHTML = '<div class="ohv3-acc-wrap" data-ohv3-active="' + initialExpanded + '">' + cardsH + '</div>';
-
-    const wrap = modalContainer.querySelector('.ohv3-acc-wrap');
-
-    // Bascule de la carte expanded
-    function setExpanded(newIdx) {
-      if (newIdx < 0 || newIdx >= picked.length) return;
-      wrap.setAttribute('data-ohv3-active', String(newIdx));
-    }
-
-    // V3 : la carte ÉTANT un <a href=Booking>, le clic ouvre Booking naturellement.
-    // Seul le survol gère l'expand visuel.
-    modalContainer.querySelectorAll('.ohv3-acc-card').forEach(card => {
-      const idx = parseInt(card.getAttribute('data-ohv3-idx'), 10);
-      card.addEventListener('mouseenter', () => setExpanded(idx));
-      // Pas de gestionnaire de clic : on laisse le navigateur suivre le href.
-      // Pas de gestionnaire keydown non plus : Enter/Space sur un <a> active déjà le lien.
-    });
-
-    // Auto-rotation des 2 photos : on l'active sur TOUTES les cartes (chacune
-    // a son propre interval). Pause au hover sur cette carte précise.
-    modalContainer.querySelectorAll('.ohv3-acc-img[data-ohv3-rotate="1"]').forEach((imgEl, idx) => {
-      let paused = false;
-      const card = imgEl.closest('.ohv3-acc-card');
-      if (card) {
-        // On met en pause uniquement la carte active (sinon le défilement
-        // sur les minis pendant qu'on regarde la grande peut distraire)
-        // → en pratique : pause au mouseenter de la carte
-        card.addEventListener('mouseenter', () => { paused = true; });
-        card.addEventListener('mouseleave', () => { paused = false; });
-      }
-      // Décalage pour ne pas synchroniser les flips entre cartes
-      setTimeout(() => {
-        const interval = setInterval(() => {
-          if (!document.body.contains(imgEl)) { clearInterval(interval); return; }
-          if (paused) return;
-          const on = imgEl.getAttribute('data-ohv3-flip') === '1';
-          imgEl.setAttribute('data-ohv3-flip', on ? '0' : '1');
-        }, CONFIG.rotationInterval);
-      }, idx * 900);
-    });
-  }
-
-  // === RENDU MOBILE : 1 carte + flèches ===
-  function renderMobileSlider(picked, activeIdx, modalContainer) {
-    const lang = getLang();
-    const total = picked.length;
-
-    // Une fonction interne qui peint l'écran
-    function paint(idx) {
-      const cur = picked[idx];
-      const h = cur.hotel;
-      const name = h.name || '';
-      const score = h.score || '';
-      const img1 = bigImg(h.imageUrl);
-      const img2 = bigImg(h.imageUrl2 || h.imageUrl);
-      const hasTwo = img2 && img2 !== img1;
-      const url = buildBookingAffiliateUrl(h.bookingUrl);
-      const desc = pickDescription(h, lang);
-      const fbColor = colorFromName(name);
-      const initial = (name.charAt(0) || '?').toUpperCase();
-      const lvLabel = levelLabel(cur.level);
-      const badgeH = '';
-      const dotsH = picked.map((_, i) =>
-        '<span class="ohv3-dot' + (i === idx ? ' ohv3-dot-on' : '') + '" data-ohv3-go="' + i + '"></span>'
+      const badgeH = isElite
+        ? '<div class="ohv3-elite-badge">' + esc(t('eliteBadge')) + '</div>'
+        : '';
+      const imgsH = photos.map((src, i) =>
+        '<img class="ohv3-mimg' + (i === 0 ? ' ohv3-img-on' : '') + '" data-ohv3-pidx="' + i +
+        '" src="' + esc(src) + '" alt="' + esc(name) + '" loading="lazy">'
       ).join('');
 
       modalContainer.innerHTML =
         '<div class="ohv3-mwrap">' +
           '<div class="ohv3-mtrack" style="background:' + fbColor + '">' +
             '<div class="ohv3-img-fallback"><span>' + esc(initial) + '</span></div>' +
-            '<img class="ohv3-mimg" src="' + esc(img1) + '" alt="' + esc(name) + '" loading="lazy" onerror="this.style.display=\'none\';">' +
+            imgsH +
             '<div class="ohv3-moverlay">' +
               badgeH +
-              '<div class="ohv3-mprice">' + priceSymbol(cur.level) + '</div>' +
+              '<div class="ohv3-mprice">' + priceSymbol(entry.level) + '</div>' +
               '<div class="ohv3-minfo">' +
                 '<div class="ohv3-mname">' + esc(name) + '</div>' +
                 '<div class="ohv3-mmeta">' +
@@ -357,52 +317,98 @@
                 '</div>' +
               '</div>' +
             '</div>' +
-            '<button class="ohv3-arrow ohv3-prev" type="button" aria-label="' + esc(t('prev')) + '">‹</button>' +
-            '<button class="ohv3-arrow ohv3-next" type="button" aria-label="' + esc(t('next')) + '">›</button>' +
           '</div>' +
-          '<div class="ohv3-dots">' + dotsH + '</div>' +
           (desc ? '<p class="ohv3-mobile-desc">' + esc(desc) + '</p>' : '') +
           '<a class="ohv3-mobile-cta" href="' + esc(url) + '" target="_blank" rel="noopener sponsored">' + esc(t('seeOnBooking')) + '</a>' +
         '</div>';
 
-      // Câblage flèches + dots
-      const setActive = newIdx => {
-        if (newIdx < 0) newIdx = total - 1;
-        if (newIdx >= total) newIdx = 0;
-        paint(newIdx);
-      };
-      const prev = modalContainer.querySelector('.ohv3-prev');
-      const next = modalContainer.querySelector('.ohv3-next');
-      if (prev) prev.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); setActive(idx - 1); });
-      if (next) next.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); setActive(idx + 1); });
-      modalContainer.querySelectorAll('.ohv3-dot').forEach(d => {
-        d.addEventListener('click', e => {
-          e.preventDefault(); e.stopPropagation();
-          const go = parseInt(d.getAttribute('data-ohv3-go'), 10);
-          if (!isNaN(go)) setActive(go);
-        });
+      const track = modalContainer.querySelector('.ohv3-mtrack');
+      const imgs = [].slice.call(modalContainer.querySelectorAll('.ohv3-mimg'));
+
+      // Clic sur la photo = lien affilie (comme le bouton)
+      if (track && url) {
+        track.style.cursor = 'pointer';
+        track.addEventListener('click', () => window.open(url, '_blank', 'noopener'));
+      }
+
+      function show(img) {
+        if (!img) return;
+        imgs.forEach(o => o.classList.remove('ohv3-img-on'));
+        img.classList.add('ohv3-img-on');
+      }
+
+      function nextBackup() {
+        if (timer) { clearInterval(timer); timer = null; }
+        const b = backups.shift();
+        if (!b) {
+          modalContainer.innerHTML = '<div class="ohv3-loading">' + esc(t('noHotels')) + '</div>';
+          return;
+        }
+        if (!b.photos || !b.photos.length) return nextBackup();
+        paint(b);
+      }
+
+      function photoFailed(img) {
+        img.setAttribute('data-ohv3-dead', '1');
+        img.classList.remove('ohv3-img-on');
+        img.style.display = 'none';
+        const alive = imgs.filter(o => !o.getAttribute('data-ohv3-dead'));
+        if (!alive.length) {
+          reportBrokenHotel(name, url, img.getAttribute('src') || '');
+          nextBackup();
+          return;
+        }
+        show(alive[0]);
+      }
+
+      imgs.forEach(img => {
+        img.addEventListener('error', () => photoFailed(img));
+        if (img.complete && img.naturalWidth === 0) photoFailed(img);
       });
 
-      // Swipe latéral
-      const track = modalContainer.querySelector('.ohv3-mtrack');
       if (track) {
-        let sx = 0, sy = 0, moved = false;
-        track.addEventListener('touchstart', e => { const t = e.touches[0]; sx = t.clientX; sy = t.clientY; moved = false; }, { passive: true });
-        track.addEventListener('touchmove', e => {
-          const t = e.touches[0];
-          if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) moved = true;
-        }, { passive: true });
-        track.addEventListener('touchend', e => {
-          if (!moved) return;
-          const t = e.changedTouches[0];
-          const dx = t.clientX - sx;
-          const dy = t.clientY - sy;
-          if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) setActive(dx < 0 ? idx + 1 : idx - 1);
-        }, { passive: true });
+        track.addEventListener('mouseenter', () => { paused = true; });
+        track.addEventListener('mouseleave', () => { paused = false; });
+      }
+
+      if (timer) { clearInterval(timer); timer = null; }
+      if (imgs.length > 1) {
+        timer = setInterval(() => {
+          if (!document.body.contains(track)) { clearInterval(timer); timer = null; return; }
+          if (paused) return;
+          const alive = imgs.filter(o => !o.getAttribute('data-ohv3-dead'));
+          if (alive.length < 2) return;
+          const cur = modalContainer.querySelector('.ohv3-mimg.ohv3-img-on');
+          const pos = alive.indexOf(cur);
+          show(alive[(pos + 1) % alive.length]);
+        }, CONFIG.rotationInterval);
       }
     }
 
-    paint(activeIdx);
+    paint(ordered[0]);
+  }
+
+  // Signalement d'un hotel dont toutes les photos sont mortes (repare dans l'admin).
+  function reportBrokenHotel(name, book, url) {
+    try {
+      if (!name) return;
+      const seen = JSON.parse(sessionStorage.getItem('ohv3_reported') || '[]');
+      if (seen.indexOf(name) !== -1) return;
+      seen.push(name);
+      sessionStorage.setItem('ohv3_reported', JSON.stringify(seen));
+      let cc = '', slug = '';
+      const m = (book || '').match(/booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/);
+      if (m) { cc = m[1]; slug = m[2]; }
+      let id = (cc + '__' + slug) || name;
+      id = id.replace(/[^a-zA-Z0-9_-]/g, '-').slice(0, 180);
+      const body = { fields: {
+        name: { stringValue: name }, cc: { stringValue: cc }, slug: { stringValue: slug },
+        bookingUrl: { stringValue: book || '' }, brokenUrl: { stringValue: url || '' },
+        ts: { timestampValue: new Date().toISOString() }
+      } };
+      const api = 'https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/broken_hotel_photos?documentId=' + encodeURIComponent(id);
+      fetch(api, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).catch(() => {});
+    } catch (e) {}
   }
 
   // === MODALE ===
@@ -445,27 +451,13 @@
         renderStay22Fallback();
         return;
       }
-      const picked = pickThreeHotels(placeData.hotels);
-      if (!picked.length) {
+      const ordered = orderHotels(placeData.hotels);
+      if (!ordered.length) {
         renderStay22Fallback();
         return;
       }
-
-      // Index initial : le mieux noté
-      let initialIdx = 0;
-      let bestScore = parseFloat(picked[0].hotel.score) || 0;
-      for (let i = 1; i < picked.length; i++) {
-        const s = parseFloat(picked[i].hotel.score) || 0;
-        if (s > bestScore) { bestScore = s; initialIdx = i; }
-      }
-
-      // Choix du rendu selon largeur écran
-      const isMobile = window.innerWidth <= 720;
-      if (isMobile) {
-        renderMobileSlider(picked, initialIdx, containerEl);
-      } else {
-        renderDesktopAccordion(picked, containerEl);
-      }
+      // Un seul hotel visible, meme rendu desktop et mobile.
+      renderSingleHotel(ordered, containerEl);
     }).catch(err => {
       console.error('[ORT-HOTELS-V3] Erreur :', err);
       // En cas d'erreur réseau aussi, on tente la carte Stay22 (mieux que rien)
@@ -536,11 +528,19 @@
       '.ohv3-acc-wrap[data-ohv3-active="1"] .ohv3-acc-card[data-ohv3-idx="1"] .ohv3-acc-img,',
       '.ohv3-acc-wrap[data-ohv3-active="2"] .ohv3-acc-card[data-ohv3-idx="2"] .ohv3-acc-img{aspect-ratio:16/9}',
 
-      '.ohv3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .8s ease;will-change:opacity}',
-      '.ohv3-img-1{opacity:1;z-index:2}',
-      '.ohv3-img-2{opacity:0;z-index:1}',
-      '.ohv3-acc-img[data-ohv3-flip="1"] .ohv3-img-1{opacity:0}',
-      '.ohv3-acc-img[data-ohv3-flip="1"] .ohv3-img-2{opacity:1}',
+      '.ohv3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease;will-change:opacity;z-index:1}',
+      '.ohv3-img.ohv3-img-on{opacity:1;z-index:2}',
+      '.ohv3-mimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease;z-index:1}',
+      '.ohv3-mimg.ohv3-img-on{opacity:1;z-index:2}',
+      // Badge "Coup de coeur" (élite)
+      '.ohv3-elite-badge{position:absolute;top:10px;left:10px;z-index:5;background:linear-gradient(135deg,#f4c430,#d4a017);color:#fff;font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:999px;letter-spacing:.02em;box-shadow:0 2px 6px rgba(212,160,23,0.45)}',
+      '.ohv3-elite-badge-m{top:10px;left:10px}',
+      // Carte élite : bordure dorée
+      '.ohv3-acc-card.ohv3-elite{border-color:#d4a017;box-shadow:0 2px 8px rgba(212,160,23,0.18)}',
+      '.ohv3-acc-card.ohv3-elite:hover{border-color:#d4a017;box-shadow:0 6px 16px rgba(212,160,23,0.28)}',
+      // Dot élite (mobile)
+      '.ohv3-dot.ohv3-dot-elite{background:linear-gradient(135deg,#f4c430,#d4a017)}',
+      '.ohv3-dot.ohv3-dot-elite.ohv3-dot-on{transform:scale(1.4)}',
 
       '.ohv3-acc-price{position:absolute;bottom:10px;right:10px;z-index:3;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:0.95rem;padding:4px 10px;border-radius:8px;letter-spacing:.02em}',
 
@@ -566,7 +566,6 @@
       // === MOBILE ===
       '.ohv3-mwrap{position:relative;padding:12px}',
       '.ohv3-mtrack{position:relative;width:100%;aspect-ratio:4/3;border-radius:14px;overflow:hidden}',
-      '.ohv3-mimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}',
       '.ohv3-moverlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:14px 14px 14px 14px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.3) 50%,rgba(0,0,0,0) 100%);z-index:2}',
       '.ohv3-mprice{position:absolute;top:10px;right:10px;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:1rem;padding:4px 12px;border-radius:8px}',
       '.ohv3-badge-m{top:10px;left:10px}',
@@ -590,6 +589,190 @@
       '@media(max-width:720px){.ohv3-acc-wrap{display:none}}'
     ].join('\n');
     document.head.appendChild(style);
+  }
+
+  // === SUPER ELITE : hotel mis en avant + popup 1 minute apres l'arrivee ===
+  // Regle 1 : l'hotel mis en avant d'un lieu = elite:true si present, sinon le plus cher (priceLevel max, score en depart).
+  function pickFeaturedHotel(hotels) {
+    if (!hotels || !hotels.length) return null;
+    for (let i = 0; i < hotels.length; i++) {
+      if (hotels[i] && hotels[i].elite === true) return hotels[i];
+    }
+    // Pas d'elite : on prend l'hotel avec le plus de photos (le plus sur a afficher),
+    // departage par la meilleure note. Le niveau de prix ne sert plus a choisir.
+    let best = hotels[0];
+    let bestPh = collectPhotos(best).length;
+    for (let j = 1; j < hotels.length; j++) {
+      const a = hotels[j];
+      if (!a) continue;
+      const ph = collectPhotos(a).length;
+      if (ph > bestPh || (ph === bestPh && (parseFloat(a.score) || 0) > (parseFloat(best.score) || 0))) {
+        best = a; bestPh = ph;
+      }
+    }
+    return best;
+  }
+
+  let _seScheduled = false;
+  let _seEl = null;
+
+  function _seEntry(hotel, placeName) {
+    if (!hotel) return null;
+    const i1 = bigImg(hotel.imageUrl || hotel.coverPhoto);
+    const u = buildBookingAffiliateUrl(hotel.bookingUrl);
+    if (!i1 || !u || u === '#') return null;
+    return { n: hotel.name || '', place: placeName || '', pl: hotel.priceLevel || 0, sc: (hotel.score != null ? hotel.score : ''), u: u, i1: i1, i2: bigImg(hotel.imageUrl2), i3: bigImg(hotel.imageUrl3) };
+  }
+
+  function _seDollars(p) { p = parseInt(p, 10) || 0; let s = ''; for (let i = 0; i < p; i++) s += '$'; return s; }
+
+  function _seImgEl(src, alt, cls) {
+    const im = document.createElement('img');
+    im.src = src; im.alt = alt || ''; im.loading = 'lazy';
+    if (cls) im.className = cls;
+    im.onerror = function() { im.style.display = 'none'; };
+    return im;
+  }
+
+  function _seInjectCSS() {
+    if (document.getElementById('ortSeCss')) return;
+    const st = document.createElement('style');
+    st.id = 'ortSeCss';
+    st.textContent = '#ortSeOverlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:99998;display:flex;align-items:center;justify-content:center;padding:16px}#ortSeOverlay .se-card{position:relative;background:#fff;border-radius:16px;max-width:420px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)}#ortSeOverlay .se-click{cursor:pointer}#ortSeOverlay .se-hero{display:block;width:100%;height:220px;object-fit:cover;border-radius:16px 16px 0 0}#ortSeOverlay .se-body{padding:14px 18px 6px}#ortSeOverlay .se-name{font-weight:700;font-size:18px;margin-bottom:4px}#ortSeOverlay .se-meta{font-size:14px;color:#444;margin-bottom:8px}#ortSeOverlay .se-pl{color:#0a7d2c;font-weight:700}#ortSeOverlay .se-sc{color:#b8860b;font-weight:700}#ortSeOverlay .se-txt{font-size:14px;line-height:1.45;color:#333;margin:0 0 10px}#ortSeOverlay .se-duo{display:flex;gap:6px;padding:0 18px 16px}#ortSeOverlay .se-duo img{width:calc(50% - 3px);height:120px;object-fit:cover;border-radius:10px}#ortSeOverlay .se-x{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:18px;cursor:pointer;line-height:30px;padding:0}#ortSeOverlay .se-ar{position:absolute;top:50%;transform:translateY(-50%);z-index:2;width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.92);color:#111;font-size:22px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);line-height:34px;padding:0}#ortSeOverlay .se-prev{left:8px}#ortSeOverlay .se-next{right:8px}';
+    document.head.appendChild(st);
+  }
+
+  function _seClose() {
+    if (!_seEl) return;
+    _seEl.parentNode.removeChild(_seEl);
+    _seEl = null;
+    document.removeEventListener('keydown', _seKey);
+  }
+
+  function _seKey(e) { if (e.key === 'Escape') _seClose(); }
+
+  function _seRender(list, idx) {
+    if (!_seEl) return;
+    const h = list[idx];
+    if (!h) return;
+    const card = _seEl.firstChild;
+    card.innerHTML = '';
+    const x = document.createElement('button');
+    x.type = 'button'; x.className = 'se-x'; x.textContent = '\u00d7';
+    x.onclick = function(ev) { ev.stopPropagation(); _seClose(); };
+    card.appendChild(x);
+    if (list.length > 1) {
+      const pv = document.createElement('button');
+      pv.type = 'button'; pv.className = 'se-ar se-prev'; pv.textContent = '\u2039';
+      pv.onclick = function(ev) { ev.stopPropagation(); _seRender(list, (idx - 1 + list.length) % list.length); };
+      card.appendChild(pv);
+      const nx = document.createElement('button');
+      nx.type = 'button'; nx.className = 'se-ar se-next'; nx.textContent = '\u203a';
+      nx.onclick = function(ev) { ev.stopPropagation(); _seRender(list, (idx + 1) % list.length); };
+      card.appendChild(nx);
+    }
+    const clk = document.createElement('div');
+    clk.className = 'se-click';
+    clk.onclick = function() { if (h.u && h.u !== '#') window.open(h.u, '_blank', 'noopener'); };
+    if (h.i1) clk.appendChild(_seImgEl(h.i1, h.n, 'se-hero'));
+    const body = document.createElement('div');
+    body.className = 'se-body';
+    const nm = document.createElement('div');
+    nm.className = 'se-name'; nm.textContent = h.n;
+    body.appendChild(nm);
+    const mt = document.createElement('div');
+    mt.className = 'se-meta';
+    const pn = document.createElement('strong');
+    pn.textContent = h.place;
+    mt.appendChild(pn);
+    if (h.pl) { const pl = document.createElement('span'); pl.className = 'se-pl'; pl.textContent = ' \u00b7 ' + _seDollars(h.pl); mt.appendChild(pl); }
+    if (h.sc) { const sc = document.createElement('span'); sc.className = 'se-sc'; sc.textContent = ' \u00b7 \u2605 ' + h.sc; mt.appendChild(sc); }
+    body.appendChild(mt);
+    const tx = document.createElement('p');
+    tx.className = 'se-txt'; tx.textContent = t('sePitch');
+    body.appendChild(tx);
+    clk.appendChild(body);
+    if (h.i2 || h.i3) {
+      const duo = document.createElement('div');
+      duo.className = 'se-duo';
+      if (h.i2) duo.appendChild(_seImgEl(h.i2, h.n, ''));
+      if (h.i3) duo.appendChild(_seImgEl(h.i3, h.n, ''));
+      clk.appendChild(duo);
+    }
+    card.appendChild(clk);
+  }
+
+  function _seOpen(list, start) {
+    if (_seEl) return;
+    _seInjectCSS();
+    _seEl = document.createElement('div');
+    _seEl.id = 'ortSeOverlay';
+    const card = document.createElement('div');
+    card.className = 'se-card';
+    _seEl.appendChild(card);
+    _seEl.onclick = function(e) { if (e.target === _seEl) _seClose(); };
+    document.body.appendChild(_seEl);
+    document.addEventListener('keydown', _seKey);
+    _seRender(list, start);
+  }
+
+  // Regle 2 : popup super elite 1 minute apres l'arrivee, a chaque ouverture.
+  // opts : { getSteps: fn -> [{place_id,name,visits}], getSuperElite: fn -> {place_id,hotel_index,hotel_name}|null, delayMs }
+  // Fallback sans superElite : depart sur le lieu qui a le plus de visites.
+  function scheduleSuperElitePopup(opts) {
+    opts = opts || {};
+    if (_seScheduled) return;
+    _seScheduled = true;
+    const delay = (typeof opts.delayMs === 'number') ? opts.delayMs : 60000;
+    setTimeout(async function() {
+      try {
+        const steps = (typeof opts.getSteps === 'function') ? (opts.getSteps() || []) : (opts.steps || []);
+        const seen = {};
+        const places = [];
+        steps.forEach(function(s) {
+          const pid = s.place_id || s.pid || '';
+          if (!pid || seen[pid]) return;
+          seen[pid] = 1;
+          places.push({ pid: pid, name: s.name || '', vis: (s.visits || []).length });
+        });
+        if (!places.length) return;
+        const seCfg = (typeof opts.getSuperElite === 'function') ? opts.getSuperElite() : (opts.superElite || null);
+        const list = [];
+        let start = -1;
+        for (const p of places) {
+          const data = await loadHotelsForPlace(p.pid);
+          const hotels = data && data.hotels ? data.hotels : null;
+          if (!hotels || !hotels.length) continue;
+          let hotel = pickFeaturedHotel(hotels);
+          let isSE = false;
+          if (seCfg && seCfg.place_id === p.pid) {
+            const hi = (typeof seCfg.hotel_index === 'number') ? seCfg.hotel_index : 0;
+            if (hotels[hi]) {
+              hotel = hotels[hi];
+              isSE = true;
+              if (seCfg.hotel_name && hotel.name && hotel.name !== seCfg.hotel_name) console.warn('[ORT-HOTELS-V3] superElite : hotel_name ne correspond pas a hotel_index (' + hotel.name + ' vs ' + seCfg.hotel_name + ')');
+            }
+          }
+          let e = _seEntry(hotel, p.name);
+          if (!e) {
+            for (let f = 0; f < hotels.length && !e; f++) e = _seEntry(hotels[f], p.name);
+            if (e) isSE = false;
+          }
+          if (!e) continue;
+          e.vis = p.vis;
+          if (isSE) start = list.length;
+          list.push(e);
+        }
+        if (!list.length) return;
+        if (start < 0) {
+          start = 0;
+          for (let v = 1; v < list.length; v++) if (list[v].vis > list[start].vis) start = v;
+        }
+        _seOpen(list, start);
+      } catch (e) {
+        console.warn('[ORT-HOTELS-V3] popup super elite :', e);
+      }
+    }, delay);
   }
 
   // === INIT ===
@@ -616,6 +799,9 @@
     buildStay22Url, buildBookingAffiliateUrl,
     loadHotelsForPlace,
     pickThreeHotels,
+    orderHotels,
+    pickFeaturedHotel,
+    scheduleSuperElitePopup,
     openHotelsModal, closeHotelsModal
   };
   global.ORT_HOTELS = ORT_HOTELS;

@@ -922,7 +922,7 @@ async function enrichStepsWithORTData(steps, config) {
 // Note : sans utilisateur connecté, ORT_STATE.saveTrip écrit en
 // localStorage et la coquille relit le localStorage (patch template-v3).
 // ====================================================================
-const STATIC_LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', pt: 'roteiros', it: 'itinerari', ar: 'masar' };
+const STATIC_LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', pt: 'roteiros', it: 'itinerari', ar: 'masar', nl: 'routes', de: 'routen' };
 
 async function saveAndRedirectToStatic(steps, itinerary, config, lang) {
   const urlParams = new URLSearchParams(window.location.search);
@@ -1075,7 +1075,7 @@ async function generateBuilderItinerary(steps, config, lang) {
   } else if (totalNightsToDistribute > 0) {
     // Pas d'étape intermédiaire : trajet trop court → message lisible
     hideBuilderLoader();
-    showBuilderError(lang, window.ORT_I18N?.builderTooShort?.[lang] || window.ORT_I18N?.builderTooShort?.fr || 'Le trajet est trop court pour générer des étapes.');
+    showBuilderError(lang, window.ORT_I18N?.builderTooShort?.[lang] || window.ORT_I18N?.builderTooShort?.en || 'Le trajet est trop court pour générer des étapes.');
     return;
   }
   
@@ -1501,14 +1501,19 @@ async function findStartCityInPlaces(start, lang) {
 function showStartCityWarning(cityName, lang) {
   const t = (key) => {
     const texts = {
-      warningTitle: { fr: '⚠️ Information', en: '⚠️ Notice', es: '⚠️ Aviso' },
+      warningTitle: { fr: '⚠️ Information', en: '⚠️ Notice', es: '⚠️ Aviso', pt: '⚠️ Aviso', it: '⚠️ Avviso', ar: '⚠️ تنبيه', nl: '⚠️ Let op', de: '⚠️ Hinweis' },
       warningText: { 
         fr: `La ville "${cityName}" n'est pas dans notre base de données. Les visites et temps conseillés ne seront pas disponibles pour cette étape.`,
         en: `The city "${cityName}" is not in our database. Visits and recommended time won't be available for this stop.`,
-        es: `La ciudad "${cityName}" no está en nuestra base de datos. Las visitas y el tiempo recomendado no estarán disponibles.`
+        es: `La ciudad "${cityName}" no está en nuestra base de datos. Las visitas y el tiempo recomendado no estarán disponibles.`,
+        pt: `A cidade "${cityName}" não está na nossa base de dados. As visitas e o tempo recomendado não estarão disponíveis para esta etapa.`,
+        it: `La città "${cityName}" non è nel nostro database. Visite e tempi consigliati non saranno disponibili per questa tappa.`,
+        ar: `المدينة "${cityName}" غير موجودة في قاعدة بياناتنا. لن تتوفر الزيارات والمدة الموصى بها لهذه المحطة.`,
+        nl: `De stad "${cityName}" staat niet in onze database. Bezienswaardigheden en aanbevolen tijd zijn niet beschikbaar voor deze stop.`,
+        de: `Die Stadt "${cityName}" ist nicht in unserer Datenbank. Sehenswürdigkeiten und empfohlene Dauer sind für diese Etappe nicht verfügbar.`
       }
     };
-    return texts[key]?.[lang] || texts[key]?.fr || key;
+    return texts[key]?.[lang] || texts[key]?.en || key;
   };
   
   // Toast warning (non bloquant)
@@ -2074,9 +2079,9 @@ async function generateLoopItinerary(steps, config, lang) {
   
   const t = (key) => {
     const texts = {
-      circuitFrom: { fr: 'Circuit depuis', en: 'Circuit from', es: 'Circuito desde', it: 'Circuito da', pt: 'Circuito de' }
+      circuitFrom: { fr: 'Circuit depuis', en: 'Circuit from', es: 'Circuito desde', it: 'Circuito da', pt: 'Circuito de' , ar: 'جولة انطلاقاً من', nl: 'Rondrit vanaf', de: 'Rundreise ab' }
     };
-    return texts[key]?.[lang] || texts[key]?.fr || key;
+    return texts[key]?.[lang] || texts[key]?.en || key;
   };
   
   // Titre du circuit
@@ -2291,10 +2296,10 @@ function showRecalculateButton(config, lang) {
   
   const t = (key) => {
     const texts = {
-      recalculateLoop: { fr: '🔄 Autres suggestions', en: '🔄 Other suggestions', es: '🔄 Otras sugerencias' },
-      recalculateTooltip: { fr: 'Proposer d\'autres villes pour le circuit', en: 'Suggest other cities for the circuit', es: 'Sugerir otras ciudades para el circuito' }
+      recalculateLoop: { fr: '🔄 Autres suggestions', en: '🔄 Other suggestions', es: '🔄 Otras sugerencias' , pt: '🔄 Outras sugestões', it: '🔄 Altri suggerimenti', ar: '🔄 اقتراحات أخرى', nl: '🔄 Andere suggesties', de: '🔄 Andere Vorschläge' },
+      recalculateTooltip: { fr: 'Proposer d\'autres villes pour le circuit', en: 'Suggest other cities for the circuit', es: 'Sugerir otras ciudades para el circuito' , pt: 'Sugerir outras cidades para o circuito', it: 'Proporre altre città per il circuito', ar: 'اقتراح مدن أخرى للجولة', nl: 'Andere steden voor de rondrit voorstellen', de: 'Andere Städte für die Rundreise vorschlagen' }
     };
-    return texts[key]?.[lang] || texts[key]?.fr || key;
+    return texts[key]?.[lang] || texts[key]?.en || key;
   };
   
   const btn = document.createElement('button');
@@ -2382,7 +2387,7 @@ function showBuilderImpossibleModal(config, distance = 0) {
     const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr');
     
     const t = (key, params) => {
-      let text = window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+      let text = window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
       if (params) {
         Object.keys(params).forEach(k => {
           text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
@@ -2489,7 +2494,7 @@ function showBuilderImpossibleModal(config, distance = 0) {
       }
     };
     modal.querySelector('#daysMinus').onclick = () => {
-      const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+      const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
       if (currentDays > 1) {
         currentDays -= 1;
         modal.querySelector('#daysValue').textContent = `${currentDays} ${t('days')}`;
@@ -2497,7 +2502,7 @@ function showBuilderImpossibleModal(config, distance = 0) {
       }
     };
     modal.querySelector('#daysPlus').onclick = () => {
-      const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+      const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
       if (currentDays < 60) {
         currentDays += 1;
         modal.querySelector('#daysValue').textContent = `${currentDays} ${t('days')}`;
@@ -2524,7 +2529,7 @@ function showBuilderImpossibleModal(config, distance = 0) {
 
 // === UI HELPERS ===
 function showBuilderLoader(lang) {
-  const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+  const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
   let el = document.getElementById('builderLoader');
   if (!el) {
     el = document.createElement('div');
@@ -2549,7 +2554,7 @@ function hideBuilderLoader() {
 
 function showBuilderError(lang, message) {
   hideBuilderLoader();
-  const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+  const t = (key) => window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
   let el = document.getElementById('builderError');
   if (!el) {
     el = document.createElement('div');
@@ -2571,43 +2576,51 @@ function showBuilderError(lang, message) {
 // ce qui rend tout trajet routier impossible (continents séparés).
 function showTranscontinentalModal(config, lang, validation) {
   const TR_I18N = {
-    title: {
-      fr: '🌍 Trajet routier impossible',
-      en: '🌍 Road trip not possible',
-      it: '🌍 Viaggio in auto impossibile',
-      es: '🌍 Viaje por carretera imposible',
-      pt: '🌍 Viagem de carro impossível',
-      ar: '🌍 الرحلة البرية مستحيلة'
-    },
-    intro: {
-      fr: 'La distance à vol d\'oiseau entre {start} et {end} est de {km} km. Aucune route ne relie ces deux villes — elles sont séparées par un océan ou un autre continent.',
-      en: 'The straight-line distance between {start} and {end} is {km} km. No road connects these two cities — they are separated by an ocean or different continents.',
-      it: 'La distanza in linea d\'aria tra {start} e {end} è di {km} km. Nessuna strada collega queste due città — sono separate da un oceano o da continenti diversi.',
-      es: 'La distancia en línea recta entre {start} y {end} es de {km} km. Ninguna carretera conecta estas dos ciudades — están separadas por un océano o continentes diferentes.',
-      pt: 'A distância em linha reta entre {start} e {end} é de {km} km. Nenhuma estrada liga estas duas cidades — estão separadas por um oceano ou continentes diferentes.',
-      ar: 'المسافة المباشرة بين {start} و {end} هي {km} كم. لا يوجد طريق يربط بين هاتين المدينتين — فهما مفصولتان بمحيط أو قارات مختلفة.'
-    },
-    suggestion: {
-      fr: 'Pour un roadtrip, choisissez deux villes sur le même continent.',
-      en: 'For a road trip, choose two cities on the same continent.',
-      it: 'Per un viaggio in auto, scegli due città sullo stesso continente.',
-      es: 'Para un viaje por carretera, elige dos ciudades en el mismo continente.',
-      pt: 'Para uma viagem de carro, escolha duas cidades no mesmo continente.',
-      ar: 'لرحلة برية، اختر مدينتين في نفس القارة.'
-    },
-    btn: {
-      fr: 'Modifier mes villes',
-      en: 'Change my cities',
-      it: 'Modifica le mie città',
-      es: 'Cambiar mis ciudades',
-      pt: 'Alterar as minhas cidades',
-      ar: 'تغيير المدن'
-    }
-  };
+  "title": {
+    "fr": "🌍 Trajet routier impossible",
+    "en": "🌍 Road trip not possible",
+    "it": "🌍 Viaggio in auto impossibile",
+    "es": "🌍 Viaje por carretera imposible",
+    "pt": "🌍 Viagem de carro impossível",
+    "ar": "🌍 الرحلة البرية مستحيلة",
+    "nl": "🌍 Reis over de weg niet mogelijk",
+    "de": "🌍 Fahrt auf der Straße nicht möglich"
+  },
+  "intro": {
+    "fr": "La distance à vol d'oiseau entre {start} et {end} est de {km} km. Aucune route ne relie ces deux villes — elles sont séparées par un océan ou un autre continent.",
+    "en": "The straight-line distance between {start} and {end} is {km} km. No road connects these two cities — they are separated by an ocean or different continents.",
+    "it": "La distanza in linea d'aria tra {start} e {end} è di {km} km. Nessuna strada collega queste due città — sono separate da un oceano o da continenti diversi.",
+    "es": "La distancia en línea recta entre {start} y {end} es de {km} km. Ninguna carretera conecta estas dos ciudades — están separadas por un océano o continentes diferentes.",
+    "pt": "A distância em linha reta entre {start} e {end} é de {km} km. Nenhuma estrada liga estas duas cidades — estão separadas por um oceano ou continentes diferentes.",
+    "ar": "المسافة المباشرة بين {start} و {end} هي {km} كم. لا يوجد طريق يربط بين هاتين المدينتين — فهما مفصولتان بمحيط أو قارات مختلفة.",
+    "nl": "De hemelsbrede afstand tussen {start} en {end} is {km} km. Geen enkele weg verbindt deze twee steden — ze worden gescheiden door een oceaan of een ander continent.",
+    "de": "Die Luftlinie zwischen {start} und {end} beträgt {km} km. Keine Straße verbindet diese beiden Städte — sie sind durch einen Ozean oder einen anderen Kontinent getrennt."
+  },
+  "suggestion": {
+    "fr": "Pour un roadtrip, choisissez deux villes sur le même continent.",
+    "en": "For a road trip, choose two cities on the same continent.",
+    "it": "Per un viaggio in auto, scegli due città sullo stesso continente.",
+    "es": "Para un viaje por carretera, elige dos ciudades en el mismo continente.",
+    "pt": "Para uma viagem de carro, escolha duas cidades no mesmo continente.",
+    "ar": "لرحلة برية، اختر مدينتين في نفس القارة.",
+    "nl": "Kies voor een road trip twee steden op hetzelfde continent.",
+    "de": "Wähle für einen Roadtrip zwei Städte auf demselben Kontinent."
+  },
+  "btn": {
+    "fr": "Modifier mes villes",
+    "en": "Change my cities",
+    "it": "Modifica le mie città",
+    "es": "Cambiar mis ciudades",
+    "pt": "Alterar as minhas cidades",
+    "ar": "تغيير المدن",
+    "nl": "Mijn steden wijzigen",
+    "de": "Meine Städte ändern"
+  }
+};
   const l = TR_I18N.title[lang] ? lang : 'fr';
-  const isRTL = (l === 'ar');
+  const isRTL = (window.ORT_RTL_LANGS || ['ar']).indexOf(l) !== -1;
   const tr = (key, params) => {
-    let text = TR_I18N[key]?.[l] || TR_I18N[key]?.fr || key;
+    let text = TR_I18N[key]?.[l] || TR_I18N[key]?.en || key;
     if (params) Object.keys(params).forEach(k => {
       text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);
     });
@@ -2709,15 +2722,15 @@ function validateRouteIsDrivable(routeData, directDistance) {
 function showSeaCrossingModal(config, lang, validation) {
   return new Promise((resolve) => {
     const t = (key, params) => {
-      let text = window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || {
-        seaCrossingTitle: { fr: '🌊 Traversée maritime détectée', en: '🌊 Sea crossing detected', es: '🌊 Cruce marítimo detectado' },
-        seaCrossingText: { fr: 'Il n\'existe pas de route terrestre directe entre {start} et {end}. Un ferry ou un avion serait nécessaire.', en: 'There is no direct land route between {start} and {end}. A ferry or plane would be required.', es: 'No existe una ruta terrestre directa entre {start} y {end}. Se necesitaría un ferry o avión.' },
-        seaCrossingSuggestion: { fr: 'Suggestions :', en: 'Suggestions:', es: 'Sugerencias:' },
-        seaCrossingTip1: { fr: '• Choisissez des villes sur le même continent', en: '• Choose cities on the same continent', es: '• Elija ciudades en el mismo continente' },
-        seaCrossingTip2: { fr: '• Pour traverser la Manche, partez de Calais ou Dunkerque', en: '• To cross the Channel, start from Calais or Dunkirk', es: '• Para cruzar el Canal, salga de Calais o Dunkerque' },
-        seaCrossingTip3: { fr: '• Pour les îles, créez un itinéraire séparé', en: '• For islands, create a separate itinerary', es: '• Para las islas, cree un itinerario separado' },
-        builderBack: { fr: 'Retour', en: 'Back', es: 'Volver', pt: 'Voltar', it: 'Indietro', de: 'Zurück' },
-        builderTooShort: { fr: 'Le trajet est trop court pour générer des étapes. Essayez avec une distance plus grande.', en: 'The route is too short to generate stops. Try with a longer distance.', es: 'El trayecto es demasiado corto para generar etapas. Prueba con una distancia mayor.', pt: 'O percurso é curto demais para gerar etapas. Tente com uma distância maior.', it: 'Il percorso è troppo breve per generare tappe. Prova con una distanza maggiore.', de: 'Die Strecke ist zu kurz, um Etappen zu erstellen. Versuche es mit einer größeren Distanz.' }
+      let text = window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || {
+        seaCrossingTitle: { fr: '🌊 Traversée maritime détectée', en: '🌊 Sea crossing detected', es: '🌊 Cruce marítimo detectado' , pt: '🌊 Travessia marítima detetada', it: '🌊 Traversata marittima rilevata', ar: '🌊 تم رصد عبور بحري', nl: '🌊 Zeeoversteek gedetecteerd', de: '🌊 Seeüberquerung erkannt' },
+        seaCrossingText: { fr: 'Il n\'existe pas de route terrestre directe entre {start} et {end}. Un ferry ou un avion serait nécessaire.', en: 'There is no direct land route between {start} and {end}. A ferry or plane would be required.', es: 'No existe una ruta terrestre directa entre {start} y {end}. Se necesitaría un ferry o avión.' , pt: 'Não existe rota terrestre direta entre {start} e {end}. Seria necessário um ferry ou um avião.', it: 'Non esiste un percorso via terra diretto tra {start} e {end}. Servirebbe un traghetto o un aereo.', ar: 'لا يوجد طريق بري مباشر بين {start} و {end}. ستحتاج إلى عبّارة أو طائرة.', nl: 'Er is geen directe route over land tussen {start} en {end}. Een veerboot of vliegtuig zou nodig zijn.', de: 'Es gibt keine direkte Landverbindung zwischen {start} und {end}. Eine Fähre oder ein Flug wäre nötig.' },
+        seaCrossingSuggestion: { fr: 'Suggestions :', en: 'Suggestions:', es: 'Sugerencias:' , pt: 'Sugestões:', it: 'Suggerimenti:', ar: 'اقتراحات:', nl: 'Suggesties:', de: 'Vorschläge:' },
+        seaCrossingTip1: { fr: '• Choisissez des villes sur le même continent', en: '• Choose cities on the same continent', es: '• Elija ciudades en el mismo continente' , pt: '• Escolha cidades no mesmo continente', it: '• Scegli città nello stesso continente', ar: '• اختر مدناً في القارة نفسها', nl: '• Kies steden op hetzelfde continent', de: '• Wähle Städte auf demselben Kontinent' },
+        seaCrossingTip2: { fr: '• Pour traverser la Manche, partez de Calais ou Dunkerque', en: '• To cross the Channel, start from Calais or Dunkirk', es: '• Para cruzar el Canal, salga de Calais o Dunkerque' , pt: '• Para atravessar a Mancha, parta de Calais ou Dunquerque', it: '• Per attraversare la Manica, parti da Calais o Dunkerque', ar: '• لعبور بحر المانش، انطلق من كاليه أو دونكيرك', nl: '• Vertrek vanuit Calais of Duinkerken om het Kanaal over te steken', de: '• Für die Überfahrt über den Ärmelkanal starte in Calais oder Dünkirchen' },
+        seaCrossingTip3: { fr: '• Pour les îles, créez un itinéraire séparé', en: '• For islands, create a separate itinerary', es: '• Para las islas, cree un itinerario separado' , pt: '• Para as ilhas, crie um roteiro separado', it: '• Per le isole, crea un itinerario separato', ar: '• للجزر، أنشئ مساراً منفصلاً', nl: '• Maak voor eilanden een aparte route', de: '• Erstelle für Inseln eine separate Route' },
+        builderBack: { fr: 'Retour', en: 'Back', es: 'Volver', pt: 'Voltar', it: 'Indietro', de: 'Zurück' , nl: 'Terug' },
+        builderTooShort: { fr: 'Le trajet est trop court pour générer des étapes. Essayez avec une distance plus grande.', en: 'The route is too short to generate stops. Try with a longer distance.', es: 'El trayecto es demasiado corto para generar etapas. Prueba con una distancia mayor.', pt: 'O percurso é curto demais para gerar etapas. Tente com uma distância maior.', it: 'Il percorso è troppo breve per generare tappe. Prova con una distanza maggiore.', de: 'Die Strecke ist zu kurz, um Etappen zu erstellen. Versuche es mit einer größeren Distanz.' , nl: 'Het traject is te kort om etappes te genereren. Probeer een grotere afstand.' }
       }[key]?.[lang] || key;
       
       if (params) {
@@ -2792,85 +2805,105 @@ function showSeaCrossingModal(config, lang, validation) {
 
 // Textes traduits (fr, en, it, es, pt, ar)
 const COMPROMISES_I18N = {
-  title: {
-    fr: 'Itinéraire généré avec quelques compromis',
-    en: 'Itinerary generated with some compromises',
-    it: 'Itinerario generato con alcuni compromessi',
-    es: 'Itinerario generado con algunos compromisos',
-    pt: 'Itinerário gerado com alguns compromissos',
-    ar: 'تم إنشاء المسار مع بعض التنازلات'
+  "title": {
+    "fr": "Itinéraire généré avec quelques compromis",
+    "en": "Itinerary generated with some compromises",
+    "it": "Itinerario generato con alcuni compromessi",
+    "es": "Itinerario generado con algunos compromisos",
+    "pt": "Itinerário gerado com alguns compromissos",
+    "ar": "تم إنشاء المسار مع بعض التنازلات",
+    "nl": "Route gemaakt met enkele compromissen",
+    "de": "Route mit einigen Kompromissen erstellt"
   },
-  intro: {
-    fr: 'Voici les points où nous avons dû nous adapter :',
-    en: 'Here are the points where we had to adapt:',
-    it: 'Ecco i punti in cui abbiamo dovuto adattarci:',
-    es: 'Estos son los puntos donde hemos tenido que adaptarnos:',
-    pt: 'Estes são os pontos onde tivemos de nos adaptar:',
-    ar: 'فيما يلي النقاط التي اضطررنا فيها إلى التكيف:'
+  "intro": {
+    "fr": "Voici les points où nous avons dû nous adapter :",
+    "en": "Here are the points where we had to adapt:",
+    "it": "Ecco i punti in cui abbiamo dovuto adattarci:",
+    "es": "Estos son los puntos donde hemos tenido que adaptarnos:",
+    "pt": "Estes são os pontos onde tivemos de nos adaptar:",
+    "ar": "فيما يلي النقاط التي اضطررنا فيها إلى التكيف:",
+    "nl": "Op deze punten moesten we ons aanpassen:",
+    "de": "An diesen Stellen mussten wir Abstriche machen:"
   },
-  distance: {
-    fr: '{n} trajet(s) dépasse(nt) {max} km (jusqu\'à {worst} km)',
-    en: '{n} leg(s) exceed {max} km (up to {worst} km)',
-    it: '{n} tratta(e) supera(no) {max} km (fino a {worst} km)',
-    es: '{n} tramo(s) supera(n) {max} km (hasta {worst} km)',
-    pt: '{n} trecho(s) excede(m) {max} km (até {worst} km)',
-    ar: '{n} مسار(ات) تتجاوز {max} كم (حتى {worst} كم)'
+  "distance": {
+    "fr": "{n} trajet(s) dépasse(nt) {max} km (jusqu'à {worst} km)",
+    "en": "{n} leg(s) exceed {max} km (up to {worst} km)",
+    "it": "{n} tratta(e) supera(no) {max} km (fino a {worst} km)",
+    "es": "{n} tramo(s) supera(n) {max} km (hasta {worst} km)",
+    "pt": "{n} trecho(s) excede(m) {max} km (até {worst} km)",
+    "ar": "{n} مسار(ات) تتجاوز {max} كم (حتى {worst} كم)",
+    "nl": "{n} traject(en) langer dan {max} km (tot {worst} km)",
+    "de": "{n} Abschnitt(e) über {max} km (bis zu {worst} km)"
   },
-  stepsCap: {
-    fr: 'Zone trop grande pour {max} km/étape : il en faudrait {needed} au lieu de {got}',
-    en: 'Area too large for {max} km/leg: would need {needed} stops instead of {got}',
-    it: 'Zona troppo grande per {max} km/tappa: ne servirebbero {needed} invece di {got}',
-    es: 'Zona demasiado grande para {max} km/etapa: harían falta {needed} en vez de {got}',
-    pt: 'Zona demasiado grande para {max} km/etapa: seriam necessárias {needed} em vez de {got}',
-    ar: 'المنطقة كبيرة جدًا لـ {max} كم/مرحلة: نحتاج {needed} بدلاً من {got}'
+  "stepsCap": {
+    "fr": "Zone trop grande pour {max} km/étape : il en faudrait {needed} au lieu de {got}",
+    "en": "Area too large for {max} km/leg: would need {needed} stops instead of {got}",
+    "it": "Zona troppo grande per {max} km/tappa: ne servirebbero {needed} invece di {got}",
+    "es": "Zona demasiado grande para {max} km/etapa: harían falta {needed} en vez de {got}",
+    "pt": "Zona demasiado grande para {max} km/etapa: seriam necessárias {needed} em vez de {got}",
+    "ar": "المنطقة كبيرة جدًا لـ {max} كم/مرحلة: نحتاج {needed} بدلاً من {got}",
+    "nl": "Gebied te groot voor {max} km per etappe: er zouden er {needed} nodig zijn in plaats van {got}",
+    "de": "Gebiet zu groß für {max} km pro Etappe: nötig wären {needed} statt {got}"
   },
-  stepsRequested: {
-    fr: 'Vous avez demandé {requested} étapes (départ et arrivée inclus), l\'itinéraire en compte {got} pour respecter {days} jours (1 nuit minimum par étape)',
-    en: 'You asked for {requested} stops (including start and end), the itinerary has {got} to fit {days} days (1 night minimum per stop)',
-    it: 'Hai chiesto {requested} tappe (inclusi partenza e arrivo), l\'itinerario ne conta {got} per rispettare {days} giorni (minimo 1 notte per tappa)',
-    es: 'Pediste {requested} etapas (incluidos salida y llegada), el itinerario tiene {got} para respetar {days} días (mínimo 1 noche por etapa)',
-    pt: 'Pediu {requested} etapas (incluindo partida e chegada), o itinerário tem {got} para respeitar {days} dias (mínimo 1 noite por etapa)',
-    ar: 'طلبت {requested} مراحل (شاملةً الانطلاق والوصول)، يتضمن المسار {got} لاحترام {days} أيام (ليلة واحدة على الأقل لكل مرحلة)'
+  "stepsRequested": {
+    "fr": "Vous avez demandé {requested} étapes (départ et arrivée inclus), l'itinéraire en compte {got} pour respecter {days} jours (1 nuit minimum par étape)",
+    "en": "You asked for {requested} stops (including start and end), the itinerary has {got} to fit {days} days (1 night minimum per stop)",
+    "it": "Hai chiesto {requested} tappe (inclusi partenza e arrivo), l'itinerario ne conta {got} per rispettare {days} giorni (minimo 1 notte per tappa)",
+    "es": "Pediste {requested} etapas (incluidos salida y llegada), el itinerario tiene {got} para respetar {days} días (mínimo 1 noche por etapa)",
+    "pt": "Pediu {requested} etapas (incluindo partida e chegada), o itinerário tem {got} para respeitar {days} dias (mínimo 1 noite por etapa)",
+    "ar": "طلبت {requested} مراحل (شاملةً الانطلاق والوصول)، يتضمن المسار {got} لاحترام {days} أيام (ليلة واحدة على الأقل لكل مرحلة)",
+    "nl": "Je vroeg om {requested} stops (vertrek en aankomst inbegrepen), de route telt er {got} om binnen {days} dagen te blijven (minstens 1 nacht per stop)",
+    "de": "Du hast {requested} Etappen angefragt (Start und Ziel inbegriffen), die Route hat {got}, um {days} Tage einzuhalten (mindestens 1 Nacht pro Etappe)"
   },
-  seaRemoved: {
-    fr: '{n} étape(s) accessibles uniquement en ferry ont été écartées : {names}',
-    en: '{n} stop(s) only reachable by ferry were excluded: {names}',
-    it: '{n} tappa/e raggiungibili solo in traghetto sono state escluse: {names}',
-    es: '{n} etapa(s) accesibles solo en ferry fueron descartadas: {names}',
-    pt: '{n} etapa(s) acessíveis apenas de ferry foram descartadas: {names}',
-    ar: 'تم استبعاد {n} مرحلة/مراحل لا يمكن الوصول إليها إلا بالعبّارة: {names}'
+  "seaRemoved": {
+    "fr": "{n} étape(s) accessibles uniquement en ferry ont été écartées : {names}",
+    "en": "{n} stop(s) only reachable by ferry were excluded: {names}",
+    "it": "{n} tappa/e raggiungibili solo in traghetto sono state escluse: {names}",
+    "es": "{n} etapa(s) accesibles solo en ferry fueron descartadas: {names}",
+    "pt": "{n} etapa(s) acessíveis apenas de ferry foram descartadas: {names}",
+    "ar": "تم استبعاد {n} مرحلة/مراحل لا يمكن الوصول إليها إلا بالعبّارة: {names}",
+    "nl": "{n} stop(s) die alleen per veerboot bereikbaar zijn, zijn weggelaten: {names}",
+    "de": "{n} Etappe(n), die nur per Fähre erreichbar sind, wurden ausgelassen: {names}"
   },
-  straightLine: {
-    fr: 'Le calcul de la route précise a échoué : les étapes suivent la ligne droite, distances approximatives. Relancez pour un meilleur résultat.',
-    en: 'Precise route calculation failed: stops follow a straight line, distances are approximate. Retry for a better result.',
-    it: 'Il calcolo preciso del percorso non è riuscito: le tappe seguono la linea retta, distanze approssimative. Riprova per un risultato migliore.',
-    es: 'El cálculo preciso de la ruta falló: las etapas siguen la línea recta, distancias aproximadas. Reintente para un mejor resultado.',
-    pt: 'O cálculo preciso da rota falhou: as etapas seguem a linha reta, distâncias aproximadas. Tente novamente para um melhor resultado.',
-    ar: 'فشل حساب الطريق الدقيق: المراحل تتبع الخط المستقيم والمسافات تقريبية. أعد المحاولة للحصول على نتيجة أفضل.'
+  "straightLine": {
+    "fr": "Le calcul de la route précise a échoué : les étapes suivent la ligne droite, distances approximatives. Relancez pour un meilleur résultat.",
+    "en": "Precise route calculation failed: stops follow a straight line, distances are approximate. Retry for a better result.",
+    "it": "Il calcolo preciso del percorso non è riuscito: le tappe seguono la linea retta, distanze approssimative. Riprova per un risultato migliore.",
+    "es": "El cálculo preciso de la ruta falló: las etapas siguen la línea recta, distancias aproximadas. Reintente para un mejor resultado.",
+    "pt": "O cálculo preciso da rota falhou: as etapas seguem a linha reta, distâncias aproximadas. Tente novamente para um melhor resultado.",
+    "ar": "فشل حساب الطريق الدقيق: المراحل تتبع الخط المستقيم والمسافات تقريبية. أعد المحاولة للحصول على نتيجة أفضل.",
+    "nl": "De precieze routeberekening is mislukt: de stops volgen de rechte lijn, afstanden zijn bij benadering. Probeer opnieuw voor een beter resultaat.",
+    "de": "Die genaue Routenberechnung ist fehlgeschlagen: Die Etappen folgen der Luftlinie, die Entfernungen sind ungefähr. Versuche es erneut für ein besseres Ergebnis."
   },
-  outOfZone: {
-    fr: '{n} étape(s) placée(s) hors de la zone que vous avez dessinée',
-    en: '{n} stop(s) placed outside the area you drew',
-    it: '{n} tappa(e) posizionata(e) fuori dalla zona disegnata',
-    es: '{n} parada(s) colocada(s) fuera de la zona dibujada',
-    pt: '{n} paragem(ns) colocada(s) fora da zona desenhada',
-    ar: '{n} محطة(ات) موضوعة خارج المنطقة التي رسمتها'
+  "outOfZone": {
+    "fr": "{n} étape(s) placée(s) hors de la zone que vous avez dessinée",
+    "en": "{n} stop(s) placed outside the area you drew",
+    "it": "{n} tappa(e) posizionata(e) fuori dalla zona disegnata",
+    "es": "{n} parada(s) colocada(s) fuera de la zona dibujada",
+    "pt": "{n} paragem(ns) colocada(s) fora da zona desenhada",
+    "ar": "{n} محطة(ات) موضوعة خارج المنطقة التي رسمتها",
+    "nl": "{n} stop(s) buiten het gebied dat je hebt getekend",
+    "de": "{n} Etappe(n) außerhalb des von dir gezeichneten Gebiets"
   },
-  btnKeep: {
-    fr: 'Garder cet itinéraire',
-    en: 'Keep this itinerary',
-    it: 'Mantieni questo itinerario',
-    es: 'Mantener este itinerario',
-    pt: 'Manter este itinerário',
-    ar: 'الاحتفاظ بهذا المسار'
+  "btnKeep": {
+    "fr": "Garder cet itinéraire",
+    "en": "Keep this itinerary",
+    "it": "Mantieni questo itinerario",
+    "es": "Mantener este itinerario",
+    "pt": "Manter este itinerário",
+    "ar": "الاحتفاظ بهذا المسار",
+    "nl": "Deze route behouden",
+    "de": "Diese Route behalten"
   },
-  btnModify: {
-    fr: 'Modifier mes critères',
-    en: 'Adjust my criteria',
-    it: 'Modifica i miei criteri',
-    es: 'Modificar mis criterios',
-    pt: 'Alterar os meus critérios',
-    ar: 'تعديل المعايير'
+  "btnModify": {
+    "fr": "Modifier mes critères",
+    "en": "Adjust my criteria",
+    "it": "Modifica i miei criteri",
+    "es": "Modificar mis criterios",
+    "pt": "Alterar os meus critérios",
+    "ar": "تعديل المعايير",
+    "nl": "Mijn criteria aanpassen",
+    "de": "Meine Kriterien anpassen"
   }
 };
 
@@ -2953,10 +2986,10 @@ function showCompromisesModalIfAny(steps, config, zoneInfo, lang, opts) {
   console.log('[ROUTE-BUILDER] ℹ️ Compromis détectés:', compromises);
   
   const l = (COMPROMISES_I18N.title[lang] ? lang : 'fr');
-  const isRTL = (l === 'ar');
+  const isRTL = (window.ORT_RTL_LANGS || ['ar']).indexOf(l) !== -1;
   
   const tr = (key, params) => {
-    let text = COMPROMISES_I18N[key]?.[l] || COMPROMISES_I18N[key]?.fr || key;
+    let text = COMPROMISES_I18N[key]?.[l] || COMPROMISES_I18N[key]?.en || key;
     if (params) {
       Object.keys(params).forEach(k => {
         text = text.replace(new RegExp(`\\{${k}\\}`, 'g'), params[k]);

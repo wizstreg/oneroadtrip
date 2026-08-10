@@ -33,7 +33,7 @@
   const STORAGE_PREFIX = 'ort_trip_';
   const STORAGE_INDEX = 'ort_trips_index';
   const AUTO_SAVE_DELAY = 3000; // 3 secondes après dernière modif
-  const SUPPORTED_LANGS = ['fr', 'en', 'it', 'es', 'pt', 'ar'];
+  const SUPPORTED_LANGS = ['fr', 'en', 'it', 'es', 'pt', 'ar', 'nl', 'de'];
 
   // ===== LIMITES FIRESTORE =====
   const MAX_SAVED_TRIPS = 5;      // Max voyages sauvegardés (users normaux)

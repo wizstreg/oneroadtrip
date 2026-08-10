@@ -12,6 +12,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <script>
+
+/* Format de date et de nombre : suit la langue du site, replie sur l anglais. */
+function ortDateLocale(){
+  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
+  return M[l] || 'en-GB';
+}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -380,6 +388,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
 	border-bottom-left-radius: 2px;
 	border-bottom-right-radius: 2px;
 	}
+
+/* Les commandes + et - passent a droite : la legende et la barre du haut
+   occupent tout le cote gauche et les masquaient. */
+.leaflet-top.leaflet-left {
+  top: 70px !important;
+  left: auto !important;
+  right: 12px !important;
+}
+.leaflet-top.leaflet-left .leaflet-control-zoom { margin-left: 0 !important; margin-right: 0 !important; }
+@media (max-width: 768px){ .leaflet-top.leaflet-left { top: 96px !important; right: 8px !important; } }
 
 /* zoom control */
 
@@ -922,6 +940,25 @@ header {
   white-space: nowrap;
 }
 .validate-btn:hover { background: #0d3461; }
+.ort-save-btn { background:#0f766e; color:#fff; font-weight:800; box-shadow:0 2px 8px rgba(15,118,110,.35); }
+@media (max-width: 768px){ #saveTripBtnMap .ort-save-lbl { display:none; } }
+.ort-save-btn:hover { background:#0b5c56; }
+/* Bandeau d'information affiche a l'arrivee sur le constructeur */
+.ort-notice{
+  position:fixed;inset:0;z-index:100070;background:rgba(8,16,32,.6);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.ort-notice-box{
+  background:#fff;color:#113f7a;border-radius:18px;max-width:460px;width:100%;
+  padding:26px 24px;text-align:center;box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+.ort-notice-ico{font-size:38px;line-height:1;margin-bottom:12px;}
+.ort-notice-box p{margin:0 0 20px;font-size:15px;line-height:1.5;font-weight:600;}
+.ort-notice-box button{
+  background:#113f7a;color:#fff;border:none;border-radius:999px;
+  padding:13px 30px;font-weight:700;font-size:15px;cursor:pointer;width:100%;
+}
+.ort-notice-box button:hover{background:#0d3461;}
 .validate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .reset-btn {
@@ -1614,7 +1651,7 @@ body.fullscreen-mode .place-preview {
 
 /* ===== Éditeur de visites et activités (mobile d'abord) ===== */
 .ve-open-btn{
-  display:block;width:100%;margin-top:14px;padding:12px 14px;
+  display:block;width:100%;margin:10px 0 4px;padding:12px 14px;
   background:#fff;color:#113f7a;border:1.5px solid #113f7a;border-radius:999px;
   font-weight:700;font-size:13px;line-height:1.35;cursor:pointer;text-align:center;
 }
@@ -1673,6 +1710,12 @@ body.fullscreen-mode .place-preview {
 }
 .ve-cand-txt{flex:1;font-size:13.5px;line-height:1.45;color:#1f2937;}
 .ve-cand-src{display:block;margin-top:6px;font-size:11.5px;color:#64748b;font-style:italic;}
+.ve-add-row{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.ve-add-blank{
+  flex:1 1 auto;min-width:140px;padding:10px 12px;background:#eef4ff;color:#113f7a;
+  border:1px dashed #113f7a;border-radius:10px;font-weight:600;font-size:12.5px;cursor:pointer;
+}
+.ve-add-blank:hover{background:#dbe7fb;}
 .ve-empty{padding:14px;color:#64748b;font-size:13px;font-style:italic;text-align:center;}
 @media (min-width:900px){
   .ve-overlay{align-items:center;}
@@ -2560,6 +2603,7 @@ body.fullscreen-mode .place-preview {
     <span style="display:flex; gap:8px;">
       <button id="resetBtnMobile" class="reset-btn-mobile" onclick="document.getElementById('resetBtn').click();">🔄 Réinit.</button>
       <button id="validateBtnMobile" class="validate-btn-mobile" onclick="document.getElementById('validateBtn').click();">✓ Valider</button>
+      <button id="saveTripBtnMobile" class="validate-btn-mobile ort-save-btn" onclick="saveBuilderTrip()">💾</button>
     </span>
   </div>
   
@@ -2569,6 +2613,7 @@ body.fullscreen-mode .place-preview {
     <button type="button" id="howtoBtn" class="howto-btn" title="Mode d'emploi">?</button>
     <button id="resetBtn" class="reset-btn">🔄 Réinitialiser</button>
     <button id="validateBtn" class="validate-btn">✓ Valider</button>
+    <button id="saveTripBtn" class="validate-btn ort-save-btn" onclick="saveBuilderTrip()">💾 Sauvegarder</button>
     <span class="subtitle" id="panelSubtitle">(modifiable sur la page suivante)</span>
   </div>
   <!-- Résumé du voyage (en haut) -->
@@ -2615,6 +2660,7 @@ body.fullscreen-mode .place-preview {
     <span class="sel-count" id="selCount">0</span>
     <span class="spacer"></span>
     <button class="selection-panel-validate" id="selValidateBtn" onclick="document.getElementById('validateBtn').click();">✓ Valider</button>
+    <button class="selection-panel-validate ort-save-btn" id="selSaveBtn" onclick="saveBuilderTrip()">💾 Sauvegarder</button>
   </div>
   <div class="selection-panel-list" id="selectionList">
     <div class="selection-panel-empty" id="selEmptyMsg">Cliquez sur les lieux pour les ajouter</div>
@@ -2629,6 +2675,7 @@ body.fullscreen-mode .place-preview {
       <option value="">-- Tous les pays --</option>
     </select>
     <div class="stats-box" id="statsBox">0 lieux visibles</div>
+    <button id="saveTripBtnMap" class="fullscreen-btn ort-save-btn" onclick="saveBuilderTrip()">💾 <span class="ort-save-lbl">Sauvegarder</span></button>
     <button id="fullscreenBtn" class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Plein écran</button>
     <div class="zoom-hint" id="zoomHint">🔍 Zoomez pour voir plus de lieux</div>
   </div>
@@ -2646,6 +2693,7 @@ body.fullscreen-mode .place-preview {
       <span class="rating-stars" id="previewStars">★★★★★</span>
     </div>
     <button id="addPlaceBtn" class="add-place-btn">+ Ajouter à mon itinéraire</button>
+    <button id="openVisitEditorBtn" class="ve-open-btn" onclick="openVisitEditor()" hidden></button>
     <div class="preview-photos" id="previewPhotos">
       <!-- 4 photos ici -->
     </div>
@@ -2658,7 +2706,6 @@ body.fullscreen-mode .place-preview {
       <h4 id="activitiesLabel">🎯 Activités</h4>
       <ul class="preview-list" id="previewActivities"></ul>
     </div>
-    <button id="openVisitEditorBtn" class="ve-open-btn" onclick="openVisitEditor()" hidden></button>
   </div>
 
   <!-- Éditeur de visites et activités (autres itinéraires) -->
@@ -2674,9 +2721,11 @@ body.fullscreen-mode .place-preview {
       <div class="ve-body">
         <div class="ve-col">
           <h4 class="ve-col-title" id="veCurrentTitle"></h4>
+          <div class="ve-add-row">
+            <button class="ve-add-blank" onclick="veAddBlank('visits')" id="veAddVisitBtn"></button>
+            <button class="ve-add-blank" onclick="veAddBlank('activities')" id="veAddActBtn"></button>
+          </div>
           <div id="veCurrentList"></div>
-          <button class="ve-add-blank" onclick="veAddBlank('visits')" id="veAddVisitBtn"></button>
-          <button class="ve-add-blank" onclick="veAddBlank('activities')" id="veAddActBtn"></button>
         </div>
         <div class="ve-col">
           <h4 class="ve-col-title" id="veOthersTitle"></h4>
@@ -2770,6 +2819,7 @@ body.fullscreen-mode .place-preview {
   </div>
 </div>
 
+<script src="js/ort-i18n-builder.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
@@ -2787,416 +2837,7 @@ function isMobileTouch() {
 // ===============================
 // TRADUCTIONS I18N
 // ===============================
-const T = {
-  fr: {
-    pageTitle: "Construisez votre itinéraire personnalisé",
-    panelTitle: "🗺️ Mon itinéraire personnalisé",
-    panelSubtitle: "(modifiable sur la page suivante)",
-    zoomHint: "🔍 Zoomez pour voir plus de lieux",
-    validate: "✓ Valider",
-    reset: "🔄 Réinitialiser",
-    visitsLabel: "🏛️ Visites possibles",
-    activitiesLabel: "🎯 Activités",
-    duration: "⏱️ Durée estimée",
-    stepSearchPlaceholder: "Chercher une étape par nom…",
-    stepFoundInOrt: "Trouvé dans OneRoadTrip",
-    stepBrut: "Nouvelle étape (sans visites listées)",
-    stepNotFound: "Non trouvé dans les lieux ORT",
-    stepNearby: "Villes ORT proches",
-    stepValidate: "Valider",
-    stepNoCity: "Aucune ville trouvée",
-    stepSearchUnavailable: "Recherche indisponible",
-    stepCalc: "calcul…",
-    stepTagBrut: "Ville ajoutée",
-    stepTagOrt: "Lieu ORT",
-    stepAddNext: "＋  Ajouter l'étape suivante",
-    stepAddFirst: "＋  Ajouter une étape",
-    stepVisits: "visites",
-    stepActivities: "activités",
-    stepIntegrateWith: "Intégrer avec visites et activités",
-    stepIntegrateWithout: "Intégrer sans visites",
-    stepDiffName: "⚠️ Ville proche, nom différent",
-    stepDurOther: "Autre…",
-    howtoTitle: "Comment ça marche",
-    stepHowto: "Ajoutez vos étapes une à une : servez-vous de la recherche, ou cliquez directement sur la carte, que l'endroit soit référencé ou non. Si vous dormez plusieurs nuits au même endroit, resélectionnez-le après vos visites autour : le tracé suivra vos allers-retours.",
-    day: "jour",
-    days: "jours",
-    minutes: "min",
-    emptyItinerary: "Cliquez sur les lieux pour les ajouter",
-    removePlace: "Retirer",
-    addPlace: "+ Ajouter à mon itinéraire",
-    removeFromItinerary: "✕ Retirer de l'itinéraire",
-    allCountries: "-- Tous les pays --",
-    placesVisible: "lieux visibles",
-    back: "← Retour",
-    legendTitle: "Lieux",
-    mustSee: "Incontournable",
-    recommended: "Recommandé",
-    discover: "À découvrir",
-    standard: "Standard",
-    selected: "Sélectionné",
-    noVisits: "Aucune visite définie",
-    noActivities: "Aucune activité définie",
-    configTitle: "Configurez votre voyage",
-    labelDepartDate: "Date de départ :",
-    labelNbDays: "Nombre de jours souhaités :",
-    labelRythme: "Rythme :",
-    labelMaxHotels: "Changements d'hôtel maximum :",
-    rythmeSlow: "Tranquille",
-    rythmeNormal: "Normal",
-    rythmeFast: "Soutenu",
-    cancel: "Annuler",
-    confirm: "Valider",
-    revisitTitle: "Étape déjà sélectionnée",
-    revisitQuestion: "{place} fait déjà partie de votre circuit. Que voulez-vous faire ?",
-    revisitAgain: "↩ Revenir à {place}",
-    revisitRemove: "🗑 Retirer cette étape",
-    manageStop: "Gérer cette étape ▾",
-    loopsTitle: "Boucles",
-    loopLabel: "Boucle {n}",
-    linksLabel: "Liaisons"
-  },
-  en: {
-    pageTitle: "Build your custom itinerary",
-    panelTitle: "🗺️ My custom itinerary",
-    panelSubtitle: "(editable on the next page)",
-    zoomHint: "🔍 Zoom in to see more places",
-    validate: "✓ Validate",
-    reset: "🔄 Reset",
-    visitsLabel: "🏛️ Possible visits",
-    activitiesLabel: "🎯 Activities",
-    duration: "⏱️ Estimated duration",
-    stepSearchPlaceholder: "Search a stop by name…",
-    stepFoundInOrt: "Found in OneRoadTrip",
-    stepBrut: "New stop (no listed visits)",
-    stepNotFound: "Not found in ORT places",
-    stepNearby: "Nearby ORT cities",
-    stepValidate: "Confirm",
-    stepNoCity: "No city found",
-    stepSearchUnavailable: "Search unavailable",
-    stepCalc: "calculating…",
-    stepTagBrut: "Added city",
-    stepTagOrt: "ORT place",
-    stepAddNext: "＋  Add next stop",
-    stepAddFirst: "＋  Add a stop",
-    stepVisits: "visits",
-    stepActivities: "activities",
-    stepIntegrateWith: "Add with visits and activities",
-    stepIntegrateWithout: "Add without visits",
-    stepDiffName: "⚠️ Nearby city, different name",
-    stepDurOther: "Other…",
-    howtoTitle: "How it works",
-    stepHowto: "Add your stops one by one: use the search, or click directly on the map, whether the place is listed or not. If you sleep several nights in the same place, select it again after visiting the surroundings: the route will follow your return trips.",
-    day: "day",
-    days: "days",
-    minutes: "min",
-    emptyItinerary: "Click on places to add them",
-    removePlace: "Remove",
-    addPlace: "+ Add to my itinerary",
-    removeFromItinerary: "✕ Remove from itinerary",
-    allCountries: "-- All countries --",
-    placesVisible: "places visible",
-    back: "← Back",
-    legendTitle: "Places",
-    mustSee: "Must-see",
-    recommended: "Recommended",
-    discover: "Discover",
-    standard: "Standard",
-    selected: "Selected",
-    noVisits: "No visits defined",
-    noActivities: "No activities defined",
-    configTitle: "Configure your trip",
-    labelDepartDate: "Departure date:",
-    labelNbDays: "Number of days:",
-    labelRythme: "Pace:",
-    labelMaxHotels: "Maximum hotel changes:",
-    rythmeSlow: "Relaxed",
-    rythmeNormal: "Normal",
-    rythmeFast: "Intensive",
-    cancel: "Cancel",
-    confirm: "Confirm",
-    revisitTitle: "Stop already selected",
-    revisitQuestion: "{place} is already part of your trip. What would you like to do?",
-    revisitAgain: "↩ Return to {place}",
-    revisitRemove: "🗑 Remove this stop",
-    manageStop: "Manage this stop ▾",
-    loopsTitle: "Loops",
-    loopLabel: "Loop {n}",
-    linksLabel: "Transfers"
-  },
-  it: {
-    pageTitle: "Costruisci il tuo itinerario personalizzato",
-    panelTitle: "🗺️ Il mio itinerario personalizzato",
-    panelSubtitle: "(modificabile nella pagina successiva)",
-    zoomHint: "🔍 Zoom per vedere più luoghi",
-    validate: "✓ Convalida",
-    reset: "🔄 Reimposta",
-    visitsLabel: "🏛️ Visite possibili",
-    activitiesLabel: "🎯 Attività",
-    duration: "⏱️ Durata stimata",
-    stepSearchPlaceholder: "Cerca una tappa per nome…",
-    stepFoundInOrt: "Trovato in OneRoadTrip",
-    stepBrut: "Nuova tappa (senza visite elencate)",
-    stepNotFound: "Non trovato nei luoghi ORT",
-    stepNearby: "Città ORT vicine",
-    stepValidate: "Conferma",
-    stepNoCity: "Nessuna città trovata",
-    stepSearchUnavailable: "Ricerca non disponibile",
-    stepCalc: "calcolo…",
-    stepTagBrut: "Città aggiunta",
-    stepTagOrt: "Luogo ORT",
-    stepAddNext: "＋  Aggiungi la tappa successiva",
-    stepAddFirst: "＋  Aggiungi una tappa",
-    stepVisits: "visite",
-    stepActivities: "attività",
-    stepIntegrateWith: "Aggiungi con visite e attività",
-    stepIntegrateWithout: "Aggiungi senza visite",
-    stepDiffName: "⚠️ Città vicina, nome diverso",
-    stepDurOther: "Altro…",
-    howtoTitle: "Come funziona",
-    stepHowto: "Aggiungi le tappe una a una: usa la ricerca o clicca direttamente sulla mappa, che il luogo sia elencato o no. Se dormi più notti nello stesso posto, riselezionalo dopo le visite nei dintorni: il tracciato seguirà i tuoi ritorni.",
-    day: "giorno",
-    days: "giorni",
-    minutes: "min",
-    emptyItinerary: "Clicca sui luoghi per aggiungerli",
-    removePlace: "Rimuovi",
-    addPlace: "+ Aggiungi al mio itinerario",
-    removeFromItinerary: "✕ Rimuovi dall'itinerario",
-    allCountries: "-- Tutti i paesi --",
-    placesVisible: "luoghi visibili",
-    back: "← Indietro",
-    legendTitle: "Luoghi",
-    mustSee: "Imperdibile",
-    recommended: "Consigliato",
-    discover: "Da scoprire",
-    standard: "Standard",
-    selected: "Selezionato",
-    noVisits: "Nessuna visita definita",
-    noActivities: "Nessuna attività definita",
-    configTitle: "Configura il tuo viaggio",
-    labelDepartDate: "Data di partenza:",
-    labelNbDays: "Numero di giorni:",
-    labelRythme: "Ritmo:",
-    labelMaxHotels: "Cambi hotel massimi:",
-    rythmeSlow: "Rilassato",
-    rythmeNormal: "Normale",
-    rythmeFast: "Intenso",
-    cancel: "Annulla",
-    confirm: "Conferma",
-    revisitTitle: "Tappa già selezionata",
-    revisitQuestion: "{place} fa già parte del tuo itinerario. Cosa vuoi fare?",
-    revisitAgain: "↩ Tornare a {place}",
-    revisitRemove: "🗑 Rimuovere questa tappa",
-    manageStop: "Gestisci questa tappa ▾",
-    loopsTitle: "Anelli",
-    loopLabel: "Anello {n}",
-    linksLabel: "Trasferimenti"
-  },
-  es: {
-    pageTitle: "Construye tu itinerario personalizado",
-    panelTitle: "🗺️ Mi itinerario personalizado",
-    panelSubtitle: "(editable en la página siguiente)",
-    zoomHint: "🔍 Acerca para ver más lugares",
-    validate: "✓ Validar",
-    reset: "🔄 Reiniciar",
-    visitsLabel: "🏛️ Visitas posibles",
-    activitiesLabel: "🎯 Actividades",
-    duration: "⏱️ Duración estimada",
-    stepSearchPlaceholder: "Buscar una etapa por nombre…",
-    stepFoundInOrt: "Encontrado en OneRoadTrip",
-    stepBrut: "Nueva etapa (sin visitas listadas)",
-    stepNotFound: "No encontrado en lugares ORT",
-    stepNearby: "Ciudades ORT cercanas",
-    stepValidate: "Validar",
-    stepNoCity: "Ninguna ciudad encontrada",
-    stepSearchUnavailable: "Búsqueda no disponible",
-    stepCalc: "calculando…",
-    stepTagBrut: "Ciudad añadida",
-    stepTagOrt: "Lugar ORT",
-    stepAddNext: "＋  Añadir la siguiente etapa",
-    stepAddFirst: "＋  Añadir una etapa",
-    stepVisits: "visitas",
-    stepActivities: "actividades",
-    stepIntegrateWith: "Añadir con visitas y actividades",
-    stepIntegrateWithout: "Añadir sin visitas",
-    stepDiffName: "⚠️ Ciudad cercana, nombre distinto",
-    stepDurOther: "Otro…",
-    howtoTitle: "Cómo funciona",
-    stepHowto: "Añade tus etapas una a una: usa la búsqueda o haz clic directamente en el mapa, esté el lugar listado o no. Si duerme varias noches en el mismo lugar, vuelva a seleccionarlo tras visitar los alrededores: el trazado seguirá sus idas y vueltas.",
-    day: "día",
-    days: "días",
-    minutes: "min",
-    emptyItinerary: "Haz clic en los lugares para añadirlos",
-    removePlace: "Eliminar",
-    addPlace: "+ Añadir a mi itinerario",
-    removeFromItinerary: "✕ Eliminar del itinerario",
-    allCountries: "-- Todos los países --",
-    placesVisible: "lugares visibles",
-    back: "← Volver",
-    legendTitle: "Lugares",
-    mustSee: "Imprescindible",
-    recommended: "Recomendado",
-    discover: "Por descubrir",
-    standard: "Estándar",
-    selected: "Seleccionado",
-    noVisits: "Sin visitas definidas",
-    noActivities: "Sin actividades definidas",
-    configTitle: "Configura tu viaje",
-    labelDepartDate: "Fecha de salida:",
-    labelNbDays: "Número de días:",
-    labelRythme: "Ritmo:",
-    labelMaxHotels: "Cambios de hotel máximos:",
-    rythmeSlow: "Tranquilo",
-    rythmeNormal: "Normal",
-    rythmeFast: "Intenso",
-    cancel: "Cancelar",
-    confirm: "Validar",
-    revisitTitle: "Etapa ya seleccionada",
-    revisitQuestion: "{place} ya forma parte de su circuito. ¿Qué desea hacer?",
-    revisitAgain: "↩ Volver a {place}",
-    revisitRemove: "🗑 Quitar esta etapa",
-    manageStop: "Gestionar esta etapa ▾",
-    loopsTitle: "Bucles",
-    loopLabel: "Bucle {n}",
-    linksLabel: "Enlaces"
-  },
-  pt: {
-    pageTitle: "Construa seu itinerário personalizado",
-    panelTitle: "🗺️ Meu itinerário personalizado",
-    panelSubtitle: "(editável na próxima página)",
-    zoomHint: "🔍 Aproxime para ver mais lugares",
-    validate: "✓ Validar",
-    reset: "🔄 Reiniciar",
-    visitsLabel: "🏛️ Visitas possíveis",
-    activitiesLabel: "🎯 Atividades",
-    duration: "⏱️ Duração estimada",
-    stepSearchPlaceholder: "Procurar uma etapa por nome…",
-    stepFoundInOrt: "Encontrado no OneRoadTrip",
-    stepBrut: "Nova etapa (sem visitas listadas)",
-    stepNotFound: "Não encontrado nos locais ORT",
-    stepNearby: "Cidades ORT próximas",
-    stepValidate: "Validar",
-    stepNoCity: "Nenhuma cidade encontrada",
-    stepSearchUnavailable: "Pesquisa indisponível",
-    stepCalc: "a calcular…",
-    stepTagBrut: "Cidade adicionada",
-    stepTagOrt: "Local ORT",
-    stepAddNext: "＋  Adicionar a próxima etapa",
-    stepAddFirst: "＋  Adicionar uma etapa",
-    stepVisits: "visitas",
-    stepActivities: "atividades",
-    stepIntegrateWith: "Adicionar com visitas e atividades",
-    stepIntegrateWithout: "Adicionar sem visitas",
-    stepDiffName: "⚠️ Cidade próxima, nome diferente",
-    stepDurOther: "Outro…",
-    howtoTitle: "Como funciona",
-    stepHowto: "Adicione as etapas uma a uma: use a pesquisa ou clique diretamente no mapa, esteja o local listado ou não. Se dormir várias noites no mesmo local, selecione-o novamente após as visitas em redor: o traçado seguirá os seus regressos.",
-    day: "dia",
-    days: "dias",
-    minutes: "min",
-    emptyItinerary: "Clique nos lugares para adicioná-los",
-    removePlace: "Remover",
-    addPlace: "+ Adicionar ao meu itinerário",
-    removeFromItinerary: "✕ Remover do itinerário",
-    allCountries: "-- Todos os países --",
-    placesVisible: "lugares visíveis",
-    back: "← Voltar",
-    legendTitle: "Lugares",
-    mustSee: "Imperdível",
-    recommended: "Recomendado",
-    discover: "Para descobrir",
-    standard: "Padrão",
-    selected: "Selecionado",
-    noVisits: "Nenhuma visita definida",
-    noActivities: "Nenhuma atividade definida",
-    configTitle: "Configure sua viagem",
-    labelDepartDate: "Data de partida:",
-    labelNbDays: "Número de dias:",
-    labelRythme: "Ritmo:",
-    labelMaxHotels: "Mudanças de hotel máximas:",
-    rythmeSlow: "Tranquilo",
-    rythmeNormal: "Normal",
-    rythmeFast: "Intenso",
-    cancel: "Cancelar",
-    confirm: "Validar",
-    revisitTitle: "Etapa já selecionada",
-    revisitQuestion: "{place} já faz parte do seu circuito. O que deseja fazer?",
-    revisitAgain: "↩ Voltar a {place}",
-    revisitRemove: "🗑 Remover esta etapa",
-    manageStop: "Gerir esta etapa ▾",
-    loopsTitle: "Circuitos",
-    loopLabel: "Circuito {n}",
-    linksLabel: "Ligações"
-  },
-  ar: {
-    pageTitle: "ابنِ مسارك المخصص",
-    panelTitle: "🗺️ مساري المخصص",
-    panelSubtitle: "(قابل للتعديل في الصفحة التالية)",
-    zoomHint: "🔍 كبّر لرؤية المزيد من الأماكن",
-    validate: "✓ تأكيد",
-    reset: "🔄 إعادة تعيين",
-    visitsLabel: "🏛️ الزيارات الممكنة",
-    activitiesLabel: "🎯 الأنشطة",
-    duration: "⏱️ المدة المقدرة",
-    stepSearchPlaceholder: "ابحث عن مرحلة بالاسم…",
-    stepFoundInOrt: "موجود في OneRoadTrip",
-    stepBrut: "مرحلة جديدة (بدون زيارات مدرجة)",
-    stepNotFound: "غير موجود في أماكن ORT",
-    stepNearby: "مدن ORT القريبة",
-    stepValidate: "تأكيد",
-    stepNoCity: "لم يتم العثور على مدينة",
-    stepSearchUnavailable: "البحث غير متاح",
-    stepCalc: "جاري الحساب…",
-    stepTagBrut: "مدينة مضافة",
-    stepTagOrt: "مكان ORT",
-    stepAddNext: "＋  إضافة المرحلة التالية",
-    stepAddFirst: "＋  إضافة مرحلة",
-    stepVisits: "زيارات",
-    stepActivities: "أنشطة",
-    stepIntegrateWith: "إضافة مع الزيارات والأنشطة",
-    stepIntegrateWithout: "إضافة بدون زيارات",
-    stepDiffName: "⚠️ مدينة قريبة باسم مختلف",
-    stepDurOther: "أخرى…",
-    howtoTitle: "كيف يعمل",
-    stepHowto: "أضف مراحلك واحدة تلو الأخرى: استخدم البحث أو انقر مباشرة على الخريطة، سواء كان المكان مدرجًا أم لا. إذا كنت تبيت عدة ليالٍ في المكان نفسه، فأعد اختياره بعد زياراتك في المحيط: سيتبع المسار رحلات عودتك.",
-    day: "يوم",
-    days: "أيام",
-    minutes: "دقيقة",
-    emptyItinerary: "انقر على الأماكن لإضافتها",
-    removePlace: "إزالة",
-    addPlace: "+ إضافة إلى مساري",
-    removeFromItinerary: "✕ إزالة من المسار",
-    allCountries: "-- جميع البلدان --",
-    placesVisible: "أماكن مرئية",
-    back: "← رجوع",
-    legendTitle: "الأماكن",
-    mustSee: "لا يفوتك",
-    recommended: "موصى به",
-    discover: "للاكتشاف",
-    standard: "عادي",
-    selected: "محدد",
-    noVisits: "لا توجد زيارات محددة",
-    noActivities: "لا توجد أنشطة محددة",
-    configTitle: "إعداد رحلتك",
-    labelDepartDate: "تاريخ المغادرة:",
-    labelNbDays: "عدد الأيام:",
-    labelRythme: "الإيقاع:",
-    labelMaxHotels: "الحد الأقصى لتغيير الفنادق:",
-    rythmeSlow: "هادئ",
-    rythmeNormal: "عادي",
-    rythmeFast: "مكثف",
-    cancel: "إلغاء",
-    confirm: "تأكيد",
-    revisitTitle: "محطة محددة مسبقاً",
-    revisitQuestion: "{place} موجودة بالفعل في مسارك. ماذا تريد أن تفعل؟",
-    revisitAgain: "↩ العودة إلى {place}",
-    revisitRemove: "🗑 إزالة هذه المحطة",
-    manageStop: "إدارة هذه المحطة ▾",
-    loopsTitle: "الحلقات",
-    loopLabel: "الحلقة {n}",
-    linksLabel: "التنقلات"
-  }
-};
+const T = ORT_I18N_BUILDER.T;
 
 // ===============================
 // VARIABLES GLOBALES
@@ -3210,7 +2851,7 @@ let currentPreviewPlace = null;
 let countryBounds = {};
 
 // Détection cohérente de la langue (URL > localStorage > navigator)
-const SUPPORTED_LANGS = ['fr', 'en', 'es', 'it', 'pt', 'ar'];
+const SUPPORTED_LANGS = ORT_I18N_BUILDER.LANGS;
 let currentLang = (function() {
   let lang = new URLSearchParams(location.search).get('lang')
            || localStorage.getItem('lang')
@@ -3246,7 +2887,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('lang', currentLang);
       
       // RTL pour arabe
-      if (currentLang === 'ar') {
+      if ((window.ORT_RTL_LANGS || ['ar']).indexOf(currentLang) !== -1) {
         document.body.setAttribute('dir', 'rtl');
       } else {
         document.body.removeAttribute('dir');
@@ -3267,7 +2908,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // RTL pour arabe
-  if (currentLang === 'ar') {
+  if ((window.ORT_RTL_LANGS || ['ar']).indexOf(currentLang) !== -1) {
     document.body.setAttribute('dir', 'rtl');
   }
 
@@ -3279,7 +2920,10 @@ document.addEventListener('DOMContentLoaded', () => {
   
   loadPhotosJSON(); // Charger les photos
   loadAllPlaces();
-  restoreDraftItinerary(); // Recharger la liste laissée avant le retour arrière
+  // Reprise d'un voyage enregistré (bouton "Reprendre dans le constructeur" du tableau de bord).
+  // Si aucun tripId n'est passé, on retombe sur le brouillon local habituel.
+  if (!resumeSavedTrip()) restoreDraftItinerary();
+  setTimeout(showBuilderNotice, 900);
   updateItineraryList(); // Afficher le bouton d'ajout dès le départ
   // Sur mobile : légende repliée par défaut
   if (window.matchMedia('(max-width: 768px)').matches) {
@@ -3351,7 +2995,7 @@ function optimizeImageUrl(url, maxWidth = 800) {
 // TRADUCTIONS
 // ===============================
 function applyTranslations() {
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   
   document.title = `OneRoadTrip – ${TXT.pageTitle}`;
   document.getElementById('panelTitle').textContent = TXT.panelTitle;
@@ -3359,6 +3003,15 @@ function applyTranslations() {
   document.getElementById('zoomHint').textContent = TXT.zoomHint;
   document.getElementById('validateBtn').textContent = TXT.validate;
   document.getElementById('resetBtn').textContent = TXT.reset;
+  // Boutons Sauvegarder et Plein ecran (etaient en dur en francais)
+  ['saveTripBtn','selSaveBtn'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) b.textContent = '\u{1F4BE} ' + TXT.saveTrip;
+  });
+  var lbl = document.querySelector('.ort-save-lbl');
+  if (lbl) lbl.textContent = TXT.saveTrip;
+  var fsb = document.getElementById('fullscreenBtn');
+  if (fsb) fsb.textContent = '\u2336 ' + (document.body.classList.contains('fullscreen-mode') ? TXT.exitFullscreen : TXT.fullscreen);
   document.getElementById('visitsLabel').textContent = TXT.visitsLabel;
   document.getElementById('activitiesLabel').textContent = TXT.activitiesLabel;
   const howto = document.getElementById('stepHowto');
@@ -3668,7 +3321,7 @@ async function loadAllPlaces() {
 
 function populateCountrySelect(countryList) {
   const select = document.getElementById('countrySelect');
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   
   select.innerHTML = `<option value="">${TXT.allCountries}</option>`;
   
@@ -3915,9 +3568,9 @@ function showLoadingCounter() {
 function updateLoadingCounter() {
   const txt = document.getElementById('loadingCounterText');
   if (!txt) return;
-  const loaded = renderedCount.toLocaleString('fr-FR');
+  const loaded = renderedCount.toLocaleString(ortDateLocale());
   if (allCountriesLoaded) {
-    const total = (renderedCount + renderQueue.length).toLocaleString('fr-FR');
+    const total = (renderedCount + renderQueue.length).toLocaleString(ortDateLocale());
     txt.textContent = `Chargement des lieux… ${loaded} / ${total}`;
   } else {
     txt.textContent = `Chargement des lieux… ${loaded}`;
@@ -4116,7 +3769,7 @@ function updateStats() {
     }
   });
 
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   document.getElementById('statsBox').textContent = `${visibleCount} ${TXT.placesVisible}`;
   updateFsStats();
 }
@@ -4150,7 +3803,7 @@ function updateAddPlaceButton() {
   const btnMobile = document.getElementById('addPlaceBtnMobile');
   if (!currentPreviewPlace) return;
   
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   const isSelected = selectedPlaces.some(p => p.place_id === currentPreviewPlace.place_id);
   
   const updateButton = (button) => {
@@ -4194,7 +3847,7 @@ function togglePlaceSelection(place) {
 function openRevisitModal(place) {
   const modal = document.getElementById('revisitModal');
   if (!modal) { removePlaceFromItinerary(place.place_id); return; }
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
 
   const titleEl = document.getElementById('revisitTitle');
   const questionEl = document.getElementById('revisitQuestion');
@@ -4231,7 +3884,7 @@ function openRevisitModal(place) {
 async function showPlacePreview(place) {
   currentPreviewPlace = place;
   const preview = document.getElementById('placePreview');
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
 
   // Titre - déjà traduit dans les données chargées
   const titleElement = document.getElementById('previewTitle');
@@ -4384,6 +4037,9 @@ async function showPlacePreview(place) {
   // Mettre à jour le bouton d'ajout
   updateAddPlaceButton();
 
+  // Retouches deja faites par l'utilisateur sur ce lieu
+  try { applyVisitOverrides([place]); } catch(e){}
+
   // Bouton d'édition des visites : affiché seulement si ce lieu a d'autres versions.
   // Le premier lieu ouvert déclenche le chargement du pays, une fois pour toutes.
   try { veUpdateOpenButton(place); } catch(e) { /* l'éditeur n'est pas encore chargé */ }
@@ -4531,7 +4187,7 @@ async function onMapClickPickCity(e) {
   const input = document.getElementById('stepSearchInput');
   search.hidden = false;
   input.value = '';
-  box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepCalc || 'calcul…'}</div>`;
+  box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.en).stepCalc || 'calcul…'}</div>`;
   positionStepResults(); box.hidden = false;
 
   try {
@@ -4559,7 +4215,7 @@ async function onMapClickPickCity(e) {
       admin1 = p.state || p.region || '';
     }
     if (!name) {
-      box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepNoCity || 'Aucune ville trouvée'}</div>`;
+      box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.en).stepNoCity || 'Aucune ville trouvée'}</div>`;
     } else {
       const city = { name, countryCode: cc, admin1, lat, lon: lng };
       // Clic carte = on OUVRE LA FICHE, jamais d'ajout direct.
@@ -4571,7 +4227,7 @@ async function onMapClickPickCity(e) {
       showPlacePreview(target);
     }
   } catch (err) {
-    box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepSearchUnavailable || 'Recherche indisponible'}</div>`;
+    box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.en).stepSearchUnavailable || 'Recherche indisponible'}</div>`;
     box.hidden = false;
   } finally {
     _mapClickBusy = false;
@@ -4581,7 +4237,7 @@ async function onMapClickPickCity(e) {
 // Affiche la liste de résultats sous le champ
 function renderStepSearchResults(cities) {
   const box = document.getElementById('stepSearchResults');
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   box.innerHTML = '';
   if (!cities || cities.length === 0) {
     box.innerHTML = `<div class="step-search-empty">${TXT.stepNoCity || 'Aucune ville trouvée'}</div>`;
@@ -4639,7 +4295,8 @@ function renderStepSearchResults(cities) {
       const btnWith = document.createElement('button');
       btnWith.className = 'step-btn step-btn-primary';
       btnWith.textContent = TXT.stepIntegrateWith + ' : ' + p.name;
-      btnWith.onclick = () => { addStepToItinerary(p, true); resetStepSearch(); };
+      // On ouvre la fiche : rien ne s'ajoute sans que l'utilisateur l'ait vue
+      btnWith.onclick = () => { resetStepSearch(); showPlacePreview(p); };
       const btnBrut = document.createElement('button');
       btnBrut.className = 'step-btn step-btn-ghost';
       btnBrut.textContent = TXT.stepIntegrateWithout + ' : ' + city.name;
@@ -4703,7 +4360,7 @@ function highlightPlaceOnMap(place, on) {
 // Clic sur un résultat : recentre la carte, affiche une box de confirmation dans la preview
 function selectStepSearchResult(city, match) {
   document.getElementById('stepSearchResults').hidden = true;
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
 
   let place;
   if (match) {
@@ -4735,7 +4392,7 @@ function selectStepSearchResult(city, match) {
 
 // Petite box de confirmation avant ajout (trouvé / non trouvé + villes proches)
 function showStepConfirmBox(place, match, nearby, city) {
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   document.getElementById('stepSearchResults').hidden = true;
   const box = document.getElementById('stepSearchResults');
   box.innerHTML = '';
@@ -4801,7 +4458,7 @@ function resetStepSearch() {
   const close = document.getElementById('howtoClose');
   if (!modal) return;
   const open = () => {
-    const TXT = T[currentLang] || T.fr;
+    const TXT = T[currentLang] || T.en;
     document.getElementById('howtoText').textContent = TXT.stepHowto || document.getElementById('howtoText').textContent;
     if (TXT.howtoTitle) document.getElementById('howtoTitle').textContent = TXT.howtoTitle;
     modal.hidden = false;
@@ -4880,7 +4537,7 @@ function positionStepResults() {
         renderStepSearchResults(cities);
       } catch (e) {
         if (e.name !== 'AbortError') {
-          box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.fr).stepSearchUnavailable || 'Recherche indisponible'}</div>`;
+          box.innerHTML = `<div class="step-search-empty">${(T[currentLang]||T.en).stepSearchUnavailable || 'Recherche indisponible'}</div>`;
           positionStepResults(); box.hidden = false;
         }
       } finally {
@@ -4902,6 +4559,322 @@ function positionStepResults() {
 
 // Ajoute une étape depuis la recherche (avec durée par défaut = suggested_days)
 // Sauvegarde du brouillon (pour retrouver la liste au retour arrière)
+
+
+// =====================================================================
+// SAUVEGARDE DEPUIS LE CONSTRUCTEUR
+// Sans compte, le voyage ne part pas dans le cloud : il reste sur cet
+// appareil et sera perdu au changement de navigateur. On le dit clairement.
+// =====================================================================
+function builderUserConnected(){
+  try {
+    if (window.ORT_STATE && window.ORT_STATE.currentUser) return true;
+    if (window.firebase && typeof window.firebase.auth === 'function' && window.firebase.auth().currentUser) return true;
+  } catch(e){}
+  return false;
+}
+
+const SAVE_MSG = {
+  "fr": {
+    "empty": "Ajoutez au moins une étape avant de sauvegarder.",
+    "notLogged": "Vous n'êtes pas connecté. Votre voyage sera enregistré sur cet appareil uniquement, et vous ne le retrouverez pas ailleurs. Connectez-vous pour le conserver. Sauvegarder quand même ?",
+    "editWarn": "Attention : vos modifications ne seront conservées que si vous êtes connecté et que vous sauvegardez votre voyage. Sans compte, elles seront perdues en changeant de navigateur ou d'appareil. Continuer ?",
+    "ok": "Voyage sauvegardé. Vous le retrouverez dans votre tableau de bord.",
+    "okLocal": "Voyage enregistré sur cet appareil seulement.",
+    "fail": "La sauvegarde a échoué. Réessayez.",
+    "intro": "Vous allez composer un voyage sur mesure. Connectez-vous et sauvegardez-le pour le retrouver ensuite et le modifier.",
+    "resume": "Vos modifications ne seront conservées que si vous êtes connecté et que vous sauvegardez le voyage.",
+    "gotIt": "J'ai compris"
+  },
+  "en": {
+    "empty": "Add at least one stop before saving.",
+    "notLogged": "You are not signed in. Your trip will be stored on this device only and you won't find it elsewhere. Sign in to keep it. Save anyway?",
+    "editWarn": "Warning: your changes will only be kept if you are signed in and you save your trip. Without an account they will be lost when you change browser or device. Continue?",
+    "ok": "Trip saved. You'll find it in your dashboard.",
+    "okLocal": "Trip stored on this device only.",
+    "fail": "Saving failed. Please try again.",
+    "intro": "You are about to build a custom trip. Sign in and save it to find it again later and edit it.",
+    "resume": "Your changes will only be kept if you are signed in and you save the trip.",
+    "gotIt": "Got it"
+  },
+  "es": {
+    "empty": "Añada al menos una etapa antes de guardar.",
+    "notLogged": "No ha iniciado sesión. Su viaje se guardará solo en este dispositivo. Inicie sesión para conservarlo. ¿Guardar igualmente?",
+    "editWarn": "Atención: sus cambios solo se conservarán si ha iniciado sesión y guarda su viaje. Sin cuenta se perderán al cambiar de navegador o dispositivo. ¿Continuar?",
+    "ok": "Viaje guardado. Lo encontrará en su panel.",
+    "okLocal": "Viaje guardado solo en este dispositivo.",
+    "fail": "No se pudo guardar. Inténtelo de nuevo.",
+    "intro": "Va a crear un viaje a medida. Inicie sesión y guárdelo para recuperarlo y modificarlo después.",
+    "resume": "Sus cambios solo se conservarán si ha iniciado sesión y guarda el viaje.",
+    "gotIt": "Entendido"
+  },
+  "pt": {
+    "empty": "Adicione pelo menos uma etapa antes de guardar.",
+    "notLogged": "Não iniciou sessão. A sua viagem ficará guardada apenas neste aparelho. Inicie sessão para a conservar. Guardar mesmo assim?",
+    "editWarn": "Atenção: as suas alterações só serão conservadas se tiver sessão iniciada e guardar a viagem. Sem conta serão perdidas ao mudar de navegador ou aparelho. Continuar?",
+    "ok": "Viagem guardada. Vai encontrá-la no seu painel.",
+    "okLocal": "Viagem guardada apenas neste aparelho.",
+    "fail": "Não foi possível guardar. Tente novamente.",
+    "intro": "Vai criar uma viagem à medida. Inicie sessão e guarde-a para a recuperar e modificar depois.",
+    "resume": "As suas alterações só serão conservadas se tiver sessão iniciada e guardar a viagem.",
+    "gotIt": "Percebi"
+  },
+  "it": {
+    "empty": "Aggiungi almeno una tappa prima di salvare.",
+    "notLogged": "Non hai effettuato l'accesso. Il viaggio sarà salvato solo su questo dispositivo. Accedi per conservarlo. Salvare comunque?",
+    "editWarn": "Attenzione: le tue modifiche saranno conservate solo se hai effettuato l'accesso e salvi il viaggio. Senza account andranno perse cambiando browser o dispositivo. Continuare?",
+    "ok": "Viaggio salvato. Lo ritrovi nella tua bacheca.",
+    "okLocal": "Viaggio salvato solo su questo dispositivo.",
+    "fail": "Salvataggio non riuscito. Riprova.",
+    "intro": "Stai per comporre un viaggio su misura. Accedi e salvalo per ritrovarlo e modificarlo in seguito.",
+    "resume": "Le tue modifiche saranno conservate solo se hai effettuato l'accesso e salvi il viaggio.",
+    "gotIt": "Ho capito"
+  },
+  "ar": {
+    "empty": "أضف محطة واحدة على الأقل قبل الحفظ.",
+    "notLogged": "لم تسجّل الدخول. ستُحفظ رحلتك على هذا الجهاز فقط. سجّل الدخول للاحتفاظ بها. الحفظ على أي حال؟",
+    "editWarn": "تنبيه: لن تُحفظ تعديلاتك إلا إذا سجّلت الدخول وحفظت رحلتك. بدون حساب ستفقدها عند تغيير المتصفح أو الجهاز. متابعة؟",
+    "ok": "تم حفظ الرحلة. ستجدها في لوحتك.",
+    "okLocal": "حُفظت الرحلة على هذا الجهاز فقط.",
+    "fail": "فشل الحفظ. أعد المحاولة.",
+    "intro": "أنت على وشك إنشاء رحلة مخصّصة. سجّل الدخول واحفظها لتعود إليها وتعدّلها لاحقًا.",
+    "resume": "لن تُحفظ تعديلاتك إلا إذا سجّلت الدخول وحفظت الرحلة.",
+    "gotIt": "فهمت"
+  },
+  "nl": {
+    "empty": "Voeg minstens één stop toe voordat je opslaat.",
+    "notLogged": "Je bent niet ingelogd. Je reis wordt alleen op dit apparaat bewaard en je vindt hem nergens anders terug. Log in om hem te behouden. Toch opslaan?",
+    "editWarn": "Let op: je wijzigingen worden alleen bewaard als je ingelogd bent en je reis opslaat. Zonder account gaan ze verloren als je van browser of apparaat wisselt. Doorgaan?",
+    "ok": "Reis opgeslagen. Je vindt hem terug in je dashboard.",
+    "okLocal": "Reis alleen op dit apparaat opgeslagen.",
+    "fail": "Opslaan is mislukt. Probeer het opnieuw.",
+    "intro": "Je gaat een reis op maat samenstellen. Log in en sla hem op om hem later terug te vinden en aan te passen.",
+    "resume": "Je wijzigingen worden alleen bewaard als je ingelogd bent en de reis opslaat.",
+    "gotIt": "Begrepen"
+  },
+  "de": {
+    "empty": "Füge mindestens eine Etappe hinzu, bevor du speicherst.",
+    "notLogged": "Du bist nicht angemeldet. Deine Reise wird nur auf diesem Gerät gespeichert und ist woanders nicht auffindbar. Melde dich an, um sie zu behalten. Trotzdem speichern?",
+    "editWarn": "Achtung: Deine Änderungen bleiben nur erhalten, wenn du angemeldet bist und deine Reise speicherst. Ohne Konto gehen sie beim Wechsel von Browser oder Gerät verloren. Fortfahren?",
+    "ok": "Reise gespeichert. Du findest sie in deinem Dashboard.",
+    "okLocal": "Reise nur auf diesem Gerät gespeichert.",
+    "fail": "Speichern fehlgeschlagen. Bitte versuche es erneut.",
+    "intro": "Du stellst gleich eine maßgeschneiderte Reise zusammen. Melde dich an und speichere sie, um sie später wiederzufinden und zu bearbeiten.",
+    "resume": "Deine Änderungen bleiben nur erhalten, wenn du angemeldet bist und die Reise speicherst.",
+    "gotIt": "Verstanden"
+  }
+};
+function saveMsg(){ return SAVE_MSG[currentLang] || SAVE_MSG.en; }
+
+// Les durees sont fractionnaires : sans arrondi, les sommes affichent 10 decimales
+function arrondiJours(v){ return Math.round((Number(v) || 0) * 100) / 100; }
+
+async function saveBuilderTrip(){
+  const M = saveMsg();
+  if (!selectedPlaces || selectedPlaces.length === 0) { alert(M.empty); return; }
+  const connecte = builderUserConnected();
+  if (!connecte && !confirm(M.notLogged)) return;
+
+  const steps = selectedPlaces.map(place => ({
+    place_id: place.place_id,
+    name: place.name,
+    lat: place.lat,
+    lon: place.lon,
+    lng: place.lon,
+    cc: place.cc,
+    coords: { lat: place.lat, lon: place.lon },
+    visits: place.visits || [],
+    activities: place.activities || [],
+    rating: place.rating || 0,
+    map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
+    _mapKeywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
+    night: { place_id: place.place_id, map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [] },
+    suggested_days: arrondiJours(typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1)),
+    nights: arrondiJours(typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1))
+  }));
+
+  // Les durees valent 0.2, 0.5, 1.5... : leur somme brute donne 6.000000000000001
+  const nights = arrondiJours(steps.reduce((n, st) => n + (st.nights || 1), 0));
+  const trip = {
+    id: resumingTripId || ('custom::' + Date.now()),
+    title: (selectedPlaces[0] && selectedPlaces[0].name ? selectedPlaces[0].name : 'Mon voyage') + ' — ' + steps.length + ' étapes',
+    country: (selectedPlaces[0] && selectedPlaces[0].cc) || '',
+    cc: (selectedPlaces[0] && selectedPlaces[0].cc) || '',
+    language: currentLang,
+    steps: steps,
+    nights: nights,
+    source: 'carte_builder',
+    // Sans ce drapeau, ORT_STATE considere le voyage comme un brouillon
+    // et l'ecrit dans le navigateur au lieu de Firestore.
+    saved: true
+  };
+
+  const btns = [document.getElementById('saveTripBtn'), document.getElementById('saveTripBtnMobile'), document.getElementById('saveTripBtnMap'), document.getElementById('selSaveBtn')].filter(Boolean);
+  btns.forEach(b => { b.disabled = true; b.dataset.old = b.textContent; b.textContent = '…'; });
+  try {
+    if (!window.ORT_STATE || typeof window.ORT_STATE.saveTrip !== 'function') throw new Error('ORT_STATE indisponible');
+    const res = await window.ORT_STATE.saveTrip(trip);
+    const newId = (res && (res.tripId || res.id)) || trip.id;
+    if (res && res.success !== false) {
+      resumingTripId = newId;   // les sauvegardes suivantes ecrasent celle-ci
+      // On annonce le cloud seulement s'il a vraiment ete utilise
+      alert(res.storage === 'cloud' ? M.ok : M.okLocal);
+    } else {
+      alert(M.fail);
+    }
+  } catch(e) {
+    console.error('[BUILDER] Sauvegarde impossible', e);
+    alert(M.fail);
+  } finally {
+    btns.forEach(b => { b.disabled = false; b.textContent = b.dataset.old || ('\u{1F4BE} ' + ((T[currentLang]||T.en).saveTrip)); });
+  }
+}
+
+// Bandeau d'information a l'arrivee, une fois par session
+function showBuilderNotice(){
+  const M = saveMsg();
+  const repris = !!new URLSearchParams(location.search).get('tripId');
+  try { if (!repris && sessionStorage.getItem('ORT_BUILDER_NOTICE') === '1') return; } catch(e){}
+  const box = document.createElement('div');
+  box.className = 'ort-notice';
+  const inner = document.createElement('div');
+  inner.className = 'ort-notice-box';
+  const ico = document.createElement('div');
+  ico.className = 'ort-notice-ico';
+  ico.textContent = repris ? '✏️' : '🧭';
+  const p = document.createElement('p');
+  p.textContent = repris ? M.resume : M.intro;
+  const b = document.createElement('button');
+  b.textContent = M.gotIt;
+  b.onclick = () => { box.remove(); try { sessionStorage.setItem('ORT_BUILDER_NOTICE','1'); } catch(e){} };
+  inner.appendChild(ico); inner.appendChild(p); inner.appendChild(b);
+  box.appendChild(inner);
+  document.body.appendChild(box);
+}
+
+// =====================================================================
+// REPRISE D'UN VOYAGE ENREGISTRE
+// Le tableau de bord peut renvoyer ici avec ?tripId=xxx : on reconstruit
+// la liste d'etapes a partir du voyage sauvegarde, et on ecrase ensuite
+// ce meme voyage a la validation au lieu d'en creer un nouveau.
+// =====================================================================
+let resumingTripId = null;
+
+function resumeSavedTrip(){
+  const tripId = new URLSearchParams(location.search).get('tripId');
+  if (!tripId) return false;
+  resumingTripId = tripId;
+  console.log('[BUILDER] Reprise du voyage ' + tripId);
+
+  const applyTrip = (trip) => {
+    if (!trip || !Array.isArray(trip.steps) || trip.steps.length === 0) {
+      console.warn('[BUILDER] Voyage introuvable ou sans etape : ' + tripId);
+      alert("Ce voyage n'a pas pu être rechargé. Vérifiez que vous êtes bien connecté au même compte.");
+      return;
+    }
+    selectedPlaces = trip.steps.map(st => ({
+      place_id: st.place_id || st.id,
+      name: st.name || st.city || '',
+      cc: st.cc || (String(st.place_id||'').split('::')[0]),
+      lat: (st.coords && st.coords.lat) != null ? st.coords.lat : st.lat,
+      lon: (st.coords && st.coords.lon) != null ? st.coords.lon : (st.lon != null ? st.lon : st.lng),
+      visits: st.visits || [],
+      activities: st.activities || [],
+      rating: st.rating || 0,
+      map_keywords: st.map_keywords || st._mapKeywords || [],
+      suggested_days: st.suggested_days || st.nights || 1,
+      _dur: st.suggested_days || st.nights || 1
+    })).filter(p => p.lat != null && p.lon != null);
+    applyVisitOverrides(selectedPlaces);
+    updateItineraryList();
+    try { recalcLegs(); } catch(e){}
+    // Les marqueurs sont souvent deja poses quand le voyage arrive :
+    // il faut les repasser en rouge, plusieurs fois car l'affichage
+    // des lieux se fait pays par pays, en continu.
+    const repeindre = () => { try { updateMarkerStyles(); } catch(e){} };
+    repeindre();
+    [800, 2000, 4000, 8000].forEach(ms => setTimeout(repeindre, ms));
+    console.log('[BUILDER] ' + selectedPlaces.length + ' etape(s) restaurees');
+  };
+
+  // 1) Le voyage est-il deja dans le stockage local ?
+  try {
+    const raw = localStorage.getItem('ort_trip_' + tripId) || localStorage.getItem(tripId);
+    if (raw) { applyTrip(JSON.parse(raw)); return true; }
+  } catch(e){}
+
+  // 2) Sinon on interroge le gestionnaire d'etat, mais SEULEMENT une fois que
+  //    Firebase a tranche sur la session : interroge trop tot, il cherche en
+  //    local, ne trouve rien et renvoie un voyage vide.
+  const demander = (essai) => {
+    if (!window.ORT_STATE || typeof window.ORT_STATE.getTrip !== 'function') {
+      setTimeout(() => demander(essai), 300);
+      return;
+    }
+    Promise.resolve(window.ORT_STATE.getTrip(tripId, true)).then(trip => {
+      if ((!trip || !Array.isArray(trip.steps) || trip.steps.length === 0) && essai < 3) {
+        console.log('[BUILDER] Voyage pas encore disponible, nouvel essai ' + (essai + 1));
+        setTimeout(() => demander(essai + 1), 1200);
+        return;
+      }
+      applyTrip(trip);
+    }).catch(e => {
+      console.warn('[BUILDER] Lecture du voyage impossible', e);
+      if (essai < 3) setTimeout(() => demander(essai + 1), 1200);
+      else restoreDraftItinerary();
+    });
+  };
+
+  const attendreAuth = () => {
+    try {
+      if (window.firebase && typeof window.firebase.auth === 'function') {
+        const off = window.firebase.auth().onAuthStateChanged(async (u) => {
+          console.log('[BUILDER] Session connue : ' + (u ? u.email : 'aucune'));
+          if (typeof off === 'function') off();
+          // Indispensable : sans ce passage, le gestionnaire d'etat ignore
+          // l'utilisateur, n'ouvre pas Firestore et ne trouve rien.
+          try {
+            if (u && window.ORT_STATE && typeof window.ORT_STATE.updateUser === 'function') {
+              await window.ORT_STATE.updateUser(u);
+            }
+          } catch(e) { console.warn('[BUILDER] updateUser', e); }
+          demander(0);
+        });
+        return;
+      }
+    } catch(e){}
+    setTimeout(() => demander(0), 600);
+  };
+  attendreAuth();
+  return true;
+}
+
+// =====================================================================
+// MEMORISATION DES VISITES MODIFIEES
+// Les textes retouches par l'utilisateur survivent a un rechargement de
+// page, meme pour un lieu qui n'a pas encore ete ajoute a l'itineraire.
+// =====================================================================
+const VE_OVERRIDES_KEY = 'ORT_VISIT_OVERRIDES';
+
+function loadVisitOverrides(){
+  try { return JSON.parse(localStorage.getItem(VE_OVERRIDES_KEY) || '{}'); }
+  catch(e){ return {}; }
+}
+function saveVisitOverride(placeId, visits, activities){
+  if (!placeId) return;
+  const all = loadVisitOverrides();
+  all[placeId] = { visits: visits, activities: activities, at: Date.now() };
+  try { localStorage.setItem(VE_OVERRIDES_KEY, JSON.stringify(all)); } catch(e){}
+}
+function applyVisitOverrides(list){
+  const all = loadVisitOverrides();
+  if (!all || Object.keys(all).length === 0) return;
+  (list || []).forEach(p => {
+    const o = all[p.place_id];
+    if (o) { p.visits = (o.visits||[]).slice(); p.activities = (o.activities||[]).slice(); }
+  });
+}
+
 const DRAFT_KEY = 'ORT_BUILDER_DRAFT';
 function saveDraftItinerary() {
   try { localStorage.setItem(DRAFT_KEY, JSON.stringify(selectedPlaces)); } catch (_) {}
@@ -5007,7 +4980,7 @@ function snapDuration(val) {
 
 // Libellé durée selon la langue (Jour/Day/Giorno...)
 function durationLabel(val) {
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   const unit = val > 1 ? (TXT.days || 'jours') : (TXT.day || 'jour');
   const num = Number.isInteger(val) ? val : val.toString().replace('.', ',');
   return `${num} ${unit}`;
@@ -5022,7 +4995,7 @@ function updateItineraryList() {
   const validateBtn = document.getElementById('validateBtn');
   const resetBtn = document.getElementById('resetBtn');
   const mobileCount = document.getElementById('mobileItinCount');
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
 
   if (mobileCount) {
     const count = selectedPlaces.length;
@@ -5165,7 +5138,7 @@ function updateItineraryList() {
     // Option saisie libre
     const optOther = document.createElement('option');
     optOther.value = '__other__';
-    optOther.textContent = (T[currentLang]||T.fr).stepDurOther || 'Autre…';
+    optOther.textContent = (T[currentLang]||T.en).stepDurOther || 'Autre…';
     if (!known) optOther.selected = true;
     sel.appendChild(optOther);
 
@@ -5478,7 +5451,7 @@ function fitToRoute(legGeoms) {
 function renderLoopLegend(legLoop) {
   const box = document.getElementById('loopLegend');
   if (!box) return;
-  const TXT = T[currentLang] || T.fr;
+  const TXT = T[currentLang] || T.en;
   const loops = legLoop ? loopCount(legLoop) : 0;
   const hasLink = legLoop ? legLoop.some(l => l < 0) : false;
 
@@ -5562,6 +5535,11 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 function toggleFullscreen() {
   document.body.classList.toggle('fullscreen-mode');
   document.body.classList.toggle('selection-open');
+
+  // Libelle du bouton selon l etat
+  var _TXT = T[currentLang] || T.en;
+  var _fsb = document.getElementById('fullscreenBtn');
+  if (_fsb) _fsb.textContent = '\u2336 ' + (document.body.classList.contains('fullscreen-mode') ? _TXT.exitFullscreen : _TXT.fullscreen);
   
   // Forcer Leaflet à recalculer la taille de la carte
   setTimeout(() => {
@@ -5611,7 +5589,7 @@ function updateSelectionPanel() {
     emptyMsg = document.createElement('div');
     emptyMsg.id = 'selEmptyMsg';
     emptyMsg.className = 'selection-panel-empty';
-    emptyMsg.textContent = (T[currentLang]||T.fr).emptyItinerary || 'Cliquez sur les lieux pour les ajouter';
+    emptyMsg.textContent = (T[currentLang]||T.en).emptyItinerary || 'Cliquez sur les lieux pour les ajouter';
   }
 
   count.textContent = selectedPlaces.length;
@@ -5730,17 +5708,67 @@ function initConfigModal() {
 
 // Libellés du choix de destination (6 langues), séparés de T pour ne pas toucher les blocs existants
 const DEST_T = {
-  fr: { label: "Où envoyer votre itinéraire ?", detailTitle: "Éditeur avancé", detailSub: "Tout modifier, ajouter hôtels et réservations.", carnetTitle: "Carnet de voyage", carnetSub: "Votre itinéraire en format premium et interactif." },
-  en: { label: "Where do you want to send your itinerary?", detailTitle: "Advanced editor", detailSub: "Edit everything, add hotels and bookings.", carnetTitle: "Travel notebook", carnetSub: "Your itinerary in a premium, interactive format." },
-  es: { label: "¿Dónde enviar tu itinerario?", detailTitle: "Editor avanzado", detailSub: "Edítalo todo, añade hoteles y reservas.", carnetTitle: "Cuaderno de viaje", carnetSub: "Tu itinerario en formato premium e interactivo." },
-  pt: { label: "Para onde enviar o seu itinerário?", detailTitle: "Editor avançado", detailSub: "Edite tudo, adicione hotéis e reservas.", carnetTitle: "Diário de viagem", carnetSub: "O seu itinerário em formato premium e interativo." },
-  it: { label: "Dove inviare il tuo itinerario?", detailTitle: "Editor avanzato", detailSub: "Modifica tutto, aggiungi hotel e prenotazioni.", carnetTitle: "Diario di viaggio", carnetSub: "Il tuo itinerario in formato premium e interattivo." },
-  ar: { label: "أين تريد إرسال مسارك؟", detailTitle: "المحرر المتقدم", detailSub: "عدّل كل شيء، أضف الفنادق والحجوزات.", carnetTitle: "دفتر الرحلة", carnetSub: "مسارك بتنسيق مميّز وتفاعلي." }
+  "fr": {
+    "label": "Où envoyer votre itinéraire ?",
+    "detailTitle": "Éditeur avancé",
+    "detailSub": "Tout modifier, ajouter hôtels et réservations.",
+    "carnetTitle": "Carnet de voyage",
+    "carnetSub": "Votre itinéraire en format premium et interactif."
+  },
+  "en": {
+    "label": "Where do you want to send your itinerary?",
+    "detailTitle": "Advanced editor",
+    "detailSub": "Edit everything, add hotels and bookings.",
+    "carnetTitle": "Travel notebook",
+    "carnetSub": "Your itinerary in a premium, interactive format."
+  },
+  "es": {
+    "label": "¿Dónde enviar tu itinerario?",
+    "detailTitle": "Editor avanzado",
+    "detailSub": "Edítalo todo, añade hoteles y reservas.",
+    "carnetTitle": "Cuaderno de viaje",
+    "carnetSub": "Tu itinerario en formato premium e interactivo."
+  },
+  "pt": {
+    "label": "Para onde enviar o seu itinerário?",
+    "detailTitle": "Editor avançado",
+    "detailSub": "Edite tudo, adicione hotéis e reservas.",
+    "carnetTitle": "Diário de viagem",
+    "carnetSub": "O seu itinerário em formato premium e interativo."
+  },
+  "it": {
+    "label": "Dove inviare il tuo itinerario?",
+    "detailTitle": "Editor avanzato",
+    "detailSub": "Modifica tutto, aggiungi hotel e prenotazioni.",
+    "carnetTitle": "Diario di viaggio",
+    "carnetSub": "Il tuo itinerario in formato premium e interattivo."
+  },
+  "ar": {
+    "label": "أين تريد إرسال مسارك؟",
+    "detailTitle": "المحرر المتقدم",
+    "detailSub": "عدّل كل شيء، أضف الفنادق والحجوزات.",
+    "carnetTitle": "دفتر الرحلة",
+    "carnetSub": "مسارك بتنسيق مميّز وتفاعلي."
+  },
+  "nl": {
+    "label": "Waar wil je je route naartoe sturen?",
+    "detailTitle": "Geavanceerde editor",
+    "detailSub": "Alles bewerken, hotels en boekingen toevoegen.",
+    "carnetTitle": "Reisdagboek",
+    "carnetSub": "Je route in een premium, interactieve opmaak."
+  },
+  "de": {
+    "label": "Wohin möchtest du deine Route senden?",
+    "detailTitle": "Erweiterter Editor",
+    "detailSub": "Alles bearbeiten, Hotels und Buchungen hinzufügen.",
+    "carnetTitle": "Reisetagebuch",
+    "carnetSub": "Deine Route in einem hochwertigen, interaktiven Format."
+  }
 };
 
 function showConfigModal() {
-  const TXT = T[currentLang] || T.fr;
-  const D = DEST_T[currentLang] || DEST_T.fr;
+  const TXT = T[currentLang] || T.en;
+  const D = DEST_T[currentLang] || DEST_T.en;
 
   // Appliquer les libellés du choix de destination
   const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
@@ -5898,7 +5926,7 @@ function submitItinerary() {
 // ATTENTION : saveTrip régénère l'id quand il commence par "custom::",
 // donc on redirige avec l'id RETOURNÉ, jamais l'id d'origine.
 async function submitToCarnet(ctx) {
-  const LSLUG = { fr: 'itineraires', en: 'itineraries', es: 'rutas', pt: 'roteiros', it: 'itinerari', ar: 'masar' };
+  const LSLUG = ORT_I18N_BUILDER.LSLUG;
   const langSlug = LSLUG[currentLang] || 'itineraries';
 
   // Étapes au format attendu par le carnet (place_id, name, lat, lon + lng, cc)
@@ -5915,7 +5943,9 @@ async function submitToCarnet(ctx) {
   }));
 
   const trip = {
-    id: ctx.itinId,          // "custom::..." -> sera régénéré en "trip_..." par saveTrip
+    // Voyage repris depuis le tableau de bord : on garde son identifiant,
+    // saveTrip ne regenere que les identifiants temporaires ("custom::", "catalog::"...)
+    id: resumingTripId || ctx.itinId,
     title: ctx.title,
     cc: ctx.cc,
     country: ctx.cc,
@@ -5972,7 +6002,25 @@ document.addEventListener('DOMContentLoaded', () => {
 <footer id="footer-legal"></footer>
 
 <!-- Scripts ORT modulaires -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/ort-config.js"></script>
+<script>
+// Initialiser Firebase avant le gestionnaire d'etat, sinon celui-ci demarre
+// en mode local et n'enregistre jamais dans le cloud, meme utilisateur connecte.
+(function() {
+  function initFb() {
+    const cfg = (window.ORT_CONFIG && (window.ORT_CONFIG.PROD || window.ORT_CONFIG.PREPROD)) || null;
+    if (cfg && cfg.apiKey && window.firebase && !firebase.apps.length) {
+      firebase.initializeApp(cfg);
+      firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      console.log('[FIREBASE] ✅ Initialisé dans le constructeur');
+    }
+  }
+  if (window.ORT_CONFIG) { initFb(); } else { window.addEventListener('load', initFb); }
+})();
+</script>
 <script src="js/ort-state-manager.js"></script>
 <script src="js/ort-utils.js"></script>
 <script src="js/ort-routing.js"></script>
@@ -6003,33 +6051,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(syncHeaderHeight, 1500);
 })();
 </script>
-<!-- ort-page-tracking-v1 -->
-<script>
-(function(){try{
-  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
-  var openTs=Date.now(),maxScroll=0,sent=false;
-  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
-  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
-  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
-  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
-  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
-  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
-  function send(){
-    if(sent)return; sent=true;
-    try{
-      var dur=Date.now()-openTs;
-      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"carte_builder"},ts:{timestampValue:new Date(openTs).toISOString()}}};
-      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
-      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
-      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
-    }catch(e){}
-  }
-  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
-  window.addEventListener("pagehide",send);
-  window.addEventListener("beforeunload",send);
-}catch(e){}})();
-</script>
-<!-- /ort-page-tracking-v1 -->
+
 
 <script>
 // =====================================================================
@@ -6041,38 +6063,136 @@ document.addEventListener('DOMContentLoaded', () => {
 // fichiers itins ne sont touchés.
 // =====================================================================
 const VE_T = {
-  fr: { open:"Ces visites ne vous conviennent pas ? Modifiez-les ou cherchez-en d'autres",
-        title:"Visites et activités", current:"Dans votre étape", others:"Proposées par d'autres itinéraires",
-        save:"Enregistrer", addVisit:"+ Ajouter une visite", addAct:"+ Ajouter une activité",
-        loading:"Recherche dans les autres itinéraires…", none:"Aucune autre version trouvée pour ce lieu.",
-        error:"Impossible de charger les itinéraires de ce pays.", visits:"Visites", acts:"Activités", from:"D'après" },
-  en: { open:"These suggestions don't suit you? Edit them or look for others",
-        title:"Visits and activities", current:"In your stop", others:"Offered by other itineraries",
-        save:"Save", addVisit:"+ Add a visit", addAct:"+ Add an activity",
-        loading:"Searching other itineraries…", none:"No other version found for this place.",
-        error:"Could not load this country's itineraries.", visits:"Visits", acts:"Activities", from:"From" },
-  es: { open:"¿Estas visitas no le convienen? Modifíquelas o busque otras",
-        title:"Visitas y actividades", current:"En su etapa", others:"Propuestas por otras rutas",
-        save:"Guardar", addVisit:"+ Añadir una visita", addAct:"+ Añadir una actividad",
-        loading:"Buscando en otras rutas…", none:"No se encontró otra versión para este lugar.",
-        error:"No se pudieron cargar las rutas de este país.", visits:"Visitas", acts:"Actividades", from:"Según" },
-  pt: { open:"Estas visitas não lhe convêm? Modifique-as ou procure outras",
-        title:"Visitas e atividades", current:"Na sua etapa", others:"Propostas por outros roteiros",
-        save:"Guardar", addVisit:"+ Adicionar uma visita", addAct:"+ Adicionar uma atividade",
-        loading:"A procurar noutros roteiros…", none:"Nenhuma outra versão encontrada para este local.",
-        error:"Não foi possível carregar os roteiros deste país.", visits:"Visitas", acts:"Atividades", from:"Segundo" },
-  it: { open:"Queste visite non fanno per te? Modificale o cercane altre",
-        title:"Visite e attività", current:"Nella tua tappa", others:"Proposte da altri itinerari",
-        save:"Salva", addVisit:"+ Aggiungi una visita", addAct:"+ Aggiungi un'attività",
-        loading:"Ricerca in altri itinerari…", none:"Nessun'altra versione trovata per questo luogo.",
-        error:"Impossibile caricare gli itinerari di questo paese.", visits:"Visite", acts:"Attività", from:"Da" },
-  ar: { open:"هل هذه الزيارات لا تناسبك؟ عدّلها أو ابحث عن غيرها",
-        title:"الزيارات والأنشطة", current:"في محطتك", others:"مقترحة من مسارات أخرى",
-        save:"حفظ", addVisit:"+ إضافة زيارة", addAct:"+ إضافة نشاط",
-        loading:"جارٍ البحث في المسارات الأخرى…", none:"لم يتم العثور على نسخة أخرى لهذا المكان.",
-        error:"تعذّر تحميل مسارات هذا البلد.", visits:"زيارات", acts:"أنشطة", from:"من" }
+  "fr": {
+    "open": "Ces visites ne vous conviennent pas ? Modifiez-les ou cherchez-en d'autres",
+    "openEdit": "Modifier les visites et activités",
+    "title": "Visites et activités",
+    "current": "Dans votre étape",
+    "others": "Proposées par d'autres itinéraires",
+    "save": "Enregistrer",
+    "addVisit": "+ Ajouter une visite",
+    "addAct": "+ Ajouter une activité",
+    "loading": "Recherche dans les autres itinéraires…",
+    "none": "Aucune autre version trouvée pour ce lieu.",
+    "error": "Impossible de charger les itinéraires de ce pays.",
+    "visits": "Visites",
+    "acts": "Activités",
+    "from": "D'après"
+  },
+  "en": {
+    "open": "These suggestions don't suit you? Edit them or look for others",
+    "openEdit": "Edit visits and activities",
+    "title": "Visits and activities",
+    "current": "In your stop",
+    "others": "Offered by other itineraries",
+    "save": "Save",
+    "addVisit": "+ Add a visit",
+    "addAct": "+ Add an activity",
+    "loading": "Searching other itineraries…",
+    "none": "No other version found for this place.",
+    "error": "Could not load this country's itineraries.",
+    "visits": "Visits",
+    "acts": "Activities",
+    "from": "From"
+  },
+  "es": {
+    "open": "¿Estas visitas no le convienen? Modifíquelas o busque otras",
+    "openEdit": "Modificar visitas y actividades",
+    "title": "Visitas y actividades",
+    "current": "En su etapa",
+    "others": "Propuestas por otras rutas",
+    "save": "Guardar",
+    "addVisit": "+ Añadir una visita",
+    "addAct": "+ Añadir una actividad",
+    "loading": "Buscando en otras rutas…",
+    "none": "No se encontró otra versión para este lugar.",
+    "error": "No se pudieron cargar las rutas de este país.",
+    "visits": "Visitas",
+    "acts": "Actividades",
+    "from": "Según"
+  },
+  "pt": {
+    "open": "Estas visitas não lhe convêm? Modifique-as ou procure outras",
+    "openEdit": "Modificar visitas e atividades",
+    "title": "Visitas e atividades",
+    "current": "Na sua etapa",
+    "others": "Propostas por outros roteiros",
+    "save": "Guardar",
+    "addVisit": "+ Adicionar uma visita",
+    "addAct": "+ Adicionar uma atividade",
+    "loading": "A procurar noutros roteiros…",
+    "none": "Nenhuma outra versão encontrada para este local.",
+    "error": "Não foi possível carregar os roteiros deste país.",
+    "visits": "Visitas",
+    "acts": "Atividades",
+    "from": "Segundo"
+  },
+  "it": {
+    "open": "Queste visite non fanno per te? Modificale o cercane altre",
+    "openEdit": "Modifica visite e attività",
+    "title": "Visite e attività",
+    "current": "Nella tua tappa",
+    "others": "Proposte da altri itinerari",
+    "save": "Salva",
+    "addVisit": "+ Aggiungi una visita",
+    "addAct": "+ Aggiungi un'attività",
+    "loading": "Ricerca in altri itinerari…",
+    "none": "Nessun'altra versione trovata per questo luogo.",
+    "error": "Impossibile caricare gli itinerari di questo paese.",
+    "visits": "Visite",
+    "acts": "Attività",
+    "from": "Da"
+  },
+  "ar": {
+    "open": "هل هذه الزيارات لا تناسبك؟ عدّلها أو ابحث عن غيرها",
+    "openEdit": "تعديل الزيارات والأنشطة",
+    "title": "الزيارات والأنشطة",
+    "current": "في محطتك",
+    "others": "مقترحة من مسارات أخرى",
+    "save": "حفظ",
+    "addVisit": "+ إضافة زيارة",
+    "addAct": "+ إضافة نشاط",
+    "loading": "جارٍ البحث في المسارات الأخرى…",
+    "none": "لم يتم العثور على نسخة أخرى لهذا المكان.",
+    "error": "تعذّر تحميل مسارات هذا البلد.",
+    "visits": "زيارات",
+    "acts": "أنشطة",
+    "from": "من"
+  },
+  "nl": {
+    "open": "Passen deze suggesties niet bij je? Pas ze aan of zoek andere",
+    "openEdit": "Bezienswaardigheden en activiteiten bewerken",
+    "title": "Bezienswaardigheden en activiteiten",
+    "current": "In jouw stop",
+    "others": "Voorgesteld door andere routes",
+    "save": "Opslaan",
+    "addVisit": "+ Bezienswaardigheid toevoegen",
+    "addAct": "+ Activiteit toevoegen",
+    "loading": "Zoeken in andere routes…",
+    "none": "Geen andere versie gevonden voor deze plaats.",
+    "error": "Kan de routes van dit land niet laden.",
+    "visits": "Bezienswaardigheden",
+    "acts": "Activiteiten",
+    "from": "Volgens"
+  },
+  "de": {
+    "open": "Passen diese Vorschläge nicht? Bearbeite sie oder suche andere",
+    "openEdit": "Sehenswürdigkeiten und Aktivitäten bearbeiten",
+    "title": "Sehenswürdigkeiten und Aktivitäten",
+    "current": "In deiner Etappe",
+    "others": "Von anderen Routen vorgeschlagen",
+    "save": "Speichern",
+    "addVisit": "+ Sehenswürdigkeit hinzufügen",
+    "addAct": "+ Aktivität hinzufügen",
+    "loading": "Suche in anderen Routen…",
+    "none": "Keine andere Version für diesen Ort gefunden.",
+    "error": "Die Routen dieses Landes konnten nicht geladen werden.",
+    "visits": "Sehenswürdigkeiten",
+    "acts": "Aktivitäten",
+    "from": "Laut"
+  }
 };
-function veTxt(){ return VE_T[currentLang] || VE_T.fr; }
+function veTxt(){ return VE_T[currentLang] || VE_T.en; }
 
 const veItinsCache = {};   // "CC|lang" -> données du fichier itins
 const veIndexCache = {};   // "CC|lang" -> { place_id: [candidats] }
@@ -6172,8 +6292,11 @@ function veEnsureCountryIndex(cc){
 function veUpdateOpenButton(place){
   const btn = document.getElementById('openVisitEditorBtn');
   if (!btn) return;
-  btn.hidden = true;
-  if (!place || !place.place_id) return;
+  const TXT = VE_T[currentLang] || VE_T.en;
+  if (!place || !place.place_id) { btn.hidden = true; return; }
+  // Toujours proposable : on peut modifier ses textes meme sans autre version
+  btn.textContent = TXT.openEdit;
+  btn.hidden = false;
   const cc = place.cc || (place.place_id || '').split('::')[0];
   veEnsureCountryIndex(cc).then(index => {
     // Le lieu affiche a pu changer entre-temps
@@ -6181,15 +6304,33 @@ function veUpdateOpenButton(place){
     const cands = (index && index[place.place_id]) || [];
     const cur = new Set([].concat(place.visits || [], place.activities || []).map(x => veNorm(x && x.text)));
     const nouveaux = cands.filter(c => !cur.has(veNorm(c.text)));
-    if (nouveaux.length > 0) {
-      btn.textContent = (VE_T[currentLang] || VE_T.fr).open;
-      btn.hidden = false;
-    }
+    // S'il existe d'autres versions, on le dit explicitement
+    if (nouveaux.length > 0) btn.textContent = TXT.open;
   });
+}
+
+
+// Prevenir au moment ou l'utilisateur touche vraiment au contenu,
+// pas a l'ouverture : un message affiche trop tot n'est pas lu.
+function veWarnOnFirstEdit(){
+  try {
+    if (builderUserConnected()) return true;
+    if (sessionStorage.getItem('ORT_EDIT_WARNED') === '1') return true;
+    const ok = confirm(saveMsg().editWarn);
+    if (ok) sessionStorage.setItem('ORT_EDIT_WARNED', '1');
+    return ok;
+  } catch(e){ return true; }
 }
 
 function openVisitEditor(){
   if (!currentPreviewPlace) return;
+  // Premier message : a l'ouverture de l'editeur
+  try {
+    if (!builderUserConnected() && sessionStorage.getItem('ORT_EDIT_WARNED_OPEN') !== '1') {
+      if (!confirm(saveMsg().editWarn)) return;
+      sessionStorage.setItem('ORT_EDIT_WARNED_OPEN', '1');
+    }
+  } catch(e){}
   vePlace = currentPreviewPlace;
   const TXT = veTxt();
   veWorkVisits = (vePlace.visits || []).map(v => ({ text:v.text, dur:v.visit_duration_min }));
@@ -6232,11 +6373,15 @@ function veRenderCurrent(){
       row.className = 've-item';
       const ta = document.createElement('textarea');
       ta.value = item.text || '';
-      ta.addEventListener('input', () => { item.text = ta.value; });
+      ta.addEventListener('input', () => {
+        if (!veWarnOnFirstEdit()) { ta.value = item.text || ''; ta.blur(); return; }
+        item.text = ta.value;
+      });
       const del = document.createElement('button');
       del.className = 've-del';
       del.textContent = '\u2715';
       del.addEventListener('click', () => {
+        if (!veWarnOnFirstEdit()) return;
         (kind === 'visits' ? veWorkVisits : veWorkActs).splice(i, 1);
         veRenderCurrent();
         veRefreshCandidateState();
@@ -6276,6 +6421,7 @@ function veRenderCandidates(cands){
       add.className = 've-add';
       add.textContent = '+';
       add.addEventListener('click', () => {
+        if (!veWarnOnFirstEdit()) return;
         (c.kind === 'visits' ? veWorkVisits : veWorkActs).push({ text:c.text, dur:c.dur });
         veRenderCurrent();
         veRefreshCandidateState();
@@ -6295,6 +6441,7 @@ function veAlreadyIn(c){
 function veRefreshCandidateState(){ veRenderCandidates(veCandidates); }
 
 function veAddBlank(kind){
+  if (!veWarnOnFirstEdit()) return;
   (kind === 'visits' ? veWorkVisits : veWorkActs).push({ text:'', dur:null });
   veRenderCurrent();
 }
@@ -6309,6 +6456,13 @@ function saveVisitEditor(){
 
   vePlace.visits = visits;
   vePlace.activities = acts;
+  saveVisitOverride(vePlace.place_id, visits, acts);
+  // Le meme lieu peut aussi etre present dans la liste generale de la carte
+  try {
+    allPlaces.forEach(p => {
+      if (p.place_id === vePlace.place_id && p !== vePlace) { p.visits = visits.slice(); p.activities = acts.slice(); }
+    });
+  } catch(e){}
   // Répercuter sur l'étape déjà présente dans l'itinéraire (le même lieu peut y figurer deux fois)
   selectedPlaces.forEach(p => {
     if (p.place_id === vePlace.place_id) { p.visits = visits.slice(); p.activities = acts.slice(); }
@@ -6318,6 +6472,32 @@ function saveVisitEditor(){
   try { showPlacePreview(vePlace); } catch(e){ console.warn('showPlacePreview', e); }
 }
 </script>
-
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"carte_builder"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
 </body>
 </html>

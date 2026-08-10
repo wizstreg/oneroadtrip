@@ -3,6 +3,14 @@
 <head>
 <!-- ===== JOURNAL D'ECRAN MOBILE : ajouter ?debug=1 a l'URL ===== -->
 <script>
+
+/* Format de date : suit la langue du site, replie sur l anglais. */
+function ortDateLocale(){
+  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
+  return M[l] || 'en-GB';
+}
+
 (function(){
   try {
     var q = new URLSearchParams(location.search);
@@ -116,6 +124,9 @@
 }catch(e){}})();
 </script>
 <!-- /ort-page-tracking-v1 -->
+
+
+
 
 
 
@@ -2314,6 +2325,7 @@ html, body {
           </div>
           <div id="aiStepsGrid" class="ai-steps-grid"></div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+            <button id="btnRegenAiSummary" type="button" onclick="regenerateAiSummary()" style="padding:8px 14px;border-radius:8px;border:1px solid #f0b3b3;background:#fff5f5;color:#b91c1c;font-size:11px;cursor:pointer;font-weight:600;">🔄 Relancer</button>
             <button id="btnCopyAiSummary" type="button" onclick="copyAiSummary()" style="padding:8px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:11px;cursor:pointer;font-weight:600;">📋 Copier</button>
             <button id="btnShareAiWhatsapp" type="button" onclick="shareAiSummary('whatsapp')" style="padding:8px 14px;border-radius:8px;border:1px solid #25d366;background:#25d366;color:#fff;font-size:11px;cursor:pointer;font-weight:700;">💬 WhatsApp</button>
             <button id="btnShareAiSms" type="button" onclick="shareAiSummary('sms')" style="padding:8px 14px;border-radius:8px;border:1px solid #3b82f6;background:#3b82f6;color:#fff;font-size:11px;cursor:pointer;font-weight:700;">💬 SMS</button>
@@ -2844,11 +2856,11 @@ window.debugLog = function(msg) {
       errExists: 'Email already used',
       errGeneric: 'Error, try again'
     }
-  };
+  , nl: {"loginTitle":'Inloggen',"signupTitle":'Account aanmaken',"resetTitle":'Wachtwoord vergeten',"email":'E-mail',"password":'Wachtwoord',"confirmPassword":'Bevestigen',"login":'Inloggen',"signup":'Aanmaken',"sendReset":'Versturen',"cancel":'Annuleren',"noAccount":'Geen account?',"hasAccount":'Al een account?',"forgotPwd":'Wachtwoord vergeten?',"orGoogle":'of met Google',"success":'✅ Ingelogd!',"resetSent":'✅ E-mail verstuurd!',"accountCreated":'✅ Account aangemaakt! Controleer je e-mail.',"errFill":'Vul alle velden in',"errEmail":'Ongeldig e-mailadres',"errPwdShort":'Wachtwoord te kort (min. 6)',"errPwdMatch":'Wachtwoorden komen niet overeen',"errWrongPwd":'Onjuist wachtwoord',"errNotFound":'Account bestaat niet',"errExists":'E-mailadres al in gebruik',"errGeneric":'Fout, probeer opnieuw'}, de: {"loginTitle":'Anmelden',"signupTitle":'Konto erstellen',"resetTitle":'Passwort vergessen',"email":'E-Mail',"password":'Passwort',"confirmPassword":'Bestätigen',"login":'Anmelden',"signup":'Erstellen',"sendReset":'Senden',"cancel":'Abbrechen',"noAccount":'Kein Konto?',"hasAccount":'Schon ein Konto?',"forgotPwd":'Passwort vergessen?',"orGoogle":'oder mit Google',"success":'✅ Angemeldet!',"resetSent":'✅ E-Mail gesendet!',"accountCreated":'✅ Konto erstellt! Prüfe deine E-Mails.',"errFill":'Fülle alle Felder aus',"errEmail":'Ungültige E-Mail',"errPwdShort":'Passwort zu kurz (mind. 6)',"errPwdMatch":'Passwörter stimmen nicht überein',"errWrongPwd":'Falsches Passwort',"errNotFound":'Konto existiert nicht',"errExists":'E-Mail bereits verwendet',"errGeneric":'Fehler, bitte erneut versuchen'}};
   
   function t(key) {
-    const lang = localStorage.getItem('ort_lang') || 'fr';
-    return T[lang]?.[key] || T.fr[key] || key;
+    const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+    return T[lang]?.[key] || T.en[key] || key;
   }
   
   function createModal() {
@@ -3166,22 +3178,22 @@ window.optimizePhotoUrls = function(urls, maxWidth) {
 
 // Traductions pour textes UI hardcodés
 const _T = {
-  unsavedQuit: {fr:'Modifications non sauvegardées. Quitter ?',en:'Unsaved changes. Leave?',es:'Cambios no guardados. ¿Salir?',it:'Modifiche non salvate. Uscire?',pt:'Alterações não guardadas. Sair?',ar:'تغييرات غير محفوظة. مغادرة؟'},
-  confirmLogout: {fr:'Confirmer la déconnexion ?',en:'Confirm sign out?',es:'¿Confirmar cierre de sesión?',it:'Confermare la disconnessione?',pt:'Confirmar encerramento de sessão?',ar:'تأكيد تسجيل الخروج؟'},
-  deleteAccountWarn: {fr:'⚠️ Cette action est irréversible. Supprimer le compte ?',en:'⚠️ This action is irreversible. Delete account?',es:'⚠️ Esta acción es irreversible. ¿Eliminar la cuenta?',it:'⚠️ Questa azione è irreversibile. Eliminare l\'account?',pt:'⚠️ Esta ação é irreversível. Eliminar a conta?',ar:'⚠️ هذا الإجراء لا يمكن التراجع عنه. حذف الحساب؟'},
-  areYouSure: {fr:'Êtes-vous vraiment sûr ?',en:'Are you really sure?',es:'¿Está realmente seguro?',it:'Sei davvero sicuro?',pt:'Tem realmente a certeza?',ar:'هل أنت متأكد حقًا؟'},
-  deleteVisit: {fr:'Supprimer cette visite ?',en:'Delete this visit?',es:'¿Eliminar esta visita?',it:'Eliminare questa visita?',pt:'Eliminar esta visita?',ar:'حذف هذه الزيارة؟'},
-  deleteActivity: {fr:'Supprimer cette activité ?',en:'Delete this activity?',es:'¿Eliminar esta actividad?',it:'Eliminare questa attività?',pt:'Eliminar esta atividade?',ar:'حذف هذا النشاط؟'},
-  notConnected: {fr:'Non connecté',en:'Not signed in',es:'No conectado',it:'Non connesso',pt:'Não conectado',ar:'غير متصل'},
-  loginRequired: {fr:'Connexion requise',en:'Sign in required',es:'Inicio de sesión requerido',it:'Accesso richiesto',pt:'Início de sessão necessário',ar:'يجب تسجيل الدخول'},
-  redirectLogin: {fr:'Redirection vers la connexion...',en:'Redirecting to sign in...',es:'Redirigiendo al inicio de sesión...',it:'Reindirizzamento all\'accesso...',pt:'Redirecionando para início de sessão...',ar:'جاري التوجيه إلى تسجيل الدخول...'},
-  scanBooking: {fr:'📷 Scanner une réservation',en:'📷 Scan a booking',es:'📷 Escanear una reserva',it:'📷 Scansiona una prenotazione',pt:'📷 Digitalizar uma reserva',ar:'📷 مسح حجز'},
-  scanBookingSub: {fr:'Photo de confirmation, email, PDF...',en:'Confirmation photo, email, PDF...',es:'Foto de confirmación, email, PDF...',it:'Foto di conferma, email, PDF...',pt:'Foto de confirmação, email, PDF...',ar:'صورة تأكيد، بريد إلكتروني، PDF...'},
-  scanDocument: {fr:'🪪 Scanner un document',en:'🪪 Scan a document',es:'🪪 Escanear un documento',it:'🪪 Scansiona un documento',pt:'🪪 Digitalizar um documento',ar:'🪪 مسح وثيقة'},
-  scanDocumentSub: {fr:'Passeport, visa, permis...',en:'Passport, visa, permit...',es:'Pasaporte, visa, permiso...',it:'Passaporto, visto, permesso...',pt:'Passaporte, visto, licença...',ar:'جواز سفر، تأشيرة، رخصة...'},
-  noSteps: {fr:'Aucune étape',en:'No steps',es:'Sin etapas',it:'Nessuna tappa',pt:'Sem etapas',ar:'لا توجد مراحل'},
-  sharedTripBy: {fr:'Voyage partagé par',en:'Trip shared by',es:'Viaje compartido por',it:'Viaggio condiviso da',pt:'Viagem partilhada por',ar:'رحلة مشتركة من'},
-  readOnly: {fr:'Mode lecture seule',en:'Read-only mode',es:'Modo solo lectura',it:'Modalità di sola lettura',pt:'Modo somente leitura',ar:'وضع القراءة فقط'}
+  unsavedQuit: {fr:'Modifications non sauvegardées. Quitter ?',en:'Unsaved changes. Leave?',es:'Cambios no guardados. ¿Salir?',it:'Modifiche non salvate. Uscire?',pt:'Alterações não guardadas. Sair?',ar:'تغييرات غير محفوظة. مغادرة؟', nl: 'Niet-opgeslagen wijzigingen. Afsluiten?', de: 'Nicht gespeicherte Änderungen. Beenden?'},
+  confirmLogout: {fr:'Confirmer la déconnexion ?',en:'Confirm sign out?',es:'¿Confirmar cierre de sesión?',it:'Confermare la disconnessione?',pt:'Confirmar encerramento de sessão?',ar:'تأكيد تسجيل الخروج؟', nl: 'Uitloggen bevestigen?', de: 'Abmeldung bestätigen?'},
+  deleteAccountWarn: {fr:'⚠️ Cette action est irréversible. Supprimer le compte ?',en:'⚠️ This action is irreversible. Delete account?',es:'⚠️ Esta acción es irreversible. ¿Eliminar la cuenta?',it:'⚠️ Questa azione è irreversibile. Eliminare l\'account?',pt:'⚠️ Esta ação é irreversível. Eliminar a conta?',ar:'⚠️ هذا الإجراء لا يمكن التراجع عنه. حذف الحساب؟', nl: '⚠️ Dit kan niet ongedaan worden gemaakt. Account verwijderen?', de: '⚠️ Das lässt sich nicht rückgängig machen. Konto löschen?'},
+  areYouSure: {fr:'Êtes-vous vraiment sûr ?',en:'Are you really sure?',es:'¿Está realmente seguro?',it:'Sei davvero sicuro?',pt:'Tem realmente a certeza?',ar:'هل أنت متأكد حقًا؟', nl: 'Weet je het heel zeker?', de: 'Bist du dir ganz sicher?'},
+  deleteVisit: {fr:'Supprimer cette visite ?',en:'Delete this visit?',es:'¿Eliminar esta visita?',it:'Eliminare questa visita?',pt:'Eliminar esta visita?',ar:'حذف هذه الزيارة؟', nl: 'Deze bezienswaardigheid verwijderen?', de: 'Diese Sehenswürdigkeit entfernen?'},
+  deleteActivity: {fr:'Supprimer cette activité ?',en:'Delete this activity?',es:'¿Eliminar esta actividad?',it:'Eliminare questa attività?',pt:'Eliminar esta atividade?',ar:'حذف هذا النشاط؟', nl: 'Deze activiteit verwijderen?', de: 'Diese Aktivität entfernen?'},
+  notConnected: {fr:'Non connecté',en:'Not signed in',es:'No conectado',it:'Non connesso',pt:'Não conectado',ar:'غير متصل', nl: 'Niet ingelogd', de: 'Nicht angemeldet'},
+  loginRequired: {fr:'Connexion requise',en:'Sign in required',es:'Inicio de sesión requerido',it:'Accesso richiesto',pt:'Início de sessão necessário',ar:'يجب تسجيل الدخول', nl: 'Inloggen vereist', de: 'Anmeldung erforderlich'},
+  redirectLogin: {fr:'Redirection vers la connexion...',en:'Redirecting to sign in...',es:'Redirigiendo al inicio de sesión...',it:'Reindirizzamento all\'accesso...',pt:'Redirecionando para início de sessão...',ar:'جاري التوجيه إلى تسجيل الدخول...', nl: 'Doorsturen naar het inloggen...', de: 'Weiterleitung zur Anmeldung...'},
+  scanBooking: {fr:'📷 Scanner une réservation',en:'📷 Scan a booking',es:'📷 Escanear una reserva',it:'📷 Scansiona una prenotazione',pt:'📷 Digitalizar uma reserva',ar:'📷 مسح حجز', nl: '📷 Een boeking scannen', de: '📷 Eine Buchung scannen'},
+  scanBookingSub: {fr:'Photo de confirmation, email, PDF...',en:'Confirmation photo, email, PDF...',es:'Foto de confirmación, email, PDF...',it:'Foto di conferma, email, PDF...',pt:'Foto de confirmação, email, PDF...',ar:'صورة تأكيد، بريد إلكتروني، PDF...', nl: 'Bevestigingsfoto, e-mail, PDF...', de: 'Bestätigungsfoto, E-Mail, PDF...'},
+  scanDocument: {fr:'🪪 Scanner un document',en:'🪪 Scan a document',es:'🪪 Escanear un documento',it:'🪪 Scansiona un documento',pt:'🪪 Digitalizar um documento',ar:'🪪 مسح وثيقة', nl: '🪪 Een document scannen', de: '🪪 Ein Dokument scannen'},
+  scanDocumentSub: {fr:'Passeport, visa, permis...',en:'Passport, visa, permit...',es:'Pasaporte, visa, permiso...',it:'Passaporto, visto, permesso...',pt:'Passaporte, visto, licença...',ar:'جواز سفر، تأشيرة، رخصة...', nl: 'Paspoort, visum, rijbewijs...', de: 'Reisepass, Visum, Führerschein...'},
+  noSteps: {fr:'Aucune étape',en:'No steps',es:'Sin etapas',it:'Nessuna tappa',pt:'Sem etapas',ar:'لا توجد مراحل', nl: 'Geen stops', de: 'Keine Etappen'},
+  sharedTripBy: {fr:'Voyage partagé par',en:'Trip shared by',es:'Viaje compartido por',it:'Viaggio condiviso da',pt:'Viagem partilhada por',ar:'رحلة مشتركة من', nl: 'Reis gedeeld door', de: 'Reise geteilt von'},
+  readOnly: {fr:'Mode lecture seule',en:'Read-only mode',es:'Modo solo lectura',it:'Modalità di sola lettura',pt:'Modo somente leitura',ar:'وضع القراءة فقط', nl: 'Alleen-lezenmodus', de: 'Nur-Lese-Modus'}
 };
 function _t(key){ const l = (state && state.lang) || 'fr'; return (_T[key]||{})[l] || (_T[key]||{}).en || (_T[key]||{}).fr || key; }
 
@@ -3693,6 +3705,141 @@ const I18N_MOBILE = {
     tripNotSaved: '❌ الرحلة غير محفوظة',
     unsavedChanges: 'تغييرات غير محفوظة. هل تريد المغادرة؟'
   }
+,
+  nl: {
+    steps: 'Stops',
+    nights: 'Nachten',
+    night: 'nacht',
+    nightPlural: 'nachten',
+    itinerary: 'Route',
+    map: 'Kaart',
+    bookings: 'Boekingen',
+    services: 'Organiseren',
+    googleMap: 'Google Maps',
+    filterRestos: '🍽️ Eten',
+    filterMonuments: '🏛️ Monumenten',
+    filterMuseums: '🎨 Musea',
+    filterCourses: '🛒 Boodschappen',
+    legendShowOnMap: 'Bekijken op de kaart',
+    legendDirections: 'De route bekijken',
+    organizeTitle: '🛎️ Mijn reis organiseren',
+    organizeSubtitle: 'Hotels, activiteiten, diensten',
+    pickStep: 'Kies een stop',
+    hotels: 'Hotels',
+    hotelsDesc: 'Interactieve kaart',
+    activities: 'Activiteiten',
+    activitiesDesc: 'Bezoeken & ervaringen',
+    noBookings: 'Geen boekingen',
+    stepOf: 'Stop {0} van {1}',
+    numberOfNights: 'Aantal nachten',
+    myBookings: 'Mijn boekingen',
+    close: 'Sluiten',
+    visits: 'Bezienswaardigheden',
+    seeVisits: 'Bezienswaardigheden bekijken',
+    seeActivities: 'Activiteiten bekijken',
+    plannedVisits: '📍 Geplande bezoeken',
+    noVisits: 'Geen bezoeken gepland voor deze stop',
+    noActivities: 'Geen activiteiten gepland voor deze stop',
+    visit: 'Bezoek',
+    activity: 'Activiteit',
+    shareTitle: '🔗 Deze reis delen',
+    shareWarning: '⚠️ Iedereen met deze link kan je reis bekijken',
+    shareGenerate: '🔗 Link maken',
+    shareRegenerate: '🔄 Link opnieuw maken',
+    shareGenerating: '⏳ Bezig...',
+    shareCopy: '📋 Kopiëren',
+    shareNative: '📤 Delen',
+    back: '← Terug',
+    loginRequired: '🔐 Inloggen vereist',
+    loginRequiredDesc: 'Log in om deze reis op te slaan en te delen.',
+    loginBtn: 'Inloggen',
+    saveRequired: '💾 Opslaan vereist',
+    saveRequiredDesc: 'Sla je reis op voordat je hem deelt.',
+    saveBtn: 'Opslaan',
+    cancelBtn: 'Annuleren',
+    profile: 'Profiel',
+    notConnected: 'Niet ingelogd',
+    connectionRequired: 'Inloggen vereist',
+    connectedSince: 'Ingelogd sinds',
+    logout: '🔓 Uitloggen',
+    changeEmail: '✉️ E-mail wijzigen',
+    changePassword: '🔑 Wachtwoord wijzigen',
+    deleteAccount: '🗑️ Account verwijderen',
+    linkCreated: '✅ Link aangemaakt!',
+    linkCopied: '📋 Link gekopieerd!',
+    saved: '✅ Opgeslagen!',
+    mapCentered: '🎯 Kaart gecentreerd',
+    noStepsToShare: '❌ Geen stops om te delen',
+    tripNotSaved: '❌ Reis niet opgeslagen',
+    unsavedChanges: 'Niet-opgeslagen wijzigingen. Afsluiten?'
+  },
+  de: {
+    steps: 'Etappen',
+    nights: 'Nächte',
+    night: 'Nacht',
+    nightPlural: 'Nächte',
+    itinerary: 'Route',
+    map: 'Karte',
+    bookings: 'Buchungen',
+    services: 'Organisieren',
+    googleMap: 'Google Maps',
+    filterRestos: '🍽️ Essen',
+    filterMonuments: '🏛️ Denkmäler',
+    filterMuseums: '🎨 Museen',
+    filterCourses: '🛒 Einkaufen',
+    legendShowOnMap: 'Auf der Karte ansehen',
+    legendDirections: 'Die Route ansehen',
+    organizeTitle: '🛎️ Meine Reise organisieren',
+    organizeSubtitle: 'Hotels, Aktivitäten, Dienste',
+    pickStep: 'Wähle eine Etappe',
+    hotels: 'Hotels',
+    hotelsDesc: 'Interaktive Karte',
+    activities: 'Aktivitäten',
+    activitiesDesc: 'Besichtigungen & Erlebnisse',
+    noBookings: 'Keine Buchungen',
+    stepOf: 'Etappe {0} von {1}',
+    numberOfNights: 'Anzahl der Nächte',
+    myBookings: 'Meine Buchungen',
+    close: 'Schließen',
+    visits: 'Sehenswürdigkeiten',
+    seeVisits: 'Sehenswürdigkeiten ansehen',
+    seeActivities: 'Aktivitäten ansehen',
+    plannedVisits: '📍 Geplante Besichtigungen',
+    noVisits: 'Keine Besichtigungen für diese Etappe geplant',
+    noActivities: 'Keine Aktivitäten für diese Etappe geplant',
+    visit: 'Besichtigung',
+    activity: 'Aktivität',
+    shareTitle: '🔗 Diese Reise teilen',
+    shareWarning: '⚠️ Jeder mit diesem Link kann deine Reise sehen',
+    shareGenerate: '🔗 Link erstellen',
+    shareRegenerate: '🔄 Link neu erstellen',
+    shareGenerating: '⏳ Wird erstellt...',
+    shareCopy: '📋 Kopieren',
+    shareNative: '📤 Teilen',
+    back: '← Zurück',
+    loginRequired: '🔐 Anmeldung erforderlich',
+    loginRequiredDesc: 'Melde dich an, um diese Reise zu speichern und zu teilen.',
+    loginBtn: 'Anmelden',
+    saveRequired: '💾 Speichern erforderlich',
+    saveRequiredDesc: 'Speichere deine Reise, bevor du sie teilst.',
+    saveBtn: 'Speichern',
+    cancelBtn: 'Abbrechen',
+    profile: 'Profil',
+    notConnected: 'Nicht angemeldet',
+    connectionRequired: 'Anmeldung erforderlich',
+    connectedSince: 'Angemeldet seit',
+    logout: '🔓 Abmelden',
+    changeEmail: '✉️ E-Mail ändern',
+    changePassword: '🔑 Passwort ändern',
+    deleteAccount: '🗑️ Konto löschen',
+    linkCreated: '✅ Link erstellt!',
+    linkCopied: '📋 Link kopiert!',
+    saved: '✅ Gespeichert!',
+    mapCentered: '🎯 Karte zentriert',
+    noStepsToShare: '❌ Keine Etappen zum Teilen',
+    tripNotSaved: '❌ Reise nicht gespeichert',
+    unsavedChanges: 'Nicht gespeicherte Änderungen. Beenden?'
+  }
 };
 
 function i18n(key) {
@@ -3828,7 +3975,7 @@ async function init() {
   const itinId = params.get('itin') || '';
   const rtKey = params.get('rtKey') || '';
   const tripId = params.get('tripId') || params.get('id') || '';
-  const lang = params.get('lang') || localStorage.getItem('ort_lang') || 'fr';
+  const lang = params.get('lang') || localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
   const fromTemp = params.get('from') === 'temp';
   const builderMode = params.get('mode') === 'builder' || params.get('from') === 'builder';
   const fromBuilderResult = params.get('fromBuilder') === '1';
@@ -3880,7 +4027,8 @@ async function init() {
   state.lang = lang;
   state.targetNights = requestedDays || 0; // Nombre de jours demandés depuis l'URL
   state.startDateStr = departDate || null; // Date de départ
-  localStorage.setItem('ort_lang', lang);
+  localStorage.setItem('lang', lang);
+  localStorage.setItem('ort_lang', lang); // compatibilite ancienne cle
   
   // INIT ORT_TRIPID - Source de vérité unique pour le tripId
   if (window.ORT_TRIPID) {
@@ -4227,7 +4375,7 @@ async function loadFromTemp(rtKey) {
       // Conserver les infos enrichies
       to_next_leg: s.to_next_leg || null,
       suggested_days: s.suggested_days || null,
-      _mapKeywords: Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : []
+      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : (Array.isArray(s.map_keywords) ? s.map_keywords : []))
     };
   });
   
@@ -4259,7 +4407,7 @@ async function loadFromTemp(rtKey) {
   if (state._originalNotes) {
     const nb = document.getElementById('mobileNotesBox');
     if (nb) {
-      const nl = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[state.lang] || 'Notes';
+      const nl = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات', nl: 'Opmerkingen', de: 'Hinweise'})[state.lang] || 'Notes';
       document.getElementById('mobileNotesLabel').textContent = nl;
       document.getElementById('mobileNotesText').innerHTML = String(state._originalNotes).replace(/\n/g,'<br>');
       nb.style.display = 'block';
@@ -4524,7 +4672,7 @@ async function applyTripDataToState(tripData) {
       rating: s.rating || 0,
       visits: s.visits || s.pois || [],
       activities: s.activities || [],
-      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : [])
+      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : (Array.isArray(s.map_keywords) ? s.map_keywords : []))
     };
   });
   
@@ -4627,7 +4775,7 @@ async function loadBuilderResult() {
       placeId: s.place_id || null,
       visits: s.visits || [],
       activities: s.activities || [],
-      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : [])
+      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : (Array.isArray(s.map_keywords) ? s.map_keywords : []))
     };
   });
   
@@ -4679,11 +4827,11 @@ function showMobileRecalculateButton() {
     es: '🔄 Otras sugerencias',
     it: '🔄 Altri suggerimenti',
     pt: '🔄 Outras sugestões'
-  };
+  , nl: '🔄 Andere suggesties', de: '🔄 Andere Vorschläge'};
   const label = window.ORT_I18N?.recalculateLoop?.[lang]
-             || window.ORT_I18N?.recalculateLoop?.fr
+             || window.ORT_I18N?.recalculateLoop?.en
              || fallback[lang]
-             || fallback.fr;
+             || fallback.en;
   
   const btn = document.createElement('button');
   btn.id = 'btnMobileRecalcLoop';
@@ -4780,8 +4928,8 @@ function showZoneFallbackBanner() {
       es: `ℹ️ La zona dibujada tenía pocos lugares. Se amplió ${info.bufferKm} km para proponer un circuito completo.`,
       it: `ℹ️ La zona disegnata aveva pochi luoghi. È stata ampliata di ${info.bufferKm} km per un circuito completo.`,
       pt: `ℹ️ A zona desenhada tinha poucos lugares. Foi ampliada em ${info.bufferKm} km para um circuito completo.`
-    };
-    text = messages[lang] || messages.fr;
+    , nl: `ℹ️ Het getekende gebied bevatte te weinig plaatsen. Het is met ${info.bufferKm} km uitgebreid om je een volledige route te bieden.`, de: `ℹ️ Das gezeichnete Gebiet enthielt zu wenige Orte. Es wurde um ${info.bufferKm} km erweitert, um dir eine vollständige Route zu bieten.`};
+    text = messages[lang] || messages.en;
   } else {
     const messages = {
       fr: `ℹ️ Pas assez de lieux dans la zone dessinée. ${info.outCount} étape(s) ajoutée(s) hors zone pour compléter le circuit.`,
@@ -4789,8 +4937,8 @@ function showZoneFallbackBanner() {
       es: `ℹ️ No hay suficientes lugares en la zona dibujada. ${info.outCount} etapa(s) añadida(s) fuera de zona para completar el circuito.`,
       it: `ℹ️ Non ci sono abbastanza luoghi nella zona disegnata. ${info.outCount} tappa(e) aggiunta(e) fuori zona per completare il circuito.`,
       pt: `ℹ️ Não há lugares suficientes na zona desenhada. ${info.outCount} etapa(s) adicionada(s) fora da zona para completar o circuito.`
-    };
-    text = messages[lang] || messages.fr;
+    , nl: `ℹ️ Niet genoeg plaatsen in het getekende gebied. ${info.outCount} stop(s) buiten het gebied toegevoegd om de route compleet te maken.`, de: `ℹ️ Nicht genug Orte im gezeichneten Gebiet. ${info.outCount} Etappe(n) außerhalb des Gebiets hinzugefügt, um die Route zu vervollständigen.`};
+    text = messages[lang] || messages.en;
   }
   
   const banner = document.createElement('div');
@@ -5331,7 +5479,7 @@ async function loadFromFirebase(rtKey) {
       place_id: s.place_id || s.placeId || null,
       visits: visits,
       activities: activities,
-      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : [])
+      _mapKeywords: Array.isArray(s._mapKeywords) ? s._mapKeywords : (Array.isArray(s.night?.map_keywords) ? s.night.map_keywords : (Array.isArray(s.map_keywords) ? s.map_keywords : []))
     };
   });
 }
@@ -5357,7 +5505,7 @@ function renderBookings() {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString(state.lang || 'fr', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      return d.toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch (e) {
       return dateStr;
     }
@@ -5668,7 +5816,8 @@ function setupEvents() {
     opt.onclick = () => {
       const newLang = opt.dataset.lang;
       localStorage.setItem('lang', newLang);
-      localStorage.setItem('ort_lang', newLang); // Important pour RT Mobile
+      localStorage.setItem('lang', newLang);
+      localStorage.setItem('ort_lang', newLang); // compatibilite ancienne cle
       
       // Nettoyer les caches de state MAIS PAS les itinéraires temporaires (ORT_TEMP_TRIP_)
       // car ils contiennent les itinéraires personnalisés de l'utilisateur
@@ -5708,7 +5857,7 @@ function updateUserUI() {
     
     if (user) {
       emailEl.textContent = user.email || 'Utilisateur';
-      statusEl.textContent = `Connecté depuis ${new Date(user.metadata.creationTime).toLocaleDateString('fr-FR')}`;
+      statusEl.textContent = `Connecté depuis ${new Date(user.metadata.creationTime).toLocaleDateString(ortDateLocale())}`;
       
       loginBtn.style.display = 'none';
       logoutBtn.style.display = 'block';
@@ -6134,7 +6283,7 @@ function updateSummary() {
   const notesStr = typeof state._originalNotes === 'string' ? state._originalNotes.trim() : '';
   console.log('[LOG-CONTROLE][MOBILE] updateSummary notes check:', !!notesStr, '| notesBox:', !!notesBox, '| type:', typeof state._originalNotes);
   if (notesBox && notesStr) {
-    const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[state.lang] || 'Notes';
+    const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات', nl: 'Opmerkingen', de: 'Hinweise'})[state.lang] || 'Notes';
     $('mobileNotesLabel').textContent = notesLabel;
     $('mobileNotesText').innerHTML = notesStr.replace(/\n/g,'<br>');
     notesBox.style.display = 'block';
@@ -6434,7 +6583,7 @@ function renderLoopLegend(loopGroups) {
     es: { title: 'Bucles', loop: 'Bucle {n}', links: 'Enlaces' },
     pt: { title: 'Circuitos', loop: 'Circuito {n}', links: 'Ligações' },
     ar: { title: 'الحلقات', loop: 'الحلقة {n}', links: 'التنقلات' }
-  })[lang] || { title: 'Boucles', loop: 'Boucle {n}', links: 'Liaisons' };
+  , nl: {"title":'Lussen',"loop":'Lus {n}',"links":'Verbindingen'}, de: {"title":'Schleifen',"loop":'Schleife {n}',"links":'Verbindungen'}})[lang] || { title: 'Boucles', loop: 'Boucle {n}', links: 'Liaisons' };
 
   let box = document.getElementById('loopLegend');
   if (box) box.remove();
@@ -6527,7 +6676,7 @@ function openStepSheet(idx) {
   const lang = state.lang || 'fr';
   
   const _sheetName = getCityDisplayName(step, lang) || step.name;
-  const _speechLangMap = {fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-PT',it:'it-IT',ar:'ar-SA'};
+  const _speechLangMap = {fr:'fr-FR',en:'en-US',es:'es-ES',pt:'pt-PT',it:'it-IT',ar:'ar-SA', nl: 'nl-NL', de: 'de-DE'};
   const _speechLang = _speechLangMap[lang] || 'en-US';
   // Construire le texte à lire : nom + visites + activités
   let _speakText = _sheetName;
@@ -6647,9 +6796,9 @@ function openStepSheet(idx) {
         const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : null;
         let dateStr = '';
         if (b.date_start) {
-          const ds = new Date(b.date_start).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+          const ds = new Date(b.date_start).toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit' });
           if (b.date_end && b.date_end !== b.date_start) {
-            const de = new Date(b.date_end).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const de = new Date(b.date_end).toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit' });
             const nights = Math.ceil((new Date(b.date_end) - new Date(b.date_start)) / 86400000);
             dateStr = `${ds} → ${de}${nights > 0 ? ` (${nights} nuit${nights > 1 ? 's' : ''})` : ''}`;
           } else {
@@ -7387,9 +7536,11 @@ const SCANNER = {
     
     try {
       const url = this.mode === 'booking' ? this.API_BOOKING : this.API_DOCUMENT;
+      // La langue du site est transmise pour que l IA reponde dans la bonne langue
+      const _lang = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
       const body = this.mode === 'booking' 
-        ? { photo: this.photoBase64 }
-        : { photo: this.photoBase64, save: false };
+        ? { photo: this.photoBase64, lang: _lang }
+        : { photo: this.photoBase64, save: false, lang: _lang };
       
       const res = await fetch(url, {
         method: 'POST',
@@ -7662,7 +7813,7 @@ function formatDate(dateStr) {
   if (!dateStr) return '';
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return d.toLocaleDateString(ortDateLocale(), { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   } catch(e) {
     return dateStr;
   }
@@ -8167,9 +8318,9 @@ window.deleteActivity = deleteActivity;
           const price = b.price ? (typeof b.price === 'object' ? b.price.amount : b.price) : null;
           let dateStr = '';
           if (b.date_start) {
-            const ds = new Date(b.date_start).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+            const ds = new Date(b.date_start).toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit' });
             if (b.date_end && b.date_end !== b.date_start) {
-              const de = new Date(b.date_end).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+              const de = new Date(b.date_end).toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit' });
               dateStr = `${ds} → ${de}`;
             } else {
               dateStr = ds;
@@ -8305,23 +8456,23 @@ window.deleteActivity = deleteActivity;
     const mapLegends = {
       fr: 'Voir sur la carte', en: 'Show on map', es: 'Ver en el mapa',
       it: 'Mostra sulla mappa', pt: 'Ver no mapa', ar: 'عرض على الخريطة'
-    };
+    , nl: 'Bekijken op de kaart', de: 'Auf der Karte ansehen'};
     const dirLegends = {
       fr: "Voir l'itinéraire", en: 'Show directions', es: 'Ver itinerario',
       it: "Vedi l'itinerario", pt: 'Ver itinerário', ar: 'عرض المسار'
-    };
+    , nl: 'De route bekijken', de: 'Die Route ansehen'};
     const directionsLabels = {
       fr: 'Itinéraire Google Maps', en: 'Google Maps directions', es: 'Cómo llegar (Google Maps)',
       it: 'Indicazioni Google Maps', pt: 'Direções Google Maps', ar: 'الاتجاهات على خرائط جوجل'
-    };
-    if (legendMapEl) legendMapEl.textContent = mapLegends[lang] || mapLegends.fr;
-    if (legendDirEl) legendDirEl.textContent = dirLegends[lang] || dirLegends.fr;
+    , nl: 'Route in Google Maps', de: 'Route in Google Maps'};
+    if (legendMapEl) legendMapEl.textContent = mapLegends[lang] || mapLegends.en;
+    if (legendDirEl) legendDirEl.textContent = dirLegends[lang] || dirLegends.en;
     if (countEl) countEl.textContent = `(${kws.length})`;
     
     chipsEl.innerHTML = kws.map(kw => {
       const safeKw = String(kw).replace(/"/g, '&quot;');
       const dirUrl = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(kw) + '&travelmode=driving';
-      const dirTitle = directionsLabels[lang] || directionsLabels.fr;
+      const dirTitle = directionsLabels[lang] || directionsLabels.en;
       // Chip composite : partie gauche cliquable (charge dans iframe) + bouton 🧭 à droite (ouvre Google Maps)
       return `<div class="mkb-chip-group">
         <button type="button" class="mkb-chip mkb-chip-main" data-kw="${safeKw}">📍 ${kw}</button>
@@ -8557,7 +8708,7 @@ if ('serviceWorker' in navigator) {
 
   function tAi(key) {
     var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['fr'] || '';
+    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['en'] || '';
     return '';
   }
   function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -8649,6 +8800,7 @@ if ('serviceWorker' in navigator) {
     if (g('btnAiSummary'))            g('btnAiSummary').textContent = tAi('aiSummaryGenerate');
     if (g('aiSummaryItineraryTitle')) g('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
     if (g('btnCopyAiSummary'))        g('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
+    if (g('btnRegenAiSummary'))       g('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate');
     if (g('btnShareAiNativeLabel'))   g('btnShareAiNativeLabel').textContent = (tAi('aiSummaryShare') || '').replace(/\uD83D\uDCE4\s?/, '');
     if (navigator.share && g('btnShareAiNative')) g('btnShareAiNative').style.display = 'inline-block';
     console.log('[AI-SUMMARY] Labels init OK');
@@ -8724,7 +8876,18 @@ if ('serviceWorker' in navigator) {
   }
 
   // ===== GENERATE =====
-  window.generateAiSummary = function() {
+  // Relance du resume : ignore le resume deja enregistre et en redemande un
+  // a l IA. Consomme le quota mensuel, d ou la confirmation.
+  window.regenerateAiSummary = function() {
+    if (!window.confirm(tAi('aiSummaryRegenConfirm'))) return;
+    var res = document.getElementById('aiSummaryResult');
+    if (res) res.style.display = 'none';
+    var b = document.getElementById('btnAiSummary');
+    if (b) b.style.display = '';
+    window.generateAiSummary(true);
+  };
+
+  window.generateAiSummary = function(force) {
     var btn = document.getElementById('btnAiSummary');
     var placeholder = document.getElementById('aiSummaryPlaceholder');
     var st = getMobileState();
@@ -8755,7 +8918,7 @@ if ('serviceWorker' in navigator) {
       return fetch(AI_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: st.title || 'Road Trip', steps: stepsPayload, language: lang })
+        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: st.title || 'Road Trip', steps: stepsPayload, language: lang, force: !!force })
       });
     }).then(function(res) { return res.json(); })
     .then(function(data) {

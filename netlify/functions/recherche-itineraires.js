@@ -14,7 +14,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 const SITE = 'https://www.oneroadtrip.com';
-const LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', it: 'itinerari', pt: 'roteiros', ar: 'masar' };
+const LANG_FOLDERS = { fr: 'itineraires', en: 'itineraries', es: 'rutas', it: 'itinerari', pt: 'roteiros', ar: 'masar', nl: 'routes', de: 'routen' };
 const UA = 'OneRoadTrip/2.0 (https://oneroadtrip.com)';
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
@@ -31,7 +31,7 @@ async function loadCatalog(lang, origin) {
   const key = lang;
   const hit = catCache.get(key);
   if (hit && Date.now() - hit.ts < CAT_TTL) return hit.rows;
-  const folder = LANG_FOLDERS[lang] || LANG_FOLDERS.fr;
+  const folder = LANG_FOLDERS[lang] || LANG_FOLDERS.en;
   const filePath = join(process.cwd(), folder, `search-catalog-${lang}.json`);
   let txt;
   try {
@@ -61,7 +61,7 @@ function heuresVolApprox(km) { return 1.5 + km / 750; }
 // Geocode une ville via Photon (meme source que citysearch).
 async function geocodeVille(query, lang) {
   if (!query) return null;
-  const params = new URLSearchParams({ q: query, limit: '1', lang: lang || 'fr' });
+  const params = new URLSearchParams({ q: query, limit: '1', lang: lang || 'en' });
   try {
     const res = await fetch(`https://photon.komoot.io/api/?${params}`, { headers: { 'User-Agent': UA } });
     if (!res.ok) return null;
@@ -253,7 +253,7 @@ export default async (request, context) => {
   try {
     const body = await request.json();
     const query = (body.query || '').trim();
-    const lang = (body.lang || 'fr').toLowerCase();
+    const lang = (body.lang || 'en').toLowerCase();
     if (!query) return new Response(JSON.stringify({ success: false, error: 'query vide' }), { status: 400, headers });
 
     // Catalogue charge en premier : on en extrait la liste exacte des themes (deja dans la bonne langue)

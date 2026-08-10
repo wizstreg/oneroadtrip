@@ -1,0 +1,101 @@
+<!-- ============================================
+     ORT - Import URL Modals
+     À copier dans vos pages HTML (RT Detail, RT Editor, etc.)
+     ============================================ -->
+
+<!-- Bouton déclencheur (à placer où vous voulez) -->
+<button id="btnImportUrl" class="btn">
+  🔗 Importer depuis une URL
+</button>
+
+<!-- ============================================
+     MODAL 1: Import URL (principal)
+     ============================================ -->
+<div id="importUrlModal" class="ort-modal">
+  <div class="ort-modal-card">
+    <button class="ort-modal-close" id="btnCloseUrlModal">×</button>
+    
+    <h3>🔗 Importer un itinéraire</h3>
+    <p class="ort-hint">Collez l'URL d'un article de voyage (blog, guide...)</p>
+    
+    <input type="url" id="importUrlInput" 
+           placeholder="https://www.exemple.com/road-trip-islande" 
+           class="ort-input">
+    
+    <div id="importUrlStatus" class="ort-status"></div>
+    
+    <div class="ort-actions">
+      <button id="btnCancelUrl" class="ort-btn outline">Annuler</button>
+      <button id="btnConfirmUrl" class="ort-btn primary">
+        <span class="btn-text">Importer</span>
+        <span class="btn-loader" style="display:none">⏳</span>
+      </button>
+    </div>
+    
+    <div id="urlQuotaInfo" class="ort-quota"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL 2: Fallback (s'ouvre si l'IA plante)
+     ============================================ -->
+<div id="importFallbackModal" class="ort-modal">
+  <div class="ort-modal-card fallback">
+    <button class="ort-modal-close" id="btnCloseFallback">×</button>
+    
+    <div class="fallback-icon">🤖💨</div>
+    <h3 id="fallbackTitle">Oups, l'IA a besoin d'une pause !</h3>
+    
+    <div class="fallback-explain" id="fallbackExplain">
+      OneRoadTrip est <strong>100% gratuit</strong> et utilise des services d'IA gratuits avec des limites d'utilisation.
+    </div>
+    
+    <div class="fallback-solution">
+      <h4 id="fallbackSolutionTitle">Pas de panique ! Import manuel en 3 clics :</h4>
+      <ol id="fallbackSteps">
+        <li>Ouvrez la page de l'article</li>
+        <li>Sélectionnez tout (<kbd>Ctrl</kbd>+<kbd>A</kbd>) et copiez (<kbd>Ctrl</kbd>+<kbd>C</kbd>)</li>
+        <li>Collez dans notre outil d'import gratuit</li>
+      </ol>
+    </div>
+    
+    <div class="fallback-actions">
+      <a id="fallbackOpenUrl" href="#" target="_blank" class="ort-btn outline">
+        🔗 Ouvrir l'article
+      </a>
+      <a href="./import.html" class="ort-btn primary" id="fallbackGoImport">
+        📋 Aller à l'import manuel
+      </a>
+    </div>
+    
+    <div class="fallback-error" id="fallbackErrorDetail"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     SCRIPT: Charger le composant
+     À placer APRÈS Firebase Auth init
+     ============================================ -->
+<script src="./js/ort-import-url-component.js"></script>
+
+<!-- ============================================
+     USAGE JAVASCRIPT
+     ============================================ -->
+<script>
+// Le bouton #btnImportUrl ouvre automatiquement la modal
+// Mais vous pouvez aussi l'ouvrir programmatiquement :
+
+// Ouvrir vers RT Detail (défaut)
+// ORT_ImportUrl.open();
+
+// Ouvrir vers RT Editor (carnet de voyage)
+// ORT_ImportUrl.open({ destination: 'editor' });
+
+// Fermer
+// ORT_ImportUrl.close();
+
+// Exemple: bouton custom pour le carnet
+document.getElementById('btnImportToCarnet')?.addEventListener('click', () => {
+  ORT_ImportUrl.open({ destination: 'editor' });
+});
+</script>

@@ -21,31 +21,31 @@
 
   function getWidgetLocale() {
     const lang = getWidgetLang();
-    return { fr:'fr-FR', en:'en-US', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'en-US' }[lang] || 'en-US';
+    return { fr:'fr-FR', en:'en-US', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'en-US' , nl: 'nl-NL', de: 'de-DE'}[lang] || 'en-US';
   }
 
   // === I18N WIDGETS ===
   const WIDGET_I18N = {
-    loading: { fr:'Chargement...', en:'Loading...', es:'Cargando...', it:'Caricamento...', pt:'Carregando...', ar:'جار التحميل...' },
-    errorLoad: { fr:'Impossible de charger. Cliquez ci-dessous.', en:'Unable to load. Click below.', es:'No se puede cargar. Haga clic abajo.', it:'Impossibile caricare. Clicca sotto.', pt:'Não foi possível carregar. Clique abaixo.', ar:'تعذر التحميل. انقر أدناه.' },
+    loading: { fr:'Chargement...', en:'Loading...', es:'Cargando...', it:'Caricamento...', pt:'Carregando...', ar:'جار التحميل...' , nl: 'Laden...', de: 'Wird geladen...'},
+    errorLoad: { fr:'Impossible de charger. Cliquez ci-dessous.', en:'Unable to load. Click below.', es:'No se puede cargar. Haga clic abajo.', it:'Impossibile caricare. Clicca sotto.', pt:'Não foi possível carregar. Clique abaixo.', ar:'تعذر التحميل. انقر أدناه.' , nl: 'Laden mislukt. Klik hieronder.', de: 'Laden nicht möglich. Klicke unten.'},
     // GYG
-    activitiesNear: { fr:'Activités à proximité de', en:'Activities near', es:'Actividades cerca de', it:'Attività vicino a', pt:'Atividades perto de', ar:'أنشطة بالقرب من' },
-    seeMoreActivities: { fr:'Voir toutes les activités à', en:'See all activities in', es:'Ver todas las actividades en', it:'Vedi tutte le attività a', pt:'Ver todas as atividades em', ar:'عرض جميع الأنشطة في' },
+    activitiesNear: { fr:'Activités à proximité de', en:'Activities near', es:'Actividades cerca de', it:'Attività vicino a', pt:'Atividades perto de', ar:'أنشطة بالقرب من' , nl: 'Activiteiten in de buurt van', de: 'Aktivitäten in der Nähe von'},
+    seeMoreActivities: { fr:'Voir toutes les activités à', en:'See all activities in', es:'Ver todas las actividades en', it:'Vedi tutte le attività a', pt:'Ver todas as atividades em', ar:'عرض جميع الأنشطة في' , nl: 'Alle activiteiten bekijken in', de: 'Alle Aktivitäten ansehen in'},
     // Ticketmaster
-    showsNear: { fr:'Spectacles à', en:'Shows in', es:'Espectáculos en', it:'Spettacoli a', pt:'Espetáculos em', ar:'عروض في' },
-    seeMoreShows: { fr:'Voir tous les spectacles', en:'See all shows', es:'Ver todos los espectáculos', it:'Vedi tutti gli spettacoli', pt:'Ver todos os espetáculos', ar:'عرض جميع العروض' }
+    showsNear: { fr:'Spectacles à', en:'Shows in', es:'Espectáculos en', it:'Spettacoli a', pt:'Espetáculos em', ar:'عروض في' , nl: 'Voorstellingen in', de: 'Veranstaltungen in'},
+    seeMoreShows: { fr:'Voir tous les spectacles', en:'See all shows', es:'Ver todos los espectáculos', it:'Vedi tutti gli spettacoli', pt:'Ver todos os espetáculos', ar:'عرض جميع العروض' , nl: 'Alle voorstellingen bekijken', de: 'Alle Veranstaltungen ansehen'}
   };
 
   function wt(key) {
     const lang = getWidgetLang();
-    return WIDGET_I18N[key]?.[lang] || WIDGET_I18N[key]?.fr || key;
+    return WIDGET_I18N[key]?.[lang] || WIDGET_I18N[key]?.en || key;
   }
 
   // === GETYOURGUIDE WIDGET ===
   
   function getGygDomain() {
     const lang = getWidgetLang();
-    return { fr:'fr', en:'com', es:'es', it:'it', pt:'pt', ar:'com' }[lang] || 'com';
+    return { fr:'fr', en:'com', es:'es', it:'it', pt:'pt', ar:'com' , nl: 'nl', de: 'de'}[lang] || 'com';
   }
 
   function openGygModal(step, idx) {
@@ -232,7 +232,7 @@
     if (!modal || !container) return;
     
     const lang = getWidgetLang();
-    const locale = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang] || 'en';
+    const locale = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' , nl: 'nl', de: 'de'}[lang] || 'en';
     
     // URL du widget voiture
     const widgetUrl = `https://trpwdg.com/content?trs=${TRAVELPAYOUTS.trs}&shmarker=${TRAVELPAYOUTS.shmarker}&locale=${locale}&powered_by=true&campaign_id=172&promo_id=4850`;

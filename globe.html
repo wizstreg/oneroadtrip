@@ -23,6 +23,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>OneRoadTrip — Globe des itinéraires</title>
+<script src="/js/ort-i18n-globe.js"></script>
 <script src="https://unpkg.com/globe.gl/dist/globe.gl.min.js"></script>
 <script src="https://unpkg.com/supercluster@8.0.1/dist/supercluster.min.js"></script>
 <style>
@@ -164,14 +165,7 @@
 
   // ---------- i18n ----------
   // langue du site : variable globale currentLang, repli sur l'anglais
-  const I18N = {
-    fr: {search:'Rechercher un pays…', none:'Aucun pays trouvé', hint:'Glissez pour explorer · molette pour zoomer · cliquez un groupe pour le scinder', itins:'itinéraires', zoomClick:'cliquez pour zoomer', days:'jours', km:'km', stops:'étapes', nights:'nuits conseillées', cta:"Voir l'itinéraire", catalog:'/itineraires/search-catalog-fr.json'},
-    en: {search:'Search a country…', none:'No country found', hint:'Drag to explore · scroll to zoom · click a group to split it', itins:'road trips', zoomClick:'click to zoom in', days:'days', km:'km', stops:'stops', nights:'suggested nights', cta:'View itinerary', catalog:'/itineraries/search-catalog-en.json'},
-    es: {search:'Buscar un país…', none:'Ningún país encontrado', hint:'Arrastra para explorar · rueda para hacer zoom · haz clic en un grupo para dividirlo', itins:'rutas', zoomClick:'haz clic para acercar', days:'días', km:'km', stops:'etapas', nights:'noches recomendadas', cta:'Ver la ruta', catalog:'/rutas/search-catalog-es.json'},
-    it: {search:'Cerca un paese…', none:'Nessun paese trovato', hint:'Trascina per esplorare · rotella per lo zoom · clicca un gruppo per dividerlo', itins:'itinerari', zoomClick:'clicca per ingrandire', days:'giorni', km:'km', stops:'tappe', nights:'notti consigliate', cta:"Vedi l'itinerario", catalog:'/itinerari/search-catalog-it.json'},
-    pt: {search:'Pesquisar um país…', none:'Nenhum país encontrado', hint:'Arraste para explorar · roda para ampliar · clique num grupo para o dividir', itins:'roteiros', zoomClick:'clique para ampliar', days:'dias', km:'km', stops:'etapas', nights:'noites recomendadas', cta:'Ver o roteiro', catalog:'/roteiros/search-catalog-pt.json'},
-    ar: {search:'ابحث عن بلد…', none:'لم يتم العثور على بلد', hint:'اسحب للاستكشاف · العجلة للتكبير · انقر على مجموعة لتقسيمها', itins:'رحلات', zoomClick:'انقر للتكبير', days:'أيام', km:'كم', stops:'محطات', nights:'ليالٍ مقترحة', cta:'عرض المسار', catalog:'/masar/search-catalog-ar.json'}
-  };
+  const I18N = ORT_I18N_GLOBE.I18N;
   let _urlLang=''; try{ _urlLang=new URLSearchParams(location.search).get('lang')||''; }catch(e){}
   let lang = String(_urlLang || window.currentLang || 'en').toLowerCase().slice(0, 2);
   if (!I18N[lang]) lang = 'en';
@@ -180,13 +174,13 @@
   // textes statiques
   $('searchInput').placeholder = T.search;
   $('hint').textContent = T.hint;
-  var _bk={fr:'Accueil',en:'Home',es:'Inicio',it:'Home',pt:'Início',ar:'الرئيسية'};
+  var _bk = ORT_I18N_GLOBE.BACK;
   $('ortBackTxt').textContent = _bk[lang]||_bk.en;
   $('ortBack').href = '/index.html?lang=' + lang;
   $('cardLink').textContent = T.cta;
   $('lDays').textContent = T.days; $('lKm').textContent = T.km;
   $('lStops').textContent = T.stops; $('lNights').textContent = T.nights;
-  if (lang === 'ar') {
+  if ((window.ORT_RTL_LANGS || ['ar']).indexOf(lang) !== -1) {
     $('searchInput').dir = 'rtl';
     document.querySelector('#card .body').dir = 'rtl';
     tip.dir = 'rtl';
@@ -488,7 +482,7 @@
     $('stNights').textContent = Math.max(0, t.days - 1);
     var _c=(t.cities||[]).filter(function(v,i,a){return v&&a.indexOf(v)===i;}).map(function(v){return v.charAt(0).toUpperCase()+v.slice(1);});
     $('cardStops').textContent = _c.join(' › ');
-    var _folders={fr:'itineraires',en:'itineraries',es:'rutas',it:'itinerari',pt:'roteiros',ar:'masar'};
+    var _folders=ORT_I18N_GLOBE.FOLDERS;
     var _folder=_folders[lang]||'itineraries';
     $('cardLink').href = '/' + _folder + '/' + t.slug + '.html';
     card.style.display = 'block';

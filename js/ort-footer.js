@@ -28,235 +28,20 @@
       es: 'acerca-de.html',
       it: 'chi-siamo.html',
       pt: 'sobre.html',
-      ar: 'about-ar.html'
+      ar: 'about-ar.html',
+      nl: 'about-nl.html',
+      de: 'about-de.html'
     };
-    return ABOUT_PAGES[lang] || ABOUT_PAGES.fr;
+    return ABOUT_PAGES[lang] || ABOUT_PAGES.en;
   }
 
   // ============================================
   // TRADUCTIONS COOKIES (6 langues)
   // ============================================
-  const COOKIE_I18N = {
-    fr: {
-      // Banner initial
-      bannerTitle: 'Nous respectons votre vie privée',
-      bannerText: 'Nous utilisons des cookies pour améliorer votre expérience, analyser le trafic et personnaliser le contenu. Vous pouvez choisir les cookies que vous acceptez.',
-      bannerLink: 'Politique de cookies',
-      btnSettings: 'Paramétrer',
-      btnRejectAll: 'Tout refuser',
-      btnAcceptAll: 'Tout accepter',
-      
-      // Modal préférences
-      modalTitle: 'Centre de préférences de confidentialité',
-      modalIntro: 'Lorsque vous visitez un site web, celui-ci peut stocker ou récupérer des informations sur votre navigateur, principalement sous forme de cookies. Ces informations peuvent concerner vous, vos préférences ou votre appareil. Elles sont principalement utilisées pour faire fonctionner le site comme vous le souhaitez. Les informations ne vous identifient généralement pas directement, mais peuvent vous offrir une expérience web plus personnalisée. Vous pouvez choisir de ne pas autoriser certains types de cookies.',
-      btnMoreInfo: 'Plus d\'informations',
-      btnConfirm: 'Confirmer mes choix',
-      
-      // Catégories
-      catNecessary: 'Cookies strictement nécessaires',
-      catNecessaryDesc: 'Ces cookies sont essentiels au fonctionnement du site. Ils permettent la navigation, la connexion sécurisée et les fonctionnalités de base. Sans ces cookies, le site ne peut pas fonctionner correctement.',
-      catNecessaryAlways: 'Toujours actif',
-      
-      catAnalytics: 'Cookies analytiques',
-      catAnalyticsDesc: 'Ces cookies nous permettent de mesurer l\'audience du site, de comprendre comment les visiteurs l\'utilisent et d\'améliorer ses performances. Toutes les données sont anonymisées.',
-      catAnalyticsCookies: 'Cookies utilisés : Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'Cookies marketing',
-      catMarketingDesc: 'Ces cookies sont utilisés pour vous proposer des publicités pertinentes et mesurer l\'efficacité de nos campagnes. Ils peuvent être déposés par nos partenaires publicitaires.',
-      catMarketingCookies: 'Cookies utilisés : Partenaires affiliés (Stay22, Travelpayouts)',
-      
-      // Footer
-      legalNotice: 'Mentions légales',
-      privacyPolicy: 'Confidentialité',
-      cookiePolicy: 'Cookies',
-      about: 'À propos',
-      blog: 'Blog',
-      contact: 'Contact',
-      manageCookies: 'Gérer mes cookies',
-      pressPartner: 'Partenaire presse',
-      pressRoom: 'Presse'
-    },
-    
-    en: {
-      bannerTitle: 'We respect your privacy',
-      bannerText: 'We use cookies to enhance your experience, analyze traffic and personalize content. You can choose which cookies you accept.',
-      bannerLink: 'Cookie Policy',
-      btnSettings: 'Cookie Settings',
-      btnRejectAll: 'Reject All',
-      btnAcceptAll: 'Accept All Cookies',
-      
-      modalTitle: 'Privacy Preference Center',
-      modalIntro: 'When you visit any website, it may store or retrieve information on your browser, mostly in the form of cookies. This information might be about you, your preferences or your device and is mostly used to make the site work as you expect it to. The information does not usually directly identify you, but it can give you a more personalized web experience. Because we respect your right to privacy, you can choose not to allow some types of cookies.',
-      btnMoreInfo: 'More information',
-      btnConfirm: 'Confirm My Choices',
-      
-      catNecessary: 'Strictly Necessary Cookies',
-      catNecessaryDesc: 'These cookies are essential for the website to function. They enable navigation, secure login and basic features. Without these cookies, the site cannot work properly.',
-      catNecessaryAlways: 'Always Active',
-      
-      catAnalytics: 'Analytics Cookies',
-      catAnalyticsDesc: 'These cookies allow us to measure site audience, understand how visitors use it and improve its performance. All data is anonymized.',
-      catAnalyticsCookies: 'Cookies used: Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'Marketing Cookies',
-      catMarketingDesc: 'These cookies are used to show you relevant ads and measure the effectiveness of our campaigns. They may be set by our advertising partners.',
-      catMarketingCookies: 'Cookies used: Affiliate partners (Stay22, Travelpayouts)',
-      
-      legalNotice: 'Legal Notice',
-      privacyPolicy: 'Privacy',
-      cookiePolicy: 'Cookies',
-      about: 'About',
-      blog: 'Blog',
-      contact: 'Contact',
-      manageCookies: 'Manage cookies',
-      pressPartner: 'Press partner',
-      pressRoom: 'Press'
-    },
-    
-    es: {
-      bannerTitle: 'Respetamos su privacidad',
-      bannerText: 'Utilizamos cookies para mejorar su experiencia, analizar el tráfico y personalizar el contenido. Puede elegir qué cookies acepta.',
-      bannerLink: 'Política de cookies',
-      btnSettings: 'Configurar',
-      btnRejectAll: 'Rechazar todo',
-      btnAcceptAll: 'Aceptar todas',
-      
-      modalTitle: 'Centro de preferencias de privacidad',
-      modalIntro: 'Cuando visita cualquier sitio web, este puede almacenar o recuperar información en su navegador, principalmente en forma de cookies. Esta información puede ser sobre usted, sus preferencias o su dispositivo y se utiliza principalmente para que el sitio funcione como espera. La información generalmente no lo identifica directamente, pero puede brindarle una experiencia web más personalizada. Puede elegir no permitir algunos tipos de cookies.',
-      btnMoreInfo: 'Más información',
-      btnConfirm: 'Confirmar mis elecciones',
-      
-      catNecessary: 'Cookies estrictamente necesarias',
-      catNecessaryDesc: 'Estas cookies son esenciales para el funcionamiento del sitio. Permiten la navegación, el inicio de sesión seguro y las funciones básicas. Sin estas cookies, el sitio no puede funcionar correctamente.',
-      catNecessaryAlways: 'Siempre activo',
-      
-      catAnalytics: 'Cookies analíticas',
-      catAnalyticsDesc: 'Estas cookies nos permiten medir la audiencia del sitio, comprender cómo lo usan los visitantes y mejorar su rendimiento. Todos los datos son anónimos.',
-      catAnalyticsCookies: 'Cookies utilizadas: Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'Cookies de marketing',
-      catMarketingDesc: 'Estas cookies se utilizan para mostrarle anuncios relevantes y medir la efectividad de nuestras campañas. Pueden ser establecidas por nuestros socios publicitarios.',
-      catMarketingCookies: 'Cookies utilizadas: Socios afiliados (Stay22, Travelpayouts)',
-      
-      legalNotice: 'Aviso legal',
-      privacyPolicy: 'Privacidad',
-      cookiePolicy: 'Cookies',
-      about: 'Acerca de',
-      blog: 'Blog',
-      contact: 'Contacto',
-      manageCookies: 'Gestionar cookies',
-      pressPartner: 'Socio de prensa',
-      pressRoom: 'Prensa'
-    },
-    
-    it: {
-      bannerTitle: 'Rispettiamo la tua privacy',
-      bannerText: 'Utilizziamo i cookie per migliorare la tua esperienza, analizzare il traffico e personalizzare i contenuti. Puoi scegliere quali cookie accettare.',
-      bannerLink: 'Politica sui cookie',
-      btnSettings: 'Impostazioni',
-      btnRejectAll: 'Rifiuta tutto',
-      btnAcceptAll: 'Accetta tutti',
-      
-      modalTitle: 'Centro preferenze privacy',
-      modalIntro: 'Quando visiti un sito web, questo può memorizzare o recuperare informazioni sul tuo browser, principalmente sotto forma di cookie. Queste informazioni potrebbero riguardare te, le tue preferenze o il tuo dispositivo e vengono utilizzate principalmente per far funzionare il sito come ti aspetti. Le informazioni di solito non ti identificano direttamente, ma possono offrirti un\'esperienza web più personalizzata. Puoi scegliere di non consentire alcuni tipi di cookie.',
-      btnMoreInfo: 'Maggiori informazioni',
-      btnConfirm: 'Conferma le mie scelte',
-      
-      catNecessary: 'Cookie strettamente necessari',
-      catNecessaryDesc: 'Questi cookie sono essenziali per il funzionamento del sito. Consentono la navigazione, l\'accesso sicuro e le funzionalità di base. Senza questi cookie, il sito non può funzionare correttamente.',
-      catNecessaryAlways: 'Sempre attivo',
-      
-      catAnalytics: 'Cookie analitici',
-      catAnalyticsDesc: 'Questi cookie ci permettono di misurare il pubblico del sito, capire come i visitatori lo utilizzano e migliorarne le prestazioni. Tutti i dati sono anonimi.',
-      catAnalyticsCookies: 'Cookie utilizzati: Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'Cookie di marketing',
-      catMarketingDesc: 'Questi cookie vengono utilizzati per mostrarti annunci pertinenti e misurare l\'efficacia delle nostre campagne. Possono essere impostati dai nostri partner pubblicitari.',
-      catMarketingCookies: 'Cookie utilizzati: Partner affiliati (Stay22, Travelpayouts)',
-      
-      legalNotice: 'Note legali',
-      privacyPolicy: 'Privacy',
-      cookiePolicy: 'Cookie',
-      about: 'Chi siamo',
-      blog: 'Blog',
-      contact: 'Contatti',
-      manageCookies: 'Gestisci cookie',
-      pressPartner: 'Partner stampa',
-      pressRoom: 'Stampa'
-    },
-    
-    pt: {
-      bannerTitle: 'Respeitamos a sua privacidade',
-      bannerText: 'Utilizamos cookies para melhorar a sua experiência, analisar o tráfego e personalizar o conteúdo. Pode escolher quais cookies aceita.',
-      bannerLink: 'Política de cookies',
-      btnSettings: 'Configurar',
-      btnRejectAll: 'Rejeitar tudo',
-      btnAcceptAll: 'Aceitar todos',
-      
-      modalTitle: 'Centro de preferências de privacidade',
-      modalIntro: 'Quando visita qualquer site, este pode armazenar ou recuperar informações no seu navegador, principalmente na forma de cookies. Estas informações podem ser sobre si, as suas preferências ou o seu dispositivo e são usadas principalmente para fazer o site funcionar como espera. As informações geralmente não o identificam diretamente, mas podem proporcionar uma experiência web mais personalizada. Pode optar por não permitir alguns tipos de cookies.',
-      btnMoreInfo: 'Mais informações',
-      btnConfirm: 'Confirmar as minhas escolhas',
-      
-      catNecessary: 'Cookies estritamente necessários',
-      catNecessaryDesc: 'Estes cookies são essenciais para o funcionamento do site. Permitem a navegação, o login seguro e as funcionalidades básicas. Sem estes cookies, o site não pode funcionar corretamente.',
-      catNecessaryAlways: 'Sempre ativo',
-      
-      catAnalytics: 'Cookies analíticos',
-      catAnalyticsDesc: 'Estes cookies permitem-nos medir a audiência do site, compreender como os visitantes o utilizam e melhorar o seu desempenho. Todos os dados são anónimos.',
-      catAnalyticsCookies: 'Cookies utilizados: Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'Cookies de marketing',
-      catMarketingDesc: 'Estes cookies são usados para mostrar anúncios relevantes e medir a eficácia das nossas campanhas. Podem ser definidos pelos nossos parceiros de publicidade.',
-      catMarketingCookies: 'Cookies utilizados: Parceiros afiliados (Stay22, Travelpayouts)',
-      
-      legalNotice: 'Aviso legal',
-      privacyPolicy: 'Privacidade',
-      cookiePolicy: 'Cookies',
-      about: 'Sobre',
-      blog: 'Blog',
-      contact: 'Contacto',
-      manageCookies: 'Gerir cookies',
-      pressPartner: 'Parceiro de imprensa',
-      pressRoom: 'Imprensa'
-    },
-    
-    ar: {
-      bannerTitle: 'نحن نحترم خصوصيتك',
-      bannerText: 'نستخدم ملفات تعريف الارتباط لتحسين تجربتك وتحليل حركة المرور وتخصيص المحتوى. يمكنك اختيار ملفات تعريف الارتباط التي تقبلها.',
-      bannerLink: 'سياسة ملفات تعريف الارتباط',
-      btnSettings: 'الإعدادات',
-      btnRejectAll: 'رفض الكل',
-      btnAcceptAll: 'قبول الكل',
-      
-      modalTitle: 'مركز تفضيلات الخصوصية',
-      modalIntro: 'عند زيارة أي موقع ويب، قد يقوم بتخزين أو استرداد معلومات على متصفحك، غالبًا في شكل ملفات تعريف الارتباط. قد تكون هذه المعلومات عنك أو عن تفضيلاتك أو جهازك وتُستخدم بشكل أساسي لجعل الموقع يعمل كما تتوقع. لا تحدد المعلومات هويتك مباشرة عادةً، ولكنها يمكن أن تمنحك تجربة ويب أكثر تخصيصًا. يمكنك اختيار عدم السماح ببعض أنواع ملفات تعريف الارتباط.',
-      btnMoreInfo: 'مزيد من المعلومات',
-      btnConfirm: 'تأكيد اختياراتي',
-      
-      catNecessary: 'ملفات تعريف الارتباط الضرورية',
-      catNecessaryDesc: 'هذه الملفات ضرورية لعمل الموقع. تتيح التنقل وتسجيل الدخول الآمن والميزات الأساسية. بدون هذه الملفات، لا يمكن للموقع العمل بشكل صحيح.',
-      catNecessaryAlways: 'نشط دائمًا',
-      
-      catAnalytics: 'ملفات تعريف الارتباط التحليلية',
-      catAnalyticsDesc: 'تسمح لنا هذه الملفات بقياس جمهور الموقع وفهم كيفية استخدام الزوار له وتحسين أدائه. جميع البيانات مجهولة المصدر.',
-      catAnalyticsCookies: 'الملفات المستخدمة: Google Analytics (_ga, _ga_*, _gid)',
-      
-      catMarketing: 'ملفات تعريف الارتباط التسويقية',
-      catMarketingDesc: 'تُستخدم هذه الملفات لعرض إعلانات ذات صلة وقياس فعالية حملاتنا. قد يتم تعيينها من قبل شركائنا الإعلانيين.',
-      catMarketingCookies: 'الملفات المستخدمة: الشركاء التابعون (Stay22, Travelpayouts)',
-      
-      legalNotice: 'إشعار قانوني',
-      privacyPolicy: 'الخصوصية',
-      cookiePolicy: 'ملفات تعريف الارتباط',
-      about: 'حول',
-      blog: 'المدونة',
-      contact: 'اتصل بنا',
-      manageCookies: 'إدارة ملفات تعريف الارتباط',
-      pressPartner: 'شريك صحفي',
-      pressRoom: 'الصحافة'
-    }
-  };
+  // Traductions du bandeau cookies : elles vivent maintenant dans
+  // ort-i18n-socle.js (format une cle puis les langues).
+  // On garde le meme nom pour ne rien casser dans le reste du fichier.
+  const COOKIE_I18N = window.ORT_COOKIE_I18N || {};
 
   // ============================================
   // UTILITAIRES
@@ -287,7 +72,7 @@
   }
 
   function isRTL() {
-    return getLang() === 'ar';
+    return (window.ORT_RTL_LANGS || ['ar']).indexOf(getLang()) !== -1;
   }
 
   function readConsent() {
@@ -397,7 +182,7 @@
     });
 
     const urls = getLegalUrls(lang);
-    const pressPages = { fr: 'press-fr', en: 'press-en', es: 'press-es', it: 'press-it', pt: 'press-pt' };
+    const pressPages = { fr: 'press-fr', en: 'press-en', es: 'press-es', it: 'press-it', pt: 'press-pt', nl: 'press-nl', de: 'press-de' };
     const pressUrl = '/presentations/' + (pressPages[lang] || 'press-en') + '.html';
     const links = [
       { href: urls.cgu, label: T.legalNotice },

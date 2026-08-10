@@ -57,10 +57,21 @@
     it: { question: 'Qual \u00E8 la valuta del tuo viaggio?', hint: 'Tutti gli importi delle prenotazioni saranno convertiti in questa valuta.', confirm: 'Conferma' },
     pt: { question: 'Qual \u00E9 a moeda da sua viagem?', hint: 'Todos os valores das reservas ser\u00E3o convertidos para esta moeda.', confirm: 'Confirmar' },
     ar: { question: '\u0645\u0627 \u0647\u064A \u0639\u0645\u0644\u0629 \u0631\u062D\u0644\u062A\u0643\u061F', hint: '\u0633\u064A\u062A\u0645 \u062A\u062D\u0648\u064A\u0644 \u062C\u0645\u064A\u0639 \u0627\u0644\u0645\u0628\u0627\u0644\u063A \u0625\u0644\u0649 \u0647\u0630\u0647 \u0627\u0644\u0639\u0645\u0644\u0629.', confirm: '\u062A\u0623\u0643\u064A\u062F' }
+  ,
+    nl: {
+      question: 'Wat is de valuta van je reis?',
+      hint: 'Alle boekingsbedragen worden naar deze valuta omgerekend.',
+      confirm: 'Bevestigen'
+    },
+    de: {
+      question: 'Welche Währung hat deine Reise?',
+      hint: 'Alle Buchungsbeträge werden in diese Währung umgerechnet.',
+      confirm: 'Bestätigen'
+    }
   };
 
   function tr(lang, key) {
-    return (I18N[lang] && I18N[lang][key]) || I18N.fr[key] || key;
+    return (I18N[lang] && I18N[lang][key]) || I18N.en[key] || key;
   }
 
   // === STOCKAGE (localStorage par tripId pour l'instant) ===

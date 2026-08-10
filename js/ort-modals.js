@@ -17,6 +17,17 @@ function showLoginModalForSave() {
       message: 'You must be logged in to save your trip to the dashboard.',
       button: '🔐 Sign in'
     }
+  ,
+    nl: {
+      title: '🔐 Inloggen vereist',
+      message: 'Je moet ingelogd zijn om je reis op het dashboard op te slaan.',
+      button: '🔐 Inloggen'
+    },
+    de: {
+      title: '🔐 Anmeldung erforderlich',
+      message: 'Du musst angemeldet sein, um deine Reise im Dashboard zu speichern.',
+      button: '🔐 Anmelden'
+    }
   }[lang] || {
     title: '🔐 Login required',
     message: 'You must be logged in to save your trip to the dashboard.',
@@ -97,6 +108,17 @@ function showSaveBeforeShareModal() {
       title: '💾 Save required',
       message: 'Your trip must be saved to the dashboard before you can share it with others.',
       button: '💾 Save first'
+    }
+  ,
+    nl: {
+      title: '💾 Opslaan vereist',
+      message: 'Je reis moet op het dashboard opgeslagen zijn voordat je hem met anderen kunt delen.',
+      button: '💾 Eerst opslaan'
+    },
+    de: {
+      title: '💾 Speichern erforderlich',
+      message: 'Deine Reise muss im Dashboard gespeichert sein, bevor du sie mit anderen teilen kannst.',
+      button: '💾 Zuerst speichern'
     }
   }[lang] || {
     title: '💾 Save required',

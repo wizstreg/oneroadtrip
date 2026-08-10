@@ -11,6 +11,14 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
 <script>
+
+/* Format de date : suit la langue du site, replie sur l anglais. */
+function ortDateLocale(){
+  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
+  return M[l] || 'en-GB';
+}
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/service-worker.js').catch(() => {});
@@ -2462,70 +2470,70 @@ input[type="number"] {
 // === Fallback i18n si ort-i18n.js non chargé ===
 if (typeof t !== 'function') {
   const ORT_I18N_FALLBACK = {
-    dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' },
-    startDate: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' },
-    tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' },
-    generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' },
-    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' },
-    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' },
-    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' },
-    bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' },
-    bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' },
-    bookInsurance: { fr: 'Assurance voyage', en: 'Travel insurance', es: 'Seguro de viaje', it: 'Assicurazione viaggio', pt: 'Seguro viagem', ar: 'تأمين السفر' },
-    countrySheet: { fr: 'Fiche pays', en: 'Country sheet', es: 'Ficha país', it: 'Scheda paese', pt: 'Ficha país', ar: 'بطاقة البلد' },
-    userPhotosResas: { fr: '📷 Photos et résas', en: '📷 Photos & bookings', es: '📷 Fotos y reservas', it: '📷 Foto e prenotazioni', pt: '📷 Fotos e reservas', ar: '📷 الصور والحجوزات' },
-    userPhotosResasTooltip: { fr: 'Insérez vos propres photos et vos réservations', en: 'Add your own photos and bookings', es: 'Añade tus propias fotos y reservas', it: 'Inserisci le tue foto e prenotazioni', pt: 'Adicione suas próprias fotos e reservas', ar: 'أضف صورك وحجوزاتك الخاصة' },
-    customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' },
-    customizeTooltip: { fr: 'Photos, réservations et documents', en: 'Photos, bookings and documents', es: 'Fotos, reservas y documentos', it: 'Foto, prenotazioni e documenti', pt: 'Fotos, reservas e documentos', ar: 'الصور والحجوزات والوثائق' },
-    menuMyPhotos: { fr: '📷 Intégrer mes photos', en: '📷 Add my photos', es: '📷 Añadir mis fotos', it: '📷 Aggiungi le mie foto', pt: '📷 Adicionar minhas fotos', ar: '📷 إضافة صوري' },
-    menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' },
-    menuViewBookings: { fr: '📋 Voir mes réservations', en: '📋 View my bookings', es: '📋 Ver mis reservas', it: '📋 Vedi le mie prenotazioni', pt: '📋 Ver minhas reservas', ar: '📋 عرض حجوزاتي' },
-    budget: { fr: 'Budget', en: 'Budget', es: 'Presupuesto', it: 'Budget', pt: 'Orçamento', ar: 'الميزانية' },
-    budgetTooltip: { fr: 'Cliquez pour voir le détail', en: 'Click to see details', es: 'Haga clic para ver los detalles', it: 'Clicca per vedere i dettagli', pt: 'Clique para ver detalhes', ar: 'انقر لرؤية التفاصيل' },
-    budgetTotal: { fr: 'Budget total', en: 'Total budget', es: 'Presupuesto total', it: 'Budget totale', pt: 'Orçamento total', ar: 'الميزانية الإجمالية' },
-    budgetByCategory: { fr: 'Par catégorie', en: 'By category', es: 'Por categoría', it: 'Per categoria', pt: 'Por categoria', ar: 'حسب الفئة' },
-    budgetTransport: { fr: 'Transport', en: 'Transport', es: 'Transporte', it: 'Trasporto', pt: 'Transporte', ar: 'النقل' },
-    budgetAccommodation: { fr: 'Hébergement', en: 'Accommodation', es: 'Alojamiento', it: 'Alloggio', pt: 'Hospedagem', ar: 'الإقامة' },
-    budgetActivities: { fr: 'Activités', en: 'Activities', es: 'Actividades', it: 'Attività', pt: 'Atividades', ar: 'الأنشطة' },
-    budgetOther: { fr: 'Autres', en: 'Other', es: 'Otros', it: 'Altro', pt: 'Outros', ar: 'أخرى' },
-    addManualItem: { fr: '➕ Ajouter une dépense', en: '➕ Add expense', es: '➕ Añadir gasto', it: '➕ Aggiungi spesa', pt: '➕ Adicionar despesa', ar: '➕ إضافة نفقة' },
-    noBudget: { fr: 'Aucune réservation', en: 'No bookings', es: 'Sin reservas', it: 'Nessuna prenotazione', pt: 'Sem reservas', ar: 'لا توجد حجوزات' },
-    flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' },
-    carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' },
-    transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' },
-    insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' },
-    delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' }
+    dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' , nl: 'Dashboard', de: 'Dashboard'},
+    startDate: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' , nl: 'Vertrekdatum', de: 'Abreisedatum'},
+    tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' , nl: 'Hulpmiddelen', de: 'Werkzeuge'},
+    generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' , nl: 'PDF maken', de: 'PDF erstellen'},
+    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' , nl: '📄 Reisdagboek', de: '📄 Reisetagebuch'},
+    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' , nl: '🔗 Delen', de: '🔗 Teilen'},
+    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' , nl: '➕ Boekingen', de: '➕ Buchungen'},
+    bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' , nl: 'Een vlucht boeken', de: 'Flug buchen'},
+    bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' , nl: 'Een auto huren', de: 'Auto mieten'},
+    bookInsurance: { fr: 'Assurance voyage', en: 'Travel insurance', es: 'Seguro de viaje', it: 'Assicurazione viaggio', pt: 'Seguro viagem', ar: 'تأمين السفر' , nl: 'Reisverzekering', de: 'Reiseversicherung'},
+    countrySheet: { fr: 'Fiche pays', en: 'Country sheet', es: 'Ficha país', it: 'Scheda paese', pt: 'Ficha país', ar: 'بطاقة البلد' , nl: 'Landinformatie', de: 'Länderinfo'},
+    userPhotosResas: { fr: '📷 Photos et résas', en: '📷 Photos & bookings', es: '📷 Fotos y reservas', it: '📷 Foto e prenotazioni', pt: '📷 Fotos e reservas', ar: '📷 الصور والحجوزات' , nl: '📷 Foto\'s en boekingen', de: '📷 Fotos und Buchungen'},
+    userPhotosResasTooltip: { fr: 'Insérez vos propres photos et vos réservations', en: 'Add your own photos and bookings', es: 'Añade tus propias fotos y reservas', it: 'Inserisci le tue foto e prenotazioni', pt: 'Adicione suas próprias fotos e reservas', ar: 'أضف صورك وحجوزاتك الخاصة' , nl: 'Voeg je eigen foto\'s en boekingen toe', de: 'Füge deine eigenen Fotos und Buchungen hinzu'},
+    customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' , nl: '✨ Personaliseren', de: '✨ Anpassen'},
+    customizeTooltip: { fr: 'Photos, réservations et documents', en: 'Photos, bookings and documents', es: 'Fotos, reservas y documentos', it: 'Foto, prenotazioni e documenti', pt: 'Fotos, reservas e documentos', ar: 'الصور والحجوزات والوثائق' , nl: 'Foto\'s, boekingen en documenten', de: 'Fotos, Buchungen und Dokumente'},
+    menuMyPhotos: { fr: '📷 Intégrer mes photos', en: '📷 Add my photos', es: '📷 Añadir mis fotos', it: '📷 Aggiungi le mie foto', pt: '📷 Adicionar minhas fotos', ar: '📷 إضافة صوري' , nl: '📷 Mijn foto\'s toevoegen', de: '📷 Meine Fotos hinzufügen'},
+    menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' , nl: '➕ Een boeking importeren', de: '➕ Eine Buchung importieren'},
+    menuViewBookings: { fr: '📋 Voir mes réservations', en: '📋 View my bookings', es: '📋 Ver mis reservas', it: '📋 Vedi le mie prenotazioni', pt: '📋 Ver minhas reservas', ar: '📋 عرض حجوزاتي' , nl: '📋 Mijn boekingen bekijken', de: '📋 Meine Buchungen ansehen'},
+    budget: { fr: 'Budget', en: 'Budget', es: 'Presupuesto', it: 'Budget', pt: 'Orçamento', ar: 'الميزانية' , nl: 'Budget', de: 'Budget'},
+    budgetTooltip: { fr: 'Cliquez pour voir le détail', en: 'Click to see details', es: 'Haga clic para ver los detalles', it: 'Clicca per vedere i dettagli', pt: 'Clique para ver detalhes', ar: 'انقر لرؤية التفاصيل' , nl: 'Klik voor de details', de: 'Für Details klicken'},
+    budgetTotal: { fr: 'Budget total', en: 'Total budget', es: 'Presupuesto total', it: 'Budget totale', pt: 'Orçamento total', ar: 'الميزانية الإجمالية' , nl: 'Totaalbudget', de: 'Gesamtbudget'},
+    budgetByCategory: { fr: 'Par catégorie', en: 'By category', es: 'Por categoría', it: 'Per categoria', pt: 'Por categoria', ar: 'حسب الفئة' , nl: 'Per categorie', de: 'Nach Kategorie'},
+    budgetTransport: { fr: 'Transport', en: 'Transport', es: 'Transporte', it: 'Trasporto', pt: 'Transporte', ar: 'النقل' , nl: 'Vervoer', de: 'Transport'},
+    budgetAccommodation: { fr: 'Hébergement', en: 'Accommodation', es: 'Alojamiento', it: 'Alloggio', pt: 'Hospedagem', ar: 'الإقامة' , nl: 'Accommodatie', de: 'Unterkunft'},
+    budgetActivities: { fr: 'Activités', en: 'Activities', es: 'Actividades', it: 'Attività', pt: 'Atividades', ar: 'الأنشطة' , nl: 'Activiteiten', de: 'Aktivitäten'},
+    budgetOther: { fr: 'Autres', en: 'Other', es: 'Otros', it: 'Altro', pt: 'Outros', ar: 'أخرى' , nl: 'Overige', de: 'Sonstiges'},
+    addManualItem: { fr: '➕ Ajouter une dépense', en: '➕ Add expense', es: '➕ Añadir gasto', it: '➕ Aggiungi spesa', pt: '➕ Adicionar despesa', ar: '➕ إضافة نفقة' , nl: '➕ Een uitgave toevoegen', de: '➕ Eine Ausgabe hinzufügen'},
+    noBudget: { fr: 'Aucune réservation', en: 'No bookings', es: 'Sin reservas', it: 'Nessuna prenotazione', pt: 'Sem reservas', ar: 'لا توجد حجوزات' , nl: 'Geen boekingen', de: 'Keine Buchungen'},
+    flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' , nl: 'Vluchten', de: 'Flüge'},
+    carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' , nl: 'Autoverhuur', de: 'Mietwagen'},
+    transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' , nl: 'Transfers', de: 'Transfers'},
+    insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' , nl: 'Verzekering', de: 'Versicherung'},
+    delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' , nl: 'Vertragingscompensatie', de: 'Verspätungsentschädigung'}
   };
   const _lang = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'fr').slice(0, 2);
   window.t = function(key) {
     const entry = ORT_I18N_FALLBACK[key];
-    return entry ? (entry[_lang] || entry.fr || key) : key;
+    return entry ? (entry[_lang] || entry.en || key) : key;
   };
 }
 // === Enrichir t() avec les clés custom du header (fonctionne même si ort-i18n.js est chargé) ===
 (function(){
   const HEADER_I18N = {
-    dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' },
-    myTrips: { fr: 'Vos voyages', en: 'Your trips', es: 'Tus viajes', it: 'I tuoi viaggi', pt: 'As tuas viagens', ar: 'رحلاتك' },
-    startDateShort: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' },
-    tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' },
-    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' },
-    printBtn: { fr: '🖨️ Imprimer', en: '🖨️ Print', es: '🖨️ Imprimir', it: '🖨️ Stampa', pt: '🖨️ Imprimir', ar: '🖨️ طباعة' },
-    bookingsBtn: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' },
-    bookingAddTypes: { fr: '➕ Intégrer une nouvelle réservation (hôtels, guides, avions)', en: '➕ Add a new booking (hotels, guides, flights)', es: '➕ Añadir una nueva reserva (hoteles, guías, vuelos)', it: '➕ Aggiungi una nuova prenotazione (hotel, guide, voli)', pt: '➕ Adicionar uma nova reserva (hotéis, guias, voos)', ar: '➕ إضافة حجز جديد (فنادق، مرشدون، رحلات جوية)' },
-    bookingView: { fr: '📋 Voir les réservations', en: '📋 View bookings', es: '📋 Ver las reservas', it: '📋 Vedi le prenotazioni', pt: '📋 Ver as reservas', ar: '📋 عرض الحجوزات' },
-    bookingBudget: { fr: '💰 Budget', en: '💰 Budget', es: '💰 Presupuesto', it: '💰 Budget', pt: '💰 Orçamento', ar: '💰 الميزانية' },
-    editMapBtn: { fr: 'Modifier', en: 'Edit', es: 'Editar', it: 'Modifica', pt: 'Editar', ar: 'تعديل' },
-    reorgAddManual: { fr: '➕ Ajouter une étape non présente dans nos lieux listés', en: '➕ Add a stop not in our listed places', es: '➕ Añadir una etapa que no está en nuestros lugares listados', it: '➕ Aggiungi una tappa non presente nei nostri luoghi elencati', pt: '➕ Adicionar uma etapa não presente nos nossos locais listados', ar: '➕ إضافة مرحلة غير موجودة في أماكننا المدرجة' },
-    insertWhereTitle: { fr: 'Où insérer « {name} » ?', en: 'Where to insert "{name}"?', es: '¿Dónde insertar «{name}»?', it: 'Dove inserire «{name}»?', pt: 'Onde inserir «{name}»?', ar: 'أين تُدرج «{name}»؟' },
-    insertAtStart: { fr: 'Au début', en: 'At the start', es: 'Al inicio', it: "All'inizio", pt: 'No início', ar: 'في البداية' },
-    insertAfterLbl: { fr: 'Après', en: 'After', es: 'Después de', it: 'Dopo', pt: 'Depois de', ar: 'بعد' },
-    insertCancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' },
-    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' },
-    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' },
-    customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' },
-    generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' },
-    menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' }
+    dashboard: { fr: 'Tableau de bord', en: 'Dashboard', es: 'Panel', it: 'Cruscotto', pt: 'Painel', ar: 'لوحة القيادة' , nl: 'Dashboard', de: 'Dashboard'},
+    myTrips: { fr: 'Vos voyages', en: 'Your trips', es: 'Tus viajes', it: 'I tuoi viaggi', pt: 'As tuas viagens', ar: 'رحلاتك' , nl: 'Jouw reizen', de: 'Deine Reisen'},
+    startDateShort: { fr: 'Date de départ', en: 'Start date', es: 'Fecha de salida', it: 'Data di partenza', pt: 'Data de partida', ar: 'تاريخ المغادرة' , nl: 'Vertrekdatum', de: 'Abreisedatum'},
+    tools: { fr: 'Outils', en: 'Tools', es: 'Herramientas', it: 'Strumenti', pt: 'Ferramentas', ar: 'أدوات' , nl: 'Hulpmiddelen', de: 'Werkzeuge'},
+    travelBook: { fr: '📄 Carnet', en: '📄 Travel Book', es: '📄 Cuaderno', it: '📄 Diario', pt: '📄 Caderno', ar: '📄 دفتر السفر' , nl: '📄 Reisdagboek', de: '📄 Reisetagebuch'},
+    printBtn: { fr: '🖨️ Imprimer', en: '🖨️ Print', es: '🖨️ Imprimir', it: '🖨️ Stampa', pt: '🖨️ Imprimir', ar: '🖨️ طباعة' , nl: '🖨️ Afdrukken', de: '🖨️ Drucken'},
+    bookingsBtn: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' , nl: 'Boekingen', de: 'Buchungen'},
+    bookingAddTypes: { fr: '➕ Intégrer une nouvelle réservation (hôtels, guides, avions)', en: '➕ Add a new booking (hotels, guides, flights)', es: '➕ Añadir una nueva reserva (hoteles, guías, vuelos)', it: '➕ Aggiungi una nuova prenotazione (hotel, guide, voli)', pt: '➕ Adicionar uma nova reserva (hotéis, guias, voos)', ar: '➕ إضافة حجز جديد (فنادق، مرشدون، رحلات جوية)' , nl: '➕ Een nieuwe boeking toevoegen (hotels, gidsen, vluchten)', de: '➕ Eine neue Buchung hinzufügen (Hotels, Guides, Flüge)'},
+    bookingView: { fr: '📋 Voir les réservations', en: '📋 View bookings', es: '📋 Ver las reservas', it: '📋 Vedi le prenotazioni', pt: '📋 Ver as reservas', ar: '📋 عرض الحجوزات' , nl: '📋 De boekingen bekijken', de: '📋 Die Buchungen ansehen'},
+    bookingBudget: { fr: '💰 Budget', en: '💰 Budget', es: '💰 Presupuesto', it: '💰 Budget', pt: '💰 Orçamento', ar: '💰 الميزانية' , nl: '💰 Budget', de: '💰 Budget'},
+    editMapBtn: { fr: 'Modifier', en: 'Edit', es: 'Editar', it: 'Modifica', pt: 'Editar', ar: 'تعديل' , nl: 'Bewerken', de: 'Bearbeiten'},
+    reorgAddManual: { fr: '➕ Ajouter une étape non présente dans nos lieux listés', en: '➕ Add a stop not in our listed places', es: '➕ Añadir una etapa que no está en nuestros lugares listados', it: '➕ Aggiungi una tappa non presente nei nostri luoghi elencati', pt: '➕ Adicionar uma etapa não presente nos nossos locais listados', ar: '➕ إضافة مرحلة غير موجودة في أماكننا المدرجة' , nl: '➕ Een stop toevoegen die niet in onze plaatsen staat', de: '➕ Eine Etappe hinzufügen, die nicht in unseren Orten steht'},
+    insertWhereTitle: { fr: 'Où insérer « {name} » ?', en: 'Where to insert "{name}"?', es: '¿Dónde insertar «{name}»?', it: 'Dove inserire «{name}»?', pt: 'Onde inserir «{name}»?', ar: 'أين تُدرج «{name}»؟' , nl: 'Waar wil je « {name} » invoegen?', de: 'Wo soll « {name} » eingefügt werden?'},
+    insertAtStart: { fr: 'Au début', en: 'At the start', es: 'Al inicio', it: "All'inizio", pt: 'No início', ar: 'في البداية' , nl: 'Aan het begin', de: 'Am Anfang'},
+    insertAfterLbl: { fr: 'Après', en: 'After', es: 'Después de', it: 'Dopo', pt: 'Depois de', ar: 'بعد' , nl: 'Na', de: 'Nach'},
+    insertCancel: { fr: 'Annuler', en: 'Cancel', es: 'Cancelar', it: 'Annulla', pt: 'Cancelar', ar: 'إلغاء' , nl: 'Annuleren', de: 'Abbrechen'},
+    shareTrip: { fr: '🔗 Partager', en: '🔗 Share', es: '🔗 Compartir', it: '🔗 Condividi', pt: '🔗 Partilhar', ar: '🔗 مشاركة' , nl: '🔗 Delen', de: '🔗 Teilen'},
+    importBookings: { fr: '➕ Réservations', en: '➕ Bookings', es: '➕ Reservas', it: '➕ Prenotazioni', pt: '➕ Reservas', ar: '➕ الحجوزات' , nl: '➕ Boekingen', de: '➕ Buchungen'},
+    customize: { fr: '✨ Personnaliser', en: '✨ Customize', es: '✨ Personalizar', it: '✨ Personalizza', pt: '✨ Personalizar', ar: '✨ تخصيص' , nl: '✨ Personaliseren', de: '✨ Anpassen'},
+    generatePdf: { fr: 'Générer PDF', en: 'Generate PDF', es: 'Generar PDF', it: 'Genera PDF', pt: 'Gerar PDF', ar: 'إنشاء PDF' , nl: 'PDF maken', de: 'PDF erstellen'},
+    menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' , nl: '➕ Een boeking importeren', de: '➕ Eine Buchung importieren'}
   };
   const _origT = window.t;
   const _lang = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'fr').slice(0, 2);
@@ -2534,7 +2542,7 @@ if (typeof t !== 'function') {
     const orig = _origT ? _origT(key) : key;
     // Si la fonction originale renvoie la clé brute, chercher dans nos clés custom
     if (orig === key && HEADER_I18N[key]) {
-      return HEADER_I18N[key][_lang] || HEADER_I18N[key].fr || key;
+      return HEADER_I18N[key][_lang] || HEADER_I18N[key].en || key;
     }
     return orig;
   };
@@ -2667,6 +2675,8 @@ if (typeof t !== 'function') {
     <option value="es">Español</option>
     <option value="pt">Português</option>
     <option value="ar">العربية</option>
+    <option value="nl">Nederlands</option>
+    <option value="de">Deutsch</option>
   </select>
 
   <div class="auth">
@@ -2698,7 +2708,7 @@ if (typeof t !== 'function') {
       es:'Debe estar registrado para accedere al Panel.',
       pt:'Você precisa estar conectado para acessar o Dashboard.',
       ar:'يجب أن تكون مسجّلًا للوصول إلى لوحة التحكم.'
-    })[lang] || 'Vous devez être enregistré pour accéder au Dashboard.';
+    , nl: 'Je moet geregistreerd zijn om het dashboard te openen.', de: 'Du musst registriert sein, um das Dashboard zu öffnen.'})[lang] || 'Vous devez être enregistré pour accéder au Dashboard.';
 
     // 4) Crée UNE NOUVELLE LIGNE PLEINE LARGEUR sous la 1re ligne du header
 var row = document.createElement('div');
@@ -2817,33 +2827,33 @@ const LANG = (new URLSearchParams(location.search).get('lang') || localStorage.g
 
 // Traductions pour tous les textes UI hardcodés
 const _T = {
-  deleteStep: {fr:'Supprimer cette étape ?',en:'Delete this step?',es:'¿Eliminar esta etapa?',it:'Eliminare questa tappa?',pt:'Eliminar esta etapa?',ar:'حذف هذه المرحلة؟'},
-  loadingSharedTrip: {fr:'⏳ Chargement du voyage partagé...',en:'⏳ Loading shared trip...',es:'⏳ Cargando viaje compartido...',it:'⏳ Caricamento viaggio condiviso...',pt:'⏳ Carregando viagem partilhada...',ar:'⏳ جاري تحميل الرحلة المشتركة...'},
-  sharedTrip: {fr:'Voyage partagé',en:'Shared trip',es:'Viaje compartido',it:'Viaggio condiviso',pt:'Viagem partilhada',ar:'رحلة مشتركة'},
-  noDateBooking: {fr:'Pas de date pour cette réservation',en:'No date for this booking',es:'Sin fecha para esta reserva',it:'Nessuna data per questa prenotazione',pt:'Sem data para esta reserva',ar:'لا يوجد تاريخ لهذا الحجز'},
-  pdfNotLoaded: {fr:'Module PDF non chargé',en:'PDF module not loaded',es:'Módulo PDF no cargado',it:'Modulo PDF non caricato',pt:'Módulo PDF não carregado',ar:'وحدة PDF غير محملة'},
-  calendarNotAvailable: {fr:'Module calendrier non disponible',en:'Calendar module not available',es:'Módulo de calendario no disponible',it:'Modulo calendario non disponibile',pt:'Módulo de calendário não disponível',ar:'وحدة التقويم غير متاحة'},
-  itineraryNotFound: {fr:'Itinéraire introuvable',en:'Itinerary not found',es:'Itinerario no encontrado',it:'Itinerario non trovato',pt:'Itinerário não encontrado',ar:'مسار الرحلة غير موجود'},
-  loginToEditTitle: {fr:'Connectez-vous pour modifier le titre',en:'Sign in to edit the title',es:'Inicie sesión para editar el título',it:'Accedi per modificare il titolo',pt:'Inicie sessão para editar o título',ar:'سجّل الدخول لتعديل العنوان'},
-  noTripSelected: {fr:'Aucun roadtrip sélectionné',en:'No road trip selected',es:'Ningún road trip seleccionado',it:'Nessun road trip selezionato',pt:'Nenhum road trip selecionado',ar:'لم يتم اختيار رحلة'},
-  saving: {fr:'⏳ Sauvegarde...',en:'⏳ Saving...',es:'⏳ Guardando...',it:'⏳ Salvataggio...',pt:'⏳ Guardando...',ar:'⏳ جاري الحفظ...'},
-  deleting: {fr:'⏳ Suppression...',en:'⏳ Deleting...',es:'⏳ Eliminando...',it:'⏳ Eliminazione...',pt:'⏳ Eliminando...',ar:'⏳ جاري الحذف...'},
-  writeSource: {fr:'🔴 Écrire source',en:'🔴 Write source',es:'🔴 Escribir fuente',it:'🔴 Scrivi sorgente',pt:'🔴 Escrever fonte',ar:'🔴 كتابة المصدر'},
-  saveSource: {fr:'💾 Source',en:'💾 Source',es:'💾 Fuente',it:'💾 Sorgente',pt:'💾 Fonte',ar:'💾 المصدر'},
-  saveSourceTooltip: {fr:'Sauvegarder dans le fichier source (admin)',en:'Save to source file (admin)',es:'Guardar en archivo fuente (admin)',it:'Salva nel file sorgente (admin)',pt:'Guardar no ficheiro fonte (admin)',ar:'حفظ في الملف المصدر (مسؤول)'},
-  previewFirst: {fr:'Erreur : veuillez prévisualiser avant de valider',en:'Error: please preview before validating',es:'Error: previsualice antes de validar',it:'Errore: visualizza l\'anteprima prima di confermare',pt:'Erro: pré-visualize antes de validar',ar:'خطأ: يرجى المعاينة قبل التأكيد'},
-  invalidFormat: {fr:'❌ Format invalide. Utilisez: CC::region::slug',en:'❌ Invalid format. Use: CC::region::slug',es:'❌ Formato inválido. Use: CC::region::slug',it:'❌ Formato non valido. Usa: CC::region::slug',pt:'❌ Formato inválido. Use: CC::region::slug',ar:'❌ تنسيق غير صالح. استخدم: CC::region::slug'},
-  deleteDefinitive: {fr:'⚠️ SUPPRESSION DÉFINITIVE',en:'⚠️ PERMANENT DELETION',es:'⚠️ ELIMINACIÓN DEFINITIVA',it:'⚠️ ELIMINAZIONE DEFINITIVA',pt:'⚠️ ELIMINAÇÃO DEFINITIVA',ar:'⚠️ حذف نهائي'},
-  deleteConfirmMsg: {fr:'Cet itinéraire sera supprimé de TOUTES les langues.\n\nConfirmer ?',en:'This itinerary will be deleted from ALL languages.\n\nConfirm?',es:'Este itinerario se eliminará de TODOS los idiomas.\n\n¿Confirmar?',it:'Questo itinerario verrà eliminato da TUTTE le lingue.\n\nConfermare?',pt:'Este itinerário será eliminado de TODAS as línguas.\n\nConfirmar?',ar:'سيتم حذف هذا المسار من جميع اللغات.\n\nتأكيد؟'},
-  addToOrder: {fr:'Ajouter au nouvel ordre',en:'Add to new order',es:'Añadir al nuevo orden',it:'Aggiungi al nuovo ordine',pt:'Adicionar à nova ordem',ar:'إضافة إلى الترتيب الجديد'},
-  removeReintegrate: {fr:'Supprimer / Réintégrer',en:'Remove / Reintegrate',es:'Eliminar / Reintegrar',it:'Rimuovi / Reintegra',pt:'Remover / Reintegrar',ar:'حذف / إعادة دمج'},
-  unsavedChanges: {fr:'⚠️ Modifications non sauvegardées',en:'⚠️ Unsaved changes',es:'⚠️ Cambios no guardados',it:'⚠️ Modifiche non salvate',pt:'⚠️ Alterações não guardadas',ar:'⚠️ تغييرات غير محفوظة'}
+  deleteStep: {fr:'Supprimer cette étape ?',en:'Delete this step?',es:'¿Eliminar esta etapa?',it:'Eliminare questa tappa?',pt:'Eliminar esta etapa?',ar:'حذف هذه المرحلة؟', nl: 'Deze stop verwijderen?', de: 'Diese Etappe löschen?'},
+  loadingSharedTrip: {fr:'⏳ Chargement du voyage partagé...',en:'⏳ Loading shared trip...',es:'⏳ Cargando viaje compartido...',it:'⏳ Caricamento viaggio condiviso...',pt:'⏳ Carregando viagem partilhada...',ar:'⏳ جاري تحميل الرحلة المشتركة...', nl: '⏳ Gedeelde reis wordt geladen...', de: '⏳ Geteilte Reise wird geladen...'},
+  sharedTrip: {fr:'Voyage partagé',en:'Shared trip',es:'Viaje compartido',it:'Viaggio condiviso',pt:'Viagem partilhada',ar:'رحلة مشتركة', nl: 'Gedeelde reis', de: 'Geteilte Reise'},
+  noDateBooking: {fr:'Pas de date pour cette réservation',en:'No date for this booking',es:'Sin fecha para esta reserva',it:'Nessuna data per questa prenotazione',pt:'Sem data para esta reserva',ar:'لا يوجد تاريخ لهذا الحجز', nl: 'Geen datum voor deze boeking', de: 'Kein Datum für diese Buchung'},
+  pdfNotLoaded: {fr:'Module PDF non chargé',en:'PDF module not loaded',es:'Módulo PDF no cargado',it:'Modulo PDF non caricato',pt:'Módulo PDF não carregado',ar:'وحدة PDF غير محملة', nl: 'PDF-module niet geladen', de: 'PDF-Modul nicht geladen'},
+  calendarNotAvailable: {fr:'Module calendrier non disponible',en:'Calendar module not available',es:'Módulo de calendario no disponible',it:'Modulo calendario non disponibile',pt:'Módulo de calendário não disponível',ar:'وحدة التقويم غير متاحة', nl: 'Agendamodule niet beschikbaar', de: 'Kalendermodul nicht verfügbar'},
+  itineraryNotFound: {fr:'Itinéraire introuvable',en:'Itinerary not found',es:'Itinerario no encontrado',it:'Itinerario non trovato',pt:'Itinerário não encontrado',ar:'مسار الرحلة غير موجود', nl: 'Route niet gevonden', de: 'Route nicht gefunden'},
+  loginToEditTitle: {fr:'Connectez-vous pour modifier le titre',en:'Sign in to edit the title',es:'Inicie sesión para editar el título',it:'Accedi per modificare il titolo',pt:'Inicie sessão para editar o título',ar:'سجّل الدخول لتعديل العنوان', nl: 'Log in om de titel te wijzigen', de: 'Melde dich an, um den Titel zu ändern'},
+  noTripSelected: {fr:'Aucun roadtrip sélectionné',en:'No road trip selected',es:'Ningún road trip seleccionado',it:'Nessun road trip selezionato',pt:'Nenhum road trip selecionado',ar:'لم يتم اختيار رحلة', nl: 'Geen road trip geselecteerd', de: 'Kein Roadtrip ausgewählt'},
+  saving: {fr:'⏳ Sauvegarde...',en:'⏳ Saving...',es:'⏳ Guardando...',it:'⏳ Salvataggio...',pt:'⏳ Guardando...',ar:'⏳ جاري الحفظ...', nl: '⏳ Opslaan...', de: '⏳ Wird gespeichert...'},
+  deleting: {fr:'⏳ Suppression...',en:'⏳ Deleting...',es:'⏳ Eliminando...',it:'⏳ Eliminazione...',pt:'⏳ Eliminando...',ar:'⏳ جاري الحذف...', nl: '⏳ Verwijderen...', de: '⏳ Wird gelöscht...'},
+  writeSource: {fr:'🔴 Écrire source',en:'🔴 Write source',es:'🔴 Escribir fuente',it:'🔴 Scrivi sorgente',pt:'🔴 Escrever fonte',ar:'🔴 كتابة المصدر', nl: '🔴 Bron schrijven', de: '🔴 Quelle schreiben'},
+  saveSource: {fr:'💾 Source',en:'💾 Source',es:'💾 Fuente',it:'💾 Sorgente',pt:'💾 Fonte',ar:'💾 المصدر', nl: '💾 Bron', de: '💾 Quelle'},
+  saveSourceTooltip: {fr:'Sauvegarder dans le fichier source (admin)',en:'Save to source file (admin)',es:'Guardar en archivo fuente (admin)',it:'Salva nel file sorgente (admin)',pt:'Guardar no ficheiro fonte (admin)',ar:'حفظ في الملف المصدر (مسؤول)', nl: 'Opslaan in het bronbestand (beheerder)', de: 'In der Quelldatei speichern (Admin)'},
+  previewFirst: {fr:'Erreur : veuillez prévisualiser avant de valider',en:'Error: please preview before validating',es:'Error: previsualice antes de validar',it:'Errore: visualizza l\'anteprima prima di confermare',pt:'Erro: pré-visualize antes de validar',ar:'خطأ: يرجى المعاينة قبل التأكيد', nl: 'Fout: bekijk eerst het voorbeeld voordat je bevestigt', de: 'Fehler: Bitte zuerst die Vorschau ansehen, dann bestätigen'},
+  invalidFormat: {fr:'❌ Format invalide. Utilisez: CC::region::slug',en:'❌ Invalid format. Use: CC::region::slug',es:'❌ Formato inválido. Use: CC::region::slug',it:'❌ Formato non valido. Usa: CC::region::slug',pt:'❌ Formato inválido. Use: CC::region::slug',ar:'❌ تنسيق غير صالح. استخدم: CC::region::slug', nl: '❌ Ongeldig formaat. Gebruik: CC::regio::slug', de: '❌ Ungültiges Format. Verwende: CC::region::slug'},
+  deleteDefinitive: {fr:'⚠️ SUPPRESSION DÉFINITIVE',en:'⚠️ PERMANENT DELETION',es:'⚠️ ELIMINACIÓN DEFINITIVA',it:'⚠️ ELIMINAZIONE DEFINITIVA',pt:'⚠️ ELIMINAÇÃO DEFINITIVA',ar:'⚠️ حذف نهائي', nl: '⚠️ DEFINITIEVE VERWIJDERING', de: '⚠️ ENDGÜLTIGES LÖSCHEN'},
+  deleteConfirmMsg: {fr:'Cet itinéraire sera supprimé de TOUTES les langues.\n\nConfirmer ?',en:'This itinerary will be deleted from ALL languages.\n\nConfirm?',es:'Este itinerario se eliminará de TODOS los idiomas.\n\n¿Confirmar?',it:'Questo itinerario verrà eliminato da TUTTE le lingue.\n\nConfermare?',pt:'Este itinerário será eliminado de TODAS as línguas.\n\nConfirmar?',ar:'سيتم حذف هذا المسار من جميع اللغات.\n\nتأكيد؟', nl: 'Deze route wordt in ALLE talen verwijderd.\n\nBevestigen?', de: 'Diese Route wird in ALLEN Sprachen gelöscht.\n\nBestätigen?'},
+  addToOrder: {fr:'Ajouter au nouvel ordre',en:'Add to new order',es:'Añadir al nuevo orden',it:'Aggiungi al nuovo ordine',pt:'Adicionar à nova ordem',ar:'إضافة إلى الترتيب الجديد', nl: 'Aan de nieuwe volgorde toevoegen', de: 'Zur neuen Reihenfolge hinzufügen'},
+  removeReintegrate: {fr:'Supprimer / Réintégrer',en:'Remove / Reintegrate',es:'Eliminar / Reintegrar',it:'Rimuovi / Reintegra',pt:'Remover / Reintegrar',ar:'حذف / إعادة دمج', nl: 'Verwijderen / opnieuw opnemen', de: 'Entfernen / wieder aufnehmen'},
+  unsavedChanges: {fr:'⚠️ Modifications non sauvegardées',en:'⚠️ Unsaved changes',es:'⚠️ Cambios no guardados',it:'⚠️ Modifiche non salvate',pt:'⚠️ Alterações não guardadas',ar:'⚠️ تغييرات غير محفوظة', nl: '⚠️ Niet-opgeslagen wijzigingen', de: '⚠️ Nicht gespeicherte Änderungen'}
 };
 function _t(key){ return (_T[key]||{})[LANG] || (_T[key]||{}).en || (_T[key]||{}).fr || key; }
 window._t = _t;
 window._T = _T;
 
-const TIP_SAVE = ({fr:'Sauvegarder ce road trip',en:'Save this road trip',it:'Salva questo road trip',es:'Guardar este road trip',pt:'Guardar este road trip',ar:'حفظ هذه الرحلة'})[LANG] || 'Save';
+const TIP_SAVE = ({fr:'Sauvegarder ce road trip',en:'Save this road trip',it:'Salva questo road trip',es:'Guardar este road trip',pt:'Guardar este road trip',ar:'حفظ هذه الرحلة', nl: 'Deze road trip opslaan', de: 'Diesen Roadtrip speichern'})[LANG] || 'Save';
 const TIP_FLAG = ({
   fr:'Signaler un RT ou une erreur',
   en:'Report a trip or an error',
@@ -2851,8 +2861,8 @@ const TIP_FLAG = ({
   es:'Informar de un viaje o un error',
   pt:'Reportar uma viagem ou um erro',
   ar:'الإبلاغ عن رحلة أو خطأ'
-})[LANG] || 'Report';
-const TIP_RATE = ({fr:'Noter ce road trip',en:'Rate this road trip',it:'Valuta questo road trip',es:'Valorar este road trip',pt:'Avaliar este road trip',ar:'قيّم هذه الرحلة'})[LANG] || 'Rate';
+, nl: 'Een RT of een fout melden', de: 'Einen RT oder einen Fehler melden'})[LANG] || 'Report';
+const TIP_RATE = ({fr:'Noter ce road trip',en:'Rate this road trip',it:'Valuta questo road trip',es:'Valorar este road trip',pt:'Avaliar este road trip',ar:'قيّم هذه الرحلة', nl: 'Deze road trip beoordelen', de: 'Diesen Roadtrip bewerten'})[LANG] || 'Rate';
 // TIP_COUNTRY supprimé - fiche pays dans menu Outils
 // const TIP_COUNTRY = t('countrySheet');
 
@@ -2957,13 +2967,13 @@ function detectBookingCategory(booking) {
   if (type.includes('activity')) return 'activity';
   return 'other';
 }
-const L_DONE = ({fr:'Avez-vous fait ce RT ?',en:'Have you done this road trip?',it:'Hai fatto questo road trip?',es:'¿Ha hecho este road trip?',pt:'Fez este road trip?',ar:'هل قمت بهذه الرحلة؟'})[LANG] || 'Done?';
-const L_YES = ({fr:'Oui',en:'Yes',it:'Sì',es:'Sí',pt:'Sim',ar:'نعم'})[LANG] || 'Yes';
-const L_NO  = ({fr:'Non',en:'No', it:'No', es:'No', pt:'Não', ar:'لا'})[LANG] || 'No';
-const L_SCORE = ({fr:'Note (1 à 10)',en:'Score (1 to 10)',it:'Voto (1–10)',es:'Nota (1–10)',pt:'Nota (1–10)',ar:'تقييم (1–10)'} )[LANG] || 'Score';
-const L_SAVE = ({fr:'Enregistrer',en:'Save',it:'Salva',es:'Guardar',pt:'Guardar',ar:'حفظ'})[LANG] || 'Save';
-const L_YOUR = ({fr:"Votre note",en:"Your score",it:"Tuo voto",es:"Tu nota",pt:"Sua nota",ar:"تقييمك"})[LANG] || 'Your score';
-const L_AVG  = ({fr:"Moy.",en:"Avg.",it:"Media",es:"Media",pt:"Média",ar:"المتوسط"})[LANG] || 'Avg.';
+const L_DONE = ({fr:'Avez-vous fait ce RT ?',en:'Have you done this road trip?',it:'Hai fatto questo road trip?',es:'¿Ha hecho este road trip?',pt:'Fez este road trip?',ar:'هل قمت بهذه الرحلة؟', nl: 'Heb je deze RT gedaan?', de: 'Hast du diesen RT gemacht?'})[LANG] || 'Done?';
+const L_YES = ({fr:'Oui',en:'Yes',it:'Sì',es:'Sí',pt:'Sim',ar:'نعم', nl: 'Ja', de: 'Ja'})[LANG] || 'Yes';
+const L_NO  = ({fr:'Non',en:'No', it:'No', es:'No', pt:'Não', ar:'لا', nl: 'Nee', de: 'Nein'})[LANG] || 'No';
+const L_SCORE = ({fr:'Note (1 à 10)',en:'Score (1 to 10)',it:'Voto (1–10)',es:'Nota (1–10)',pt:'Nota (1–10)',ar:'تقييم (1–10)', nl: 'Cijfer (1 tot 10)', de: 'Note (1 bis 10)'} )[LANG] || 'Score';
+const L_SAVE = ({fr:'Enregistrer',en:'Save',it:'Salva',es:'Guardar',pt:'Guardar',ar:'حفظ', nl: 'Opslaan', de: 'Speichern'})[LANG] || 'Save';
+const L_YOUR = ({fr:"Votre note",en:"Your score",it:"Tuo voto",es:"Tu nota",pt:"Sua nota",ar:"تقييمك", nl: 'Jouw cijfer', de: 'Deine Note'})[LANG] || 'Your score';
+const L_AVG  = ({fr:"Moy.",en:"Avg.",it:"Media",es:"Media",pt:"Média",ar:"المتوسط", nl: 'Gem.', de: 'Ø'})[LANG] || 'Avg.';
 const L_COMMENT = ({
   fr:'Commentaire (facultatif)',
   en:'Comment (optional)',
@@ -2971,7 +2981,7 @@ const L_COMMENT = ({
   es:'Comentario (opcional)',
   pt:'Comentário (opcional)',
   ar:'تعليق (اختياري)'
-})[LANG] || 'Comment (optional)';
+, nl: 'Opmerking (optioneel)', de: 'Kommentar (optional)'})[LANG] || 'Comment (optional)';
 
 const L_PLACEHOLDER = ({
   fr:'Ajoutez un retour utile pour les autres voyageurs…',
@@ -2980,7 +2990,7 @@ const L_PLACEHOLDER = ({
   es:'Añade comentarios útiles para otros viajeros…',
   pt:'Adicione um feedback útil para outros viajantes…',
   ar:'أضف ملاحظات مفيدة للمسافرين الآخرين…'
-})[LANG] || 'Add feedback that helps other travelers…';
+, nl: 'Geef feedback waar andere reizigers iets aan hebben…', de: 'Gib Feedback, das anderen Reisenden hilft…'})[LANG] || 'Add feedback that helps other travelers…';
 
 const L_SENT_OK = ({
   fr:'✅ Merci ! Votre note a été prise en compte.',
@@ -2989,7 +2999,7 @@ const L_SENT_OK = ({
   es:'✅ ¡Gracias! Tu valoración se ha registrado.',
   pt:'✅ Obrigado! Sua avaliação foi registrada.',
   ar:'✅ شكرًا! تم تسجيل تقييمك.'
-})[LANG] || '✅ Thanks! Your rating was recorded.';
+, nl: '✅ Bedankt! Je beoordeling is opgeslagen.', de: '✅ Danke! Deine Bewertung wurde gespeichert.'})[LANG] || '✅ Thanks! Your rating was recorded.';
 d.addEventListener('change', onDateChange);
 
 // == Icônes à GAUCHE de la date (sans décaler la date) ==
@@ -3591,7 +3601,7 @@ hdr.appendChild(row);
   const carHref   =`/web/redirect.html?type=car&uid=${uid}&rtKey=${encodeURIComponent(rtKey)}&lang=${lang}&page=${encodeURIComponent(pagePath)}`;
 
   // 🛡 Assurances: lien affilié Ekta Traveling avec langue dynamique
-  const insLang = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' }[lang] || 'en';
+  const insLang = { fr:'fr', en:'en', es:'es', it:'it', pt:'pt', ar:'en' , nl: 'nl', de: 'de'}[lang] || 'en';
   const insHref = `https://ektatraveling.com/${insLang}/?sub_id=8d611d0d167741c58fdfe9e61-688844&utm_source=travelpayouts`;
 
   // Icônes voiture Porsche (rouge=non réservé, verte=réservé)
@@ -3604,10 +3614,10 @@ hdr.appendChild(row);
   const getLangServices = () => window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0, 2);
   const getServices = (key) => {
     const lang = getLangServices();
-    const fServices = { services: { fr: 'Services', en: 'Services', es: 'Servicios', it: 'Servizi', pt: 'Serviços', ar: 'خدمات' }, servicesPartnerTooltip: { fr: 'Accès aux services partenaires', en: 'Access to partner services', es: 'Acceso a servicios asociados', it: 'Accesso ai servizi partner', pt: 'Acesso aos serviços parceiros', ar: 'الوصول إلى خدمات الشركاء' } };
+    const fServices = { services: { fr: 'Services', en: 'Services', es: 'Servicios', it: 'Servizi', pt: 'Serviços', ar: 'خدمات' , nl: 'Diensten', de: 'Dienste'}, servicesPartnerTooltip: { fr: 'Accès aux services partenaires', en: 'Access to partner services', es: 'Acceso a servicios asociados', it: 'Accesso ai servizi partner', pt: 'Acesso aos serviços parceiros', ar: 'الوصول إلى خدمات الشركاء' , nl: 'Toegang tot de partnerdiensten', de: 'Zugang zu den Partnerdiensten'} };
     if (window.ORT_I18N?.[key]?.[lang]) return window.ORT_I18N[key][lang];
     if (window.ORT_I18N?.[key]?.fr) return window.ORT_I18N[key].fr;
-    return fServices[key]?.[lang] || fServices[key]?.fr || key;
+    return fServices[key]?.[lang] || fServices[key]?.en || key;
   };
   servicesMenuBtn.innerHTML = '🛠️ ' + getServices('services');
   servicesMenuBtn.title = getServices('servicesPartnerTooltip');
@@ -3649,8 +3659,8 @@ hdr.appendChild(row);
     if (window.ORT_I18N?.[key]?.[lang]) return window.ORT_I18N[key][lang];
     if (window.ORT_I18N?.[key]?.fr) return window.ORT_I18N[key].fr;
     // Fallback
-    const fb = { bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' }, bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' }, vehTransferBtn: { fr: 'Véhicules et transferts', en: 'Vehicles & transfers', es: 'Vehículos y traslados', it: 'Veicoli e trasferimenti', pt: 'Veículos e transferências', ar: 'المركبات والتنقلات' }, insureTrip: { fr: 'Assurer son voyage', en: 'Insure your trip', es: 'Asegura tu viaje', it: 'Assicura il viaggio', pt: 'Seguro de viagem', ar: 'تأمين رحلتك' }, flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' }, carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' }, transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' }, insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' }, delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' } };
-    return fb[key]?.[lang] || fb[key]?.fr || key;
+    const fb = { bookFlight: { fr: 'Réserver un vol', en: 'Book a flight', es: 'Reservar vuelo', it: 'Prenota volo', pt: 'Reservar voo', ar: 'حجز رحلة' , nl: 'Een vlucht boeken', de: 'Flug buchen'}, bookCar: { fr: 'Louer une voiture', en: 'Rent a car', es: 'Alquilar coche', it: 'Noleggia auto', pt: 'Alugar carro', ar: 'استئجار سيارة' , nl: 'Een auto huren', de: 'Auto mieten'}, vehTransferBtn: { fr: 'Véhicules et transferts', en: 'Vehicles & transfers', es: 'Vehículos y traslados', it: 'Veicoli e trasferimenti', pt: 'Veículos e transferências', ar: 'المركبات والتنقلات' , nl: 'Voertuigen en transfers', de: 'Fahrzeuge und Transfers'}, insureTrip: { fr: 'Assurer son voyage', en: 'Insure your trip', es: 'Asegura tu viaje', it: 'Assicura il viaggio', pt: 'Seguro de viagem', ar: 'تأمين رحلتك' , nl: 'Je reis verzekeren', de: 'Deine Reise versichern'}, flights: { fr: 'Vols', en: 'Flights', es: 'Vuelos', it: 'Voli', pt: 'Voos', ar: 'الرحلات' , nl: 'Vluchten', de: 'Flüge'}, carRental: { fr: 'Location voiture', en: 'Car rental', es: 'Alquiler de coche', it: 'Noleggio auto', pt: 'Aluguel de carro', ar: 'تأجير سيارات' , nl: 'Autoverhuur', de: 'Mietwagen'}, transfers: { fr: 'Transferts', en: 'Transfers', es: 'Traslados', it: 'Trasferimenti', pt: 'Transferências', ar: 'التحويلات' , nl: 'Transfers', de: 'Transfers'}, insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' , nl: 'Verzekering', de: 'Versicherung'}, delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' , nl: 'Vertragingscompensatie', de: 'Verspätungsentschädigung'} };
+    return fb[key]?.[lang] || fb[key]?.en || key;
   };
   
   const services = [
@@ -3804,6 +3814,7 @@ hdr.appendChild(row);
         </div>
         <div id="aiStepsGrid" class="ai-steps-grid"></div>
         <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="btnRegenAiSummary" type="button" onclick="regenerateAiSummary()" style="padding:6px 14px;border-radius:8px;border:1px solid #f0b3b3;background:#fff5f5;color:#b91c1c;font-size:12px;cursor:pointer;font-weight:600;">🔄 Relancer</button>
           <button id="btnCopyAiSummary" type="button" onclick="copyAiSummary()" style="padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">📋 Copier</button>
           <button id="btnPrintAiSummary" type="button" onclick="printAiSummary()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">🖨️ Imprimer</button>
           <button id="btnEmailAiSummary" type="button" onclick="emailAiSummary()" style="display:none;padding:6px 14px;border-radius:8px;border:1px solid #cbd5e1;background:#f8fafc;color:#475569;font-size:12px;cursor:pointer;font-weight:600;">✉️ Envoyer par email</button>
@@ -3957,9 +3968,9 @@ hdr.appendChild(row);
 
   function L(){
     const lang=document.documentElement.lang||'fr';
-    const MAP_LOGIN={fr:"Se connecter",en:"Sign in",it:"Accedi",es:"Iniciar sesión",pt:"Iniciar sessão",ar:"تسجيل الدخول"};
-    const MAP_LOGOUT={fr:"Déconnexion",en:"Log out",it:"Esci",es:"Cerrar sesión",pt:"Terminar sessão",ar:"تسجيل الخروج"};
-    return { login:MAP_LOGIN[lang]||MAP_LOGIN.fr, logout:MAP_LOGOUT[lang]||MAP_LOGOUT.fr, google:"Google", email:"E-mail" };
+    const MAP_LOGIN={fr:"Se connecter",en:"Sign in",it:"Accedi",es:"Iniciar sesión",pt:"Iniciar sessão",ar:"تسجيل الدخول", nl: 'Inloggen', de: 'Anmelden'};
+    const MAP_LOGOUT={fr:"Déconnexion",en:"Log out",it:"Esci",es:"Cerrar sesión",pt:"Terminar sessão",ar:"تسجيل الخروج", nl: 'Uitloggen', de: 'Abmelden'};
+    return { login:MAP_LOGIN[lang]||MAP_LOGIN.en, logout:MAP_LOGOUT[lang]||MAP_LOGOUT.en, google:"Google", email:"E-mail" };
   }
 
  async function ensureFirebase(){
@@ -4043,29 +4054,29 @@ hdr.appendChild(row);
     const origSwitchMode = switchMode;
     function updateModeLink(signup) {
       const lang = document.documentElement.lang || 'fr';
-      const HINT    = { fr: 'Pas encore de compte ?',  en: 'No account yet?',       es: '¿Sin cuenta?',      it: 'Nessun account?',    pt: 'Sem conta?',          ar: 'ليس لديك حساب؟' };
-      const HINT2   = { fr: 'Déjà un compte ?',        en: 'Already have an account?', es: '¿Ya tienes cuenta?', it: 'Hai già un account?', pt: 'Já tem uma conta?', ar: 'لديك حساب بالفعل؟' };
-      const ACTION  = { fr: '✓ Créer mon compte gratuit', en: '✓ Create my free account', es: '✓ Crear mi cuenta gratuita', it: '✓ Crea il mio account', pt: '✓ Criar minha conta', ar: '✓ إنشاء حسابي المجاني' };
-      const ACTION2 = { fr: 'Se connecter',            en: 'Sign in',               es: 'Iniciar sesión',    it: 'Accedi',             pt: 'Iniciar sessão',     ar: 'تسجيل الدخول' };
-      if (modeHint)   modeHint.textContent   = signup ? (HINT2[lang]||HINT2.fr)   : (HINT[lang]||HINT.fr);
-      if (modeSwitch) modeSwitch.textContent = signup ? (ACTION2[lang]||ACTION2.fr) : (ACTION[lang]||ACTION.fr);
+      const HINT    = { fr: 'Pas encore de compte ?',  en: 'No account yet?',       es: '¿Sin cuenta?',      it: 'Nessun account?',    pt: 'Sem conta?',          ar: 'ليس لديك حساب؟' , nl: 'Nog geen account?', de: 'Noch kein Konto?'};
+      const HINT2   = { fr: 'Déjà un compte ?',        en: 'Already have an account?', es: '¿Ya tienes cuenta?', it: 'Hai già un account?', pt: 'Já tem uma conta?', ar: 'لديك حساب بالفعل؟' , nl: 'Al een account?', de: 'Schon ein Konto?'};
+      const ACTION  = { fr: '✓ Créer mon compte gratuit', en: '✓ Create my free account', es: '✓ Crear mi cuenta gratuita', it: '✓ Crea il mio account', pt: '✓ Criar minha conta', ar: '✓ إنشاء حسابي المجاني' , nl: '✓ Mijn gratis account aanmaken', de: '✓ Mein kostenloses Konto erstellen'};
+      const ACTION2 = { fr: 'Se connecter',            en: 'Sign in',               es: 'Iniciar sesión',    it: 'Accedi',             pt: 'Iniciar sessão',     ar: 'تسجيل الدخول' , nl: 'Inloggen', de: 'Anmelden'};
+      if (modeHint)   modeHint.textContent   = signup ? (HINT2[lang]||HINT2.en)   : (HINT[lang]||HINT.en);
+      if (modeSwitch) modeSwitch.textContent = signup ? (ACTION2[lang]||ACTION2.en) : (ACTION[lang]||ACTION.en);
       if (modeSwitch) modeSwitch.style.color = signup ? '#6b7280' : '#16a34a';
     }
 
     // Traductions contact
     const C = {
-      btn:     { fr:'✉️ Nous contacter',                    en:'✉️ Contact us',                      es:'✉️ Contáctanos',              it:'✉️ Contattaci',              pt:'✉️ Fale conosco',              ar:'✉️ تواصل معنا' },
-      desc:    { fr:'Un souci pour vous connecter ? Écrivez-nous.', en:'Having trouble signing in? Write to us.', es:'¿Problemas para acceder? Escríbenos.', it:'Problemi ad accedere? Scrivici.', pt:'Dificuldades? Escreva-nos.', ar:'هل تواجه مشكلة؟ اكتب لنا.' },
-      name:    { fr:'Votre nom',    en:'Your name',    es:'Su nombre',    it:'Il tuo nome',    pt:'Seu nome',    ar:'اسمك' },
-      email:   { fr:'Votre email',  en:'Your email',   es:'Su email',     it:'La tua email',   pt:'Seu email',   ar:'بريدك' },
-      subject: { fr:'Sujet',        en:'Subject',      es:'Asunto',       it:'Oggetto',        pt:'Assunto',     ar:'الموضوع' },
-      message: { fr:'Message',      en:'Message',      es:'Mensaje',      it:'Messaggio',      pt:'Mensagem',    ar:'الرسالة' },
-      send:    { fr:'Envoyer',      en:'Send',         es:'Enviar',       it:'Invia',          pt:'Enviar',      ar:'إرسال' },
-      success: { fr:'Message envoyé ! Nous vous répondons rapidement.', en:'Message sent! We\'ll reply shortly.', es:'¡Mensaje enviado!', it:'Messaggio inviato!', pt:'Mensagem enviada!', ar:'تم الإرسال!' },
-      error:   { fr:'Erreur d\'envoi', en:'Send error', es:'Error de envío', it:'Errore di invio', pt:'Erro de envio', ar:'خطأ في الإرسال' }
+      btn:     { fr:'✉️ Nous contacter',                    en:'✉️ Contact us',                      es:'✉️ Contáctanos',              it:'✉️ Contattaci',              pt:'✉️ Fale conosco',              ar:'✉️ تواصل معنا' , nl: '✉️ Neem contact op', de: '✉️ Kontakt aufnehmen'},
+      desc:    { fr:'Un souci pour vous connecter ? Écrivez-nous.', en:'Having trouble signing in? Write to us.', es:'¿Problemas para acceder? Escríbenos.', it:'Problemi ad accedere? Scrivici.', pt:'Dificuldades? Escreva-nos.', ar:'هل تواجه مشكلة؟ اكتب لنا.' , nl: 'Problemen met inloggen? Schrijf ons.', de: 'Probleme beim Anmelden? Schreib uns.'},
+      name:    { fr:'Votre nom',    en:'Your name',    es:'Su nombre',    it:'Il tuo nome',    pt:'Seu nome',    ar:'اسمك' , nl: 'Je naam', de: 'Dein Name'},
+      email:   { fr:'Votre email',  en:'Your email',   es:'Su email',     it:'La tua email',   pt:'Seu email',   ar:'بريدك' , nl: 'Je e-mailadres', de: 'Deine E-Mail'},
+      subject: { fr:'Sujet',        en:'Subject',      es:'Asunto',       it:'Oggetto',        pt:'Assunto',     ar:'الموضوع' , nl: 'Onderwerp', de: 'Betreff'},
+      message: { fr:'Message',      en:'Message',      es:'Mensaje',      it:'Messaggio',      pt:'Mensagem',    ar:'الرسالة' , nl: 'Bericht', de: 'Nachricht'},
+      send:    { fr:'Envoyer',      en:'Send',         es:'Enviar',       it:'Invia',          pt:'Enviar',      ar:'إرسال' , nl: 'Versturen', de: 'Senden'},
+      success: { fr:'Message envoyé ! Nous vous répondons rapidement.', en:'Message sent! We\'ll reply shortly.', es:'¡Mensaje enviado!', it:'Messaggio inviato!', pt:'Mensagem enviada!', ar:'تم الإرسال!' , nl: 'Bericht verstuurd! We antwoorden snel.', de: 'Nachricht gesendet! Wir antworten schnell.'},
+      error:   { fr:'Erreur d\'envoi', en:'Send error', es:'Error de envío', it:'Errore di invio', pt:'Erro de envio', ar:'خطأ في الإرسال' , nl: 'Fout bij verzenden', de: 'Fehler beim Senden'}
     };
     function getLang(){ return document.documentElement.lang||'fr'; }
-    function ct(key){ return C[key][getLang()]||C[key].fr; }
+    function ct(key){ return C[key][getLang()]||C[key].en; }
 
     // Initialiser les textes contact
     const contactToggleBtn = $('emailContactToggle');
@@ -4157,7 +4168,7 @@ hdr.appendChild(row);
 
   /* Auto-lang + navigation cohérente */
   (function(){
-    const SUP=["fr","en","it","es","pt","ar"];
+    const SUP=["fr","en","it","es","pt","ar","nl","de"];
     let lang = new URLSearchParams(location.search).get('lang')
              || localStorage.getItem('lang')
              || (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
@@ -4288,12 +4299,12 @@ function openStepPage(step, idx){
 function L_affiliate(){
   const lang=(localStorage.getItem('lang')||document.documentElement.lang||'fr').slice(0,2).toLowerCase();
   const t={
-    hotels:{fr:"Chercher un hôtel",en:"Find a hotel",it:"Cerca un hotel",es:"Buscar hotel",pt:"Procurar hotel",ar:"البحث عن فندق"},
-    close:{fr:"Fermer",en:"Close",it:"Chiudi",es:"Cerrar",pt:"Fechar",ar:"إغلاق"}
+    hotels:{fr:"Chercher un hôtel",en:"Find a hotel",it:"Cerca un hotel",es:"Buscar hotel",pt:"Procurar hotel",ar:"البحث عن فندق", nl: 'Een hotel zoeken', de: 'Hotel suchen'},
+    close:{fr:"Fermer",en:"Close",it:"Chiudi",es:"Cerrar",pt:"Fechar",ar:"إغلاق", nl: 'Sluiten', de: 'Schließen'}
   }; 
   return {
-    hotels: t.hotels[lang]||t.hotels.fr,
-    close: t.close[lang]||t.close.fr
+    hotels: t.hotels[lang]||t.hotels.en,
+    close: t.close[lang]||t.close.en
   };
 }
 
@@ -4502,20 +4513,20 @@ function openBookingsModal(stepIdx, stepName) {
   
   const lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
   const I18N = {
-    title: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' },
-    noBookings: { fr: 'Aucune réservation pour cette étape', en: 'No bookings for this step', es: 'Sin reservas para esta etapa', it: 'Nessuna prenotazione per questa tappa', pt: 'Sem reservas para esta etapa', ar: 'لا حجوزات لهذه المرحلة' },
-    close: { fr: 'Fermer', en: 'Close', es: 'Cerrar', it: 'Chiudi', pt: 'Fechar', ar: 'إغلاق' },
-    outbound: { fr: 'ALLER', en: 'OUTBOUND', es: 'IDA', it: 'ANDATA', pt: 'IDA', ar: 'ذهاب' },
-    return: { fr: 'RETOUR', en: 'RETURN', es: 'VUELTA', it: 'RITORNO', pt: 'VOLTA', ar: 'عودة' },
-    pickup: { fr: 'PRISE EN CHARGE', en: 'PICKUP', es: 'RECOGIDA', it: 'RITIRO', pt: 'RETIRADA', ar: 'استلام' },
-    dropoff: { fr: 'RESTITUTION', en: 'DROPOFF', es: 'DEVOLUCIÓN', it: 'RICONSEGNA', pt: 'DEVOLUÇÃO', ar: 'تسليم' },
-    duration: { fr: 'Durée', en: 'Duration', es: 'Duración', it: 'Durata', pt: 'Duração', ar: 'المدة' },
-    mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' },
-    fuel: { fr: 'Carburant', en: 'Fuel', es: 'Combustible', it: 'Carburante', pt: 'Combustível', ar: 'الوقود' },
-    addToCalendar: { fr: '📅 Calendrier', en: '📅 Calendar', es: '📅 Calendario', it: '📅 Calendario', pt: '📅 Calendário', ar: '📅 التقويم' },
-    addAllToCalendar: { fr: '📅 Tout ajouter au calendrier', en: '📅 Add all to calendar', es: '📅 Añadir todo al calendario', it: '📅 Aggiungi tutto al calendario', pt: '📅 Adicionar tudo ao calendário', ar: '📅 إضافة الكل للتقويم' }
+    title: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' , nl: 'Boekingen', de: 'Buchungen'},
+    noBookings: { fr: 'Aucune réservation pour cette étape', en: 'No bookings for this step', es: 'Sin reservas para esta etapa', it: 'Nessuna prenotazione per questa tappa', pt: 'Sem reservas para esta etapa', ar: 'لا حجوزات لهذه المرحلة' , nl: 'Geen boekingen voor deze stop', de: 'Keine Buchungen für diese Etappe'},
+    close: { fr: 'Fermer', en: 'Close', es: 'Cerrar', it: 'Chiudi', pt: 'Fechar', ar: 'إغلاق' , nl: 'Sluiten', de: 'Schließen'},
+    outbound: { fr: 'ALLER', en: 'OUTBOUND', es: 'IDA', it: 'ANDATA', pt: 'IDA', ar: 'ذهاب' , nl: 'HEENREIS', de: 'HINREISE'},
+    return: { fr: 'RETOUR', en: 'RETURN', es: 'VUELTA', it: 'RITORNO', pt: 'VOLTA', ar: 'عودة' , nl: 'TERUGREIS', de: 'RÜCKREISE'},
+    pickup: { fr: 'PRISE EN CHARGE', en: 'PICKUP', es: 'RECOGIDA', it: 'RITIRO', pt: 'RETIRADA', ar: 'استلام' , nl: 'OPHALEN', de: 'ABHOLUNG'},
+    dropoff: { fr: 'RESTITUTION', en: 'DROPOFF', es: 'DEVOLUCIÓN', it: 'RICONSEGNA', pt: 'DEVOLUÇÃO', ar: 'تسليم' , nl: 'INLEVEREN', de: 'RÜCKGABE'},
+    duration: { fr: 'Durée', en: 'Duration', es: 'Duración', it: 'Durata', pt: 'Duração', ar: 'المدة' , nl: 'Duur', de: 'Dauer'},
+    mileage: { fr: 'Kilométrage', en: 'Mileage', es: 'Kilometraje', it: 'Chilometraggio', pt: 'Quilometragem', ar: 'المسافة' , nl: 'Kilometerstand', de: 'Kilometerstand'},
+    fuel: { fr: 'Carburant', en: 'Fuel', es: 'Combustible', it: 'Carburante', pt: 'Combustível', ar: 'الوقود' , nl: 'Brandstof', de: 'Kraftstoff'},
+    addToCalendar: { fr: '📅 Calendrier', en: '📅 Calendar', es: '📅 Calendario', it: '📅 Calendario', pt: '📅 Calendário', ar: '📅 التقويم' , nl: '📅 Agenda', de: '📅 Kalender'},
+    addAllToCalendar: { fr: '📅 Tout ajouter au calendrier', en: '📅 Add all to calendar', es: '📅 Añadir todo al calendario', it: '📅 Aggiungi tutto al calendario', pt: '📅 Adicionar tudo ao calendário', ar: '📅 إضافة الكل للتقويم' , nl: '📅 Alles aan de agenda toevoegen', de: '📅 Alles zum Kalender hinzufügen'}
   };
-  const t = (key) => I18N[key]?.[lang] || I18N[key]?.fr || key;
+  const t = (key) => I18N[key]?.[lang] || I18N[key]?.en || key;
   
   // Formater la durée
   const formatDuration = (minutes) => {
@@ -4531,7 +4542,7 @@ function openBookingsModal(stepIdx, stepName) {
     try {
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return dateStr;
-      return d.toLocaleDateString(lang || 'fr', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      return d.toLocaleDateString(ortDateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch (e) {
       return dateStr;
     }
@@ -4796,10 +4807,10 @@ function setTitleTranslated(raw){
     es: "Pasas a pantalla completa. Pasa el ratón sobre una etapa para ver su descripción. Haz clic para definir el orden (1→n). Doble clic para eliminar una etapa. Usa \"Validar\" para aplicar los cambios, o \"Salir\" para cancelar.",
     pt: "Você está entrando em tela cheia. Passe o mouse sobre uma etapa para ver sua descrição. Clique para definir a ordem (1→n). Clique duas vezes para remover uma etapa. Use \"Validar\" para aplicar as alterações ou \"Sair\" para cancelar.",
     ar: "أنت تدخل وضع ملء الشاشة. مرر فوق خطوة لرؤية وصفها. انقر لتحديد الترتيب (1→n). انقر مرتين لإزالة خطوة. استخدم \"تأكيد\" لتطبيق التغييرات، أو \"خروج\" للإلغاء."
-  };
+  , nl: 'Je gaat naar volledig scherm. Beweeg over een stop om de beschrijving te zien. Klik om de volgorde te bepalen (1→n). Dubbelklik om een stop te verwijderen. Gebruik "Bevestigen" om de wijzigingen toe te passen, of "Afsluiten" om te annuleren.', de: 'Du wechselst in den Vollbildmodus. Fahre über eine Etappe, um ihre Beschreibung zu sehen. Klicke, um die Reihenfolge festzulegen (1→n). Doppelklicke, um eine Etappe zu entfernen. Nutze "Bestätigen", um die Änderungen zu übernehmen, oder "Beenden", um abzubrechen.'};
   
   if (btnFull) {
-    btnFull.title = FULLSCREEN_HELP[LANG] || FULLSCREEN_HELP.fr;
+    btnFull.title = FULLSCREEN_HELP[LANG] || FULLSCREEN_HELP.en;
   }
 
   function applyView(mode){
@@ -5195,8 +5206,8 @@ function dateTipLabel(){
     es:'Primera/última noche',
     pt:'Primeira/última noite',
     ar:'أول/آخر ليلة'
-  };
-  return MAP[lang]||MAP.fr;
+  , nl: 'Eerste/laatste nacht', de: 'Erste/letzte Nacht'};
+  return MAP[lang]||MAP.en;
 }
 
 // haversineDistance() → fourni par ort-utils.js
@@ -6199,12 +6210,12 @@ function renderPracticalContext() {
   // Utiliser le système I18N centralisé
   const t = (key) => {
     const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
-    return window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.fr || key;
+    return window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
   };
   
   // I18N local pour "Notes"
   const _lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
-  const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات'})[_lang] || 'Notes';
+  const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات', nl: 'Opmerkingen', de: 'Hinweise'})[_lang] || 'Notes';
   
   let html = '';
   
@@ -6267,7 +6278,7 @@ function showNightsAdjustmentAlert(adjustment){
       es: '⚠️ Difícil respetar el número de noches',
       pt: '⚠️ Difícil respeitar o número de noites',
       ar: '⚠️ صعوبة في الالتزام بعدد الليالي'
-    },
+    , nl: '⚠️ Aantal nachten moeilijk haalbaar', de: '⚠️ Anzahl der Nächte schwer einzuhalten'},
     message: {
       fr: `Le nombre de nuits demandé (${targetNights}) est difficile à respecter compte tenu du nombre d'étapes. Actuellement : ${allocated} nuits.`,
       en: `The requested nights (${targetNights}) is difficult to achieve given the number of stops. Currently: ${allocated} nights.`,
@@ -6275,7 +6286,7 @@ function showNightsAdjustmentAlert(adjustment){
       es: `El número de noches solicitado (${targetNights}) es difícil de respetar dado el número de etapas. Actualmente: ${allocated} noches.`,
       pt: `O número de noites solicitado (${targetNights}) é difícil de respeitar dado o número de etapas. Atualmente: ${allocated} noites.`,
       ar: `عدد الليالي المطلوب (${targetNights}) صعب التحقيق نظراً لعدد المحطات. حالياً: ${allocated} ليالي.`
-    },
+    , nl: `Het gevraagde aantal nachten (${targetNights}) is moeilijk haalbaar met dit aantal stops. Nu: ${allocated} nachten.`, de: `Die gewünschte Anzahl Nächte (${targetNights}) ist bei dieser Etappenzahl schwer einzuhalten. Aktuell: ${allocated} Nächte.`},
     forceZero: {
       fr: `Forcer ${diff} passage(s) sans nuit`,
       en: `Force ${diff} stop(s) without overnight`,
@@ -6283,7 +6294,7 @@ function showNightsAdjustmentAlert(adjustment){
       es: `Forzar ${diff} parada(s) sin noche`,
       pt: `Forçar ${diff} paragem(ns) sem pernoite`,
       ar: `فرض ${diff} توقف بدون مبيت`
-    },
+    , nl: `${diff} doorreis(zen) zonder overnachting afdwingen`, de: `${diff} Durchfahrt(en) ohne Übernachtung erzwingen`},
     keepNights: {
       fr: `Garder ${allocated} nuits (recommandé)`,
       en: `Keep ${allocated} nights (recommended)`,
@@ -6291,7 +6302,7 @@ function showNightsAdjustmentAlert(adjustment){
       es: `Mantener ${allocated} noches (recomendado)`,
       pt: `Manter ${allocated} noites (recomendado)`,
       ar: `الإبقاء على ${allocated} ليالي (موصى به)`
-    },
+    , nl: `${allocated} nachten behouden (aanbevolen)`, de: `${allocated} Nächte behalten (empfohlen)`},
     warning: {
       fr: `Étapes concernées : ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`,
       en: `Affected stops: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`,
@@ -6299,7 +6310,7 @@ function showNightsAdjustmentAlert(adjustment){
       es: `Etapas afectadas: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`,
       pt: `Etapas afetadas: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`,
       ar: `المحطات المتأثرة: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`
-    }
+    , nl: `Betrokken stops: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`, de: `Betroffene Etappen: ${candidates.slice(0, 3).join(', ')}${candidates.length > 3 ? '...' : ''}`}
   };
   
   const overlay = document.createElement('div');
@@ -6313,15 +6324,15 @@ function showNightsAdjustmentAlert(adjustment){
   
   overlay.innerHTML = `
     <div style="background:#fff; color:#113f7a; border-radius:16px; padding:24px; max-width:420px; width:90%; box-shadow:0 12px 40px rgba(0,0,0,.3);">
-      <h3 style="margin:0 0 16px; font-size:1.2rem;">${t.title[lang] || t.title.fr}</h3>
-      <p style="margin:0 0 12px; line-height:1.5;">${t.message[lang] || t.message.fr}</p>
-      <p style="margin:0 0 20px; font-size:0.9rem; color:#64748b;">${t.warning[lang] || t.warning.fr}</p>
+      <h3 style="margin:0 0 16px; font-size:1.2rem;">${t.title[lang] || t.title.en}</h3>
+      <p style="margin:0 0 12px; line-height:1.5;">${t.message[lang] || t.message.en}</p>
+      <p style="margin:0 0 20px; font-size:0.9rem; color:#64748b;">${t.warning[lang] || t.warning.en}</p>
       <div style="display:flex; flex-direction:column; gap:10px;">
         <button id="alertForceZero" style="padding:12px; border-radius:10px; border:1px solid #dc2626; background:#fee2e2; color:#dc2626; font-weight:600; cursor:pointer;">
-          ${t.forceZero[lang] || t.forceZero.fr}
+          ${t.forceZero[lang] || t.forceZero.en}
         </button>
         <button id="alertKeepNights" style="padding:12px; border-radius:10px; border:none; background:#113f7a; color:#fff; font-weight:600; cursor:pointer;">
-          ${t.keepNights[lang] || t.keepNights.fr}
+          ${t.keepNights[lang] || t.keepNights.en}
         </button>
       </div>
     </div>
@@ -6714,7 +6725,7 @@ function renderTripBookings() {
         other: 'bookingCategoryOther'
       };
       const i18nKey = categoryMap[category];
-      return window.ORT_I18N?.[i18nKey]?.[lang] || window.ORT_I18N?.[i18nKey]?.fr || category;
+      return window.ORT_I18N?.[i18nKey]?.[lang] || window.ORT_I18N?.[i18nKey]?.en || category;
     };
     const catLabel = getCatLabel(cat);
     
@@ -6742,11 +6753,11 @@ function renderRow(step,idx){
   // I18N local pour les tooltips
   const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
   const ROW_I18N = {
-    viewPhotos: { fr:'Voir les photos', en:'View photos', es:'Ver fotos', it:'Vedi foto', pt:'Ver fotos', ar:'عرض الصور' },
-    copyStep: { fr:'Copier cette étape', en:'Copy this step', es:'Copiar esta etapa', it:'Copia questa tappa', pt:'Copiar esta etapa', ar:'نسخ هذه المرحلة' },
-    chooseHotel: { fr:'Voir les hôtels', en:'See hotels', es:'Ver hoteles', it:'Vedi hotel', pt:'Ver hotéis', ar:'عرض الفنادق' }
+    viewPhotos: { fr:'Voir les photos', en:'View photos', es:'Ver fotos', it:'Vedi foto', pt:'Ver fotos', ar:'عرض الصور' , nl: 'Foto\'s bekijken', de: 'Fotos ansehen'},
+    copyStep: { fr:'Copier cette étape', en:'Copy this step', es:'Copiar esta etapa', it:'Copia questa tappa', pt:'Copiar esta etapa', ar:'نسخ هذه المرحلة' , nl: 'Deze stop kopiëren', de: 'Diese Etappe kopieren'},
+    chooseHotel: { fr:'Voir les hôtels', en:'See hotels', es:'Ver hoteles', it:'Vedi hotel', pt:'Ver hotéis', ar:'عرض الفنادق' , nl: 'Hotels bekijken', de: 'Hotels ansehen'}
   };
-  const t = (key) => ROW_I18N[key]?.[lang] || ROW_I18N[key]?.fr || key;
+  const t = (key) => ROW_I18N[key]?.[lang] || ROW_I18N[key]?.en || key;
 
   const row=document.createElement('div');
   row.className='step-row';
@@ -6856,10 +6867,10 @@ place.innerHTML=`
       it: "Clicca per vedere attività e visite",
       pt: "Clique para ver atividades e visitas",
       ar: "انقر لعرض الأنشطة والزيارات"
-    };
+    , nl: 'Klik om de activiteiten en bezienswaardigheden te zien', de: 'Klicke, um Aktivitäten und Sehenswürdigkeiten zu sehen'};
     
     const lang = localStorage.getItem('lang') || document.documentElement.lang || 'fr';
-    const tooltipText = tooltipTexts[lang] || tooltipTexts.fr;
+    const tooltipText = tooltipTexts[lang] || tooltipTexts.en;
     
   // Hover : montrer tooltip (Nom complet + message)
 nameLink.addEventListener('mouseenter', (e) => {
@@ -6984,8 +6995,8 @@ dateCell.style.textAlign='left';
     es:'Primera/última noche',
     pt:'Primeira/última noite',
     ar:'أول/آخر ليلة'
-  };
-  dateCell.title = TIP[lang] || TIP.fr;
+  , nl: 'Eerste/laatste nacht', de: 'Erste/letzte Nacht'};
+  dateCell.title = TIP[lang] || TIP.en;
 
   // Si pas de date globale définie, on affiche un tiret
   const startStr = (state.startDateStr||'').trim();
@@ -7013,7 +7024,7 @@ dateCell.style.textAlign='left';
   const fmt = (d)=>{
 
     try {
-      const l = (document.documentElement.lang||'fr');
+      const l = ortDateLocale();
       return d.toLocaleDateString(l, { day:'2-digit', month:'short' });
     } catch(_){
       const dd = String(d.getDate()).padStart(2,'0');
@@ -7271,23 +7282,23 @@ function createStepDetailsPanel(step, idx) {
   
   // Textes I18N pour tooltips
   const I18N = {
-    visits: { fr:'Visites prévues', en:'Planned visits', es:'Visitas previstas', it:'Visite previste', pt:'Visitas previstas', ar:'الزيارات المخططة' },
-    activities: { fr:'Activités', en:'Activities', es:'Actividades', it:'Attività', pt:'Atividades', ar:'الأنشطة' },
-    addVisit: { fr:'Ajouter une visite...', en:'Add a visit...', es:'Añadir una visita...', it:'Aggiungi una visita...', pt:'Adicionar uma visita...', ar:'إضافة زيارة...' },
-    addActivity: { fr:'Ajouter une activité...', en:'Add an activity...', es:'Añadir una actividad...', it:'Aggiungi un\'attività...', pt:'Adicionar uma atividade...', ar:'إضافة نشاط...' },
-    add: { fr:'+', en:'+', es:'+', it:'+', pt:'+', ar:'+' },
-    proposePhoto: { fr:'Proposer une photo libre de droit', en:'Suggest a royalty-free photo', es:'Proponer una foto libre de derechos', it:'Proponi una foto royalty-free', pt:'Propor uma foto livre de direitos', ar:'اقتراح صورة مجانية' },
-    reportError: { fr:'Signaler une erreur sur ce lieu', en:'Report an error on this place', es:'Reportar un error en este lugar', it:'Segnala un errore su questo luogo', pt:'Reportar um erro neste lugar', ar:'الإبلاغ عن خطأ في هذا المكان' },
-    bookActivity: { fr:'Activités & tours', en:'Activities & tours', es:'Actividades y tours', it:'Attività e tour', pt:'Atividades e tours', ar:'الأنشطة والجولات' },
-    bookTickets: { fr:'Visites & billets', en:'Visits & tickets', es:'Visitas y entradas', it:'Visite e biglietti', pt:'Visitas e bilhetes', ar:'الزيارات والتذاكر' },
-    bookShows: { fr:'Spectacles', en:'Shows', es:'Espectáculos', it:'Spettacoli', pt:'Espetáculos', ar:'العروض' },
-    bookGuide: { fr:'Réserver un guide (bientôt)', en:'Book a guide (coming soon)', es:'Reservar un guía (próximamente)', it:'Prenota una guida (prossimamente)', pt:'Reservar um guia (em breve)', ar:'حجز مرشد (قريباً)' },
-    noVisits: { fr:'Aucune visite prévue', en:'No visits planned', es:'Sin visitas previstas', it:'Nessuna visita prevista', pt:'Nenhuma visita prevista', ar:'لا توجد زيارات مخططة' },
-    noActivities: { fr:'Aucune activité', en:'No activities', es:'Sin actividades', it:'Nessuna attività', pt:'Nenhuma atividade', ar:'لا توجد أنشطة' },
-    seeOnMaps: { fr:'Voir sur Google Maps', en:'See on Google Maps', es:'Ver en Google Maps', it:'Vedi su Google Maps', pt:'Ver no Google Maps', ar:'عرض على خرائط جوجل' },
-    clickToEnlarge: { fr:'Cliquez pour agrandir', en:'Click to enlarge', es:'Clic para ampliar', it:'Clicca per ingrandire', pt:'Clique para ampliar', ar:'انقر للتكبير' }
+    visits: { fr:'Visites prévues', en:'Planned visits', es:'Visitas previstas', it:'Visite previste', pt:'Visitas previstas', ar:'الزيارات المخططة' , nl: 'Geplande bezoeken', de: 'Geplante Besichtigungen'},
+    activities: { fr:'Activités', en:'Activities', es:'Actividades', it:'Attività', pt:'Atividades', ar:'الأنشطة' , nl: 'Activiteiten', de: 'Aktivitäten'},
+    addVisit: { fr:'Ajouter une visite...', en:'Add a visit...', es:'Añadir una visita...', it:'Aggiungi una visita...', pt:'Adicionar uma visita...', ar:'إضافة زيارة...' , nl: 'Een bezienswaardigheid toevoegen...', de: 'Sehenswürdigkeit hinzufügen...'},
+    addActivity: { fr:'Ajouter une activité...', en:'Add an activity...', es:'Añadir una actividad...', it:'Aggiungi un\'attività...', pt:'Adicionar uma atividade...', ar:'إضافة نشاط...' , nl: 'Een activiteit toevoegen...', de: 'Aktivität hinzufügen...'},
+    add: { fr:'+', en:'+', es:'+', it:'+', pt:'+', ar:'+' , nl: '+', de: '+'},
+    proposePhoto: { fr:'Proposer une photo libre de droit', en:'Suggest a royalty-free photo', es:'Proponer una foto libre de derechos', it:'Proponi una foto royalty-free', pt:'Propor uma foto livre de direitos', ar:'اقتراح صورة مجانية' , nl: 'Een rechtenvrije foto voorstellen', de: 'Ein lizenzfreies Foto vorschlagen'},
+    reportError: { fr:'Signaler une erreur sur ce lieu', en:'Report an error on this place', es:'Reportar un error en este lugar', it:'Segnala un errore su questo luogo', pt:'Reportar um erro neste lugar', ar:'الإبلاغ عن خطأ في هذا المكان' , nl: 'Een fout over deze plaats melden', de: 'Einen Fehler zu diesem Ort melden'},
+    bookActivity: { fr:'Activités & tours', en:'Activities & tours', es:'Actividades y tours', it:'Attività e tour', pt:'Atividades e tours', ar:'الأنشطة والجولات' , nl: 'Activiteiten & tours', de: 'Aktivitäten & Touren'},
+    bookTickets: { fr:'Visites & billets', en:'Visits & tickets', es:'Visitas y entradas', it:'Visite e biglietti', pt:'Visitas e bilhetes', ar:'الزيارات والتذاكر' , nl: 'Bezienswaardigheden & tickets', de: 'Sehenswürdigkeiten & Tickets'},
+    bookShows: { fr:'Spectacles', en:'Shows', es:'Espectáculos', it:'Spettacoli', pt:'Espetáculos', ar:'العروض' , nl: 'Voorstellingen', de: 'Veranstaltungen'},
+    bookGuide: { fr:'Réserver un guide (bientôt)', en:'Book a guide (coming soon)', es:'Reservar un guía (próximamente)', it:'Prenota una guida (prossimamente)', pt:'Reservar um guia (em breve)', ar:'حجز مرشد (قريباً)' , nl: 'Een gids boeken (binnenkort)', de: 'Guide buchen (bald)'},
+    noVisits: { fr:'Aucune visite prévue', en:'No visits planned', es:'Sin visitas previstas', it:'Nessuna visita prevista', pt:'Nenhuma visita prevista', ar:'لا توجد زيارات مخططة' , nl: 'Geen bezoeken gepland', de: 'Keine Besichtigungen geplant'},
+    noActivities: { fr:'Aucune activité', en:'No activities', es:'Sin actividades', it:'Nessuna attività', pt:'Nenhuma atividade', ar:'لا توجد أنشطة' , nl: 'Geen activiteiten', de: 'Keine Aktivitäten'},
+    seeOnMaps: { fr:'Voir sur Google Maps', en:'See on Google Maps', es:'Ver en Google Maps', it:'Vedi su Google Maps', pt:'Ver no Google Maps', ar:'عرض على خرائط جوجل' , nl: 'Bekijken op Google Maps', de: 'Auf Google Maps ansehen'},
+    clickToEnlarge: { fr:'Cliquez pour agrandir', en:'Click to enlarge', es:'Clic para ampliar', it:'Clicca per ingrandire', pt:'Clique para ampliar', ar:'انقر للتكبير' , nl: 'Klik om te vergroten', de: 'Zum Vergrößern klicken'}
   };
-  const t = (key) => I18N[key]?.[lang] || I18N[key]?.fr || key;
+  const t = (key) => I18N[key]?.[lang] || I18N[key]?.en || key;
   
   const panel = document.createElement('div');
   panel.className = 'step-details-panel';
@@ -7343,7 +7354,7 @@ function createStepDetailsPanel(step, idx) {
     const getLabel = (k) => {
       const i18nKey = i18nKeys[k];
       if (i18nKey && window.ORT_I18N?.[i18nKey]) {
-        return window.ORT_I18N[i18nKey][lang] || window.ORT_I18N[i18nKey].fr || k;
+        return window.ORT_I18N[i18nKey][lang] || window.ORT_I18N[i18nKey].en || k;
       }
       return k;
     };
@@ -7740,8 +7751,8 @@ const BUDGET_TO_PRICE = {
 function trLabel(lang, key){
   lang = (lang||'fr').slice(0,2).toLowerCase();
   const MAP = {
-    visits:     { fr:'Visites',    en:'Visits',     it:'Visite',    es:'Visitas',   pt:'Visitas',   ar:'الزيارات' },
-    activities: { fr:'Activités',  en:'Activities', it:'Attività',  es:'Actividades', pt:'Atividades', ar:'الأنشطة' }
+    visits:     { fr:'Visites',    en:'Visits',     it:'Visite',    es:'Visitas',   pt:'Visitas',   ar:'الزيارات' , nl: 'Bezienswaardigheden', de: 'Sehenswürdigkeiten'},
+    activities: { fr:'Activités',  en:'Activities', it:'Attività',  es:'Actividades', pt:'Atividades', ar:'الأنشطة' , nl: 'Activiteiten', de: 'Aktivitäten'}
   };
   return (MAP[key] && MAP[key][lang]) ? MAP[key][lang] : (MAP[key]?.fr || key);
 }
@@ -8089,9 +8100,9 @@ document.getElementById('btnRecalcNights')?.addEventListener('click', () => {
     es: '¿Recalcular las noches automáticamente?\n\nEsto sobrescribirá sus cambios manuales.',
     pt: 'Recalcular as noites automaticamente?\n\nIsso substituirá suas alterações manuais.',
     ar: 'إعادة حساب الليالي تلقائياً؟\n\nسيؤدي ذلك إلى استبدال تغييراتك اليدوية.'
-  };
+  , nl: 'De nachten automatisch opnieuw berekenen?\n\nDit overschrijft je handmatige wijzigingen van de nachten.', de: 'Die Nächte automatisch neu berechnen?\n\nDas überschreibt deine manuellen Änderungen an den Nächten.'};
   
-  if (!confirm(confirmMsg[lang] || confirmMsg.fr)) return;
+  if (!confirm(confirmMsg[lang] || confirmMsg.en)) return;
   
   // Fermer le popup
   document.getElementById('toolsPop')?.classList.remove('show');
@@ -8121,10 +8132,10 @@ document.getElementById('btnRecalcNights')?.addEventListener('click', () => {
     es: '🔢 ¡Noches recalculadas!',
     pt: '🔢 Noites recalculadas!',
     ar: '🔢 تم إعادة حساب الليالي!'
-  };
+  , nl: '🔢 Nachten opnieuw berekend!', de: '🔢 Nächte neu berechnet!'};
   
   if (typeof toast === 'function') {
-    toast(successMsg[lang] || successMsg.fr);
+    toast(successMsg[lang] || successMsg.en);
   }
   
   console.log('[LOG-CONTROLE][NIGHTS] Nuits recalculées manuellement');
@@ -8328,7 +8339,7 @@ OtherCtl.onAdd = function(){
   const label = {
     fr:'Autres lieux', en:'Other places', es:'Otros lugares',
     it:'Altri luoghi', pt:'Outros lugares', ar:'أماكن أخرى'
-  }[lang] || 'Other places';
+  , nl: 'Andere plaatsen', de: 'Andere Orte'}[lang] || 'Other places';
   div.innerHTML = `
     <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;font:600 13px/1 system-ui;background:#fff;border:2px solid #cfd6e4;border-radius:8px;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.1)">
       <input id="toggleOtherPlaces" type="checkbox" checked style="margin:0;cursor:pointer;width:16px;height:16px">
@@ -9188,7 +9199,7 @@ function renderLoopLegend(loopGroups) {
     es: { title: 'Bucles', loop: 'Bucle {n}', links: 'Enlaces' },
     pt: { title: 'Circuitos', loop: 'Circuito {n}', links: 'Ligações' },
     ar: { title: 'الحلقات', loop: 'الحلقة {n}', links: 'التنقلات' }
-  })[lang] || { title: 'Boucles', loop: 'Boucle {n}', links: 'Liaisons' };
+  , nl: {"title":'Lussen',"loop":'Lus {n}',"links":'Verbindingen'}, de: {"title":'Schleifen',"loop":'Schleife {n}',"links":'Verbindungen'}})[lang] || { title: 'Boucles', loop: 'Boucle {n}', links: 'Liaisons' };
 
   let box = document.getElementById('loopLegend');
   if (box) box.remove();
@@ -11133,7 +11144,7 @@ renderRows();
       "Unique Experiences":"تجارب فريدة",
       unavailable:"الدليل غير متاح."
     }
-  }[ui] || I18N_fallback();
+  , nl: {"Safety Warning":'Veiligheidswaarschuwingen',"Best Time to Visit":'Beste reisperiode',"Iconic Places to Visit":'Iconische plaatsen',"Best Transportation":'Vervoer',"Daily Budget for Two People":'Budget (2 pers.)',"Essential Tips":'Belangrijke tips',"Unique Experiences":'Unieke ervaringen',"unavailable":'Gids niet beschikbaar.'}, de: {"Safety Warning":'Sicherheitshinweise',"Best Time to Visit":'Beste Reisezeit',"Iconic Places to Visit":'Ikonische Orte',"Best Transportation":'Verkehrsmittel',"Daily Budget for Two People":'Budget (2 Pers.)',"Essential Tips":'Wichtige Tipps',"Unique Experiences":'Einzigartige Erlebnisse',"unavailable":'Reiseführer nicht verfügbar.'}}[ui] || I18N_fallback();
   function I18N_fallback(){return {unavailable:"Guide unavailable."};}
 
   function boldOnly(s){
@@ -11221,8 +11232,8 @@ if (typeof window.showSaveBeforeShareModal !== 'function') {
       it: 'Per favore salva il tuo viaggio prima di condividerlo.\n\nClicca sul pulsante "Salva" in alto nella pagina.',
       pt: 'Por favor, salve sua viagem antes de compartilhá-la.\n\nClique no botão "Salvar" no topo da página.',
       ar: 'يرجى حفظ رحلتك أولاً قبل مشاركتها.\n\nانقر على زر "حفظ" في أعلى الصفحة.'
-    };
-    alert(messages[lang] || messages.fr);
+    , nl: 'Sla je reis eerst op voordat je hem deelt.\n\nKlik op de knop "Opslaan" boven aan de pagina.', de: 'Speichere deine Reise zuerst, bevor du sie teilst.\n\nKlicke oben auf der Seite auf "Speichern".'};
+    alert(messages[lang] || messages.en);
     // Highlight le bouton save
     const saveBtn = document.getElementById('btnSave');
     if (saveBtn) {
@@ -11242,8 +11253,8 @@ window.showLoginModalForSave = function() {
       it: { msg: "Devi essere registrato per salvare questo viaggio nella tua dashboard.", close: "Chiudi" },
       pt: { msg: "Você precisa estar registrado para salvar esta viagem no seu painel.", close: "Fechar" },
       ar: { msg: "يجب أن تكون مسجلاً لحفظ هذه الرحلة في لوحة التحكم.", close: "إغلاق" }
-    };
-    const t = i18n[lang] || i18n.fr;
+    , nl: {"msg":'Je moet geregistreerd zijn om deze reis in je dashboard op te slaan.',"close":'Sluiten'}, de: {"msg":'Du musst registriert sein, um diese Reise in deinem Dashboard zu speichern.',"close":'Schließen'}};
+    const t = i18n[lang] || i18n.en;
     const isRTL = (lang === 'ar');
 
     document.getElementById('loginRequiredModal')?.remove();
@@ -11329,7 +11340,7 @@ window.showLoginModalForSave = function() {
         it: 'Segnala un errore o suggerimento',
         pt: 'Reportar um erro ou sugestão',
         ar: 'الإبلاغ عن خطأ أو اقتراح'
-      }[lang] || 'Report';
+      , nl: 'Een fout of verbetering melden', de: 'Einen Fehler oder eine Verbesserung melden'}[lang] || 'Report';
       
       const note = prompt(tipMsg + '\n\nÉcrivez votre message :');
       if(!note || !note.trim()) return;
@@ -11596,7 +11607,7 @@ const infoCloseBtn = modal?.querySelector('.btn-close-info');
       line5: '⚠️ التحقق ضروري في نهاية إعادة الترتيب لحفظ التغييرات.',
   close: 'فهمت'
     }
-  };
+  , nl: {"btnTitle":'Herschikken',"title":'Route herschikken',"line1":'<strong>1e enkele klik</strong> op een stop: begin van de route',"line2":'<strong>2e enkele klik</strong>: tweede stop van je route',"line3":'<strong>Dubbelklik</strong>: stop verwijderen',"line4":'<strong>Opnieuw dubbelklikken</strong>: stop weer opnemen',"line5":'⚠️ Aan het eind moet je bevestigen om je wijzigingen op te slaan.',"close":'Begrepen'}, de: {"btnTitle":'Neu ordnen',"title":'Route neu ordnen',"line1":'<strong>1. einfacher Klick</strong> auf eine Etappe: Beginn der Route',"line2":'<strong>2. einfacher Klick</strong>: zweite Etappe deiner Route',"line3":'<strong>Doppelklick</strong>: Etappe entfernen',"line4":'<strong>Erneuter Doppelklick</strong>: Etappe wieder aufnehmen',"line5":'⚠️ Am Ende musst du bestätigen, um deine Änderungen zu speichern.',"close":'Verstanden'}};
 
   // Traductions pour le panneau de réorganisation
 const PANEL_I18N = {
@@ -11737,12 +11748,12 @@ const PANEL_I18N = {
     nights: 'ليلة',
     nightsPlural: 'ليالٍ'
   }
-};
+, nl: {"panelTitle":'🔄 Herschikking',"inst1":'Enkele klik',"inst1b":'Aan de nieuwe volgorde toevoegen',"inst2":'Dubbelklik',"inst2b":'Verwijderen / opnieuw opnemen',"save":'💾 Opslaan',"preview":'👁️ Voorbeeld',"invert":'Route omkeren',"reset":'Wijzigingen annuleren en terugkeren',"invertHelp":'De huidige volgorde omkeren (de nieuwe volgorde krijgt voorrang, anders de oorspronkelijke).',"resetHelp":'Alle wijzigingen (volgorde/verwijderingen) annuleren en terugkeren naar de oorspronkelijke route.',"previewTitle":'Voorbeeld van de nieuwe route',"validate":'✓ Bevestigen',"cancel":'✕ Annuleren',"deleted":'Verwijderd',"noSteps":'Geen stops om te herschikken',"mustKeepOne":'Je moet minstens één stop behouden!',"saved":'✅ Herschikking opgeslagen!',"nights":'nacht',"nightsPlural":'nachten'}, de: {"panelTitle":'🔄 Neuordnung',"inst1":'Einfacher Klick',"inst1b":'Zur neuen Reihenfolge hinzufügen',"inst2":'Doppelklick',"inst2b":'Entfernen / wieder aufnehmen',"save":'💾 Speichern',"preview":'👁️ Vorschau',"invert":'Route umkehren',"reset":'Änderungen verwerfen und zurück',"invertHelp":'Die aktuelle Reihenfolge umkehren (die neue Reihenfolge hat Vorrang, sonst die ursprüngliche).',"resetHelp":'Alle Änderungen (Reihenfolge/Löschungen) verwerfen und zur ursprünglichen Route zurückkehren.',"previewTitle":'Vorschau der neuen Route',"validate":'✓ Bestätigen',"cancel":'✕ Abbrechen',"deleted":'Gelöscht',"noSteps":'Keine Etappen zum Neuordnen',"mustKeepOne":'Du musst mindestens eine Etappe behalten!',"saved":'✅ Neuordnung gespeichert!',"nights":'Nacht',"nightsPlural":'Nächte'}};
 
  
 
-  const t = I18N[LANG] || I18N.fr;
-  const tPanel = PANEL_I18N[LANG] || PANEL_I18N.fr;
+  const t = I18N[LANG] || I18N.en;
+  const tPanel = PANEL_I18N[LANG] || PANEL_I18N.en;
    // === [ADD] Mémo "modale info déjà vue" par utilisateur ===
   const uidForSeen = (typeof currentUser==='function' && currentUser() && currentUser().uid)
                    || localStorage.getItem('ort.lastUid')
@@ -14700,7 +14711,7 @@ if ('serviceWorker' in navigator) {
 
   function tAi(key) {
     var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
-    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['fr'] || '';
+    if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['en'] || '';
     return '';
   }
   function escH(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -14731,6 +14742,7 @@ if ('serviceWorker' in navigator) {
     if ($('btnAiSummary'))            $('btnAiSummary').textContent = tAi('aiSummaryGenerate');
     if ($('aiSummaryItineraryTitle')) $('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
     if ($('btnCopyAiSummary'))        $('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
+    if ($('btnRegenAiSummary'))       $('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate');
   }
 
   window.toggleAiSummary = function() {
@@ -14756,7 +14768,7 @@ if ('serviceWorker' in navigator) {
   }
 
   // ===== GENERATE (requires auth) =====
-  window.generateAiSummary = async function() {
+  window.generateAiSummary = async function(force) {
     var btn = document.getElementById('btnAiSummary');
     var placeholder = document.getElementById('aiSummaryPlaceholder');
     var user = (window.firebase && window.firebase.auth && window.firebase.auth().currentUser) || null;
@@ -14786,7 +14798,7 @@ if ('serviceWorker' in navigator) {
       var res = await fetch(AI_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: window.state.title || 'Road Trip', steps: stepsPayload, language: lang })
+        body: JSON.stringify({ catalogId: catalogId || '', tripId: tripId || '', title: window.state.title || 'Road Trip', steps: stepsPayload, language: lang, force: !!force })
       });
       var data = await res.json();
       if (!res.ok || !data.success) {
@@ -14806,6 +14818,18 @@ if ('serviceWorker' in navigator) {
     } finally {
       btn.disabled = false; btn.textContent = tAi('aiSummaryGenerate'); btn.style.opacity = '1';
     }
+  };
+
+
+  // Relance du resume : ignore le resume deja enregistre et en redemande un
+  // a l IA. Consomme le quota mensuel, d ou la confirmation.
+  window.regenerateAiSummary = function() {
+    if (!window.confirm(tAi('aiSummaryRegenConfirm'))) return;
+    var res = document.getElementById('aiSummaryResult');
+    if (res) res.style.display = 'none';
+    var btn = document.getElementById('btnAiSummary');
+    if (btn) btn.style.display = '';
+    window.generateAiSummary(true);
   };
 
   // ===== RENDER =====
@@ -14875,7 +14899,7 @@ if ('serviceWorker' in navigator) {
     _aiPrinting = true;
     var title = (window.state && window.state.title) || 'Road Trip';
     var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
-    var date = new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    var date = new Date().toLocaleDateString(ortDateLocale(), { year: 'numeric', month: 'long', day: 'numeric' });
 
     // Build review HTML
     var reviewBox = document.getElementById('aiReviewContainer');
@@ -15001,8 +15025,8 @@ if ('serviceWorker' in navigator) {
       it: { msg: "Devi essere registrato per salvare questo viaggio nella tua dashboard.", close: "Chiudi" },
       pt: { msg: "Você precisa estar registrado para salvar esta viagem no seu painel.", close: "Fechar" },
       ar: { msg: "يجب أن تكون مسجلاً لحفظ هذه الرحلة في لوحة التحكم.", close: "إغلاق" }
-    };
-    const t = i18n[lang] || i18n.fr;
+    , nl: {"msg":'Je moet geregistreerd zijn om deze reis in je dashboard op te slaan.',"close":'Sluiten'}, de: {"msg":'Du musst registriert sein, um diese Reise in deinem Dashboard zu speichern.',"close":'Schließen'}};
+    const t = i18n[lang] || i18n.en;
     const isRTL = (lang === 'ar');
     document.getElementById('loginRequiredModal')?.remove();
     const modal = document.createElement('div');

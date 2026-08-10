@@ -23,51 +23,61 @@
 
   // === I18N ===
   const I18N = {
-    topHotels: { 
-      fr: 'Meilleurs hôtels', 
-      en: 'Top hotels', 
-      es: 'Mejores hoteles',
-      pt: 'Melhores hotéis', 
-      it: 'Migliori hotel', 
-      ar: 'أفضل الفنادق'
-    },
-    chooseOnMap: {
-      fr: 'Choisir sur la carte',
-      en: 'Choose on map',
-      es: 'Elegir en el mapa',
-      pt: 'Escolher no mapa',
-      it: 'Scegli sulla mappa',
-      ar: 'اختر على الخريطة'
-    },
-    loading: {
-      fr: 'Chargement des hôtels...',
-      en: 'Loading hotels...',
-      es: 'Cargando hoteles...',
-      pt: 'Carregando hotéis...',
-      it: 'Caricamento hotel...',
-      ar: 'جار تحميل الفنادق...'
-    },
-    noHotels: {
-      fr: 'Aucun hôtel disponible',
-      en: 'No hotels available',
-      es: 'No hay hoteles disponibles',
-      pt: 'Nenhum hotel disponível',
-      it: 'Nessun hotel disponibile',
-      ar: 'لا توجد فنادق متاحة'
-    },
-    viewHotels: {
-      fr: 'Voir les hôtels',
-      en: 'View hotels',
-      es: 'Ver hoteles',
-      pt: 'Ver hotéis',
-      it: 'Vedi hotel',
-      ar: 'عرض الفنادق'
-    }
+      "topHotels": {
+          "fr": "Meilleurs hôtels",
+          "en": "Top hotels",
+          "es": "Mejores hoteles",
+          "pt": "Melhores hotéis",
+          "it": "Migliori hotel",
+          "ar": "أفضل الفنادق",
+          "nl": "Beste hotels",
+          "de": "Top-Hotels"
+      },
+      "chooseOnMap": {
+          "fr": "Choisir sur la carte",
+          "en": "Choose on map",
+          "es": "Elegir en el mapa",
+          "pt": "Escolher no mapa",
+          "it": "Scegli sulla mappa",
+          "ar": "اختر على الخريطة",
+          "nl": "Kiezen op de kaart",
+          "de": "Auf der Karte auswählen"
+      },
+      "loading": {
+          "fr": "Chargement des hôtels...",
+          "en": "Loading hotels...",
+          "es": "Cargando hoteles...",
+          "pt": "Carregando hotéis...",
+          "it": "Caricamento hotel...",
+          "ar": "جار تحميل الفنادق...",
+          "nl": "Hotels laden...",
+          "de": "Hotels werden geladen..."
+      },
+      "noHotels": {
+          "fr": "Aucun hôtel disponible",
+          "en": "No hotels available",
+          "es": "No hay hoteles disponibles",
+          "pt": "Nenhum hotel disponível",
+          "it": "Nessun hotel disponibile",
+          "ar": "لا توجد فنادق متاحة",
+          "nl": "Geen hotels beschikbaar",
+          "de": "Keine Hotels verfügbar"
+      },
+      "viewHotels": {
+          "fr": "Voir les hôtels",
+          "en": "View hotels",
+          "es": "Ver hoteles",
+          "pt": "Ver hotéis",
+          "it": "Vedi hotel",
+          "ar": "عرض الفنادق",
+          "nl": "Hotels bekijken",
+          "de": "Hotels ansehen"
+      }
   };
 
   function t(key) {
     const lang = getLang();
-    return I18N[key]?.[lang] || I18N[key]?.fr || key;
+    return I18N[key]?.[lang] || I18N[key]?.en || key;
   }
 
   // === UTILITAIRES ===
@@ -78,7 +88,7 @@
 
   function getBookingLangSuffix() {
     const lang = getLang();
-    const suffixes = { fr: 'fr', en: 'en-gb', es: 'es', pt: 'pt-pt', it: 'it', ar: 'ar' };
+    const suffixes = { fr: 'fr', en: 'en-gb', es: 'es', pt: 'pt-pt', it: 'it', ar: 'ar', nl: 'nl', de: 'de' };
     return suffixes[lang] || 'en-gb';
   }
 

@@ -132,6 +132,47 @@
       allBookings: 'جميع الحجوزات',
       tripCalendar: 'تقويم الرحلة'
     }
+  ,
+    nl: {
+      flight: 'Vlucht',
+      outbound: 'Heenreis',
+      returnFlight: 'Terugreis',
+      hotel: 'Hotel',
+      checkin: 'Check-in',
+      checkout: 'Check-out',
+      carPickup: 'Auto ophalen',
+      carDropoff: 'Auto inleveren',
+      activity: 'Activiteit',
+      visit: 'Bezoek',
+      ref: 'Ref.',
+      addToCalendar: 'Aan agenda toevoegen',
+      downloadIcs: '.ics downloaden',
+      googleCalendar: 'Google Agenda',
+      appleCalendar: 'Apple Agenda',
+      outlookCalendar: 'Outlook',
+      allBookings: 'Alle boekingen',
+      tripCalendar: 'Reisagenda'
+    },
+    de: {
+      flight: 'Flug',
+      outbound: 'Hinflug',
+      returnFlight: 'Rückflug',
+      hotel: 'Hotel',
+      checkin: 'Check-in',
+      checkout: 'Check-out',
+      carPickup: 'Fahrzeugabholung',
+      carDropoff: 'Fahrzeugrückgabe',
+      activity: 'Aktivität',
+      visit: 'Besichtigung',
+      ref: 'Ref.',
+      addToCalendar: 'Zum Kalender hinzufügen',
+      downloadIcs: '.ics herunterladen',
+      googleCalendar: 'Google Kalender',
+      appleCalendar: 'Apple Kalender',
+      outlookCalendar: 'Outlook',
+      allBookings: 'Alle Buchungen',
+      tripCalendar: 'Reisekalender'
+    }
   };
   
   let lang = localStorage.getItem('ORT_LANG') || 'fr';

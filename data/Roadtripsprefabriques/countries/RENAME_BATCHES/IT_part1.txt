@@ -1,0 +1,347 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "IT" → la langue locale (it) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays IT, partie 1/2)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+IT::abano-terme	Abano Terme	Abano Terme	Abano Terme
+IT::acquapendente	Acquapendente		
+IT::agnone	Agnone	Agnone	Agnone
+IT::agrigento	Agrigento		
+IT::agropoli	Agropoli	Agropoli	Agropoli
+IT::alatri	Alatri		
+IT::alba	Alba		
+IT::alberobello	Alberobello	Alberobello	Alberobello
+IT::alghero	Alghero	Alghero	Alghero
+IT::aliano	Aliano		
+IT::alicudi	Alicudi		
+IT::altamura	Altamura		
+IT::amalfi	Amalfi		
+IT::amantea	Amantea	Amantea	Amantea
+IT::anacapri	Anacapri	Anacapri	Anacapri
+IT::anagni	Anagni	Anagni	Anagni
+IT::angera	Angera	Angera	Angera
+IT::anghiari	Anghiari	Anghiari	Anghiari
+IT::anversa-degli-abruzzi	Anversa Degli Abruzzi		
+IT::aoste	Aoste		
+IT::aquileia	Aquileia	Aquileia	Aquileia
+IT::arezzo	Arezzo	Province of Arezzo	provincia di Arezzo
+IT::ariano-irpino	Ariano Irpino		
+IT::arpino	Arpino	Arpino	Arpino
+IT::arqua-petrarca	Arqua Petrarca	Arquà Petrarca	Arquà Petrarca
+IT::arsoli	Arsoli		
+IT::artimino	Artimino		
+IT::asciano	Asciano	Asciano	Asciano
+IT::ascoli-piceno	Ascoli Piceno		
+IT::asiago	Asiago		
+IT::asolo	Asolo	Asolo	Asolo
+IT::asti	Asti		
+IT::atina	Atina		
+IT::avellino	Avellino	Province of Avellino	provincia di Avellino
+IT::bagni-di-lucca	Bagni Di Lucca		
+IT::barberino-val-elsa	Barberino Val Elsa		
+IT::bardi	Bardi		
+IT::barga	Barga	Barga	Barga
+IT::bari	Bari		
+IT::barolo	Barolo	Barolo	Barolo
+IT::barumini	Barumini		
+IT::bassano-del-grappa	Bassano Del Grappa	Bassano del Grappa	Bassano del Grappa
+IT::baunei	Baunei		
+IT::bellagio	Bellagio	Bellagio	Bellagio
+IT::benevento	Benevento	Province of Benevento	Benevento
+IT::bentivoglio	Bentivoglio		
+IT::bergamo	Bergamo		
+IT::bettona	Bettona		
+IT::bevagna	Bevagna		
+IT::bibbiena	Bibbiena		
+IT::biella	Biella	Province of Biella	Biella
+IT::bienno	Bienno		
+IT::bojano	Bojano		
+IT::bologna	Bologna	Bologna	Bologna
+IT::bologne	Bologne		
+IT::bolsena	Bolsena	Bolsena	Bolsena
+IT::bolzano	Bolzano	South Tyrol	Bolzano
+IT::bomarzo	Bomarzo	Bomarzo	Bomarzo
+IT::borgo-a-mozzano	Borgo A Mozzano		
+IT::borgo-san-lorenzo	Borgo San Lorenzo		
+IT::bormio	Bormio	Bormio	Bormio
+IT::bosa	Bosa	Bosa	Bosa
+IT::bovino	Bovino	Bovino	Bovino
+IT::bracciano	Bracciano	Bracciano	Bracciano
+IT::brescia	Brescia	Province of Brescia	Brescia
+IT::breuil-cervinia	Breuil Cervinia		
+IT::brindisi	Brindisi	Province of Brindisi	provincia di Brindisi
+IT::brisighella	Brisighella	Brisighella	Brisighella
+IT::buggiano-castello	Buggiano Castello		
+IT::buonconvento	Buonconvento	Buonconvento	Buonconvento
+IT::cagliari	Cagliari	Cagliari	Cagliari
+IT::cala-gonone	Cala Gonone		
+IT::calcata	Calcata		
+IT::calci	Calci	Calci	Calci
+IT::calitri	Calitri		
+IT::camaiore	Camaiore	Camaiore	Camaiore
+IT::camaldoli	Camaldoli	Camaldoli	Camaldoli
+IT::camigliatello-silano	Camigliatello Silano		
+IT::camogli	Camogli	Camogli	Camogli
+IT::campli	Campli	Campli	Campli
+IT::campobasso	Campobasso		
+IT::campodimele	Campodimele		
+IT::capalbio	Capalbio		
+IT::capannoli	Capannoli		
+IT::caprarola	Caprarola	Caprarola	Caprarola
+IT::caraglio	Caraglio		
+IT::caramanico-terme	Caramanico Terme	Caramanico Terme	Caramanico Terme
+IT::carmignano	Carmignano		
+IT::carovigno	Carovigno		
+IT::carpineto-romano	Carpineto Romano		
+IT::carrara	Carrara		
+IT::casale-monferrato	Casale Monferrato		
+IT::caserta	Caserta	Province of Caserta	provincia di Caserta
+IT::casole-elsa	Casole Elsa		
+IT::cassino	Cassino		
+IT::castagnole-delle-lanze	Castagnole Delle Lanze		
+IT::castel-del-monte	Castel Del Monte		
+IT::castel-del-rio	Castel Del Rio		
+IT::castel-di-tora	Castel Di Tora		
+IT::castel-gandolfo	Castel Gandolfo	Castel Gandolfo	Castel Gandolfo
+IT::castel-san-vincenzo	Castel San Vincenzo	Castel San Vincenzo	Castel San Vincenzo
+IT::castelfranco-di-sotto	Castelfranco Di Sotto		
+IT::castelfranco-veneto	Castelfranco Veneto	Castelfranco Veneto	Castelfranco Veneto
+IT::castell-arquato	Castell Arquato	Castell'Arquato	Castell'Arquato
+IT::castellaro-lagusello	Castellaro Lagusello		
+IT::castelli	Castelli	Castelli	Castelli
+IT::castellina-in-chianti	Castellina In Chianti		
+IT::castelluccio-di-norcia	Castelluccio Di Norcia		
+IT::castelmezzano	Castelmezzano		
+IT::castelnuovo-garfagnana	Castelnuovo Garfagnana	Castelnuovo Garfagnana railway station	stazione di Castelnuovo di Garfagnana
+IT::castelsardo	Castelsardo	Castelsardo	Castelsardo
+IT::castiglion-fiorentino	Castiglion Fiorentino	Castiglion Fiorentino	Castiglion Fiorentino
+IT::castiglione-del-lago	Castiglione Del Lago		
+IT::castro-dei-volsci	Castro Dei Volsci		
+IT::castro-marina	Castro Marina		
+IT::catania	Catania		
+IT::catanzaro-lido	Catanzaro Lido	Catanzaro Lido	Catanzaro Lido
+IT::cefalu	Cefalu	Cefalù	Cefalù
+IT::cella-monte	Cella Monte		
+IT::certaldo	Certaldo	Certaldo	Certaldo
+IT::cerveteri	Cerveteri	Cerveteri	Cerveteri
+IT::cesenatico	Cesenatico		
+IT::cetona	Cetona		
+IT::champoluc	Champoluc		
+IT::chatillon	Chatillon		
+IT::chianale	Chianale		
+IT::chianni	Chianni		
+IT::chianti	Chianti		
+IT::chieti	Chieti		
+IT::chioggia	Chioggia	Chioggia	Chioggia
+IT::cilento-coast	Cilento Coast	Cilentan Coast	Costiera cilentana
+IT::cingoli	Cingoli		
+IT::cinque-terre	Cinque Terre		
+IT::citta-sant-angelo	Citta Sant Angelo	Città Sant'Angelo	Città Sant'Angelo
+IT::cittadella	Cittadella	Cittadella	Cittadella
+IT::civita-di-bagnoregio	Civita Di Bagnoregio	Civita di Bagnoregio	Civita di Bagnoregio
+IT::civitella-del-tronto	Civitella Del Tronto	Civitella del Tronto	Civitella del Tronto
+IT::clauzetto	Clauzetto		
+IT::cocconato	Cocconato		
+IT::cogne	Cogne		
+IT::colle-val-elsa	Colle Val Elsa		
+IT::collepardo	Collepardo		
+IT::collodi	Collodi	Collodi	Collodi
+IT::colorno	Colorno	Colorno	Colorno
+IT::colosseo	Colosseo	Colosseum	Colosseo
+IT::comacchio	Comacchio		
+IT::como	Como		
+IT::compiano	Compiano	Compiano	Compiano
+IT::conegliano	Conegliano	Conegliano	Conegliano
+IT::corciano	Corciano		
+IT::coreglia-antelminelli	Coreglia Antelminelli		
+IT::cori	Cori		
+IT::corigliano-d-otranto	Corigliano D Otranto		
+IT::corinaldo	Corinaldo		
+IT::corno-alle-scale	Corno Alle Scale		
+IT::cortina-dampezzo	Cortina Dampezzo		
+IT::cortona	Cortona	Cortona	Cortona
+IT::cosenza	Cosenza		
+IT::costa-paradiso	Costa Paradiso		
+IT::costa-trabocchi	Costa Trabocchi		
+IT::courmayeur	Courmayeur		
+IT::crecchio	Crecchio		
+IT::cremona	Cremona		
+IT::crespi-d-adda	Crespi D Adda		
+IT::cuneo	Cuneo	Province of Cuneo	provincia di Cuneo
+IT::cutigliano	Cutigliano		
+IT::delta-del-po	Delta Del Po		
+IT::demonte	Demonte		
+IT::desenzano-del-garda	Desenzano Del Garda	Desenzano del Garda	Desenzano del Garda
+IT::diamante	Diamante		
+IT::dobbiaco	Dobbiaco	Toblach	Dobbiaco
+IT::dolceacqua	Dolceacqua	Dolceacqua	Dolceacqua
+IT::dorgali	Dorgali		
+IT::dozza	Dozza		
+IT::dronero	Dronero	Dronero	Dronero
+IT::erto-e-casso	Erto E Casso		
+IT::esanatoglia	Esanatoglia		
+IT::etna	Etna		
+IT::favignana	Favignana		
+IT::feltre	Feltre	Feltre	Feltre
+IT::ferrare	Ferrare		
+IT::fiesole	Fiesole	Fiesole	Fiesole
+IT::figline-valdarno	Figline Valdarno		
+IT::filicudi	Filicudi		
+IT::fiorenzuola-di-focara	Fiorenzuola Di Focara		
+IT::firenze	Firenze		
+IT::fiuggi	Fiuggi	Fiuggi	Fiuggi
+IT::foggia	Foggia	Province of Foggia	Foggia
+IT::follina	Follina		
+IT::fondi	Fondi	Fondi	Fondi
+IT::fontana-di-trevi	Fontana Di Trevi		
+IT::fontanellato	Fontanellato	Fontanellato	Fontanellato
+IT::fonte-colombo	Fonte Colombo	Santuario di Fonte Colombo	santuario di Fonte Colombo
+IT::forgaria-nel-friuli	Forgaria Nel Friuli		
+IT::foro-palatino	Foro Palatino		
+IT::forte-dei-marmi	Forte Dei Marmi		
+IT::frontino	Frontino		
+IT::frosolone	Frosolone		
+IT::fumone	Fumone	Fumone	Fumone
+IT::gaeta	Gaeta	Gaeta	Gaeta
+IT::gaiole-in-chianti	Gaiole In Chianti	Gaiole in Chianti	Gaiole in Chianti
+IT::gallipoli	Gallipoli		
+IT::garessio	Garessio		
+IT::genova	Genova		
+IT::gerace	Gerace	Gerace	Gerace
+IT::giglio-castello	Giglio Castello		
+IT::gorizia	Gorizia	Gorizia	Gorizia
+IT::gradara	Gradara	Gradara	Gradara
+IT::grado	Grado	Grado	Grado
+IT::grazie-mantoue	Grazie Mantoue		
+IT::grazzano-visconti	Grazzano Visconti	Grazzano Visconti	Grazzano Visconti
+IT::gressoney-saint-jean	Gressoney Saint Jean		
+IT::greve-in-chianti	Greve In Chianti		
+IT::grizzana-morandi	Grizzana Morandi		
+IT::grottaglie	Grottaglie		
+IT::grottammare	Grottammare		
+IT::grotte-di-caglieron	Grotte Di Caglieron		
+IT::guardiagrele	Guardiagrele	Guardiagrele	Guardiagrele
+IT::guarene	Guarene		
+IT::iglesias	Iglesias		
+IT::imperia	Imperia	Province of Imperia	Imperia
+IT::impruneta	Impruneta		
+IT::ingria	Ingria		
+IT::iseo	Iseo	Iseo	Iseo
+IT::isernia	Isernia		
+IT::isola-del-liri	Isola Del Liri		
+IT::isola-della-cona	Isola Della Cona		
+IT::isole-egadi	Isole Egadi		
+IT::isole-eolie	Isole Eolie		
+IT::itri	Itri		
+IT::la-maddalena	La Maddalena		
+IT::la-morra	La Morra		
+IT::la-spezia	La Spezia		
+IT::la-verna	La Verna	La Verna	Montagna della Verna
+IT::labro	Labro		
+IT::lacedonia	Lacedonia		
+IT::laghi-park	Laghi Park		
+IT::laghi-suviana-brasimone	Laghi Suviana Brasimone		
+IT::lago-di-cornino	Lago Di Cornino		
+IT::lago-di-fimon	Lago Di Fimon		
+IT::lajatico	Lajatico		
+IT::lamezia-terme	Lamezia Terme	Lamezia Terme	Lamezia Terme
+IT::lampedusa	Lampedusa		
+IT::lanciano	Lanciano		
+IT::lanzo-torinese	Lanzo Torinese	Lanzo Torinese	Lanzo Torinese
+IT::laquila	Laquila		
+IT::lari	Lari	Lari	Lari
+IT::larino	Larino		
+IT::laterza	Laterza		
+IT::laveno-mombello	Laveno Mombello		
+IT::lazise	Lazise		
+IT::le-castella	Le Castella		
+IT::lecce	Lecce	province of Lecce	Lecce
+IT::levanto	Levanto		
+IT::lido-di-camaiore	Lido Di Camaiore		
+IT::limone-piemonte	Limone Piemonte	Limone Piemonte	Limone Piemonte
+IT::limone-sul-garda	Limone Sul Garda	Limone sul Garda	Limone sul Garda
+IT::lipari	Lipari		
+IT::lizzano-in-belvedere	Lizzano In Belvedere		
+IT::lucca	Lucca		
+IT::lucera	Lucera		
+IT::lucignano	Lucignano		
+IT::lugo-di-vicenza	Lugo Di Vicenza		
+IT::luino	Luino		
+IT::macerata-feltria	Macerata Feltria		
+IT::magliano-in-toscana	Magliano In Toscana		
+IT::maiori	Maiori		
+IT::manfredonia	Manfredonia		
+IT::maratea	Maratea		
+IT::marettimo	Marettimo		
+IT::marina-di-pisa	Marina Di Pisa	Marina di Pisa	Marina di Pisa
+IT::marostica	Marostica		
+IT::martina-franca	Martina Franca		
+IT::massa-marittima	Massa Marittima	Massa Marittima	Massa Marittima
+IT::matelica	Matelica		
+IT::matera	Matera	province of Matera	provincia di Matera
+IT::medicina	Medicina		
+IT::melfi	Melfi		
+IT::menaggio	Menaggio	Menaggio	Menaggio
+IT::merano	Merano	Merano	Merano
+IT::mercatello-sul-metauro	Mercatello Sul Metauro		
+IT::messina	Messina		
+IT::milano	Milano		
+IT::minori	Minori		
+IT::minturno	Minturno		
+IT::mira	Mira		
+IT::modene	Modene		
+IT::mombaldone	Mombaldone		
+IT::mondavio	Mondavio		
+IT::mondolfo	Mondolfo		
+IT::monforte-d-alba	Monforte D Alba		
+IT::monopoli	Monopoli	Monopoli	Monopoli
+IT::monreale	Monreale		
+IT::monselice	Monselice	Monselice	Monselice
+IT::montagnana	Montagnana	Montagnana	Montagnana
+IT::montalcino	Montalcino	Montalcino	Montalcino
+IT::monte-sant-angelo	Monte Sant Angelo		
+IT::monte-sole	Monte Sole		
+IT::montecarlo-toscana	Montecarlo Toscana		
+IT::montecassiano	Montecassiano		

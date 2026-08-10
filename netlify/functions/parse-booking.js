@@ -36,6 +36,27 @@ const CATEGORIES = {
   activity: '🎯', visit: '🏛️', show: '🎭'
 };
 
+// ===== MESSAGES RENVOYES AU VISITEUR (8 langues) =====
+const LANG_NAMES = { fr:'French', en:'English', es:'Spanish', it:'Italian', pt:'Portuguese', ar:'Arabic', nl:'Dutch', de:'German' };
+
+const MSG = {
+  methodNotAllowed: { fr:'Methode non autorisee', en:'Method not allowed', es:'Metodo no permitido', it:'Metodo non consentito', pt:'Metodo nao permitido', ar:'\u0637\u0631\u064a\u0642\u0629 \u063a\u064a\u0631 \u0645\u0633\u0645\u0648\u062d \u0628\u0647\u0627', nl:'Methode niet toegestaan', de:'Methode nicht erlaubt' },
+  contentTooShort: { fr:'Contenu trop court', en:'Content too short', es:'Contenido demasiado corto', it:'Contenuto troppo corto', pt:'Conteudo demasiado curto', ar:'\u0627\u0644\u0645\u062d\u062a\u0648\u0649 \u0642\u0635\u064a\u0631 \u062c\u062f\u0627', nl:'Inhoud te kort', de:'Inhalt zu kurz' },
+  loginRequired: { fr:'Connexion requise', en:'Sign in required', es:'Inicio de sesion requerido', it:'Accesso richiesto', pt:'Inicio de sessao necessario', ar:'\u064a\u062c\u0628 \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644', nl:'Inloggen vereist', de:'Anmeldung erforderlich' },
+  quotaReached: { fr:'Quota atteint ({n}/mois)', en:'Quota reached ({n}/month)', es:'Cuota alcanzada ({n}/mes)', it:'Quota raggiunta ({n}/mese)', pt:'Quota atingida ({n}/mes)', ar:'\u062a\u0645 \u0628\u0644\u0648\u063a \u0627\u0644\u062d\u062f ({n}/\u0634\u0647\u0631)', nl:'Limiet bereikt ({n}/maand)', de:'Limit erreicht ({n}/Monat)' }
+};
+
+function msg(key, lang, vars) {
+  var e = MSG[key] || {};
+  var txt = e[lang] || e.en || key;
+  if (vars) Object.keys(vars).forEach(function(k){ txt = txt.split('{'+k+'}').join(vars[k]); });
+  return txt;
+}
+
+function buildPrompt(lang) {
+  return PROMPT + '\n\nIMPORTANT: write the "name" field in ' + (LANG_NAMES[lang] || 'English') + '.';
+}
+
 const PROMPT = `Tu extrais les infos de réservations voyage en JSON.
 
 RÈGLES:
@@ -149,13 +170,13 @@ async function checkQuota(uid, email) {
 }
 
 // ===== GEMINI =====
-async function callGemini(content) {
+async function callGemini(content, lang) {
   console.log('🔄 Essai Gemini Flash...');
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: PROMPT + '\n\n' + content }] }],
+      contents: [{ parts: [{ text: buildPrompt(lang) + '\n\n' + content }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 16384, thinkingConfig: { thinkingLevel: 'low' } }
     })
   });
@@ -173,7 +194,7 @@ async function callGemini(content) {
 }
 
 // ===== GROQ (fallback texte) =====
-async function callGroq(content) {
+async function callGroq(content, lang) {
   console.log('⚡ Fallback Groq...');
   for (const model of GROQ_MODELS) {
     try {
@@ -187,7 +208,7 @@ async function callGroq(content) {
         body: JSON.stringify({
           model: model,
           messages: [
-            { role: 'system', content: PROMPT },
+            { role: 'system', content: buildPrompt(lang) },
             { role: 'user', content: content }
           ],
           temperature: 0.1,
@@ -226,7 +247,7 @@ async function getOpenRouterFreeModels() {
     .slice(0, 10);
 }
 
-async function callOpenRouter(content) {
+async function callOpenRouter(content, lang) {
   console.log('🔄 Fallback OpenRouter...');
   const freeModels = await getOpenRouterFreeModels();
   console.log('📋 Modèles gratuits:', freeModels);
@@ -246,7 +267,7 @@ async function callOpenRouter(content) {
         body: JSON.stringify({
           model: model,
           messages: [
-            { role: 'system', content: PROMPT },
+            { role: 'system', content: buildPrompt(lang) },
             { role: 'user', content: content }
           ],
           temperature: 0.1,
@@ -271,12 +292,12 @@ async function callOpenRouter(content) {
 }
 
 // ===== PARSE =====
-async function parseEmail(content) {
+async function parseEmail(content, lang) {
   // Ordre des fournisseurs : Gemini, puis Groq, puis OpenRouter
   const providers = [];
-  if (GEMINI_KEY) providers.push(['Gemini', () => callGemini(content)]);
-  if (GROQ_KEY) providers.push(['Groq', () => callGroq(content)]);
-  if (OPENROUTER_KEY) providers.push(['OpenRouter', () => callOpenRouter(content)]);
+  if (GEMINI_KEY) providers.push(['Gemini', () => callGemini(content, lang)]);
+  if (GROQ_KEY) providers.push(['Groq', () => callGroq(content, lang)]);
+  if (OPENROUTER_KEY) providers.push(['OpenRouter', () => callOpenRouter(content, lang)]);
 
   for (const [name, call] of providers) {
     try {
@@ -422,35 +443,43 @@ export default async (request, context) => {
     'Content-Type': 'application/json'
   };
 
+  // Langue du visiteur : lue dans le corps de la requete, repli sur l anglais.
+  var _lang = 'en';
+  var _body = null;
+  if (request.method === 'POST') {
+    try { _body = await request.clone().json(); } catch (e) { _body = null; }
+    if (_body && _body.lang) _lang = String(_body.lang).slice(0, 2).toLowerCase();
+  }
+
   if (request.method === 'OPTIONS') {
     return new Response('', { status: 204, headers });
   }
 
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ success: false, error: 'Method not allowed' }), { status: 405, headers });
+    return new Response(JSON.stringify({ success: false, error: msg('methodNotAllowed', _lang) }), { status: 405, headers });
   }
 
   try {
     const { content } = await request.json();
     
     if (!content || content.length < 50) {
-      return new Response(JSON.stringify({ success: false, error: 'Contenu trop court' }), { status: 400, headers });
+      return new Response(JSON.stringify({ success: false, error: msg('contentTooShort', _lang) }), { status: 400, headers });
     }
 
     // Auth
     const user = await verifyToken(request.headers.get('authorization'));
     if (!user) {
-      return new Response(JSON.stringify({ success: false, error: 'Connexion requise' }), { status: 401, headers });
+      return new Response(JSON.stringify({ success: false, error: msg('loginRequired', _lang) }), { status: 401, headers });
     }
 
     // Quota
     const quota = await checkQuota(user.uid, user.email);
     if (!quota.allowed) {
-      return new Response(JSON.stringify({ success: false, error: `Quota atteint (${quota.limit}/mois)`, usage: quota }), { status: 429, headers });
+      return new Response(JSON.stringify({ success: false, error: msg('quotaReached', _lang, { n: quota.limit }), usage: quota }), { status: 429, headers });
     }
 
     // Parse (le JSON est déjà validé dans parseEmail)
-    const result = await parseEmail(content);
+    const result = await parseEmail(content, _lang);
     const data = result.data;
     
     data.id = `booking_${Date.now()}`;

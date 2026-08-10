@@ -1,0 +1,347 @@
+# OneRoadTrip - Validation des noms de places
+
+## Contexte
+Je nettoie les noms et les place_id dans mon catalogue OneRoadTrip. Pour chaque ligne ci-dessous, donne-moi le bon nom à afficher selon ces règles strictes.
+
+## Règle de langue
+Pays "FR" → la langue locale (fr) est lisible par un Européen, donc utilise-la.
+
+Si la langue locale a une orthographe latine acceptable (Bologna, München, Köln, Århus, etc.) → utilise-la.
+Si la langue est non latine (grec, japonais, arabe, cyrillique, hébreu, thaï, etc.) → utilise l'anglais standard.
+
+## Détection des doublons
+Si deux place_id pointent visiblement vers la même ville (ex: "ES::barcelone" et "ES::barcelona", "FR::haroue" et "FR::haroué", "MU::trou-d-eau-douce" et "MU::trou-deau-douce"), marque l'un comme doublon de l'autre.
+
+Le "gardé" est celui dont le slug est le plus correct (avec apostrophe, accent, orthographe locale). L'autre est marqué comme doublon de celui-ci.
+
+## Colonne "choix" (IMPORTANT)
+- **OK** : tu es sûr de la correction, elle peut être appliquée automatiquement
+- **?** : cas douteux, l'utilisateur doit valider à la main
+
+Mets **?** quand :
+- confiance moyenne ou basse
+- granularité bizarre (un quartier au lieu d'une ville, un village dans un parc, etc.)
+- doublon possible mais pas évident
+- la donnée Wikidata semble fausse (ex: "Cachi Department" pour la ville de Cachi)
+
+Mets **OK** quand :
+- changement orthographique simple et clair (Bologne → Bologna, Zell Am See → Zell am See)
+- nom déjà correct, juste recopié
+- doublon strict évident (haroue/haroué)
+
+## Format de sortie OBLIGATOIRE
+Réponds UNIQUEMENT avec un bloc TSV (tab-separated), sans explication avant ou après, sans markdown autour, sans backticks.
+
+Colonnes (séparées par TAB, dans cet ordre) :
+`place_id_actuel\tnom_corrige\tdoublon_de\tchoix\tconfiance\tcommentaire`
+
+- **place_id_actuel** : recopier exactement ce qui est en entrée
+- **nom_corrige** : le bon nom à afficher (si déjà correct, recopier le nom_actuel)
+- **doublon_de** : si c'est un doublon, le place_id à garder. Sinon vide.
+- **choix** : OK ou ?
+- **confiance** : H, M ou L
+- **commentaire** : court (max 80 caractères) si changement notable, sinon vide
+
+## Données (pays FR, partie 1/4)
+
+place_id_actuel	nom_actuel	nom_anglais	nom_local
+FR::abbeville	Abbeville	Abbeville	Abbeville
+FR::abilly	Abilly		
+FR::agen	Agen	Agen	Agen
+FR::aigues-mortes	Aigues Mortes	Aigues-Mortes	Aigues-Mortes
+FR::aigueze	Aigueze	Aiguèze	Aiguèze
+FR::aiguines	Aiguines	Aiguines	Aiguines
+FR::ailhon	Ailhon	Ailhon	Ailhon
+FR::ainhoa	Ainhoa	Ainhoa	Ainhoa
+FR::airvault	Airvault	Airvault	Airvault
+FR::aix-en-provence	Aix En Provence	Aix-en-Provence	Aix-en-Provence
+FR::aix-les-bains	Aix Les Bains		
+FR::aixe-sur-vienne	Aixe Sur Vienne	Aixe-sur-Vienne	Aixe-sur-Vienne
+FR::ajaccio	Ajaccio	Ajaccio	Ajaccio
+FR::alba-la-romaine	Alba La Romaine	Alba-la-Romaine	Alba-la-Romaine
+FR::albert	Albert	Albert	Albert
+FR::albertville	Albertville	Albertville	Albertville
+FR::albi	Albi	Albi	Albi
+FR::alencon	Alencon	Alençon	Alençon
+FR::ales	Ales	Alès	Alès
+FR::allegre	Allegre	Allègre	Allègre
+FR::amberieu-en-bugey	Amberieu En Bugey	Ambérieu-en-Bugey	Ambérieu-en-Bugey
+FR::ambert	Ambert	Ambert	Ambert
+FR::ambleteuse	Ambleteuse	Ambleteuse	Ambleteuse
+FR::amboise	Amboise	Amboise	Amboise
+FR::amiens	Amiens	Amiens	Amiens
+FR::amneville	Amneville	Amnéville	Amnéville
+FR::ancy-le-franc	Ancy Le Franc	Ancy-le-Franc	Ancy-le-Franc
+FR::anduze	Anduze	Anduze	Anduze
+FR::anet	Anet	Anet	Anet
+FR::angers	Angers	Angers	Angers
+FR::angles-sur-l-anglin	Angles Sur L Anglin	Angles-sur-l'Anglin	Angles-sur-l'Anglin
+FR::angouleme	Angouleme	Angoulême	Angoulême
+FR::annecy	Annecy		
+FR::annot	Annot	Annot	Annot
+FR::ansouis	Ansouis	Ansouis	Ansouis
+FR::antibes	Antibes		
+FR::antony	Antony		
+FR::antraigues-sur-volane	Antraigues Sur Volane	Antraigues-sur-Volane	Antraigues-sur-Volane
+FR::arbois	Arbois	Arbois	Arbois
+FR::arc-et-senans	Arc Et Senans	Arc-et-Senans	Arc-et-Senans
+FR::arcachon	Arcachon	Arcachon	Arcachon
+FR::argentan	Argentan	Argentan	Argentan
+FR::argentat-sur-dordogne	Argentat Sur Dordogne	Argentat-sur-Dordogne	Argentat-sur-Dordogne
+FR::argenton-sur-creuse	Argenton Sur Creuse	Argenton-sur-Creuse	Argenton-sur-Creuse
+FR::arlempdes	Arlempdes	Arlempdes	Arlempdes
+FR::arles	Arles		
+FR::arpajon	Arpajon	Arpajon-sur-Cère	Arpajon-sur-Cère
+FR::arras	Arras	Arras	Arras
+FR::arreau	Arreau	Arreau	Arreau
+FR::arromanches-les-bains	Arromanches Les Bains	Arromanches-les-Bains	Arromanches-les-Bains
+FR::artemare	Artemare		
+FR::asnieres-sur-oise	Asnieres Sur Oise		
+FR::aubenas	Aubenas	Aubenas	Aubenas
+FR::aubervilliers	Aubervilliers		
+FR::aubeterre-sur-dronne	Aubeterre Sur Dronne	Aubeterre-sur-Dronne	Aubeterre-sur-Dronne
+FR::aubigny-sur-nere	Aubigny Sur Nere	Aubigny-sur-Nère	Aubigny-sur-Nère
+FR::aubusson	Aubusson	Aubusson	Aubusson
+FR::auch	Auch	Auch	Auch
+FR::aulnay-sous-bois	Aulnay Sous Bois		
+FR::aulus-les-bains	Aulus Les Bains	Aulus-les-Bains	Aulus-les-Bains
+FR::aumont-aubrac	Aumont Aubrac	Aumont-Aubrac	Aumont-Aubrac
+FR::auray	Auray	Auray	Auray
+FR::aurillac	Aurillac	Aurillac	Aurillac
+FR::autoire	Autoire	Autoire	Autoire
+FR::autrans	Autrans	Autrans	Autrans
+FR::autrey	Autrey	Autrey	Autrey
+FR::autun	Autun	Autun	Autun
+FR::auvers-sur-oise	Auvers Sur Oise		
+FR::auvillar	Auvillar	Auvillar	Auvillar
+FR::auxerre	Auxerre	Auxerre	Auxerre
+FR::avallon	Avallon	Avallon	Avallon
+FR::avignon	Avignon		
+FR::avranches	Avranches	Avranches	Avranches
+FR::ax-les-thermes	Ax Les Thermes	Ax-les-Thermes	Ax-les-Thermes
+FR::ay-champagne	Ay Champagne	Aÿ-Champagne	Aÿ-Champagne
+FR::azay-le-rideau	Azay Le Rideau	Azay-le-Rideau	Azay-le-Rideau
+FR::baccarat	Baccarat	Baccarat	Baccarat
+FR::bagneres-de-bigorre	Bagneres De Bigorre	Bagnères-de-Bigorre	Bagnères-de-Bigorre
+FR::bagneres-de-luchon	Bagneres De Luchon	Bagnères-de-Luchon	Bagnères-de-Luchon
+FR::bagnoles-de-l-orne	Bagnoles De L Orne	Bagnoles-de-l'Orne	Bagnoles-de-l'Orne
+FR::bagnols-sur-ceze	Bagnols Sur Ceze	Bagnols-sur-Cèze	Bagnols-sur-Cèze
+FR::balazuc	Balazuc	Balazuc	Balazuc
+FR::banne	Banne	Banne	Banne
+FR::bar-le-duc	Bar Le Duc	Bar-le-Duc	Bar-le-Duc
+FR::bar-sur-seine	Bar Sur Seine	Bar-sur-Seine	Bar-sur-Seine
+FR::barbentane	Barbentane	Barbentane	Barbentane
+FR::barbizon	Barbizon	Barbizon	Barbizon
+FR::bareges	Bareges	Barèges	Barèges
+FR::barfleur	Barfleur	Barfleur	Barfleur
+FR::barjac	Barjac	Barjac	Barjac
+FR::barneville-carteret	Barneville Carteret		
+FR::bastia	Bastia	Bastia	Bastia
+FR::batz-sur-mer	Batz Sur Mer		
+FR::bauduen	Bauduen	Bauduen	Bauduen
+FR::baume-les-dames	Baume Les Dames	Baume-les-Dames	Baume-les-Dames
+FR::baume-les-messieurs	Baume Les Messieurs	Baume-les-Messieurs	Baume-les-Messieurs
+FR::bavay	Bavay	Bavay	Bavay
+FR::bayeux	Bayeux	Bayeux	Bayeux
+FR::bayonne	Bayonne	Bayonne	Bayonne
+FR::beauchastel	Beauchastel	Beauchastel	Beauchastel
+FR::beaucourt	Beaucourt	Beaucourt	Beaucourt
+FR::beaufort	Beaufort	Beaufort	Beaufort
+FR::beaugency	Beaugency	Beaugency	Beaugency
+FR::beaujeu	Beaujeu	Beaujeu	Beaujeu
+FR::beaulieu-ardeche	Beaulieu Ardeche	Beaulieu	Beaulieu
+FR::beaulieu-en-argonne	Beaulieu En Argonne	Beaulieu-en-Argonne	Beaulieu-en-Argonne
+FR::beaulieu-sur-dordogne	Beaulieu Sur Dordogne	Beaulieu-sur-Dordogne	Beaulieu-sur-Dordogne
+FR::beaulieu-sur-mer	Beaulieu Sur Mer	Beaulieu-sur-Mer	Beaulieu-sur-Mer
+FR::beaune	Beaune		
+FR::beauvais	Beauvais	Beauvais	Beauvais
+FR::behuard	Behuard	Béhuard	Béhuard
+FR::belcastel	Belcastel	Belcastel	Belcastel
+FR::belfort	Belfort		
+FR::bellac	Bellac	Bellac	Bellac
+FR::bellegarde-sur-valserine	Bellegarde Sur Valserine	Bellegarde-sur-Valserine	Bellegarde-sur-Valserine
+FR::belleme	Belleme	Bellême	Bellême
+FR::belley	Belley		
+FR::belvedere	Belvedere		
+FR::belz	Belz		
+FR::bergerac	Bergerac	Bergerac	Bergerac
+FR::bergheim	Bergheim	Bergheim	Bergheim
+FR::bergues	Bergues	Bergues	Bergues
+FR::bernay	Bernay		
+FR::besancon	Besancon	Besançon	Besançon
+FR::besse-et-saint-anastaise	Besse Et Saint Anastaise	Besse-et-Saint-Anastaise	Besse-et-Saint-Anastaise
+FR::bethmale	Bethmale	Bethmale	Bethmale
+FR::bethune	Bethune	Béthune	Béthune
+FR::beuvron-en-auge	Beuvron En Auge	Beuvron-en-Auge	Beuvron-en-Auge
+FR::beynac-et-cazenac	Beynac Et Cazenac	Beynac-et-Cazenac	Beynac-et-Cazenac
+FR::beze	Beze	Bèze	Bèze
+FR::beziers	Beziers	Béziers	Béziers
+FR::biarritz	Biarritz	Biarritz	Biarritz
+FR::bibracte	Bibracte		
+FR::biot	Biot	Biot	Biot
+FR::biscarrosse	Biscarrosse	Biscarrosse	Biscarrosse
+FR::bitche	Bitche	Bitche	Bitche
+FR::blaye	Blaye	Blaye	Blaye
+FR::blois	Blois	Blois	Blois
+FR::bobigny	Bobigny		
+FR::bonifacio	Bonifacio	Bonifacio	Bonifacio / Bunifaziu
+FR::bonnetable	Bonnetable	Bonnétable	Bonnétable
+FR::bonneval	Bonneval	Bonneval	Bonneval
+FR::bonneval-sur-arc	Bonneval Sur Arc	Bonneval-sur-Arc	Bonneval-sur-Arc
+FR::bordeaux	Bordeaux		
+FR::bormes-les-mimosas	Bormes Les Mimosas	Bormes-les-Mimosas	Bormes-les-Mimosas
+FR::boucieu-le-roi	Boucieu Le Roi	Boucieu-le-Roi	Boucieu-le-Roi
+FR::bouges-le-chateau	Bouges Le Chateau	Bouges-le-Château	Bouges-le-Château
+FR::boulbon	Boulbon	Boulbon	Boulbon
+FR::boulogne-billancourt	Boulogne Billancourt		
+FR::boulogne-sur-mer	Boulogne Sur Mer	Boulogne-sur-Mer	Boulogne-sur-Mer
+FR::bourbon-l-archambault	Bourbon L Archambault	Bourbon-l'Archambault	Bourbon-l'Archambault
+FR::bourbonne-les-bains	Bourbonne Les Bains	Bourbonne-les-Bains	Bourbonne-les-Bains
+FR::bourg-en-bresse	Bourg En Bresse	Bourg-en-Bresse	Bourg-en-Bresse
+FR::bourges	Bourges	Bourges	Bourges
+FR::boussac	Boussac	Boussac	Boussac
+FR::bouxwiller	Bouxwiller		
+FR::bouzigues	Bouzigues	Bouzigues	Bouzigues
+FR::bouzonville	Bouzonville	Bouzonville	Bouzonville
+FR::brancion	Brancion	Brancion	Brancion
+FR::brando	Brando		
+FR::brantome	Brantome	Brantôme	Brantôme
+FR::bressuire	Bressuire	Bressuire	Bressuire
+FR::brest	Brest		
+FR::briancon	Briancon	Briançon	Briançon
+FR::briare	Briare	Briare	Briare
+FR::brienne-le-chateau	Brienne Le Chateau	Brienne-le-Château	Brienne-le-Château
+FR::briey	Briey	Briey	Briey
+FR::brioude	Brioude	Brioude	Brioude
+FR::brissac-loire-aubance	Brissac Loire Aubance		
+FR::brissac-quince	Brissac Quince	Brissac-Quincé	Brissac-Quincé
+FR::brive-la-gaillarde	Brive La Gaillarde	Brive-la-Gaillarde	Brive-la-Gaillarde
+FR::brou	Brou	Brou	Brou
+FR::bruere-allichamps	Bruere Allichamps		
+FR::bruniquel	Bruniquel	Bruniquel	Bruniquel
+FR::cabourg	Cabourg	Cabourg	Cabourg
+FR::cabrerets-pech-merle	Cabrerets Pech Merle	Pech Merle cave	Grotte de Pech-Merle
+FR::caen	Caen	Caen	Caen
+FR::cagnes-sur-mer	Cagnes Sur Mer	Cagnes-sur-Mer	Cagnes-sur-Mer
+FR::cahors	Cahors	Cahors	Cahors
+FR::calais	Calais	Calais	Calais
+FR::calvi	Calvi	Calvi	Calvi
+FR::camaret-sur-mer	Camaret Sur Mer	Camaret-sur-Mer	Camaret-sur-Mer
+FR::cambrai	Cambrai	Cambrai	Cambrai
+FR::cancale	Cancale	Cancale	Cancale
+FR::canet-en-roussillon	Canet En Roussillon	Canet-en-Roussillon	Canet-en-Roussillon
+FR::cannes	Cannes		
+FR::cap-frehel	Cap Frehel		
+FR::capbreton	Capbreton	Capbreton	Capbreton
+FR::carcassonne	Carcassonne	Carcassonne	Carcassonne
+FR::cargese	Cargese	Cargèse	Cargèse
+FR::carnac	Carnac	Carnac	Carnac
+FR::caromb	Caromb		
+FR::carpentras	Carpentras	Carpentras	Carpentras
+FR::carros	Carros		
+FR::carrouges	Carrouges	Carrouges	Carrouges
+FR::carry-le-rouet	Carry Le Rouet	Carry-le-Rouet	Carry-le-Rouet
+FR::caseneuve	Caseneuve	Caseneuve	Caseneuve
+FR::cassel	Cassel	Cassel	Cassel
+FR::cassis	Cassis	Cassis	Cassis
+FR::casteljaloux	Casteljaloux	Casteljaloux	Casteljaloux
+FR::castellane	Castellane	Castellane	Castellane
+FR::castelnou	Castelnou	Castelnou	Castelnou
+FR::castelsarrasin	Castelsarrasin	Castelsarrasin	Castelsarrasin
+FR::castres	Castres	Castres	Castres
+FR::caudebec-en-caux	Caudebec En Caux	Caudebec-en-Caux	Caudebec-en-Caux
+FR::caussade	Caussade	Caussade	Caussade
+FR::cauterets	Cauterets	Cauterets	Cauterets
+FR::celles-sur-belle	Celles Sur Belle	Celles-sur-Belle	Celles-sur-Belle
+FR::centre-pompidou	Centre Pompidou		
+FR::centuri	Centuri	Centuri	Centuri
+FR::cerdon	Cerdon	Cerdon	Cerdon
+FR::ceret	Ceret	Céret	Céret
+FR::cergy	Cergy	Cergy	Cergy
+FR::chablis	Chablis	Chablis	Chablis
+FR::chalencon	Chalencon	Chalencon	Chalencon
+FR::challans	Challans		
+FR::chalon-sur-saone	Chalon Sur Saone	Chalon-sur-Saône	Chalon-sur-Saône
+FR::chalons-en-champagne	Chalons En Champagne	Châlons-en-Champagne	Châlons-en-Champagne
+FR::chambery	Chambery	Chambéry	Chambéry
+FR::chambon-sur-lac	Chambon Sur Lac	Chambon-sur-Lac	Chambon-sur-Lac
+FR::chambon-sur-voueize	Chambon Sur Voueize	Chambon-sur-Voueize	Chambon-sur-Voueize
+FR::chambord	Chambord	Chambord	Chambord
+FR::chamonix	Chamonix		
+FR::chamonix-mont-blanc	Chamonix Mont Blanc	Chamonix-Mont-Blanc	Chamonix-Mont-Blanc
+FR::champagnole	Champagnole	Champagnole	Champagnole
+FR::champlitte	Champlitte	Champlitte	Champlitte
+FR::champs-sur-marne	Champs Sur Marne	Champs-sur-Marne	Champs-sur-Marne
+FR::chanaz	Chanaz		
+FR::chantilly	Chantilly	Chantilly	Chantilly
+FR::chaource	Chaource	Chaource	Chaource
+FR::charenton-le-pont	Charenton Le Pont		
+FR::charleville-mezieres	Charleville Mezieres	Charleville-Mézières	Charleville-Mézières
+FR::charlieu	Charlieu	Charlieu	Charlieu
+FR::charolles	Charolles	Charolles	Charolles
+FR::charroux	Charroux	Charroux	Charroux
+FR::chartres	Chartres	Chartres	Chartres
+FR::chateau-chalon	Chateau Chalon	Château-Chalon	Château-Chalon
+FR::chateau-chinon	Chateau Chinon	Château-Chinon (Ville)	Château-Chinon (Ville)
+FR::chateau-de-chambord	Chateau De Chambord		
+FR::chateau-de-champchevrier	Chateau De Champchevrier		
+FR::chateau-de-chenonceau	Chateau De Chenonceau		
+FR::chateau-de-cheverny	Chateau De Cheverny		
+FR::chateau-de-gizeux	Chateau De Gizeux		
+FR::chateau-de-la-ferte-saint-aubin	Chateau De La Ferte Saint Aubin		
+FR::chateau-de-langeais	Chateau De Langeais		
+FR::chateau-de-talcy	Chateau De Talcy		
+FR::chateau-de-valencay	Chateau De Valencay		
+FR::chateau-de-villandry	Chateau De Villandry		
+FR::chateau-de-villesavin	Chateau De Villesavin		
+FR::chateau-du-clos-luce	Chateau Du Clos Luce		
+FR::chateau-du-rivau	Chateau Du Rivau		
+FR::chateau-gontier	Chateau Gontier	Château-Gontier	Château-Gontier
+FR::chateau-royal-amboise	Chateau Royal Amboise		
+FR::chateau-royal-blois	Chateau Royal Blois		
+FR::chateau-thierry	Chateau Thierry		
+FR::chateaubriant	Chateaubriant		
+FR::chateaudouble	Chateaudouble	Châteaudouble	Châteaudouble
+FR::chateaudun	Chateaudun	Châteaudun	Châteaudun
+FR::chateauneuf-en-auxois	Chateauneuf En Auxois	Châteauneuf	Rue de Châteauneuf
+FR::chateauneuf-sur-charente	Chateauneuf Sur Charente	Châteauneuf-sur-Charente	Châteauneuf-sur-Charente
+FR::chateaurenard	Chateaurenard	Châteaurenard	Châteaurenard
+FR::chateauroux	Chateauroux	Châteauroux	Châteauroux
+FR::chatellerault	Chatellerault	Châtellerault	Châtellerault
+FR::chatenois-bas-rhin	Chatenois Bas Rhin	Châtenois	Châtenois
+FR::chatillon-sur-chalaronne	Chatillon Sur Chalaronne	Châtillon-sur-Chalaronne	Châtillon-sur-Chalaronne
+FR::chaudes-aigues	Chaudes Aigues	Chaudes-Aigues	Chaudes-Aigues
+FR::chaumont	Chaumont	Chaumont	Chaumont
+FR::chaumont-sur-loire	Chaumont Sur Loire	Chaumont-sur-Loire	Chaumont-sur-Loire
+FR::chauny	Chauny	Chauny	Chauny
+FR::chauvigny	Chauvigny	Chauvigny	Chauvigny
+FR::chenonceaux	Chenonceaux		
+FR::cherbourg-en-cotentin	Cherbourg En Cotentin	Cherbourg-en-Cotentin	Cherbourg-en-Cotentin
+FR::cheverny	Cheverny	Cheverny	Cheverny
+FR::chinon	Chinon	Chinon	Chinon
+FR::chiroubles	Chiroubles	Chiroubles	Chiroubles
+FR::cholet	Cholet	Cholet	Cholet
+FR::choranche	Choranche	Choranche	Choranche
+FR::cite-architecture-patrimoine	Cite Architecture Patrimoine		
+FR::cite-des-sciences	Cite Des Sciences		
+FR::civray	Civray	Civray	Civray
+FR::clairvaux	Clairvaux	Clairvaux-d'Aveyron	Clairvaux-d'Aveyron
+FR::clairvaux-les-lacs	Clairvaux Les Lacs	Clairvaux-les-Lacs	Clairvaux-les-Lacs
+FR::clamecy	Clamecy	Clamecy	Clamecy
+FR::claudon	Claudon	Claudon	Claudon
+FR::clecy	Clecy	Clécy	Clécy
+FR::clermont	Clermont	Clermont	Clermont
+FR::clermont-ferrand	Clermont Ferrand	Clermont-Ferrand	Clermont-Ferrand
+FR::clisson	Clisson	Clisson	Clisson
+FR::cluny	Cluny	Cluny	Cluny
+FR::cognac	Cognac	Cognac	Cognac
+FR::colleville-sur-mer	Colleville Sur Mer	Colleville-sur-Mer	Colleville-sur-Mer
+FR::collioure	Collioure	Collioure	Collioure
+FR::collonges-la-rouge	Collonges La Rouge	Collonges-la-Rouge	Collonges-la-Rouge
+FR::colmar	Colmar	Colmar	Colmar
+FR::colmars-les-alpes	Colmars Les Alpes	Colmars	Centre d'incendie et de secours de Colmars-les-Alpes
+FR::colombey-les-deux-eglises	Colombey Les Deux Eglises	Colombey les Deux Églises	Colombey-les-Deux-Églises
+FR::combourg	Combourg	Combourg	Combourg
+FR::commercy	Commercy	Commercy	Commercy
+FR::compiegne	Compiegne	Compiègne	Compiègne
+FR::concarneau	Concarneau	Concarneau	Concarneau
