@@ -491,6 +491,12 @@
 /* Aucun des trois elements ne se comprime ni ne passe a la ligne. */
 .ort-env-wrap > * { flex: 0 0 auto; }
 
+/* Sous 1400px, le curseur ville/nature est masque : les deux badges CO2
+   suffisent, et la barre tient sans defilement horizontal. */
+@media (max-width: 1400px) {
+    .ort-env-nature { display: none !important; }
+}
+
 /* Tablette et petits ecrans larges : on reduit pour tenir sur la ligne. */
 @media (min-width: 601px) and (max-width: 1400px) {
     .ort-env-wrap { gap: 6px; margin-left: 8px; }
