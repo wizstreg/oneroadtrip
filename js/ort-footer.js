@@ -48,9 +48,22 @@
   // ============================================
   
   function getLang() {
+    // 0. Langue memorisee du visiteur : elle gagne sur tout le reste. Le pied
+    //    de page fait partie de l interface, pas du contenu. Un visiteur
+    //    neerlandais qui ouvre un itineraire disponible seulement en anglais
+    //    doit garder un pied de page en neerlandais, meme si l adresse est
+    //    /itineraries/... et porte ?lang=en.
+    try {
+      var saved = localStorage.getItem('lang');
+      if (saved) {
+        saved = String(saved).slice(0, 2).toLowerCase();
+        if (/^[a-z]{2}$/.test(saved)) return saved;
+      }
+    } catch (e) { /* on continue */ }
+
     // 1. Chemin URL — source la plus fiable sur les pages statiques
-    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
-    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
+    var pathMap = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar',routes:'nl',routen:'de'};
+    var pathMatch = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar|routes|routen)\//);
     if (pathMatch && pathMap[pathMatch[1]]) return pathMap[pathMatch[1]];
     // 2. Module i18n si disponible
     if (window.ORT_I18N_AUTH?.detectLang) {
@@ -67,8 +80,17 @@
   }
 
   function getT() {
+    // Le socle (ort-i18n-socle.js) peut ne pas etre charge sur certaines pages.
+    // Dans ce cas on ne plante pas : on renvoie un objet vide, les libelles
+    // seront absents mais le pied de page s affichera quand meme.
+    const dico = window.ORT_COOKIE_I18N || COOKIE_I18N || {};
     const lang = getLang();
-    return COOKIE_I18N[lang] || COOKIE_I18N.en;
+    const t = dico[lang] || dico.en || dico.fr;
+    if (!t) {
+      console.warn('[ORT-FOOTER] ort-i18n-socle.js non charge : libelles indisponibles');
+      return {};
+    }
+    return t;
   }
 
   function isRTL() {

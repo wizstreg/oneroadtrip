@@ -1,6 +1,37 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<!-- Langue du visiteur : definie AVANT tout le reste.
+     Deux langues coexistent sur cette page :
+     - l INTERFACE (onglets, boutons) suit la langue du visiteur ;
+     - le CONTENU de l itineraire suit la langue de l adresse (?lang=),
+       car un itineraire peut n exister qu en anglais.
+     Certains blocs s executent avant le chargement de ort-i18n.js : sans cette
+     definition precoce, ils lisent une autre source et l interface se retrouve
+     a moitie dans une langue, a moitie dans l autre.
+     ort-i18n.js redefinit ensuite les memes fonctions, avec les memes regles. -->
+<script>
+window.ORT_getLang = function () {
+  var l = localStorage.getItem('lang')
+       || navigator.language
+       || document.documentElement.lang
+       || 'en';
+  return String(l).slice(0, 2).toLowerCase();
+};
+window.ORT_getContentLang = function () {
+  try {
+    var q = new URLSearchParams(window.location.search).get('lang');
+    if (q) {
+      q = String(q).slice(0, 2).toLowerCase();
+      if (/^[a-z]{2}$/.test(q)) return q;
+    }
+  } catch (e) { /* on continue */ }
+  var D = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar',routes:'nl',routen:'de'};
+  var m = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar|routes|routen)\//);
+  if (m && D[m[1]]) return D[m[1]];
+  return window.ORT_getLang();
+};
+</script>
 <!-- ort-pwa-injected-v1 -->
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#ffffff">
@@ -14,7 +45,7 @@
 
 /* Format de date : suit la langue du site, replie sur l anglais. */
 function ortDateLocale(){
-  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var l = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || document.documentElement.lang || 'en')).slice(0,2);
   var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
   return M[l] || 'en-GB';
 }
@@ -2504,10 +2535,12 @@ if (typeof t !== 'function') {
     insurance: { fr: 'Assurance', en: 'Insurance', es: 'Seguro', it: 'Assicurazione', pt: 'Seguro', ar: 'التأمين' , nl: 'Verzekering', de: 'Versicherung'},
     delayCompensation: { fr: 'Compensation retard', en: 'Delay compensation', es: 'Compensación por retraso', it: 'Compensazione ritardo', pt: 'Compensação por atraso', ar: 'تعويض التأخير' , nl: 'Vertragingscompensatie', de: 'Verspätungsentschädigung'}
   };
-  const _lang = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'fr').slice(0, 2);
+  // La langue est relue a chaque appel : si elle etait figee au chargement, un
+  // changement de langue ne serait jamais repercute sur ces libelles.
   window.t = function(key) {
     const entry = ORT_I18N_FALLBACK[key];
-    return entry ? (entry[_lang] || entry.en || key) : key;
+    const lang = window.ORT_getLang ? window.ORT_getLang() : 'en';
+    return entry ? (entry[lang] || entry.en || key) : key;
   };
 }
 // === Enrichir t() avec les clés custom du header (fonctionne même si ort-i18n.js est chargé) ===
@@ -2536,13 +2569,14 @@ if (typeof t !== 'function') {
     menuImportBooking: { fr: '➕ Importer une réservation', en: '➕ Import a booking', es: '➕ Importar una reserva', it: '➕ Importa una prenotazione', pt: '➕ Importar uma reserva', ar: '➕ استيراد حجز' , nl: '➕ Een boeking importeren', de: '➕ Eine Buchung importieren'}
   };
   const _origT = window.t;
-  const _lang = (new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || 'fr').slice(0, 2);
+  // Idem : la langue est relue a chaque appel, jamais figee au chargement.
   window.t = function(key) {
     // D'abord essayer la fonction originale
     const orig = _origT ? _origT(key) : key;
     // Si la fonction originale renvoie la clé brute, chercher dans nos clés custom
     if (orig === key && HEADER_I18N[key]) {
-      return HEADER_I18N[key][_lang] || HEADER_I18N[key].en || key;
+      const lang = window.ORT_getLang ? window.ORT_getLang() : 'en';
+      return HEADER_I18N[key][lang] || HEADER_I18N[key].en || key;
     }
     return orig;
   };
@@ -2700,7 +2734,7 @@ if (typeof t !== 'function') {
     if(document.getElementById('ortDashRow')) return;
 
     // 3) Prépare i18n pour le pop-up
-    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').toLowerCase();
+    var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').toLowerCase();
     var MSG = ({
       fr:'Vous devez être enregistré pour accéder au Dashboard.',
       en:'You must be signed in to access the Dashboard.',
@@ -2761,7 +2795,7 @@ if(!d){
   d = document.createElement('input');
   d.id   = 'rtStartDate';
   // Ajouter la langue du document pour forcer le calendrier natif à l'utiliser
-  const lang = (document.documentElement.lang || 'fr').slice(0, 2);
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0, 2);
   d.lang = lang;
   // Priorité: URL departure > localStorage. Pas de date du jour par défaut.
   const urlDeparture = new URLSearchParams(location.search).get('departure') || '';
@@ -3162,7 +3196,7 @@ if(!icoWrap){
           const payload = {
             subject: '[ORT] Nouvelle note de roadtrip',
             message:
-              `URL: ${location.href}\nLang: ${ (localStorage.getItem('lang') || document.documentElement.lang || 'fr') }\n` +
+              `URL: ${location.href}\nLang: ${ (window.ORT_getLang ? window.ORT_getLang() : 'en') }\n` +
               `User: ${user}\nRT: ${rtKey}\nDone: ${done}\nScore: ${sc}/10\nComment:\n${cmt||'(vide)'}\n` +
               `When: ${new Date().toISOString()}`
           };
@@ -3300,7 +3334,7 @@ Object.assign(pdfBtnRow.style, {
 });
 pdfBtnRow.addEventListener('click', () => {
   if (window.ORT_PDF && window.state) {
-    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     if (state._originalPracticalContext && !state.practical_context) {
       state.practical_context = state._originalPracticalContext;
     }
@@ -3414,7 +3448,7 @@ resaItems.forEach((item, idx) => {
       navigateToCustomizePage(item.page);
     } else {
       const tripId = window.ORT_TRIPID ? window.ORT_TRIPID.get() : (window.state?.tripId || 'default');
-      const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+      const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
       window.location.href = `${item.page}?tripId=${tripId}&lang=${lang}`;
     }
   });
@@ -3611,7 +3645,7 @@ hdr.appendChild(row);
 
   // === MENU SERVICES (dropdown) ===
   const servicesMenuBtn = document.createElement('button');
-  const getLangServices = () => window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0, 2);
+  const getLangServices = () => (window.ORT_getLang ? window.ORT_getLang() : 'en');
   const getServices = (key) => {
     const lang = getLangServices();
     const fServices = { services: { fr: 'Services', en: 'Services', es: 'Servicios', it: 'Servizi', pt: 'Serviços', ar: 'خدمات' , nl: 'Diensten', de: 'Dienste'}, servicesPartnerTooltip: { fr: 'Accès aux services partenaires', en: 'Access to partner services', es: 'Acceso a servicios asociados', it: 'Accesso ai servizi partner', pt: 'Acesso aos serviços parceiros', ar: 'الوصول إلى خدمات الشركاء' , nl: 'Toegang tot de partnerdiensten', de: 'Zugang zu den Partnerdiensten'} };
@@ -3652,7 +3686,7 @@ hdr.appendChild(row);
     z-index:10000;
   `;
   
-  const getLang = () => window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0, 2);
+  const getLang = () => (window.ORT_getLang ? window.ORT_getLang() : 'en');
   const getLabel = (key) => {
     // Chercher d'abord dans window.ORT_I18N, sinon dans le fallback
     const lang = getLang();
@@ -4511,7 +4545,7 @@ function openBookingsModal(stepIdx, stepName) {
     bookings = globalBookingManager.getBookings(stepIdx) || [];
   }
   
-  const lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
   const I18N = {
     title: { fr: 'Réservations', en: 'Bookings', es: 'Reservas', it: 'Prenotazioni', pt: 'Reservas', ar: 'الحجوزات' , nl: 'Boekingen', de: 'Buchungen'},
     noBookings: { fr: 'Aucune réservation pour cette étape', en: 'No bookings for this step', es: 'Sin reservas para esta etapa', it: 'Nessuna prenotazione per questa tappa', pt: 'Sem reservas para esta etapa', ar: 'لا حجوزات لهذه المرحلة' , nl: 'Geen boekingen voor deze stop', de: 'Keine Buchungen für diese Etappe'},
@@ -6209,12 +6243,12 @@ function renderPracticalContext() {
   
   // Utiliser le système I18N centralisé
   const t = (key) => {
-    const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en');
     return window.ORT_I18N?.[key]?.[lang] || window.ORT_I18N?.[key]?.en || key;
   };
   
   // I18N local pour "Notes"
-  const _lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
+  const _lang = (window.ORT_getLang ? window.ORT_getLang() : 'en');
   const notesLabel = ({fr:'Notes',en:'Notes',es:'Notas',it:'Note',pt:'Notas',ar:'ملاحظات', nl: 'Opmerkingen', de: 'Hinweise'})[_lang] || 'Notes';
   
   let html = '';
@@ -6268,7 +6302,7 @@ function renderPracticalContext() {
 // === Alerte i18n : Nombre de nuits impossible à atteindre ===
 function showNightsAdjustmentAlert(adjustment){
   const { diff, targetNights, allocated, candidates } = adjustment;
-  const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2).toLowerCase();
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2).toLowerCase();
   
   const t = {
     title: {
@@ -6715,7 +6749,7 @@ function renderTripBookings() {
   Object.entries(grouped).forEach(([cat, bookings]) => {
     const icon = getCategoryIconForCell(cat);
     const getCatLabel = (category) => {
-      const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0, 2);
+      const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en');
       const categoryMap = {
         flight: 'flights',
         car: 'bookingCategoryVehicles',
@@ -6751,7 +6785,7 @@ function renderTripBookings() {
 
 function renderRow(step,idx){
   // I18N local pour les tooltips
-  const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
   const ROW_I18N = {
     viewPhotos: { fr:'Voir les photos', en:'View photos', es:'Ver fotos', it:'Vedi foto', pt:'Ver fotos', ar:'عرض الصور' , nl: 'Foto\'s bekijken', de: 'Fotos ansehen'},
     copyStep: { fr:'Copier cette étape', en:'Copy this step', es:'Copiar esta etapa', it:'Copia questa tappa', pt:'Copiar esta etapa', ar:'نسخ هذه المرحلة' , nl: 'Deze stop kopiëren', de: 'Diese Etappe kopieren'},
@@ -7278,7 +7312,7 @@ row.addEventListener('mouseleave', ()=>{
 
 // === PANNEAU DÉTAILS ÉTAPE (activités, visites, actions) ===
 function createStepDetailsPanel(step, idx) {
-  const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
   
   // Textes I18N pour tooltips
   const I18N = {
@@ -7350,7 +7384,7 @@ function createStepDetailsPanel(step, idx) {
     };
     
     // Utiliser le système I18N centralisé
-    const lang = window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en');
     const getLabel = (k) => {
       const i18nKey = i18nKeys[k];
       if (i18nKey && window.ORT_I18N?.[i18nKey]) {
@@ -7867,7 +7901,7 @@ function showStepPreview(step){
 
  // === TRADUCTION INTELLIGENTE SYNCHRONE + ASYNCHRONE ===
   
-  const targetLang = (document.documentElement.lang || 'fr').toLowerCase();
+  const targetLang = (window.ORT_getLang ? window.ORT_getLang() : 'en').toLowerCase();
   
 // Fonction de détection améliorée - analyse CHAQUE ligne
   function detectSourceLang(text) {
@@ -8092,7 +8126,7 @@ const padRight = popupShown ? 440 : 60; // 420px + marges pour éviter que l’i
 
 // === Handler bouton Recalculer les nuits ===
 document.getElementById('btnRecalcNights')?.addEventListener('click', () => {
-  const lang = (document.documentElement.lang || 'fr').slice(0, 2);
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0, 2);
   const confirmMsg = {
     fr: 'Recalculer les nuits automatiquement ?\n\nCela va écraser vos modifications manuelles des nuits.',
     en: 'Recalculate nights automatically?\n\nThis will overwrite your manual night changes.',
@@ -11074,7 +11108,7 @@ renderRows();
   }
 
   const qs  = new URLSearchParams(location.search);
-  const ui  = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  const ui  = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
   
   // Récupérer CC dynamiquement (state > URL > fallback)
   function getCC() {
@@ -11224,7 +11258,7 @@ renderRows();
 // === Fonctions modales de secours (si non définies ailleurs) ===
 if (typeof window.showSaveBeforeShareModal !== 'function') {
   window.showSaveBeforeShareModal = function() {
-    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     const messages = {
       fr: 'Veuillez d\'abord sauvegarder votre voyage avant de le partager.\n\nCliquez sur le bouton "Enregistrer" en haut de la page.',
       en: 'Please save your trip first before sharing it.\n\nClick the "Save" button at the top of the page.',
@@ -11245,7 +11279,7 @@ if (typeof window.showSaveBeforeShareModal !== 'function') {
 
 // showLoginModalForSave : modale i18n simple. Message + bouton Fermer. Rien d'autre.
 window.showLoginModalForSave = function() {
-    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     const i18n = {
       fr: { msg: "Vous devez être inscrit pour sauvegarder ce voyage dans votre tableau de bord.", close: "Fermer" },
       en: { msg: "You must be registered to save this trip to your dashboard.", close: "Close" },
@@ -11332,7 +11366,7 @@ window.showLoginModalForSave = function() {
   if(reportBtn){
     reportBtn.addEventListener('click', ()=>{
       toolsPop.classList.remove('show');
-      const lang = (document.documentElement.lang || 'fr').slice(0,2);
+      const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
       const tipMsg = {
         fr: 'Signaler une erreur ou amélioration',
         en: 'Report an error or suggestion',
@@ -14653,6 +14687,9 @@ if (mapPopup) {
 <script src="/js/ort-pdf-export-v6.js"></script>
 <script src="/js/ort-calendar-export.js"></script>
 <script src="./js/ort-modals.js"></script>
+<!-- Socle i18n : libelles de l en-tete, du pied de page et de la connexion.
+     Doit etre charge AVANT ort-footer.js et ort-i18n-auth.js. -->
+<script src="/js/ort-i18n-socle.js"></script>
 <script src="/js/ort-footer.js"></script>
 
 <!-- Auth obligatoire -->
@@ -14710,7 +14747,7 @@ if ('serviceWorker' in navigator) {
   var AI_API = '/.netlify/functions/parse-summary';
 
   function tAi(key) {
-    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['en'] || '';
     return '';
   }
@@ -14742,7 +14779,7 @@ if ('serviceWorker' in navigator) {
     if ($('btnAiSummary'))            $('btnAiSummary').textContent = tAi('aiSummaryGenerate');
     if ($('aiSummaryItineraryTitle')) $('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
     if ($('btnCopyAiSummary'))        $('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
-    if ($('btnRegenAiSummary'))       $('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate');
+    if ($('btnRegenAiSummary'))       $('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate') || '\u{1F504}';
   }
 
   window.toggleAiSummary = function() {
@@ -14786,7 +14823,7 @@ if ('serviceWorker' in navigator) {
     try {
       var token = await getAiToken();
       if (!token) throw new Error('auth_required');
-      var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+      var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
       var stepsPayload = window.state.steps.map(function(s) {
         return {
           name: s.name || s.place_id || '', nights: s.nights || 0,
@@ -14825,10 +14862,16 @@ if ('serviceWorker' in navigator) {
   // a l IA. Consomme le quota mensuel, d ou la confirmation.
   window.regenerateAiSummary = function() {
     if (!window.confirm(tAi('aiSummaryRegenConfirm'))) return;
+    // On remet la zone dans son etat de depart : le bloc des boutons est
+    // masque des qu un resume s affiche, il faut donc le rendre visible.
     var res = document.getElementById('aiSummaryResult');
     if (res) res.style.display = 'none';
+    var actions = document.getElementById('aiSummaryActions');
+    if (actions) actions.style.display = 'flex';
+    var ph = document.getElementById('aiSummaryPlaceholder');
+    if (ph) ph.style.display = '';
     var btn = document.getElementById('btnAiSummary');
-    if (btn) btn.style.display = '';
+    if (btn) btn.style.display = 'inline-block';
     window.generateAiSummary(true);
   };
 
@@ -14898,7 +14941,7 @@ if ('serviceWorker' in navigator) {
     if (_aiPrinting) return;
     _aiPrinting = true;
     var title = (window.state && window.state.title) || 'Road Trip';
-    var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+    var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     var date = new Date().toLocaleDateString(ortDateLocale(), { year: 'numeric', month: 'long', day: 'numeric' });
 
     // Build review HTML
@@ -14995,7 +15038,7 @@ if ('serviceWorker' in navigator) {
       console.log('[AI-SUMMARY] Cache check — catalogId:', catalogId, 'tripId:', tripId);
       try {
         // NO auth header → public cache read
-        var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+        var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
         var res = await fetch(AI_API, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -15017,7 +15060,7 @@ if ('serviceWorker' in navigator) {
 // Ce script s'exécute en dernier et verrouille la V5 simple pour empêcher toute réécriture en V2.
 (function lockLoginModalV5(){
   function v5() {
-    const lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     const i18n = {
       fr: { msg: "Vous devez être inscrit pour sauvegarder ce voyage dans votre tableau de bord.", close: "Fermer" },
       en: { msg: "You must be registered to save this trip to your dashboard.", close: "Close" },

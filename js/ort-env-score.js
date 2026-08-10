@@ -384,7 +384,7 @@
                         Number(window.ORT_TRIP && window.ORT_TRIP.days) ||
                         Number(window._ortItinData && window._ortItinData.days) ||
                         readDaysFromPage() ||
-                        (hasRealNights ? totalNightsCount + 1 : daysPlan.length);
+                        (hasRealNights ? totalNightsCount : daysPlan.length);
 
         console.log('[ENV][DUREE] retenue:', totalDays,
             '| requestedDays:', stt.requestedDays,
@@ -463,6 +463,19 @@
         style.id = 'ort-env-styles';
         style.textContent = `
 /* ═══ ENV SCORE BADGES ═══ */
+
+/* Emplacement dans la barre d'actions (pages statiques) */
+#ort-env-slot {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 8px;
+}
+#ort-env-slot:empty { display: none; }
+#ort-env-slot .ort-env-wrap { margin-left: 0; }
+@media (max-width: 900px) {
+    #ort-env-slot { order: 13; margin-left: auto; }
+}
+
 .ort-env-wrap {
     display: inline-flex;
     align-items: center;

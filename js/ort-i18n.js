@@ -1638,7 +1638,34 @@ window.ORT_I18N = {
  * Obtenir la langue courante
  */
 window.ORT_getLang = function() {
-  return (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+  // LANGUE DE L INTERFACE : celle du visiteur, jamais celle de l adresse.
+  // Cas type : un visiteur neerlandais ouvre un itineraire qui n existe qu en
+  // anglais. L adresse porte ?lang=en parce que le TEXTE de l itineraire est en
+  // anglais, mais les onglets et les boutons doivent rester en neerlandais.
+  var l = localStorage.getItem('lang')
+       || navigator.language
+       || document.documentElement.lang
+       || 'en';
+  return String(l).slice(0, 2).toLowerCase();
+};
+
+/**
+ * Langue du CONTENU de l itineraire (etapes, descriptions).
+ * Elle vient de l adresse : parametre ?lang=, sinon dossier /itineraries/...
+ * A n utiliser que pour le texte de l itineraire, pas pour l interface.
+ */
+window.ORT_getContentLang = function() {
+  try {
+    var q = new URLSearchParams(window.location.search).get('lang');
+    if (q) {
+      q = String(q).slice(0, 2).toLowerCase();
+      if (/^[a-z]{2}$/.test(q)) return q;
+    }
+  } catch (e) { /* URLSearchParams indisponible : on continue */ }
+  var D = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar',routes:'nl',routen:'de'};
+  var m = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar|routes|routen)\//);
+  if (m && D[m[1]]) return D[m[1]];
+  return window.ORT_getLang();
 };
 
 /**
@@ -3110,3 +3137,46 @@ window.ORT_I18N.aiSummaryShareSubject = {
   };
 
 console.log('[ORT-I18N] ✅ Chargé -', Object.keys(window.ORT_I18N).length, 'clés');
+window.ORT_I18N.aiSummaryRegenerate = {
+  fr: '🔄 Relancer',
+  en: '🔄 Regenerate',
+  es: '🔄 Volver a generar',
+  it: '🔄 Rigenera',
+  pt: '🔄 Gerar de novo',
+  ar: '🔄 إعادة الإنشاء',
+  nl: '🔄 Opnieuw genereren',
+  de: '🔄 Neu erstellen'
+};
+
+window.ORT_I18N.aiSummaryRegenConfirm = {
+  fr: 'Relancer le résumé ? L\'ancien sera remplacé et cela consomme votre résumé du mois.',
+  en: 'Regenerate the summary? The previous one will be replaced and this uses your summary for the month.',
+  es: '¿Volver a generar el resumen? El anterior se reemplazará y consumirá tu resumen del mes.',
+  it: 'Rigenerare il riassunto? Quello precedente sarà sostituito e consumerà il tuo riassunto del mese.',
+  pt: 'Gerar o resumo de novo? O anterior será substituído e consome o seu resumo do mês.',
+  ar: 'إعادة إنشاء الملخص؟ سيتم استبدال الملخص السابق وسيستهلك ذلك ملخصك الشهري.',
+  nl: 'De samenvatting opnieuw genereren? De vorige wordt vervangen en dit verbruikt je samenvatting van deze maand.',
+  de: 'Die Zusammenfassung neu erstellen? Die bisherige wird ersetzt und das verbraucht deine Zusammenfassung des Monats.'
+};
+
+window.ORT_I18N.bestPeriod = {
+  fr: 'Meilleure période',
+  en: 'Best period',
+  es: 'Mejor época',
+  it: 'Periodo migliore',
+  pt: 'Melhor época',
+  ar: 'أفضل فترة',
+  nl: 'Beste periode',
+  de: 'Beste Reisezeit'
+};
+
+window.ORT_I18N.highlights = {
+  fr: 'Points forts',
+  en: 'Highlights',
+  es: 'Puntos destacados',
+  it: 'Punti salienti',
+  pt: 'Destaques',
+  ar: 'أبرز المعالم',
+  nl: 'Hoogtepunten',
+  de: 'Höhepunkte'
+};

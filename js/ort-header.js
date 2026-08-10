@@ -81,13 +81,26 @@
 
   /** Récupère la langue courante — priorise le chemin URL sur les pages statiques */
   /** Dossiers d'itineraires par langue */
-  var ITIN_DIRS = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar'};
+  var ITIN_DIRS = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar',routes:'nl',routen:'de'};
 
   function getLang() {
     var path = window.location.pathname;
 
+    // 0. Langue memorisee du visiteur : elle gagne sur tout le reste.
+    //    L en-tete fait partie de l interface, pas du contenu. Un visiteur
+    //    neerlandais qui ouvre un itineraire disponible seulement en anglais
+    //    doit garder un en-tete en neerlandais, meme si l adresse est
+    //    /itineraries/... et porte ?lang=en.
+    try {
+      var saved = localStorage.getItem('lang');
+      if (saved) {
+        saved = String(saved).slice(0, 2).toLowerCase();
+        if (SUPPORTED_LANGS.indexOf(saved) !== -1) return saved;
+      }
+    } catch (e) { /* localStorage indisponible : on continue */ }
+
     // 1. Itineraires : /itineraires/, /itineraries/, /rutas/...
-    var m = path.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//);
+    var m = path.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar|routes|routen)\//);
     if (m && ITIN_DIRS[m[1]]) return ITIN_DIRS[m[1]];
 
     // 2. Blog : /blog/fr/, /blog/en/...

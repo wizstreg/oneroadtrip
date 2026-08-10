@@ -538,7 +538,7 @@
       out[l] = {};
       Object.keys(map).forEach(function (oldKey) {
         var entry = S[map[oldKey]];
-        out[l][oldKey] = (entry && (entry[l] || entry.en)) || '';
+        out[l][oldKey] = (entry && (entry[l] || entry.fr)) || '';
       });
       out[l].langNames = LANG_NAMES;
     });
@@ -593,7 +593,7 @@
 
   var authByLang = byLang(AUTH_MAP);
   window.ORT_I18N_AUTH = authByLang;
-  window.ORT_I18N_AUTH.get = function (lang) { return authByLang[lang] || authByLang.en; };
+  window.ORT_I18N_AUTH.get = function (lang) { return authByLang[lang] || authByLang.fr; };
 
   window.ORT_AUTH_I18N = byLang(GATE_MAP);
   window.ORT_COOKIE_I18N = byLang(COOKIE_MAP);

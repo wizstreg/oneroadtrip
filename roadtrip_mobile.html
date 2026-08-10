@@ -1,12 +1,43 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<!-- Langue du visiteur : definie AVANT tout le reste.
+     Deux langues coexistent sur cette page :
+     - l INTERFACE (onglets, boutons) suit la langue du visiteur ;
+     - le CONTENU de l itineraire suit la langue de l adresse (?lang=),
+       car un itineraire peut n exister qu en anglais.
+     Certains blocs s executent avant le chargement de ort-i18n.js : sans cette
+     definition precoce, ils lisent une autre source et l interface se retrouve
+     a moitie dans une langue, a moitie dans l autre.
+     ort-i18n.js redefinit ensuite les memes fonctions, avec les memes regles. -->
+<script>
+window.ORT_getLang = function () {
+  var l = localStorage.getItem('lang')
+       || navigator.language
+       || document.documentElement.lang
+       || 'en';
+  return String(l).slice(0, 2).toLowerCase();
+};
+window.ORT_getContentLang = function () {
+  try {
+    var q = new URLSearchParams(window.location.search).get('lang');
+    if (q) {
+      q = String(q).slice(0, 2).toLowerCase();
+      if (/^[a-z]{2}$/.test(q)) return q;
+    }
+  } catch (e) { /* on continue */ }
+  var D = {itineraires:'fr',itineraries:'en',rutas:'es',roteiros:'pt',itinerari:'it',masar:'ar',routes:'nl',routen:'de'};
+  var m = window.location.pathname.match(/^\/(itineraires|itineraries|rutas|roteiros|itinerari|masar|routes|routen)\//);
+  if (m && D[m[1]]) return D[m[1]];
+  return window.ORT_getLang();
+};
+</script>
 <!-- ===== JOURNAL D'ECRAN MOBILE : ajouter ?debug=1 a l'URL ===== -->
 <script>
 
 /* Format de date : suit la langue du site, replie sur l anglais. */
 function ortDateLocale(){
-  var l = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+  var l = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || document.documentElement.lang || 'en')).slice(0,2);
   var M = { fr:'fr-FR', en:'en-GB', es:'es-ES', it:'it-IT', pt:'pt-PT', ar:'ar', nl:'nl-NL', de:'de-DE' };
   return M[l] || 'en-GB';
 }
@@ -7537,7 +7568,7 @@ const SCANNER = {
     try {
       const url = this.mode === 'booking' ? this.API_BOOKING : this.API_DOCUMENT;
       // La langue du site est transmise pour que l IA reponde dans la bonne langue
-      const _lang = (localStorage.getItem('lang') || document.documentElement.lang || 'en').slice(0,2);
+      const _lang = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || document.documentElement.lang || 'en')).slice(0,2);
       const body = this.mode === 'booking' 
         ? { photo: this.photoBase64, lang: _lang }
         : { photo: this.photoBase64, save: false, lang: _lang };
@@ -8659,6 +8690,7 @@ window.addEventListener('pageshow', async function(event) {
 <script src="./js/ort-modals.js"></script>
 
 <!-- Auth obligatoire -->
+<script src="/js/ort-i18n-socle.js"></script>
 <script src="/js/ort-i18n-auth.js"></script>
 <script src="/js/ort-auth-modal.js"></script>
 <!-- Bypass auth gate pour liens partagés -->
@@ -8707,7 +8739,7 @@ if ('serviceWorker' in navigator) {
   var AI_API = '/.netlify/functions/parse-summary';
 
   function tAi(key) {
-    var lang = (localStorage.getItem('lang') || document.documentElement.lang || 'fr').slice(0,2);
+    var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
     if (window.ORT_I18N && window.ORT_I18N[key]) return window.ORT_I18N[key][lang] || window.ORT_I18N[key]['en'] || window.ORT_I18N[key]['en'] || '';
     return '';
   }
@@ -8800,7 +8832,7 @@ if ('serviceWorker' in navigator) {
     if (g('btnAiSummary'))            g('btnAiSummary').textContent = tAi('aiSummaryGenerate');
     if (g('aiSummaryItineraryTitle')) g('aiSummaryItineraryTitle').textContent = tAi('aiSummaryItinerary');
     if (g('btnCopyAiSummary'))        g('btnCopyAiSummary').textContent = tAi('aiSummaryCopy');
-    if (g('btnRegenAiSummary'))       g('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate');
+    if (g('btnRegenAiSummary'))       g('btnRegenAiSummary').textContent = tAi('aiSummaryRegenerate') || '\u{1F504}';
     if (g('btnShareAiNativeLabel'))   g('btnShareAiNativeLabel').textContent = (tAi('aiSummaryShare') || '').replace(/\uD83D\uDCE4\s?/, '');
     if (navigator.share && g('btnShareAiNative')) g('btnShareAiNative').style.display = 'inline-block';
     console.log('[AI-SUMMARY] Labels init OK');
@@ -8880,10 +8912,16 @@ if ('serviceWorker' in navigator) {
   // a l IA. Consomme le quota mensuel, d ou la confirmation.
   window.regenerateAiSummary = function() {
     if (!window.confirm(tAi('aiSummaryRegenConfirm'))) return;
+    // On remet la zone dans son etat de depart : le bloc des boutons est
+    // masque des qu un resume s affiche, il faut donc le rendre visible.
     var res = document.getElementById('aiSummaryResult');
     if (res) res.style.display = 'none';
+    var actions = document.getElementById('aiSummaryActions');
+    if (actions) actions.style.display = 'flex';
+    var ph = document.getElementById('aiSummaryPlaceholder');
+    if (ph) ph.style.display = '';
     var b = document.getElementById('btnAiSummary');
-    if (b) b.style.display = '';
+    if (b) b.style.display = 'inline-block';
     window.generateAiSummary(true);
   };
 
@@ -8906,7 +8944,7 @@ if ('serviceWorker' in navigator) {
 
     getAiToken().then(function(token) {
       if (!token) throw new Error('auth_required');
-      var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+      var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
       var stepsPayload = st.steps.map(function(s) {
         return {
           name: s.name || s.place_id || '', nights: s.nights || 0,
@@ -8995,7 +9033,7 @@ if ('serviceWorker' in navigator) {
       clearInterval(ck);
       console.log('[AI-SUMMARY] Auto-load — catalogId:', catalogId, '| tripId:', tripId);
 
-      var lang = (localStorage.getItem('lang') || 'fr').slice(0,2);
+      var lang = (window.ORT_getLang ? window.ORT_getLang() : 'en').slice(0,2);
       fetch(AI_API, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

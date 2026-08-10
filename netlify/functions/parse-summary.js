@@ -187,7 +187,7 @@ function buildStepsText(steps, lang) {
 
       const vis = (Array.isArray(s.visits) ? s.visits.map(v => typeof v === 'string' ? v : v.text).filter(Boolean) : []);
       const act = (Array.isArray(s.activities) ? s.activities.map(a => typeof a === 'string' ? a : a.text).filter(Boolean) : []);
-      let t = `${dayLabel}: ${s.name || L.step + ' ' + (i + 1)} (${n} ${n > 1 ? L.nights : L.night})`;
+      let t = `${s.name || L.step + ' ' + (i + 1)} (${n} ${n > 1 ? L.nights : L.night})`;
       if (vis.length) t += `\n  ${L.visits}: ${vis.join(' | ')}`;
       if (act.length) t += `\n  ${L.activities}: ${act.join(' | ')}`;
       if (s.description) t += `\n  ${L.info}: ${s.description}`;
@@ -201,7 +201,7 @@ function buildStepsText(steps, lang) {
       }
 
       // ownLeg = transport LEAVING this overnight step (real _roadType/_distanceKmToNext/_driveMinToNext)
-      processed.push({ text: t, dayLabel, ownLeg: legText(s, L), passagesAfter: [] });
+      processed.push({ text: t, dayLabel, name: s.name || `${L.step} ${i + 1}`, ownLeg: legText(s, L), passagesAfter: [] });
     }
   }
   // Attach trailing passages (after last overnight step)
@@ -209,15 +209,22 @@ function buildStepsText(steps, lang) {
     processed[processed.length - 1].passagesAfter = [...pendingPassages];
   }
 
-  // Second pass: transport line separate from no-night visits (never framed as a move)
+  // Second pass: every place gets a numbered block. The number and the day label
+  // are authoritative: they are re-applied server-side after the AI answers.
+  const index = [];
+  let no = 0;
   const body = processed.map((p) => {
-    let line = p.text;
+    no++;
+    index.push({ day: p.dayLabel, city: p.name });
+    let line = `#${no} [${p.dayLabel}] ${p.text}`;
     if (p.ownLeg) line += `\n  → ${L.trajet}: ${p.ownLeg}`;
     if (p.passagesAfter.length > 0) {
       line += `\n  → ${L.noNight}: ${p.passagesAfter.map(x => x.name).join(', ')}`;
       // Detail block for each no-night place, so the AI can output one card per place
       p.passagesAfter.forEach(x => {
-        let sub = `\n  ${L.passage} [${p.dayLabel}] ${x.name}`;
+        no++;
+        index.push({ day: p.dayLabel, city: x.name });
+        let sub = `\n#${no} [${p.dayLabel}] ${L.passage}: ${x.name}`;
         if (x.visits.length) sub += `\n    ${L.visits}: ${x.visits.join(' | ')}`;
         if (x.activities.length) sub += `\n    ${L.activities}: ${x.activities.join(' | ')}`;
         if (x.description) sub += `\n    ${L.info}: ${x.description}`;
@@ -232,7 +239,7 @@ function buildStepsText(steps, lang) {
   const totalNights = steps.reduce((sum, s) => sum + (s.nights || 0), 0);
   const nbBases = steps.filter(s => (s.nights || 0) > 0).length;
   const header = (TRIP_HEADER[lang] || TRIP_HEADER.en)(totalNights, nbBases);
-  return `${header}\n\n${body}`;
+  return { text: `${header}\n\n${body}`, index };
 }
 
 // ===== PROMPT =====
@@ -241,49 +248,49 @@ function buildPrompt(title, stepsText, lang) {
     fr: `Tu es un expert en road trips. Réponds UNIQUEMENT en JSON valide (pas de texte avant/après, pas de backticks).
 Format: {"alerts":["⚠️ alerte1","⚠️ alerte2"],"review":["Points forts: ...","Points faibles: ...","Avis: pour qui, réduire/augmenter, conseil"],"steps":[{"day":"Jour X","city":"NOM","highlights":"1-2 phrases, noms clés EN MAJUSCULES","next":"direction + distance + temps"}]}
 alerts: liste COURTE (0-3) de choses à vérifier ou corriger sur ce parcours. Ex: étape trop longue en voiture, lieu fermé/saisonnier, détour inutile, étape manquante évidente, visa/permis nécessaire, meilleure saison. Si tout est OK, tableau vide [].
-review=3 chaînes, steps=TOUS les lieux du parcours, un objet par lieu, dans l'ordre exact fourni. Les lieux marqués "Passage [Jour X]" donnent AUSSI leur propre objet, en reprenant le MÊME label de jour que l'étape qui les précède. Le champ "day" reprend le label exact (ex: "Jour 1", "Jour 2-4"). next="" pour la dernière étape. Concis, enthousiaste.
+review=3 chaînes, steps=UN objet par ligne numérotée #1, #2, #3... de l'itinéraire ci-dessous, dans le MÊME ordre et avec le MÊME nombre d'objets. Recopie le label de jour entre crochets tel quel dans "day" et le nom du lieu dans "city". N'invente aucun numéro de jour, ne fusionne jamais deux lignes. next="" pour la dernière étape. Concis, enthousiaste.
 TRANSPORT: chaque étape indique son trajet réel (mode + distance + temps) sous "→ Trajet". Reprends EXACTEMENT ce mode et cette durée dans "next". Ne suppose JAMAIS la voiture : si c'est marqué EN AVION, c'est un vol. N'ajoute aucune alerte de fatigue, de trajet trop long ni de "journée de route" quand le trajet est un vol.
 NUITS vs LIEUX: la durée réelle est le nombre de NUITS, pas le nombre de lieux. Un lieu "sans nuit" est une visite depuis l'hébergement du moment, jamais un changement d'hôtel. Ne dis JAMAIS qu'un séjour est infaisable, surchargé ou trop intense à cause du nombre de lieux. Une base avec plusieurs visites sans nuit reste UNE seule étape avec un seul hébergement.
 IMPORTANT: Avant de répondre, compte les lieux de l'itinéraire fourni (étapes avec nuit + lignes "Passage") et vérifie que ton tableau steps contient EXACTEMENT le même nombre d'objets, dans le même ordre, avec les mêmes labels de jour. Aucun lieu ne doit manquer.`,
     en: `You are a road trip expert. Respond ONLY with valid JSON (no text before/after, no backticks).
 Format: {"alerts":["⚠️ alert1","⚠️ alert2"],"review":["Strengths: ...","Weaknesses: ...","Verdict: who, shorten/extend, tip"],"steps":[{"day":"Day X","city":"NAME","highlights":"1-2 sentences, key names IN CAPITALS","next":"direction + distance + time"}]}
 alerts: SHORT list (0-3) of things to verify or fix. E.g.: overly long drive, seasonal closure, unnecessary detour, obvious missing stop, visa required, best season. If all OK, empty array [].
-review=3 strings, steps=ALL places of the route, one object per place, in the exact given order. Places marked "Pass-through [Day X]" ALSO get their own object, reusing the SAME day label as the stop before them. "day" field must match the exact label (e.g. "Day 1", "Day 2-4"). next="" for last step. Concise, enthusiastic.
+review=3 strings, steps=ONE object per numbered line #1, #2, #3... of the itinerary below, in the SAME order and with the SAME count. Copy the bracketed day label as-is into "day" and the place name into "city". Never invent a day number, never merge two lines. next="" for last step. Concise, enthusiastic.
 TRANSPORT: each stop states its real leg (mode + distance + time) under "→ Leg". Reuse that EXACT mode and duration in "next". NEVER assume driving: if it says BY PLANE, it is a flight. Do not add any fatigue, too-long-drive or "full day on the road" warning when the leg is a flight.
 NIGHTS vs PLACES: real duration is the number of NIGHTS, not the number of places. A "no-night" place is a visit from the current lodging, never a hotel change. NEVER call a trip infeasible, overloaded or too intense because of the number of places. One base with several no-night visits is still ONE stop with one lodging.
 IMPORTANT: Before responding, count the places in the given itinerary (overnight stops + "Pass-through" lines) and check your steps array contains EXACTLY the same number of objects, in the same order, with the same day labels. No place may be missing.`,
     nl: `You are a road trip expert. Write ALL your answers in Dutch. Respond ONLY with valid JSON (no text before/after, no backticks).
 Format: {"alerts":["⚠️ alert1","⚠️ alert2"],"review":["Strengths: ...","Weaknesses: ...","Verdict: who, shorten/extend, tip"],"steps":[{"day":"Day X","city":"NAME","highlights":"1-2 sentences, key names IN CAPITALS","next":"direction + distance + time"}]}
 alerts: SHORT list (0-3) of things to verify or fix. E.g.: overly long drive, seasonal closure, unnecessary detour, obvious missing stop, visa required, best season. If all OK, empty array [].
-review=3 strings, steps=ALL places of the route, one object per place, in the exact given order. Places marked "Pass-through [Day X]" ALSO get their own object, reusing the SAME day label as the stop before them. "day" field must match the exact label (e.g. "Day 1", "Day 2-4"). next="" for last step. Concise, enthusiastic.
+review=3 strings, steps=ONE object per numbered line #1, #2, #3... of the itinerary below, in the SAME order and with the SAME count. Copy the bracketed day label as-is into "day" and the place name into "city". Never invent a day number, never merge two lines. next="" for last step. Concise, enthusiastic.
 TRANSPORT: each stop states its real leg (mode + distance + time) under "→ Leg". Reuse that EXACT mode and duration in "next". NEVER assume driving: if it says BY PLANE, it is a flight. Do not add any fatigue, too-long-drive or "full day on the road" warning when the leg is a flight.
 NIGHTS vs PLACES: real duration is the number of NIGHTS, not the number of places. A "no-night" place is a visit from the current lodging, never a hotel change. NEVER call a trip infeasible, overloaded or too intense because of the number of places. One base with several no-night visits is still ONE stop with one lodging.
 IMPORTANT: Before responding, count the places in the given itinerary (overnight stops + "Pass-through" lines) and check your steps array contains EXACTLY the same number of objects, in the same order, with the same day labels. No place may be missing.`,
     de: `You are a road trip expert. Write ALL your answers in German. Respond ONLY with valid JSON (no text before/after, no backticks).
 Format: {"alerts":["⚠️ alert1","⚠️ alert2"],"review":["Strengths: ...","Weaknesses: ...","Verdict: who, shorten/extend, tip"],"steps":[{"day":"Day X","city":"NAME","highlights":"1-2 sentences, key names IN CAPITALS","next":"direction + distance + time"}]}
 alerts: SHORT list (0-3) of things to verify or fix. E.g.: overly long drive, seasonal closure, unnecessary detour, obvious missing stop, visa required, best season. If all OK, empty array [].
-review=3 strings, steps=ALL places of the route, one object per place, in the exact given order. Places marked "Pass-through [Day X]" ALSO get their own object, reusing the SAME day label as the stop before them. "day" field must match the exact label (e.g. "Day 1", "Day 2-4"). next="" for last step. Concise, enthusiastic.
+review=3 strings, steps=ONE object per numbered line #1, #2, #3... of the itinerary below, in the SAME order and with the SAME count. Copy the bracketed day label as-is into "day" and the place name into "city". Never invent a day number, never merge two lines. next="" for last step. Concise, enthusiastic.
 TRANSPORT: each stop states its real leg (mode + distance + time) under "→ Leg". Reuse that EXACT mode and duration in "next". NEVER assume driving: if it says BY PLANE, it is a flight. Do not add any fatigue, too-long-drive or "full day on the road" warning when the leg is a flight.
 NIGHTS vs PLACES: real duration is the number of NIGHTS, not the number of places. A "no-night" place is a visit from the current lodging, never a hotel change. NEVER call a trip infeasible, overloaded or too intense because of the number of places. One base with several no-night visits is still ONE stop with one lodging.
 IMPORTANT: Before responding, count the places in the given itinerary (overnight stops + "Pass-through" lines) and check your steps array contains EXACTLY the same number of objects, in the same order, with the same day labels. No place may be missing.`,
     es: `Experto en road trips. Responde SOLO con JSON válido (sin texto antes/después).
 Formato: {"alerts":["⚠️ ..."],"review":["Fuertes: ...","Débiles: ...","Veredicto: ..."],"steps":[{"day":"Día X","city":"CIUDAD","highlights":"1-2 frases, nombres EN MAYÚSCULAS","next":"dirección + distancia + tiempo"}]}
-alerts: 0-3 cosas a verificar. review=3, steps=TODOS los lugares, un objeto por lugar, en el orden exacto. Los marcados "Paso [Día X]" TAMBIÉN generan su propio objeto, con la MISMA etiqueta de día que la etapa anterior. "day" = etiqueta exacta (ej: "Día 1", "Día 2-4"). next="" última. Conciso, entusiasta.
+alerts: 0-3 cosas a verificar. review=3, steps=UN objeto por línea numerada #1, #2, #3... del itinerario, en el MISMO orden y con el MISMO número. Copia la etiqueta de día entre corchetes en "day" y el nombre en "city". Nunca inventes un día ni fusiones dos líneas. next="" última. Conciso, entusiasta.
 TRANSPORTE: cada etapa indica su trayecto real (modo + distancia + tiempo) bajo "→ Trayecto". Usa EXACTAMENTE ese modo y duración en "next". NUNCA supongas coche: si dice EN AVIÓN, es un vuelo. No añadas alerta de fatiga ni de trayecto demasiado largo cuando el trayecto es un vuelo.
 IMPORTANTE: Antes de responder, cuenta los lugares del itinerario (etapas con noche + líneas "Paso") y verifica que steps contiene EXACTAMENTE el mismo número de objetos, en el mismo orden.`,
     it: `Esperto di road trip. Rispondi SOLO con JSON valido (nessun testo prima/dopo).
 Formato: {"alerts":["⚠️ ..."],"review":["Forza: ...","Deboli: ...","Giudizio: ..."],"steps":[{"day":"Giorno X","city":"CITTÀ","highlights":"1-2 frasi, nomi IN MAIUSCOLO","next":"direzione + distanza + tempo"}]}
-alerts: 0-3 cose da verificare. review=3, steps=TUTTI i luoghi, un oggetto per luogo, nell'ordine esatto. Quelli marcati "Passaggio [Giorno X]" generano ANCHE il proprio oggetto, con la STESSA etichetta di giorno della tappa precedente. "day" = etichetta esatta (es: "Giorno 1", "Giorno 2-4"). next="" ultima. Conciso, entusiasta.
+alerts: 0-3 cose da verificare. review=3, steps=UN oggetto per riga numerata #1, #2, #3... dell'itinerario, nello STESSO ordine e con lo STESSO numero. Copia l'etichetta di giorno tra parentesi quadre in "day" e il nome in "city". Non inventare mai un giorno, non unire mai due righe. next="" ultima. Conciso, entusiasta.
 TRASPORTO: ogni tappa indica il tragitto reale (modo + distanza + tempo) sotto "→ Tragitto". Usa ESATTAMENTE quel modo e durata in "next". Non supporre MAI l'auto: se c'è scritto IN AEREO, è un volo. Non aggiungere alcun avviso di stanchezza o tragitto troppo lungo quando il tragitto è un volo.
 IMPORTANTE: Prima di rispondere, conta i luoghi dell'itinerario (tappe con notte + righe "Passaggio") e verifica che steps contenga ESATTAMENTE lo stesso numero di oggetti, nello stesso ordine.`,
     pt: `Especialista em road trips. Responda APENAS com JSON válido (sem texto antes/depois).
 Formato: {"alerts":["⚠️ ..."],"review":["Fortes: ...","Fracos: ...","Veredicto: ..."],"steps":[{"day":"Dia X","city":"CIDADE","highlights":"1-2 frases, nomes EM MAIÚSCULAS","next":"direção + distância + tempo"}]}
-alerts: 0-3 pontos a verificar. review=3, steps=TODOS os locais, um objeto por local, na ordem exata. Os marcados "Passagem [Dia X]" TAMBÉM geram o seu próprio objeto, com o MESMO rótulo de dia da etapa anterior. "day" = rótulo exato (ex: "Dia 1", "Dia 2-4"). next="" última. Conciso, entusiasta.
+alerts: 0-3 pontos a verificar. review=3, steps=UM objeto por linha numerada #1, #2, #3... do itinerário, na MESMA ordem e com o MESMO número. Copie o rótulo de dia entre parênteses retos em "day" e o nome em "city". Nunca invente um dia nem junte duas linhas. next="" última. Conciso, entusiasta.
 TRANSPORTE: cada etapa indica o seu trajeto real (modo + distância + tempo) em "→ Trajeto". Use EXATAMENTE esse modo e duração em "next". NUNCA suponha carro: se diz DE AVIÃO, é um voo. Não adicione alerta de cansaço nem de trajeto longo demais quando o trajeto é um voo.
 IMPORTANTE: Antes de responder, conte os locais do itinerário (etapas com noite + linhas "Passagem") e verifique que steps contém EXATAMENTE o mesmo número de objetos, na mesma ordem.`,
     ar: `خبير رحلات. أجب فقط بـ JSON صالح.
 {"alerts":["⚠️ ..."],"review":["القوة: ...","الضعف: ...","الحكم: ..."],"steps":[{"day":"يوم X","city":"المدينة","highlights":"جملة أو جملتين","next":"اتجاه + مسافة + وقت"}]}
-alerts: 0-3 أشياء للتحقق. review=3, steps=كل الأماكن، كائن واحد لكل مكان، بالترتيب نفسه. الأماكن المعلَّمة "عبور" لها أيضاً كائن خاص بنفس تسمية اليوم للمرحلة السابقة. "day" = التسمية الدقيقة. next="" الأخيرة.
+alerts: 0-3 أشياء للتحقق. review=3, steps=كائن واحد لكل سطر مرقّم #1، #2، #3... بالترتيب نفسه وبالعدد نفسه. انسخ تسمية اليوم بين القوسين في "day" واسم المكان في "city". لا تخترع يوماً ولا تدمج سطرين. next="" الأخيرة.
 النقل: كل مرحلة تذكر مسافتها الحقيقية (الوسيلة + المسافة + الوقت) تحت "→". استخدم نفس الوسيلة والمدة بالضبط في "next". لا تفترض السيارة أبداً: إذا كُتب بالطائرة فهي رحلة جوية. لا تضف أي تحذير عن التعب أو طول الطريق عندما يكون التنقل بالطائرة.
 مهم: قبل الإجابة، عُدّ الأماكن في المسار (المراحل بليالٍ + أسطر "عبور") وتحقق أن steps يحتوي على العدد نفسه بالضبط وبالترتيب نفسه.`
   };
@@ -293,6 +300,29 @@ alerts: 0-3 أشياء للتحقق. review=3, steps=كل الأماكن، كا�
     nl: 'Route', de: 'Route'
   };
   return `${instr[lang] || instr.en}\n\n${introLabel[lang] || introLabel.en} "${title}":\n${stepsText}`;
+}
+
+// ===== REALIGN =====
+// The day label and the place name are OUR data, never the AI's. We re-apply them
+// on the AI output so a mislabelled or merged day can never reach the user.
+function realignSteps(aiSteps, index) {
+  if (!Array.isArray(index) || index.length === 0) return aiSteps;
+  const list = Array.isArray(aiSteps) ? aiSteps : [];
+  const norm = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return index.map((ref, i) => {
+    let src = list[i];
+    // If the AI dropped or reordered entries, find the right one by name.
+    // No name match = no text at all, rather than text belonging to another place.
+    if (!src || norm(src.city) !== norm(ref.city)) {
+      src = list.find(x => norm(x && x.city) === norm(ref.city)) || null;
+    }
+    return {
+      day: ref.day,
+      city: ref.city,
+      highlights: (src && src.highlights) || '',
+      next: (src && src.next) || ''
+    };
+  });
 }
 
 // ===== PARSE AI JSON =====
@@ -490,7 +520,9 @@ export default async (request, context) => {
     // Generate
     let aiResult;
     try {
-      aiResult = await generateSummary(title || 'Road Trip', buildStepsText(steps, lang), lang);
+      const built = buildStepsText(steps, lang);
+      aiResult = await generateSummary(title || 'Road Trip', built.text, lang);
+      aiResult.steps = realignSteps(aiResult.steps, built.index);
     } catch (aiErr) {
       console.error('❌ All AI failed:', aiErr.message);
       return new Response(JSON.stringify({ success: false, error: 'ai_overloaded', message: aiErr.message, usage: quota }), { status: 503, headers });
