@@ -283,7 +283,11 @@
     `;
 
     const partnerImg = document.createElement('img');
-    partnerImg.src = '/assets/logos/logoit2-3-scaled.webp';
+    // Logo reduit (168 x 60 px, quelques Ko) : l'original faisait 2560 x 912 px et 684 Ko
+    // pour un affichage en 56 x 20 px. Largeur et hauteur indiquees : rien ne bouge au chargement.
+    partnerImg.src = '/assets/logos/logoit2-3-small.webp';
+    partnerImg.width = 56;
+    partnerImg.height = 20;
     partnerImg.alt = 'InfosTourisme.com';
     partnerImg.loading = 'lazy';
     partnerImg.style.cssText = `
@@ -346,7 +350,7 @@
           </div>
           <div style="color: #444; font-size: 14px; line-height: 1.5;">
             ${T.bannerText}
-            <a href="/politique-cookies.html?lang=${lang}" style="color: #113f7a; text-decoration: underline; margin-${rtl ? 'right' : 'left'}: 4px;">
+            <a href="/cookies-${['fr','en','es','it','pt','de','nl','ar'].indexOf(lang)!==-1?lang:'en'}.html" style="color: #113f7a; text-decoration: underline; margin-${rtl ? 'right' : 'left'}: 4px;">
               ${T.bannerLink}
             </a>
           </div>
@@ -486,7 +490,7 @@
           <p style="margin: 0; color: #444; font-size: 14px; line-height: 1.6;">
             ${T.modalIntro}
           </p>
-          <a href="/politique-cookies.html?lang=${lang}" target="_blank" style="
+          <a href="/cookies-${['fr','en','es','it','pt','de','nl','ar'].indexOf(lang)!==-1?lang:'en'}.html" target="_blank" style="
             display: inline-block;
             margin-top: 12px;
             color: #113f7a;

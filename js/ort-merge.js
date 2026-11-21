@@ -384,7 +384,10 @@
     ensureCSS();
     Promise.all([
       loadItins(cc, lang),
-      fetchJSON('/data/photos-json/photos_lieux.json')
+      // Version legere d'abord (6 Mo au lieu de 31) ; la complete en secours.
+      fetchJSON('/data/photos-json/photos_lieux.light.json').then(function (db) {
+        return (db && typeof db === 'object') ? db : fetchJSON('/data/photos-json/photos_lieux.json');
+      })
     ]).then(function (res) {
       var itins = res[0] || [];
       state.photosDb = res[1] || {};

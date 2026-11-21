@@ -29,6 +29,13 @@
   const SUPPORTED_LANGS = (window.ORT_LANGS || ['fr', 'en', 'es', 'it', 'pt', 'ar', 'nl', 'de']);
   const MODAL_ID = 'ortAuthModal';
   const MODAL_ZINDEX = 10000;
+  // Langues dans lesquelles la page d'aide existe : /help-fr.html, /help-en.html...
+  // Ajouter un code ici quand la page de cette langue est en ligne.
+  // Une langue absente de la liste (l'arabe) renvoie vers la page anglaise.
+  const HELP_LANGS = ['fr', 'en', 'es', 'it', 'pt', 'de', 'nl'];
+  function helpUrl(lang) {
+    return '/help-' + (HELP_LANGS.indexOf(lang) !== -1 ? lang : 'en') + '.html';
+  }
 
   // ============================================
   // UTILITAIRES
@@ -131,6 +138,12 @@
       }
       // Pas de balise (ex: l'index du blog) : on se contente de changer le segment.
       return path.replace(/^\/blog\/[a-z]{2}\//, '/blog/' + newLang + '/');
+    }
+
+    // Aide : /help-fr.html -> /help-en.html, seulement si la page existe.
+    m = path.match(/^\/help-([a-z]{2})(\.html)?$/);
+    if (m) {
+      return HELP_LANGS.indexOf(newLang) !== -1 ? '/help-' + newLang + (m[2] || '') : null;
     }
 
     // Itineraires : on remplace le dossier. Le slug ne change pas.
@@ -775,6 +788,7 @@
     const catalogLabel = lbl('navCatalog', 'Catalogue');
     const blogLabel    = lbl('navBlog', 'Blog');
     const tripsLabel   = lbl('navTrips', 'Your trips');
+    const helpLabel    = lbl('navHelp', 'Help');
 
     // Habillage de base de la barre.
     // Il etait jusqu'ici recopie dans chaque template ; il vit maintenant ici,
@@ -819,19 +833,29 @@
           .ort-nav-link{padding:7px 10px;font-size:13px;gap:5px;}
           header.ort-hdr .brandlink img{height:44px;}
         }
-        /* Petits ecrans : on ne garde que les pictos, la barre tient sur une ligne. */
-        @media(max-width:720px){
+        /* Petits ecrans : on ne garde que les pictos, la barre tient sur une ligne.
+           Seuil releve de 720 a 900 depuis l'ajout du lien Aide (5 liens). */
+        @media(max-width:900px){
           .ort-nav-link .lbl{display:none;}
           .ort-nav-link{padding:7px 9px;}
           header.ort-hdr .auth-txt{display:none;}
           header.ort-hdr .brand{display:none!important;}
         }
+        /* Telephones : 5 pictos, la langue et le compte sur une seule ligne. */
+        @media(max-width:480px){
+          .header-row-1{gap:4px;}
+          .ort-nav-link{padding:6px 6px;}
+          header.ort-hdr .brandlink img{height:38px;}
+          header.ort-hdr .langpick{max-width:62px;}
+          header.ort-hdr .btn{padding:4px 7px;}
+        }
         /* Tres petits ecrans : dernier resserrement, plus rien ne deborde. */
         @media(max-width:380px){
-          .header-row-1{gap:5px;}
-          header.ort-hdr{padding:6px 8px;}
-          .ort-nav-link{padding:6px 7px;font-size:12px;}
-          header.ort-hdr .brandlink img{height:38px;}
+          .header-row-1{gap:3px;}
+          header.ort-hdr{padding:6px 6px;}
+          .ort-nav-link{padding:5px 5px;font-size:12px;}
+          header.ort-hdr .brandlink img{height:34px;}
+          header.ort-hdr .langpick{max-width:54px;}
         }
       `;
       document.head.appendChild(st);
@@ -854,6 +878,9 @@
         </a>
         <a class="ort-nav-link" id="btnTrips" href="/dashboard_user.html?lang=${lang}" aria-label="${tripsLabel}">
           <span aria-hidden="true">🏠</span><span class="lbl">${tripsLabel}</span>
+        </a>
+        <a class="ort-nav-link" id="helpLink" href="${helpUrl(lang)}" aria-label="${helpLabel}">
+          <span aria-hidden="true">❓</span><span class="lbl">${helpLabel}</span>
         </a>
         <select id="langSel" class="langpick" aria-label="Langue">
           ${SUPPORTED_LANGS.map(function(c){ return '<option value="'+c+'">'+c.toUpperCase()+'</option>'; }).join('')}

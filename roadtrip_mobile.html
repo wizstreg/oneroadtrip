@@ -177,6 +177,68 @@ function ortDateLocale(){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <meta charset="utf-8">
 <meta name="robots" content="noindex, follow">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
@@ -185,6 +247,7 @@ function ortDateLocale(){
 <link rel="manifest" href="/manifest.json">
 <title>OneRoadTrip</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-JK3QGQGDDL"></script>
 <script>
@@ -217,7 +280,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
   
@@ -234,7 +302,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
   
@@ -254,7 +327,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
 })();
@@ -1224,7 +1302,14 @@ html, body {
   z-index: 201;
   transform: translateY(100%);
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  /* Sur iPhone, vh mesure la page barres du navigateur masquees, donc plus haut
+     que la zone reellement visible. Le panneau depassait par le haut et son
+     en-tete, avec les fleches de navigation entre etapes, sortait de l ecran.
+     dvh suit la hauteur reellement affichee. La ligne vh reste en repli pour
+     les navigateurs qui ne connaissent pas dvh. */
   max-height: 85vh;
+  max-height: 85dvh;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   display: flex;
   flex-direction: column;
 }
@@ -2192,6 +2277,16 @@ html, body {
   height: 26px;
   border: 2px solid #fff;
   box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  position: absolute;
+}
+/* Drapeau des étapes où l'on dort, comme sur roadtrip_detail */
+.step-marker .hub-flag {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  font-size: 12px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.3));
 }
 
 /* Scanner buttons */
@@ -2706,6 +2801,14 @@ html, body {
         <span class="service-icon">🇸🇦</span>
         <span class="service-name">العربية</span>
       </div>
+      <div class="service-card lang-option" data-lang="nl">
+        <span class="service-icon">🇳🇱</span>
+        <span class="service-name">Nederlands</span>
+      </div>
+      <div class="service-card lang-option" data-lang="de">
+        <span class="service-icon">🇩🇪</span>
+        <span class="service-name">Deutsch</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2785,6 +2888,8 @@ window.debugLog = function(msg) {
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -2890,7 +2995,7 @@ window.debugLog = function(msg) {
   , nl: {"loginTitle":'Inloggen',"signupTitle":'Account aanmaken',"resetTitle":'Wachtwoord vergeten',"email":'E-mail',"password":'Wachtwoord',"confirmPassword":'Bevestigen',"login":'Inloggen',"signup":'Aanmaken',"sendReset":'Versturen',"cancel":'Annuleren',"noAccount":'Geen account?',"hasAccount":'Al een account?',"forgotPwd":'Wachtwoord vergeten?',"orGoogle":'of met Google',"success":'✅ Ingelogd!',"resetSent":'✅ E-mail verstuurd!',"accountCreated":'✅ Account aangemaakt! Controleer je e-mail.',"errFill":'Vul alle velden in',"errEmail":'Ongeldig e-mailadres',"errPwdShort":'Wachtwoord te kort (min. 6)',"errPwdMatch":'Wachtwoorden komen niet overeen',"errWrongPwd":'Onjuist wachtwoord',"errNotFound":'Account bestaat niet',"errExists":'E-mailadres al in gebruik',"errGeneric":'Fout, probeer opnieuw'}, de: {"loginTitle":'Anmelden',"signupTitle":'Konto erstellen',"resetTitle":'Passwort vergessen',"email":'E-Mail',"password":'Passwort',"confirmPassword":'Bestätigen',"login":'Anmelden',"signup":'Erstellen',"sendReset":'Senden',"cancel":'Abbrechen',"noAccount":'Kein Konto?',"hasAccount":'Schon ein Konto?',"forgotPwd":'Passwort vergessen?',"orGoogle":'oder mit Google',"success":'✅ Angemeldet!',"resetSent":'✅ E-Mail gesendet!',"accountCreated":'✅ Konto erstellt! Prüfe deine E-Mails.',"errFill":'Fülle alle Felder aus',"errEmail":'Ungültige E-Mail',"errPwdShort":'Passwort zu kurz (mind. 6)',"errPwdMatch":'Passwörter stimmen nicht überein',"errWrongPwd":'Falsches Passwort',"errNotFound":'Konto existiert nicht',"errExists":'E-Mail bereits verwendet',"errGeneric":'Fehler, bitte erneut versuchen'}};
   
   function t(key) {
-    const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr'));
     return T[lang]?.[key] || T.en[key] || key;
   }
   
@@ -3874,7 +3979,7 @@ const I18N_MOBILE = {
 };
 
 function i18n(key) {
-  const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr'));
   // 1. Chercher dans I18N_MOBILE local
   if (I18N_MOBILE[lang]?.[key]) return I18N_MOBILE[lang][key];
   if (I18N_MOBILE.fr?.[key]) return I18N_MOBILE.fr[key];
@@ -3885,7 +3990,7 @@ function i18n(key) {
 }
 
 function applyI18n() {
-  const lang = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr';
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || localStorage.getItem('ort_lang') || 'fr'));
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const text = i18n(key);
@@ -4399,8 +4504,14 @@ async function loadFromTemp(rtKey) {
       description: s.description || s.desc || '',
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      _roadType: s._roadType || s.to_next_leg?.road_type || null,
+      _transportMode: s._transportMode || s.to_next_leg?.transport_mode || null,
+      _method: s._method || s.to_next_leg?.method || null,
       placeId: s.placeId || s.place_id || s.night?.place_id || null,
       place_id: s.place_id || s.placeId || s.night?.place_id || null,
+      // Base de nuit et nombre de nuits decides en amont, quand le fichier les porte
+      ...(s.stay_at ? { stay_at: s.stay_at } : {}),
+      ...(Number.isFinite(Number(s.stay_nights)) ? { stay_nights: Number(s.stay_nights) } : {}),
       visits: visits,
       activities: activities,
       // Conserver les infos enrichies
@@ -4696,6 +4807,9 @@ async function applyTripDataToState(tripData) {
       description: s.description || s.desc || '',
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || s._distanceKmToNext || 0,
+      _roadType: s._roadType || s.to_next_leg?.road_type || null,
+      _transportMode: s._transportMode || s.to_next_leg?.transport_mode || null,
+      _method: s._method || s.to_next_leg?.method || null,
       drive_min: s.drive_min || s.to_next_leg?.drive_min || s._driveMinToNext || 0,
       placeId: s.placeId || s.place_id || null,
       place_id: s.place_id || s.placeId || null,
@@ -4803,6 +4917,9 @@ async function loadBuilderResult() {
       description: s.description || '',
       photos: photos,
       distance_km: s.distance_km || s.to_next_leg?.distance_km || 0,
+      _roadType: s._roadType || s.to_next_leg?.road_type || null,
+      _transportMode: s._transportMode || s.to_next_leg?.transport_mode || null,
+      _method: s._method || s.to_next_leg?.method || null,
       placeId: s.place_id || null,
       visits: s.visits || [],
       activities: s.activities || [],
@@ -5365,6 +5482,9 @@ async function loadItinerary_OLD(cc, itinId, lang) {
             nights, description,
             photos: photos,
             distance_km: distanceKm,
+            _roadType: day.to_next_leg?.road_type || null,
+            _transportMode: day.to_next_leg?.transport_mode || null,
+            _method: day.to_next_leg?.method || null,
             placeId: day.place_id || day.placeId || placeId,
             place_id: day.place_id || day.placeId || placeId,
             visits: visits,
@@ -5445,6 +5565,11 @@ async function loadItinerary_OLD(cc, itinId, lang) {
       nights, description,
       photos: photos,
       distance_km: distanceKm,
+      // Type de route, mode et methode viennent du fichier et ne se recalculent
+      // pas. La methode dit notamment si le trajet a le droit d'etre route.
+      _roadType: day.to_next_leg?.road_type || null,
+      _transportMode: day.to_next_leg?.transport_mode || null,
+      _method: day.to_next_leg?.method || null,
       placeId: day.place_id || day.placeId || placeId,
       place_id: day.place_id || day.placeId || placeId,
       visits: visits,
@@ -5506,6 +5631,9 @@ async function loadFromFirebase(rtKey) {
       description: s.description || '',
       photos: photos,
       distance_km: s.distance_km || 0,
+      _roadType: s._roadType || s.to_next_leg?.road_type || null,
+      _transportMode: s._transportMode || s.to_next_leg?.transport_mode || null,
+      _method: s._method || s.to_next_leg?.method || null,
       placeId: s.placeId || s.place_id || null,
       place_id: s.place_id || s.placeId || null,
       visits: visits,
@@ -5864,12 +5992,14 @@ function setupEvents() {
       
       state.lang = newLang;
       closeAllSheets();
-      showToast(`✅ Langue: ${newLang.toUpperCase()}`);
-      
-      // Mettre à jour l'URL avec la nouvelle langue puis reload
+
+      // On navigue tout de suite. Avec un delai, la page continue de tourner
+      // apres avoir vide ses caches : elle relance des chargements que la
+      // navigation annule ensuite, et Safari affiche "Load failed".
+      window.__ORT_REDIRECTING = true;
       const url = new URL(location.href);
       url.searchParams.set('lang', newLang);
-      setTimeout(() => location.replace(url.toString()), 500);
+      location.replace(url.toString());
     };
   });
 }
@@ -6226,9 +6356,19 @@ function renderList() {
       }
     }
     
+    // Mode de transport : valeur technique anglaise en base, on l'affiche par
+    // une icone plutot que par un mot, ce qui evite d'avoir a la traduire.
+    const ICONE_MODE = { car: '🚗', train: '🚆', flight: '✈️', ferry: '⛴️', boat: '🛶', walk: '🚶' };
+    const iconeMode = ICONE_MODE[step._transportMode] || '';
+
+    // Type de route : deja ecrit en clair dans la langue du fichier, il
+    // s'affiche tel quel, sans table de correspondance.
+    const typeRoute = (step._roadType || '').trim();
+
     // Fusion km + nuits sur une seule ligne meta
     let metaParts = [];
-    if (distText) metaParts.push(distText);
+    if (distText) metaParts.push(iconeMode ? `${iconeMode} ${distText}` : distText);
+    if (typeRoute) metaParts.push(typeRoute.length > 42 ? typeRoute.slice(0, 40) + '…' : typeRoute);
     if (step.nights > 0) metaParts.push(`🌙 ${nightsText}`);
     const metaLine = metaParts.join(' · ');
 
@@ -6324,15 +6464,22 @@ function updateSummary() {
 }
 
 // === MAP ===
+function ortAddBaseMap(m){
+  // Le fond raster fonctionne aussi sans contexte graphique WebGL sur iPhone.
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom:19
+  }).addTo(m);
+}
+
 function initMap() {
   if (typeof L === 'undefined') { setTimeout(initMap, 100); return; }
   if (map) return;
   
-  map = L.map('map', { zoomControl: true, attributionControl: false });
+  // Donner une vue initiale valide, même lorsque l’onglet Carte est masqué.
+  map = L.map('map', { center: [0, 0], zoom: 2, zoomControl: true, attributionControl: true });
   window.map = map; // exposé pour ort-itin-editor (bridge)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd'
-  }).addTo(map);
+  ortAddBaseMap(map);
   
   renderMarkers();
   fetchAndDrawRoute();
@@ -6411,9 +6558,11 @@ function renderMarkers() {
         window._hubLines.push(hubLine);
       }
       
+      // Drapeau sur les étapes où l'on dort (nuits > 0), comme sur roadtrip_detail
+      const isHub = step._isHub || (Number(step.nights) > 0);
       const icon = L.divIcon({
         className: 'step-marker',
-        html: `${idx + 1}`,
+        html: `${idx + 1}${isHub ? '<span class="hub-flag">🚩</span>' : ''}`,
         iconSize: [26, 26],
         iconAnchor: [13, 13]
       });
@@ -6516,7 +6665,34 @@ async function fetchAndDrawRoute() {
   const coords = steps.map(s => [s.lng, s.lat]); // ordre OSRM : lng,lat
   if (coords.length < 2) return;
 
-  const groups = buildLoopSegments(steps);
+  let groups = buildLoopSegments(steps);
+
+  // Une piste n'est pas dans OSRM : il la contourne par le goudron et dessine
+  // un detour de plusieurs centaines de kilometres. Ces portions sont donc
+  // coupees et tracees en ligne droite pointillee, comme sur la version bureau.
+  groups = (function couperLesPistes(gs) {
+    const nonRoutable = i => {
+      const m = steps[i] && steps[i]._method;
+      return m === 'piste' || m === 'direct';
+    };
+    const sortie = [];
+    gs.forEach(g => {
+      let debut = g.start;
+      let etatCourant = null;
+      for (let i = g.start; i < g.end; i++) {
+        const etat = nonRoutable(i);
+        if (etatCourant === null) { etatCourant = etat; continue; }
+        if (etat !== etatCourant) {
+          sortie.push({ loop: g.loop, start: debut, end: i, droit: etatCourant });
+          debut = i;
+          etatCourant = etat;
+        }
+      }
+      sortie.push({ loop: g.loop, start: debut, end: g.end, droit: !!etatCourant });
+    });
+    return sortie;
+  })(groups);
+
   clearRouteLayers();
   window._loopFilters = window._loopFilters || {};
   let totalM = 0;
@@ -6527,6 +6703,17 @@ async function fetchAndDrawRoute() {
     const color = loopColor(g.loop);
     const key = g.loop < 0 ? 'link' : 'loop' + g.loop;
     const visible = window._loopFilters[key] !== false;
+
+    // Portion sur piste ou sans route : ligne droite, aucun appel au routeur.
+    if (g.droit) {
+      const straight = slice.map(c => [c[1], c[0]]);
+      const line = L.polyline(straight, { color: color, weight: 3, opacity: 0.75, dashArray: '6,8' });
+      line._loopKey = key;
+      if (visible) line.addTo(map);
+      routeLayers.push(line);
+      continue;
+    }
+
     try {
       const leg = await fetchLegGeometry(slice);
       totalM += leg.distance;
@@ -6664,8 +6851,12 @@ function renderLoopLegend(loopGroups) {
 
 function fitMapBounds() {
   if (!map) return;
-  const coords = state.steps.filter(s => s.lat && s.lng).map(s => [s.lat, s.lng]);
-  if (coords.length > 0) map.fitBounds(coords, { padding: [30, 30] });
+  const container = map.getContainer();
+  // L'onglet est initialement masqué : attendre ses dimensions réelles.
+  if (!container.clientWidth || !container.clientHeight) return;
+  map.invalidateSize({pan:false});
+  const coords = state.steps.filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng)).map(s => [s.lat, s.lng]);
+  if (coords.length > 0) map.fitBounds(coords, { padding: [30, 30], maxZoom: 15, animate: false });
 }
 
 function centerMap() {
@@ -7085,6 +7276,14 @@ function adjustNights(delta) {
   step.nights = Math.max(0, (step.nights || 0) + delta);
   $('nightsValue').textContent = step.nights;
   hasUnsavedChanges = true;
+  // Le drapeau du marqueur suit les nuits
+  try {
+    const mk = markers.find(m => m._stepIdx === currentStepIndex);
+    if (mk) {
+      const flag = (step._isHub || step.nights > 0) ? '<span class="hub-flag">🚩</span>' : '';
+      mk.setIcon(L.divIcon({ className: 'step-marker', html: `${currentStepIndex + 1}${flag}`, iconSize: [26, 26], iconAnchor: [13, 13] }));
+    }
+  } catch (e) {}
   
   // MAJ lien hôtel - Ouvrir modale au lieu de Stay22 direct
   const btnHotel = $('btnHotel');
@@ -7483,6 +7682,9 @@ function exportPdf() {
 
 // === TOAST ===
 function showToast(message, duration = 2500) {
+  // Pendant une redirection, les requetes annulees produisent de faux messages
+  // d erreur. On ne les affiche pas, la page va disparaitre de toute facon.
+  if (window.__ORT_REDIRECTING) return;
   const toast = $('toast');
   toast.textContent = message;
   toast.classList.add('show');
@@ -8724,14 +8926,7 @@ if (new URLSearchParams(location.search).get('share')) {
 <script src="js/ort-env-score.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
 
-<!-- Service Worker pour mode offline -->
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(r => {
-    console.log('[SW] ✅ Enregistré, scope:', r.scope);
-  }).catch(e => console.warn('[SW] Échec:', e));
-}
-</script>
+<!-- Hors ligne : gere par /service-worker.js uniquement (appel en haut de page). Ne pas rajouter /sw.js. -->
 
 <!-- ═══ RÉSUMÉ IA - SCRIPT ═══ -->
 <script>

@@ -613,6 +613,53 @@
 /* Animation pulsation marqueur */
 @keyframes ort-pulse{0%{transform:scale(1)}50%{transform:scale(1.3)}100%{transform:scale(1)}}
 .ort-ed-pulse{animation:ort-pulse .3s ease}
+
+/* Listes des fenêtres : barre de défilement toujours visible + indicateur « il y a la suite » */
+.ort-ed-modal{position:relative}
+.ort-ed-scroll{overflow-y:scroll!important;scrollbar-width:auto!important;scrollbar-color:#113f7a #e8edf3!important}
+.ort-ed-scroll::-webkit-scrollbar{width:14px!important;display:block!important}
+.ort-ed-scroll::-webkit-scrollbar-track{background:#e8edf3!important}
+.ort-ed-scroll::-webkit-scrollbar-thumb{background:#113f7a!important;border:3px solid #e8edf3;border-radius:8px;min-height:40px}
+.ort-ed-modal.ort-ed-has-more::after{content:'';position:absolute;left:0;right:14px;bottom:0;height:64px;background:linear-gradient(rgba(255,255,255,0),#fff 85%);pointer-events:none;border-radius:0 0 16px 16px}
+.ort-ed-more{position:absolute;z-index:2;bottom:12px;left:calc(50% - 7px);transform:translateX(-50%) scale(.8);width:42px;height:42px;border-radius:50%;border:0;background:#113f7a;color:#fff;font:700 1.3rem/1 Inter,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease,transform .2s ease}
+.ort-ed-more.on{opacity:1;pointer-events:auto;transform:translateX(-50%) scale(1);animation:ort-ed-bounce 1.6s ease-in-out 2}
+@keyframes ort-ed-bounce{0%,100%{margin-bottom:0}50%{margin-bottom:6px}}
+@media(prefers-reduced-motion:reduce){.ort-ed-more.on{animation:none}}
+/* === Réorganisation V4 === */
+.ort-ed-rp-sec{padding:8px 16px 4px;font-size:.7rem;color:#113f7a;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
+.ort-ed-rp-sec.del{color:#9ca3af}
+.ort-ed-rpanel-num.active{background:#113f7a}
+.ort-ed-rpanel-item{gap:6px}
+.ort-ed-rpanel-item.deleted2 .ort-ed-rpanel-name{color:#9ca3af;text-decoration:line-through}
+.ort-ed-rp-arr{width:28px;height:28px;flex-shrink:0;border:1px solid #d0dff0;border-radius:6px;background:#fff;color:#113f7a;font-size:.95rem;font-weight:700;cursor:pointer;padding:0;line-height:1}
+.ort-ed-rp-arr:hover:not([disabled]){background:#113f7a;color:#fff;border-color:#113f7a}
+.ort-ed-rp-arr[disabled]{opacity:.25;cursor:default}
+.ort-ed-rp-del{width:28px;height:28px;flex-shrink:0;border:0;background:none;color:#e11d48;font-size:1rem;cursor:pointer;padding:0}
+.ort-ed-rp-del:hover{background:#fff1f2;border-radius:6px}
+.ort-ed-rp-restore{flex-shrink:0;border:1px solid #d0dff0;border-radius:6px;background:#fff;color:#113f7a;font-size:.75rem;font-weight:600;cursor:pointer;padding:4px 8px}
+.ort-ed-rp-new{display:inline-block;background:#16a34a;color:#fff;border-radius:8px;font-size:.65rem;font-weight:700;padding:0 5px;margin-left:4px;vertical-align:1px}
+.ort-ed-steppop{font-family:Inter,system-ui,sans-serif;min-width:190px}
+.ort-ed-steppop-t{font-weight:700;color:#113f7a;font-size:.95rem;margin-bottom:8px;padding-right:12px}
+.ort-ed-steppop-b{display:flex;gap:6px}
+.ort-ed-steppop-b button{flex:1;padding:8px 10px;border-radius:8px;border:0;font-weight:700;font-size:.85rem;cursor:pointer;white-space:nowrap}
+.ort-ed-steppop-b .mv{background:#113f7a;color:#fff}
+.ort-ed-steppop-b .del{background:#fff1f2;color:#e11d48}
+.ort-ed-steppop-b .ok{background:#16a34a;color:#fff}
+.ort-ed-vfab{position:fixed;z-index:2005;bottom:28px;left:50%;transform:translate(-50%,30px) scale(.92);opacity:0;pointer-events:none;background:#16a34a;color:#fff;border:0;border-radius:14px;padding:16px 36px;font:700 1.1rem/1.1 Inter,system-ui,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35);cursor:pointer;transition:opacity .25s ease,transform .25s ease;white-space:nowrap}
+.ort-ed-vfab.on{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+.ort-ed-vfab:hover{background:#15803d}
+.ort-ed-vfab:focus-visible{outline:3px solid #e49d16;outline-offset:3px}
+.ort-ed-map-fs.ort-ed-has-panel .ort-ed-vfab{left:calc((100vw - 320px) / 2)}
+.ort-ed-reorg-badge{top:12px;bottom:auto}
+/* Textes de la page qui passaient par-dessus la carte plein écran (bandeau titre, bas de page « flow ») */
+.ort-ed-map-fs section.hr,.ort-ed-map-fs .ort-flow-bottom{display:none!important}
+.ort-ed-map-fs .ort-ed-toast{bottom:auto;top:20px}
+.ort-ed-map-fs.ort-ed-has-panel .ort-ed-toast{left:calc((100vw - 320px) / 2)}
+@media(max-width:900px){
+  .ort-ed-vfab{bottom:76px;width:min(92vw,380px);padding:15px 18px;white-space:normal}
+  .ort-ed-map-fs .ort-ed-toast{top:64px}
+}
+@media(prefers-reduced-motion:reduce){.ort-ed-vfab{transition:none}}
 `;
 
   // ─────────────────────────────────────────────
@@ -630,6 +677,23 @@
   let editorActive = false;
   let savedTripId = null;   // tripId attribué à la première sauvegarde, réutilisé ensuite
   let editorMode = 'map';   // 'list' ou 'map' — le mode carte est le défaut
+
+
+  // Textes du mode Réorganisation V4 (ajoutés au dictionnaire de la langue au démarrage)
+  var REORG_V4_TXT = {
+    fr: { reorgInst: '↑↓ pour changer l’ordre · ✕ pour supprimer · Cliquez sur une étape de la carte pour la déplacer · Cliquez sur un lieu gris pour l’ajouter', reorgInstMobile: 'Touchez une étape pour la déplacer ou la supprimer, et un lieu gris pour l’ajouter. La carte se met à jour à chaque changement.', reorgOrder: 'Ordre du voyage', reorgMove: 'Déplacer', reorgUp: 'Monter', reorgDown: 'Descendre', reorgRestore: 'Remettre', reorgValidateBig: 'Valider les modifications', reorgMoveTitle: 'Où déplacer {name} ?' },
+    en: { reorgInst: '↑↓ to change the order · ✕ to remove · Click a stop on the map to move it · Click a grey place to add it', reorgInstMobile: 'Tap a stop to move or remove it, and a grey place to add it. The map updates with every change.', reorgOrder: 'Trip order', reorgMove: 'Move', reorgUp: 'Move up', reorgDown: 'Move down', reorgRestore: 'Restore', reorgValidateBig: 'Confirm changes', reorgMoveTitle: 'Where to move {name}?' },
+    es: { reorgInst: '↑↓ para cambiar el orden · ✕ para eliminar · Haz clic en una etapa del mapa para moverla · Haz clic en un lugar gris para añadirlo', reorgInstMobile: 'Toca una etapa para moverla o eliminarla, y un lugar gris para añadirlo. El mapa se actualiza con cada cambio.', reorgOrder: 'Orden del viaje', reorgMove: 'Mover', reorgUp: 'Subir', reorgDown: 'Bajar', reorgRestore: 'Restaurar', reorgValidateBig: 'Confirmar los cambios', reorgMoveTitle: '¿Dónde mover {name}?' },
+    pt: { reorgInst: '↑↓ para mudar a ordem · ✕ para remover · Clique numa etapa do mapa para a mover · Clique num local cinzento para o adicionar', reorgInstMobile: 'Toque numa etapa para a mover ou remover, e num local cinzento para o adicionar. O mapa atualiza-se a cada alteração.', reorgOrder: 'Ordem da viagem', reorgMove: 'Mover', reorgUp: 'Subir', reorgDown: 'Descer', reorgRestore: 'Repor', reorgValidateBig: 'Confirmar alterações', reorgMoveTitle: 'Para onde mover {name}?' },
+    it: { reorgInst: '↑↓ per cambiare l’ordine · ✕ per eliminare · Clicca su una tappa della mappa per spostarla · Clicca su un luogo grigio per aggiungerlo', reorgInstMobile: 'Tocca una tappa per spostarla o eliminarla, e un luogo grigio per aggiungerlo. La mappa si aggiorna a ogni modifica.', reorgOrder: 'Ordine del viaggio', reorgMove: 'Sposta', reorgUp: 'Su', reorgDown: 'Giù', reorgRestore: 'Ripristina', reorgValidateBig: 'Conferma le modifiche', reorgMoveTitle: 'Dove spostare {name}?' },
+    ar: { reorgInst: '↑↓ لتغيير الترتيب · ✕ للحذف · انقر على محطة في الخريطة لنقلها · انقر على مكان رمادي لإضافته', reorgInstMobile: 'المس محطة لنقلها أو حذفها، والمس مكانًا رماديًا لإضافته. تتحدث الخريطة مع كل تغيير.', reorgOrder: 'ترتيب الرحلة', reorgMove: 'نقل', reorgUp: 'إلى الأعلى', reorgDown: 'إلى الأسفل', reorgRestore: 'استعادة', reorgValidateBig: 'تأكيد التعديلات', reorgMoveTitle: 'إلى أين تنقل {name}؟' },
+    nl: { reorgInst: '↑↓ om de volgorde te wijzigen · ✕ om te verwijderen · Klik op een etappe op de kaart om die te verplaatsen · Klik op een grijze plek om die toe te voegen', reorgInstMobile: 'Tik op een etappe om die te verplaatsen of te verwijderen, en op een grijze plek om die toe te voegen. De kaart wordt bij elke wijziging bijgewerkt.', reorgOrder: 'Volgorde van de reis', reorgMove: 'Verplaatsen', reorgUp: 'Omhoog', reorgDown: 'Omlaag', reorgRestore: 'Terugzetten', reorgValidateBig: 'Wijzigingen bevestigen', reorgMoveTitle: 'Waar wil je {name} heen verplaatsen?' },
+    de: { reorgInst: '↑↓ zum Ändern der Reihenfolge · ✕ zum Entfernen · Klicke auf eine Etappe in der Karte, um sie zu verschieben · Klicke auf einen grauen Ort, um ihn hinzuzufügen', reorgInstMobile: 'Tippe auf eine Etappe, um sie zu verschieben oder zu entfernen, und auf einen grauen Ort, um ihn hinzuzufügen. Die Karte aktualisiert sich bei jeder Änderung.', reorgOrder: 'Reihenfolge der Reise', reorgMove: 'Verschieben', reorgUp: 'Nach oben', reorgDown: 'Nach unten', reorgRestore: 'Wiederherstellen', reorgValidateBig: 'Änderungen übernehmen', reorgMoveTitle: 'Wohin soll {name} verschoben werden?' }
+  };
+  function applyReorgTexts(lang) {
+    var x = REORG_V4_TXT[lang] || REORG_V4_TXT.en;
+    Object.keys(x).forEach(function (k) { t[k] = x[k]; });
+  }
 
   // État de la réorganisation carte
   let reorg = {
@@ -717,6 +781,7 @@
     config.cc = (config.cc || '').toUpperCase();
     config.lang = config.lang || 'fr';
     t = I18N[config.lang] || I18N.en;
+    applyReorgTexts(config.lang);
 
     console.log('[ORT-EDITOR] init', config);
 
@@ -1626,11 +1691,17 @@
   // ─────────────────────────────────────────────
   // MODE CARTE — DÉMARRAGE
   // ─────────────────────────────────────────────
+  // V4 (nov. 2026) : le voyage complet est toujours affiché et numéroté. Chaque changement
+  // (déplacer, supprimer, remettre, ajouter, inverser) redessine tout de suite la carte.
+  // Un gros bouton « Valider » apparaît sur la carte dès la première modification.
+  // Plus de clic « dans l'ordre » ni de prévisualisation.
   function startMapReorg() {
     reorg.active = true;
-    reorg.newOrder = [];
     reorg.deleted = [];
     reorg.addedPlaces = [];
+    reorg.newOrder = steps.map(function (s) { return s._idx; });
+    reorg.origOrder = reorg.newOrder.slice();
+    reorg.mkByIdx = {};
 
     // Sauvegarder le HTML original si pas encore fait
     var textPanel = document.getElementById('textPanel');
@@ -1661,34 +1732,15 @@
       });
     }
 
-    // Mettre tous les marqueurs en mode "en attente" et ajouter popup avec bouton supprimer
+    // Marqueurs des étapes : un clic ouvre « Déplacer / Supprimer »
     steps.forEach(function (step, idx) {
-      var dayNum = idx + 1;
-      if (global.mk[dayNum]) {
-        global.mk[dayNum].setIcon(reorgIcon(dayNum, 'pending', dayNum));
-        // Popup avec nom + bouton supprimer (utile sur mobile où le double-clic ne marche pas)
-        var popHtml = '<div style="text-align:center;min-width:140px;font-family:Inter,system-ui,sans-serif">';
-        popHtml += '<strong>' + esc(step.name) + '</strong><br>';
-        popHtml += '<button data-reorg-del="' + step._idx + '" style="margin-top:6px;padding:6px 12px;background:#e11d48;color:#fff;border:none;border-radius:6px;font-size:.82rem;font-weight:600;cursor:pointer">✕ ' + esc(t.deleteStep) + '</button>';
-        popHtml += '</div>';
-        global.mk[dayNum].bindPopup(popHtml, { maxWidth: 200 });
-        global.mk[dayNum].on('popupopen', function () {
-          setTimeout(function () {
-            var delBtn = document.querySelector('button[data-reorg-del="' + step._idx + '"]');
-            if (delBtn) {
-              delBtn.addEventListener('click', function () {
-                global.map.closePopup();
-                handleReorgDblClick(step._idx);
-              });
-            }
-          }, 50);
-        });
-        // Attacher les listeners de clic
-        global.mk[dayNum].off('click');
-        global.mk[dayNum].on('click', function () { handleReorgClick(step._idx); });
-        global.mk[dayNum].off('dblclick');
-        global.mk[dayNum].on('dblclick', function () { handleReorgDblClick(step._idx); });
-      }
+      var m = global.mk[idx + 1];
+      if (!m) return;
+      reorg.mkByIdx[step._idx] = m;
+      try { m.unbindPopup(); } catch (e) { }
+      m.off('click');
+      m.off('dblclick');
+      m.on('click', function () { handleReorgClick(step._idx); });
     });
 
     // Rendre les "autres lieux" (OP) cliquables pour ajout
@@ -1702,8 +1754,50 @@
     } else {
       renderReorgMobile();
     }
+    renderValidateFab();
+    refreshReorgVisuals();
 
     console.log('[ORT-EDITOR] Mode carte démarré');
+  }
+
+
+  // Listes des fenêtres (Où placer / Où déplacer / Ajouter) : barre de défilement visible,
+  // fondu en bas et bouton ↓ tant qu'il reste des lignes cachées.
+  function enhanceScrollList(list) {
+    if (!list || list._ortMore) return;
+    var modal = list.closest('.ort-ed-modal');
+    if (!modal) return;
+    list.classList.add('ort-ed-scroll');
+    var more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'ort-ed-more';
+    more.setAttribute('aria-hidden', 'true');
+    more.tabIndex = -1;
+    more.textContent = '↓';
+    modal.appendChild(more);
+    list._ortMore = more;
+    function upd() {
+      var hasMore = list.scrollHeight - list.scrollTop - list.clientHeight > 8;
+      more.classList.toggle('on', hasMore);
+      modal.classList.toggle('ort-ed-has-more', hasMore);
+    }
+    more.addEventListener('click', function () {
+      try { list.scrollBy({ top: Math.round(list.clientHeight * 0.7), behavior: 'smooth' }); } catch (e) { list.scrollTop += Math.round(list.clientHeight * 0.7); }
+    });
+    list.addEventListener('scroll', upd, { passive: true });
+    try { if (window.ResizeObserver) new ResizeObserver(upd).observe(list); } catch (e) { }
+    try { if (window.MutationObserver) new MutationObserver(upd).observe(list, { childList: true }); } catch (e) { }
+    setTimeout(upd, 60);
+    upd();
+  }
+
+  // Retire tout ce que le mode carte a ajouté à l'écran
+  function cleanupReorgUI() {
+    ['ort-ed-toolbar', 'ort-ed-rpanel', 'ort-ed-reorg-badge', 'ort-ed-reorg-mbtns', 'ort-ed-vfab', 'ort-ed-help-modal'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.remove();
+    });
+    try { if (global.map) global.map.closePopup(); } catch (e) { }
   }
 
   // ─────────────────────────────────────────────
@@ -1719,15 +1813,8 @@
     // Retirer le plein écran
     document.body.classList.remove('ort-ed-map-fs', 'ort-ed-has-panel');
 
-    // Retirer la toolbar, le panneau et les éléments mobiles
-    var tb = document.getElementById('ort-ed-toolbar');
-    if (tb) tb.remove();
-    var panel = document.getElementById('ort-ed-rpanel');
-    if (panel) panel.remove();
-    var badge = document.getElementById('ort-ed-reorg-badge');
-    if (badge) badge.remove();
-    var mbtns = document.getElementById('ort-ed-reorg-mbtns');
-    if (mbtns) mbtns.remove();
+    // Retirer la toolbar, le panneau, le bouton Valider et les éléments mobiles
+    cleanupReorgUI();
 
     // Nettoyer les listeners OP et restaurer les originaux
     cleanupOPMarkers();
@@ -1738,6 +1825,7 @@
       try { global.map.removeLayer(reorgOriginalPl); } catch (e) { }
       reorgOriginalPl = null;
     }
+    reorg.mkByIdx = {};
 
     // Restaurer les marqueurs normaux
     updateMap();
@@ -1765,16 +1853,17 @@
   // ─────────────────────────────────────────────
   function reorgIcon(day, state, label) {
     var bg, sz, fs, txt, extra = '';
-    if (state === 'ordered') {
+    if (state === 'active') {
+      bg = '#113f7a'; sz = 30; fs = 13; txt = label;
+    } else if (state === 'ordered') {
       bg = '#e11d48'; sz = 32; fs = 13; txt = label;
     } else if (state === 'deleted') {
-      bg = '#9ca3af'; sz = 22; fs = 11; txt = '✕'; extra = 'opacity:.5;';
+      bg = '#9ca3af'; sz = 22; fs = 11; txt = '✕'; extra = 'opacity:.55;';
     } else {
-      // Pending : bleu moyen bien visible
       bg = '#4b7ab5'; sz = 28; fs = 12; txt = label; extra = '';
     }
     return L.divIcon({
-      html: '<div style="background:' + bg + ';color:#fff;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);' + extra + '">' + txt + '</div>',
+      html: '<div style="background:' + bg + ';color:#fff;width:' + sz + 'px;height:' + sz + 'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:' + fs + 'px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);cursor:pointer;' + extra + '">' + txt + '</div>',
       className: 'dm',
       iconSize: [sz, sz],
       iconAnchor: [sz / 2, sz / 2]
@@ -1782,119 +1871,249 @@
   }
 
   // ─────────────────────────────────────────────
-  // GESTION DES CLICS RÉORG
+  // ACTIONS SUR LES ÉTAPES
   // ─────────────────────────────────────────────
-  function handleReorgClick(stepIdx) {
-    if (reorg.clickTimer) {
-      clearTimeout(reorg.clickTimer);
-      reorg.clickTimer = null;
-      handleReorgDblClick(stepIdx);
-      return;
-    }
-    reorg.clickTimer = setTimeout(function () {
-      reorg.clickTimer = null;
-      doSingleClick(stepIdx);
-    }, 250);
+  function stepByIdx(sIdx) {
+    return steps.find(function (s) { return s._idx === sIdx; });
   }
 
-  function doSingleClick(stepIdx) {
-    if (reorg.deleted.indexOf(stepIdx) >= 0) return; // supprimé → ignorer
+  // Y a-t-il une vraie modification par rapport au voyage de départ ?
+  function reorgIsChanged() {
+    if (reorg.deleted.some(function (i) { return reorg.addedPlaces.indexOf(i) < 0; })) return true;
+    if (reorg.addedPlaces.some(function (i) { return reorg.newOrder.indexOf(i) >= 0; })) return true;
+    var a = reorg.newOrder, b = reorg.origOrder || [];
+    if (a.length !== b.length) return true;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return true;
+    return false;
+  }
 
-    var idx = reorg.newOrder.indexOf(stepIdx);
-    if (idx >= 0) {
-      // Déjà dans l\u2019ordre → retirer (correction)
-      reorg.newOrder.splice(idx, 1);
-    } else {
-      // Pas encore → ajouter à la fin
-      reorg.newOrder.push(stepIdx);
-    }
+  function reorgDelete(sIdx) {
+    var k = reorg.newOrder.indexOf(sIdx);
+    if (k < 0) return;
+    if (reorg.newOrder.length <= 1) { showToast(t.reorgMustKeepOne, 'error'); return; }
+    reorg.newOrder.splice(k, 1);
+    if (reorg.deleted.indexOf(sIdx) < 0) reorg.deleted.push(sIdx);
     refreshReorgVisuals();
   }
 
-  function handleReorgDblClick(stepIdx) {
-    var delIdx = reorg.deleted.indexOf(stepIdx);
-    if (delIdx >= 0) {
-      // Réintégrer
-      reorg.deleted.splice(delIdx, 1);
-      reorg.newOrder.push(stepIdx);
-    } else {
-      // Supprimer
-      var ordIdx = reorg.newOrder.indexOf(stepIdx);
-      if (ordIdx >= 0) reorg.newOrder.splice(ordIdx, 1);
-      reorg.deleted.push(stepIdx);
+  // Remet une étape supprimée à sa place d'origine (ou à la fin pour un lieu ajouté)
+  function reorgRestore(sIdx) {
+    var d = reorg.deleted.indexOf(sIdx);
+    if (d < 0) return;
+    reorg.deleted.splice(d, 1);
+    var orig = reorg.origOrder || [];
+    var o = orig.indexOf(sIdx);
+    var at = reorg.newOrder.length;
+    if (o >= 0) {
+      for (var i = 0; i < reorg.newOrder.length; i++) {
+        var oi = orig.indexOf(reorg.newOrder[i]);
+        if (oi > o) { at = i; break; }
+      }
     }
+    reorg.newOrder.splice(at, 0, sIdx);
     refreshReorgVisuals();
   }
 
+  function reorgMoveBy(sIdx, delta) {
+    var k = reorg.newOrder.indexOf(sIdx);
+    var j = k + delta;
+    if (k < 0 || j < 0 || j >= reorg.newOrder.length) return;
+    reorg.newOrder.splice(k, 1);
+    reorg.newOrder.splice(j, 0, sIdx);
+    refreshReorgVisuals();
+  }
+
+  // pos = rang d'insertion dans l'ordre actuel (0 = au début, i+1 = après l'étape i)
+  function reorgMoveTo(sIdx, pos) {
+    var k = reorg.newOrder.indexOf(sIdx);
+    if (k < 0) return;
+    reorg.newOrder.splice(k, 1);
+    if (pos > k) pos--;
+    reorg.newOrder.splice(pos, 0, sIdx);
+    refreshReorgVisuals();
+  }
+
+  // Clic sur une étape de la carte : petite fenêtre « Déplacer / Supprimer » (ou « Remettre »)
+  function handleReorgClick(sIdx) {
+    openStepPopup(sIdx);
+  }
+
+  // Double clic (ancien geste) : supprimer / remettre
+  function handleReorgDblClick(sIdx) {
+    if (reorg.deleted.indexOf(sIdx) >= 0) reorgRestore(sIdx);
+    else reorgDelete(sIdx);
+  }
+
+  function openStepPopup(sIdx) {
+    var step = stepByIdx(sIdx);
+    var map = global.map;
+    if (!step || !map) return;
+    var isDel = reorg.deleted.indexOf(sIdx) >= 0;
+    var pos = reorg.newOrder.indexOf(sIdx);
+    var box = document.createElement('div');
+    box.className = 'ort-ed-steppop';
+    var title = document.createElement('div');
+    title.className = 'ort-ed-steppop-t';
+    title.textContent = (pos >= 0 ? (pos + 1) + '. ' : '') + step.name;
+    box.appendChild(title);
+    var row = document.createElement('div');
+    row.className = 'ort-ed-steppop-b';
+    function btn(label, cls, fn) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = cls;
+      b.textContent = label;
+      b.addEventListener('click', function (e) { e.stopPropagation(); map.closePopup(); fn(); });
+      row.appendChild(b);
+    }
+    if (isDel) {
+      btn('↩ ' + t.reorgRestore, 'ok', function () { reorgRestore(sIdx); });
+    } else {
+      btn('↕ ' + t.reorgMove, 'mv', function () { openMoveModal(sIdx); });
+      btn('✕ ' + t.deleteStep, 'del', function () { reorgDelete(sIdx); });
+    }
+    box.appendChild(row);
+    var m = reorg.mkByIdx[sIdx];
+    var ll = m ? m.getLatLng() : L.latLng(step.lat, step.lng);
+    L.popup({ offset: [0, -10], autoPanPadding: [40, 40], className: 'ort-ed-steppop-wrap' })
+      .setLatLng(ll).setContent(box).openOn(map);
+  }
+
+  // Liste : clic sur un nom = centrer la carte sur l'étape et ouvrir sa fenêtre
+  function reorgFocus(sIdx) {
+    var m = reorg.mkByIdx[sIdx];
+    if (m && global.map) {
+      try { global.map.panTo(m.getLatLng()); } catch (e) { }
+    }
+    openStepPopup(sIdx);
+  }
+
+  // Fenêtre « Où déplacer X ? » : Au début / Après [étape]
+  function openMoveModal(sIdx) {
+    var step = stepByIdx(sIdx);
+    if (!step) return;
+    closeModal();
+    var k = reorg.newOrder.indexOf(sIdx);
+    var h = '<div class="ort-ed-modal-bg" id="ort-ed-modal-bg" onclick="if(event.target===this)ORT_ITIN_EDITOR._closeModal()">';
+    h += '<div class="ort-ed-modal">';
+    h += '<div class="ort-ed-modal-head"><h3>' + esc(t.reorgMoveTitle.replace('{name}', step.name)) + '</h3>';
+    h += '<button class="ort-ed-modal-close" onclick="ORT_ITIN_EDITOR._closeModal()">×</button></div>';
+    h += '<div style="overflow-y:auto;max-height:60vh;padding:8px 0" id="ort-ed-movelist">';
+    if (k !== 0) {
+      h += '<div class="ort-ed-pos-hover" data-move-at="0" style="display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;border-bottom:1px solid #f5f5f5">';
+      h += '<div style="background:#e11d48;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700">↑</div>';
+      h += '<div style="flex:1;font-weight:600;font-size:.88rem">' + esc(t.start) + '</div></div>';
+    }
+    reorg.newOrder.forEach(function (oIdx, j) {
+      if (oIdx === sIdx || j === k - 1) return;
+      var o = stepByIdx(oIdx);
+      h += '<div class="ort-ed-pos-hover" data-move-at="' + (j + 1) + '" style="display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;border-bottom:1px solid #f5f5f5">';
+      h += '<div style="background:#113f7a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700">' + (j + 1) + '</div>';
+      h += '<div style="flex:1;font-size:.88rem">' + esc(t.insertAfter) + ' <strong>' + esc(o ? o.name : '') + '</strong></div></div>';
+    });
+    h += '</div></div></div>';
+    var container = document.createElement('div');
+    container.id = 'ort-ed-modal-container';
+    container.innerHTML = h;
+    var style = document.createElement('style');
+    style.textContent = '.ort-ed-pos-hover:hover{background:#f0f7ff}';
+    container.appendChild(style);
+    document.body.appendChild(container);
+    var list = document.getElementById('ort-ed-movelist');
+    enhanceScrollList(list);
+    if (list) {
+      list.addEventListener('click', function (e) {
+        var item = e.target.closest('[data-move-at]');
+        if (!item) return;
+        var at = parseInt(item.dataset.moveAt, 10);
+        closeModal();
+        reorgMoveTo(sIdx, at);
+      });
+    }
+  }
+
   // ─────────────────────────────────────────────
-  // MISE À JOUR VISUELLE DES MARQUEURS
+  // MISE À JOUR VISUELLE (CARTE, LISTE, BOUTON VALIDER)
   // ─────────────────────────────────────────────
   function refreshReorgVisuals() {
-    steps.forEach(function (step, idx) {
-      var dayNum = idx + 1;
-      var m = global.mk[dayNum];
+    steps.forEach(function (step) {
+      var m = reorg.mkByIdx[step._idx];
       if (!m) return;
-
-      var sIdx = step._idx;
-      var ordIdx = reorg.newOrder.indexOf(sIdx);
-      var isDel = reorg.deleted.indexOf(sIdx) >= 0;
-
-      if (isDel) {
-        m.setIcon(reorgIcon(dayNum, 'deleted', '✕'));
-      } else if (ordIdx >= 0) {
-        m.setIcon(reorgIcon(dayNum, 'ordered', ordIdx + 1));
-      } else {
-        m.setIcon(reorgIcon(dayNum, 'pending', dayNum));
+      var pos = reorg.newOrder.indexOf(step._idx);
+      if (reorg.deleted.indexOf(step._idx) >= 0) {
+        m.setIcon(reorgIcon(0, 'deleted', '✕'));
+        try { m.setZIndexOffset(-500); } catch (e) { }
+      } else if (pos >= 0) {
+        m.setIcon(reorgIcon(pos + 1, 'active', pos + 1));
+        try { m.setZIndexOffset(1000 - pos); } catch (e) { }
       }
     });
 
-    // Mettre à jour la polyline avec le nouvel ordre
+    // Trajet redessiné dans le nouvel ordre
     updateReorgPolyline();
 
-    // Mettre à jour le panneau latéral ou le badge mobile
+    // Panneau latéral ou badge mobile
     if (window.innerWidth > 900) {
       updateReorgPanelList();
     } else {
       updateReorgBadge();
     }
+    updateValidateFab();
   }
 
-  // Polyline grise pour l'ordre original (visible en permanence en mode réorg)
+  // Ligne grise en pointillés = trajet de départ ; ligne rouge pleine = trajet actuel
   var reorgOriginalPl = null;
 
   function updateReorgPolyline() {
     var map = global.map;
     if (!map) return;
 
-    // Supprimer l'ancienne polyline rouge (sélection en cours)
     if (global.pl) { try { map.removeLayer(global.pl); } catch (e) { } }
     global.pl = null;
 
-    // S'assurer que la polyline grise de l'ordre original est visible
     if (!reorgOriginalPl) {
       var origLL = [];
-      steps.forEach(function (step) {
-        if (step.lat && step.lng && reorg.deleted.indexOf(step._idx) < 0) {
-          origLL.push([step.lat, step.lng]);
-        }
+      (reorg.origOrder || []).forEach(function (sIdx) {
+        var s = stepByIdx(sIdx);
+        if (s && s.lat && s.lng) origLL.push([s.lat, s.lng]);
       });
       if (origLL.length >= 2) {
-        reorgOriginalPl = L.polyline(origLL, { color: '#4b7ab5', weight: 3, opacity: 0.6, dashArray: '8,8' }).addTo(map);
+        reorgOriginalPl = L.polyline(origLL, { color: '#94a3b8', weight: 3, opacity: 0.6, dashArray: '6,8', interactive: false }).addTo(map);
       }
     }
 
-    // Construire la polyline rouge depuis newOrder (le nouvel ordre choisi)
     var ll = [];
     reorg.newOrder.forEach(function (sIdx) {
-      var step = steps.find(function (s) { return s._idx === sIdx; });
-      if (step && step.lat && step.lng) {
-        ll.push([step.lat, step.lng]);
-      }
+      var s = stepByIdx(sIdx);
+      if (s && s.lat && s.lng) ll.push([s.lat, s.lng]);
     });
-
     if (ll.length >= 2) {
-      global.pl = L.polyline(ll, { color: '#e11d48', weight: 3, opacity: 0.8, dashArray: '8,6' }).addTo(map);
+      global.pl = L.polyline(ll, { color: '#e11d48', weight: 4, opacity: 0.9, interactive: false }).addTo(map);
     }
+  }
+
+  // Gros bouton « Valider » sur la carte, visible dès la première modification
+  function renderValidateFab() {
+    var b = document.getElementById('ort-ed-vfab');
+    if (b) b.remove();
+    b = document.createElement('button');
+    b.id = 'ort-ed-vfab';
+    b.type = 'button';
+    b.className = 'ort-ed-vfab';
+    b.textContent = '✓ ' + t.reorgValidateBig;
+    b.tabIndex = -1;
+    b.setAttribute('aria-hidden', 'true');
+    b.addEventListener('click', function () { reorgValidate(); });
+    document.body.appendChild(b);
+  }
+
+  function updateValidateFab() {
+    var b = document.getElementById('ort-ed-vfab');
+    if (!b) return;
+    var on = reorgIsChanged();
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-hidden', on ? 'false' : 'true');
+    b.tabIndex = on ? 0 : -1;
   }
 
   // ─────────────────────────────────────────────
@@ -1909,21 +2128,15 @@
     panel.className = 'ort-ed-rpanel';
 
     var h = '';
-    // Head
     h += '<div class="ort-ed-rpanel-head"><h3>🔄 ' + esc(t.reorgTitle) + '</h3>';
     h += '<button class="ort-ed-modal-close" onclick="ORT_ITIN_EDITOR._stopReorg(false)">×</button></div>';
-    // Instructions
     h += '<div class="ort-ed-rpanel-inst">' + esc(t.reorgInst) + '</div>';
-    // Outils
     h += '<div class="ort-ed-rpanel-tools">';
     h += '<button onclick="ORT_ITIN_EDITOR._reorgInvert()">🔁 ' + esc(t.reorgInvert) + '</button>';
     h += '<button onclick="ORT_ITIN_EDITOR._reorgReset()">⟲ ' + esc(t.reorgReset) + '</button>';
     h += '</div>';
-    // Liste
     h += '<div class="ort-ed-rpanel-list" id="ort-ed-rpanel-list"></div>';
-    // Footer — seuls boutons d'action
-    h += '<div class="ort-ed-rpanel-footer" style="flex-wrap:wrap">';
-    h += '<button class="ort-ed-rbtn-validate" onclick="ORT_ITIN_EDITOR._reorgPreview()">👁️ ' + esc(t.reorgPreview) + '</button>';
+    h += '<div class="ort-ed-rpanel-footer">';
     h += '<button class="ort-ed-rbtn-cancel" onclick="ORT_ITIN_EDITOR._stopReorg(false)">✕ ' + esc(t.reorgCancel) + '</button>';
     h += '</div>';
 
@@ -1936,112 +2149,89 @@
   function updateReorgPanelList() {
     var listEl = document.getElementById('ort-ed-rpanel-list');
     if (!listEl) return;
-
+    var keepScroll = listEl.scrollTop;
+    var n = reorg.newOrder.length;
     var h = '';
 
-    // D'abord les étapes dans le nouvel ordre
-    if (reorg.newOrder.length > 0) {
-      h += '<div style="padding:4px 16px;font-size:.7rem;color:#e11d48;font-weight:600;text-transform:uppercase">' + esc(t.reorgNewOrder) + '</div>';
-      reorg.newOrder.forEach(function (sIdx, i) {
-        var step = steps.find(function (s) { return s._idx === sIdx; });
-        var name = step ? step.name : (placesIndex[sIdx] ? placesIndex[sIdx].name : sIdx);
-        h += '<div class="ort-ed-rpanel-item ordered">';
-        h += '<div class="ort-ed-rpanel-num ordered" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + sIdx + ')" style="cursor:pointer">' + (i + 1) + '</div>';
-        h += '<div class="ort-ed-rpanel-name" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + sIdx + ')" style="cursor:pointer">' + esc(name) + '</div>';
-        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')" style="background:none;border:none;color:#e11d48;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0" title="' + esc(t.deleteStep) + '">✕</button>';
-        h += '</div>';
-      });
-    }
-
-    // Étapes en attente (ni dans newOrder ni dans deleted)
-    var pending = steps.filter(function (s) {
-      return reorg.newOrder.indexOf(s._idx) < 0 && reorg.deleted.indexOf(s._idx) < 0;
+    h += '<div class="ort-ed-rp-sec">' + esc(t.reorgOrder) + ' (' + n + ')</div>';
+    reorg.newOrder.forEach(function (sIdx, i) {
+      var step = stepByIdx(sIdx);
+      var name = step ? step.name : String(sIdx);
+      var added = reorg.addedPlaces.indexOf(sIdx) >= 0;
+      h += '<div class="ort-ed-rpanel-item">';
+      h += '<div class="ort-ed-rpanel-num active">' + (i + 1) + '</div>';
+      h += '<div class="ort-ed-rpanel-name" onclick="ORT_ITIN_EDITOR._reorgFocus(' + sIdx + ')" style="cursor:pointer">' + esc(name) + (added ? ' <span class="ort-ed-rp-new">+</span>' : '') + '</div>';
+      h += '<button class="ort-ed-rp-arr" title="' + esc(t.reorgUp) + '" aria-label="' + esc(t.reorgUp) + '"' + (i === 0 ? ' disabled' : '') + ' onclick="ORT_ITIN_EDITOR._reorgMoveBy(' + sIdx + ',-1)">↑</button>';
+      h += '<button class="ort-ed-rp-arr" title="' + esc(t.reorgDown) + '" aria-label="' + esc(t.reorgDown) + '"' + (i === n - 1 ? ' disabled' : '') + ' onclick="ORT_ITIN_EDITOR._reorgMoveBy(' + sIdx + ',1)">↓</button>';
+      h += '<button class="ort-ed-rp-del" title="' + esc(t.deleteStep) + '" aria-label="' + esc(t.deleteStep) + '" onclick="ORT_ITIN_EDITOR._reorgDelete(' + sIdx + ')">✕</button>';
+      h += '</div>';
     });
-    if (pending.length > 0) {
-      h += '<div style="padding:4px 16px;font-size:.7rem;color:#4b7ab5;font-weight:600;text-transform:uppercase">' + esc(t.reorgPending) + '</div>';
-      pending.forEach(function (step, i) {
-        var origNum = steps.indexOf(step) + 1;
-        h += '<div class="ort-ed-rpanel-item">';
-        h += '<div class="ort-ed-rpanel-num pending" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + step._idx + ')" style="cursor:pointer">' + origNum + '</div>';
-        h += '<div class="ort-ed-rpanel-name" onclick="ORT_ITIN_EDITOR._reorgClickPanel(' + step._idx + ')" style="cursor:pointer">' + esc(step.name) + '</div>';
-        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + step._idx + ')" style="background:none;border:none;color:#9ca3af;font-size:1rem;cursor:pointer;padding:2px 6px;flex-shrink:0" title="' + esc(t.deleteStep) + '">✕</button>';
-        h += '</div>';
-      });
-    }
 
-    // Étapes supprimées
     if (reorg.deleted.length > 0) {
-      h += '<div style="padding:4px 16px;font-size:.7rem;color:#9ca3af;font-weight:600;text-transform:uppercase">✕ ' + esc(t.reorgDeleted) + '</div>';
+      h += '<div class="ort-ed-rp-sec del">✕ ' + esc(t.reorgDeleted) + '</div>';
       reorg.deleted.forEach(function (sIdx) {
-        var step = steps.find(function (s) { return s._idx === sIdx; });
-        var name = step ? step.name : sIdx;
-        h += '<div class="ort-ed-rpanel-item deleted">';
+        var step = stepByIdx(sIdx);
+        h += '<div class="ort-ed-rpanel-item deleted2">';
         h += '<div class="ort-ed-rpanel-num deleted">✕</div>';
-        h += '<div class="ort-ed-rpanel-name">' + esc(name) + '</div>';
-        h += '<button onclick="ORT_ITIN_EDITOR._reorgDblClickPanel(' + sIdx + ')" style="background:none;border:none;color:#4b7ab5;font-size:.8rem;cursor:pointer;padding:2px 6px;flex-shrink:0;text-decoration:underline" title="Restaurer">↩</button>';
+        h += '<div class="ort-ed-rpanel-name">' + esc(step ? step.name : String(sIdx)) + '</div>';
+        h += '<button class="ort-ed-rp-restore" onclick="ORT_ITIN_EDITOR._reorgRestore(' + sIdx + ')">↩ ' + esc(t.reorgRestore) + '</button>';
         h += '</div>';
       });
     }
 
-    // Bouton ajouter une étape
     h += '<div style="padding:10px 16px">';
     h += '<button onclick="ORT_ITIN_EDITOR._openAddFromPanel()" style="display:block;width:100%;padding:10px;border:2px dashed #d0dff0;border-radius:8px;background:none;color:#113f7a;font-size:.85rem;font-weight:600;cursor:pointer">＋ ' + esc(t.addStep) + '</button>';
     h += '</div>';
 
     listEl.innerHTML = h;
+    listEl.scrollTop = keepScroll;
   }
 
   // ─────────────────────────────────────────────
   // MOBILE : BADGE + BOUTONS
   // ─────────────────────────────────────────────
   function renderReorgMobile() {
-    // Badge
     var badge = document.createElement('div');
     badge.id = 'ort-ed-reorg-badge';
     badge.className = 'ort-ed-reorg-badge';
-    badge.textContent = t.reorgStepCount.replace('{done}', '0').replace('{total}', steps.length);
     document.body.appendChild(badge);
 
-    // Boutons
     var btns = document.createElement('div');
     btns.id = 'ort-ed-reorg-mbtns';
     btns.className = 'ort-ed-reorg-mbtns';
-    btns.innerHTML = '<button style="background:#f0f0f0;color:#333" onclick="ORT_ITIN_EDITOR._stopReorg(false)">\u2715 ' + esc(t.reorgCancel) + '</button>' +
-      '<button style="background:#e11d48;color:#fff" onclick="ORT_ITIN_EDITOR._reorgPreview()">\u2713 ' + esc(t.reorgValidate) + '</button>';
+    btns.innerHTML = '<button style="background:#f0f0f0;color:#333" onclick="ORT_ITIN_EDITOR._stopReorg(false)">✕ ' + esc(t.reorgCancel) + '</button>' +
+      '<button style="background:#fff;color:#113f7a;border:2px solid #113f7a" onclick="ORT_ITIN_EDITOR._openAddFromPanel()">＋ ' + esc(t.addStep) + '</button>';
     document.body.appendChild(btns);
+    updateReorgBadge();
 
-    // Modale explicative mobile (affichée une seule fois)
-    if (!sessionStorage.getItem('ort_reorg_help_seen')) {
+    // Modale explicative mobile (affichée une seule fois par session)
+    if (!sessionStorage.getItem('ort_reorg_help_seen_v4')) {
       var helpModal = document.createElement('div');
       helpModal.id = 'ort-ed-help-modal';
       helpModal.style.cssText = 'position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px';
       var helpContent = '<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.25)">';
-      helpContent += '<div style="font-size:1.5rem;margin-bottom:10px">\ud83d\uddfa\ufe0f</div>';
+      helpContent += '<div style="font-size:1.5rem;margin-bottom:10px">🗺️</div>';
       helpContent += '<h3 style="color:#113f7a;margin:0 0 12px;font-size:1rem">' + esc(t.reorgTitle) + '</h3>';
       helpContent += '<div style="text-align:left;font-size:.88rem;color:#444;line-height:1.6;margin-bottom:16px">';
-      helpContent += '<p style="margin:0 0 8px"><b style="color:#e11d48">\u261d\ufe0f</b> ' + esc(t.reorgInstMobile || t.reorgInst) + '</p>';
+      helpContent += '<p style="margin:0 0 8px"><b style="color:#e11d48">☝️</b> ' + esc(t.reorgInstMobile || t.reorgInst) + '</p>';
       helpContent += '</div>';
       helpContent += '<button id="ort-ed-help-ok" style="padding:10px 28px;background:#113f7a;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.9rem;cursor:pointer">OK</button>';
       helpContent += '</div>';
       helpModal.innerHTML = helpContent;
       document.body.appendChild(helpModal);
-      document.getElementById('ort-ed-help-ok').addEventListener('click', function () {
+      var closeHelp = function () {
         helpModal.remove();
-        sessionStorage.setItem('ort_reorg_help_seen', '1');
-      });
-      helpModal.addEventListener('click', function (e) {
-        if (e.target === helpModal) {
-          helpModal.remove();
-          sessionStorage.setItem('ort_reorg_help_seen', '1');
-        }
-      });
+        try { sessionStorage.setItem('ort_reorg_help_seen_v4', '1'); } catch (e) { }
+      };
+      document.getElementById('ort-ed-help-ok').addEventListener('click', closeHelp);
+      helpModal.addEventListener('click', function (e) { if (e.target === helpModal) closeHelp(); });
     }
   }
 
   function updateReorgBadge() {
     var badge = document.getElementById('ort-ed-reorg-badge');
     if (badge) {
-      badge.textContent = t.reorgStepCount.replace('{done}', reorg.newOrder.length).replace('{total}', steps.length);
+      badge.textContent = t.reorgOrder + ' : ' + reorg.newOrder.length;
     }
   }
 
@@ -2249,6 +2439,7 @@
     m.on('click', function () { handleReorgClick(newStep._idx); });
     m.on('dblclick', function () { handleReorgDblClick(newStep._idx); });
     global.mk[dayNum] = m;
+    reorg.mkByIdx[newStep._idx] = m;
 
     global.map.closePopup();
     closeModal();
@@ -2314,7 +2505,9 @@
 
   function bindAddPlaceClicks() {
     var list = document.getElementById('ort-ed-placelist');
-    if (!list) return;
+    enhanceScrollList(list);
+    if (!list || list._ortBound) return;
+    list._ortBound = true;
     list.addEventListener('click', function (e) {
       var item = e.target.closest('.ort-ed-modal-item[data-place-id]');
       if (!item) return;
@@ -2324,6 +2517,22 @@
         openInsertPositionModal(pid);
       }
     });
+  }
+
+  // Bouton "Ajouter" de la carte des pages : au premier clic, l'éditeur charge encore l'itinéraire
+  // et les lieux. On attend qu'il soit prêt (10 s au plus) avant d'ouvrir le choix de position.
+  function openInsertPositionWhenReady(placeId) {
+    var tries = 0;
+    (function attempt() {
+      var ready = editorActive && reorg.active && Object.keys(placesIndex).length > 0;
+      if (ready) {
+        if (placesIndex[placeId]) openInsertPositionModal(placeId);
+        else console.warn('[ORT-EDITOR] Lieu absent des lieux du pays : ' + placeId);
+        return;
+      }
+      if (++tries > 40) { console.warn('[ORT-EDITOR] Ajout abandonné : éditeur pas prêt'); return; }
+      setTimeout(attempt, 250);
+    })();
   }
 
   // Modale de choix de position d'insertion
@@ -2367,6 +2576,7 @@
 
     // Event delegation — au clic, on reconstruit le newOrder complet puis on insère
     var list = document.getElementById('ort-ed-poslist');
+    enhanceScrollList(list);
     if (list) {
       list.addEventListener('click', function (e) {
         var item = e.target.closest('[data-insert-pid]');
@@ -2418,6 +2628,7 @@
         m.on('click', function () { handleReorgClick(newStep._idx); });
         m.on('dblclick', function () { handleReorgDblClick(newStep._idx); });
         global.mk[dayNum] = m;
+        reorg.mkByIdx[newStep._idx] = m;
 
         global.map.closePopup();
         closeModal();
@@ -2431,30 +2642,26 @@
   // INVERSER / RÉINITIALISER
   // ─────────────────────────────────────────────
   function reorgInvert() {
-    if (reorg.newOrder.length === 0) {
-      // Construire l'ordre actuel (sans les supprimées)
-      reorg.newOrder = steps.filter(function (s) {
-        return reorg.deleted.indexOf(s._idx) < 0;
-      }).map(function (s) { return s._idx; });
-    }
     reorg.newOrder.reverse();
     refreshReorgVisuals();
   }
 
+  // Retour au voyage de départ : on retire les lieux ajoutés (toujours en fin de tableau)
   function reorgReset() {
-    reorg.newOrder = [];
-    reorg.deleted = [];
-    // Retirer les étapes ajoutées depuis OP
-    reorg.addedPlaces.forEach(function (sIdx) {
+    reorg.addedPlaces.slice().sort(function (a, b) { return b - a; }).forEach(function (sIdx) {
+      var m = reorg.mkByIdx[sIdx];
+      if (m) {
+        try { global.map.removeLayer(m); } catch (e) { }
+        Object.keys(global.mk || {}).forEach(function (k) { if (global.mk[k] === m) delete global.mk[k]; });
+      }
+      delete reorg.mkByIdx[sIdx];
       var idx = steps.findIndex(function (s) { return s._idx === sIdx; });
       if (idx >= 0) steps.splice(idx, 1);
     });
     reorg.addedPlaces = [];
-    // Supprimer la polyline grise pour qu'elle soit recréée proprement
-    if (reorgOriginalPl) {
-      try { global.map.removeLayer(reorgOriginalPl); } catch (e) { }
-      reorgOriginalPl = null;
-    }
+    reorg.deleted = [];
+    reorg.newOrder = (reorg.origOrder || []).slice();
+    try { global.map.closePopup(); } catch (e) { }
     refreshReorgVisuals();
   }
 
@@ -2689,6 +2896,7 @@
       if (cc) config.cc = (cc || '').toUpperCase();
       if (!config.lang) config.lang = detectLang();
       t = I18N[config.lang] || I18N.en;
+      applyReorgTexts(config.lang);
       var textPanel = document.getElementById('textPanel');
       if (!textPanel) { console.error('[ORT-EDITOR] #textPanel introuvable'); return; }
       console.log('[MERGE] _startMerged daysPlan=', (daysPlan || []).length, 'cc=', cc, 'title=', title);
@@ -2745,19 +2953,26 @@
 
     // Mode carte réorg
     _stopReorg: function (apply) {
-      if (!apply && (reorg.newOrder.length > 0 || reorg.deleted.length > 0)) {
+      if (!apply && reorgIsChanged()) {
         if (!confirm(t.reorgConfirmExit)) return;
       }
       stopMapReorg(apply);
     },
     _reorgInvert: reorgInvert,
     _reorgReset: reorgReset,
-    _reorgPreview: reorgPreview,
+    _reorgPreview: reorgValidate,   // V4 : plus de previsualisation, on valide directement
     _reorgValidate: reorgValidate,
     _reorgAddOP: function (pid, pos) { reorgAddOP(pid, pos); },
     _openAddFromPanel: function () { openAddFromPanel(); },
+    // Choix de la position (Au début / Après l'étape N), appelé par le bouton "Ajouter" de la carte des pages
+    _openInsertPosition: function (pid) { openInsertPositionWhenReady(pid); },
     _reorgClickPanel: function (sIdx) { handleReorgClick(sIdx); },
     _reorgDblClickPanel: function (sIdx) { handleReorgDblClick(sIdx); },
+    _reorgMoveBy: function (sIdx, d) { reorgMoveBy(sIdx, d); },
+    _reorgDelete: function (sIdx) { reorgDelete(sIdx); },
+    _reorgRestore: function (sIdx) { reorgRestore(sIdx); },
+    _reorgFocus: function (sIdx) { reorgFocus(sIdx); },
+    _reorgMoveAsk: function (sIdx) { openMoveModal(sIdx); },
 
     // Récupère une chaîne i18n selon la langue détectée (fallback FR)
     _getLabel: function (key) {

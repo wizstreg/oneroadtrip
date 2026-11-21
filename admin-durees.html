@@ -61,6 +61,11 @@
   .ecart-ok { color: #2e7d32; }
   .ecart-bad { color: #c62828; }
 
+  /* Badge validé (case verte) */
+  .badge-validated { background: #c8e6c9; color: #1b5e20; }
+  .itin-item.validated { opacity: 0.75; }
+  .itin-item.validated .title { color: #555; }
+
   /* Editor */
   .editor { flex: 1; overflow-y: auto; padding: 20px; background: #fafafa; }
   .editor-empty { display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; text-align: center; line-height: 2; }
@@ -106,18 +111,46 @@
   .filter-row select { flex: 1; padding: 7px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; }
 
   span#serverStatus { font-size: 11px; color: #999; }
+
+  /* Onglet Nuits (venu de admin-itin-editor) */
+  .nubar { background:#fff; border:1px solid #e0e0e0; border-radius:6px; padding:10px 12px; margin-bottom:12px; }
+  .nubar .rowflex { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .nubar select, .nubar input[type="text"] { padding:6px 8px; border:1px solid #ccc; border-radius:4px; font-size:13px; }
+  .nu-hint { font-size:12px; color:#78909c; margin-top:8px; line-height:1.5; }
+  .nu-empty { color:#999; font-size:13px; text-align:center; padding:30px 10px; }
+  .cbtn { border-radius:4px; padding:5px 10px; font-size:12px; cursor:pointer; font-weight:600; margin-right:6px; border:1px solid #ccc; background:#fff; color:#333; }
+  .cbtn:hover { filter:brightness(0.96); }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
+<style>
+  #stepMap { height: 320px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 14px; }
+  .nights-warn { background:#fff4e0; border:1px solid #f0b357; color:#8a5a12; border-radius:4px; padding:8px 12px; margin-bottom:12px; font-size:13px; }
+  .nights-ok { background:#e6f6ec; border:1px solid #5ab97e; color:#1c6b3c; border-radius:4px; padding:8px 12px; margin-bottom:12px; font-size:13px; }
+  .nit { width:52px; padding:3px 5px; border:1px solid #ccc; border-radius:4px; font-size:13px; text-align:center }
+  .nit.chg { border-color:#e6a23c; background:#fff8ec; font-weight:700 }
+  .bit { width:190px; padding:3px 5px; border:1px solid #ccc; border-radius:4px; font-size:12px; background:#fff }
+  .bit.chg { border-color:#e6a23c; background:#fff8ec; font-weight:700 }
 </style>
 </head>
 <body>
 <div class="header">
   <h1>ORT Admin</h1>
-  <span class="header-sub">Durées & Cohérence</span>
+  <span class="header-sub" id="headerSub">Durées & Cohérence</span>
   <div style="flex:1"></div>
+  <div style="display:flex;gap:6px;margin-right:14px">
+    <button class="btn btn-sm btn-blue" id="viewBtnDurees" onclick="switchView('durees')">Durées</button>
+    <button class="btn btn-sm btn-outline" id="viewBtnUnif" onclick="switchView('unif')">Uniformisation</button>
+    <button class="btn btn-sm btn-outline" id="viewBtnNuits" onclick="switchView('nuits')">Nuits</button>
+  </div>
   <span id="serverStatus"></span>
 </div>
 <div id="statusBar"></div>
 
-<div class="main">
+<div class="main" id="viewDurees">
   <div class="sidebar">
     <div class="sidebar-header">
       <div style="display:flex;gap:6px">
@@ -130,13 +163,22 @@
           <option value="all">Tous</option>
           <option value="mismatch">Écarts seulement</option>
           <option value="ok">Cohérents seulement</option>
+          <option value="title_diff">Différence avec les titres</option>
+          <option value="nights_bad">Nuits à revoir</option>
+          <option value="nights_missing">Sans champ nuits</option>
         </select>
+      </div>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:6px;font-size:12px;color:#555">
+        <input type="checkbox" id="showValidated" style="margin:0">
+        <label for="showValidated" style="cursor:pointer">Voir aussi les itins validés</label>
       </div>
     </div>
     <div class="sidebar-stats">
       <span>Total: <b id="stTotal">0</b></span>
       <span>Cohérents: <b id="stOk" style="color:#2e7d32">0</b></span>
       <span>Écarts: <b id="stBad" style="color:#c62828">0</b></span>
+      <span>Validés: <b id="stVal" style="color:#1b5e20">0</b></span>
+      <span>Nuits KO: <b id="stNights" style="color:#e6a23c">0</b></span>
     </div>
     <div class="sidebar-list" id="listBox"></div>
   </div>
@@ -149,15 +191,141 @@
   </div>
 </div>
 
+<!-- Vue Uniformisation -->
+<div id="viewUnif" style="display:none;padding:20px;background:#fafafa;height:calc(100vh - 50px);overflow-y:auto">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <h2 style="margin:0;font-size:18px">Uniformisation des durées dans les textes</h2>
+    <button class="btn btn-blue btn-sm" onclick="runUnifScan()">Scanner les itinéraires validés</button>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#555">
+      <input type="checkbox" id="unifScanAll" style="margin:0"> Scanner aussi les non-validés
+    </label>
+    <span id="unifSummary" style="font-size:12px;color:#888;margin-left:auto"></span>
+  </div>
+  <div id="unifResults">
+    <div style="color:#999;font-size:13px;text-align:center;padding:40px">
+      Clique sur "Scanner" pour analyser les textes des itinéraires.<br><br>
+      Le scan cherche dans <b>title</b>, <b>subtitle</b> et le bloc <b>seo</b> (h1_title, intro_paragraph, seo_hook, etc.)<br>
+      des mentions de durée qui ne correspondent pas à <code>estimated_days_base</code>.<br>
+      Les 6 langues sont analysées.
+    </div>
+  </div>
+</div>
+
+<!-- Vue Nuits : controle des reponses de nuits.js (ort-nights\reponses) -->
+<div id="viewNuits" style="display:none;padding:20px;background:#fafafa;height:calc(100vh - 50px);overflow-y:auto">
+  <div class="nubar">
+    <div class="rowflex">
+      <button class="btn btn-blue btn-sm" id="nuRecharger">Recharger</button>
+      <select id="nuPays"><option value="">Tous les pays</option></select>
+      <select id="nuFiltre">
+        <option value="a_voir">A voir (alertes non tranchees)</option>
+        <option value="a_voir_tous">A voir, propres compris</option>
+        <option value="alertes">Alertes seulement</option>
+        <option value="irrealisable">Irrealisables seulement</option>
+        <option value="doutes">Doutes seulement</option>
+        <option value="corrige">Corriges a la main</option>
+        <option value="ok">Valides OK</option>
+        <option value="anomalie">Anomalies</option>
+        <option value="tous">Tous</option>
+      </select>
+      <input type="text" id="nuCherche" placeholder="Filtrer par identifiant..." style="width:220px">
+      <button class="cbtn" id="nuExport" style="background:#eef4ff;border-color:#9ec1ff;color:#1a4fa0" title="Copie la liste des OK et des anomalies en JSON">Copier les validations</button>
+      <span id="nuProg" style="flex:1;font-size:12px;color:#78909c"></span>
+    </div>
+    <div class="nu-hint">
+      Lit <b>ort-nights\reponses</b> (les nuits decidees par nuits.js) et <b>ort-nights\doutes</b> (l avis de doutes.js).
+      <b>OK, c est bon</b> et <b>Anomalie</b> sont ecrits dans <b>ort-nights\validations.json</b>, le fichier que lit ecrire-stay-at.js.
+      Une correction faite dans l onglet Durees est reportee ici automatiquement (reponse reecrite, itineraire marque OK).
+    </div>
+  </div>
+  <div style="display:flex;gap:12px">
+    <div id="nuListe" style="flex:0 0 380px;max-height:72vh;overflow:auto;background:#fff;border:1px solid #e0e0e0;border-radius:6px"></div>
+    <div id="nuDetail" style="flex:1;background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:12px;min-height:200px"><div class="nu-empty">Choisis un itineraire dans la liste.</div></div>
+  </div>
+</div>
+
 <script>
 const API = 'http://127.0.0.1:8030';
 const DP = 'data/Roadtripsprefabriques/countries';
 const LANGS = ['fr','en','es','it','pt','ar'];
+// stay_at et stay_nights sont techniques : ils vont dans toutes les langues.
+const LANGS_TECH = ['fr','en','es','it','pt','ar','de','nl'];
 
 let CC = [];       // liste des codes pays
 let allItins = []; // [{i: itinObject, cc: 'MX', fp: 'data/...'}]
 let selected = null; // l'itin sélectionné
 let titlesByLang = {}; // { fr: 'titre FR', en: 'titre EN', ... } — chargé à la sélection
+let validations = {}; // { 'AT::austria-family-roadtrip': { validated_at: '...', by: '...' } }
+
+const VALIDATIONS_PATH = 'data/Roadtripsprefabriques/validations.json';
+
+function isValidated(id) { return !!validations[id]; }
+
+function markValidated(id, source) {
+  if (!id) return;
+  // On préserve un éventuel flag unif_skip existant
+  const prev = validations[id] || {};
+  validations[id] = {
+    ...prev,
+    validated_at: new Date().toISOString().slice(0, 19),
+    by: source || 'admin'
+  };
+}
+
+function unmarkValidated(id) {
+  if (id && validations[id]) delete validations[id];
+}
+
+function isUnifSkipped(id) { return !!(validations[id] && validations[id].unif_skip); }
+
+function markUnifSkip(id) {
+  if (!id) return;
+  const prev = validations[id] || {};
+  validations[id] = {
+    ...prev,
+    unif_skip: true,
+    unif_skip_at: new Date().toISOString().slice(0, 19),
+    // Si pas encore validé, on le valide en même temps (cas "tel quel")
+    validated_at: prev.validated_at || new Date().toISOString().slice(0, 19),
+    by: prev.by || 'unif-skip'
+  };
+}
+
+async function loadValidations() {
+  try {
+    const r = await fetch(API + '/' + VALIDATIONS_PATH);
+    if (!r.ok) {
+      console.warn('[loadValidations] fichier introuvable (status ' + r.status + '), démarrage avec liste vide');
+      validations = {};
+      return;
+    }
+    const j = await r.json();
+    validations = (j && j.validations) || {};
+    console.log('[loadValidations] ' + Object.keys(validations).length + ' itinéraires validés chargés depuis le serveur');
+  } catch(e) {
+    console.error('[loadValidations] erreur:', e);
+    validations = {};
+  }
+}
+
+async function saveValidationsToServer() {
+  console.log('[saveValidationsToServer] start, payload size:', Object.keys(validations).length);
+  try {
+    const r = await fetch(API + '/api/save-validations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ validations })
+    });
+    console.log('[saveValidationsToServer] response status:', r.status);
+    const text = await r.text();
+    console.log('[saveValidationsToServer] response body:', text);
+    const j = JSON.parse(text);
+    return j.success === true;
+  } catch(e) {
+    console.error('[saveValidationsToServer] error:', e);
+    return false;
+  }
+}
 
 const $ = id => document.getElementById(id);
 function st(m, t) {
@@ -203,7 +371,8 @@ async function loadIt(cc, lang) {
   for (const f of [cc + '.itins.modules-' + lang + '.json', cc.toLowerCase() + '.itins.modules-' + lang + '.json'])
     for (const d of [cc, cc.toLowerCase()])
       try {
-        const r = await fetch(API + '/' + DP + '/' + d + '/' + f);
+        // Toujours relire le disque : le navigateur garde volontiers l ancien fichier.
+        const r = await fetch(API + '/' + DP + '/' + d + '/' + f + '?t=' + Date.now(), { cache: 'no-store' });
         if (!r.ok) continue;
         const j = await r.json();
         return { its: j.itineraries || [], fp: DP + '/' + d + '/' + f, cc };
@@ -239,7 +408,85 @@ async function loadAll() {
   st(allItins.length + ' itinéraires (tous pays)', 'success');
 }
 
+// ─── Extraction du nombre de jours depuis un titre ─────────────
+// Cherche un nombre suivi de jour/jours/day/days/día/días/dia/dias/giorno/giorni/يوم/أيام
+// On accepte un espace, un tiret ou rien entre le nombre et le mot.
+const TITLE_DAYS_RX = /(\d+)\s*[-]?\s*(jours?|days?|d[ií]as?|giorni|giorno|يوم|أيام)\b/i;
+function extractTitleDays(title) {
+  if (!title) return null;
+  const m = String(title).match(TITLE_DAYS_RX);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+// Compare le nombre du titre à la somme brute (arrondie).
+// Renvoie { titleDays, ref, diff } ou null si pas de nombre dans le titre.
+function titleVsBrute(itin) {
+  const td = extractTitleDays(itin.title);
+  if (td == null) return null;
+  const d = calcDurees(itin);
+  const ref = Math.round(d.sommeBrute);
+  return { titleDays: td, ref, diff: td - ref };
+}
+
 // ─── Calculs durées ─────────────────────────────────────────────
+
+// ─── Analyse des nuits (stay_at / stay_nights) ──────────────────
+// Une base qui porte plusieurs nuits pendant que les etapes autour sont a zero
+// est normale : on rayonne. En revanche deux etapes SUR LE MEME LIEU qui se
+// suivent sont deux journees sur place : il faut au moins autant de nuits que
+// de jours, sinon le voyageur devrait dormir ailleurs sans qu on lui dise ou.
+function calcNuits(itin) {
+  const days = itin.days_plan || itin.steps || [];
+  const aucun = days.length === 0 || days.some(d => d.stay_nights === undefined || d.stay_nights === null);
+  if (aucun) return { present: false, bases: [], totalNuits: 0, ecarts: [], ok: false };
+
+  // Regroupement par base successive. Le dernier jour du voyage est le jour
+  // du depart : il ne compte pas comme une journee sur place qui appelle une
+  // nuit (Naples J11 a 0 nuit est normal).
+  const dernierJour = Number(days[days.length - 1].day);
+  const bases = [];
+  days.forEach(d => {
+    const base = d.stay_at || '';
+    const surPlace = ((d.night && d.night.place_id) === base && Number(d.day) !== dernierJour) ? 1 : 0;
+    const last = bases[bases.length - 1];
+    if (last && last.base === base) {
+      last.jours.push(d.day);
+      last.nuits += Number(d.stay_nights) || 0;
+      last.surPlace += surPlace;
+    } else {
+      bases.push({ base, jours: [d.day], nuits: Number(d.stay_nights) || 0, surPlace: surPlace });
+    }
+  });
+
+  const ecarts = [];
+
+  // 1. Sejour de plusieurs journees SUR la base avec trop peu de nuits
+  bases.forEach(function(b) {
+    if (b.surPlace > 1 && b.nuits < b.surPlace) {
+      ecarts.push({ type: 'court', base: b.base, jours: b.jours, surPlace: b.surPlace, nuits: b.nuits });
+    }
+  });
+
+  // 2. Total des nuits contre la duree annoncee
+  const totalNuits = days.reduce((t, d) => t + (Number(d.stay_nights) || 0), 0);
+  const annonce = Number(itin.estimated_days_base) || 0;
+  if (annonce && totalNuits !== annonce) {
+    ecarts.push({ type: 'total', total: totalNuits, annonce: annonce });
+  }
+
+  return { present: true, bases, totalNuits, ecarts, ok: ecarts.length === 0 };
+}
+
+// Validation a la main des nuits : l itineraire sort de "Nuits a revoir"
+// meme si la regle le signale. Gardee dans ort-nights/validations.json.
+function nuitsValideesMain(id) {
+  const v = NU.valid[id];
+  return !!(v && v.etat === 'ok' && v.valide_main);
+}
+function nuitsARevoir(itin) {
+  const n = calcNuits(itin);
+  return n.present && !n.ok && !nuitsValideesMain(itin.itin_id || itin.id);
+}
 
 function calcDurees(itin) {
   const days = itin.days_plan || [];
@@ -297,10 +544,21 @@ function calcDurees(itin) {
   const nbPlacesUniques = Object.keys(placeData).length;
   const nbForcedNights = placeDetails.filter(p => p.forced).length;
 
+  // Temps de route et distance totaux (somme des to_next_leg)
+  let driveMinTotal = 0;
+  let distanceKmTotal = 0;
+  for (const day of days) {
+    const tnl = day.to_next_leg;
+    if (tnl) {
+      driveMinTotal += tnl.drive_min || 0;
+      distanceKmTotal += tnl.distance_km || 0;
+    }
+  }
+
   const ecart = annonce - sommeMax;
   const coherent = Math.abs(ecart) < 0.5;
 
-  return { annonce, nbEtapes, sommeBrute, sommeMax, nbPlacesUniques, nbForcedNights, placeDetails, ecart, coherent };
+  return { annonce, nbEtapes, sommeBrute, sommeMax, nbPlacesUniques, nbForcedNights, placeDetails, ecart, coherent, driveMinTotal, distanceKmTotal };
 }
 
 // ─── Rendu sidebar ──────────────────────────────────────────────
@@ -308,34 +566,50 @@ function calcDurees(itin) {
 function renderList() {
   const search = $('searchBox').value.toLowerCase();
   const filter = $('filterType').value;
+  const showVal = $('showValidated').checked;
 
   let list = allItins;
   if (search) list = list.filter(({ i }) => ((i.itin_id || i.id || '') + (i.title || '')).toLowerCase().includes(search));
 
   if (filter === 'mismatch') list = list.filter(({ i }) => !calcDurees(i).coherent);
   if (filter === 'ok') list = list.filter(({ i }) => calcDurees(i).coherent);
+  if (filter === 'nights_bad') list = list.filter(({ i }) => nuitsARevoir(i));
+  if (filter === 'nights_missing') list = list.filter(({ i }) => !calcNuits(i).present);
+  if (filter === 'title_diff') list = list.filter(({ i }) => {
+    const t = titleVsBrute(i);
+    return t && Math.abs(t.diff) >= 1;
+  });
+
+  // Masquer les validés sauf si case cochée
+  if (!showVal) list = list.filter(({ i }) => !isValidated(i.itin_id || i.id));
 
   // Stats globales
   const totalOk = allItins.filter(({ i }) => calcDurees(i).coherent).length;
   const totalBad = allItins.length - totalOk;
+  const totalVal = allItins.filter(({ i }) => isValidated(i.itin_id || i.id)).length;
+  const totalNightsBad = allItins.filter(({ i }) => nuitsARevoir(i)).length;
   $('stTotal').textContent = allItins.length;
   $('stOk').textContent = totalOk;
   $('stBad').textContent = totalBad;
+  $('stVal').textContent = totalVal;
+  $('stNights').textContent = totalNightsBad;
 
   $('listBox').innerHTML = list.map(({ i, cc }) => {
     const id = i.itin_id || i.id;
     const d = calcDurees(i);
     const sel = selected && (selected.i.itin_id || selected.i.id) === id;
+    const validated = isValidated(id);
     const badgeCls = d.coherent ? 'badge-ok' : 'badge-warn';
     const badgeText = d.coherent ? d.annonce + 'j ✓' : d.annonce + 'j ≠ ' + d.sommeMax + 'j';
     const ecartCls = d.coherent ? 'ecart-ok' : 'ecart-bad';
     const ecartText = d.coherent ? '' : ' (écart ' + (d.ecart > 0 ? '+' : '') + Math.round(d.ecart * 10) / 10 + 'j)';
 
-    return '<div class="itin-item ' + (sel ? 'selected' : '') + '" onclick="selectItin(\'' + id + '\')">'
-      + '<div class="title">' + (i.title || id) + '</div>'
+    return '<div class="itin-item ' + (sel ? 'selected ' : '') + (validated ? 'validated' : '') + '" onclick="selectItin(\'' + id + '\')">'
+      + '<div class="title">' + (validated ? '✓ ' : '') + (i.title || id) + '</div>'
       + '<div class="meta">'
       + '<span>' + cc + '</span>'
       + '<span class="badge ' + badgeCls + '">' + badgeText + '</span>'
+      + (validated ? '<span class="badge badge-validated">validé</span>' : '')
       + '<span>' + d.nbEtapes + ' étapes</span>'
       + (ecartText ? '<span class="ecart ' + ecartCls + '">' + ecartText + '</span>' : '')
       + '</div></div>';
@@ -344,6 +618,7 @@ function renderList() {
 
 $('searchBox').oninput = renderList;
 $('filterType').onchange = renderList;
+$('showValidated').onchange = renderList;
 
 // ─── Sélection itinéraire ───────────────────────────────────────
 
@@ -409,6 +684,27 @@ function renderEditor() {
         + ' oninput="onTitleChange()">'
         + '</div>';
     }
+
+    // Bloc "Remplacement en masse" — détecte le nombre présent dans les titres
+    // et propose de le remplacer par un autre dans toutes les langues d'un coup.
+    let detected = null;
+    for (const lang of LANGS) {
+      const n = extractTitleDays(titlesByLang[lang]);
+      if (n != null) { detected = n; break; }
+    }
+    const sugg = calcDurees(i);
+    const suggested = Math.round(sugg.sommeBrute);
+
+    html += '<div style="margin-top:12px;padding-top:10px;border-top:1px dashed #ddd;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      + '<span style="font-size:12px;color:#555;font-weight:500">Remplacer dans tous les titres :</span>'
+      + '<input type="number" id="bulkFrom" value="' + (detected != null ? detected : '') + '" placeholder="ex. 19" style="width:64px;padding:5px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:center">'
+      + '<span style="font-size:12px;color:#888">par</span>'
+      + '<input type="number" id="bulkTo" placeholder="ex. 15" style="width:64px;padding:5px 6px;border:1px solid #ccc;border-radius:4px;font-size:13px;text-align:center">'
+      + '<button class="btn-quick" onclick="bulkReplaceTitles()">Appliquer</button>'
+      + (detected != null
+          ? '<span style="font-size:11px;color:#888;margin-left:4px">détecté : <b>' + detected + '</b> · suggéré : <b>' + suggested + '</b></span>'
+          : '<span style="font-size:11px;color:#aaa;margin-left:4px">aucun nombre détecté</span>')
+      + '</div>';
   }
 
   html += '</div></details>';
@@ -418,7 +714,7 @@ function renderEditor() {
   // Ligne 1 : durée annoncée (modifiable)
   html += '<div class="dur-edit-row">'
     + '<span class="dur-label" style="font-weight:600">Durée annoncée (estimated_days_base) :</span>'
-    + '<input type="number" id="editDays" min="1" max="90" value="' + d.annonce + '" class="' + inputCls + '" onchange="onDaysChange()">'
+    + '<input type="number" id="editDays" min="1" max="90" value="' + d.annonce + '" class="' + inputCls + '" oninput="onDaysChange()">'
     + '<span style="font-size:13px;color:#888">jours</span>'
     + '<span style="margin-left:8px;font-size:11px;color:#aaa">Raccourci :</span>'
     + '<button class="btn-quick" onclick="setDays(' + d.sommeMax + ')" title="Aligner sur la somme MAX par place unique">= ' + d.sommeMax + 'j (calculé)</button>'
@@ -447,6 +743,18 @@ function renderEditor() {
   html += '<div class="dur-row">'
     + '<span class="dur-label">Nombre de nuits (days_plan) :</span>'
     + '<span class="dur-value neutral">' + d.nbEtapes + '</span>'
+    + '</div>';
+
+  // Ligne 4a : temps de route et distance totaux
+  const hTot = Math.floor(d.driveMinTotal / 60);
+  const mTot = d.driveMinTotal % 60;
+  const driveStr = d.driveMinTotal > 0
+    ? hTot + 'h' + String(mTot).padStart(2, '0') + ' (' + d.driveMinTotal + ' min)'
+    : '—';
+  html += '<div class="dur-row">'
+    + '<span class="dur-label">Temps de route total :</span>'
+    + '<span class="dur-value neutral">' + driveStr + '</span>'
+    + '<span style="font-size:11px;color:#aaa;margin-left:8px">' + d.distanceKmTotal + ' km cumulés</span>'
     + '</div>';
 
   // Ligne 4b : détail des nuits forcées par la route
@@ -478,22 +786,67 @@ function renderEditor() {
       + '</div>';
   }
 
-  // Bouton sauvegarder
-  html += '<div style="margin-top:14px;display:flex;gap:8px;align-items:center">'
-    + '<button class="btn btn-green" id="btnSave" onclick="saveDays()" disabled>Sauvegarder dans les 6 langues</button>'
+  // Bouton sauvegarder + bouton valider
+  const validated = isValidated(id);
+  const validBtnLabel = validated ? '✓ Validé — Dévalider' : 'Marquer comme validé';
+  const validBtnCls = validated ? 'btn btn-outline' : 'btn btn-green';
+  const validInfo = validated && validations[id]
+    ? '<span style="font-size:11px;color:#888;margin-left:8px">le ' + (validations[id].validated_at || '').slice(0, 10) + '</span>'
+    : '';
+  html += '<div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    + '<button class="btn btn-green" id="btnSave" onclick="saveDays()" disabled>Sauvegarder dans toutes les langues</button>'
+    + '<button class="' + validBtnCls + '" onclick="toggleValidation()" style="' + (validated ? '' : 'background:#1b5e20') + '">' + validBtnLabel + '</button>'
+    + validInfo
     + '<span id="saveHint" style="font-size:11px;color:#aaa">Modifiez la valeur ci-dessus pour activer</span>'
     + '</div>';
 
   html += '</div>'; // fin dur-summary
 
+  // ── Bilan des nuits conseillées ────────────────────────────────
+  const nu = calcNuits(selected.i);
+  const nomLieu = function(pid) { return String(pid).split('::').slice(1).join(' ').replace(/-/g, ' '); };
+  if (!nu.present) {
+    html += '<div class="nights-warn">Cet itinéraire n\'a pas encore le champ des nuits conseillées. '
+      + 'Lance <b>ecrire-stay-at.js</b> pour le poser.</div>';
+  } else if (nu.ok) {
+    html += '<div class="nights-ok">Nuits conseillées : <b>' + nu.totalNuits + '</b> au total, réparties sur '
+      + nu.bases.length + ' base(s).</div>';
+  } else {
+    const valideMain = nuitsValideesMain(id);
+    html += '<div class="' + (valideMain ? 'nights-ok' : 'nights-warn') + '" style="display:flex;gap:12px;align-items:flex-start">'
+      + '<div style="flex:1">' + (valideMain ? '<b>Nuits validées à la main</b> malgré :' : '<b>Nuits à revoir</b>') + '<br>'
+      + nu.ecarts.map(function(e) {
+          if (e.type === 'total') {
+            return '&bull; ' + e.total + ' nuit(s) posées pour ' + e.annonce + ' jours annoncés';
+          }
+          return '&bull; <b>' + nomLieu(e.base) + '</b> : ' + e.surPlace + ' étapes sur place (jours '
+            + e.jours.join(', ') + ') pour seulement ' + e.nuits + ' nuit(s)';
+        }).join('<br>')
+      + '</div>'
+      + '<button class="btn btn-sm ' + (valideMain ? 'btn-outline' : 'btn-green') + '" onclick="validerNuits()" style="flex:0 0 auto">'
+      + (valideMain ? 'Annuler la validation' : 'Valider les nuits') + '</button>'
+      + '</div>';
+  }
+
+  // ── Carte des étapes ───────────────────────────────────────────
+  html += '<div class="section-title">Carte des étapes</div><div id="stepMap"></div>';
+
   // Tableau des étapes
-  html += '<div class="section-title">Détail des étapes (' + d.nbEtapes + ')</div>';
+  html += '<div class="section-title" style="display:flex;align-items:center;gap:14px">'
+    + '<span>Détail des étapes (' + d.nbEtapes + ')</span>'
+    + '<span id="nuitsCompteur" style="font-size:15px;font-weight:700"></span>'
+    + '</div>';
   html += '<table class="steps-table"><thead><tr>'
-    + '<th>Jour</th><th>Lieu (nuit)</th><th>suggested_days</th><th>Visites</th><th>Activités</th><th>→ Suivant</th>'
+    + '<th>Jour</th><th>Lieu (nuit)</th><th>Nuits</th><th>On dort à</th><th>suggested_days</th><th>Visites</th><th>Activités</th><th>→ Suivant</th>'
     + '</tr></thead><tbody>';
 
   // Construire un set des places avec nuit forcée pour marquer dans le tableau
   const forcedPids = new Set(d.placeDetails.filter(p => p.forced).map(p => p.pid));
+
+  // Lieux de l itineraire, dans l ordre du parcours : la liste de choix
+  // de "On dort a" pour chaque jour.
+  const lieuxItin = [...new Set(days.map(function(x){ return (x.night && x.night.place_id) || ''; }).filter(Boolean))];
+  const nomCourt = function(p) { return String(p).split('::').slice(1).join(' ').replace(/-/g, ' '); };
 
   days.forEach((day, idx) => {
     const pid = day.night?.place_id || '';
@@ -514,9 +867,19 @@ function renderEditor() {
     const isForced = forcedPids.has(pid) && (day.suggested_days || 0) < 1;
     const rowCls = isForced ? 'background:#fff5f5' : '';
 
-    html += '<tr style="' + rowCls + '">'
+    html += '<tr style="' + rowCls + '" id="row_' + day.day + '" title="">'
       + '<td>J' + day.day + '</td>'
       + '<td class="place-name" title="' + pid + '">' + placeName + (isForced ? ' 🚗' : '') + '</td>'
+      + '<td><input type="number" min="0" max="30" class="nit" id="nit_' + day.day + '" '
+        + 'value="' + (day.stay_nights === undefined || day.stay_nights === null ? '' : day.stay_nights) + '" '
+        + 'data-orig="' + (day.stay_nights === undefined || day.stay_nights === null ? '' : day.stay_nights) + '" '
+        + 'oninput="onNightChange(' + day.day + ')"></td>'
+      + '<td><select class="bit" id="bit_' + day.day + '" data-orig="' + (day.stay_at || '') + '" '
+        + 'onchange="onNightChange(' + day.day + ')">'
+        + (day.stay_at && !lieuxItin.includes(day.stay_at) ? '<option value="' + day.stay_at + '" selected>' + nomCourt(day.stay_at) + '</option>' : '')
+        + (!day.stay_at ? '<option value="" selected>?</option>' : '')
+        + lieuxItin.map(function(p) { return '<option value="' + p + '"' + (p === day.stay_at ? ' selected' : '') + '>' + nomCourt(p) + '</option>'; }).join('')
+        + '</select></td>'
       + '<td style="' + sdCls + '">' + (day.suggested_days || 0) + (isForced ? ' →1' : '') + '</td>'
       + '<td>' + nbVisits + '</td>'
       + '<td>' + nbActs + '</td>'
@@ -525,7 +888,172 @@ function renderEditor() {
   });
 
   html += '</tbody></table>';
+
   e.innerHTML = html;
+  drawStepMap(days);
+  majCompteurNuits();
+  afficherRaisons(id, days);
+}
+
+// Compteur vivant : somme des nuits tapees contre la duree annoncee tapee.
+function majCompteurNuits() {
+  const c = $('nuitsCompteur');
+  if (!c) return;
+  let total = 0, vides = 0;
+  document.querySelectorAll('input.nit').forEach(function(n) {
+    if (n.value === '') { vides++; return; }
+    total += parseInt(n.value, 10) || 0;
+  });
+  const annonce = parseInt(($('editDays') || {}).value, 10) || 0;
+  const ecart = total - annonce;
+  const ok = annonce > 0 && ecart === 0;
+  c.textContent = total + ' nuit' + (total > 1 ? 's' : '') + ' / ' + annonce + ' jour' + (annonce > 1 ? 's' : '') + ' prévus'
+    + (ok ? ' ✓' : annonce > 0 ? ' (' + (ecart > 0 ? '+' : '') + ecart + ')' : '')
+    + (vides ? ' · ' + vides + ' jour(s) sans nuit renseignée' : '');
+  c.style.color = ok ? '#2e7d32' : '#c62828';
+}
+
+// Au survol d une ligne : la raison donnee par nuits.js pour ce jour, et sur
+// le titre du tableau l avis global et les alertes de la reponse.
+async function afficherRaisons(id, days) {
+  let rep = NU.reponses.find(function(r) { return r.itin_id === id; });
+  if (!rep) { try { rep = await nuLireReponse(id); } catch(e) { rep = null; } }
+  if (!rep || !selected || (selected.i.itin_id || selected.i.id) !== id) return;
+  const parJour = new Map((rep.decisions || []).map(function(d) { return [Number(d.jour), d]; }));
+  days.forEach(function(day) {
+    const tr = document.getElementById('row_' + day.day);
+    const d = parJour.get(Number(day.day));
+    if (!tr || !d) return;
+    tr.title = 'nuits.js : dort a ' + (d.stay_at || '?') + (d.raison ? '\n' + d.raison : '');
+  });
+  const titre = [...document.querySelectorAll('.section-title')].find(function(x) { return /Détail des étapes/.test(x.textContent); });
+  if (titre) {
+    titre.title = (rep.avis ? rep.avis + '\n' : '')
+      + ((rep.alertes || []).length ? 'Alertes : ' + rep.alertes.join(' ; ') : 'Aucune alerte')
+      + (rep.corrige_main ? '\nCorrige a la main le ' + String(rep.corrige_main).slice(0, 10) : '')
+      + (rep.corrige_auto ? '\nCorrige par le script le ' + String(rep.corrige_auto).slice(0, 10) : '');
+    titre.style.cursor = 'help';
+  }
+}
+
+// ─── Carte des étapes ───────────────────────────────────────────
+let stepMapObj = null;
+function drawStepMap(days) {
+  const box = document.getElementById('stepMap');
+  if (!box || typeof L === 'undefined') return;
+  if (stepMapObj) { stepMapObj.remove(); stepMapObj = null; }
+
+  const pts = days
+    .map(function(d, i) {
+      const c = d.night && d.night.coords;
+      if (!c || c.length < 2) return null;
+      return { day: d.day, lat: c[0], lng: c[1], pid: (d.night.place_id || ''), nuits: d.stay_nights };
+    })
+    .filter(Boolean);
+
+  if (!pts.length) { box.innerHTML = '<div style="padding:20px;color:#999;font-size:13px">Aucune coordonnée dans ce fichier.</div>'; return; }
+
+  stepMapObj = L.map('stepMap');
+  if (typeof L.maplibreGL === 'function') {
+    L.maplibreGL({
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      attribution: '&copy; OpenStreetMap &copy; OpenFreeMap'
+    }).addTo(stepMapObj);
+  } else {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap', maxZoom: 19
+    }).addTo(stepMapObj);
+  }
+
+  // Plusieurs jours au meme endroit (J1, J2 et J11 a Naples par exemple) :
+  // une seule pastille qui affiche tous les numeros, sinon ils se cachent.
+  const groupes = new Map();
+  pts.forEach(function(p) {
+    const cle = p.lat.toFixed(5) + ',' + p.lng.toFixed(5);
+    if (!groupes.has(cle)) groupes.set(cle, { lat: p.lat, lng: p.lng, pid: p.pid, jours: [] });
+    groupes.get(cle).jours.push(p);
+  });
+
+  groupes.forEach(function(g) {
+    const dort = g.jours.some(function(p) { return Number(p.nuits) > 0; });
+    const label = g.jours.map(function(p) { return p.day; }).join('\u00b7');
+    const icon = L.divIcon({
+      className: '',
+      html: '<div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);'
+        + 'min-width:26px;height:26px;padding:0 6px;box-sizing:border-box;border-radius:13px;'
+        + 'display:flex;align-items:center;justify-content:center;white-space:nowrap;'
+        + 'font:700 12px system-ui;color:#fff;border:2px solid #fff;'
+        + 'box-shadow:0 1px 4px rgba(0,0,0,.4);background:' + (dort ? '#1c6b3c' : '#8a8f98') + '">'
+        + label + '</div>',
+      iconSize: [0, 0], iconAnchor: [0, 0], popupAnchor: [0, -14]
+    });
+    const lignes = g.jours.map(function(p) {
+      const n = Number(p.nuits) > 0;
+      return '<b>J' + p.day + '</b> ' + (n ? p.nuits + ' nuit(s)' : 'pas de nuit ici');
+    }).join('<br>');
+    L.marker([g.lat, g.lng], { icon: icon })
+      .bindPopup(g.pid + '<br>' + lignes)
+      .addTo(stepMapObj);
+  });
+
+  L.polyline(pts.map(function(p) { return [p.lat, p.lng]; }), { color: '#1565c0', weight: 2, opacity: .7 }).addTo(stepMapObj);
+  stepMapObj.fitBounds(L.latLngBounds(pts.map(function(p) { return [p.lat, p.lng]; })).pad(0.15));
+  setTimeout(function() { if (stepMapObj) stepMapObj.invalidateSize(); }, 150);
+}
+
+// ─── Édition des nuits ──────────────────────────────────────────
+// "Valider les nuits" : je juge que c est bon malgre la regle. Ecrit dans
+// ort-nights/validations.json, l itineraire sort de "Nuits a revoir".
+async function validerNuits() {
+  if (!selected) return;
+  const id = selected.i.itin_id || selected.i.id;
+  if (!NU.validCharge) await nuValidCharger();
+  const cur = NU.valid[id] || {};
+  if (cur.etat === 'ok' && cur.valide_main) {
+    delete cur.valide_main;
+    cur.note = cur.note === 'nuits validees a la main' ? '' : cur.note;
+    NU.valid[id] = cur;
+  } else {
+    NU.valid[id] = { etat: 'ok', note: cur.note || 'nuits validees a la main', date: new Date().toISOString(), valide_main: new Date().toISOString() };
+  }
+  try { localStorage.setItem(NU_KEY, JSON.stringify(NU.valid)); } catch(e) {}
+  try {
+    await nuValidEcrireServeur();
+    st(id + (NU.valid[id].valide_main ? ' : nuits validées' : ' : validation annulée'), 'success');
+  } catch(e) {
+    st('Validation non enregistrée (' + e.message + '). Relance ort_server.py.', 'error');
+  }
+  renderList();
+  renderEditor();
+}
+
+function onNightChange(day) {
+  const n = document.getElementById('nit_' + day);
+  const b = document.getElementById('bit_' + day);
+  if (n) n.classList.toggle('chg', n.value !== n.dataset.orig);
+  if (b) b.classList.toggle('chg', b.value !== b.dataset.orig);
+  updateSaveState();
+  majCompteurNuits();
+}
+
+// Retourne les jours dont les nuits ou la base ont change.
+function collectNightChanges() {
+  if (!selected) return [];
+  const days = selected.i.days_plan || selected.i.steps || [];
+  const out = [];
+  days.forEach(function(d) {
+    const n = document.getElementById('nit_' + d.day);
+    const b = document.getElementById('bit_' + d.day);
+    if (!n && !b) return;
+    const chgN = n && n.value !== n.dataset.orig;
+    const chgB = b && b.value !== b.dataset.orig;
+    if (!chgN && !chgB) return;
+    const e = { day: d.day };
+    if (n && n.value !== '') e.stay_nights = parseInt(n.value, 10) || 0;
+    if (b && b.value.trim() !== '') e.stay_at = b.value.trim();
+    out.push(e);
+  });
+  return out;
 }
 
 // ─── Modification durée ou titre ─────────────────────────────────
@@ -535,6 +1063,7 @@ function hasChanges() {
   const d = calcDurees(selected.i);
   const newDays = parseInt($('editDays').value);
   if (!isNaN(newDays) && newDays !== d.annonce) return true;
+  if (collectNightChanges().length) return true;
   // Vérifier les titres modifiés
   for (const lang of LANGS) {
     const el = $('title_' + lang);
@@ -562,10 +1091,12 @@ function updateSaveState() {
     if (el.value !== (titlesByLang[lang] || '')) titleChanges++;
   }
   if (titleChanges > 0) changes.push(titleChanges + ' titre(s) modifié(s)');
+  const nightChanges = collectNightChanges().length;
+  if (nightChanges > 0) changes.push(nightChanges + ' jour(s) de nuits modifié(s)');
   
   $('saveHint').textContent = changed
     ? changes.join(' + ')
-    : 'Modifiez la durée ou un titre pour activer';
+    : 'Modifiez la durée, un titre ou les nuits pour activer';
   
   const input = $('editDays');
   if (input) input.classList.toggle('highlight-bad', !isNaN(newDays) && Math.abs(newDays - d.sommeMax) >= 0.5);
@@ -573,6 +1104,7 @@ function updateSaveState() {
 
 function onDaysChange() {
   updateSaveState();
+  majCompteurNuits();
 }
 
 function onTitleChange() {
@@ -582,6 +1114,62 @@ function onTitleChange() {
 function setDays(val) {
   $('editDays').value = val;
   onDaysChange();
+}
+
+// ─── Remplacement en masse d'un nombre dans tous les titres ────
+// Ne touche que les nombres suivis d'un mot temporel (jour, day, día...).
+// Conserve la casse du mot et les espaces existants.
+function bulkReplaceTitles() {
+  const from = parseInt($('bulkFrom').value, 10);
+  const to = parseInt($('bulkTo').value, 10);
+  if (isNaN(from) || isNaN(to)) { st('Renseigne les deux nombres', 'error'); return; }
+  if (from === to) { st('Source et cible identiques', 'error'); return; }
+
+  const rx = new RegExp('\\b' + from + '(\\s*[-]?\\s*)(jours?|days?|d[ií]as?|giorni|giorno|يوم|أيام)\\b', 'gi');
+  let count = 0;
+  for (const lang of LANGS) {
+    const el = $('title_' + lang);
+    if (!el) continue;
+    const before = el.value;
+    const after = before.replace(rx, to + '$1$2');
+    if (after !== before) {
+      el.value = after;
+      count++;
+    }
+  }
+  if (count > 0) {
+    onTitleChange();
+    st(count + ' titre(s) modifié(s) — n\'oublie pas de sauvegarder', 'success');
+  } else {
+    st('Aucun titre ne contient "' + from + '" suivi d\'un mot temporel', 'info');
+  }
+}
+
+// ─── Validation manuelle ─────────────────────────────────────────
+
+async function toggleValidation() {
+  if (!selected) { console.warn('[toggleValidation] no selected'); return; }
+  const id = selected.i.itin_id || selected.i.id;
+  const wasValid = isValidated(id);
+  console.log('[toggleValidation] id=', id, 'wasValid=', wasValid);
+  if (wasValid) {
+    unmarkValidated(id);
+  } else {
+    markValidated(id, 'manual');
+  }
+  console.log('[toggleValidation] new state:', isValidated(id), 'validations obj:', validations);
+  const ok = await saveValidationsToServer();
+  console.log('[toggleValidation] server save ok=', ok);
+  if (!ok) {
+    // rollback
+    if (wasValid) markValidated(id, 'manual'); else unmarkValidated(id);
+    st('Erreur : impossible de sauvegarder validations.json', 'error');
+    return;
+  }
+  st(wasValid ? 'Itinéraire dévalidé' : 'Itinéraire validé', 'success');
+  renderList();
+  renderEditor();
+  console.log('[toggleValidation] re-render done');
 }
 
 // ─── Sauvegarde dans les 6 langues ──────────────────────────────
@@ -608,11 +1196,13 @@ async function saveDays() {
 
   $('btnSave').disabled = true;
   $('btnSave').textContent = 'Sauvegarde en cours...';
-  st('Sauvegarde de ' + id + ' dans les 6 langues...', 'info');
+  st('Sauvegarde de ' + id + '...', 'info');
 
   let ok = 0, fail = 0;
+  const nightChanges = collectNightChanges();
+  const langues = nightChanges.length ? LANGS_TECH : LANGS;
 
-  for (const lang of LANGS) {
+  for (const lang of langues) {
     let done = false;
     const tried = new Set();
     const folders = [cc, cc.toLowerCase()];
@@ -640,6 +1230,17 @@ async function saveDays() {
           // Modifier la durée
           target.estimated_days_base = newVal;
 
+          // Nuits conseillées : valeurs techniques, identiques dans toutes les langues
+          if (nightChanges.length) {
+            const jours = target.days_plan || target.steps || [];
+            nightChanges.forEach(function(ch) {
+              const j = jours.find(function(x) { return Number(x.day) === Number(ch.day); });
+              if (!j) return;
+              if (ch.stay_nights !== undefined) j.stay_nights = ch.stay_nights;
+              if (ch.stay_at !== undefined) j.stay_at = ch.stay_at;
+            });
+          }
+
           // Modifier le titre si modifié pour cette langue
           if (newTitles[lang]) {
             target.title = newTitles[lang];
@@ -661,27 +1262,1179 @@ async function saveDays() {
 
   // Mettre à jour l'objet local
   if (ok > 0) {
+    const joursChanges = Number(selected.i.estimated_days_base) !== newVal;
     selected.i.estimated_days_base = newVal;
     if (newTitles['fr']) selected.i.title = newTitles['fr'];
+    // Les nuits sauvegardees doivent aussi etre reportees ici, sinon l ecran
+    // reaffiche les anciennes valeurs jusqu au prochain rechargement.
+    if (nightChanges.length) {
+      const joursLoc = selected.i.days_plan || selected.i.steps || [];
+      nightChanges.forEach(function(ch) {
+        const j = joursLoc.find(function(x) { return Number(x.day) === Number(ch.day); });
+        if (!j) return;
+        if (ch.stay_nights !== undefined) j.stay_nights = ch.stay_nights;
+        if (ch.stay_at !== undefined) j.stay_at = ch.stay_at;
+      });
+    }
     // Mettre à jour le cache des titres
     for (const [lang, title] of Object.entries(newTitles)) {
       titlesByLang[lang] = title;
     }
+
+    // Auto-validation si la durée annoncée colle maintenant à la durée calculée
+    const d2 = calcDurees(selected.i);
+    let autoValidated = false;
+    const idSel = selected.i.itin_id || selected.i.id;
+    if (d2.coherent && !isValidated(idSel)) {
+      markValidated(idSel, 'auto-save');
+      const okv = await saveValidationsToServer();
+      if (okv) autoValidated = true;
+      else unmarkValidated(idSel); // rollback si l'écriture a échoué
+    }
+
+    // Report dans ort-nights\reponses : la reponse reste la verite, sinon un
+    // rerun de ecrire-stay-at.js effacerait la correction.
+    let repInfo = '';
+    if (nightChanges.length || joursChanges) {
+      repInfo = await nuReporterCorrection(id, selected.i, newVal);
+    }
+
     renderList();
     renderEditor();
     const titleInfo = Object.keys(newTitles).length > 0
       ? ' + ' + Object.keys(newTitles).length + ' titre(s)'
       : '';
-    st('Sauvegardé dans ' + ok + ' langue(s)' + titleInfo + (fail ? ' (' + fail + ' échec)' : ''), 'success');
+    const valInfo = autoValidated ? ' + auto-validé' : '';
+    st('Sauvegardé dans ' + ok + ' langue(s)' + titleInfo + valInfo + repInfo + (fail ? ' (' + fail + ' échec)' : ''), fail ? 'error' : 'success');
   } else {
     st('Erreur : aucune langue sauvegardée', 'error');
   }
 
-  $('btnSave').textContent = 'Sauvegarder dans les 6 langues';
+  $('btnSave').textContent = 'Sauvegarder dans toutes les langues';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// UNIFORMISATION : scan des textes pour repérer les durées
+// ═══════════════════════════════════════════════════════════════
+
+// Dictionnaires mots → nombre (1 à 30 environ) pour FR/EN/ES/IT/PT
+const WORD_NUMBERS = {
+  // FR
+  'un':1,'une':1,'deux':2,'trois':3,'quatre':4,'cinq':5,'six':6,'sept':7,'huit':8,'neuf':9,
+  'dix':10,'onze':11,'douze':12,'treize':13,'quatorze':14,'quinze':15,'seize':16,
+  'dix-sept':17,'dix-huit':18,'dix-neuf':19,'vingt':20,'vingt-et-un':21,'vingt-deux':22,
+  'vingt-trois':23,'vingt-quatre':24,'vingt-cinq':25,'trente':30,
+  // EN
+  'one':1,'two':2,'three':3,'four':4,'five':5,'seven':7,'eight':8,'nine':9,
+  'ten':10,'eleven':11,'twelve':12,'thirteen':13,'fourteen':14,'fifteen':15,'sixteen':16,
+  'seventeen':17,'eighteen':18,'nineteen':19,'twenty':20,'twenty-one':21,'twenty-two':22,
+  'twenty-three':23,'thirty':30,
+  // ES
+  'uno':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,
+  'diez':10,'once':11,'doce':12,'trece':13,'catorce':14,'quince':15,'dieciseis':16,'dieciséis':16,
+  'diecisiete':17,'dieciocho':18,'diecinueve':19,'veinte':20,'veintiuno':21,'veintidos':22,'veintidós':22,
+  'treinta':30,
+  // IT
+  'uno':1,'due':2,'tre':3,'quattro':4,'cinque':5,'sei':6,'sette':7,'otto':8,'nove':9,
+  'dieci':10,'undici':11,'dodici':12,'tredici':13,'quattordici':14,'quindici':15,'sedici':16,
+  'diciassette':17,'diciotto':18,'diciannove':19,'venti':20,'ventuno':21,'ventidue':22,
+  'trenta':30,
+  // PT
+  'um':1,'dois':2,'duas':2,'tres':3,'três':3,'quatro':4,'cinco':5,'seis':6,'sete':7,'oito':8,'nove':9,
+  'dez':10,'onze':11,'doze':12,'treze':13,'quatorze':14,'catorze':14,'quinze':15,'dezesseis':16,
+  'dezessete':17,'dezoito':18,'dezenove':19,'vinte':20,'trinta':30,
+};
+
+// Mots "jour(s)" et "semaine(s)" dans les 6 langues
+const DAY_WORDS = ['jours?','days?','d[ií]as?','giorni?','dias?','jornadas?','يوم|أيام'];
+const WEEK_WORDS = ['semaines?','weeks?','semanas?','settimane?'];
+const DAY_RX = new RegExp('(?:' + DAY_WORDS.join('|') + ')', 'i');
+const WEEK_RX = new RegExp('(?:' + WEEK_WORDS.join('|') + ')', 'i');
+
+// Regex globale : nombre OU mot, suivi de jour|semaine (toutes langues)
+// On capture séparément le quantifieur et l'unité
+const TIME_UNIT_GROUP = '(' + DAY_WORDS.join('|') + '|' + WEEK_WORDS.join('|') + ')';
+const NUM_RX = new RegExp('\\b(\\d{1,3})\\s*[-]?\\s*' + TIME_UNIT_GROUP + '\\b', 'gi');
+
+// Pour les mots : on construit la regex à partir du dictionnaire
+const WORD_KEYS_SORTED = Object.keys(WORD_NUMBERS).sort((a,b)=>b.length-a.length); // plus longs d'abord
+const WORD_RX = new RegExp('\\b(' + WORD_KEYS_SORTED.join('|') + ')\\s+' + TIME_UNIT_GROUP + '\\b', 'gi');
+
+// Champs à scanner (chemins relatifs à l'itinéraire)
+function getScannableTexts(itin, langTitlesCache) {
+  // Retourne un tableau d'objets { lang, path, label, text }
+  const out = [];
+  const pushText = (lang, path, label, text) => {
+    if (text && typeof text === 'string') out.push({ lang, path, label, text });
+  };
+
+  // Pour le FR : on prend la version fraîchement chargée du cache si dispo,
+  // sinon l'objet en mémoire (qui peut être obsolète après écritures).
+  const frSource = (langTitlesCache && langTitlesCache.fr) ? langTitlesCache.fr : itin;
+  pushText('fr', 'title', 'Titre', frSource.title);
+  pushText('fr', 'subtitle', 'Sous-titre', frSource.subtitle);
+  if (frSource.seo) {
+    pushText('fr', 'seo.h1_title', 'H1', frSource.seo.h1_title);
+    pushText('fr', 'seo.intro_paragraph', 'Intro', frSource.seo.intro_paragraph);
+    pushText('fr', 'seo.seo_hook', 'SEO hook', frSource.seo.seo_hook);
+    if (Array.isArray(frSource.seo.featured_list)) {
+      frSource.seo.featured_list.forEach((s, i) => pushText('fr', 'seo.featured_list[' + i + ']', 'Featured #' + (i+1), s));
+    }
+    if (Array.isArray(frSource.seo.places_taglines)) {
+      frSource.seo.places_taglines.forEach((s, i) => pushText('fr', 'seo.places_taglines[' + i + ']', 'Tagline #' + (i+1), s));
+    }
+  }
+
+  // Autres langues : depuis le cache si dispo
+  if (langTitlesCache) {
+    for (const lang of LANGS) {
+      if (lang === 'fr') continue;
+      const cache = langTitlesCache[lang];
+      if (!cache) continue;
+      pushText(lang, 'title', 'Titre', cache.title);
+      pushText(lang, 'subtitle', 'Sous-titre', cache.subtitle);
+      if (cache.seo) {
+        pushText(lang, 'seo.h1_title', 'H1', cache.seo.h1_title);
+        pushText(lang, 'seo.intro_paragraph', 'Intro', cache.seo.intro_paragraph);
+        pushText(lang, 'seo.seo_hook', 'SEO hook', cache.seo.seo_hook);
+        if (Array.isArray(cache.seo.featured_list)) {
+          cache.seo.featured_list.forEach((s, i) => pushText(lang, 'seo.featured_list[' + i + ']', 'Featured #' + (i+1), s));
+        }
+        if (Array.isArray(cache.seo.places_taglines)) {
+          cache.seo.places_taglines.forEach((s, i) => pushText(lang, 'seo.places_taglines[' + i + ']', 'Tagline #' + (i+1), s));
+        }
+      }
+    }
+  }
+  return out;
+}
+
+// Détecte tous les patterns de durée dans un texte.
+// Retourne [{ raw, value (en jours), unit ('day'|'week'), matchStart, matchEnd, isWord }]
+function detectDurations(text) {
+  const found = [];
+  if (!text) return found;
+
+  // Chiffres
+  NUM_RX.lastIndex = 0;
+  let m;
+  while ((m = NUM_RX.exec(text)) !== null) {
+    const num = parseInt(m[1], 10);
+    const unitRaw = m[2];
+    const isWeek = WEEK_RX.test(unitRaw);
+    found.push({
+      raw: m[0],
+      number: num,
+      unit: isWeek ? 'week' : 'day',
+      valueInDays: isWeek ? num * 7 : num,
+      matchStart: m.index,
+      matchEnd: m.index + m[0].length,
+      isWord: false,
+    });
+  }
+
+  // Mots
+  WORD_RX.lastIndex = 0;
+  while ((m = WORD_RX.exec(text)) !== null) {
+    const word = m[1].toLowerCase();
+    const num = WORD_NUMBERS[word];
+    if (num == null) continue;
+    const unitRaw = m[2];
+    const isWeek = WEEK_RX.test(unitRaw);
+    found.push({
+      raw: m[0],
+      number: num,
+      unit: isWeek ? 'week' : 'day',
+      valueInDays: isWeek ? num * 7 : num,
+      matchStart: m.index,
+      matchEnd: m.index + m[0].length,
+      isWord: true,
+    });
+  }
+
+  // Trier par position et dédupliquer les chevauchements (mot vs nombre au même endroit)
+  found.sort((a, b) => a.matchStart - b.matchStart);
+  const dedup = [];
+  for (const f of found) {
+    const last = dedup[dedup.length - 1];
+    if (last && f.matchStart < last.matchEnd) continue;
+    dedup.push(f);
+  }
+  return dedup;
+}
+
+// Décide si un match "pose problème" par rapport à la durée annoncée
+function isDurationProblem(detect, annoncedDays) {
+  // Pour les jours en chiffres : doit être strictement égal
+  if (detect.unit === 'day' && !detect.isWord) {
+    return detect.number !== annoncedDays;
+  }
+  // Pour les semaines (chiffres ou mots) : on tolère un écart pour "X semaines"
+  // Exemple : 14 jours = "deux semaines" OK ; 12 jours = "deux semaines" → on flague pour vérif
+  if (detect.unit === 'week') {
+    return Math.abs(detect.valueInDays - annoncedDays) > 0; // toute mention semaine est à vérifier sauf match exact
+  }
+  // Pour les jours en mots : strict aussi
+  if (detect.unit === 'day' && detect.isWord) {
+    return detect.number !== annoncedDays;
+  }
+  return false;
+}
+
+// Cache des fichiers JSON multi-langue déjà chargés (par chemin)
+const _unifLangCache = {};
+async function loadCountryFileLang(cc, lang) {
+  const fp = DP + '/' + cc + '/' + cc + '.itins.modules-' + lang + '.json';
+  if (_unifLangCache[fp] !== undefined) return _unifLangCache[fp];
+  try {
+    // no-store + cache-buster : impératif, sinon le navigateur peut servir
+    // une version stale après une écriture serveur.
+    const r = await fetch(API + '/' + fp + '?_=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) { _unifLangCache[fp] = null; return null; }
+    const j = await r.json();
+    _unifLangCache[fp] = j;
+    return j;
+  } catch(e) {
+    _unifLangCache[fp] = null;
+    return null;
+  }
+}
+
+// Récupère un itinéraire dans toutes les langues sous la forme d'un cache utilisable.
+// Le FR est aussi relu depuis le disque pour avoir la version à jour après écritures.
+async function loadItinAllLangs(itin, cc) {
+  const id = itin.itin_id || itin.id;
+  const cache = {};
+  for (const lang of LANGS) {
+    const j = await loadCountryFileLang(cc, lang);
+    if (!j || !Array.isArray(j.itineraries)) continue;
+    const found = j.itineraries.find(x => (x.itin_id || x.id) === id);
+    if (found) cache[lang] = found;
+  }
+  return cache;
+}
+
+// ─── Vue : exécution du scan ────────────────────────────────────
+async function runUnifScan() {
+  // Vider le cache des fichiers de langue pour relire les versions à jour
+  // (sinon on rescanne ce qu'on a en mémoire, qui peut être obsolète).
+  for (const k in _unifLangCache) delete _unifLangCache[k];
+
+  // Si rien n'est chargé, on charge tout d'abord
+  if (allItins.length === 0) {
+    $('unifResults').innerHTML = '<div style="color:#888;padding:20px;text-align:center">Chargement de tous les itinéraires... (ça peut prendre quelques secondes)</div>';
+    await loadAll();
+  }
+
+  const includeAll = $('unifScanAll').checked;
+  const target = (includeAll
+    ? allItins
+    : allItins.filter(({ i }) => isValidated(i.itin_id || i.id))
+  ).filter(({ i }) => !isUnifSkipped(i.itin_id || i.id));
+
+  if (target.length === 0) {
+    const reason = allItins.length === 0
+      ? 'Aucun itinéraire chargé. Va dans l\'onglet Durées, choisis un pays ou clique "Tous".'
+      : 'Aucun itinéraire validé parmi les ' + allItins.length + ' chargés. Coche "Scanner aussi les non-validés" pour voir tout.';
+    $('unifResults').innerHTML = '<div style="color:#c62828;padding:20px;text-align:center">' + reason + '</div>';
+    $('unifSummary').textContent = '';
+    return;
+  }
+
+  $('unifResults').innerHTML = '<div style="color:#888;padding:20px;text-align:center">Scan en cours... ' + target.length + ' itinéraires</div>';
+
+  const problems = []; // [{ itin, cc, annonced, hits: [{lang, path, label, text, detect}, ...] }]
+  let processed = 0;
+  for (const { i, cc } of target) {
+    processed++;
+    const annonced = i.estimated_days_base;
+    if (annonced == null) continue;
+
+    const langCache = await loadItinAllLangs(i, cc);
+    const texts = getScannableTexts(i, langCache);
+    const hits = [];
+    for (const t of texts) {
+      const detected = detectDurations(t.text);
+      for (const d of detected) {
+        if (isDurationProblem(d, annonced)) {
+          hits.push({ ...t, detect: d });
+        }
+      }
+    }
+    if (hits.length > 0) problems.push({ itin: i, cc, annonced, hits });
+
+    if (processed % 10 === 0) {
+      $('unifSummary').textContent = 'Scan : ' + processed + '/' + target.length + '...';
+    }
+  }
+
+  $('unifSummary').textContent = problems.length + ' itinéraires avec dissonance sur ' + target.length + ' scannés';
+  renderUnifResults(problems);
+}
+
+function renderUnifResults(problems) {
+  if (problems.length === 0) {
+    $('unifResults').innerHTML = '<div style="color:#2e7d32;padding:40px;text-align:center;font-size:14px">✓ Aucune dissonance détectée. Tous les textes sont cohérents avec la durée annoncée.</div>';
+    return;
+  }
+
+  // On stocke pour pouvoir corriger après
+  window._unifProblems = problems;
+
+  let html = '';
+  problems.forEach((p, idx) => {
+    const id = p.itin.itin_id || p.itin.id;
+    // Bouton "Accepter toutes les suggestions" : englobe jours + semaines.
+    // Les semaines seront remplacées par "<N> jours/days/..." dans la langue.
+    const totalCount = p.hits.length;
+
+    // Détecter les lignes "à risque" : champs qui contiennent 2+ mentions de durée
+    // (peu importe que les autres soient fautives ou pas — ça peut être un visa, etc.)
+    const riskyLines = {}; // clé = lang|path, valeur = nombre total de détections dans le texte
+    for (const h of p.hits) {
+      const k = h.lang + '|' + h.path;
+      if (riskyLines[k] !== undefined) continue;
+      const all = detectDurations(h.text);
+      if (all.length >= 2) riskyLines[k] = all.length;
+    }
+    const nbRisky = Object.keys(riskyLines).length;
+
+    html += '<div class="unif-card" data-idx="' + idx + '" style="background:white;border:1px solid #e0e0e0;border-radius:6px;padding:14px;margin-bottom:12px">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">';
+    html += '<b style="font-size:14px">' + (p.itin.title || id) + '</b>';
+    html += '<span style="font-size:11px;color:#888">' + p.cc + ' · ' + id + '</span>';
+    html += '<span class="badge badge-ok" style="margin-left:auto">Durée annoncée : ' + p.annonced + ' jours</span>';
+    if (totalCount > 0) {
+      const btnLabel = nbRisky > 0
+        ? 'Accepter toutes les suggestions (' + totalCount + ') ⚠'
+        : 'Accepter toutes les suggestions (' + totalCount + ')';
+      const btnTitle = nbRisky > 0
+        ? nbRisky + ' ligne(s) contiennent plusieurs dates : vérifie avant de cliquer (visa, etc.)'
+        : '';
+      const btnStyle = nbRisky > 0 ? 'background:#ef6c00' : '';
+      html += '<button class="btn btn-sm btn-green" onclick="applyAllUnifFixes(' + idx + ')" title="' + escapeHtml(btnTitle) + '" style="' + btnStyle + '">' + btnLabel + '</button>';
+    }
+    html += '<button class="btn btn-sm btn-outline" onclick="acceptAsIs(' + idx + ')" title="Marquer cet itinéraire comme OK, ne plus le proposer">Valider tel quel</button>';
+    if (nbRisky > 0) {
+      html += '<div style="width:100%;background:#fff3e0;border:1px solid #ef6c00;color:#bf360c;padding:6px 10px;border-radius:4px;font-size:12px;margin-top:4px">'
+        + '⚠ ' + nbRisky + ' texte(s) contiennent <b>plusieurs mentions de durée</b>. Vérifie qu\'aucune ne concerne autre chose que l\'itinéraire (visa, durée d\'une activité, etc.) avant d\'accepter en masse.'
+        + '</div>';
+    }
+    html += '</div>';
+
+    // Grouper les hits par (lang, path) pour éviter doublons d'affichage si plusieurs matches dans un même texte
+    const grouped = {};
+    p.hits.forEach((h, hi) => {
+      const k = h.lang + '|' + h.path;
+      if (!grouped[k]) grouped[k] = { ...h, detects: [] };
+      grouped[k].detects.push({ ...h.detect, _hitIdx: hi });
+    });
+
+    html += '<div style="display:grid;gap:8px">';
+    for (const k in grouped) {
+      const g = grouped[k];
+      const sortedDets = [...g.detects].sort((a, b) => b.matchStart - a.matchStart);
+      // Si la ligne est à risque (>= 2 dates), on lui passe TOUTES les détections du texte
+      // pour que les "extras" (visa, etc.) soient surlignées en bleu.
+      const extras = riskyLines[k] !== undefined ? detectDurations(g.text) : null;
+      const highlighted = renderHighlightedText(g.text, g.detects, extras);
+      const isRisky = riskyLines[k] !== undefined;
+
+      const borderColor = isRisky ? '#ef6c00' : '#1976d2';
+      const bgColor = isRisky ? '#fff8e1' : '#fafafa';
+      html += '<div style="border-left:3px solid ' + borderColor + ';padding:6px 10px;background:' + bgColor + '">';
+      html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">';
+      html += '<span style="font-size:10px;font-weight:700;color:' + borderColor + ';text-transform:uppercase">' + g.lang + '</span>';
+      html += '<span style="font-size:11px;color:#666">' + g.label + '</span>';
+      html += '<span style="font-size:10px;color:#aaa">' + g.path + '</span>';
+      if (isRisky) {
+        html += '<span style="font-size:11px;color:#bf360c;font-weight:600;margin-left:auto">⚠ ' + riskyLines[k] + ' mentions de durée dans ce texte</span>';
+      }
+      html += '</div>';
+      html += '<div style="font-size:13px;line-height:1.5">' + highlighted + '</div>';
+
+      // Boutons d'action
+      const dayWordByLang = { fr: 'jours', en: 'days', es: 'días', it: 'giorni', pt: 'dias', ar: 'يوم' };
+      html += '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">';
+      sortedDets.reverse().forEach((d) => {
+        const newText = p.annonced + ' ' + (dayWordByLang[g.lang] || 'jours');
+        html += '<button class="btn btn-sm btn-blue" onclick="applyUnifFix(' + idx + ',' + d._hitIdx + ',' + JSON.stringify(newText).replace(/"/g, '&quot;') + ')">';
+        html += 'Remplacer "' + escapeHtml(d.raw) + '" par "' + escapeHtml(newText) + '"';
+        html += '</button>';
+      });
+      html += '<button class="btn btn-sm btn-outline" onclick="editUnifField(' + idx + ',' + JSON.stringify(g.lang).replace(/"/g, '&quot;') + ',' + JSON.stringify(g.path).replace(/"/g, '&quot;') + ')">Édition manuelle</button>';
+      html += '</div>';
+
+      html += '</div>';
+    }
+    html += '</div></div>';
+  });
+  $('unifResults').innerHTML = html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Surligne les matches dans le texte (sécurisé HTML).
+// `detects` : les hits problématiques (en rouge/orange).
+// `extraDetects` (optionnel) : autres détections non-problématiques (en bleu) à signaler quand même.
+function renderHighlightedText(text, detects, extraDetects) {
+  const all = [];
+  for (const d of detects) all.push({ ...d, _kind: 'problem' });
+  if (extraDetects) {
+    for (const d of extraDetects) {
+      // Ne pas re-marquer ceux déjà dans detects
+      const overlap = detects.some(x => x.matchStart === d.matchStart);
+      if (!overlap) all.push({ ...d, _kind: 'ok' });
+    }
+  }
+  const sorted = all.sort((a, b) => a.matchStart - b.matchStart);
+  let out = '';
+  let cursor = 0;
+  for (const d of sorted) {
+    if (d.matchStart < cursor) continue; // chevauchement
+    out += escapeHtml(text.slice(cursor, d.matchStart));
+    let color, border;
+    if (d._kind === 'ok') {
+      color = '#e3f2fd'; border = '#1976d2';
+    } else if (d.unit === 'week') {
+      color = '#fff3cd'; border = '#ffc107';
+    } else {
+      color = '#ffcdd2'; border = '#c62828';
+    }
+    out += '<mark style="background:' + color + ';padding:1px 4px;border-radius:3px;border:1px solid ' + border + '">' + escapeHtml(text.slice(d.matchStart, d.matchEnd)) + '</mark>';
+    cursor = d.matchEnd;
+  }
+  out += escapeHtml(text.slice(cursor));
+  return out;
+}
+
+// "Valider tel quel" : marque l'itin comme à ignorer dans les futurs scans d'uniformisation.
+// N'écrit aucun texte. Le marque aussi comme validé s'il ne l'est pas.
+async function acceptAsIs(problemIdx) {
+  const problems = window._unifProblems;
+  if (!problems || !problems[problemIdx]) return;
+  const p = problems[problemIdx];
+  const id = p.itin.itin_id || p.itin.id;
+
+  markUnifSkip(id);
+  const ok = await saveValidationsToServer();
+  if (!ok) {
+    // rollback
+    if (validations[id]) {
+      delete validations[id].unif_skip;
+      delete validations[id].unif_skip_at;
+    }
+    st('Erreur : impossible d\'enregistrer le statut "tel quel"', 'error');
+    return;
+  }
+  st('Itinéraire validé tel quel — il ne sera plus proposé', 'success');
+  problems.splice(problemIdx, 1);
+  renderUnifResults(problems);
+  // Re-render la liste de la vue Durées si elle est visible (compteur "Validés")
+  renderList();
+}
+
+// Correction auto : remplace tous les fragments problématiques et sauvegarde
+async function applyAllUnifFixes(problemIdx) {
+  const problems = window._unifProblems;
+  if (!problems || !problems[problemIdx]) return;
+  const p = problems[problemIdx];
+
+  // On prend TOUS les hits (jours ET semaines). Les semaines seront remplacées
+  // par "<N> jours" dans la langue. C'est ton choix : tu valides l'écrasement.
+  const dayHits = p.hits.map((h, idx) => ({ h, idx }));
+
+  if (dayHits.length === 0) {
+    st('Rien à corriger', 'info');
+    return;
+  }
+
+  // Grouper par (lang, path)
+  const groups = {};
+  for (const { h, idx } of dayHits) {
+    const k = h.lang + '|' + h.path;
+    if (!groups[k]) groups[k] = { lang: h.lang, path: h.path, text: h.text, items: [] };
+    groups[k].items.push({ detect: h.detect, idx });
+  }
+
+  const dayWordByLang = { fr: 'jours', en: 'days', es: 'días', it: 'giorni', pt: 'dias', ar: 'يوم' };
+  let okCount = 0, failCount = 0;
+
+  // Traiter chaque groupe séquentiellement
+  for (const k in groups) {
+    const g = groups[k];
+    // Trier les remplacements par offset décroissant pour ne pas casser les indices
+    const items = g.items.sort((a, b) => b.detect.matchStart - a.detect.matchStart);
+    let updatedText = g.text;
+    for (const it of items) {
+      const newText = p.annonced + ' ' + (dayWordByLang[g.lang] || 'jours');
+      updatedText = updatedText.substring(0, it.detect.matchStart) + newText + updatedText.substring(it.detect.matchEnd);
+    }
+    // Écriture unique dans le fichier
+    const ok = await writeFieldToCountryFile(p.cc, g.lang, p.itin.itin_id || p.itin.id, g.path, updatedText);
+    if (ok) {
+      okCount += items.length;
+      // Invalider le cache pour cette langue pour que le prochain scan relise le fichier
+      delete _unifLangCache[DP + '/' + p.cc + '/' + p.cc + '.itins.modules-' + g.lang + '.json'];
+    } else {
+      failCount += items.length;
+    }
+  }
+
+  // Tous les hits ont été traités : on vide
+  p.hits = [];
+  if (p.hits.length === 0) problems.splice(problemIdx, 1);
+
+  st(okCount + ' correction(s) appliquée(s)' + (failCount > 0 ? ', ' + failCount + ' échec(s)' : ''), failCount > 0 ? 'error' : 'success');
+  renderUnifResults(problems);
+}
+
+async function applyUnifFix(problemIdx, hitIdx, newText) {
+  const problems = window._unifProblems;
+  if (!problems || !problems[problemIdx]) return;
+  const p = problems[problemIdx];
+  const hit = p.hits[hitIdx];
+  if (!hit) return;
+
+  // Remplacer "hit.detect.raw" par "newText" dans le texte original
+  const updated = hit.text.substring(0, hit.detect.matchStart) + newText + hit.text.substring(hit.detect.matchEnd);
+
+  // Écrire dans le fichier de la langue concernée
+  const ok = await writeFieldToCountryFile(p.cc, hit.lang, p.itin.itin_id || p.itin.id, hit.path, updated);
+  if (!ok) {
+    st('Erreur lors de la sauvegarde', 'error');
+    return;
+  }
+  // Invalider le cache pour cette langue
+  delete _unifLangCache[DP + '/' + p.cc + '/' + p.cc + '.itins.modules-' + hit.lang + '.json'];
+  st('Modifié dans ' + hit.lang.toUpperCase() + ' (' + hit.label + ')', 'success');
+
+  // Re-scan léger : on enlève juste ce hit de la liste
+  p.hits.splice(hitIdx, 1);
+  if (p.hits.length === 0) problems.splice(problemIdx, 1);
+  renderUnifResults(problems);
+}
+
+// Édition manuelle : remplace l'affichage de la ligne par un textarea + bouton enregistrer
+function editUnifField(problemIdx, lang, path) {
+  const problems = window._unifProblems;
+  if (!problems || !problems[problemIdx]) return;
+  const p = problems[problemIdx];
+  const hit = p.hits.find(h => h.lang === lang && h.path === path);
+  if (!hit) return;
+
+  const card = document.querySelector('.unif-card[data-idx="' + problemIdx + '"]');
+  if (!card) return;
+
+  const editorHtml = '<div style="background:#fffde7;border:1px solid #fbc02d;border-radius:4px;padding:8px;margin-top:6px">'
+    + '<div style="font-size:11px;color:#555;margin-bottom:4px">Édition manuelle : <b>' + lang.toUpperCase() + '</b> · ' + hit.label + '</div>'
+    + '<textarea id="unifEdit_' + problemIdx + '" style="width:100%;min-height:80px;font-size:13px;padding:6px;border:1px solid #ccc;border-radius:4px">' + escapeHtml(hit.text) + '</textarea>'
+    + '<div style="display:flex;gap:6px;margin-top:6px">'
+    + '<button class="btn btn-sm btn-green" onclick="saveUnifManual(' + problemIdx + ',' + JSON.stringify(lang).replace(/"/g, '&quot;') + ',' + JSON.stringify(path).replace(/"/g, '&quot;') + ')">Enregistrer</button>'
+    + '<button class="btn btn-sm btn-outline" onclick="renderUnifResults(window._unifProblems)">Annuler</button>'
+    + '</div></div>';
+  card.insertAdjacentHTML('beforeend', editorHtml);
+}
+
+async function saveUnifManual(problemIdx, lang, path) {
+  const problems = window._unifProblems;
+  if (!problems || !problems[problemIdx]) return;
+  const p = problems[problemIdx];
+  const ta = $('unifEdit_' + problemIdx);
+  if (!ta) return;
+  const newText = ta.value;
+  const ok = await writeFieldToCountryFile(p.cc, lang, p.itin.itin_id || p.itin.id, path, newText);
+  if (!ok) { st('Erreur sauvegarde', 'error'); return; }
+  st('Texte modifié dans ' + lang.toUpperCase(), 'success');
+  // Vider le cache pour cette langue et relancer le scan
+  delete _unifLangCache[DP + '/' + p.cc + '/' + p.cc + '.itins.modules-' + lang + '.json'];
+  runUnifScan();
+}
+
+// Écrit un champ dans le fichier pays d'une langue donnée et sauvegarde via l'API
+// File d'attente globale pour les écritures.
+// Garantit qu'on n'a jamais deux POST /api/save-itinerary en parallèle.
+// Évite les race conditions quand plusieurs corrections touchent le même fichier.
+let _writeQueue = Promise.resolve();
+function enqueueWrite(fn) {
+  const run = _writeQueue.then(fn, fn);
+  // On capture les erreurs pour que la queue continue même si une écriture rate
+  _writeQueue = run.catch(() => {});
+  return run;
+}
+
+async function writeFieldToCountryFile(cc, lang, itinId, fieldPath, newValue) {
+  return enqueueWrite(() => _writeFieldToCountryFileImpl(cc, lang, itinId, fieldPath, newValue));
+}
+
+async function _writeFieldToCountryFileImpl(cc, lang, itinId, fieldPath, newValue) {
+  // Pour TOUTES les langues : un seul fetch initial (mis en cache mémoire JS),
+  // puis mutation de l'objet en mémoire entre écritures successives.
+  // L'asymétrie historique FR (rechargement à chaque écriture) provoquait l'écrasement
+  // des corrections précédentes quand le cache HTTP du navigateur servait du stale.
+  const fp = DP + '/' + cc + '/' + cc + '.itins.modules-' + lang + '.json';
+  let data = _unifLangCache[fp];
+  if (!data) {
+    try {
+      const r = await fetch(API + '/' + fp + '?_=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) return false;
+      data = await r.json();
+      _unifLangCache[fp] = data;
+    } catch(e) { return false; }
+  }
+
+  // Trouver l'itin
+  const itin = data.itineraries.find(x => (x.itin_id || x.id) === itinId);
+  if (!itin) {
+    console.warn('[writeField] itin introuvable:', itinId, 'dans', fp);
+    return false;
+  }
+
+  // Modifier le champ. fieldPath peut être 'title', 'subtitle', 'seo.h1_title', 'seo.featured_list[2]'
+  if (!setByPath(itin, fieldPath, newValue)) {
+    console.warn('[writeField] setByPath a échoué:', itinId, fieldPath);
+    return false;
+  }
+
+  // Sauvegarder : on envoie SEULEMENT l'itinéraire modifié (le serveur le réinsère par id).
+  try {
+    const r = await fetch(API + '/api/save-itinerary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: fp, data: itin, country: cc })
+    });
+    if (!r.ok) {
+      const txt = await r.text().catch(() => '');
+      console.warn('[writeField] HTTP ' + r.status, itinId, fieldPath, 'body:', txt);
+      return false;
+    }
+    const j = await r.json();
+    if (!j.success) {
+      console.warn('[writeField] serveur a refusé:', itinId, fieldPath, j);
+      return false;
+    }
+  } catch(e) {
+    console.error('[writeField] erreur fetch:', e);
+    return false;
+  }
+
+  // L'objet en mémoire (_unifLangCache[fp]) est déjà à jour (on l'a muté plus haut).
+  // Pour FR, on met aussi à jour allItins[].i pour que l'affichage carte reste cohérent.
+  if (lang === 'fr') {
+    const local = allItins.find(({ i }) => (i.itin_id || i.id) === itinId);
+    if (local) setByPath(local.i, fieldPath, newValue);
+  }
+  return true;
+}
+
+// Helper : set 'seo.featured_list[2]' = value
+function setByPath(obj, path, value) {
+  // tokenise : seo.featured_list[2] → ['seo', 'featured_list', 2]
+  const tokens = [];
+  const re = /([^.\[\]]+)|\[(\d+)\]/g;
+  let m;
+  while ((m = re.exec(path)) !== null) {
+    if (m[1]) tokens.push(m[1]);
+    else if (m[2]) tokens.push(parseInt(m[2], 10));
+  }
+  let cur = obj;
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const tok = tokens[i];
+    if (cur[tok] == null) {
+      // Crée le conteneur manquant : dict si la clé suivante est un nom, array si c'est un index
+      const next = tokens[i + 1];
+      cur[tok] = (typeof next === 'number') ? [] : {};
+    }
+    cur = cur[tok];
+  }
+  const last = tokens[tokens.length - 1];
+  cur[last] = value;
+  return true;
+}
+
+// ─── Bascule entre vues ────────────────────────────────────────
+function switchView(view) {
+  const vues = { durees: 'viewDurees', unif: 'viewUnif', nuits: 'viewNuits' };
+  const boutons = { durees: 'viewBtnDurees', unif: 'viewBtnUnif', nuits: 'viewBtnNuits' };
+  const titres = { durees: 'Durées & Cohérence', unif: 'Uniformisation des textes', nuits: 'Nuits décidées par nuits.js' };
+  if (!vues[view]) view = 'durees';
+  Object.keys(vues).forEach(function(k) {
+    $(vues[k]).style.display = (k === view) ? '' : 'none';
+    $(boutons[k]).className = (k === view) ? 'btn btn-sm btn-blue' : 'btn btn-sm btn-outline';
+  });
+  $('headerSub').textContent = titres[view];
+  if (view === 'nuits' && !NU.charge) nuCharger();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ONGLET NUITS : controle des nuits decidees par nuits.js
+// Lit ort-nights/reponses/<id>.json et ort-nights/doutes/<id>.json par le
+// serveur local. Les OK et les anomalies vont dans ort-nights/validations.json
+// (POST /api/nuits/validations), les reponses corrigees dans
+// ort-nights/reponses (POST /api/nuits/reponse).
+// ═══════════════════════════════════════════════════════════════
+const NU = { charge: false, reponses: [], doutes: {}, valid: {}, validCharge: false, courant: null, fr: {} };
+const NU_KEY = 'ort-nuits-validations';
+const NU_REP = 'ort-nights/reponses';
+const NU_DOU = 'ort-nights/doutes';
+
+function nuEsc(t) { return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function nuNomFichier(id) { return String(id).replace(/[:\\\/*?"<>|]/g, '_') + '.json'; }
+function nuCC(id) { return String(id).split('::')[0].toUpperCase(); }
+
+/* Les validations vivent dans ort-nights/validations.json par le serveur ;
+   le navigateur n en garde qu une copie de secours. */
+async function nuValidCharger() {
+  let local = {};
+  try { local = JSON.parse(localStorage.getItem(NU_KEY) || '{}') || {}; } catch(e) {}
+  try {
+    const r = await fetch(API + '/ort-nights/validations.json?t=' + Date.now(), { cache: 'no-store' });
+    if (r.ok) { const j = await r.json(); NU.valid = (j && j.validations) ? j.validations : {}; NU.validCharge = true; return; }
+  } catch(e) {}
+  NU.valid = local;
+  NU.validCharge = true;
+}
+async function nuValidEcrireServeur() {
+  const res = await fetch(API + '/api/nuits/validations', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ validations: NU.valid })
+  });
+  const j = await res.json();
+  if (!j.success) throw new Error(j.error || 'echec');
+}
+let nuTimer = null;
+function nuValidEnregistrer() {
+  try { localStorage.setItem(NU_KEY, JSON.stringify(NU.valid)); } catch(e) {}
+  if (nuTimer) clearTimeout(nuTimer);
+  nuTimer = setTimeout(async function() {
+    try { await nuValidEcrireServeur(); }
+    catch(e) { st('Validations gardees dans le navigateur seulement (serveur : ' + e.message + '). Relance ort_server.py a jour.', 'error'); }
+  }, 400);
+}
+
+/* Liste des fichiers d un dossier via l index HTML du serveur local. */
+async function nuLister(dossier) {
+  const r = await fetch(API + '/' + dossier + '/?t=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) throw new Error('dossier ' + dossier + ' introuvable (' + r.status + ')');
+  const h = await r.text();
+  const noms = {};
+  (h.match(/href="([^"]+\.json)"/gi) || []).forEach(function(m) {
+    let n = m.replace(/^href="/i, '').replace(/"$/, '');
+    n = n.split('/').pop();
+    try { n = decodeURIComponent(n); } catch(e) {}
+    noms[n] = 1;
+  });
+  return Object.keys(noms).sort();
+}
+
+async function nuLireReponse(id) {
+  const r = await fetch(API + '/' + NU_REP + '/' + encodeURIComponent(nuNomFichier(id)) + '?t=' + Date.now(), { cache: 'no-store' });
+  if (!r.ok) return null;
+  return r.json();
+}
+
+async function nuCharger() {
+  await nuValidCharger();
+  $('nuProg').textContent = 'Chargement...';
+  NU.reponses = []; NU.doutes = {};
+  let noms = [];
+  try { noms = await nuLister(NU_REP); }
+  catch(e) { $('nuProg').textContent = 'Impossible de lire ' + NU_REP + ' : ' + e.message; NU.charge = true; nuRendreListe(); return; }
+  let nomsDoutes = [];
+  try { nomsDoutes = await nuLister(NU_DOU); } catch(e) { nomsDoutes = []; }
+  const setDoutes = {}; nomsDoutes.forEach(function(n) { setDoutes[n] = 1; });
+
+  /* chargement par paquets de 12 pour ne pas etouffer le serveur */
+  let fait = 0;
+  for (let i = 0; i < noms.length; i += 12) {
+    const lot = noms.slice(i, i + 12);
+    await Promise.all(lot.map(async function(nom) {
+      try {
+        const r = await fetch(API + '/' + NU_REP + '/' + encodeURIComponent(nom) + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) return;
+        const rep = await r.json();
+        if (!rep || !rep.itin_id) return;
+        rep._nom = nom;
+        NU.reponses.push(rep);
+        if (setDoutes[nom]) {
+          try {
+            const d = await fetch(API + '/' + NU_DOU + '/' + encodeURIComponent(nom) + '?t=' + Date.now(), { cache: 'no-store' });
+            if (d.ok) NU.doutes[rep.itin_id] = await d.json();
+          } catch(e) {}
+        }
+      } catch(e) {}
+      fait++;
+    }));
+    $('nuProg').textContent = fait + ' / ' + noms.length + ' reponses lues...';
+  }
+  NU.reponses.sort(function(a, b) { return String(a.itin_id).localeCompare(String(b.itin_id)); });
+  NU.charge = true;
+
+  const pays = {}; NU.reponses.forEach(function(r) { pays[nuCC(r.itin_id)] = 1; });
+  const sel = $('nuPays'); const cur = sel.value;
+  sel.innerHTML = '<option value="">Tous les pays</option>' + Object.keys(pays).sort().map(function(p) { return '<option value="' + p + '">' + p + '</option>'; }).join('');
+  sel.value = cur;
+  nuRendreListe();
+}
+
+function nuEtat(rep) {
+  const v = NU.valid[rep.itin_id];
+  if (v && v.etat === 'ok') return 'ok';
+  if (v && v.etat === 'anomalie') return 'anomalie';
+  return '';
+}
+function nuNature(rep) {
+  const al = rep.alertes || [];
+  return {
+    irrealisable: al.some(function(a) { return String(a).indexOf('IRREALISABLE') === 0; }),
+    doute: al.some(function(a) { return String(a).indexOf('doute') >= 0; }),
+    nb: al.length
+  };
+}
+
+function nuFiltrer() {
+  const f = $('nuFiltre').value, p = $('nuPays').value, q = ($('nuCherche').value || '').toLowerCase();
+  return NU.reponses.filter(function(rep) {
+    if (p && nuCC(rep.itin_id) !== p) return false;
+    if (q && String(rep.itin_id).toLowerCase().indexOf(q) < 0) return false;
+    const n = nuNature(rep), e = nuEtat(rep);
+    if (f === 'tous') return true;
+    if (f === 'ok') return e === 'ok';
+    if (f === 'anomalie') return e === 'anomalie';
+    if (f === 'corrige') return !!rep.corrige_main;
+    if (f === 'alertes') return n.nb > 0;
+    if (f === 'irrealisable') return n.irrealisable;
+    if (f === 'doutes') return n.doute;
+    if (f === 'a_voir_tous') return e === '';
+    /* Par defaut on ne montre pas les rapports propres : sans alerte ni doute
+       il n y a rien a trancher. */
+    return e === '' && (n.nb > 0 || n.doute);
+  });
+}
+
+function nuRendreListe() {
+  const liste = nuFiltrer();
+  const tot = NU.reponses.length;
+  const nbOk = NU.reponses.filter(function(r) { return nuEtat(r) === 'ok'; }).length;
+  const nbAno = NU.reponses.filter(function(r) { return nuEtat(r) === 'anomalie'; }).length;
+  const nbAl = NU.reponses.filter(function(r) { return nuNature(r).nb > 0; }).length;
+  const nbMain = NU.reponses.filter(function(r) { return !!r.corrige_main; }).length;
+  $('nuProg').textContent = tot + ' reponses, ' + nbAl + ' avec alerte, ' + nbOk + ' OK, ' + nbAno + ' anomalie(s), ' + nbMain + ' corrigee(s) a la main. Affichees : ' + liste.length + '.';
+  if (!liste.length) { $('nuListe').innerHTML = '<div class="nu-empty">Rien dans ce filtre.</div>'; return; }
+  $('nuListe').innerHTML = liste.map(function(rep) {
+    const n = nuNature(rep), e = nuEtat(rep);
+    const couleur = e === 'ok' ? '#2e7d32' : e === 'anomalie' ? '#b71c1c' : n.irrealisable ? '#e65100' : n.nb ? '#f9a825' : '#90a4ae';
+    const etiquette = e === 'ok' ? 'OK' : e === 'anomalie' ? 'ANOMALIE' : n.irrealisable ? 'IRREALISABLE' : n.doute ? 'doute' : n.nb ? 'alerte' : 'propre';
+    const actif = NU.courant === rep.itin_id ? 'background:#eef4ff;' : '';
+    return '<div class="nu-item" data-id="' + nuEsc(rep.itin_id) + '" style="' + actif + 'padding:8px 10px;border-bottom:1px solid #eef2f6;cursor:pointer;font-size:13px">' +
+      '<div style="display:flex;justify-content:space-between;gap:8px"><b style="word-break:break-all">' + nuEsc(rep.itin_id) + '</b>' +
+      '<span style="flex:0 0 auto;color:#fff;background:' + couleur + ';border-radius:10px;padding:1px 8px;font-size:11px;font-weight:700">' + etiquette + '</span></div>' +
+      '<div style="color:#546e7a">' + nuEsc(rep.jours_conseilles || '?') + ' j &middot; ' + ((rep.bases || []).length) + ' bases &middot; ' + ((rep.decisions || []).length) + ' etapes' + (rep.fusions ? ' &middot; ' + rep.fusions + ' fusion(s)' : '') + (rep.derniere_nuit === false ? ' &middot; depart' : '') + (rep.corrige_main ? ' &middot; <b style="color:#1565c0">main</b>' : '') + '</div>' +
+      '</div>';
+  }).join('');
+  $('nuListe').querySelectorAll('.nu-item').forEach(function(el) { el.onclick = function() { nuOuvrir(el.getAttribute('data-id')); }; });
+}
+
+/* Itineraire francais : dans la liste chargee si le pays y est, sinon lu sur
+   le serveur et garde en memoire. */
+async function nuItinFR(id) {
+  const trouve = allItins.find(function(x) { return String(x.i.itin_id || x.i.id) === String(id); });
+  if (trouve) return trouve.i;
+  const cc = nuCC(id);
+  if (!NU.fr[cc]) {
+    try { NU.fr[cc] = (await loadIt(cc)).its; } catch(e) { NU.fr[cc] = []; }
+  }
+  return NU.fr[cc].find(function(x) { return String(x.itin_id || x.id) === String(id); }) || null;
+}
+
+async function nuOuvrir(id) {
+  NU.courant = id;
+  const rep = NU.reponses.find(function(r) { return r.itin_id === id; });
+  if (!rep) { $('nuDetail').innerHTML = '<div class="nu-empty">Reponse introuvable.</div>'; return; }
+  const dou = NU.doutes[id];
+  const v = NU.valid[id] || {};
+  const al = rep.alertes || [];
+  /* lieu et nuits de chaque jour, lus dans le JSON francais */
+  const lieux = {}, nuitsJson = {}, basesJson = {};
+  const itFR = await nuItinFR(id);
+  if (itFR) (itFR.days_plan || []).forEach(function(s) {
+    lieux[s.day] = (s.night && s.night.place_id) || '';
+    if (s.stay_nights !== undefined && s.stay_nights !== null) nuitsJson[s.day] = s.stay_nights;
+    if (s.stay_at) basesJson[s.day] = s.stay_at;
+  });
+
+  let h = '';
+  h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">';
+  h += '<div><div style="font-size:16px;font-weight:700">' + nuEsc(rep.titre || id) + '</div><div style="font-size:12px;color:#78909c">' + nuEsc(id) + ' &middot; ' + nuEsc(rep.modele || '') + ' &middot; ' + nuEsc((rep.date || '').slice(0, 10)) + (rep.corrige_main ? ' &middot; <b style="color:#1565c0">corrige a la main le ' + nuEsc(String(rep.corrige_main).slice(0, 10)) + '</b>' : '') + '</div></div>';
+  h += '<div style="flex:0 0 auto">';
+  h += '<button class="cbtn" id="nuOk" style="background:#e8f5e9;border-color:#a5d6a7;color:#1b5e20' + (v.etat === 'ok' ? ';outline:2px solid #2e7d32' : '') + '">OK, c est bon</button>';
+  h += '<button class="cbtn" id="nuAno" style="background:#fdecea;border-color:#e57373;color:#b71c1c' + (v.etat === 'anomalie' ? ';outline:2px solid #b71c1c' : '') + '">Anomalie</button>';
+  h += '<button class="cbtn" id="nuRaz" style="background:#f5f5f5;color:#546e7a" title="Enleve seulement ton verdict OK ou Anomalie">Effacer mon verdict</button>';
+  h += '<button class="cbtn" id="nuSup" style="background:#fdecea;border-color:#e57373;color:#b71c1c" title="Supprime le rapport lui-meme">Supprimer l audit</button>';
+  h += '<button class="cbtn" id="nuDurees" style="background:#eef4ff;border-color:#9ec1ff;color:#1a4fa0" title="Ouvre cet itineraire dans l onglet Durees pour corriger les nuits">Corriger dans Durees</button>';
+  h += '</div></div>';
+  h += '<div style="margin-top:6px"><input type="text" id="nuNote" placeholder="Note (ce qui cloche, ce que tu as change...)" value="' + nuEsc(v.note || '') + '" style="width:100%;padding:6px 8px;border:1px solid #ccc;border-radius:4px;font-size:13px"></div>';
+
+  h += '<div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap">';
+  h += '<div style="flex:1;min-width:260px"><div style="font-weight:700;margin-bottom:4px">Le sejour</div>';
+  h += '<div style="font-size:13px">' + nuEsc(rep.jours_conseilles) + ' jours conseilles &middot; ' + (rep.faisable === false ? '<b style="color:#b71c1c">juge non faisable</b>' : 'faisable') + ' &middot; derniere etape : ' + (rep.derniere_nuit === false ? 'jour du depart' : 'une nuit') + (rep.fusions ? ' &middot; ' + rep.fusions + ' fusion(s) du script' : '') + '</div>';
+  h += '<div style="font-size:13px;color:#37474f;margin-top:4px;font-style:italic">' + nuEsc(rep.avis || '') + '</div>';
+  h += '<div style="margin-top:8px;font-weight:700;margin-bottom:4px">Bases</div><div style="font-size:13px">' + (rep.bases || []).map(function(b) { return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;border-radius:10px;background:' + (b.nuits ? '#e3f2fd' : '#eceff1') + '">' + nuEsc(b.place_id) + ' <b>' + b.nuits + '</b> nuit(s) / ' + b.etapes + ' etape(s)</span>'; }).join('') + '</div>';
+  h += '</div>';
+  h += '<div style="flex:1;min-width:260px"><div style="font-weight:700;margin-bottom:4px">Alertes</div>';
+  h += al.length ? al.map(function(a) { const rouge = String(a).indexOf('IRREALISABLE') === 0; return '<div style="font-size:13px;padding:4px 8px;margin-bottom:4px;border-radius:6px;background:' + (rouge ? '#fdecea' : '#fff8e1') + ';color:' + (rouge ? '#b71c1c' : '#e65100') + '">' + nuEsc(a) + '</div>'; }).join('') : '<div style="font-size:13px;color:#2e7d32">Aucune.</div>';
+  if (dou) {
+    h += '<div style="font-weight:700;margin:10px 0 4px">Avis de doutes.js</div>';
+    h += '<div style="font-size:13px;padding:6px 8px;border-radius:6px;background:#f3eeff;color:#4527a0"><b>' + nuEsc(dou.verdict) + '</b>' + (dou.nuits_recommandees && dou.nuits_recommandees !== rep.jours_conseilles ? ' &middot; ' + nuEsc(dou.nuits_recommandees) + ' nuits recommandees' : '') + '<br>' + nuEsc(dou.explication || '') + (dou.changement ? '<br><b>&rarr; ' + nuEsc(dou.changement) + '</b>' : '') +
+      ((dou.doutes || []).length ? '<ul style="margin:6px 0 0 16px;padding:0">' + dou.doutes.map(function(d) { return '<li>jour ' + nuEsc(d.jour) + ' : ' + nuEsc(d.stay_at) + ' &middot; ' + nuEsc(d.pourquoi || '') + '</li>'; }).join('') + '</ul>' : '') + '</div>';
+  }
+  h += '</div></div>';
+
+  h += '<div style="font-weight:700;margin:12px 0 4px">Ou l on dort chaque soir</div>';
+  h += '<table style="width:100%;border-collapse:collapse;font-size:13px"><tr style="background:#f5f7fa"><th style="text-align:left;padding:4px 6px">Jour</th><th style="text-align:left;padding:4px 6px">Etape</th><th style="text-align:left;padding:4px 6px">Nuit a (reponse)</th><th style="text-align:left;padding:4px 6px">Nuits</th><th style="text-align:left;padding:4px 6px">Dans le JSON</th><th style="text-align:left;padding:4px 6px">Raison</th><th style="width:28px"></th></tr>';
+  (rep.decisions || []).forEach(function(d) {
+    const raison = String(d.raison || '');
+    const doute = /^doute/i.test(raison), fusion = /^fusion script/i.test(raison);
+    const lieu = lieux[d.jour] || '';
+    const bouge = lieu && lieu !== d.stay_at;
+    const enJson = (basesJson[d.jour] || nuitsJson[d.jour] !== undefined)
+      ? nuEsc(basesJson[d.jour] || '?') + ' &middot; ' + (nuitsJson[d.jour] !== undefined ? nuitsJson[d.jour] + ' n.' : '?')
+      : '<span style="color:#b0bec5">absent</span>';
+    const differe = basesJson[d.jour] && basesJson[d.jour] !== d.stay_at;
+    h += '<tr style="border-bottom:1px solid #eef2f6;' + (doute ? 'background:#fff8e1' : fusion ? 'background:#e3f2fd' : '') + '">';
+    h += '<td style="padding:4px 6px">' + nuEsc(d.jour) + '</td>';
+    h += '<td style="padding:4px 6px;color:#546e7a">' + nuEsc(lieu || '') + '</td>';
+    h += '<td style="padding:4px 6px;font-weight:' + (bouge ? '700' : '400') + '">' + nuEsc(d.stay_at) + '</td>';
+    h += '<td style="padding:4px 6px">' + (d.nuits !== undefined && d.nuits !== null ? nuEsc(d.nuits) : '<span style="color:#b0bec5">calc.</span>') + '</td>';
+    h += '<td style="padding:4px 6px;' + (differe ? 'color:#b71c1c;font-weight:700' : 'color:#546e7a') + '">' + enJson + '</td>';
+    h += '<td style="padding:4px 6px;color:#37474f">' + nuEsc(raison) + '</td>';
+    /* La croix supprime la nuit de ce soir : l etape est rattachee a la base
+       de la veille. Pas de croix sur le premier jour. */
+    h += '<td style="padding:4px 6px;text-align:center">' +
+      (d.jour === (rep.decisions || [])[0].jour ? '' :
+       '<button class="cbtn nuSupNuit" data-jour="' + nuEsc(d.jour) + '" title="Supprimer cette nuit : on rentre dormir a l etape precedente" ' +
+       'style="padding:0 6px;line-height:18px;background:#fdecea;border-color:#e57373;color:#b71c1c;font-weight:700;margin:0">&times;</button>') +
+      '</td></tr>';
+  });
+  h += '</table>';
+  if (!itFR) h += '<div style="font-size:12px;color:#78909c;margin-top:4px">Itineraire introuvable dans le JSON francais.</div>';
+
+  $('nuDetail').innerHTML = h;
+  $('nuDetail').querySelectorAll('.nuSupNuit').forEach(function(bt) {
+    bt.onclick = function() { nuSupprimerNuit(id, bt.getAttribute('data-jour')); };
+  });
+  $('nuOk').onclick  = function() { nuMarquer(id, 'ok'); };
+  $('nuAno').onclick = function() { nuMarquer(id, 'anomalie'); };
+  $('nuRaz').onclick = function() { delete NU.valid[id]; nuValidEnregistrer(); nuRendreListe(); nuOuvrir(id); };
+  /* Supprimer l audit : le fichier part dans ort-nights/reponses/supprimes. */
+  $('nuSup').onclick = async function() {
+    if (!confirm('Supprimer le rapport de nuits de ' + id + ' ?\nL itineraire n est pas touche, le fichier part dans reponses/supprimes.')) return;
+    try {
+      const r = await fetch(API + '/api/nuits/supprimer', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ itin_id: id })
+      });
+      const j = await r.json();
+      if (!j.success) throw new Error(j.error || 'suppression refusee');
+      NU.reponses = NU.reponses.filter(function(x) { return x.itin_id !== id; });
+      delete NU.valid[id]; nuValidEnregistrer();
+      NU.courant = null;
+      $('nuDetail').innerHTML = '<div class="nu-empty">Rapport supprime. Choisis un itineraire dans la liste.</div>';
+      st(id + ' : rapport supprime.', 'success');
+      nuRendreListe();
+    } catch(e) { st('Suppression impossible : ' + e.message + '. Relance ort_server.py a jour.', 'error'); }
+  };
+  $('nuNote').onchange = function() { const cur = NU.valid[id] || { etat: '' }; cur.note = $('nuNote').value; cur.date = new Date().toISOString(); NU.valid[id] = cur; nuValidEnregistrer(); };
+  /* Ouvre l itineraire dans l onglet Durees, en chargeant son pays si besoin. */
+  $('nuDurees').onclick = async function() {
+    const cc = nuCC(id);
+    const present = allItins.some(function(x) { return String(x.i.itin_id || x.i.id) === String(id); });
+    if (!present) {
+      st('Chargement ' + cc + '...', 'info');
+      const r = await loadIt(cc);
+      allItins = r.its.map(function(i) { return { i: i, cc: r.cc, fp: r.fp }; });
+      $('selCC').value = cc;
+      renderList();
+    }
+    switchView('durees');
+    selectItin(id);
+  };
+  nuRendreListe();
+}
+
+/* Calcul des bases : copie exacte de calculerBases() de nuits.js, pour que le
+   rapport corrige a la main compte les nuits comme le script les compterait. */
+function nuCalculerBases(decisions, joursConseilles, derniereNuit) {
+  const sejours = [];
+  decisions.forEach(function(d) {
+    const dernier = sejours[sejours.length - 1];
+    if (dernier && dernier.place_id === d.stay_at) dernier.etapes++;
+    else sejours.push({ place_id: d.stay_at, etapes: 1 });
+  });
+  var depart = null;
+  const dern = sejours[sejours.length - 1];
+  if (derniereNuit === false && dern && dern.etapes === 1 && sejours.length > 1) {
+    depart = sejours.pop(); depart.nuits = 0;
+  }
+  const remettre = function(l) { if (depart) l.push(depart); return l; };
+  const total = joursConseilles;
+  if (!total || !sejours.length) { sejours.forEach(function(s) { s.nuits = 1; }); return remettre(sejours); }
+  const nbEtapes = sejours.reduce(function(a, s) { return a + s.etapes; }, 0);
+  sejours.forEach(function(s) { s.exact = s.etapes * total / nbEtapes; s.nuits = Math.max(1, Math.floor(s.exact)); });
+  var ecart = total - sejours.reduce(function(a, s) { return a + s.nuits; }, 0);
+  const ordre = sejours.slice().sort(function(a, b) { return (b.exact - b.nuits) - (a.exact - a.nuits); });
+  var i = 0;
+  while (ecart > 0 && ordre.length) { ordre[i % ordre.length].nuits++; ecart--; i++; }
+  const inverse = sejours.slice().sort(function(a, b) { return a.exact - b.exact; });
+  i = 0; var tours = 0;
+  while (ecart < 0 && tours < 1000) {
+    const s = inverse[i % inverse.length];
+    if (s.nuits > 1) { s.nuits--; ecart++; }
+    i++; tours++;
+  }
+  sejours.forEach(function(s) { delete s.exact; });
+  return remettre(sejours);
+}
+
+/* Bases a partir de nuits posees a la main : sejours consecutifs, et le
+   nombre de nuits est la somme de ce qui a ete tape, pas un calcul. */
+function nuBasesDepuisNuits(decisions) {
+  const sejours = [];
+  decisions.forEach(function(d) {
+    const dernier = sejours[sejours.length - 1];
+    const n = Number(d.nuits) || 0;
+    if (dernier && dernier.place_id === d.stay_at) { dernier.etapes++; dernier.nuits += n; }
+    else sejours.push({ place_id: d.stay_at, etapes: 1, nuits: n });
+  });
+  return sejours;
+}
+
+/* Alertes : meme regle que controlerBases() de nuits.js. */
+function nuCalculerAlertes(rep, bases) {
+  const alertes = [];
+  const nuits = rep.jours_conseilles;
+  const derniereSansNuit = rep.derniere_nuit === false && bases.length && bases[bases.length - 1].etapes === 1;
+  const lieux = bases.length - (derniereSansNuit ? 1 : 0);
+  if (nuits && lieux > nuits) {
+    alertes.push('IRREALISABLE: ' + lieux + ' lieux de couchage pour ' + nuits + ' nuits');
+  } else {
+    const total = bases.reduce(function(a, b) { return a + (Number(b.nuits) || 0); }, 0);
+    if (nuits && total !== nuits) alertes.push('total des nuits ' + total + ' au lieu de ' + nuits);
+  }
+  if (rep.faisable === false) alertes.push('IRREALISABLE selon le modele: ' + (String(rep.avis || '').trim() || 'sans explication'));
+  return alertes;
+}
+
+async function nuEcrireReponse(id, rep) {
+  const r = await fetch(API + '/api/nuits/reponse', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itin_id: id, reponse: rep })
+  });
+  const j = await r.json();
+  if (!j.success) throw new Error(j.error || 'ecriture refusee');
+}
+
+/* Report d une correction faite dans l onglet Durees : la reponse de nuits.js
+   prend les nuits et les bases tapees (jour par jour), ses bases et alertes
+   sont recalculees, et l itineraire est marque OK dans validations.json.
+   Renvoie un bout de texte pour la barre d etat. */
+async function nuReporterCorrection(id, itin, joursAnnonces) {
+  const jours = itin.days_plan || itin.steps || [];
+  let rep = NU.reponses.find(function(r) { return r.itin_id === id; });
+  if (!rep) {
+    try { rep = await nuLireReponse(id); } catch(e) { rep = null; }
+  }
+  if (!rep) return ' (pas de reponse nuits.js a mettre a jour)';
+  if (!Array.isArray(rep.decisions)) rep.decisions = [];
+
+  const parJour = new Map(rep.decisions.map(function(d) { return [Number(d.jour), d]; }));
+  jours.forEach(function(j) {
+    const num = Number(j.day);
+    let d = parJour.get(num);
+    if (!d) { d = { jour: num, stay_at: '' }; rep.decisions.push(d); parJour.set(num, d); }
+    if (j.stay_at) d.stay_at = String(j.stay_at).trim();
+    if (j.stay_nights !== undefined && j.stay_nights !== null) d.nuits = Number(j.stay_nights) || 0;
+  });
+  rep.decisions.sort(function(a, b) { return Number(a.jour) - Number(b.jour); });
+
+  const toutesNuits = rep.decisions.length > 0 && rep.decisions.every(function(d) { return Number.isFinite(Number(d.nuits)) && d.nuits !== null && d.nuits !== undefined; });
+  if (joursAnnonces) rep.jours_conseilles = joursAnnonces;
+  rep.bases = toutesNuits ? nuBasesDepuisNuits(rep.decisions) : nuCalculerBases(rep.decisions, rep.jours_conseilles, rep.derniere_nuit);
+  const derniere = rep.decisions[rep.decisions.length - 1];
+  if (toutesNuits && derniere) rep.derniere_nuit = (Number(derniere.nuits) || 0) > 0;
+  rep.alertes = nuCalculerAlertes(rep, rep.bases);
+  rep.corrige_main = new Date().toISOString();
+
+  try { await nuEcrireReponse(id, rep); }
+  catch(e) { return ' (reponse nuits.js NON reecrite : ' + e.message + ')'; }
+
+  if (!NU.reponses.some(function(r) { return r.itin_id === id; })) NU.reponses.push(rep);
+
+  // Marque OK : une correction a la main vaut relecture.
+  if (!NU.validCharge) await nuValidCharger();
+  const cur = NU.valid[id] || {};
+  NU.valid[id] = { etat: 'ok', note: cur.note && cur.note !== 'nuits validees a la main' ? cur.note : 'corrige a la main dans admin-durees', date: new Date().toISOString() };
+  try { localStorage.setItem(NU_KEY, JSON.stringify(NU.valid)); } catch(e) {}
+  try { await nuValidEcrireServeur(); }
+  catch(e) { return ' + reponse reecrite (validation NON ecrite : ' + e.message + ')'; }
+  if (NU.charge) nuRendreListe();
+  return ' + reponse nuits.js reecrite, marquee OK';
+}
+
+/* Supprimer une nuit : l etape reste au programme, mais on rentre dormir la ou
+   on a dormi la veille. Les bases et les alertes sont recalculees, et le
+   rapport est reecrit sur le disque pour que la correction tienne. */
+async function nuSupprimerNuit(id, jour) {
+  const rep = NU.reponses.find(function(r) { return r.itin_id === id; });
+  if (!rep || !Array.isArray(rep.decisions)) return;
+  const i = rep.decisions.findIndex(function(d) { return String(d.jour) === String(jour); });
+  if (i <= 0) { st('Impossible : il n y a pas d etape precedente ou dormir.', 'error'); return; }
+  const veille = rep.decisions[i - 1].stay_at;
+  if (rep.decisions[i].stay_at === veille) { st('Cette etape dort deja a l etape precedente.', 'error'); return; }
+  const avant = rep.decisions[i].stay_at;
+  rep.decisions[i].stay_at = veille;
+  rep.decisions[i].raison = 'nuit supprimee a la main, on rentre dormir a ' + veille;
+  /* Les nuits tapees a la main ne valent plus : on repasse au calcul. */
+  rep.decisions.forEach(function(d) { delete d.nuits; });
+  if (i === rep.decisions.length - 1) rep.derniere_nuit = false;
+  rep.bases = nuCalculerBases(rep.decisions, rep.jours_conseilles, rep.derniere_nuit);
+  rep.alertes = nuCalculerAlertes(rep, rep.bases);
+  rep.corrige_main = new Date().toISOString();
+  try {
+    await nuEcrireReponse(id, rep);
+    st('Nuit du jour ' + jour + ' supprimee : ' + avant + ' devient ' + veille + '. Relance ecrire-stay-at.js pour l ecrire dans les JSON.', 'success');
+  } catch(e) {
+    st('Nuit supprimee a l ecran, mais pas enregistree (' + e.message + '). Relance ort_server.py a jour.', 'error');
+  }
+  nuOuvrir(id);
+}
+
+function nuMarquer(id, etat) {
+  const note = ($('nuNote') && $('nuNote').value) || '';
+  if (etat === 'anomalie' && !note) { st('Mets une note pour dire ce qui cloche avant de marquer l anomalie.', 'error'); $('nuNote').focus(); return; }
+  NU.valid[id] = { etat: etat, note: note, date: new Date().toISOString() };
+  nuValidEnregistrer();
+  st(id + ' : ' + (etat === 'ok' ? 'OK, integrable' : 'anomalie, non integre'), 'success');
+  nuRendreListe(); nuOuvrir(id);
+}
+
+$('nuRecharger').onclick = function() { NU.charge = false; nuCharger(); };
+$('nuFiltre').onchange = nuRendreListe;
+$('nuPays').onchange = nuRendreListe;
+$('nuCherche').oninput = nuRendreListe;
+$('nuExport').onclick = function() {
+  const txt = JSON.stringify({ generated_at: new Date().toISOString(), validations: NU.valid }, null, 2);
+  navigator.clipboard.writeText(txt).then(function() { st('Validations copiees (' + Object.keys(NU.valid).length + ' itineraire(s)). Le fichier ort-nights\\validations.json est deja a jour par le serveur.', 'success'); }, function() { st('Copie impossible.', 'error'); });
+};
+
 // ─── Init ───────────────────────────────────────────────────────
-loadCC();
+(async () => {
+  await loadValidations();
+  await nuValidCharger();
+  loadCC();
+})();
 </script>
 <!-- ort-page-tracking-v1 -->
 <script>

@@ -113,6 +113,8 @@ function ortDateLocale(){
   .actions .btn{display:inline-flex;background:#f3f6fb;color:#113f7a;border:1px solid #d9e4f0;padding:6px 10px;font-size:0.85rem}
   @media(min-width:640px){.actions .btn{padding:8px 12px;font-size:0.95rem}}
   .actions .btn:hover{background:#eaf1fb}
+  .actions .btn.carnet{background:#113f7a;color:#fff;border-color:#113f7a;font-weight:700}
+  .actions .btn.carnet:hover{background:#0a2a57}
 
   /* Topbar: cacher boutons secondaires sur mobile, garder Nouveau voyage */
   @media(max-width:480px){
@@ -323,8 +325,17 @@ let PHOTOS_LIEUX = null;
 async function loadPhotosLieuxOnce(){
   if (PHOTOS_LIEUX) return PHOTOS_LIEUX;
   try{
-    const r = await fetch('/data/photos-json/photos_lieux.json');
-    PHOTOS_LIEUX = r.ok ? (await r.json()) : {};
+    // Version legere d'abord (6 Mo au lieu de 31, gardee hors ligne) ; la complete en secours.
+    let db = null;
+    try{
+      const rl = await fetch('/data/photos-json/photos_lieux.light.json');
+      if (rl.ok) db = await rl.json();
+    }catch(_){ db = null; }
+    if (!db || typeof db !== 'object'){
+      const r = await fetch('/data/photos-json/photos_lieux.json');
+      db = r.ok ? (await r.json()) : {};
+    }
+    PHOTOS_LIEUX = db || {};
   }catch(_){ PHOTOS_LIEUX = {}; }
   return PHOTOS_LIEUX;
 }
@@ -385,6 +396,9 @@ function initLeafletMap(div, rt){
 
 
 const Dashboard = (()=>{
+  const CARNET_LANGS = {fr:'itineraires',en:'itineraries',es:'rutas',pt:'roteiros',it:'itinerari',ar:'masar',nl:'routes',de:'routen'};
+  const CARNET_LABELS = {fr:'Voir le carnet',en:'View travel notebook',es:'Ver cuaderno de viaje',pt:'Ver diário de viagem',it:'Apri diario di viaggio',ar:'عرض دفتر الرحلة',nl:'Reisdagboek bekijken',de:'Reisetagebuch ansehen'};
+
   const listEl = document.getElementById('list');
   const emptyEl= document.getElementById('emptyState');
   const lang = localStorage.getItem('lang') || document.documentElement.lang || 'fr';
@@ -564,7 +578,13 @@ if (photos.length > 0) {
 const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'; c.appendChild(h);
     const meta = document.createElement('div'); meta.className='meta';
     meta.appendChild(chip(rt.country||rt.cc||'–'));
-    meta.appendChild(chip(L.metas(rt.nights||rt.nb_nights||0, rt.kms||0)));
+    // Distance : celle enregistree avec le voyage, sinon celle recalculee depuis
+    // les etapes. Sans distance connue, on n'affiche pas "0 km".
+    const _km = tripKm(rt);
+    const _nuits = rt.nights||rt.nb_nights||0;
+    let _metaTxt = L.metas(_nuits, _km ? ((_km.approx ? '\u2248 ' : '') + _km.km) : 0);
+    if (!_km) _metaTxt = String(_metaTxt).split(' \u00b7 ')[0];
+    meta.appendChild(chip(_metaTxt));
    if(rt.steps) meta.appendChild(chip((rt.steps.length||0)+" "+((L.labels&&L.labels.steps)||'étapes')));
     if(rt.pace)  meta.appendChild(chip(((L.labels&&L.labels.pace)||'Rythme')+' '+rt.pace));
     c.appendChild(meta);
@@ -573,16 +593,15 @@ const h = document.createElement('h3'); h.textContent = rt.title || 'Sans titre'
 
     const actions = document.createElement('div'); actions.className='actions'; c.appendChild(actions);
 
-    // ↗ Ouvrir dans l'éditeur (RT Detail)
- const openBtn = btn(L.btn.openEditor || L.btn.open, ()=> openRT(rt)); actions.appendChild(openBtn);
-    // 🗺️ Voir l'itinéraire sur la page statique (si le voyage vient d'un itin statique)
-    const staticUrl = buildStaticUrl(rt);
-    if (staticUrl) {
-      // Ajouter tripId pour que la page statique charge directement la version modifiée
-      const staticUrlWithTrip = staticUrl + (staticUrl.indexOf('?') >= 0 ? '&' : '?') + 'tripId=' + encodeURIComponent(rt.id);
-      const staticBtn = btn(L.btn.openStatic || '🗺️ Visualiser', ()=> { location.href = staticUrlWithTrip; });
-      actions.appendChild(staticBtn);
+    // Accès direct au carnet 30 du voyage enregistré, quelle que soit son origine.
+    const carnetUrl = buildCarnetUrl(rt);
+    if (carnetUrl) {
+      const carnetBtn = btn('🗺️ ' + CARNET_LABELS[tripPageLang()], ()=> { location.href = carnetUrl; });
+      carnetBtn.classList.add('carnet');
+      actions.appendChild(carnetBtn);
     }
+    const openBtn = btn(L.btn.openEditor || L.btn.open, ()=> openRT(rt));
+    actions.appendChild(openBtn);
 // 🛠️ Reprendre le voyage dans le constructeur de carte
 const builderBtn = btn('🛠️ ' + ((L.btn && L.btn.openBuilder) || 'Modifier sur la carte'), ()=> openBuilder(rt));
 actions.appendChild(builderBtn);
@@ -599,52 +618,57 @@ const shareBtn = btn(L.btn_extra?.share || '📤 Partager', ()=> openShareCompos
     return c;
   }
 
+  // Distance d'un voyage pour la vignette.
+  // 1. le total enregistre ; 2. la somme des trajets entre etapes ;
+  // 3. a defaut, la ligne droite entre etapes, marquee comme approximative.
+  function tripKm(rt){
+    const direct = Number(rt && (rt.kms || rt.totalKm || rt.total_km) || 0);
+    if (direct > 0) return { km: Math.round(direct), approx: false };
+    const steps = (rt && Array.isArray(rt.steps)) ? rt.steps : [];
+    let somme = 0;
+    for (const s of steps){
+      if (!s) continue;
+      const leg = s.to_next_leg || {};
+      const v = Number(s._distanceKmToNext || s.distance_km || leg.distance_km || s._distanceToNext || s.dist || 0);
+      if (v > 0) somme += v;
+    }
+    if (somme > 0) return { km: Math.round(somme), approx: false };
+    const pts = steps.map(s => {
+      if (!s) return null;
+      const c = Array.isArray(s.coords) ? s.coords : null;
+      const lat = Number(s.lat != null ? s.lat : (c ? c[0] : NaN));
+      const lon = Number(s.lon != null ? s.lon : (s.lng != null ? s.lng : (c ? c[1] : NaN)));
+      return (Number.isFinite(lat) && Number.isFinite(lon)) ? { lat: lat, lon: lon } : null;
+    }).filter(Boolean);
+    const droite = calculateTotalKm(pts);
+    return droite > 0 ? { km: droite, approx: true } : null;
+  }
+
   function btn(lbl, onclick, danger=false){ const b=document.createElement('button'); b.className='btn'+(danger?' danger':''); b.type='button'; b.textContent=lbl; b.onclick=onclick; return b; }
 
-// Renvoie vers le constructeur de carte, qui rechargera les etapes de ce voyage
+// Une langue et un identifiant cohérents pour les trois accès au voyage.
+function tripPageLang(){
+  const selected = String(localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || document.documentElement.lang || 'fr').toLowerCase().slice(0,2);
+  return Object.prototype.hasOwnProperty.call(CARNET_LANGS, selected) ? selected : 'en';
+}
+
 function openBuilder(rt){
-  const lang = localStorage.getItem('lang') || localStorage.getItem('ORT_LANG') || 'fr';
-  location.href = `carte_builder.html?tripId=${encodeURIComponent(rt.id)}&lang=${lang}`;
+  const params = new URLSearchParams({tripId:rt.id, lang:tripPageLang()});
+  location.href = 'carte_builder.html?' + params.toString();
 }
 
 function openRT(rt){
-    const lang = localStorage.getItem('lang') || 'fr';
-    const url = `roadtrip_detail.html?tripId=${encodeURIComponent(rt.id)}&lang=${lang}`;
-    location.href = url;
-  }
+  const params = new URLSearchParams({tripId:rt.id, lang:tripPageLang()});
+  location.href = 'roadtrip_detail.html?' + params.toString();
+}
 
-  // Construit l'URL de la page statique si le voyage provient d'un itinéraire pré-fabriqué
-  function buildStaticUrl(rt) {
-    const lang = localStorage.getItem('lang') || 'fr';
-    // Le voyage doit avoir un _originalItinId (posé par l'éditeur statique) ou un sourceUrl pointant vers une page statique
-    var itinId = rt._originalItinId || '';
-    var sourceUrl = rt.sourceUrl || '';
-
-    // Si on a un sourceUrl qui pointe vers une page statique ORT, utiliser le chemin uniquement
-    if (sourceUrl && /\/(itineraires|itineraries|rutas|roteiros|itinerari|masar)\//.test(sourceUrl)) {
-      try { return new URL(sourceUrl, location.origin).pathname; } catch(e) { return sourceUrl.replace(/^https?:\/\/[^\/]+/, ''); }
-    }
-
-    // Sinon, si on a un itinId, construire l'URL
-    // Mais ignorer les itinIds "custom" ou temporaires (générés par RT Detail, pas du catalogue)
-    if (itinId && !/custom|^temp|^\d{10,}/.test(itinId)) {
-      // Slugifier comme generate-v2.js : "84::vaucluse" → "84-vaucluse", "KH::phnom-penh" → "kh-phnom-penh"
-      var slug = itinId.toLowerCase().replace(/::/g, '-').replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-      var LSLUG = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar', nl:'routes', de:'routen'};
-      var langSlug = LSLUG[lang] || 'itineraries';
-      return '/' + langSlug + '/' + slug + '.html';
-    }
-
-    // Pas d'itinéraire catalogue → page coquille custom.html
-    // Le voyage sera chargé depuis Firestore via tripId dans l'URL
-    if (rt.steps && rt.steps.length > 0) {
-      var LSLUG2 = {fr:'itineraires', en:'itineraries', es:'rutas', pt:'roteiros', it:'itinerari', ar:'masar', nl:'routes', de:'routen'};
-      var langSlug2 = LSLUG2[lang] || 'itineraries';
-      return '/' + langSlug2 + '/custom.html';
-    }
-
-    return null; // vraiment rien à afficher
-  }
+// custom.html est généré avec template-30.js et charge les étapes sauvegardées.
+function buildCarnetUrl(rt){
+  if (!rt || !rt.id || !Array.isArray(rt.steps) || !rt.steps.length) return null;
+  const lang = tripPageLang();
+  const params = new URLSearchParams({tripId:rt.id, lang:lang});
+  return '/' + CARNET_LANGS[lang] + '/custom.html?' + params.toString();
+}
 
   async function renameRT(rt){
     const msg = L.btn.rename || 'Renommer';

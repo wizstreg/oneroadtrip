@@ -126,6 +126,10 @@ input[type=text],input[type=date],select{
 .article .ctrl{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
 .empty{color:var(--mut);font-size:14px;padding:10px 0}
 .warn{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+/* Journal de débogage */
+.dbg{margin-top:18px;background:#0f172a;color:#e2e8f0;border-radius:12px;padding:12px}
+.dbg-head{display:flex;gap:10px;align-items:center;margin-bottom:8px;color:#fff;flex-wrap:wrap}
+.dbg pre{margin:0;max-height:360px;overflow:auto;font:12px/1.45 Consolas,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
@@ -136,13 +140,8 @@ input[type=text],input[type=date],select{
 
 <div class="wrap">
 
-  <div id="browserWarn" class="warn" style="display:none">
-    Ton navigateur ne gère pas l'écriture directe sur disque. Utilise Edge ou Chrome. Tu peux quand même rédiger, mais il faudra enregistrer les fichiers à la main.
-  </div>
-
   <div class="connect">
-    <button class="btn" id="connectBtn">📁 Connecter mon dossier de site</button>
-    <span class="status" id="connectStatus">Aucun dossier connecté.</span>
+    <span class="status" id="connectStatus">Chargement des articles…</span>
   </div>
 
   <div class="tabs">
@@ -162,7 +161,7 @@ input[type=text],input[type=date],select{
       <div>
         <label for="fImage">Photo (dans assets/news)</label>
         <select id="fImage"><option value="">— Aucune —</option></select>
-        <div class="hint" id="imgHint">Connecte ton dossier pour voir tes photos.</div>
+        <div class="hint" id="imgHint">Chargement des photos…</div>
       </div>
     </div>
 
@@ -194,183 +193,90 @@ input[type=text],input[type=date],select{
     <div id="articleList"><div class="empty">Aucun article pour l'instant.</div></div>
   </div>
 
+  <div class="dbg">
+    <div class="dbg-head">
+      <b>🐞 Journal de débogage</b>
+      <button class="btn small ghost" id="dbgCopy">Copier le journal</button>
+      <button class="btn small ghost" id="dbgClear">Effacer</button>
+    </div>
+    <pre id="dbgLog"></pre>
+  </div>
+
 </div>
 
 <script>
 // ===============================
+// Journal de débogage (visible en bas de page + console F12)
+// ===============================
+const DBG = [];
+function dbgStr(a){
+  if (a === undefined) return 'undefined';
+  if (a === null) return 'null';
+  if (typeof a === 'string') return a;
+  if (a && typeof a === 'object' && typeof a.message === 'string' && a.name) return '[' + a.name + '] ' + a.message;
+  try { return JSON.stringify(a); } catch(e){ return String(a); }
+}
+function dbg(...args){
+  const d = new Date();
+  const ts = d.toTimeString().slice(0,8) + '.' + String(d.getMilliseconds()).padStart(3,'0');
+  const line = ts + '  ' + args.map(dbgStr).join(' ');
+  DBG.push(line);
+  try { console.log('[ORT-ADMIN] ' + line); } catch(e){}
+  const el = document.getElementById('dbgLog');
+  if (el){ el.textContent += line + '\n'; el.scrollTop = el.scrollHeight; }
+}
+function errStr(e){ return e ? ((e.name || 'Erreur') + ' : ' + (e.message || String(e))) : 'inconnue'; }
+window.addEventListener('error', e => dbg('❌ ERREUR JS :', e.message, '| ligne', e.lineno));
+window.addEventListener('unhandledrejection', e => dbg('❌ ERREUR non gérée :', e.reason));
+
+document.getElementById('dbgCopy').addEventListener('click', async ()=>{
+  const txt = DBG.join('\n');
+  try {
+    await navigator.clipboard.writeText(txt);
+    dbg('Journal copié dans le presse-papiers (' + DBG.length + ' lignes).');
+  } catch(e){
+    const r = document.createRange();
+    r.selectNodeContents(document.getElementById('dbgLog'));
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    alert('Copie automatique impossible : le journal est sélectionné, fais Ctrl+C.');
+  }
+});
+document.getElementById('dbgClear').addEventListener('click', ()=>{
+  DBG.length = 0;
+  document.getElementById('dbgLog').textContent = '';
+  dbg('Journal effacé.');
+});
+
+// ===============================
 // État
 // ===============================
+// Lecture : /data/news/<fichier> servi par le site.
+// Écriture : POST /api/save-news, c'est ort_server.py qui écrit sur le disque.
+// Plus aucun dossier à choisir dans le navigateur.
 const FILES = { news: 'news.json', press: 'press.json', partners: 'partners.json' };
-let rootHandle = null;        // dossier racine du site
-let dataDirHandle = null;     // data/news
-let assetsDirHandle = null;   // assets/news
+const DATA_URL = '/data/news/';
+const SAVE_URL = '/api/save-news';
 let store = { news: [], press: [], partners: [] };
-let shapes = {};              // mémorise la forme d'origine de chaque fichier
-let loadedFromServer = false; // articles déjà lus via le serveur ?
+let shapes = {};              // forme d'origine de chaque fichier
+let loaded = false;           // articles lus via le site ?
 let currentTab = 'news';
 
-const supportsFS = ('showDirectoryPicker' in window);
-if (!supportsFS) document.getElementById('browserWarn').style.display = 'block';
+dbg('=== Démarrage de la page ===');
+dbg('Adresse :', location.href);
+dbg('Navigateur :', navigator.userAgent);
 
 // Date du jour par défaut
 document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
-
-// ===============================
-// Persistance du dossier (IndexedDB) pour ne pas reconnecter à chaque fois
-// ===============================
-function idbGet(key){
-  return new Promise((res)=>{
-    const r = indexedDB.open('ort-admin',1);
-    r.onupgradeneeded = ()=> r.result.createObjectStore('h');
-    r.onsuccess = ()=>{
-      const tx = r.result.transaction('h','readonly').objectStore('h').get(key);
-      tx.onsuccess = ()=> res(tx.result || null);
-      tx.onerror = ()=> res(null);
-    };
-    r.onerror = ()=> res(null);
-  });
-}
-function idbSet(key,val){
-  return new Promise((res)=>{
-    const r = indexedDB.open('ort-admin',1);
-    r.onupgradeneeded = ()=> r.result.createObjectStore('h');
-    r.onsuccess = ()=>{
-      const tx = r.result.transaction('h','readwrite').objectStore('h').put(val,key);
-      tx.onsuccess = ()=> res(true);
-      tx.onerror = ()=> res(false);
-    };
-    r.onerror = ()=> res(false);
-  });
-}
-
-// ===============================
-// Connexion dossier
-// ===============================
-document.getElementById('connectBtn').addEventListener('click', async ()=>{
-  if (!supportsFS) return;
-  try {
-    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    await useRootHandle(handle);
-    await idbSet('root', handle);
-  } catch(e){ /* annulé par l'utilisateur */ }
-});
-
-async function useRootHandle(handle){
-  // Vérifier la permission en écriture
-  let perm = await handle.queryPermission({ mode:'readwrite' });
-  if (perm !== 'granted') perm = await handle.requestPermission({ mode:'readwrite' });
-  if (perm !== 'granted') {
-    setConnectStatus('Permission refusée. Reclique pour autoriser.', false);
-    return;
-  }
-  rootHandle = handle;
-
-  // Trouve le dossier des articles, peu importe ce que tu as choisi
-  dataDirHandle = await resolveDataDir(handle);
-  assetsDirHandle = await resolveAssetsDir(handle);
-
-  // Si le serveur a déjà chargé tes articles, on NE relit PAS le disque :
-  // connecter ne sert qu'à pouvoir enregistrer. Ta liste reste intacte.
-  if (loadedFromServer){
-    const total = store.news.length + store.press.length + store.partners.length;
-    setConnectStatus(`Enregistrement autorisé · dossier <b>${dataDirHandle.name}</b>. Tes ${total} articles restent affichés.`, true);
-    await loadImages();
-    renderList();
-    return;
-  }
-
-  // Sinon (serveur injoignable), on lit les articles depuis le disque
-  setConnectStatus(`Connecté · articles lus dans <b>${dataDirHandle.name}</b>.`, true);
-  await loadStore();
-  await loadImages();
-  renderList();
-}
-
-// Cherche le dossier contenant news.json / press.json / partners.json,
-// que tu aies choisi la racine du site, "data", ou directement "news".
-async function resolveDataDir(picked){
-  // On cherche data/news EN PREMIER (le vrai dossier des articles).
-  const dn = await tryPath(picked, ['data','news']); if (dn) return dn;
-  const n  = await tryPath(picked, ['news']);          if (n)  return n;
-  // Sinon seulement, si les json sont directement dans le dossier choisi.
-  if (await dirHasAnyFile(picked, ['news.json','press.json','partners.json'])) return picked;
-  // Rien trouvé : on crée data/news en dernier recours
-  const dataRoot = await picked.getDirectoryHandle('data', { create:true });
-  return await dataRoot.getDirectoryHandle('news', { create:true });
-}
-
-async function resolveAssetsDir(picked){
-  return (await tryPath(picked, ['assets','news']))
-      || (await tryPath(picked, ['..','assets','news']))
-      || null;
-}
-
-async function dirHasAnyFile(dir, names){
-  for (const nm of names){
-    try { await dir.getFileHandle(nm, { create:false }); return true; } catch(e){}
-  }
-  return false;
-}
-async function tryPath(dir, parts){
-  try {
-    let h = dir;
-    for (const p of parts){
-      if (p === '..') return null; // on ne peut pas remonter avec cette API
-      h = await h.getDirectoryHandle(p, { create:false });
-    }
-    return h;
-  } catch(e){ return null; }
-}
 
 function setConnectStatus(html, ok){
   const el = document.getElementById('connectStatus');
   el.innerHTML = html;
   el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
+  dbg('Bandeau ' + (ok ? '(vert)' : '(ROUGE)') + ' :', el.textContent);
 }
 
 // ===============================
-// Chargement automatique depuis le serveur (AUCUN choix de dossier)
-// Les fichiers sont servis à /data/news/ par le serveur du site.
-// ===============================
-const DATA_URL = '/data/news/';
-
-async function fetchJson(name){
-  try{
-    const res = await fetch(DATA_URL + name + '?t=' + Date.now(), { cache:'no-store' });
-    if (!res.ok) return null;
-    return normalizeShape(name, await res.json());
-  } catch(e){ return null; }
-}
-
-async function autoLoad(){
-  const n  = await fetchJson(FILES.news);
-  const p  = await fetchJson(FILES.press);
-  const pa = await fetchJson(FILES.partners);
-  if (n === null && p === null && pa === null) return false; // pas de serveur joignable
-  store.news = n || []; store.press = p || []; store.partners = pa || [];
-  loadedFromServer = true;
-  const total = store.news.length + store.press.length + store.partners.length;
-  setConnectStatus(`Articles chargés depuis le site (${total}). Pas de dossier à choisir.`, true);
-  renderList();
-  return true;
-}
-
-// Au chargement : on lit direct via le serveur. Le dossier ne sert que pour ENREGISTRER.
-(async ()=>{
-  const ok = await autoLoad();
-  if (ok) return;
-  setConnectStatus("Lecture directe impossible (page pas servie par le serveur). Connecte le dossier.", false);
-  if (!supportsFS) return;
-  const saved = await idbGet('root');
-  if (saved){
-    const perm = await saved.queryPermission({ mode:'readwrite' });
-    if (perm === 'granted') { await useRootHandle(saved); }
-    else setConnectStatus('Clique pour reconnecter ton dossier.', false);
-  }
-})();
-
-// ===============================
-// Lecture / écriture des fichiers JSON
+// Lecture depuis le site
 // ===============================
 // Garde la forme d'origine du fichier (liste simple OU objet contenant une liste)
 function normalizeShape(name, data){
@@ -385,85 +291,150 @@ function normalizeShape(name, data){
   return [];
 }
 
-async function readJsonFile(name){
-  try {
-    const fh = await dataDirHandle.getFileHandle(name, { create:false });
-    const file = await fh.getFile();
-    const txt = await file.text();
-    if (!txt.trim()){ shapes[name] = { type:'array' }; return []; }
-    return normalizeShape(name, JSON.parse(txt));
-  } catch(e){ shapes[name] = { type:'array' }; return []; } // fichier absent = liste vide
+async function fetchJson(name){
+  const url = DATA_URL + name;
+  try{
+    const res = await fetch(url + '?t=' + Date.now(), { cache:'no-store' });
+    dbg('Lecture site', url, '→ code', res.status, '| type', res.headers.get('content-type'));
+    if (!res.ok) return null;
+    const data = await res.json();
+    const arr = normalizeShape(name, data);
+    dbg('Lecture site', name, '→', arr.length, 'élément(s) | forme', shapes[name].type + (shapes[name].key ? ' (clé "' + shapes[name].key + '")' : ''));
+    return arr;
+  } catch(e){ dbg('Lecture site', url, '→ ÉCHEC', e); return null; }
 }
 
-async function writeJsonFile(name, arr){
-  const fh = await dataDirHandle.getFileHandle(name, { create:true });
-  const w = await fh.createWritable();
-  const shape = shapes[name] || { type:'array' };
-  let out = arr;
-  if (shape.type === 'wrap'){ shape.obj[shape.key] = arr; out = shape.obj; }
-  await w.write(JSON.stringify(out, null, 2));
-  await w.close();
+async function autoLoad(){
+  const n  = await fetchJson(FILES.news);
+  const p  = await fetchJson(FILES.press);
+  const pa = await fetchJson(FILES.partners);
+  if (n === null && p === null && pa === null) return false;
+  store.news = n || []; store.press = p || []; store.partners = pa || [];
+  loaded = true;
+  const total = store.news.length + store.press.length + store.partners.length;
+  setConnectStatus(`Articles chargés depuis le site (${total}). L'enregistrement passe par le serveur, aucun dossier à choisir.`, true);
+  return true;
 }
 
-async function loadStore(){
-  store.news     = await readJsonFile(FILES.news);
-  store.press    = await readJsonFile(FILES.press);
-  store.partners = await readJsonFile(FILES.partners);
-}
+(async ()=>{
+  const ok = await autoLoad();
+  dbg('Démarrage : lecture via le site', ok ? 'OK' : 'ÉCHEC');
+  if (!ok){
+    setConnectStatus("Impossible de lire les articles. Lance 1_Lancer_Site_Windows.bat puis ouvre cette page par l'adresse http://127.0.0.1:…/news-admin.html.", false);
+  }
+  await loadImages();
+  renderList();
+})();
 
+// ===============================
+// Enregistrement par le serveur
+// ===============================
 async function persist(tab){
-  if (!dataDirHandle){
-    flash('Articles lus par le serveur. Pour ENREGISTRER, clique “Connecter mon dossier” une fois.', false);
+  const name = FILES[tab];
+  const shape = shapes[name] || { type:'array' };
+  let out = store[tab];
+  if (shape.type === 'wrap'){ shape.obj[shape.key] = store[tab]; out = shape.obj; }
+  dbg('Enregistrement', name, ':', store[tab].length, 'élément(s), forme', shape.type, '→ envoi à', SAVE_URL);
+  let res, txt = '';
+  try {
+    res = await fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: name, data: out })
+    });
+    txt = await res.text();
+  } catch(e){
+    dbg('Enregistrement → serveur INJOIGNABLE', e);
+    flash('Pas enregistré : le serveur ne répond pas. Relance 1_Lancer_Site_Windows.bat.', false);
     return false;
   }
-  await writeJsonFile(FILES[tab], store[tab]);
+  dbg('Enregistrement → code', res.status, '| réponse', txt.slice(0, 400));
+  if (res.status === 404 || res.status === 501){
+    flash("Pas enregistré : le serveur tourne avec l'ancien ort_server.py. Ferme la fenêtre ORT SERVER et relance 1_Lancer_Site_Windows.bat.", false);
+    return false;
+  }
+  let r = null;
+  try { r = JSON.parse(txt); } catch(e){}
+  if (!res.ok || !r || !r.success){
+    flash('Pas enregistré : ' + ((r && r.error) || ('erreur serveur ' + res.status)), false);
+    return false;
+  }
+  dbg('Enregistrement → OK dans', r.absolu || r.path, '|', r.count, 'élément(s) | copie de secours :', r.backup || 'aucune (fichier neuf)');
   return true;
 }
 
 // ===============================
-// Liste des photos de assets/news
+// Photos de assets/news (lues sur le site)
 // ===============================
 const IMG_EXT = ['.jpg','.jpeg','.png','.webp','.gif','.avif'];
+const ASSETS_URL = '/assets/news/';
+function isImg(name){ return IMG_EXT.some(ext => (name||'').toLowerCase().endsWith(ext)); }
+
+async function listServerImages(){
+  try {
+    const res = await fetch(ASSETS_URL + '?t=' + Date.now(), { cache:'no-store' });
+    const type = (res.headers.get('content-type') || '').toLowerCase();
+    dbg('Photos site', ASSETS_URL, '→ code', res.status, '| type', type);
+    if (!res.ok) return [];
+    const txt = await res.text();
+    const out = new Set();
+    if (type.includes('json')){
+      const re = /[^"'<>\/\\\s]+\.(?:jpe?g|png|webp|gif|avif)/gi;
+      (txt.match(re) || []).forEach(n => out.add(n));
+    } else {
+      const doc = new DOMParser().parseFromString(txt, 'text/html');
+      doc.querySelectorAll('a[href]').forEach(a=>{
+        let h = (a.getAttribute('href') || '').split('?')[0].split('#')[0];
+        let n = h.split('/').filter(Boolean).pop() || '';
+        try { n = decodeURIComponent(n); } catch(e){}
+        if (isImg(n)) out.add(n);
+      });
+    }
+    dbg('Photos site →', out.size, 'photo(s) dans la liste');
+    return [...out];
+  } catch(e){ dbg('Photos site → ÉCHEC', e); return []; }
+}
+
 async function loadImages(){
   const sel = document.getElementById('fImage');
+  const keep = sel.value;
   sel.innerHTML = '<option value="">— Aucune —</option>';
-  if (!assetsDirHandle){
-    document.getElementById('imgHint').textContent = "Dossier assets/news introuvable. Dépose tes photos dedans.";
-    return;
+  const names = new Set(await listServerImages());
+  let used = 0;
+  for (const t of Object.keys(store)){
+    for (const a of (store[t] || [])){
+      if (a.image && a.image.startsWith('assets/news/')){ names.add(a.image.split('/').pop()); used++; }
+    }
   }
-  const names = [];
-  for await (const [name, h] of assetsDirHandle.entries()){
-    if (h.kind === 'file' && IMG_EXT.some(ext => name.toLowerCase().endsWith(ext))) names.push(name);
-  }
-  names.sort();
-  for (const n of names){
+  dbg('Photos : +', used, 'photo(s) déjà utilisée(s) dans les articles | total liste :', names.size);
+  const list = [...names].sort();
+  for (const n of list){
     const o = document.createElement('option');
     o.value = 'assets/news/' + n;
     o.textContent = n;
     sel.appendChild(o);
   }
-  document.getElementById('imgHint').textContent = names.length
-    ? `${names.length} photo(s) trouvée(s) dans assets/news.`
-    : "Aucune photo dans assets/news pour l'instant.";
+  if (keep && [...sel.options].some(o=>o.value===keep)) sel.value = keep;
+  document.getElementById('imgHint').textContent = list.length
+    ? `${list.length} photo(s) dans assets/news. Pour en ajouter, dépose-les dans assets/news puis recharge la page.`
+    : "Aucune photo trouvée dans assets/news.";
 }
 
-document.getElementById('fImage').addEventListener('change', updateImgPreview);
+document.getElementById('fImage').addEventListener('change', ()=>{
+  dbg('Photo choisie :', document.getElementById('fImage').value || '(aucune)');
+  updateImgPreview();
+});
 function updateImgPreview(){
   const v = document.getElementById('fImage').value;
   const img = document.getElementById('imgPreview');
-  if (v && rootHandle){
-    // Aperçu depuis le disque connecté
-    showLocalImage(v, img);
-  } else { img.style.display = 'none'; }
+  if (v) showImage(v, img);
+  else img.style.display = 'none';
 }
-async function showLocalImage(relPath, imgEl){
-  try {
-    const name = relPath.split('/').pop();
-    const fh = await assetsDirHandle.getFileHandle(name, { create:false });
-    const file = await fh.getFile();
-    imgEl.src = URL.createObjectURL(file);
-    imgEl.style.display = 'block';
-  } catch(e){ imgEl.style.display = 'none'; }
+function showImage(relPath, imgEl){
+  const src = '/' + relPath.split('/').map(encodeURIComponent).join('/');
+  imgEl.onerror = ()=>{ imgEl.style.display = 'none'; dbg('Aperçu : photo INTROUVABLE sur le site :', src); };
+  imgEl.onload  = ()=>{ imgEl.style.display = 'block'; };
+  imgEl.src = src;
 }
 
 // ===============================
@@ -496,6 +467,7 @@ document.querySelectorAll('.tab').forEach(t=>{
     document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');
     currentTab = t.dataset.tab;
+    dbg('Onglet :', currentTab);
     resetForm();
     renderList();
   });
@@ -511,28 +483,47 @@ document.getElementById('saveBtn').addEventListener('click', async ()=>{
   const body = editor.innerHTML.trim();
   const editingId = document.getElementById('editingId').value;
 
+  dbg('--- Clic Valider --- onglet', currentTab, '| date', date, '| titre', JSON.stringify(title),
+      '| photo', image || '(aucune)', '| corps', body.length, 'caractères |', editingId ? ('modification de ' + editingId) : 'nouvel article');
+
+  if (!loaded){ flash("Pas enregistré : les articles n'ont pas pu être lus, je n'écrase rien.", false); return; }
   if (!date){ flash('Indique une date.', false); return; }
   if (!body){ flash('Le corps est vide.', false); return; }
 
-  if (editingId){
-    const art = store[currentTab].find(a => a.id === editingId);
-    if (art){ art.date=date; art.title=title; art.image=image; art.body=body; art.updated=Date.now(); }
-  } else {
-    store[currentTab].unshift({
-      id: 'a' + Date.now(),
-      type: currentTab,
-      date, title, image, body,
-      updated: Date.now()
-    });
-  }
-  // Tri par date décroissante
-  store[currentTab].sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  const saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true;
+  const before = JSON.parse(JSON.stringify(store[currentTab]));
+  try {
+    if (editingId){
+      const art = store[currentTab].find(a => a.id === editingId);
+      if (!art){
+        dbg('Valider : article', editingId, 'INTROUVABLE');
+        flash("Cet article n'existe plus. Rien n'a été modifié.", false);
+        return;
+      }
+      art.date=date; art.title=title; art.image=image; art.body=body; art.updated=Date.now();
+    } else {
+      store[currentTab].unshift({
+        id: 'a' + Date.now(),
+        type: currentTab,
+        date, title, image, body,
+        updated: Date.now()
+      });
+    }
+    // Tri par date décroissante
+    store[currentTab].sort((a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+    dbg('Valider : articles dans l\'onglet', before.length, '→', store[currentTab].length);
 
-  const ok = await persist(currentTab);
-  if (ok){ flash(editingId ? 'Article modifié et enregistré.' : 'Article ajouté et enregistré.', true); resetForm(); renderList(); }
+    const ok = await persist(currentTab);
+    dbg('Valider : enregistrement', ok ? 'RÉUSSI' : 'ÉCHOUÉ');
+    if (ok){ flash(editingId ? 'Article modifié et enregistré.' : 'Article ajouté et enregistré.', true); resetForm(); renderList(); }
+    else { store[currentTab] = before; } // échec : on annule pour éviter les doublons
+  } finally {
+    saveBtn.disabled = false;
+  }
 });
 
-document.getElementById('cancelBtn').addEventListener('click', resetForm);
+document.getElementById('cancelBtn').addEventListener('click', ()=>{ dbg('Annuler la modification'); resetForm(); });
 
 function resetForm(){
   document.getElementById('editingId').value = '';
@@ -546,6 +537,7 @@ function resetForm(){
 }
 
 function flash(text, ok){
+  dbg('Message ' + (ok ? '(vert)' : '(ROUGE)') + ' :', text);
   const m = document.getElementById('formMsg');
   m.textContent = text;
   m.className = 'msg ' + (ok ? 'ok' : 'err');
@@ -560,6 +552,7 @@ function renderList(){
   document.getElementById('listTitle').textContent = titles[currentTab] || 'Articles publiés';
   const wrap = document.getElementById('articleList');
   const arr = store[currentTab];
+  dbg('Liste :', currentTab, '→', arr ? arr.length : 0, 'article(s) affiché(s)');
   if (!arr || arr.length === 0){
     wrap.innerHTML = '<div class="empty">Aucun article pour l\'instant.</div>';
     return;
@@ -570,20 +563,19 @@ function renderList(){
     div.className = 'article';
     const plain = (a.body || '').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
     div.innerHTML = `
-      <img ${a.image ? '' : 'style="display:none"'} alt="" data-img="${a.image||''}">
+      <img ${a.image ? '' : 'style="display:none"'} alt="" data-img="${escapeHtml(a.image||'')}">
       <div class="meta">
         <div class="d">${formatDate(a.date)}</div>
         <div class="t">${escapeHtml(a.title || '(sans titre)')}</div>
         <div class="b">${escapeHtml(plain).slice(0,140)}</div>
       </div>
       <div class="ctrl">
-        <button class="btn ghost small" data-edit="${a.id}">Modifier</button>
-        <button class="btn danger small" data-del="${a.id}">Supprimer</button>
+        <button class="btn ghost small" data-edit="${escapeHtml(a.id||'')}">Modifier</button>
+        <button class="btn danger small" data-del="${escapeHtml(a.id||'')}">Supprimer</button>
       </div>`;
     wrap.appendChild(div);
-    // aperçu image depuis le disque
     const imgEl = div.querySelector('img[data-img]');
-    if (a.image && assetsDirHandle) showLocalImage(a.image, imgEl);
+    if (a.image) showImage(a.image, imgEl);
   });
 
   wrap.querySelectorAll('[data-edit]').forEach(b=> b.addEventListener('click', ()=> editArticle(b.dataset.edit)));
@@ -591,8 +583,9 @@ function renderList(){
 }
 
 function editArticle(id){
+  dbg('--- Clic Modifier ---', id);
   const a = store[currentTab].find(x=>x.id===id);
-  if (!a) return;
+  if (!a){ dbg('Modifier : article', id, 'INTROUVABLE'); return; }
   document.getElementById('editingId').value = a.id;
   document.getElementById('fDate').value = a.date || '';
   document.getElementById('fTitle').value = a.title || '';
@@ -610,10 +603,16 @@ function editArticle(id){
 }
 
 async function deleteArticle(id){
-  if (!confirm('Supprimer cet article ?')) return;
+  dbg('--- Clic Supprimer ---', id);
+  if (!loaded){ flash("Pas supprimé : les articles n'ont pas pu être lus, je n'écrase rien.", false); return; }
+  if (!confirm('Supprimer cet article ?')){ dbg('Supprimer : annulé'); return; }
+  const before = store[currentTab];
   store[currentTab] = store[currentTab].filter(x=>x.id!==id);
+  dbg('Supprimer : articles', before.length, '→', store[currentTab].length);
   const ok = await persist(currentTab);
+  dbg('Supprimer : enregistrement', ok ? 'RÉUSSI' : 'ÉCHOUÉ');
   if (ok){ flash('Article supprimé.', true); renderList(); }
+  else { store[currentTab] = before; }
 }
 
 // ===============================
@@ -625,10 +624,9 @@ function formatDate(d){
   catch(e){ return d; }
 }
 function escapeHtml(s){
-  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 </script>
-
 <!-- ort-page-tracking-v1 -->
 <script>
 (function(){try{

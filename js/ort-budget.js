@@ -15,6 +15,35 @@
     other: { icon: '📋', keys: ['insurance', 'other'], label: 'budgetOther' }
   };
 
+  // Libelles des categories, ranges ICI pour ne dependre d'aucun autre fichier.
+  // Avant, ils etaient demandes au dictionnaire general, qui ne les connait pas :
+  // la fenetre affichait "budgetTransport" et "budgetAccommodation" en clair.
+  const BUDGET_LABELS = {
+    budgetTransport:     { fr: 'Transport',   en: 'Transport',     es: 'Transporte',  it: 'Trasporto', pt: 'Transporte', nl: 'Vervoer',       de: 'Transport',    ar: '\u0627\u0644\u0646\u0642\u0644' },
+    budgetAccommodation: { fr: 'H\u00e9bergement', en: 'Accommodation', es: 'Alojamiento', it: 'Alloggio',  pt: 'Alojamento', nl: 'Accommodatie',  de: 'Unterkunft',   ar: '\u0627\u0644\u0625\u0642\u0627\u0645\u0629' },
+    budgetActivities:    { fr: 'Activit\u00e9s',   en: 'Activities',    es: 'Actividades', it: 'Attivit\u00e0', pt: 'Atividades', nl: 'Activiteiten',  de: 'Aktivit\u00e4ten',  ar: '\u0627\u0644\u0623\u0646\u0634\u0637\u0629' },
+    budgetOther:         { fr: 'Autres',      en: 'Other',         es: 'Otros',       it: 'Altro',     pt: 'Outros',     nl: 'Overige',       de: 'Sonstiges',    ar: '\u0623\u062e\u0631\u0649' },
+    noBudget:            { fr: 'Aucune r\u00e9servation', en: 'No bookings', es: 'Sin reservas', it: 'Nessuna prenotazione', pt: 'Sem reservas', nl: 'Geen boekingen', de: 'Keine Buchungen', ar: '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u062c\u0648\u0632\u0627\u062a' }
+  };
+  function budgetLang() {
+    try {
+      const l = (typeof global.ORT_getLang === 'function') ? global.ORT_getLang()
+        : (document.documentElement.lang || 'en');
+      return String(l || 'en').slice(0, 2).toLowerCase();
+    } catch (e) { return 'en'; }
+  }
+  // Libelle d'une cle : notre liste d'abord, sinon le dictionnaire general,
+  // et jamais le nom brut de la cle.
+  function label(key) {
+    const own = BUDGET_LABELS[key];
+    if (own) return own[budgetLang()] || own.en;
+    if (typeof global.t === 'function') {
+      const v = global.t(key);
+      if (v && v !== key) return v;
+    }
+    return '';
+  }
+
   // État du budget
   let budgetData = { total: 0, byCategory: {}, items: [], currency: 'EUR', unconverted: [] };
 
@@ -144,7 +173,7 @@
     const modal = document.getElementById('budgetModal');
     if (!modal) return;
     
-    const tFunc = typeof t === 'function' ? t : (k) => k;
+    const tFunc = label;
     
     // Update total
     const totalDisplay = document.getElementById('budgetTotalDisplay');
@@ -155,9 +184,9 @@
       const val = budgetData.byCategory[key] || 0;
       if (val <= 0) return '';
       const pct = budgetData.total > 0 ? Math.round(val / budgetData.total * 100) : 0;
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;">
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;color:#113f7a;">
         <span>${def.icon} ${tFunc(def.label)}</span>
-        <span style="font-weight:600;">${fmt(val, 0)} <span style="color:#64748b;font-size:0.8rem;">(${pct}%)</span></span>
+        <span style="font-weight:600;color:#113f7a;">${fmt(val, 0)} <span style="color:#64748b;font-size:0.8rem;">(${pct}%)</span></span>
       </div>`;
     }).join('');
     

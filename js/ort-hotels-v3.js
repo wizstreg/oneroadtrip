@@ -102,6 +102,10 @@
 
   function bigImg(url) {
     if (!url) return '';
+    // Photo Booking avec jeton (?k=...) : adresse gardee telle quelle.
+    // Le jeton est lie a la taille d'origine ; en demander une autre avec le
+    // meme jeton est refuse par Booking pour une partie des photos.
+    if (url.indexOf('bstatic.com') > -1 && url.indexOf('k=') > -1) return url;
     return url.replace('square240', 'square600');
   }
 

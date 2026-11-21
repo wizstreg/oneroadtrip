@@ -2239,11 +2239,27 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
     document.body.appendChild(container);
   }
   
+  // Garantit que trip.steps est toujours une vraie liste.
+  // Firestore peut renvoyer les etapes sous forme de chaine JSON.
+  function normalizeSteps() {
+    if (!trip) return;
+    if (typeof trip.steps === 'string') {
+      try {
+        trip.steps = JSON.parse(trip.steps);
+      } catch (e) {
+        console.warn('[TRIP] steps illisible, remis a vide', e);
+        trip.steps = [];
+      }
+    }
+    if (!Array.isArray(trip.steps)) trip.steps = [];
+  }
+
   async function loadTrip() {
     const stored = localStorage.getItem(`ort_trip_${tripId}`);
     if (stored) {
       try {
         trip = JSON.parse(stored);
+        normalizeSteps();
         $('tripName').textContent = trip.title || '';
         return;
       } catch (e) {}
@@ -2255,6 +2271,7 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
         const doc = await firebase.firestore().collection('users').doc(user.uid).collection('trips').doc(tripId).get();
         if (doc.exists) {
           trip = doc.data();
+          normalizeSteps();
           $('tripName').textContent = trip.title || '';
         }
       } catch (e) {}
@@ -2755,7 +2772,6 @@ h1{margin:0 0 4px;font-size:1.2rem;text-align:center}
 
 <footer id="footer-legal"></footer>
 <script src="/js/ort-footer.js"></script>
-
 
 <!-- ort-page-tracking-v1 -->
 <script>

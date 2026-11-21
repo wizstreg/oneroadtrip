@@ -44,6 +44,7 @@ function ortDateLocale(){
 <title>OneRoadTrip – Constructeur d'Itinéraire</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23113f7a'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='28' fill='white'%3EOR%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
 <link rel="dns-prefetch" href="//images.pexels.com">
@@ -959,6 +960,7 @@ header {
   padding:13px 30px;font-weight:700;font-size:15px;cursor:pointer;width:100%;
 }
 .ort-notice-box button:hover{background:#0d3461;}
+.ort-start-select{display:block;border-radius:999px;width:100%;margin:0 0 16px;padding:12px 14px;font-size:15px;border:2px solid #113f7a;color:#113f7a;background:#fff;}
 .validate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .reset-btn {
@@ -2806,8 +2808,8 @@ body.fullscreen-mode .place-preview {
         </label>
         <label class="dest-opt" data-dest="carnet">
           <input type="radio" name="dest" value="carnet">
-          <span class="dest-opt-title" id="destCarnetTitle">Carnet de voyage</span>
-          <span class="dest-opt-sub" id="destCarnetSub">Votre itinéraire en format premium et interactif.</span>
+          <span class="dest-opt-title" id="destCarnetTitle">Carnet de voyage · Template 30</span>
+          <span class="dest-opt-sub" id="destCarnetSub">Votre itinéraire avec carte et outils de modification.</span>
         </label>
       </div>
     </div>
@@ -2819,8 +2821,11 @@ body.fullscreen-mode .place-preview {
   </div>
 </div>
 
+<script src="js/ort-i18n-socle.js"></script>
 <script src="js/ort-i18n-builder.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 <script>
 // ===============================
@@ -2919,11 +2924,14 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('zoomHint').style.display = 'none';
   
   loadPhotosJSON(); // Charger les photos
-  loadAllPlaces();
   // Reprise d'un voyage enregistré (bouton "Reprendre dans le constructeur" du tableau de bord).
   // Si aucun tripId n'est passé, on retombe sur le brouillon local habituel.
-  if (!resumeSavedTrip()) restoreDraftItinerary();
-  setTimeout(showBuilderNotice, 900);
+  const _repris = resumeSavedTrip();
+  if (!_repris) restoreDraftItinerary();
+  // Un seul écran d'accueil : le choix du pays (avec le texte d'intro dedans).
+  // En reprise de voyage, pas de choix de pays : on garde juste le rappel de sauvegarde.
+  loadAllPlaces();
+  if (_repris) setTimeout(showBuilderNotice, 900);
   updateItineraryList(); // Afficher le bouton d'ajout dès le départ
   // Sur mobile : légende repliée par défaut
   if (window.matchMedia('(max-width: 768px)').matches) {
@@ -2939,7 +2947,10 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===============================
 async function loadPhotosJSON() {
   try {
+    // Version legere d'abord (6 Mo au lieu de 31, gardee hors ligne), fabriquee
+    // a la mise en ligne par build-photos-light.js ; la complete en secours.
     const paths = [
+      './data/photos-json/photos_lieux.light.json',
       './data/photos-json/photos_lieux.json',
       'data/photos-json/photos_lieux.json'
     ];
@@ -3045,6 +3056,31 @@ function applyTranslations() {
 // ===============================
 // CARTE LEAFLET
 // ===============================
+function ortAddBaseMap(m){
+  var glLayer;
+  try{
+    if(typeof L.maplibreGL==='function'){
+      glLayer=L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',attribution:'\u00a9 OSM \u00a9 OpenFreeMap'});
+      var onRemove=glLayer.onRemove;
+      glLayer.onRemove=function(map){
+        if(this.getMaplibreMap())return onRemove.call(this,map);
+        var container=this.getContainer();
+        if(container&&container.parentNode)container.parentNode.removeChild(container);
+      };
+      glLayer.addTo(m);
+      return;
+    }
+  }catch(error){
+    // removeLayer declenche aussi le retrait des ecouteurs zoom/move/resize.
+    if(glLayer&&m.hasLayer(glLayer))m.removeLayer(glLayer);
+    console.warn('[MAP] WebGL indisponible : fond OpenStreetMap utilise.',error);
+  }
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom:19
+  }).addTo(m);
+}
+
 function initMap() {
   // Vérifier que Leaflet est chargé
   if (typeof L === 'undefined') {
@@ -3054,20 +3090,16 @@ function initMap() {
   }
 
   map = L.map('map', {
-    center: [46, 2],      // Centré sur la France par défaut
-    zoom: 7,              // Zoom plus proche pour voir les points directement
+    center: [30, 0],      // Vue monde : on recadre sur le pays choisi à l'accueil
+    zoom: 3,
     minZoom: 2,
     maxZoom: 18,
     worldCopyJump: true,
     preferCanvas: true    // Utiliser Canvas au lieu de SVG (plus rapide)
   });
 
-  // Utiliser CartoDB Positron pour avoir les noms en anglais/latin
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap contributors, © CARTO',
-    maxZoom: 19,
-    subdomains: 'abcd'
-  }).addTo(map);
+  // Fond vectoriel si WebGL est disponible, sinon tuiles OpenStreetMap.
+  ortAddBaseMap(map);
 
   // Le décalage des tracés qui se chevauchent est calculé en pixels :
   // on le recalcule après chaque zoom pour garder un écart constant à l'écran.
@@ -3272,15 +3304,42 @@ async function loadAllPlaces() {
       return [];
     };
 
-    // 1) On télécharge d'abord le PAYS VISIBLE à l'ouverture (France par défaut).
-    //    Seul, il a toute la bande passante : la zone affichée se remplit vite.
-    //    Pour changer le pays prioritaire : modifier 'FR' ci-dessous, ou ouvrir
-    //    la page avec ?country=XX dans l'URL.
+    // 1) Pays de départ : ?country=XX dans l'URL, sinon on demande à l'utilisateur
+    //    (écran d'accueil), avec en mémoire son dernier choix.
     const _params = new URLSearchParams(location.search);
-    const PRIORITY_CC = (_params.get('country') || _params.get('cc') || 'FR').toUpperCase();
     const ccOf = (o) => String(o.cc || o.code || o).toUpperCase();
+    let PRIORITY_CC = (_params.get('country') || _params.get('cc') || '').toUpperCase();
+    if (!PRIORITY_CC && !_params.get('tripId')) {
+      PRIORITY_CC = await askStartCountry(countryList);
+    }
+    if (!PRIORITY_CC) {
+      try { PRIORITY_CC = (localStorage.getItem('ort_builder_country') || '').toUpperCase(); } catch (e) {}
+    }
+    if (!PRIORITY_CC) PRIORITY_CC = 'FR';
+    try { localStorage.setItem('ort_builder_country', PRIORITY_CC); } catch (e) {}
+
     const focal = countryList.find(o => ccOf(o) === PRIORITY_CC);
-    const rest = countryList.filter(o => o !== focal);
+
+    // 2) Le reste est trié du plus proche au plus loin du pays de départ.
+    //    Position d'un pays : celle de l'index si elle existe, sinon la table
+    //    COUNTRY_CENTERS (centres approximatifs, uniquement pour ordonner les téléchargements).
+    const centerOf = (o) => {
+      const cc = ccOf(o);
+      if (o && typeof o === 'object') {
+        if (o.lat != null && o.lon != null) return [+o.lat, +o.lon];
+        if (o.center && o.center.length === 2) return [+o.center[0], +o.center[1]];
+      }
+      return COUNTRY_CENTERS[cc] || null;
+    };
+    const origin = focal ? centerOf(focal) : null;
+    const dist = (o) => {
+      const c = centerOf(o);
+      if (!c || !origin) return 1e9; // position inconnue : en fin de file
+      const dLat = c[0] - origin[0];
+      let dLon = Math.abs(c[1] - origin[1]); if (dLon > 180) dLon = 360 - dLon;
+      return dLat * dLat + dLon * dLon;
+    };
+    loadQueue = countryList.filter(o => o !== focal).sort((a, b) => dist(a) - dist(b));
 
     const handleCountry = (places) => {
       if (places && places.length) {
@@ -3299,24 +3358,47 @@ async function loadAllPlaces() {
       }
     };
 
-    // Pays visible en premier, on l'attend avant de lancer le reste.
+    // Pays de départ seul en premier : il a toute la bande passante.
     if (focal) {
-      try { handleCountry(await loadCountry(focal)); }
+      try {
+        handleCountry(await loadCountry(focal));
+        if (map && countryBounds[PRIORITY_CC]) {
+          map.fitBounds(countryBounds[PRIORITY_CC], { padding: [50, 50] });
+          const sel = document.getElementById('countrySelect');
+          if (sel) { sel.value = PRIORITY_CC; const fs = document.getElementById('fsCountrySelect'); if (fs) fs.value = PRIORITY_CC; }
+        }
+      }
       catch (e) { console.warn('Pays prioritaire en échec:', e); }
       finally { onCountrySettled(); }
     }
 
-    // 2) Puis tout le reste du monde en parallèle, ajouté au fil de l'eau.
-    rest.forEach((countryObj) => {
-      loadCountry(countryObj)
-        .then(handleCountry)
-        .catch((e) => console.warn('Pays en échec:', e))
-        .finally(onCountrySettled);
-    });
+    // 3) Puis les autres, 4 à la fois, dans l'ordre de la file (les voisins d'abord).
+    //    promoteCountry(cc) peut faire passer un pays en tête à tout moment.
+    const worker = async () => {
+      while (loadQueue.length) {
+        const countryObj = loadQueue.shift();
+        const cc = ccOf(countryObj);
+        loadingNow.add(cc);
+        try { handleCountry(await loadCountry(countryObj)); }
+        catch (e) { console.warn('Pays en échec:', e); }
+        finally {
+          loadingNow.delete(cc);
+          onCountrySettled();
+          const cb = pendingFocus[cc]; if (cb) { delete pendingFocus[cc]; cb(); }
+        }
+      }
+    };
+    for (let i = 0; i < 4; i++) worker();
 
   } catch (error) {
     console.error('Erreur chargement:', error);
   }
+}
+
+function sortedCountriesForLanguage(countryList) {
+  const collator = new Intl.Collator(currentLang, { sensitivity: 'base' });
+  const name = o => String(o.names?.[currentLang] || o.name || o.cc || o.code || o);
+  return [...countryList].sort((a, b) => collator.compare(name(a), name(b)));
 }
 
 function populateCountrySelect(countryList) {
@@ -3325,7 +3407,7 @@ function populateCountrySelect(countryList) {
   
   select.innerHTML = `<option value="">${TXT.allCountries}</option>`;
   
-  countryList.forEach(countryObj => {
+  sortedCountriesForLanguage(countryList).forEach(countryObj => {
     const cc = String(countryObj.cc || countryObj.code || countryObj).toUpperCase();
     const name = countryObj.names?.[currentLang] || countryObj.name || cc;
     const option = document.createElement('option');
@@ -3334,15 +3416,97 @@ function populateCountrySelect(countryList) {
     select.appendChild(option);
   });
 
+  const fsSelect = document.getElementById('fsCountrySelect');
+  if (fsSelect) fsSelect.innerHTML = select.innerHTML;
+
   select.addEventListener('change', (e) => {
     const cc = e.target.value;
-    if (cc && countryBounds[cc]) {
-      map.fitBounds(countryBounds[cc], { padding: [50, 50] });
-    } else if (!cc) {
-      map.setView([30, 0], 3);
-    }
+    if (!cc) { map.setView([30, 0], 3); return; }
+    focusCountry(cc);
   });
 }
+
+// File de téléchargement des pays (remplie par loadAllPlaces)
+let loadQueue = [];
+const loadingNow = new Set();
+const pendingFocus = {};
+
+// Centre la carte sur un pays. S'il n'est pas encore téléchargé, il passe en tête de file.
+function focusCountry(cc) {
+  cc = String(cc || '').toUpperCase();
+  if (!cc) return;
+  try { localStorage.setItem('ort_builder_country', cc); } catch (e) {}
+  if (map && countryBounds[cc]) {
+    map.fitBounds(countryBounds[cc], { padding: [50, 50] });
+    return;
+  }
+  const ccOf = (o) => String(o.cc || o.code || o).toUpperCase();
+  const idx = loadQueue.findIndex(o => ccOf(o) === cc);
+  if (idx > 0) loadQueue.unshift(loadQueue.splice(idx, 1)[0]);
+  if (idx >= 0 || loadingNow.has(cc)) {
+    pendingFocus[cc] = () => { if (countryBounds[cc]) map.fitBounds(countryBounds[cc], { padding: [50, 50] }); };
+    if (COUNTRY_CENTERS[cc]) map.setView(COUNTRY_CENTERS[cc], 5);
+  }
+}
+
+// Écran d'accueil : choix du pays de départ (une seule fenêtre, avec le texte d'intro).
+// Renvoie le code pays choisi.
+function askStartCountry(countryList) {
+  return new Promise((resolve) => {
+    const M = saveMsg();
+    let last = 'FR';
+    try { last = (localStorage.getItem('ort_builder_country') || 'FR').toUpperCase(); } catch (e) {}
+    const box = document.createElement('div');
+    box.className = 'ort-notice';
+    const inner = document.createElement('div');
+    inner.className = 'ort-notice-box';
+    const ico = document.createElement('div');
+    ico.className = 'ort-notice-ico';
+    ico.textContent = '🧭';
+    const p = document.createElement('p');
+    p.textContent = M.intro;
+    const label = document.createElement('p');
+    label.textContent = M.pickCountry || 'Par quel pays voulez-vous commencer ?';
+    const sel = document.createElement('select');
+    sel.className = 'ort-start-select';
+    sortedCountriesForLanguage(countryList).forEach(o => {
+      const cc = String(o.cc || o.code || o).toUpperCase();
+      const name = o.names?.[currentLang] || o.name || cc;
+      const opt = document.createElement('option');
+      opt.value = cc; opt.textContent = `${getFlagEmoji(cc)} ${name}`;
+      if (cc === last) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    const b = document.createElement('button');
+    b.textContent = M.gotIt;
+    const done = () => { box.remove(); try { sessionStorage.setItem('ORT_BUILDER_NOTICE','1'); } catch(e){} resolve(sel.value); };
+    b.onclick = done;
+    sel.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(); });
+    inner.appendChild(ico); inner.appendChild(p); inner.appendChild(label); inner.appendChild(sel); inner.appendChild(b);
+    box.appendChild(inner);
+    document.body.appendChild(box);
+    setTimeout(() => sel.focus(), 50);
+  });
+}
+
+// Centres approximatifs des pays (degrés entiers). Sert uniquement à décider
+// dans quel ordre télécharger les pays autour du pays de départ.
+const COUNTRY_CENTERS = {
+  AD:[43,2],AE:[24,54],AF:[33,65],AL:[41,20],AM:[40,45],AO:[-12,18],AR:[-34,-64],AT:[47,14],AU:[-25,134],AZ:[40,48],
+  BA:[44,18],BD:[24,90],BE:[51,4],BF:[12,-2],BG:[43,25],BH:[26,51],BI:[-3,30],BJ:[9,2],BN:[4,115],BO:[-17,-65],BR:[-10,-55],BS:[24,-76],BT:[27,90],BW:[-22,24],BY:[53,28],BZ:[17,-89],
+  CA:[56,-106],CD:[-4,22],CF:[7,21],CG:[-1,15],CH:[47,8],CI:[8,-5],CL:[-30,-71],CM:[6,12],CN:[35,105],CO:[4,-72],CR:[10,-84],CU:[22,-80],CV:[16,-24],CY:[35,33],CZ:[50,15],
+  DE:[51,10],DJ:[12,43],DK:[56,10],DO:[19,-70],DZ:[28,3],EC:[-2,-78],EE:[59,26],EG:[27,30],ER:[15,39],ES:[40,-4],ET:[9,40],
+  FI:[64,26],FJ:[-18,178],FR:[46,2],GA:[-1,12],GB:[54,-2],GE:[42,44],GH:[8,-2],GL:[72,-40],GM:[13,-16],GN:[11,-10],GQ:[2,10],GR:[39,22],GT:[15,-90],GY:[5,-59],
+  HN:[15,-87],HR:[45,16],HT:[19,-72],HU:[47,20],ID:[-2,118],IE:[53,-8],IL:[31,35],IN:[21,78],IQ:[33,44],IR:[32,53],IS:[65,-18],IT:[42,12],
+  JM:[18,-77],JO:[31,36],JP:[36,138],KE:[1,38],KG:[41,75],KH:[13,105],KP:[40,127],KR:[36,128],KW:[29,48],KZ:[48,68],
+  LA:[18,105],LB:[34,36],LI:[47,10],LK:[7,81],LR:[6,-9],LS:[-29,28],LT:[55,24],LU:[50,6],LV:[57,25],LY:[27,17],
+  MA:[32,-6],MC:[44,7],MD:[47,29],ME:[42,19],MG:[-19,47],MK:[42,22],ML:[17,-4],MM:[20,96],MN:[47,104],MR:[20,-10],MT:[36,14],MU:[-20,58],MV:[3,73],MW:[-13,34],MX:[23,-102],MY:[4,109],MZ:[-18,35],
+  NA:[-22,17],NE:[17,8],NG:[10,8],NI:[13,-85],NL:[52,5],NO:[62,10],NP:[28,84],NZ:[-41,174],OM:[21,57],
+  PA:[9,-80],PE:[-10,-76],PG:[-6,147],PH:[13,122],PK:[30,69],PL:[52,20],PT:[39,-8],PY:[-23,-58],QA:[25,51],RO:[46,25],RS:[44,21],RU:[60,100],RW:[-2,30],
+  SA:[24,45],SD:[16,30],SE:[62,15],SG:[1,104],SI:[46,15],SK:[49,20],SL:[8,-12],SN:[14,-14],SO:[6,46],SR:[4,-56],SV:[14,-89],SY:[35,38],SZ:[-26,31],
+  TD:[15,19],TG:[8,1],TH:[15,101],TJ:[39,71],TL:[-9,126],TM:[39,59],TN:[34,9],TR:[39,35],TT:[11,-61],TW:[24,121],TZ:[-6,35],
+  UA:[49,32],UG:[1,32],US:[38,-97],UY:[-33,-56],UZ:[41,64],VE:[8,-66],VN:[16,108],YE:[15,48],ZA:[-29,25],ZM:[-13,28],ZW:[-20,30]
+};
 
 function getFlagEmoji(cc) {
   const codePoints = cc.toUpperCase().split('').map(c => 127397 + c.charCodeAt(0));
@@ -3442,8 +3606,8 @@ function createMarkerElement(place) {
       isPreviewPinned = true;
       showPlacePreview(place);
     } else {
-      // Sur desktop : clic toggle la sélection et ouvre la preview
-      togglePlaceSelection(place);
+      // Sur ordinateur comme sur tactile : le clic ouvre la fiche.
+      // L'ajout passe toujours par le bouton, jamais sans avoir vu le lieu.
       isPreviewPinned = true;
       showPlacePreview(place);
     }
@@ -4468,14 +4632,8 @@ function resetStepSearch() {
   if (ok) ok.addEventListener('click', hide);
   if (close) close.addEventListener('click', hide);
   modal.addEventListener('click', (e) => { if (e.target === modal) hide(); });
-  // Ouverture auto une fois par session, UNIQUEMENT sur mobile
-  try {
-    const isMobile = window.matchMedia('(max-width: 768px)').matches;
-    if (isMobile && !sessionStorage.getItem('ort_howto_seen')) {
-      open();
-      sessionStorage.setItem('ort_howto_seen', '1');
-    }
-  } catch (_) {}
+  // Plus d'ouverture automatique : l'accueil est déjà pris par le choix du pays.
+  // Le bouton ? reste disponible.
 })();
 
 function openStepSearch() {
@@ -4584,7 +4742,8 @@ const SAVE_MSG = {
     "fail": "La sauvegarde a échoué. Réessayez.",
     "intro": "Vous allez composer un voyage sur mesure. Connectez-vous et sauvegardez-le pour le retrouver ensuite et le modifier.",
     "resume": "Vos modifications ne seront conservées que si vous êtes connecté et que vous sauvegardez le voyage.",
-    "gotIt": "J'ai compris"
+    "gotIt": "J'ai compris",
+    "pickCountry": "Par quel pays voulez-vous commencer ?"
   },
   "en": {
     "empty": "Add at least one stop before saving.",
@@ -4595,7 +4754,8 @@ const SAVE_MSG = {
     "fail": "Saving failed. Please try again.",
     "intro": "You are about to build a custom trip. Sign in and save it to find it again later and edit it.",
     "resume": "Your changes will only be kept if you are signed in and you save the trip.",
-    "gotIt": "Got it"
+    "gotIt": "Got it",
+    "pickCountry": "Which country do you want to start with?"
   },
   "es": {
     "empty": "Añada al menos una etapa antes de guardar.",
@@ -5706,63 +5866,63 @@ function initConfigModal() {
   });
 }
 
-// Libellés du choix de destination (6 langues), séparés de T pour ne pas toucher les blocs existants
+// Libellés du choix de destination (8 langues), séparés de T pour ne pas toucher les blocs existants
 const DEST_T = {
   "fr": {
     "label": "Où envoyer votre itinéraire ?",
     "detailTitle": "Éditeur avancé",
     "detailSub": "Tout modifier, ajouter hôtels et réservations.",
-    "carnetTitle": "Carnet de voyage",
-    "carnetSub": "Votre itinéraire en format premium et interactif."
+    "carnetTitle": "Carnet de voyage · Template 30",
+    "carnetSub": "Votre itinéraire avec carte et outils de modification."
   },
   "en": {
     "label": "Where do you want to send your itinerary?",
     "detailTitle": "Advanced editor",
     "detailSub": "Edit everything, add hotels and bookings.",
-    "carnetTitle": "Travel notebook",
-    "carnetSub": "Your itinerary in a premium, interactive format."
+    "carnetTitle": "Travel notebook · Template 30",
+    "carnetSub": "Your itinerary with a map and editing tools."
   },
   "es": {
     "label": "¿Dónde enviar tu itinerario?",
     "detailTitle": "Editor avanzado",
     "detailSub": "Edítalo todo, añade hoteles y reservas.",
-    "carnetTitle": "Cuaderno de viaje",
-    "carnetSub": "Tu itinerario en formato premium e interactivo."
+    "carnetTitle": "Cuaderno de viaje · Template 30",
+    "carnetSub": "Tu itinerario con mapa y herramientas de edición."
   },
   "pt": {
     "label": "Para onde enviar o seu itinerário?",
     "detailTitle": "Editor avançado",
     "detailSub": "Edite tudo, adicione hotéis e reservas.",
-    "carnetTitle": "Diário de viagem",
-    "carnetSub": "O seu itinerário em formato premium e interativo."
+    "carnetTitle": "Diário de viagem · Template 30",
+    "carnetSub": "O seu itinerário com mapa e ferramentas de edição."
   },
   "it": {
     "label": "Dove inviare il tuo itinerario?",
     "detailTitle": "Editor avanzato",
     "detailSub": "Modifica tutto, aggiungi hotel e prenotazioni.",
-    "carnetTitle": "Diario di viaggio",
-    "carnetSub": "Il tuo itinerario in formato premium e interattivo."
+    "carnetTitle": "Diario di viaggio · Template 30",
+    "carnetSub": "Il tuo itinerario con mappa e strumenti di modifica."
   },
   "ar": {
     "label": "أين تريد إرسال مسارك؟",
     "detailTitle": "المحرر المتقدم",
     "detailSub": "عدّل كل شيء، أضف الفنادق والحجوزات.",
-    "carnetTitle": "دفتر الرحلة",
-    "carnetSub": "مسارك بتنسيق مميّز وتفاعلي."
+    "carnetTitle": "دفتر الرحلة · Template 30",
+    "carnetSub": "مسارك مع خريطة وأدوات التعديل."
   },
   "nl": {
     "label": "Waar wil je je route naartoe sturen?",
     "detailTitle": "Geavanceerde editor",
     "detailSub": "Alles bewerken, hotels en boekingen toevoegen.",
-    "carnetTitle": "Reisdagboek",
-    "carnetSub": "Je route in een premium, interactieve opmaak."
+    "carnetTitle": "Reisdagboek · Template 30",
+    "carnetSub": "Je route met kaart en bewerkingsmogelijkheden."
   },
   "de": {
     "label": "Wohin möchtest du deine Route senden?",
     "detailTitle": "Erweiterter Editor",
     "detailSub": "Alles bearbeiten, Hotels und Buchungen hinzufügen.",
-    "carnetTitle": "Reisetagebuch",
-    "carnetSub": "Deine Route in einem hochwertigen, interaktiven Format."
+    "carnetTitle": "Reisetagebuch · Template 30",
+    "carnetSub": "Deine Route mit Karte und Bearbeitungswerkzeugen."
   }
 };
 
@@ -5926,6 +6086,7 @@ function submitItinerary() {
 // ATTENTION : saveTrip régénère l'id quand il commence par "custom::",
 // donc on redirige avec l'id RETOURNÉ, jamais l'id d'origine.
 async function submitToCarnet(ctx) {
+  if (submitToCarnet.pending) return;
   const LSLUG = ORT_I18N_BUILDER.LSLUG;
   const langSlug = LSLUG[currentLang] || 'itineraries';
 
@@ -5937,6 +6098,11 @@ async function submitToCarnet(ctx) {
     lon: place.lon,
     lng: place.lon,
     cc: place.cc || ctx.cc,
+    coords: { lat: place.lat, lon: place.lon },
+    visits: place.visits || [],
+    activities: place.activities || [],
+    rating: place.rating || 0,
+    night: { place_id: place.place_id, coords: [place.lat, place.lon], map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [] },
     map_keywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
     _mapKeywords: Array.isArray(place.map_keywords) ? place.map_keywords : [],
     suggested_days: (typeof place._dur === 'number' ? place._dur : (place.suggested_days || 1))
@@ -5950,6 +6116,10 @@ async function submitToCarnet(ctx) {
     cc: ctx.cc,
     country: ctx.cc,
     lang: currentLang,
+    language: currentLang,
+    template: 30,
+    source: 'carte_builder',
+    legLoops: computeLegLoops(),
     steps: steps,
     departDate: ctx.config.departDate,
     days: ctx.config.days
@@ -5961,7 +6131,15 @@ async function submitToCarnet(ctx) {
       alert('Erreur, réessayez.');
       return;
     }
-    const res = await window.ORT_STATE.saveTrip(trip);
+    submitToCarnet.pending = true;
+    const confirmBtn = document.getElementById('configConfirm');
+    if (confirmBtn) confirmBtn.disabled = true;
+    // Garder les réservations et notes d'un voyage repris ; remplacer ses étapes.
+    let existing = null;
+    if (resumingTripId && typeof window.ORT_STATE.getTrip === 'function') {
+      existing = await window.ORT_STATE.getTrip(resumingTripId);
+    }
+    const res = await window.ORT_STATE.saveTrip(Object.assign({}, existing || {}, trip));
     if (!res || !res.success || !res.tripId) {
       console.error('❌ Sauvegarde carnet échouée:', res);
       alert('Erreur, réessayez.');
@@ -5969,13 +6147,19 @@ async function submitToCarnet(ctx) {
     }
     console.log('✅ Carnet sauvegardé, tripId final:', res.tripId, '(', res.storage, ')');
 
+    resumingTripId = res.tripId;
     if (window.ORT_TRIPID) window.ORT_TRIPID.store(res.tripId);
+    else localStorage.setItem('ORT_CURRENT_TRIP_ID', res.tripId);
 
     const params = new URLSearchParams({ tripId: res.tripId, lang: currentLang });
     window.location.href = `/${langSlug}/custom.html?${params.toString()}`;
   } catch (e) {
     console.error('❌ Erreur envoi carnet:', e);
     alert('Erreur, réessayez.');
+  } finally {
+    submitToCarnet.pending = false;
+    const confirmBtn = document.getElementById('configConfirm');
+    if (confirmBtn) confirmBtn.disabled = false;
   }
 }
 

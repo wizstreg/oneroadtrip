@@ -118,6 +118,27 @@
   .va-label.resto { color: #2e7d32; }
   .va-text { color: #333; }
   .va-day { font-size: 10px; color: #999; margin-top: 2px; }
+  /* Onglet Photo d'accroche */
+  .he-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .he-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .he-card.ok { border-color: #a5d6a7; background: #f6fbf6; }
+  .he-card.gen { border-color: #ef9a9a; }
+  .he-img { position: relative; aspect-ratio: 16/10; background: #eee; cursor: pointer; }
+  .he-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .he-img:hover { filter: brightness(1.05); }
+  .he-tag { position: absolute; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px; color: #fff; }
+  .he-strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: #fff; }
+  .he-strip img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; cursor: pointer; opacity: .85; }
+  .he-strip img:hover { opacity: 1; }
+  .he-body { padding: 8px 10px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .he-name { font-size: 14px; font-weight: 600; color: #222; }
+  .he-name .cc { font-size: 11px; font-weight: 500; color: #888; margin-left: 6px; }
+  .he-itins { font-size: 11px; color: #666; line-height: 1.35; }
+  .he-warn { font-size: 11px; color: #e65100; line-height: 1.35; }
+  .he-warn a { color: #1565c0; cursor: pointer; text-decoration: underline; }
+  .he-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 4px; }
+  .he-actions .btn { flex: 1; }
+  .he-more { text-align: center; margin: 16px 0; }
 </style>
 </head>
 <body>
@@ -126,10 +147,12 @@
   <div class="tabs">
     <button class="tab active" data-tab="themes">Thèmes</button>
     <button class="tab" data-tab="r2photos">📸 R2 Photos</button>
+    <button class="tab" data-tab="hero">🥇 Photo d'accroche</button>
     <button class="tab" data-tab="newplaces">🆕 Nouveaux lieux</button>
     <button class="tab" data-tab="rotten">🗑️ Itins pourris</button>
     <button class="tab" data-tab="viewer">👁️ Visionneuse R2</button>
     <button class="tab" data-tab="gplaces">🌍 Google Places</button>
+    <button class="tab" data-tab="blogup">📤 Upload blog</button>
     <!-- Anciens onglets masqués, gardés pour ne pas casser le JS -->
     <button class="tab" data-tab="photos" style="display:none">Photos / Itin</button>
     <button class="tab" data-tab="review" style="display:none">Review Photos</button>
@@ -142,7 +165,7 @@
 <div id="tab-themes" class="container active">
   <div class="sidebar">
     <div class="sidebar-header">
-      <div style="display:flex;gap:6px"><select id="thCC" style="flex:1"><option value="">Chargement...</option></select><select id="thLang" style="width:60px"><option value="fr">FR</option><option value="en">EN</option><option value="es">ES</option><option value="it">IT</option><option value="pt">PT</option><option value="ar">AR</option></select><button class="btn btn-blue btn-sm" onclick="loadAllTh()">Tous</button></div>
+      <div style="display:flex;gap:6px"><select id="thCC" style="flex:1"><option value="">Chargement...</option></select><select id="thLang" style="width:60px"><option value="fr">FR</option></select><button class="btn btn-blue btn-sm" onclick="loadAllTh()">Tous</button></div>
       <input type="text" id="thSearch" placeholder="Rechercher...">
       <select id="thFilter" style="margin-top:4px"><option value="all">Tous</option><option value="empty">Sans thèmes</option><option value="noncanon">Non canoniques</option><option value="ok">OK</option></select>
     </div>
@@ -213,6 +236,49 @@
   <div class="editor" id="r2Ed" style="position:relative"><div class="editor-empty">Choisissez un pays puis un lieu</div></div>
 </div>
 
+<div id="tab-hero" class="container">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-blue btn-sm" style="flex:1" onclick="heLoad(true)">🔄 Charger / recharger</button>
+      </div>
+      <select id="heCC" onchange="heRenderGrid()"><option value="">Tous les pays</option></select>
+      <input type="text" id="heSearch" placeholder="Rechercher un lieu ou un itinéraire..." oninput="heRenderGrid()">
+      <select id="heFilter" onchange="heRenderGrid()">
+        <option value="todo">À revoir</option>
+        <option value="ok">Validées ✓</option>
+        <option value="generic">Image générique (aucune photo)</option>
+        <option value="shifted">1re étape sans photo</option>
+        <option value="lieux">Ancienne image (hors R2)</option>
+        <option value="changed">Changées pendant la session</option>
+        <option value="all">Toutes</option>
+      </select>
+      <select id="heSort" onchange="heRenderGrid()">
+        <option value="impact">Tri : plus d'itinéraires d'abord</option>
+        <option value="cc">Tri : par pays</option>
+        <option value="name">Tri : par nom de lieu</option>
+      </select>
+    </div>
+    <div class="sidebar-stats" id="heStats"><span>Pas encore chargé</span></div>
+    <div class="sidebar-list" style="font-size:12px;color:#555;line-height:1.55;padding:12px">
+      <p style="margin-bottom:8px"><b>Ce que montre cet onglet</b><br>Pour chaque itinéraire, la photo que le générateur met en tête de page, et que Google peut afficher à côté du résultat.</p>
+      <p style="margin-bottom:8px"><b>La règle</b><br>On prend la 1re étape qui a une photo. C'est la 1re photo du lieu dans photos_lieux.json, sinon l'ancienne image du fichier lieux du pays.</p>
+      <p style="margin-bottom:8px"><b>Pour changer une photo</b><br>Clique sur la vignette. Dans l'éditeur, mets la bonne photo en ★ principale puis Valider, ou supprime la mauvaise.</p>
+      <p style="margin-bottom:8px"><b>Attention</b><br>Une photo appartient au lieu : elle change pour tous les itinéraires qui passent par ce lieu.</p>
+      <p><b>✓ OK</b> marque une vignette comme vue. C'est mémorisé dans ce navigateur.</p>
+    </div>
+  </div>
+  <div id="heMain" style="flex:1;display:flex;flex-direction:column;min-width:0;background:#fafafa">
+    <div id="heGridWrap" style="flex:1;overflow-y:auto;padding:16px">
+      <div id="heGrid"><div class="editor-empty">Clique sur « Charger » pour afficher les photos d'accroche</div></div>
+    </div>
+    <div id="heEdWrap" style="flex:1;display:none;flex-direction:column;min-height:0">
+      <div id="heEdBar" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fff;border-bottom:1px solid #ddd;flex-wrap:wrap"></div>
+      <div id="heEdHost" style="flex:1;display:flex;min-height:0"></div>
+    </div>
+  </div>
+</div>
+
 <div id="tab-newplaces" class="container">
   <div class="sidebar">
     <div class="sidebar-header">
@@ -236,10 +302,7 @@
     <div class="sidebar-header">
       <div style="display:flex;gap:6px">
         <select id="roCC" style="flex:1"><option value="">-- Pays (ou Tous) --</option></select>
-        <select id="roLang" style="width:70px">
-          <option value="fr">FR</option><option value="en">EN</option><option value="es">ES</option>
-          <option value="it">IT</option><option value="pt">PT</option><option value="ar">AR</option>
-        </select>
+        <select id="roLang" style="width:70px"><option value="fr">FR</option></select>
         <button class="btn btn-blue btn-sm" onclick="roScan()">Scanner</button>
       </div>
       <div style="display:flex;gap:6px;margin-top:6px;align-items:center;font-size:11px;color:#666">
@@ -333,6 +396,39 @@
   </div>
 </div>
 
+<div id="tab-blogup" class="container" style="flex-direction:column;padding:24px;overflow:auto">
+  <div style="max-width:680px;margin:0 auto;width:100%">
+    <h2 style="margin:0 0 4px">📤 Upload photo pour articles blog</h2>
+    <p style="color:#777;font-size:13px;margin:0 0 20px">Envoie une photo de ton PC sur R2 avec le nom et le dossier de ton choix. Aucun lien avec les lieux. Tu récupères l'URL publique à coller dans tes articles.</p>
+
+    <div style="background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="display:block;font-size:12px;color:#555;margin-bottom:4px">Fichier(s) — tu peux en sélectionner plusieurs</label>
+        <input type="file" id="blogFile" accept="image/*" multiple style="width:100%">
+      </div>
+      <div style="text-align:center;color:#aaa;font-size:12px">— ou —</div>
+      <div>
+        <label style="display:block;font-size:12px;color:#555;margin-bottom:4px">Lien d'une image (URL)</label>
+        <input type="text" id="blogUrlIn" placeholder="https://..." style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:#555;margin-bottom:4px">Nom du fichier (sans extension) — ignoré si tu envoies plusieurs fichiers, chacun garde son nom</label>
+        <input type="text" id="blogName" placeholder="ex: coucher-soleil-monopoli" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+      </div>
+      <div>
+        <label style="display:block;font-size:12px;color:#555;margin-bottom:4px">Dossier R2 (existant ou nouveau)</label>
+        <input type="text" id="blogFolder" list="blogFolders" placeholder="ex: articles-blog" value="articles-blog" style="width:100%;padding:8px 10px;border:1px solid #ccc;border-radius:4px;font-size:13px">
+        <datalist id="blogFolders"><option value="articles-blog"><option value="blog"></datalist>
+      </div>
+      <div style="display:flex;gap:8px;align-self:flex-start">
+        <button class="btn btn-blue" onclick="blogUpload()">Envoyer sur R2</button>
+        <button class="btn btn-outline" onclick="blogReset()">🆕 Nouveau</button>
+      </div>
+      <div id="blogResult"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const API='http://127.0.0.1:'+(location.port||'8030'),PH='http://localhost:3000',DP='data/Roadtripsprefabriques/countries';
 const TH=["Montagne","Mer & Côtes","Ville & Histoire","Nature","Culture","Gastronomie & Vin","Aventure & Outdoor","Route & Exploration","Insolite & Hors sentiers battus","Faune & Vie sauvage","Spiritualité & Religion","Bien-être & Détente","Détente","Testé & approuvé ORT","Les plus beaux villages","Itinéraires de créateurs","Bestseller"];
@@ -343,6 +439,39 @@ function st(m,t='success'){const b=$('statusBar');b.textContent=m;b.className=t;
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.container').forEach(x=>x.classList.remove('active'));t.classList.add('active');$('tab-'+t.dataset.tab).classList.add('active');if(t.dataset.tab==='review')loadRv()});
 
 function loadRv(){fetch(PH+'/api/stats').then(r=>{if(r.ok)$('rvBox').innerHTML='<iframe src="'+PH+'"></iframe>';else $('rvOff').style.display='flex'}).catch(()=>{if(!$('rvBox').querySelector('iframe'))$('rvOff').style.display='flex'})}
+
+// ---- LANGUES DYNAMIQUES ----
+// Aucune liste figée : le serveur lit les fichiers présents sur le disque.
+let ALL_LANGS=['fr'];
+const LANG_CACHE={};
+async function fetchLangs(cc){
+  const key=(cc||'__all').toUpperCase();
+  if(LANG_CACHE[key])return LANG_CACHE[key];
+  try{
+    const r=await fetch(API+'/api/languages'+(cc?'?country='+encodeURIComponent(cc):''));
+    const j=await r.json();
+    const L=(j.languages&&j.languages.length)?j.languages:ALL_LANGS;
+    LANG_CACHE[key]=L;
+    if(!cc)ALL_LANGS=L;
+    return L;
+  }catch(e){return ALL_LANGS}
+}
+// Version immédiate (pour le rendu synchrone) : cache si dispo, sinon la liste globale
+function langsFor(cc){
+  const key=(cc||'__all').toUpperCase();
+  return LANG_CACHE[key]||ALL_LANGS;
+}
+function fillLangSelect(id,langs){
+  const s=$(id);if(!s)return;
+  const cur=s.value;
+  s.innerHTML=langs.map(l=>'<option value="'+l+'">'+l.toUpperCase()+'</option>').join('');
+  if(langs.includes(cur))s.value=cur;
+}
+async function initLangs(){
+  const L=await fetchLangs(null);
+  fillLangSelect('thLang',L);
+  fillLangSelect('roLang',L);
+}
 
 async function loadCC(){
   try{
@@ -407,9 +536,9 @@ async function thSv(id){
   const f=tI.find(({i})=>(i.itin_id||i.id)===id);if(!f)return;
   const themes=gT(f.i);
   const cc=f.cc;
-  const LANGS=['fr','en','es','it','pt','ar'];
+  const LANGS=await fetchLangs(cc);
   let ok=0,fail=0;
-  st('Sauvegarde 6 langues...','info');
+  st('Sauvegarde '+LANGS.length+' langues ('+LANGS.map(l=>l.toUpperCase()).join(',')+')...','info');
   for(const lang of LANGS){
     let done=false;
     // Dédupliquer les chemins à tester
@@ -506,7 +635,7 @@ async function r2LoadVA(cc,placeId){
   
   // Charger les itinéraires de tous les pays dans toutes les langues
   var allIts=[];
-  var langs=['fr','en','es','de','it','pt'];
+  var langs=await fetchLangs(null);
   var seen=new Set();
   for(var c of allCCs){
     if(r2VAcache[c]){allIts=allIts.concat(r2VAcache[c]);continue}
@@ -624,6 +753,37 @@ document.addEventListener('dblclick',e=>{if(e.target.tagName==='IMG'&&e.target.c
 let r2Places=[],r2Sel=null,r2Current=[],r2New=[],r2Selected=new Map(),r2Primary=null,r2Loading=false,r2Groups=[],r2Keywords=[],r2ShowAll=false;
 let r2Prefetch={};  // Cache: place_id → données de recherche pré-chargées
 let r2WikiOnlyDone=new Set();  // place_ids pour lesquels on a déjà fait la recherche élargie (non wiki-only)
+let r2KwStats={};  // mot-clé → bilan de recherche renvoyé par le serveur (found, new, broadened)
+
+// Transforme la liste kw_stats du serveur en table mot-clé → bilan
+function kwStatsMap(d){
+  const m={};
+  ((d&&d.kw_stats)||[]).forEach(function(s){ if(s&&s.kw) m[s.kw]=s; });
+  return m;
+}
+
+// Petit badge à côté d'un mot-clé : combien de photos il a donné
+// extra = texte en plus (ex: "2 dans ta sélection · 1 masquée")
+function kwBadge(s, extra){
+  if(!s) return '';
+  let txt, bg, col, tip;
+  if(s.found===0){
+    txt='0 photo'; bg='#ffebee'; col='#c62828';
+    tip='Aucune photo trouvée pour ce mot-clé';
+  }else if(s.new===0){
+    txt='déjà vues'; bg='#eceff1'; col='#546e7a';
+    tip=s.found+' photo(s) trouvée(s), toutes déjà présentes dans un autre groupe';
+  }else{
+    txt=s.new+' photo'+(s.new>1?'s':''); bg='#e8f5e9'; col='#2e7d32';
+    tip=s.new+' photo(s) nouvelle(s) sur '+s.found+' trouvée(s)';
+  }
+  if(s.broadened){
+    txt+=' · élargi';
+    tip+=' (rien de nouveau sur Wikimedia, recherche aussi sur Pexels, Pixabay, Bing)';
+  }
+  if(extra) txt+=' · '+extra;
+  return '<span title="'+tip.replace(/"/g,'&quot;')+'" style="background:'+bg+';color:'+col+';border-radius:3px;padding:1px 6px;font-size:10px;font-weight:600;white-space:nowrap">'+txt+'</span>';
+}
 
 // ============================================
 // PREFETCH R2 — pré-charger les 3 places suivantes en arrière-plan
@@ -655,23 +815,28 @@ async function r2PrefetchNext(currentPid){
 
     // Trouver l'index de la place actuelle dans la liste AFFICHÉE (avec filtres appliqués)
     // On applique les MEMES filtres que r2RenderList pour suivre ce que l'utilisateur voit
+    // Onglet Photo d'accroche actif : on suit l'ordre de sa grille (lieux deja traites compris), 3 lieux seulement.
+    const heMode = (typeof heActive!=='undefined' && heActive);
     const s=($('r2Search').value||'').toLowerCase();
     const f=$('r2Filter').value;
     let list = r2Places;
+    if(heMode) list = heR2Order();
+    else {
     if(s) list = list.filter(p=>(p.name+' '+p.place_id).toLowerCase().includes(s));
     if(f==='todo') list = list.filter(p=>!p.is_done || (p.photo_count>0 && !p.has_r2));
     if(f==='done') list = list.filter(p=>p.is_done);
     if(f==='no-photo') list = list.filter(p=>p.photo_count===0);
     if(f==='old-format') list = list.filter(p=>p.photo_count>0 && !p.has_r2);
+    }
     const idx = list.findIndex(p => p.place_id === currentPid);
     if(idx < 0) return;
 
     // Prendre les 3 suivantes (dans la liste, pas déjà traitées ni déjà prefetchées)
     const targets = [];
-    for(let i = idx + 1; i < list.length && targets.length < R2_PREFETCH_COUNT; i++){
+    for(let i = idx + 1; i < list.length && targets.length < (heMode ? 3 : R2_PREFETCH_COUNT); i++){
       const p = list[i];
       if(!p || !p.place_id) continue;
-      if(p.is_done) continue;                    // skip traités
+      if(p.is_done && !heMode) continue;         // skip traités (sauf onglet Photo d'accroche)
       if(r2Prefetch[p.place_id]) continue;       // déjà en cache
       if(r2PrefetchInflight.has(p.place_id)) continue; // déjà en cours
       targets.push(p.place_id);
@@ -702,7 +867,7 @@ async function r2PrefetchNext(currentPid){
       const genAtStart = myGen;
       return fetch(API+'/api/photos/search',{
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({place_id:pid, wiki_only:true})
+        body:JSON.stringify({place_id:pid, wiki_only:true, broaden_empty:true})
       }).then(function(resp){
         if(!resp.ok) throw new Error('HTTP '+resp.status);
         return resp.json();
@@ -860,6 +1025,7 @@ function r2DoUpload(job, attempt){
         pl.first_photo = d.r2_urls && d.r2_urls[0] || pl.first_photo;
       }
       st('✅ '+pid+' uploadé ('+(d.r2_urls||[]).length+' photos)', 'success');
+      if(typeof heOnUploaded==='function') heOnUploaded(pid, d.r2_urls||[]);  // onglet Photo d'accroche
       r2RenderList();
       // Si on est toujours sur cette place, mettre à jour l'éditeur aussi
       if(r2Sel && r2Sel.place_id === pid){
@@ -1001,7 +1167,7 @@ function r2Click(pid){
     // 2. Passer à la nouvelle place
     r2Sel=r2Places.find(p=>p.place_id===pid)||null;
     r2Selected.clear();r2Primary=null;
-    r2Groups=[];r2Keywords=[];
+    r2Groups=[];r2Keywords=[];r2KwStats={};
     r2OriginalSelection=null;
 
     if(r2Prefetch[pid]){
@@ -1010,6 +1176,7 @@ function r2Click(pid){
       r2New=d.new_candidates||[];
       r2Groups=d.groups||[];
       r2Keywords=d.map_keywords||[];
+      r2KwStats=kwStatsMap(d);
       r2ApplyPreselection(d.preselected||[]);
       r2SnapshotOriginal();  // Snapshot juste après pré-sélection
       delete r2Prefetch[pid];
@@ -1023,7 +1190,7 @@ function r2Click(pid){
       const requestedPid=pid;  // Capturer le pid au moment du clic
       fetch(API+'/api/photos/search',{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({place_id:pid, wiki_only:true})
+        body:JSON.stringify({place_id:pid, wiki_only:true, broaden_empty:true})
       }).then(function(resp){
         if(!resp.ok)throw new Error('Erreur serveur '+resp.status);
         return resp.json();
@@ -1034,6 +1201,7 @@ function r2Click(pid){
         r2New=d.new_candidates||[];
         r2Groups=d.groups||[];
         r2Keywords=d.map_keywords||[];
+        r2KwStats=kwStatsMap(d);
         r2ApplyPreselection(d.preselected||[]);
         r2SnapshotOriginal();  // Snapshot juste après pré-sélection
         r2Loading=false;
@@ -1080,6 +1248,7 @@ function r2SearchMore(){
     r2New = d.new_candidates || [];
     r2Groups = d.groups || [];
     r2Keywords = d.map_keywords || [];
+    r2KwStats = kwStatsMap(d);
     // Ré-appliquer la pré-sélection auto (seuls les scores ≥ 25)
     r2ApplyPreselection(d.preselected || []);
     // Restaurer la sélection manuelle de l'utilisateur (par URL)
@@ -1188,13 +1357,14 @@ function r2RenderEditor(){
     +'<input type="text" id="r2ManualUrl" placeholder="Coller une URL d\'image..." style="flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
     +'<input type="text" id="r2ManualCaption" placeholder="Légende..." style="width:180px;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px">'
     +'<button class="btn btn-outline btn-sm" onclick="r2AddManual()">Ajouter</button>'
+    +'<button class="btn btn-blue btn-sm" onclick="r2AddLocal()" title="Envoyer une photo de ton PC pour ce lieu">📁 Mon PC</button>'
     +'</div>';
 
-  // Bouton "Chercher ailleurs" : si moins de 3 photos auto-sélectionnées
-  // ET qu'on n'a pas déjà fait l'appel élargi sur ce lieu
-  if(!r2Loading && !r2WikiOnlyDone.has(r2Sel.place_id) && r2Selected.size < 3){
+  // Bouton "Chercher ailleurs" : toujours affiché tant qu'on n'a pas déjà fait
+  // l'appel élargi sur ce lieu (avant : caché dès 3 photos pré-sélectionnées)
+  if(!r2Loading && !r2WikiOnlyDone.has(r2Sel.place_id)){
     h+='<div style="background:#fff3e0;border:1px solid #ffcc80;border-radius:6px;padding:8px 12px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">'
-      +'<span style="font-size:12px;color:#e65100">Seulement '+r2Selected.size+' photo(s) préselectionnée(s) sur Wikimedia — tu peux chercher ailleurs si ce n\'est pas suffisant.</span>'
+      +'<span style="font-size:12px;color:#e65100">Recherche faite sur Wikimedia ('+r2Selected.size+' photo(s) pré-sélectionnée(s)). Les mots-clés à 0 photo ont déjà été cherchés ailleurs. Tu peux tout chercher sur Pexels, Pixabay et Bing.</span>'
       +'<button class="btn btn-sm" style="background:#ef6c00;color:#fff;border:none;white-space:nowrap" onclick="r2SearchMore()">🔎 Chercher ailleurs</button>'
       +'</div>';
   }
@@ -1218,6 +1388,17 @@ function r2RenderEditor(){
     h+=r2RenderGrid(r2Current,true);
   }
 
+  // Filtre d'affichage des candidates : par défaut seulement score >= 12, sans bing/ddg,
+  // sans photos < 800px. Défini ici car le bilan par mot-clé en a besoin aussi.
+  const isLowOrBing=function(c){
+    const src=((c.source||'')+'').toLowerCase();
+    if(src.includes('bing')||src.includes('duckduckgo'))return true;
+    // Filtre taille : width connue et < 800 → pourrie
+    const w=parseInt(c.width)||0;
+    if(w>0 && w<800)return true;
+    return (typeof c.score==='number') && c.score < 12;
+  };
+
   // Keywords recherchés avec boutons Google par keyword (pays ajouté si pas déjà dedans)
   if(r2Keywords.length>0){
     h+='<div style="background:#fff3e0;border:1px solid #ffb74d;border-radius:6px;padding:10px 12px;margin:12px 0;font-size:12px;color:#333">'
@@ -1225,8 +1406,16 @@ function r2RenderEditor(){
       +r2Keywords.map(function(k,i){
         const q=k.toLowerCase().includes(cn.toLowerCase())?k:(k+' '+cn);
         const ek=encodeURIComponent(k);
+        // Bilan : combien de photos de ce mot-clé sont dans la sélection ou masquées par le filtre
+        const grpPhotos=r2New.filter(c=>c.group==='🔑 '+k);
+        const inSel=grpPhotos.filter(c=>r2Selected.has(c.url)).length;
+        const hidden=r2ShowAll?0:grpPhotos.filter(c=>!r2Selected.has(c.url)&&isLowOrBing(c)).length;
+        const extraParts=[];
+        if(inSel)extraParts.push(inSel+' dans ta sélection');
+        if(hidden)extraParts.push(hidden+' masquée'+(hidden>1?'s':''));
         return '<div style="display:inline-flex;gap:6px;align-items:center;margin:3px 6px 3px 0;background:#fff;padding:4px 8px;border:1px solid #ddd;border-radius:4px">'
           +'<span style="color:#333">'+k+'</span>'
+          +kwBadge(r2KwStats[k], extraParts.join(' · '))
           +'<a href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q)+'" target="_blank" title="Google Images (web)" style="text-decoration:none;color:#1565c0;font-size:12px">🔍</a>'
           +'<button title="Chercher sur Google Places API (payant)" onclick="r2FetchGoogle(\''+ek+'\',this)" style="background:#ea4335;color:#fff;border:none;border-radius:3px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">🌍 Google</button>'
           +'</div>';
@@ -1237,15 +1426,7 @@ function r2RenderEditor(){
   // Nouvelles candidates groupées (SANS les déjà sélectionnées)
   if(r2New.length>0){
     const allNonSel=r2New.filter(c=>!r2Selected.has(c.url));
-    // Filtrer : par defaut seulement score >= 12 sans bing/ddg ET sans photos < 800px
-    const isLowOrBing=function(c){
-      const src=((c.source||'')+'').toLowerCase();
-      if(src.includes('bing')||src.includes('duckduckgo'))return true;
-      // Filtre taille : width connue et < 800 → pourrie
-      const w=parseInt(c.width)||0;
-      if(w>0 && w<800)return true;
-      return (typeof c.score==='number') && c.score < 12;
-    };
+    // Filtre isLowOrBing défini plus haut (avant la boîte des mots-clés)
     const nonSelected = r2ShowAll ? allNonSel : allNonSel.filter(c=>!isLowOrBing(c));
     const hiddenCount = allNonSel.length - nonSelected.length;
 
@@ -1430,6 +1611,7 @@ function r2SetPrimary(encodedUrl){
 async function r2DeletePhoto(encodedUrl){
   const url=decodeURIComponent(encodedUrl);
   if(!confirm('Supprimer définitivement cette photo de R2 et du JSON ?\n\n'+url))return;
+  const _hePid=r2Sel?r2Sel.place_id:null;
   try{
     const r=await fetch(API+'/api/photos/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
     const j=await r.json();
@@ -1437,6 +1619,7 @@ async function r2DeletePhoto(encodedUrl){
     r2Current=r2Current.filter(c=>c.url!==url);
     r2Selected.delete(url);
     if(r2Primary===url)r2Primary=null;
+    if(typeof heOnDeleted==='function') heOnDeleted(_hePid, url);  // onglet Photo d'accroche
     r2RenderEditor();
     st('✓ Photo supprimée (R2: '+(j.r2_deleted?'OK':'échec')+')','success');
   }catch(e){
@@ -1468,6 +1651,153 @@ function r2AddManual(){
   r2RenderEditor();
   st('Photo ajoutée et sélectionnée','success');
 }
+
+// Envoyer une photo depuis le PC pour le lieu courant.
+// Elle monte sur R2 sous une cle unique (jamais de collision), puis devient
+// une candidate cochee et principale. Le depart du lieu la persiste via /select.
+function r2AddLocal(){
+  if(!r2Sel){st('Sélectionnez d\'abord un lieu','error');return}
+  const inp=document.createElement('input');
+  inp.type='file';inp.accept='image/*';
+  inp.onchange=function(){
+    const file=inp.files&&inp.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=function(){
+      const b64=String(reader.result).split(',',2)[1]||'';
+      if(!b64){st('Lecture du fichier impossible','error');return}
+      st('Upload de '+file.name+'...','info');
+      fetch(API+'/api/photos/upload-file',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({data_base64:b64,filename:file.name,place_id:r2Sel.place_id,source:'perso'})
+      }).then(r=>r.json()).then(j=>{
+        if(!j.ok||!j.url){st('Erreur upload : '+(j.error||'inconnue'),'error');return}
+        const photo={url:j.url,url_full:j.url,caption:'Photo perso',author:j.author||'',source:'perso',license:'',width:0,height:0,is_current:false,score:999,score_reasons:['perso']};
+        r2New.unshift(photo);
+        r2Selected.set(j.url,photo);
+        r2Primary=j.url;
+        r2RenderEditor();
+        st('Photo perso envoyée, cochée et définie comme principale','success');
+      }).catch(e=>st('Erreur réseau : '+e,'error'));
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+// Onglet articles blog : envoi d'UN lien, d'UN fichier, ou de PLUSIEURS fichiers d'un coup.
+// En masse: chaque photo garde son propre nom, tout va dans le dossier indique,
+// et la liste des URLs s'affiche a la fin.
+function blogUpload(){
+  const fileInput=$('blogFile');
+  const files=fileInput&&fileInput.files?Array.from(fileInput.files):[];
+  const url=($('blogUrlIn').value||'').trim();
+  if(!files.length&&!url){st('Choisis un ou des fichiers, ou colle une URL','error');return}
+  if(url&&!url.startsWith('http')){st('URL invalide','error');return}
+  const name=($('blogName').value||'').trim();
+  const folder=($('blogFolder').value||'').trim()||'articles-blog';
+  const res=$('blogResult');
+
+  // Cas simple: une seule URL, pas de fichier
+  if(!files.length && url){
+    res.innerHTML='<span style="color:#1976d2;font-size:13px">⏳ Envoi...</span>';
+    blogSend({image_url:url,filename:name,folder:folder},function(j){
+      if(!j.ok||!j.url){res.innerHTML='<span style="color:#c62828">Erreur : '+(j.error||'inconnue')+'</span>';return}
+      blogRememberFolder(folder);
+      if($('blogUrlIn'))$('blogUrlIn').value='';
+      res.innerHTML=blogOneResult(j.url);
+      st('Photo envoyée sur R2','success');
+    });
+    return;
+  }
+
+  // Cas fichier(s): envoi sequentiel
+  const total=files.length;
+  const results=[];   // {name, url} ou {name, error}
+  let i=0;
+  function next(){
+    if(i>=total){blogFinishBatch(results,folder);return}
+    const file=files[i];
+    res.innerHTML='<span style="color:#1976d2;font-size:13px">⏳ '+(i+1)+' / '+total+' — '+file.name+'</span>';
+    const reader=new FileReader();
+    reader.onload=function(){
+      const b64=String(reader.result).split(',',2)[1]||'';
+      if(!b64){results.push({name:file.name,error:'lecture impossible'});i++;next();return}
+      // Nom force seulement si un seul fichier et champ rempli; sinon nom du fichier
+      const fname=(total===1&&name)?name:file.name;
+      blogSend({data_base64:b64,filename:fname,folder:folder},function(j){
+        if(j&&j.ok&&j.url){results.push({name:file.name,url:j.url})}
+        else{results.push({name:file.name,error:(j&&j.error)||'echec'})}
+        i++;next();
+      });
+    };
+    reader.onerror=function(){results.push({name:file.name,error:'lecture impossible'});i++;next()};
+    reader.readAsDataURL(file);
+  }
+  next();
+}
+
+function blogSend(body,cb){
+  fetch(API+'/api/photos/upload-file',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  }).then(r=>r.json()).then(cb).catch(e=>cb({ok:false,error:'reseau: '+e}));
+}
+
+function blogOneResult(u){
+  return '<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:12px;margin-top:4px">'
+    +'<div style="font-size:12px;color:#2e7d32;margin-bottom:8px">✅ Envoyé sur R2</div>'
+    +'<div style="display:flex;gap:8px;align-items:center"><input type="text" id="blogUrl" readonly value="'+u+'" style="flex:1;padding:7px 10px;border:1px solid #ccc;border-radius:4px;font-size:12px"><button class="btn btn-outline btn-sm" onclick="var e=document.getElementById(\'blogUrl\');e.select();document.execCommand(\'copy\');st(\'URL copiée\',\'success\')">Copier</button></div>'
+    +'<div style="margin-top:8px"><img src="'+u+'" style="max-width:100%;max-height:220px;border-radius:4px"></div>'
+    +'</div>';
+}
+
+function blogFinishBatch(results,folder){
+  blogRememberFolder(folder);
+  if($('blogFile'))$('blogFile').value='';
+  if($('blogName'))$('blogName').value='';
+  const ok=results.filter(r=>r.url);
+  const ko=results.filter(r=>!r.url);
+  const urlsText=ok.map(r=>r.url).join('\n');
+  let html='<div style="background:#e8f5e9;border:1px solid #a5d6a7;border-radius:6px;padding:12px;margin-top:4px">';
+  html+='<div style="font-size:12px;color:#2e7d32;margin-bottom:8px">✅ '+ok.length+' photo(s) envoyée(s)'+(ko.length?' · <span style="color:#c62828">'+ko.length+' échec(s)</span>':'')+'</div>';
+  if(ok.length){
+    html+='<div style="display:flex;gap:8px;margin-bottom:8px"><button class="btn btn-blue btn-sm" onclick="var e=document.getElementById(\'blogUrls\');e.select();document.execCommand(\'copy\');st(\'Toutes les URLs copiées\',\'success\')">Copier toutes les URLs</button></div>';
+    html+='<textarea id="blogUrls" readonly style="width:100%;height:'+Math.min(200,30+ok.length*20)+'px;font-size:12px;font-family:monospace;padding:8px;border:1px solid #ccc;border-radius:4px">'+urlsText.replace(/</g,'&lt;')+'</textarea>';
+  }
+  if(ko.length){
+    html+='<div style="margin-top:8px;font-size:12px;color:#c62828">Échecs : '+ko.map(r=>r.name+' ('+r.error+')').join(', ')+'</div>';
+  }
+  html+='</div>';
+  $('blogResult').innerHTML=html;
+  st(ok.length+' photo(s) envoyée(s)'+(ko.length?', '+ko.length+' échec(s)':''),ko.length?'error':'success');
+}
+
+// Remet le formulaire blog a zero, MAIS garde le dossier choisi.
+function blogReset(){
+  if($('blogFile'))$('blogFile').value='';
+  if($('blogName'))$('blogName').value='';
+  if($('blogUrlIn'))$('blogUrlIn').value='';
+  if($('blogResult'))$('blogResult').innerHTML='';
+  st('Prêt pour une nouvelle photo','info');
+}
+
+// Memorise les dossiers deja utilises pour les reproposer dans la liste.
+function blogRememberFolder(folder){
+  if(!folder)return;
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem('blogFolders')||'[]')}catch(e){list=[]}
+  if(!list.includes(folder)){list.unshift(folder);list=list.slice(0,30);localStorage.setItem('blogFolders',JSON.stringify(list))}
+  blogFillFolders();
+}
+function blogFillFolders(){
+  const dl=$('blogFolders');if(!dl)return;
+  let list=[];
+  try{list=JSON.parse(localStorage.getItem('blogFolders')||'[]')}catch(e){list=[]}
+  const defaults=['articles-blog','blog'];
+  const all=[...new Set([...list,...defaults])];
+  dl.innerHTML=all.map(f=>'<option value="'+f.replace(/"/g,'&quot;')+'">').join('');
+}
+blogFillFolders();
 
 async function r2FetchGoogle(encodedKw, btn){
   if(!r2Sel){st('Sélectionnez un lieu','error');return}
@@ -1529,6 +1859,8 @@ async function r2Search(){
     r2New=d.new_candidates||[];
     r2Groups=d.groups||[];
     r2Keywords=d.map_keywords||[];
+    r2KwStats=kwStatsMap(d);
+    r2WikiOnlyDone.add(r2Sel.place_id);  // recherche complète faite : plus besoin de "Chercher ailleurs"
     // Auto-sélectionner les 7 meilleures
     r2ApplyPreselection(d.preselected||[]);
     st(r2Current.length+' actuelles + '+r2New.length+' nouvelles, '+r2Selected.size+' pré-sélectionnées','success');
@@ -1558,7 +1890,7 @@ async function r2Validate(){
 // ============================================
 // NOUVEAUX LIEUX (sans photo)
 // ============================================
-let npPlaces=[],npSel=null,npCurrent=[],npNew=[],npSelected=new Map(),npPrimary=null,npLoading=false,npGroups=[],npKeywords=[];
+let npPlaces=[],npSel=null,npCurrent=[],npNew=[],npSelected=new Map(),npPrimary=null,npLoading=false,npGroups=[],npKeywords=[],npKwStats={};
 
 $('npCC').onchange=e=>{if(e.target.value)npLoad(e.target.value)};
 
@@ -1822,7 +2154,7 @@ function npClick(pid){
   leavePromise.then(function(){
     // 2. Passer à la nouvelle place
     npSel=npPlaces.find(p=>p.place_id===pid)||null;
-    npSelected.clear();npPrimary=null;npGroups=[];npKeywords=[];
+    npSelected.clear();npPrimary=null;npGroups=[];npKeywords=[];npKwStats={};
     npOriginalSelection=null;
 
     if(npPrefetch[pid]){
@@ -1830,6 +2162,7 @@ function npClick(pid){
       npNew=d.new_candidates||[];
       npGroups=d.groups||[];
       npKeywords=d.map_keywords||[];
+      npKwStats=kwStatsMap(d);
       if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
       npApplyPreselection(d.preselected||[]);
       npSnapshotOriginal();
@@ -1853,6 +2186,7 @@ function npClick(pid){
         npNew=d.new_candidates||[];
         npGroups=d.groups||[];
         npKeywords=d.map_keywords||[];
+        npKwStats=kwStatsMap(d);
         if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
         npApplyPreselection(d.preselected||[]);
         npSnapshotOriginal();
@@ -1913,7 +2247,8 @@ function npRenderEditor(){
         +npKeywords.map(function(k){
           const q=k.toLowerCase().includes(cn.toLowerCase())?k:(k+' '+cn);
           return '<a href="https://www.google.com/search?tbm=isch&q='+encodeURIComponent(q)+'" target="_blank" '
-            +'style="background:#e3f2fd;padding:2px 6px;border-radius:3px;margin:2px;text-decoration:none;color:#1565c0;cursor:pointer">🔍 '+k+'</a>';
+            +'style="background:#e3f2fd;padding:2px 6px;border-radius:3px;margin:2px;text-decoration:none;color:#1565c0;cursor:pointer">🔍 '+k+'</a>'
+            +kwBadge(npKwStats[k]);
         }).join(' ')
         +'</div>';
     }
@@ -2035,6 +2370,7 @@ async function npSearch(){
     npNew=d.new_candidates||[];
     npGroups=d.groups||[];
     npKeywords=d.map_keywords||[];
+    npKwStats=kwStatsMap(d);
     if(d.current_photos&&d.current_photos.length)npNew=[...d.current_photos,...npNew];
     npApplyPreselection(d.preselected||[]);
     st(npNew.length+' candidates, '+npSelected.size+' pré-sélectionnées','success');
@@ -2195,7 +2531,7 @@ async function roSelect(idx){
 async function roPreloadLangs(cc,id){
   const key=cc+'|'+id;
   if(roLangCache[key])return roLangCache[key];
-  const LANGS=['fr','en','es','it','pt','ar'];
+  const LANGS=await fetchLangs(cc);
   const cur=roSel?roSel.lang:null;
   const result={};
   // langue courante : déjà en mémoire
@@ -2253,7 +2589,7 @@ function roRenderEditor(){
       '</div></div>';
   }).join('');
   // Barre de langues : switch d'affichage (clic = on bascule sur cette langue)
-  const LANGS=['fr','en','es','it','pt','ar'];
+  const LANGS=langsFor(cc);
   const cacheKey=cc+'|'+id;
   const cached=roLangCache[cacheKey];
   const langBar='<div style="display:flex;gap:4px;margin-bottom:8px;align-items:center">'+
@@ -3162,8 +3498,337 @@ window.addEventListener('beforeunload', function(e){
   }
 });
 
+
+// ============================================
+// 🥇 PHOTO D'ACCROCHE
+// La photo que le générateur met en tête de chaque itinéraire (bandeau, og:image).
+// Même règle que generate-v4.js + template-11/12/20/30 :
+//   on parcourt les étapes dans l'ordre ; la 1re étape qui a une photo donne la photo.
+//   photo = 1re photo du lieu dans photos_lieux.json (si ce n'est pas une photo d'hôtel),
+//           sinon 1re image du lieu dans le fichier lieux du pays (xx.places.master-fr.json).
+//   Itinéraires de créateurs : photos propres à l'itinéraire, ils ne sont pas dans la grille.
+// L'éditeur utilisé est celui de l'onglet R2 Photos (même enregistrement, même file d'upload).
+// ============================================
+const HE_DEFAULT_IMG='https://www.oneroadtrip.com/assets/image_index.webp';  // la lagune générique du site
+const HE_OK_KEY='ort_hero_ok_v1';
+const HE_PAGE=240;               // vignettes affichées d'un coup
+let heActive=false,heLoaded=false,heLoading=false;
+let hePhotos=null;               // contenu de data/photos-json/photos_lieux.json
+let heMaster={};                 // cc -> {place_id: lieu} (fichier lieux du pays)
+let heItins=[];                  // [{i, cc}]
+let heCards=[];                  // une carte par lieu d'accroche
+let heCreatorSkipped=0;
+let heCurKey=null,heCurPid=null; // carte et lieu ouverts dans l'éditeur
+let heChanged=new Set();         // lieux modifiés pendant la session
+let heEditorShown=false,heGridScroll=0,heShown=HE_PAGE;
+
+function heEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function heOk(){try{return JSON.parse(localStorage.getItem(HE_OK_KEY)||'{}')||{}}catch(e){return{}}}
+function heOkSave(o){try{localStorage.setItem(HE_OK_KEY,JSON.stringify(o))}catch(e){}}
+
+// --- Copie exacte des règles du générateur (generate-v4.js : photoUrl, isHotelPhoto, getPhoto) ---
+function hePhotoUrl(p){if(!p)return null;if(typeof p==='string')return p;if(typeof p==='object'&&p.url)return p.url;return null}
+function heIsHotel(u){
+  if(!u||typeof u!=='string')return false;
+  u=u.toLowerCase();
+  const hosts=['cf.bstatic.com','q-xx.bstatic.com','r-xx.bstatic.com','aff.bstatic.com','bstatic.com','booking.com','expedia.com','expedia.fr','media.expedia','agoda.net','agoda.com','hotels.com','mediaim.expedia','trivago','kayak','hostelworld','airbnb','mr.booking.com'];
+  for(const h of hosts){if(u.indexOf(h)>=0)return true}
+  if(u.indexOf('/hotel/')>=0||u.indexOf('/hotels/')>=0||u.indexOf('/property/')>=0||u.indexOf('/lodging/')>=0||u.indexOf('hotel-photos')>=0||u.indexOf('hotelimages')>=0)return true;
+  return false;
+}
+function heGetPhoto(pid,cc){
+  if(!pid)return null;
+  const e=hePhotos&&hePhotos[pid];
+  if(e&&e.photos&&e.photos[0]){const u=hePhotoUrl(e.photos[0]);if(u&&!heIsHotel(u))return{url:u,src:'r2'}}
+  const m=heMaster[cc],pl=m&&m[pid];
+  if(pl&&pl.images&&pl.images[0]){const u=hePhotoUrl(pl.images[0]);if(u&&!heIsHotel(u))return{url:u,src:'lieux'}}
+  return null;
+}
+function heHasR2(pid){const e=hePhotos&&hePhotos[pid];if(!e||!e.photos||!e.photos[0])return false;const u=hePhotoUrl(e.photos[0]);return !!(u&&!heIsHotel(u))}
+function heStepPid(d){return d?(d.place_id||(d.night?d.night.place_id:null)):null}
+let heR2Map=new Map();
+function heR2MapBuild(){heR2Map=new Map(r2Places.map(p=>[p.place_id,p]))}
+function hePlaceName(pid){
+  const r=heR2Map.get(pid)||r2Places.find(p=>p.place_id===pid);
+  const n=(r&&r.name)?r.name:String(pid||'').split('::').pop();
+  return String(n).replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+// Vignette réduite par wsrv.nl (comme sur le site) ; en cas d'échec, l'image d'origine.
+function heImgErr(img){if(img.dataset.f){img.style.opacity=.15;return}img.dataset.f='1';img.src=img.dataset.raw||HE_DEFAULT_IMG}
+function heThumb(u,w,h){
+  if(!u)return HE_DEFAULT_IMG;
+  if(u.charAt(0)==='/'||u===HE_DEFAULT_IMG)return u;
+  return 'https://wsrv.nl/?url='+encodeURIComponent(u)+'&w='+w+'&h='+h+'&fit=cover&output=webp&q=70';
+}
+
+// --- Chargement ---
+async function heFetchJson(url){const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+async function hePool(items,n,fn){let i=0;const run=async()=>{while(i<items.length){const k=i++;await fn(items[k],k)}};await Promise.all(Array.from({length:Math.min(n,items.length)},run))}
+async function heLoadMaster(cc){
+  if(heMaster[cc])return;
+  heMaster[cc]={};
+  const cu=cc.toUpperCase(),cl=cc.toLowerCase();
+  for(const l of ['fr','en'])for(const d of [cu,cl]){
+    try{const j=await heFetchJson(API+'/'+DP+'/'+d+'/'+cl+'.places.master-'+l+'.json');const m={};(j.places||[]).forEach(p=>{if(p&&p.place_id)m[p.place_id]=p});heMaster[cc]=m;return}catch(e){}
+  }
+}
+async function heLoad(force){
+  if(heLoading)return;
+  if(heLoaded&&!force){heRenderGrid();return}
+  heLoading=true;
+  try{
+    st('Photo d\'accroche : lecture de photos_lieux.json...','info');
+    try{hePhotos=await heFetchJson(API+'/data/photos-json/photos_lieux.json?t='+Date.now())}
+    catch(e){throw new Error('Impossible de lire data/photos-json/photos_lieux.json sur le serveur ('+e.message+')')}
+    if(!CC.length)await loadCC();
+    st('Photo d\'accroche : chargement des lieux R2...','info');
+    if(r2Sel)r2HandleLeaveCurrent();   // enregistre d'abord un lieu ouvert et modifié
+    await r2LoadCountry('');            // tous les lieux, indispensable pour l'éditeur
+    heItins=[];heMaster={};let n=0;
+    await hePool(CC,6,async c=>{const r=await loadIt(c,'fr');r.its.forEach(i=>heItins.push({i,cc:r.cc}));n++;if(n%10===0)st('Photo d\'accroche : '+n+'/'+CC.length+' pays...','info')});
+    // Fichier lieux du pays : seulement là où une étape n'a pas de photo R2 avant la photo retenue
+    const need=new Set();
+    heItins.forEach(({i,cc})=>{if(i.source==='creator')return;for(const d of (i.days_plan||[])){const pid=heStepPid(d);if(!pid)continue;if(heHasR2(pid))break;need.add(cc)}});
+    if(need.size){st('Photo d\'accroche : anciennes images de '+need.size+' pays...','info');await hePool([...need],6,heLoadMaster)}
+    heCompute();
+    const cs=[...new Set(heCards.map(c=>c.cc))].sort();
+    const cur=$('heCC').value;
+    $('heCC').innerHTML='<option value="">Tous les pays</option>'+cs.map(c=>'<option value="'+c+'"'+(c===cur?' selected':'')+'>'+c+'</option>').join('');
+    heLoaded=true;heShown=HE_PAGE;
+    heRenderGrid();
+    st(heCards.length+' photos d\'accroche pour '+heItins.length+' itinéraires','success');
+  }catch(e){
+    st(e.message,'error');
+    $('heGrid').innerHTML='<div class="editor-empty">'+heEsc(e.message)+'</div>';
+  }finally{heLoading=false}
+}
+
+// --- Calcul : une carte par lieu d'accroche ---
+function heCompute(){
+  heR2MapBuild();
+  const map=new Map();heCreatorSkipped=0;
+  heItins.forEach(({i,cc})=>{
+    if(i.source==='creator'){heCreatorSkipped++;return}
+    const dp=i.days_plan||[];let firstPid=null,heroPid=null,hero=null;
+    for(const d of dp){const pid=heStepPid(d);if(!pid)continue;if(!firstPid)firstPid=pid;const ph=heGetPhoto(pid,cc);if(ph){hero=ph;heroPid=pid;break}}
+    if(!firstPid)return;
+    const key=hero?heroPid:'GEN::'+firstPid;
+    let c=map.get(key);
+    if(!c){
+      const pid=hero?heroPid:firstPid;
+      const e=hePhotos&&hePhotos[pid];
+      const all=(e&&e.photos?e.photos:[]).map(hePhotoUrl).filter(u=>u&&!heIsHotel(u));
+      c={key,pid,cc:String(pid).split('::')[0].toUpperCase()||cc,url:hero?hero.url:null,src:hero?hero.src:'none',generic:!hero,
+         next:hero&&hero.src==='r2'?all.slice(1,4):all.slice(0,3),itins:[],shifted:[]};
+      map.set(key,c);
+    }
+    const title=(i.seo&&i.seo.h1_title)||i.title||(i.itin_id||i.id);
+    c.itins.push({title,id:i.itin_id||i.id,cc});
+    if(hero&&heroPid!==firstPid&&!c.shifted.some(s=>s.pid===firstPid))c.shifted.push({pid:firstPid,title});
+  });
+  heCards=[...map.values()];
+  heCards.forEach(c=>{c.name=hePlaceName(c.pid)});
+}
+
+// --- Grille ---
+function heFiltered(){
+  const s=($('heSearch').value||'').toLowerCase(),f=$('heFilter').value,cc=$('heCC').value,ok=heOk();
+  let l=heCards;
+  if(cc)l=l.filter(x=>x.cc===cc||x.itins.some(t=>t.cc===cc));
+  if(s)l=l.filter(x=>(x.name+' '+x.pid+' '+x.itins.map(t=>t.title).join(' ')).toLowerCase().includes(s));
+  if(f==='todo')l=l.filter(x=>!ok[x.key]);
+  else if(f==='ok')l=l.filter(x=>ok[x.key]);
+  else if(f==='generic')l=l.filter(x=>x.generic);
+  else if(f==='shifted')l=l.filter(x=>x.shifted.length>0);
+  else if(f==='lieux')l=l.filter(x=>x.src==='lieux');
+  else if(f==='changed')l=l.filter(x=>heChanged.has(x.pid));
+  const so=$('heSort').value,byName=(a,b)=>a.name.localeCompare(b.name);
+  l=l.slice().sort(so==='cc'?(a,b)=>a.cc.localeCompare(b.cc)||byName(a,b):so==='name'?byName:(a,b)=>(b.itins.length-a.itins.length)||byName(a,b));
+  return l;
+}
+function heRenderStats(){
+  const ok=heOk(),nOk=heCards.filter(c=>ok[c.key]).length;
+  $('heStats').innerHTML='<span>Lieux : <b>'+heCards.length+'</b></span>'
+    +'<span>Itinéraires : <b>'+heItins.length+'</b></span>'
+    +'<span>Validés : <b style="color:#2e7d32">'+nOk+'</b></span>'
+    +'<span>Image générique : <b style="color:#c62828">'+heCards.filter(c=>c.generic).length+'</b></span>'
+    +'<span>1re étape sans photo : <b style="color:#e65100">'+heCards.filter(c=>c.shifted.length).length+'</b></span>'
+    +'<span>Ancienne image : <b>'+heCards.filter(c=>c.src==='lieux').length+'</b></span>'
+    +(heCreatorSkipped?'<span title="Itinéraires de créateurs : photos propres, hors grille">Créateurs : <b>'+heCreatorSkipped+'</b></span>':'');
+}
+function heCardHtml(c,ix,ok){
+  const isOk=!!ok[c.key],n=c.itins.length;
+  const titles=c.itins.slice(0,2).map(t=>heEsc(t.title)).join(' · ')+(n>2?' · +'+(n-2):'');
+  let h='<div class="he-card'+(isOk?' ok':'')+(c.generic?' gen':'')+'">'
+    +'<div class="he-img" onclick="heOpen('+ix+')" title="Changer la photo de '+heEsc(c.name)+'">'
+    +'<img src="'+heEsc(heThumb(c.url,400,250))+'" data-raw="'+heEsc(c.url||HE_DEFAULT_IMG)+'" alt="" loading="lazy" referrerPolicy="no-referrer" onerror="heImgErr(this)">'
+    +'<span class="he-tag" style="top:6px;right:6px;background:rgba(0,0,0,.65)">'+n+' itin.</span>'
+    +(isOk?'<span class="he-tag" style="top:6px;left:6px;background:#2e7d32">✓ OK</span>':'')
+    +(c.generic?'<span class="he-tag" style="bottom:6px;left:6px;background:#c62828">Image générique : aucune photo</span>':'')
+    +(c.src==='lieux'?'<span class="he-tag" style="bottom:6px;left:6px;background:#6d4c41">Ancienne image (hors R2)</span>':'')
+    +(heChanged.has(c.pid)?'<span class="he-tag" style="bottom:6px;right:6px;background:#1565c0">Changée</span>':'')
+    +'</div>';
+  if(c.next.length){
+    h+='<div class="he-strip">'+c.next.map(u=>'<img src="'+heEsc(heThumb(u,140,88))+'" data-raw="'+heEsc(u)+'" alt="" loading="lazy" referrerPolicy="no-referrer" title="Photo suivante du lieu" onclick="heOpen('+ix+')" onerror="heImgErr(this)">').join('')
+      +(c.next.length<3?'<span></span>'.repeat(3-c.next.length):'')+'</div>';
+  }
+  h+='<div class="he-body"><div class="he-name">'+heEsc(c.name)+'<span class="cc">'+heEsc(c.cc)+'</span></div>'
+    +'<div class="he-itins">'+titles+'</div>';
+  if(c.shifted.length){
+    h+='<div class="he-warn">⚠ 1re étape sans photo : '+c.shifted.slice(0,3).map((s,j)=>'<a onclick="heOpenShift('+ix+','+j+')">'+heEsc(hePlaceName(s.pid))+'</a>').join(', ')+(c.shifted.length>3?' +'+(c.shifted.length-3):'')+'</div>';
+  }
+  h+='<div class="he-actions"><button class="btn btn-sm '+(isOk?'btn-green':'btn-outline')+'" onclick="heToggleOk('+ix+')">'+(isOk?'✓ Validée':'✓ OK')+'</button>'
+    +'<button class="btn btn-sm btn-blue" onclick="heOpen('+ix+')">✏️ Changer</button></div></div></div>';
+  return h;
+}
+function heRenderGrid(){
+  if(!heLoaded){return}
+  heRenderStats();
+  const l=heFiltered(),ok=heOk();
+  if(!l.length){$('heGrid').innerHTML='<div class="editor-empty">Aucune vignette pour ce filtre</div>';return}
+  const shown=l.slice(0,heShown);
+  let h='<div style="font-size:12px;color:#666;margin-bottom:10px">'+l.length+' vignette(s)'+(l.length>shown.length?', '+shown.length+' affichées':'')+'</div>';
+  h+='<div class="he-grid">'+shown.map(c=>heCardHtml(c,heCards.indexOf(c),ok)).join('')+'</div>';
+  if(l.length>shown.length)h+='<div class="he-more"><button class="btn btn-outline" onclick="heShown+='+HE_PAGE+';heRenderGrid()">Afficher '+Math.min(HE_PAGE,l.length-shown.length)+' de plus</button></div>';
+  $('heGrid').innerHTML=h;
+}
+function heToggleOk(ix){
+  const c=heCards[ix];if(!c)return;
+  const o=heOk();if(o[c.key])delete o[c.key];else o[c.key]=new Date().toISOString().slice(0,10);
+  heOkSave(o);
+  const wrap=$('heGridWrap'),y=wrap.scrollTop;heRenderGrid();wrap.scrollTop=y;
+}
+
+// --- Éditeur (celui de l'onglet R2 Photos, déplacé ici) ---
+function heMountEditor(where){
+  const ed=$('r2Ed');if(!ed)return;
+  if(where==='hero'){if(ed.parentNode!==$('heEdHost'))$('heEdHost').appendChild(ed)}
+  else if(ed.parentNode!==$('tab-r2photos'))$('tab-r2photos').appendChild(ed);
+}
+function heShowEditor(on){
+  heEditorShown=on;
+  $('heGridWrap').style.display=on?'none':'block';
+  $('heEdWrap').style.display=on?'flex':'none';
+  if(on)heMountEditor('hero');
+}
+function heEnsureR2Place(pid){
+  if(r2Places.find(p=>p.place_id===pid))return;
+  // Lieu absent de la liste R2 : on l'ajoute. S'il a déjà des photos, on le considère
+  // « traité » pour qu'aucune pré-sélection automatique ne remplace ses photos en partant.
+  const has=!!(hePhotos&&hePhotos[pid]&&hePhotos[pid].photos&&hePhotos[pid].photos.length);
+  r2Places.push({place_id:pid,name:String(pid).split('::').pop(),country:String(pid).split('::')[0],country_name:String(pid).split('::')[0],type:'',photo_count:has?hePhotos[pid].photos.length:0,is_done:has,has_r2:has});
+}
+function heRenderBar(itins,label){
+  const n=itins.length;
+  const list=itins.slice(0,4).map(t=>heEsc(t.title)).join(' · ')+(n>4?' · +'+(n-4):'');
+  $('heEdBar').innerHTML='<button class="btn btn-outline btn-sm" onclick="heBack()">← Grille</button>'
+    +'<div style="flex:1;min-width:220px"><div style="font-size:14px"><b>'+heEsc(hePlaceName(heCurPid))+'</b> <span style="color:#888;font-size:12px">'+heEsc(heCurPid)+'</span></div>'
+    +'<div style="font-size:12px;color:#555;margin-top:2px">'+heEsc(label)+' ('+n+') : '+list+'</div>'
+    +'<div style="font-size:11px;color:#888;margin-top:2px">La photo ★ principale devient la photo d\'accroche à la prochaine génération des pages.</div></div>'
+    +'<button class="btn btn-green btn-sm" onclick="heOkNext()">✓ OK et suivant →</button>'
+    +'<button class="btn btn-outline btn-sm" onclick="heNext()">Suivant →</button>';
+}
+function heOpenPlace(pid,key,itins,label){
+  if(!heEditorShown)heGridScroll=$('heGridWrap').scrollTop;
+  heCurKey=key;heCurPid=pid;
+  heShowEditor(true);
+  heEnsureR2Place(pid);
+  heRenderBar(itins,label);
+  r2Click(pid);
+}
+function heOpen(ix){const c=heCards[ix];if(!c)return;heOpenPlace(c.pid,c.key,c.itins,c.generic?'Aucune photo, 1re étape de':'Photo d\'accroche de')}
+function heOpenShift(ix,j){
+  const c=heCards[ix];if(!c||!c.shifted[j])return;
+  const pid=c.shifted[j].pid;
+  const its=heItins.filter(({i})=>i.source!=='creator'&&heStepPid((i.days_plan||[]).find(d=>heStepPid(d)))===pid).map(({i,cc})=>({title:(i.seo&&i.seo.h1_title)||i.title||(i.itin_id||i.id),cc}));
+  heOpenPlace(pid,c.key,its.length?its:[{title:c.shifted[j].title}],'1re étape sans photo de');
+}
+function heLeaveEditor(){
+  r2HandleLeaveCurrent();            // enregistre si la sélection a changé (comme l'onglet R2)
+  r2PrefetchGen++;
+  r2Sel=null;r2Selected.clear();r2Primary=null;r2OriginalSelection=null;r2Current=[];r2New=[];r2Loading=false;
+  r2RenderEditor();
+}
+function heBack(){
+  heLeaveEditor();
+  heShowEditor(false);
+  heRenderGrid();
+  $('heGridWrap').scrollTop=heGridScroll;
+}
+function heNextCard(){
+  const l=heFiltered();
+  const k=l.findIndex(c=>c.key===heCurKey);
+  for(let j=k+1;j<l.length;j++){if(l[j].key!==heCurKey)return l[j]}
+  return null;
+}
+function heNext(){
+  const nx=heNextCard();
+  if(!nx){st('Fin de la liste','info');heBack();return}
+  heOpen(heCards.indexOf(nx));
+}
+function heOkNext(){
+  const nx=heNextCard();          // calculé avant de valider : avec le filtre « À revoir », la carte va sortir de la liste
+  const o=heOk();if(heCurKey)o[heCurKey]=new Date().toISOString().slice(0,10);heOkSave(o);
+  if(!nx){st('Fin de la liste','info');heBack();return}
+  heOpen(heCards.indexOf(nx));
+}
+
+// --- Mises à jour après enregistrement ou suppression dans l'éditeur ---
+function heFixCurKey(){if(heCurKey&&!heCards.some(c=>c.key===heCurKey)){const c=heCards.find(x=>x.pid===heCurPid);if(c)heCurKey=c.key}}
+function heRefreshAfterChange(pid){
+  heChanged.add(pid);
+  heCompute();heFixCurKey();
+  if(!heEditorShown&&heActive){const y=$('heGridWrap').scrollTop;heRenderGrid();$('heGridWrap').scrollTop=y}
+}
+function heOnUploaded(pid,urls){
+  if(!heLoaded||!pid||!hePhotos)return;
+  if(urls&&urls.length){hePhotos[pid]=Object.assign({},hePhotos[pid]||{},{photos:urls.slice()})}
+  heRefreshAfterChange(pid);
+}
+function heOnDeleted(pid,url){
+  if(!heLoaded||!hePhotos)return;
+  Object.keys(hePhotos).forEach(k=>{
+    if(pid&&k!==pid)return;
+    const e=hePhotos[k];if(!e||!e.photos)return;
+    const before=e.photos.length;
+    e.photos=e.photos.filter(p=>hePhotoUrl(p)!==url);
+    if(e.photos.length!==before)heChanged.add(k);
+  });
+  heCompute();heFixCurKey();
+}
+// Ordre de pré-chargement : celui de la grille quand l'onglet est actif
+function heR2Order(){return heFiltered().map(c=>heR2Map.get(c.pid)||r2Places.find(p=>p.place_id===c.pid)).filter(Boolean)}
+
+// Activation de l'onglet : l'éditeur R2 suit l'onglet affiché
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  heActive=(t.dataset.tab==='hero');
+  if(heActive){
+    if(heEditorShown)heMountEditor('hero');
+    if(!heLoaded&&!heLoading)heLoad(false);
+  }else if(t.dataset.tab==='r2photos'){
+    heMountEditor('r2');
+  }
+}));
+
 loadCC();
+initLangs();
 r2QueueRestoreCheck();
+
+/* === ORT deep-link onglet (ajout hub admin) === */
+(function(){
+  function ortOpenTabFromHash(){
+    var h=(location.hash||'').replace('#','').trim();
+    if(!h) return;
+    var t=document.querySelector('.tab[data-tab="'+h+'"]');
+    if(t) t.click();
+  }
+  // on attend que tout soit prêt, puis on clique (avec un petit retry de sécurité)
+  window.addEventListener('load', function(){
+    ortOpenTabFromHash();
+    setTimeout(ortOpenTabFromHash, 300);
+  });
+})();
+
 </script>
 <!-- ort-page-tracking-v1 -->
 <script>

@@ -95,7 +95,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
   
@@ -115,7 +120,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
   
@@ -135,7 +145,12 @@ function ortDateLocale(){
     qs.set('tripId', newTripId);
     const newUrl = `${location.pathname}?${qs.toString()}`;
     console.log('[INIT-EARLY] Redirect vers:', newUrl);
-    window.location.href = newUrl;
+    // On signale la redirection : le reste de la page continue de se charger
+    // pendant que le navigateur navigue, ses requetes sont annulees en vol et
+    // Safari les signale par "Load failed". Le drapeau permet de taire ces
+    // messages qui ne concernent pas l utilisateur.
+    window.__ORT_REDIRECTING = true;
+    window.location.replace(newUrl);
     return;
   }
 })();
@@ -252,6 +267,7 @@ function ortDateLocale(){
 </script>
 <title>OneRoadTrip - Détails du roadtrip</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <style>
 :root{--bg:#113f7a;--card:#fff;--ink:#113f7a;--bd:#c3d6b6;--mut:#6b7a99;--danger:#c62828;--ok:#1b5e20}
 *{box-sizing:border-box}
@@ -466,11 +482,24 @@ body.layout-stack .main>section{order:1}
 .go-pop{
   position:fixed; z-index:12000; background:#fff; color:#113f7a;
   border:1px solid #cfd6e4; border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,.18);
-  padding:10px 12px; width:280px; max-width:90vw;
+  padding:14px; width:330px; max-width:calc(100vw - 24px); box-sizing:border-box;
+  max-height:calc(100dvh - 24px); overflow-y:auto;
 }
 .go-pop .row{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 .go-pop .btn{background:#113f7a;border-color:#113f7a;color:#fff}
 .go-pop .btn.ghost{background:#fff;color:#113f7a;border:1px solid #113f7a}
+.go-pop .step-pop-title{font-weight:600;margin-bottom:12px;overflow-wrap:anywhere}
+.go-pop .step-pop-counts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:13px}
+.go-pop .step-pop-counts span{background:#f1f5f9;border-radius:6px;padding:6px 8px}
+.go-pop .step-pop-duration{font-size:13px;color:#475569;margin:0 0 14px}
+.go-pop .step-pop-label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.go-pop .step-pop-editor{display:flex;gap:8px;align-items:stretch}
+.go-pop .step-pop-editor select{flex:1;min-width:0;font:inherit;font-size:14px;background:#fff;color:#113f7a}
+.go-pop .step-pop-status{min-height:18px;font-size:12px;color:#166534;margin:6px 0}
+.go-pop .step-pop-hotel{display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;margin-bottom:6px}
+.go-pop .step-pop-hotel[hidden]{display:none}
+.go-pop .step-pop-hotel img{width:14px;height:14px}
+.go-pop .step-pop-close{width:100%}
 .sidebar{position:sticky;top:92px}
 
 
@@ -792,7 +821,7 @@ body.layout-stack #map .map-popup{
 /* Overlays de la carte (en haut à droite) */
 #mapActions{
   position:absolute; top:140px; right:8px; z-index:1000;
-  display:flex; gap:6px;
+  display:flex; gap:6px; align-items:flex-start;
 }
 
 @media (max-width:580px){
@@ -1046,8 +1075,13 @@ body.view-itin-only .group-badge {
 /* Icône réorganisation en mode plein écran (BAS GAUCHE) */
 #reorgFullscreenBtn{
   display:none;
+  box-sizing:border-box;
+  flex:0 0 auto;
+  align-self:flex-start;
   width:auto;
   height:40px;
+  min-height:40px;
+  max-height:40px;
   padding:0 14px;
   white-space:nowrap;
   border-radius:8px;     
@@ -2482,6 +2516,59 @@ input[type="number"] {
   padding-right: 8px !important;
 }
 
+/* La liste défile dans son propre panneau ; la carte reste à sa place. */
+@media screen {
+  body:not(.view-map-only):not(.view-itin-only) .main {
+    grid-template-columns:minmax(0,3fr) minmax(0,2fr);
+    align-items:start;
+  }
+  body:not(.view-map-only):not(.view-itin-only) #itineraryPanel {
+    height:var(--ort-list-height,calc(100dvh - 280px));
+    min-height:160px;
+    min-width:0;
+    box-sizing:border-box;
+    overflow:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+    scroll-padding-top:70px;
+  }
+  body:not(.view-map-only):not(.view-itin-only) .main > aside {
+    min-width:0;
+    position:sticky;
+    top:var(--ort-sticky-top,110px);
+    margin-bottom:0;
+  }
+  body:not(.view-map-only):not(.view-itin-only) #map {
+    height:var(--ort-map-height,calc(100dvh - 280px)) !important;
+    min-height:0 !important;
+    max-height:none !important;
+  }
+  body:not(.view-map-only):not(.view-itin-only) .main.ort-split-stacked {
+    display:flex;flex-direction:column;gap:14px;
+  }
+  body:not(.view-map-only):not(.view-itin-only) .main.ort-split-stacked > aside {order:0;width:100%}
+  body:not(.view-map-only):not(.view-itin-only) .main.ort-split-stacked > section {order:1;width:100%}
+  #itineraryPanel {scrollbar-width:auto;scrollbar-color:#7796ba #eef3f9}
+  #itineraryPanel::-webkit-scrollbar {width:14px;height:12px}
+  #itineraryPanel::-webkit-scrollbar-track {background:#eef3f9;border-radius:8px}
+  #itineraryPanel::-webkit-scrollbar-thumb {background:#7796ba;border:3px solid #eef3f9;border-radius:8px}
+  #itineraryPanel > .itinerary-scroll-tools {
+    display:flex;gap:8px;justify-content:flex-end;align-items:center;
+    position:sticky;top:-14px;z-index:5;background:#fff;
+    padding:6px 0;margin-bottom:12px;border-bottom:1px solid #e2e8f0;
+  }
+  #itineraryPanel .itinerary-scroll-tools .iconbtn {width:40px;height:40px;font-size:22px;color:#113f7a;background:#f1f5f9}
+  #itineraryPanel .itinerary-scroll-tools button:disabled {opacity:.35;cursor:default}
+  #itineraryPanel .itinerary-scroll-tools button:focus-visible {outline:2px solid #2563eb;outline-offset:2px}
+  #itineraryPanel .itinerary-scroll-label {margin-right:auto;font-size:13px;font-weight:600;color:#475569}
+  body.view-itin-only #itineraryPanel > .itinerary-scroll-tools {display:flex !important;top:50px}
+  .step-row.is-map-selected {background:#eff6ff;border-color:#2563eb;box-shadow:0 0 0 2px #2563eb33}
+}
+@media print {
+  #itineraryPanel {height:auto !important;max-height:none !important;overflow:visible !important;position:static !important}
+  .itinerary-scroll-tools {display:none !important}
+}
+
 </style>
 
 <!-- ⬇️ AJOUTER AVANT </head> -->
@@ -3805,8 +3892,11 @@ hdr.appendChild(row);
 <div id="practicalContextBox"></div>
 
   <div class="main">
-    <section class="card">
-     <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-bottom:12px">
+    <section class="card" id="itineraryPanel" tabindex="0" aria-label="Étapes du voyage">
+     <div class="itinerary-scroll-tools">
+  <span class="itinerary-scroll-label">Défiler dans les étapes</span>
+  <button id="btnItinScrollUp" class="iconbtn" type="button" title="Défiler vers le haut" aria-label="Défiler vers le haut" aria-controls="itineraryPanel">↑</button>
+  <button id="btnItinScrollDown" class="iconbtn" type="button" title="Défiler vers le bas" aria-label="Défiler vers le bas" aria-controls="itineraryPanel">↓</button>
   <div style="display:flex;gap:6px;">
     <button id="btnListFull" class="iconbtn" type="button" data-i18n-title="fullscreenList" title="Plein écran liste (2 colonnes)" style="font-size:16px;padding:4px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:4px;cursor:pointer;">⤢</button>
   </div>
@@ -3903,6 +3993,107 @@ hdr.appendChild(row);
 
   </div>
 </div>
+
+<script id="ort-independent-scroll">
+// Défilement de la liste indépendant du document et de la carte.
+(function initItineraryScrolling(){
+  const panel = document.getElementById('itineraryPanel');
+  const main = panel?.closest('.main');
+  if (!panel || !main) return;
+  const tools = panel.querySelector('.itinerary-scroll-tools');
+  const up = document.getElementById('btnItinScrollUp');
+  const down = document.getElementById('btnItinScrollDown');
+  let frame = 0;
+  let lastMapSize = '';
+  const smooth = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+
+  function updateButtons(){
+    up.disabled = panel.scrollTop <= 1;
+    down.disabled = panel.scrollTop + panel.clientHeight >= panel.scrollHeight - 1;
+  }
+  function sizePanels(){
+    frame = 0;
+    const lang = (window.ORT_getLang ? window.ORT_getLang() : 'fr').slice(0,2);
+    const labels = {
+      fr:['Étapes du voyage','Défiler dans les étapes','Défiler vers le haut','Défiler vers le bas'],
+      en:['Trip stops','Scroll through stops','Scroll up','Scroll down'],
+      es:['Etapas del viaje','Desplazarse por las etapas','Desplazarse hacia arriba','Desplazarse hacia abajo'],
+      it:['Tappe del viaggio','Scorri le tappe','Scorri verso l’alto','Scorri verso il basso'],
+      pt:['Etapas da viagem','Percorrer as etapas','Deslocar para cima','Deslocar para baixo'],
+      nl:['Reisstops','Door de stops scrollen','Omhoog scrollen','Omlaag scrollen'],
+      de:['Reiseetappen','Durch die Etappen scrollen','Nach oben scrollen','Nach unten scrollen'],
+      ar:['مراحل الرحلة','التمرير بين المراحل','التمرير لأعلى','التمرير لأسفل']
+    }[lang] || ['Trip stops','Scroll through stops','Scroll up','Scroll down'];
+    panel.setAttribute('aria-label', labels[0]);
+    tools.querySelector('.itinerary-scroll-label').textContent = labels[1];
+    [up,down].forEach((button,i) => { button.title = labels[i+2]; button.setAttribute('aria-label',labels[i+2]); });
+
+    const mapOnly = document.body.classList.contains('view-map-only');
+    const listOnly = document.body.classList.contains('view-itin-only');
+    if (!mapOnly && !listOnly) {
+      const stacked = document.body.classList.contains('layout-stack') || window.innerWidth <= 900;
+      main.classList.toggle('ort-split-stacked', stacked);
+      const headerBottom = document.querySelector('header')?.getBoundingClientRect().bottom || 0;
+      const stickyTop = Math.max(0, headerBottom) + 12;
+      const top = Math.max(stickyTop, main.getBoundingClientRect().top);
+      const available = Math.max(stacked ? 340 : 200, window.innerHeight - top - 16);
+      const mapHeight = stacked ? Math.max(140, Math.min(300, Math.floor(available * .4))) : available;
+      // L'encart de la carte peut aussi contenir une ligne sous la carte.
+      const mapEl = document.getElementById('map');
+      const aside = main.querySelector('aside');
+      const asideExtra = stacked && mapEl && aside ? Math.max(0, aside.offsetHeight - mapEl.offsetHeight) : 0;
+      const listHeight = stacked ? Math.max(160, available - mapHeight - 14 - asideExtra) : available;
+      main.style.setProperty('--ort-sticky-top', stickyTop + 'px');
+      main.style.setProperty('--ort-map-height', mapHeight + 'px');
+      main.style.setProperty('--ort-list-height', listHeight + 'px');
+      const mapSize = `${stacked}:${mapHeight}:${window.innerWidth}`;
+      if (mapSize !== lastMapSize) {
+        lastMapSize = mapSize;
+        window.map?.invalidateSize?.({pan:false});
+      }
+    }
+    updateButtons();
+  }
+  function scheduleSize(){ if (!frame) frame = requestAnimationFrame(sizePanels); }
+  function scrollPage(direction){
+    panel.scrollBy({top:direction * Math.max(120, panel.clientHeight * .8), behavior:smooth()});
+  }
+  up.addEventListener('click', () => scrollPage(-1));
+  down.addEventListener('click', () => scrollPage(1));
+  panel.addEventListener('scroll', updateButtons, {passive:true});
+
+  // Seul le panneau bouge ; scrollIntoView ferait aussi défiler toute la page.
+  window.ORT_scrollToStep = function(stepId){
+    const row = Array.from(panel.querySelectorAll('.step-row')).find(el => el.dataset.stepId === stepId);
+    if (!row) return false;
+    if (document.body.classList.contains('view-map-only')) {
+      document.getElementById('btnMapExit')?.click();
+    }
+    sizePanels();
+    panel.querySelectorAll('.step-row').forEach(el => el.classList.toggle('is-map-selected',el === row));
+    const wrapper = row.closest('.step-wrapper');
+    wrapper?.querySelector('.step-details-panel')?.classList.add('open');
+    row.querySelector('.step-expand-toggle')?.classList.add('open');
+    const panelTop = panel.getBoundingClientRect().top;
+    const inset = Math.max(0, tools.getBoundingClientRect().bottom - panelTop) + 8;
+    const top = panel.scrollTop + row.getBoundingClientRect().top - panelTop - inset;
+    panel.scrollTo({top:Math.max(0,top), behavior:smooth()});
+    updateButtons();
+    return true;
+  };
+  window.addEventListener('resize', scheduleSize, {passive:true});
+  window.addEventListener('scroll', scheduleSize, {passive:true});
+  window.addEventListener('load', scheduleSize);
+  if (window.ResizeObserver) {
+    const observer = new ResizeObserver(scheduleSize);
+    [document.querySelector('header'),document.querySelector('.topband'),document.getElementById('practicalContextBox'),document.getElementById('rows'),document.getElementById('aiSummaryBox'),document.getElementById('tripBookingsContainer'),panel].filter(Boolean).forEach(el => observer.observe(el));
+  }
+  if (window.MutationObserver) {
+    new MutationObserver(scheduleSize).observe(document.body,{attributes:true,attributeFilter:['class']});
+  }
+  scheduleSize();
+})();
+</script>
 
 <!-- Footer ORT -->
 <footer id="footer-legal"></footer>
@@ -4241,6 +4432,8 @@ if(home){
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
 <script src="js/ort-step-common.js"></script>
 <!-- STATE MANAGER -->
 <script src="js/ort-state-manager.js"></script>
@@ -4329,80 +4522,187 @@ function openStepPage(step, idx){
   showAffiliatePopover(null, step, idx);
 }
 
-// I18N pour le popup affiliés
+// Libellés du résumé d'étape (langue de l'interface).
 function L_affiliate(){
-  const lang=(localStorage.getItem('lang')||document.documentElement.lang||'fr').slice(0,2).toLowerCase();
-  const t={
-    hotels:{fr:"Chercher un hôtel",en:"Find a hotel",it:"Cerca un hotel",es:"Buscar hotel",pt:"Procurar hotel",ar:"البحث عن فندق", nl: 'Een hotel zoeken', de: 'Hotel suchen'},
-    close:{fr:"Fermer",en:"Close",it:"Chiudi",es:"Cerrar",pt:"Fechar",ar:"إغلاق", nl: 'Sluiten', de: 'Schließen'}
-  }; 
+  const lang = (window.ORT_getLang ? window.ORT_getLang() : (localStorage.getItem('lang') || document.documentElement.lang || 'fr')).slice(0,2).toLowerCase();
+  const labels = {
+    fr: ['Chercher un hôtel','Fermer','Visites','Activités','Durée conseillée','jour','jours','Nuits sur place','nuit','nuits','Passage sans nuit','Valider','Nuits mises à jour','Non renseignée','Étape'],
+    en: ['Find a hotel','Close','Visits','Activities','Recommended duration','day','days','Nights here','night','nights','Stop without overnight stay','Apply','Nights updated','Not specified','Stop'],
+    es: ['Buscar hotel','Cerrar','Visitas','Actividades','Duración recomendada','día','días','Noches en este lugar','noche','noches','Parada sin pernocta','Confirmar','Noches actualizadas','No indicada','Etapa'],
+    it: ['Cerca un hotel','Chiudi','Visite','Attività','Durata consigliata','giorno','giorni','Notti in questa tappa','notte','notti','Sosta senza pernottamento','Conferma','Notti aggiornate','Non indicata','Tappa'],
+    pt: ['Procurar hotel','Fechar','Visitas','Atividades','Duração recomendada','dia','dias','Noites neste local','noite','noites','Paragem sem pernoita','Confirmar','Noites atualizadas','Não indicada','Etapa'],
+    nl: ['Een hotel zoeken','Sluiten','Bezienswaardigheden','Activiteiten','Aanbevolen duur','dag','dagen','Nachten op deze plek','nacht','nachten','Stop zonder overnachting','Bevestigen','Aantal nachten bijgewerkt','Niet opgegeven','Stop'],
+    de: ['Hotel suchen','Schließen','Besichtigungen','Aktivitäten','Empfohlene Dauer','Tag','Tage','Nächte vor Ort','Nacht','Nächte','Zwischenstopp ohne Übernachtung','Bestätigen','Nächte aktualisiert','Nicht angegeben','Etappe'],
+    ar: ['البحث عن فندق','إغلاق','الزيارات','الأنشطة','المدة المقترحة','يوم','أيام','عدد الليالي هنا','ليلة','ليالٍ','توقف دون مبيت','تأكيد','تم تحديث عدد الليالي','غير محددة','مرحلة']
+  };
+  const keys = ['hotels','close','visits','activities','duration','day','days','nightsLabel','night','nights','passThrough','apply','updated','unknown','step'];
+  const values = labels[lang] || labels.en;
+  return Object.assign({lang}, Object.fromEntries(keys.map((key, i) => [key, values[i]])));
+}
+
+// Résumé des données de l'étape. Une liste vidée par l'utilisateur reste vide.
+function getStepPopoverSummary(step){
+  const master = window.PLACES_INDEX?.[step.place_id] || {};
+  const count = raw => (Array.isArray(raw) ? raw : raw ? [raw] : [])
+    .filter(item => String(typeof item === 'string' ? item : (item?.text || item?.name || '')).trim()).length;
+  const days = [step._suggestedDays, step.suggested_days, master.suggested_days, step.adjustedDays]
+    .map(value => Number(value)).find(value => Number.isFinite(value) && value > 0);
   return {
-    hotels: t.hotels[lang]||t.hotels.en,
-    close: t.close[lang]||t.close.en
+    visits: count(step.visits ?? master.visits),
+    activities: count(step.activities ?? master.activities),
+    days: days ?? null
   };
 }
 
-// Popup affiliés ancré au marqueur ou centré
+// Même mise à jour depuis la liste et depuis la fenêtre de la carte.
+function setStepNights(idx, value){
+  const step = state.steps[idx];
+  const parsed = Number(value);
+  if (!step || !Number.isFinite(parsed)) return false;
+  // Conserver sans changement une ancienne valeur au-delà de la limite du sélecteur.
+  if (Number(step.nights) === parsed && Number.isInteger(parsed) && parsed >= 0) return true;
+  const newNights = Math.max(0, Math.min(30, Math.round(parsed)));
+  if (Number(step.nights) === newNights) return true;
+  step.nights = newNights;
+  if (newNights === 0) {
+    delete step.hotel;
+    delete step.hotelName;
+    delete step.hotelPrice;
+    delete step.hotelRating;
+    delete step.hotelUrl;
+    delete step.hotelPhoto;
+    delete step._isHub;
+    delete step.groupName;
+    delete step.groupColor;
+  }
+  renderRows(); // Dates, marqueurs et totaux suivent le même état.
+  markUnsavedChanges(); // La sauvegarde définitive reste le bouton habituel 💾.
+  return true;
+}
+
+// Popup de l'étape : résumé, nuits modifiables et recherche d'hôtel.
 function showAffiliatePopover(anchorEl, step, idx){
+  if (!step) return;
   const t = L_affiliate();
-  document.querySelectorAll('.go-pop').forEach(x=>x.remove());
-  
-  const box = document.createElement('div'); 
+  document.querySelectorAll('.go-pop').forEach(el => el._closePopover ? el._closePopover() : el.remove());
+  // Le clic prend le relais du survol en plein écran.
+  document.getElementById('mapPopup')?.classList.remove('show');
+  const wasLocked = window.popupLocked;
+  window.popupLocked = true;
+
+  const sid = step.__sid;
+  // Ne jamais identifier par place_id : un lieu peut figurer plusieurs fois.
+  const findStepIndex = () => state.steps.findIndex(s => s === step || (sid && s.__sid === sid));
+  const summary = getStepPopoverSummary(step);
+  const duration = summary.days === null ? t.unknown : `${new Intl.NumberFormat(t.lang, {maximumFractionDigits:2}).format(summary.days)} ${summary.days > 1 ? t.days : t.day}`;
+  const currentNights = Math.max(0, Math.round(Number(step.nights) || 0));
+  const options = Array.from({length: Math.max(30, currentNights) + 1}, (_, n) =>
+    `<option value="${n}"${n === currentNights ? ' selected' : ''}>${n === 0 ? `0 — ${t.passThrough}` : `${n} ${n === 1 ? t.night : t.nights}`}</option>`).join('');
+
+  const box = document.createElement('div');
   box.className = 'go-pop';
-  box.style.minWidth = '220px';
-  box.style.zIndex = '10000';
-  
-  const checkIn = new Date().toISOString().split('T')[0];
-  const nights = step.nights || 1;
-  const lat = step.lat || 0;
-  const lng = step.lon || step.lng || 0;
-  const address = encodeURIComponent(step.name || 'Hotel');
-  const stay22Url = `https://www.stay22.com/allez/roam?campaign=oneroadtrip&aid=oneroadtrip&checkin=${checkIn}&nights=${nights}&lat=${lat}&lng=${lng}&address=${address}`;
-  
+  box.setAttribute('role', 'dialog');
+  box.setAttribute('aria-labelledby', 'stepPopoverTitle');
+  box.dir = t.lang === 'ar' ? 'rtl' : 'ltr';
   box.innerHTML = `
-    <div style="font-weight:600;margin-bottom:8px;color:#113f7a;">${step.name || 'Étape'}</div>
-    <div style="font-size:12px;color:#64748b;margin-bottom:10px;">${step.nights || 0} nuit(s)</div>
-    <a href="${stay22Url}" target="_blank" rel="noopener" class="btn" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;margin-bottom:6px;">
-      <img src="/assets/hotel.png" alt="" style="width:14px;height:14px" onerror="this.style.display='none'"> ${t.hotels}
+    <div class="step-pop-title" id="stepPopoverTitle">${safe(step.name || step.place_id || t.step)}</div>
+    <div class="step-pop-counts">
+      <span>🏛️ ${t.visits} : <strong>${summary.visits}</strong></span>
+      <span>🎯 ${t.activities} : <strong>${summary.activities}</strong></span>
+    </div>
+    <p class="step-pop-duration">⏱ ${t.duration} : <strong>${duration}</strong></p>
+    <form class="step-pop-form">
+      <label class="step-pop-label" for="stepPopoverNights">🌙 ${t.nightsLabel}</label>
+      <div class="step-pop-editor">
+        <select id="stepPopoverNights" class="input">${options}</select>
+        <button type="submit" class="btn">${t.apply}</button>
+      </div>
+      <div class="step-pop-status" role="status" aria-live="polite"></div>
+    </form>
+    <a target="_blank" rel="noopener" class="btn step-pop-hotel">
+      <img src="/assets/hotel.png" alt="" onerror="this.style.display='none'"> ${t.hotels}
     </a>
-    <button class="btn ghost" data-act="close" style="width:100%">${t.close}</button>
+    <button type="button" class="btn ghost step-pop-close">${t.close}</button>
   `;
-  
   document.body.appendChild(box);
-  
-  // Positionnement : ancré si anchorEl valide, sinon centré sur la carte
-  if (anchorEl && anchorEl !== document.body) {
-    const r = anchorEl.getBoundingClientRect();
-    box.style.left = Math.min(window.innerWidth - box.offsetWidth - 12, Math.max(12, r.left + window.scrollX - 8)) + 'px';
-    box.style.top = (r.bottom + window.scrollY + 8) + 'px';
-  } else {
-    // Centrer sur la carte ou l'écran
-    const mapEl = document.getElementById('map');
-    if (mapEl) {
-      const mapRect = mapEl.getBoundingClientRect();
-      box.style.left = (mapRect.left + mapRect.width / 2 - box.offsetWidth / 2) + 'px';
-      box.style.top = (mapRect.top + window.scrollY + mapRect.height / 2 - 80) + 'px';
-    } else {
-      // Fallback: centré sur l'écran
-      box.style.left = (window.innerWidth / 2 - box.offsetWidth / 2) + 'px';
-      box.style.top = (window.innerHeight / 2 - 80 + window.scrollY) + 'px';
+  const select = box.querySelector('select');
+  const status = box.querySelector('[role="status"]');
+  const hotelLink = box.querySelector('.step-pop-hotel');
+  if (findStepIndex() < 0) box.querySelectorAll('select, button[type="submit"]').forEach(el => el.disabled = true);
+
+  function updateHotelLink(){
+    const currentIdx = findStepIndex();
+    const currentStep = state.steps[currentIdx] || step;
+    const nights = Number(currentStep.nights) || 0;
+    // Une étape de passage ne doit pas devenir une réservation d'une nuit.
+    hotelLink.hidden = nights <= 0;
+    const start = state.startDateStr ? new Date(state.startDateStr + 'T00:00:00') : new Date();
+    const checkInDate = Number.isNaN(start.getTime()) ? new Date() : start;
+    const offset = state.steps.slice(0, Math.max(0, currentIdx)).reduce((sum, s) => sum + Number(s.nights || 0), 0);
+    checkInDate.setDate(checkInDate.getDate() + offset);
+    const checkIn = `${checkInDate.getFullYear()}-${String(checkInDate.getMonth()+1).padStart(2,'0')}-${String(checkInDate.getDate()).padStart(2,'0')}`;
+    const params = new URLSearchParams({campaign:'oneroadtrip', aid:'oneroadtrip', checkin:checkIn, nights:String(nights), lat:String(currentStep.lat ?? 0), lng:String(currentStep.lon ?? currentStep.lng ?? 0), address:currentStep.name || 'Hotel'});
+    hotelLink.href = 'https://www.stay22.com/allez/roam?' + params;
+  }
+
+  // position:fixed utilise exclusivement les coordonnées de la fenêtre.
+  function position(){
+    const gap = 12;
+    box.style.maxHeight = `${Math.max(0, window.innerHeight - gap * 2)}px`;
+    const mapRect = document.getElementById('map')?.getBoundingClientRect();
+    let left = (window.innerWidth - box.offsetWidth) / 2;
+    let top = (window.innerHeight - box.offsetHeight) / 2;
+    if (anchorEl && anchorEl !== document.body && anchorEl.isConnected) {
+      const r = anchorEl.getBoundingClientRect();
+      left = r.left - 8;
+      top = r.bottom + 8;
+      if (top + box.offsetHeight > window.innerHeight - gap) top = r.top - box.offsetHeight - 8;
+    } else if (mapRect) {
+      left = (Math.max(gap, mapRect.left) + Math.min(window.innerWidth - gap, mapRect.right) - box.offsetWidth) / 2;
+      top = (Math.max(gap, mapRect.top) + Math.min(window.innerHeight - gap, mapRect.bottom) - box.offsetHeight) / 2;
+    }
+    box.style.left = Math.max(gap, Math.min(left, window.innerWidth - box.offsetWidth - gap)) + 'px';
+    box.style.top = Math.max(gap, Math.min(top, window.innerHeight - box.offsetHeight - gap)) + 'px';
+  }
+  function close(){
+    clearTimeout(outsideTimer);
+    document.removeEventListener('click', onOutside, true);
+    document.removeEventListener('keydown', onKey);
+    window.removeEventListener('resize', position);
+    window.removeEventListener('scroll', onScroll, true);
+    window.popupLocked = wasLocked;
+    box.remove();
+  }
+  function onOutside(e){ if (!box.contains(e.target)) close(); }
+  function onKey(e){
+    if (e.key === 'Escape') {
+      const returnFocus = box.contains(document.activeElement);
+      close();
+      if (returnFocus && anchorEl?.isConnected) anchorEl.focus();
     }
   }
-  
-  box.addEventListener('click', (e) => {
-    const act = e.target?.dataset?.act;
-    if(act === 'close') box.remove();
+  function onScroll(e){ if (!box.contains(e.target)) position(); }
+  const outsideTimer = setTimeout(() => document.addEventListener('click', onOutside, true), 100);
+  box._closePopover = close;
+  box.querySelector('.step-pop-close').addEventListener('click', close);
+  box.addEventListener('click', e => e.stopPropagation());
+  select.addEventListener('change', () => { status.textContent = ''; });
+  box.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    const currentIdx = findStepIndex();
+    if (currentIdx < 0) { close(); return; }
+    if (setStepNights(currentIdx, select.value)) {
+      select.value = String(state.steps[currentIdx].nights);
+      status.textContent = t.updated;
+      updateHotelLink();
+      position();
+    }
   });
-  
-  // Fermer au clic extérieur après un court délai (évite fermeture immédiate)
-  setTimeout(() => {
-    document.addEventListener('click', function onDoc(e){
-      if(!box.contains(e.target)){ 
-        box.remove(); 
-        document.removeEventListener('click', onDoc); 
-      }
-    }, {capture:true});
-  }, 100);
+  document.addEventListener('keydown', onKey);
+  window.addEventListener('resize', position);
+  window.addEventListener('scroll', onScroll, true);
+  updateHotelLink();
+  position();
 }
 
 // Compat: redirection vers popup affiliés
@@ -4775,8 +5075,12 @@ function __nextSid(){
 }
 function ensureSid(step){
   if(!step) return null;
-  if(step.__sid && !__collectSids().has(step.__sid)) return step.__sid;
-  // (ré)assigne un SID jamais utilisé
+  // L'étape possède déjà son SID : seule une AUTRE étape peut être en conflit.
+  const collision = step.__sid && (window.state?.steps || []).some(other =>
+    other && other !== step && other.__sid === step.__sid
+  );
+  if(step.__sid && !collision) return step.__sid;
+  // Assigner seulement si absent ou copié depuis une autre étape.
   const sid = __nextSid();
   step.__sid = sid;
   return sid;
@@ -4924,6 +5228,9 @@ localStorage.setItem('ort.view', mapOnly ? 'map' : 'normal');
 })();
 
 function initApp(){
+// Rend l'apercu d'etape accessible aux autres blocs (panneau de reorganisation)
+window.showStepPreview = (step) => showStepPreview(step);
+
 // === VÉRIFICATION MODE PARTAGÉ ===
 (async function checkShareMode(){
   const shareToken = new URLSearchParams(location.search).get('share');
@@ -4957,6 +5264,17 @@ function initApp(){
         // Les données sont dans sharedData.data (pas directement dans sharedData)
         const tripData = sharedData.data || sharedData;
         
+        // Garantit que steps est une vraie liste (parfois recu en chaine JSON)
+        if (typeof tripData.steps === 'string') {
+          try {
+            tripData.steps = JSON.parse(tripData.steps);
+          } catch (e) {
+            console.warn('[SHARE] steps illisible, remis a vide', e);
+            tripData.steps = [];
+          }
+        }
+        if (tripData.steps && !Array.isArray(tripData.steps)) tripData.steps = [];
+
         if (tripData.steps && tripData.steps.length > 0) {
           window.state = window.state || {};
           window.state.steps = tripData.steps;
@@ -5707,9 +6025,17 @@ window.applyListView = applyListView;
 
 async function loadPhotosJSON(){
   try{
-    const r=await fetch('./data/photos-json/photos_lieux.json');
-    if(r.ok) {
-      const data = await r.json() || {};
+    // Version legere d'abord (6 Mo au lieu de 31, gardee hors ligne) ; la complete en secours.
+    let data = null;
+    try{
+      const rl=await fetch('./data/photos-json/photos_lieux.light.json');
+      if(rl.ok) data = await rl.json();
+    }catch(e){ data = null; }
+    if(!data || typeof data !== 'object'){
+      const r=await fetch('./data/photos-json/photos_lieux.json');
+      if(r.ok) data = await r.json() || {};
+    }
+    if(data) {
       Object.assign(window.PHOTOS_CACHE, data);
       PHOTOS_CACHE = window.PHOTOS_CACHE;
       window.applyCouplesToCache();
@@ -6045,12 +6371,17 @@ async function initFromItin(it){
       steps.push({
         place_id:pid,name,lat,lon,nights:1,visits,activities,
         rating,
+        // Ou dort le voyageur ce soir la, decide en amont et ecrit dans le
+        // fichier. Absent sur les itineraires non traites : le calcul reprend.
+        ...(d.stay_at ? { stay_at: d.stay_at } : {}),
+        ...(Number.isFinite(Number(d.stay_nights)) ? { stay_nights: Number(d.stay_nights) } : {}),
         region_code: d.region_code || '',
         _suggestedDays: suggestedDays,
         _driveMinToNext: d.to_next_leg?.drive_min || 0,
         _distanceKmToNext: d.to_next_leg?.distance_km || 0,
         _roadType: d.to_next_leg?.road_type || null,
         _transportMode: d.to_next_leg?.transport_mode || null,
+        _method: d.to_next_leg?.method || null,
         _mapKeywords: Array.isArray(d.night?.map_keywords) ? d.night.map_keywords : [],
         images:optimizePhotoUrls(getPhotosForPlace(pid)),
         description:visits.map(v=>v.text||v).join('. ')
@@ -6080,6 +6411,17 @@ async function initFromItin(it){
   
   // === FUSION DES ÉTAPES CONSÉCUTIVES IDENTIQUES ===
   // DÉSACTIVÉ - chaque jour du JSON = une étape distincte
+  
+  // On note sur chaque etape les coordonnees de l'etape qui la suivait dans le
+  // fichier. C'est ce qui permet plus bas de savoir si la distance ecrite dans
+  // le fichier decrit encore le trajet affiche : si le visiteur deplace ou
+  // supprime une etape, l'arrivee ne correspond plus et on recalcule.
+  for (let i = 0; i < steps.length - 1; i++) {
+    const n = steps[i + 1];
+    if (n && Number.isFinite(n.lat) && Number.isFinite(n.lon)) {
+      steps[i]._nextCoords = [n.lat, n.lon];
+    }
+  }
   
   state.steps=steps;
   
@@ -6201,6 +6543,7 @@ async function initFromItin(it){
   state._originalClimate = it.climate || null;
   state._originalSeoKeywords = it.seo_keywords || null;
   state._originalPracticalContext = it.practical_context || null;
+  state._originalPacingRules = (it.pacing_rules && typeof it.pacing_rules === 'object') ? it.pacing_rules : null;
   console.log('[LOG-CONTROLE][INIT] 📦 Métadonnées stockées:', state._originalSeo ? 'SEO ✓' : 'SEO ✗', state._originalMeta ? 'meta ✓' : 'meta ✗', state._originalPracticalContext ? 'practical_context ✓' : '');
   
   // Afficher le practical_context si présent
@@ -6617,7 +6960,8 @@ window._groupsCalculating = false; // Mutex pour éviter les recalculs en cascad
 
 
 function renderRows(){
-  
+  const listPanel = document.getElementById('itineraryPanel');
+  const listScrollTop = listPanel?.scrollTop || 0;
   // 🔒 Mémoriser quels panneaux étaient ouverts avant le re-render,
   // pour éviter qu'un re-render (ex: post-bookings) referme une étape
   // que l'utilisateur vient juste de déplier.
@@ -6693,6 +7037,7 @@ function renderRows(){
   recomputeTotals();      // met à jour km/temps
   updateQuickStats();     // met à jour le pavé compact
   renderTripBookings();   // Affiche les réservations du voyage (NEW)
+  if (listPanel) listPanel.scrollTop = listScrollTop;
   // scheduleAutosave(); // SUPPRIMÉ - ne pas sauvegarder au simple affichage, seulement sur modification utilisateur
 
 }
@@ -7611,6 +7956,41 @@ function createStepDetailsPanel(step, idx) {
 // Calcul distance via micro-API ORT (fallback local si erreur)
 async function calculateDistance(fromStep, toStep) {
   
+  // ═══ PRIORITE AU FICHIER ═══
+  // La distance et la duree du fichier ont ete verifiees, corrigees et parfois
+  // routees hors ligne. Les recalculer ici efface tout ce travail, et sur une
+  // piste le routeur renvoie un detour de plusieurs centaines de kilometres par
+  // le goudron. On ne recalcule que si le fichier ne dit rien, ou si le trajet
+  // affiche n'est plus celui du fichier parce que le visiteur a modifie son
+  // parcours.
+  const r3 = n => Math.round(n * 1000) / 1000;
+  const memeArrivee = Array.isArray(fromStep?._nextCoords)
+    && Number.isFinite(toStep?.lat) && Number.isFinite(toStep?.lon)
+    && r3(fromStep._nextCoords[0]) === r3(toStep.lat)
+    && r3(fromStep._nextCoords[1]) === r3(toStep.lon);
+
+  if (memeArrivee) {
+    const kmSource = Number(fromStep._distanceKmToNext);
+    const minSource = Number(fromStep._driveMinToNext);
+    if (Number.isFinite(kmSource) && kmSource > 0
+        && Number.isFinite(minSource) && minSource > 0) {
+      return { km: Math.round(kmSource), minutes: Math.round(minSource) };
+    }
+    // Une piste ou une traversee sans distance utilisable ne doit pas partir
+    // chez le routeur : il ignore que la piste existe. Ligne droite majoree.
+    const m = fromStep._method;
+    if (m === 'piste' || m === 'direct') {
+      const R = 6371, toRad = d => d * Math.PI / 180;
+      const dLat = toRad(toStep.lat - fromStep.lat), dLon = toRad(toStep.lon - fromStep.lon);
+      const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(toRad(fromStep.lat)) * Math.cos(toRad(toStep.lat)) * Math.sin(dLon / 2) ** 2;
+      const vol = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const km = Math.round(vol * 1.25);
+      const vitesse = m === 'piste' ? 40 : 60;
+      return { km, minutes: Math.round((km / vitesse) * 60) };
+    }
+  }
+
   const fallback = () => {
     const R=6371, toRad=d=>d*Math.PI/180;
     const dLat=toRad(toStep.lat-fromStep.lat), dLon=toRad(toStep.lon-fromStep.lon);
@@ -8054,12 +8434,39 @@ map=L.map('map', {
 
       console.log('Langue carte:',userLang);
       
-         // Cartodb Voyager : meilleur multilingue gratuit avec noms en anglais
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
-        maxZoom:20,
-        attribution:'© CARTO © OpenStreetMap'
+      // Fond OpenFreeMap ; repli raster si MapLibre ou WebGL est indisponible.
+      const addRasterFallback = () => L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
       }).addTo(map);
-      
+
+      if (typeof L.maplibreGL === 'function') {
+        let glLayer;
+        try {
+          glLayer = L.maplibreGL({
+            style: 'https://tiles.openfreemap.org/styles/liberty',
+            attribution: '© OpenStreetMap © OpenFreeMap'
+          });
+          glLayer.addTo(map);
+        } catch (error) {
+          console.warn('[MAP] Initialisation MapLibre impossible, repli raster :', error);
+          if (glLayer && map.hasLayer(glLayer)) {
+            // En 0.0.22, onRemove suppose que le moteur GL a été créé.
+            // Adapter le retrait du calque partiel pour que Leaflet détache aussi ses événements.
+            if (!glLayer.getMaplibreMap()) {
+              glLayer.onRemove = function () {
+                const container = this.getContainer();
+                if (container) L.DomUtil.remove(container);
+              };
+            }
+            map.removeLayer(glLayer);
+          }
+          addRasterFallback();
+        }
+      } else {
+        addRasterFallback();
+      }
+
       map.on('click',async e=>{
         if(!mapClickMode)return;
         const{lat,lng}=e.latlng;
@@ -8791,7 +9198,10 @@ function renderOtherPlaces(){
 
   // Utiliser window.state.steps si restauré via fallback, sinon state.steps
   const stepsForMap = (window.state?.steps && window.state.steps.length > 0) ? window.state.steps : state.steps;
-  const pts=stepsForMap.filter(s=>s.lat!=null&&s.lon!=null);
+  // Conserver le numéro dans la liste, même si certains lieux ne sont pas cartographiables.
+  const mapEntries = stepsForMap.map((step, index) => ({step, index}))
+    .filter(({step}) => step && Number.isFinite(step.lat) && Number.isFinite(step.lon));
+  const pts = mapEntries.map(entry => entry.step);
   if(!pts.length){map.setView([48.8566,2.3522],5);return}
 // [PATCH-GROUP-LABELS] START
 // === Regrouper les étapes très proches (grille ~100–150 m) & labels communs ===
@@ -8839,7 +9249,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
     const isHub = step._isHub || (step.nights && step.nights > 0);
     const flagHtml = isHub ? '<span class="hub-flag">🚩</span>' : '';
     
-    const iconHtml = `<div class="marker-num">${(i + 1)}${flagHtml}</div>`;
+    const iconHtml = `<div class="marker-num">${mapEntries[i].index + 1}${flagHtml}</div>`;
 
     // [STACKED-MARKERS] Construction de l'icône
     let finalHtml, finalClassName, finalIconSize;
@@ -8850,7 +9260,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
         const angle = (2 * Math.PI * k) / groupSize - Math.PI / 2; // démarre en haut
         const dx = Math.round(SAT_RADIUS_PX * Math.cos(angle));
         const dy = Math.round(SAT_RADIUS_PX * Math.sin(angle));
-        return `<span class="stack-sat" style="transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))">${memberIdx + 1}</span>`;
+        return `<span class="stack-sat" style="transform: translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))">${mapEntries[memberIdx].index + 1}</span>`;
       }).join('');
       const centerLabel = totalNights > 0 ? totalNights : groupSize;
       finalHtml = `<div class="stack-center">${centerLabel}</div>${satellitesHtml}`;
@@ -8896,7 +9306,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
   // 🎯 HOVER pour desktop
     m.on('mouseover', () => {
       const row = document.querySelector(`.step-row[data-step-id="${m.stepId}"]`);
-      if(row){ row.classList.add('highlight'); row.scrollIntoView({block:'nearest'}); }
+      if(row){ row.classList.add('highlight'); }
       m.getElement()?.querySelector('.marker-num')?.classList.add('num-boost');
       m.setZIndexOffset?.(1500);
       
@@ -9008,14 +9418,8 @@ Object.entries(grouped).forEach(([key, indices]) => {
         return;
       }
       
-      // Toujours highlight et scroll vers la ligne correspondante dans le panneau
-      const row = document.querySelector(`.step-row[data-step-id="${m.stepId}"]`);
-      if(row){
-        // Enlever highlight des autres
-        document.querySelectorAll('.step-row.highlight').forEach(r => r.classList.remove('highlight'));
-        row.classList.add('highlight');
-        row.scrollIntoView({block:'nearest', behavior:'smooth'});
-      }
+      // Le clic défile uniquement dans la liste, sans déplacer la carte.
+      window.ORT_scrollToStep?.(m.stepId);
       
       // En mode ajout carte, on ne navigue pas - juste sélection
       if(mapClickMode){
@@ -9027,7 +9431,7 @@ Object.entries(grouped).forEach(([key, indices]) => {
       // retrouver l'index réel dans stepsForMap via __sid (index pts ≠ index steps possibles)
       const sid = m.stepId;
       const realIdx = (sid)
-        ? (stepsForMap || []).findIndex(s => (typeof ensureSid==='function'?ensureSid(s):(s.__sid)) === sid)
+        ? (stepsForMap || []).findIndex(s => s.__sid === sid)
         : (stepsForMap || []).indexOf(step);
       const u = (typeof currentUser === 'function') ? currentUser() : null;
       if (u) {
@@ -9051,9 +9455,9 @@ Object.entries(grouped).forEach(([key, indices]) => {
     const radius = 0.006;
     
     indices.forEach((stepIndex, subIndex) => {
-      const step = stepsForMap[stepIndex];
+      const step = pts[stepIndex];
       const sid  = (typeof ensureSid === 'function') ? ensureSid(step) : (step.__sid || (step.__sid = crypto?.randomUUID?.() || ('S'+Date.now()+Math.random().toString(36).slice(2))));
-      const stepNumber = stepIndex + 1;
+      const stepNumber = mapEntries[stepIndex].index + 1;
 
       // Disperser en cercle complet (360°) autour du centre
       const angle = (subIndex / indices.length) * 2 * Math.PI - Math.PI / 2;
@@ -9089,6 +9493,11 @@ Object.entries(grouped).forEach(([key, indices]) => {
       // Stocker le stepId sur le marqueur
       miniMarker.stepId = sid;
       miniMarker.isMiniMarker = true;
+      // Les sous-étapes groupées suivent le même clic que leur marqueur principal.
+      miniMarker.on('click', e => {
+        const mainMarker = markers.find(marker => marker.stepId === sid);
+        mainMarker?.fire('click', {originalEvent:e.originalEvent});
+      });
       
       // Événements hover pour agrandir
       // Événements hover pour agrandir ET afficher le popup
@@ -9323,7 +9732,35 @@ async function calculateRoute(waypoints, mode = 'driving') {
   }).addTo(map);
   
   // Calculer la route, portion par portion, pour colorier chaque boucle
-  const loopGroups = buildLoopSegments(pts);
+  let loopGroups = buildLoopSegments(pts);
+
+  // Un trajet marque "piste" ou "direct" ne doit pas passer par le routeur :
+  // il ne connait pas la piste et part la contourner par le goudron, ce qui
+  // dessine un detour de plusieurs centaines de kilometres. On coupe donc les
+  // portions a chaque trajet de ce genre, et ces morceaux la sont traces en
+  // ligne droite pointillee.
+  loopGroups = (function couperLesPistes(groupes) {
+    const nonRoutable = i => {
+      const m = pts[i] && pts[i]._method;
+      return m === 'piste' || m === 'direct';
+    };
+    const sortie = [];
+    groupes.forEach(g => {
+      let debut = g.start;
+      let etatCourant = null;
+      for (let i = g.start; i < g.end; i++) {
+        const etat = nonRoutable(i);
+        if (etatCourant === null) { etatCourant = etat; continue; }
+        if (etat !== etatCourant) {
+          sortie.push({ loop: g.loop, start: debut, end: i, droit: etatCourant });
+          debut = i;
+          etatCourant = etat;
+        }
+      }
+      sortie.push({ loop: g.loop, start: debut, end: g.end, droit: !!etatCourant });
+    });
+    return sortie;
+  })(loopGroups);
   // Table sid -> ensemble des boucles auxquelles ce lieu touche (tronçon avant + après).
   // Un lieu reste visible tant qu'au moins une de ses boucles est cochée.
   (function buildPointLoopMap(){
@@ -9349,6 +9786,10 @@ async function calculateRoute(waypoints, mode = 'driving') {
 
   Promise.all(loopGroups.map(g => {
     const slice = latlngs.slice(g.start, g.end + 1);
+    // Portion sur piste ou sans route : ligne droite, aucun appel au routeur.
+    if (g.droit) {
+      return Promise.resolve({ g, res: { type: 'fallback', coordinates: slice, dashArray: '6, 8' } });
+    }
     return calculateRoute(slice, transportMode)
       .then(res => ({ g, res }))
       .catch(() => ({ g, res: { type: 'fallback', coordinates: slice } }));
@@ -9563,25 +10004,7 @@ function getDragAfterWrapper(container,y){
 
 document.addEventListener('change',e=>{
   if(e.target.matches('input[type="number"]')&&e.target.dataset.idx!==undefined){
-    const idx=Number(e.target.dataset.idx);
-    const newNights = Math.max(0,Math.min(30,Number(e.target.value||0)));
-    state.steps[idx].nights = newNights;
-    
-    // Si nights = 0, supprimer l'hôtel et les infos de groupe
-    if (newNights === 0) {
-      delete state.steps[idx].hotel;
-      delete state.steps[idx].hotelName;
-      delete state.steps[idx].hotelPrice;
-      delete state.steps[idx].hotelRating;
-      delete state.steps[idx].hotelUrl;
-      delete state.steps[idx].hotelPhoto;
-      delete state.steps[idx]._isHub;
-      delete state.steps[idx].groupName;
-      delete state.steps[idx].groupColor;
-      console.log(`[LOG-CONTROLE][NIGHTS] Étape ${idx+1}: 0 nuit → hôtel supprimé`);
-    }
-    
-    renderRows(); // <-- re-render pour injecter/retirer la colonne Hôtel
+    setStepNights(Number(e.target.dataset.idx), e.target.value);
   }
 });
 
@@ -10406,11 +10829,20 @@ window.initSaveSourceButton = function(){
     const days_plan = state.steps.map((s, i) => ({
       day: i + 1,
       slice: 1,
-      place_id: s.place_id || '',
-      // suggested_days = nuits actuelles (reflète les modifications utilisateur)
-      suggested_days: s.nights || s._suggestedDays || 1,
+      // (pas de place_id au niveau du jour : il vit dans night.place_id, le
+      // doublon ecrit ici jusqu a present etait perdu a chaque import Excel)
+      // suggested_days = la duree de visite du fichier, jamais ecrasee par les
+      // nuits : celles-ci ont leur propre champ (stay_nights) plus bas.
+      suggested_days: (s._suggestedDays !== undefined && s._suggestedDays !== null && s._suggestedDays !== '') ? s._suggestedDays : (s.nights || 1),
       rating: s.rating || 0,
       region_code: s.region_code || '',
+      // Nuits conseillees : ne jamais les perdre au save, le champ absent est
+      // aussi faux que le champ faux. Les nuits editees ici font foi ; une
+      // etape qui porte des nuits est sa propre base.
+      ...((s.stay_at || Number.isFinite(Number(s.stay_nights))) ? {
+        stay_at: (Number(s.nights) > 0) ? (s.place_id || '') : (s.stay_at || s.place_id || ''),
+        stay_nights: Number.isFinite(Number(s.nights)) ? Number(s.nights) : Number(s.stay_nights)
+      } : {}),
       night: {
         place_id: s.place_id || '',
         coords: [s.lat, s.lon],
@@ -10434,7 +10866,11 @@ window.initSaveSourceButton = function(){
         distance_km: s._distanceKmToNext || (s._distanceToNext ? Math.round(s._distanceToNext) : null),
         drive_min: s._driveMinToNext || (s._distanceToNext ? Math.round(s._distanceToNext * 1.2) : null),
         transport_mode: s._transportMode || 'car',
-        method: s._driveMinToNext ? 'source' : 'heuristic',
+        // Le method d'origine est conserve tel quel : c'est lui qui dit a la
+        // chaine de production si elle a le droit de recalculer ce trajet.
+        // 'piste' et 'direct' interdisent le recalcul, les ecraser reintroduit
+        // les detours par le goudron.
+        method: s._method || (s._driveMinToNext ? 'heuristic' : 'heuristic'),
         road_type: s._roadType || null
       }
     }));
@@ -10457,7 +10893,9 @@ window.initSaveSourceButton = function(){
       estimated_days_base: estimatedDays,
       source_url: state._originalSourceUrl || null,
       created_at: state._originalCreatedAt || new Date().toISOString(),
-      pacing_rules: {
+      // Les regles d allure du fichier font foi ; les valeurs fixes ne servent
+      // qu a un itineraire qui n en avait pas.
+      pacing_rules: state._originalPacingRules || {
         factors: { slow: 1.25, standard: 1.0, fast: 0.75 },
         merge_threshold: 0.85
       },
@@ -10803,6 +11241,7 @@ if(itinsObj){
         if (toUse.climate) state._originalClimate = toUse.climate;
         if (toUse.seo_keywords) state._originalSeoKeywords = toUse.seo_keywords;
         if (toUse.practical_context) state._originalPracticalContext = toUse.practical_context;
+        if (toUse.pacing_rules && typeof toUse.pacing_rules === 'object') state._originalPacingRules = toUse.pacing_rules;
         // Champs enrichis supplémentaires (v3.3)
         if (toUse.essential_tips) state._originalEssentialTips = toUse.essential_tips;
         if (toUse.summary) state._originalSummary = toUse.summary;
@@ -13040,6 +13479,9 @@ if (window.ORT_DETAIL_ADAPTER && typeof window.ORT_DETAIL_ADAPTER.saveCurrent ==
   
   // Toast de notification
   function showToast(message) {
+    // Pendant une redirection, les requetes annulees produisent de faux messages
+    // d erreur. On ne les affiche pas, la page va disparaitre de toute facon.
+    if (window.__ORT_REDIRECTING) return;
     const toast = document.createElement('div');
     Object.assign(toast.style, {
       position: 'fixed',
@@ -14732,14 +15174,7 @@ if (new URLSearchParams(location.search).get('share')) {
 <script src="/js/ort-hotels-v3.js"></script>
 <link rel="stylesheet" href="/css/ort-hotels.css">
 
-<!-- Service Worker pour mode offline -->
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(r => {
-    console.log('[SW] ✅ Enregistré, scope:', r.scope);
-  }).catch(e => console.warn('[SW] Échec:', e));
-}
-</script>
+<!-- Hors ligne : gere par /service-worker.js uniquement (appel en haut de page). Ne pas rajouter /sw.js. -->
 
 <!-- ═══ RÉSUMÉ IA - SCRIPT ═══ -->
 <script>

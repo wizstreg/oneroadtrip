@@ -41,6 +41,10 @@
       fr: 'Vos voyages', en: 'Your trips', es: 'Tus viajes', it: 'I tuoi viaggi',
       pt: 'As suas viagens', ar: 'رحلاتك', nl: 'Jouw reizen', de: 'Deine Reisen'
     },
+    navHelp: {
+      fr: 'Aide', en: 'Help', es: 'Ayuda', it: 'Aiuto',
+      pt: 'Ajuda', ar: 'مساعدة', nl: 'Help', de: 'Hilfe'
+    },
 
     // ═══════════════════════════════════════════════════════════
     // CONNEXION : boutons visibles dans l'en-tete

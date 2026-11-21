@@ -1,6 +1,53 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"custom"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+
+
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <script>(function(s,t,a,y,tw,to){s.Stay22=s.Stay22||{};s.Stay22.params={lmaID:"692f0c75b2478d16bb9b22fa"};tw=t.createElement(a);to=t.getElementsByTagName(a)[0];tw.async=1;tw.src=y;to.parentNode.insertBefore(tw,to);})(window,document,"script","https://scripts.stay22.com/letmeallez.js");</script>
@@ -9,6 +56,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <title>Meu itinerário personalizado | OneRoadTrip</title>
 <meta name="description" content="Visualize o seu itinerário personalizado no mapa">
 <link rel="alternate" hreflang="fr" href="https://www.oneroadtrip.com/itineraires/custom.html">
@@ -24,7 +72,7 @@
 *{margin:0;padding:0;box-sizing:border-box}html{scroll-behavior:smooth}body{font-family:Inter,system-ui,sans-serif;color:var(--t);background:var(--bg);line-height:1.6}
 .hd{position:sticky;top:0;z-index:1000;background:var(--pd);color:#fff;height:var(--hh);display:flex;align-items:center;padding:0 20px;justify-content:space-between}.hd a{color:#fff;text-decoration:none}.hb{display:flex;align-items:center;gap:8px;font-size:1rem;font-weight:600}.hb img{height:28px}.hn{display:flex;gap:12px;align-items:center;font-size:.85rem}
 .ls{position:relative}.lb{background:var(--bl);border:1px solid #ddd;color:var(--t);padding:5px 10px;border-radius:6px;cursor:pointer;font-size:.8rem}.ld{display:none;position:absolute;top:100%;right:0;background:#fff;border-radius:8px;box-shadow:var(--sl);overflow-y:auto;max-height:calc(100vh - 80px);min-width:180px;z-index:999}.ld.open{display:block}.ld a.lo{display:flex;align-items:center;gap:8px;padding:10px 16px;color:#1a1a2e;text-decoration:none;font-size:.9rem;white-space:nowrap}.ld a.lo:hover{background:var(--bl);color:#1a1a2e}.ld a.lo.ac{background:var(--p);color:#fff}
-.ml{display:grid;grid-template-columns:1fr 1fr;min-height:600px}.mp{position:sticky;top:calc(var(--hh) + 50px);height:calc(var(--mh) - 50px);z-index:10;display:flex;flex-direction:column;overflow:hidden}.mp.fs{position:fixed;inset:0;z-index:10001;height:100vh;width:100vw}.mp.fs .mc{top:16px;right:16px;z-index:10002}.mp.fs .mb{padding:8px 14px;font-size:1rem;background:rgba(255,255,255,.95);box-shadow:0 2px 8px rgba(0,0,0,.3)}#map{width:100%;flex:1;min-height:0}.mc{position:absolute;top:10px;right:10px;z-index:1300;display:flex;gap:5px;transition:top .4s ease}.mb{background:#fff;border:1px solid #ccc;border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem;box-shadow:0 2px 4px rgba(0,0,0,.15)}.mb:hover{background:var(--bl)}.tp{padding:20px 28px}
+.ml{display:grid;grid-template-columns:1fr 1fr;min-height:600px}.mp{position:sticky;top:calc(var(--hh) + 50px);height:calc(var(--mh) - 50px);z-index:10;display:flex;flex-direction:column;overflow:hidden}.mp.fs{position:fixed;inset:0;z-index:10001;height:100vh;width:100vw}.mp.fs .mc{top:16px;right:16px;z-index:10002}.mp.fs .mb{padding:8px 14px;font-size:1rem;background:rgba(255,255,255,.95);box-shadow:0 2px 8px rgba(0,0,0,.3)}#map{width:100%;flex:1;min-height:0}.mc{position:absolute;top:10px;right:10px;z-index:1300;display:flex;gap:5px;align-items:flex-start;transition:top .4s ease}.mb{background:#fff;border:1px solid #ccc;border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.78rem;box-shadow:0 2px 4px rgba(0,0,0,.15)}.mb:hover{background:var(--bl)}.tp{padding:20px 28px}
 body:has(.mp.fs) .ip-bar{display:none !important}
 body:has(.mp.fs) header.ort-hdr{display:none !important}
 body:has(.mp.fs) .hd{display:none !important}
@@ -52,8 +100,19 @@ body:has(.mp.fs) .hd{display:none !important}
 .dd::after{content:'';display:block;clear:both}
 @media(max-width:600px){.mag-figure.mag-inset-left,.mag-figure.mag-inset-right{float:none;width:100%;margin:8px 0 12px 0}}
 .htl-inline{display:flex;align-items:center;gap:12px;padding:10px 14px;margin:8px 0;background:linear-gradient(135deg,#f0f7ff,#fff);border:1px solid var(--bd);border-radius:var(--r);text-decoration:none;color:var(--t);transition:all .2s}.htl-inline:hover{border-color:var(--s);box-shadow:0 2px 8px rgba(17,63,122,.12)}.htl-inline img{width:70px;height:70px;border-radius:8px;object-fit:cover;flex-shrink:0}.htl-info{flex:1;min-width:0}.htl-name{display:block;font-size:.82rem;font-weight:600;color:var(--p);line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.htl-score{display:inline-block;margin-top:4px;background:var(--p);color:#fff;padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:700}
-</style>
-<style>@media(max-width:640px){.crh-imgs img:nth-child(2){display:none}}.hb3-block{margin:24px 0;padding:0}.hb3-title{font-size:1.05rem;font-weight:600;color:#1e293b;margin:0 0 12px 0;display:flex;align-items:center;gap:8px}.hb3-title-icon{width:24px;height:24px;border-radius:5px;object-fit:cover;flex-shrink:0}.hb3-stay22-card{position:relative;display:block;width:100%;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04);text-decoration:none;color:inherit;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}.hb3-stay22-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.12)}.hb3-stay22-img{display:block;width:100%;height:320px;object-fit:cover}@media(max-width:600px){.hb3-stay22-img{height:260px}}.hb3-stay22-overlay{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0) 100%);display:flex;justify-content:flex-end;align-items:flex-end}.hb3-stay22-cta{background:#fff;color:#003b95;font-weight:600;font-size:0.92rem;padding:8px 14px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2)}.hb3-stage{position:relative;width:100%}.hb3-track{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#94a3b8}@media(max-width:720px){.hb3-track{aspect-ratio:4/3}}.hb3-slide{position:absolute;inset:0;display:block;text-decoration:none;color:inherit;cursor:pointer;overflow:hidden}.hb3-img-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:0;color:#fff;font-size:3rem;font-weight:700;letter-spacing:.05em;background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(0,0,0,0.15))}.hb3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .45s ease;pointer-events:none}.hb3-img-on{opacity:1}.hb3-badge{position:absolute;top:12px;left:12px;z-index:3;background:linear-gradient(135deg,#f4c430,#d4a017);color:#fff;font-size:0.78rem;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.02em;box-shadow:0 2px 8px rgba(212,160,23,0.45)}.hb3-price-tag{position:absolute;top:12px;right:12px;z-index:3;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:1rem;padding:5px 12px;border-radius:8px}.hb3-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px;background:linear-gradient(to top,rgba(0,0,0,0.78) 0%,rgba(0,0,0,0.25) 55%,rgba(0,0,0,0) 100%);color:#fff;z-index:2;pointer-events:none}.hb3-name{font-weight:600;font-size:1.1rem;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.5);margin-bottom:6px}.hb3-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hb3-score{flex-shrink:0;background:#003b95;color:#fff;font-weight:700;font-size:0.85rem;padding:3px 8px;border-radius:6px;line-height:1.1}.hb3-level{font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px}</style>
+.ort-booking{flex:0 0 auto;min-height:0;background:#fff;border-top:1px solid var(--bd);padding:10px 12px;display:grid;gap:7px;overflow:hidden}
+.ort-booking[hidden]{display:none}
+.ort-booking-title{font-size:13px;font-weight:700;color:#113f7a;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.ort-booking-hotel{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none;color:#113f7a;background:#f6f8fb;border-radius:4px;overflow:hidden}
+.ort-booking-hotel img{width:42%;height:clamp(70px,18vh,150px);object-fit:cover;flex-shrink:0}
+.ort-booking-hotel>span{display:grid;gap:6px;padding:8px;min-width:0;font-size:13px}
+.ort-booking-hotel strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.ort-booking-map{width:100%;height:clamp(100px,20vh,180px);border:0;display:block;background:#f2f5f9}
+.ort-booking-all{display:block;text-align:center;padding:8px 10px;background:#113f7a;color:#fff!important;border-radius:4px;text-decoration:none;font-size:13px;font-weight:700;line-height:1.4}
+.htl-ph .ort-booking-all{margin:8px 0 14px}
+@media(max-width:900px){body.t30 #mapPanel:not(.fs){height:52vh!important;min-height:300px}.ort-booking{padding:7px 10px;gap:4px}.ort-booking-map{height:110px}.ort-booking-hotel img{height:72px}.ort-booking-all{padding:6px 8px;font-size:12px}body.t30 .mc{top:10px;bottom:auto;left:auto;right:10px;max-width:70%}}
+.di{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px}.stay-line{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px;width:auto;flex:0 0 auto;padding:4px 12px;border-radius:16px;background:#fff4e0;border:1px solid #f0b357;font-size:13px;font-weight:600;line-height:1.35;color:#8a5a12;cursor:default}.stay-line.is-base{background:#e6f6ec;border-color:#5ab97e;color:#1c6b3c}.dm .ort-flag{position:absolute;top:-15px;right:-12px;font-size:11px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}.leaflet-tooltip.ort-tt{background:#fff;color:var(--t,#1f2937);border:1px solid var(--bd,#e5e7eb);border-radius:10px;padding:0;font-size:.82rem;line-height:1.4;box-shadow:0 4px 14px rgba(0,0,0,.18);width:max-content;max-width:280px;white-space:normal;overflow:hidden}.ort-tt .ott-h{display:flex;align-items:center;gap:8px;background:var(--p,#113f7a);color:#fff;padding:7px 12px}.ort-tt .ott-h strong{color:#fff;font-weight:700;font-size:.9rem}.ort-tt .ott-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:#fff;color:var(--p,#113f7a);font-weight:800;font-size:.75rem;display:flex;align-items:center;justify-content:center}.ort-tt .ott-l{padding:5px 12px;display:flex;gap:6px;align-items:center;white-space:nowrap}.ort-tt .ott-l+.ott-l{border-top:1px solid var(--bd,#e5e7eb)}.ort-tt .ott-stay{background:#e6f6ec;color:#1c6b3c;font-weight:600}.ort-tt .ott-km b{color:var(--p,#113f7a)}.ort-tt .ott-nx{color:var(--tl,#6b7280);font-size:.78rem}.stay-line label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.stay-sel{padding:1px 5px;border:1px solid currentColor;border-radius:5px;background:#fff;font-size:13px;font-weight:700;color:inherit;cursor:pointer}.stay-base{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;padding-left:10px;border-left:1px solid rgba(0,0,0,.15)}.stay-here{padding:2px 10px;border:1px solid currentColor;border-radius:12px;background:#fff;color:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}.stay-here:hover{background:#8a5a12;color:#fff}@media(max-width:600px){.stay-line{flex-basis:100%}.stay-base{padding-left:0;border-left:0}}[hidden]{display:none!important}</style>
+<style>@media(max-width:640px){.crh-imgs img:nth-child(2){display:none}}.hb3-block{margin:24px 0;padding:0}.hb3-title{font-size:1.05rem;font-weight:600;color:#1e293b;margin:0 0 12px 0;display:flex;align-items:center;gap:8px}.hb3-title-icon{width:24px;height:24px;border-radius:5px;object-fit:cover;flex-shrink:0}.hb3-stay22-card{position:relative;display:block;width:100%;border-radius:14px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 3px rgba(0,0,0,0.04);text-decoration:none;color:inherit;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}.hb3-stay22-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.12)}.hb3-stay22-img{display:block;width:100%;height:320px;object-fit:cover}@media(max-width:600px){.hb3-stay22-img{height:260px}}.hb3-stay22-overlay{position:absolute;left:0;right:0;bottom:0;padding:14px 16px;background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0) 100%);display:flex;justify-content:flex-end;align-items:flex-end}.hb3-stay22-cta{background:#fff;color:#003b95;font-weight:600;font-size:0.92rem;padding:8px 14px;border-radius:8px;box-shadow:0 2px 6px rgba(0,0,0,0.2)}.hb3-stage{position:relative;width:100%}.hb3-track{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#94a3b8}@media(max-width:720px){.hb3-track{aspect-ratio:4/3}}.hb3-slide{position:absolute;inset:0;display:block;text-decoration:none;color:inherit;cursor:pointer;overflow:hidden}.hb3-img-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:0;color:#fff;font-size:3rem;font-weight:700;letter-spacing:.05em;background:linear-gradient(135deg,rgba(255,255,255,0.15),rgba(0,0,0,0.15))}.hb3-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0;transition:opacity .45s ease;pointer-events:none}.hb3-img-on{opacity:1;pointer-events:auto}.hb3-badge{position:absolute;top:12px;left:12px;z-index:3;background:linear-gradient(135deg,#f4c430,#d4a017);color:#fff;font-size:0.78rem;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.02em;box-shadow:0 2px 8px rgba(212,160,23,0.45)}.hb3-price-tag{position:absolute;top:12px;right:12px;z-index:3;background:rgba(15,23,42,0.85);color:#fff;font-weight:700;font-size:1rem;padding:5px 12px;border-radius:8px}.hb3-overlay{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;padding:16px 18px;background:linear-gradient(to top,rgba(0,0,0,0.78) 0%,rgba(0,0,0,0.25) 55%,rgba(0,0,0,0) 100%);color:#fff;z-index:2;pointer-events:none}.hb3-name{font-weight:600;font-size:1.1rem;line-height:1.3;text-shadow:0 1px 3px rgba(0,0,0,0.5);margin-bottom:6px}.hb3-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.hb3-score{flex-shrink:0;background:#003b95;color:#fff;font-weight:700;font-size:0.85rem;padding:3px 8px;border-radius:6px;line-height:1.1}.hb3-level{font-size:0.75rem;text-transform:uppercase;letter-spacing:.05em;font-weight:600;background:rgba(255,255,255,0.2);padding:3px 8px;border-radius:6px}.hb3-stage:hover .hb3-nav{opacity:.92}.hb3-nav{position:absolute;z-index:5;border:none;cursor:pointer;background:rgba(15,23,42,.62);color:#fff;opacity:.55;transition:opacity .18s,background .18s;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}.hb3-nav:hover{opacity:1;background:rgba(15,23,42,.85)}.hb3-nav-left,.hb3-nav-right{top:50%;transform:translateY(-50%);width:38px;height:64px;font-size:1.6rem;border-radius:8px}.hb3-nav-left{left:8px}.hb3-nav-right{right:8px}.hb3-nav-up,.hb3-nav-down{left:50%;transform:translateX(-50%);width:64px;height:30px;font-size:1.2rem;border-radius:8px}.hb3-nav-up{top:8px}.hb3-nav-down{bottom:8px}.hb3-nav[hidden]{display:none}.hb3-count{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;z-index:4;background:rgba(15,23,42,.62);color:#fff;font-size:.72rem;padding:3px 9px;border-radius:999px;pointer-events:none}@media(max-width:600px){.hb3-nav{opacity:.85}.hb3-nav-left,.hb3-nav-right{width:34px;height:54px}}</style>
 <style>
 .kw-bar{display:flex;flex-wrap:wrap;gap:6px;padding:8px 0;margin-bottom:4px}.kw-tag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:#f0f7ff;border:1px solid #d0dff0;border-radius:14px;font-size:.75rem;color:var(--p);text-decoration:none;transition:all .15s;white-space:nowrap}.kw-tag:hover{background:var(--p);color:#fff;border-color:var(--p)}
 .car{position:relative;width:100%;height:320px;margin:12px 0 8px;border-radius:var(--r);overflow:hidden;background:#e8edf2}
@@ -61,7 +120,7 @@ body:has(.mp.fs) .hd{display:none !important}
 .car .car-img.car-active{opacity:1}
 @media(max-width:600px){.car{height:320px}.dp-inline{height:320px}}
 .see-itin{display:none;width:100%;padding:12px;background:linear-gradient(to bottom,transparent,rgba(17,63,122,.85));color:#fff;border:none;font-size:.9rem;font-weight:600;cursor:pointer;text-align:center;position:absolute;bottom:0;left:0;right:0;z-index:20}
-.edit-on-map{background:linear-gradient(135deg,#ff6b35,#e35a25);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.15);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:filter .15s,box-shadow .15s}
+.edit-on-map{background:linear-gradient(135deg,#ff6b35,#e35a25);color:#fff;border:none;flex:0 0 auto;align-self:flex-start;padding:5px 12px;border-radius:6px;font-size:.78rem;font-weight:700;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.15);display:inline-flex;align-items:center;gap:4px;white-space:nowrap;transition:filter .15s,box-shadow .15s}
 .edit-on-map:hover{filter:brightness(1.08);box-shadow:0 3px 8px rgba(0,0,0,.25)}
 .edit-on-map:active{filter:brightness(.95)}
 body.ort-ed-map-fs .edit-on-map{display:none !important}
@@ -70,7 +129,15 @@ img.wk-lazy{background:#e8edf2;background:linear-gradient(90deg,#e8edf2 25%,#f0f
 .vi{display:block;margin-bottom:14px}.vm{display:none}.vc{display:block}.vc p{font-size:.88rem;line-height:1.6;text-align:justify}.vd{display:inline-block;margin-top:3px;font-size:.78rem;color:var(--tl)}
 .ab{margin-top:10px;padding:10px;background:var(--bl);border-radius:var(--r)}.ab h4{font-size:.88rem;color:var(--p);margin-bottom:6px}.ai p{font-size:.85rem;line-height:1.5;margin-bottom:6px}
 .htb{position:relative;display:block;width:56px;height:56px;border-radius:6px;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .15s;flex-shrink:0}.htb:hover{transform:scale(1.08)}.htb img{width:100%;height:100%;object-fit:cover;display:block}.hts{position:absolute;bottom:2px;left:2px;background:#003580;color:#fff;font-size:.65rem;font-weight:700;padding:1px 4px;border-radius:3px}
-.nl{display:flex;align-items:center;gap:7px;margin-top:10px;padding:9px 12px;background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border-radius:var(--r);font-size:.83rem}
+.nl{display:flex;align-items:center;gap:8px;margin-top:12px;padding:10px 14px;background:linear-gradient(135deg,#c62828,#a01d1d);color:#fff;border-radius:var(--r);font-size:.86rem;font-weight:500;box-shadow:0 2px 6px rgba(198,40,40,.25)}
+.nl b{color:#fff;font-weight:700}
+.nl-help{margin-left:auto;position:relative;background:rgba(255,255,255,.22);border:0;color:#fff;width:22px;height:22px;min-width:22px;border-radius:50%;cursor:pointer;font:inherit;padding:0;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.nl-q{font-size:.78rem;font-weight:700}
+.nl-tip{position:absolute;right:0;bottom:calc(100% + 8px);width:min(280px,72vw);background:#fff;color:#243b53;border:1px solid #d9e2ec;border-radius:8px;padding:10px 12px;font-size:.78rem;font-weight:400;line-height:1.45;text-align:left;box-shadow:0 6px 20px rgba(0,0,0,.18);opacity:0;visibility:hidden;transition:opacity .15s;z-index:40;pointer-events:none}
+.nl-help:hover .nl-tip,.nl-help:focus .nl-tip{opacity:1;visibility:visible}
+[dir=rtl] .nl-tip{right:auto;left:0;text-align:right}
+@media(max-width:700px){.nl-help{position:static}.nl{position:relative;flex-wrap:wrap}.nl-tip{right:12px;left:12px;width:auto;max-width:none;transform:none;bottom:calc(100% + 6px)}}
+.nl>span:first-child{background:rgba(255,255,255,.2);padding:2px 9px;border-radius:999px;font-weight:600;white-space:nowrap}
 .ft{background:var(--pd);color:rgba(255,255,255,.6);padding:20px 28px;text-align:center;font-size:.78rem}.ft a{color:rgba(255,255,255,.8)}
 .po{display:none;position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px}.po[style*="block"]{display:flex !important}.pc{position:relative;width:100%;max-width:640px;max-height:80vh;background:#fff;border-radius:var(--rl);padding:22px 22px 22px;overflow-y:auto;box-shadow:var(--sl)}.px{position:absolute;top:8px;right:12px;background:none;border:none;font-size:1.5rem;cursor:pointer;line-height:1;padding:4px 8px;color:#555}.px:hover{color:#000}
 .btm{display:none;position:fixed;bottom:80px;right:20px;z-index:950;background:var(--p);color:#fff;border:none;border-radius:28px;padding:10px 18px;font-size:.85rem;font-weight:600;cursor:pointer;box-shadow:var(--sl);transition:transform .15s;gap:6px;align-items:center}.btm:hover{transform:scale(1.05)}.btm svg{width:18px;height:18px;fill:#fff}
@@ -96,7 +163,7 @@ body.hdr-off .mp{top:50px}
 .llg-item:not(.on) .llg-tx{text-decoration:line-through}
 @media(max-width:900px){.ort-loop-legend{top:8px;right:8px;max-width:88%;gap:5px}.llg-item{font-size:.7rem;padding:3px 8px;gap:5px}.llg-sw{width:9px;height:9px}}
 .mtg{display:none}.mopen{display:none}
-@media(max-width:900px){.mp{position:sticky!important;top:var(--hh);z-index:12;transition:height .28s ease}.mtg{display:inline-block;font-weight:700;line-height:1}.mc{top:auto;bottom:10px;left:10px;right:auto;flex-wrap:wrap;max-width:60%;gap:6px}body.map-off .mp{height:0!important;min-height:0!important;border:0!important;overflow:hidden!important}body.map-off .mp>*{display:none!important}body.map-off .btm{display:none!important}body.map-off .mopen{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 16px;margin:0;border:none;border-bottom:1px solid var(--bd);background:var(--p);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;position:sticky;top:var(--snBase,var(--hh));z-index:1160;box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:0;animation:ortMopenIn .18s ease .3s forwards}@keyframes ortMopenIn{from{opacity:0}to{opacity:1}}}
+@media(max-width:900px){.mp{position:sticky!important;top:var(--hh);z-index:12;transition:height .28s ease}.mtg{display:inline-block;font-weight:700;line-height:1}.mc{top:auto;bottom:10px;left:10px;right:auto;flex-wrap:wrap;max-width:60%;gap:6px;align-items:flex-start}body.map-off .mp{height:0!important;min-height:0!important;border:0!important;overflow:hidden!important}body.map-off .mp>*{display:none!important}body.map-off .btm{display:none!important}body.map-off .mopen{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px 16px;margin:0;border:none;border-bottom:1px solid var(--bd);background:var(--p);color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;position:sticky;top:var(--snBase,var(--hh));z-index:1160;box-shadow:0 2px 8px rgba(0,0,0,.18);opacity:0;animation:ortMopenIn .18s ease .3s forwards}@keyframes ortMopenIn{from{opacity:0}to{opacity:1}}}
 body.hdr-off .rcol{top:8px;height:calc(100vh - 16px)}
 .tp{position:relative;z-index:1}
 .header-row-1{display:flex;align-items:center;gap:8px;width:100%;flex-wrap:nowrap}
@@ -130,22 +197,309 @@ header.ort-hdr .auth-pop .btn.out{background:#fff;color:var(--pd);border:1px sol
 @media(max-width:600px){.vi{flex-direction:column;gap:4px}}
 .ds{scroll-margin-top:calc(var(--hh) + 10px);padding:20px 0;border-bottom:1px solid var(--bd)}.ds.active{background:var(--bl);border-radius:var(--r)}.dh{display:flex;align-items:center;gap:10px;cursor:pointer;padding:0 0 10px}.db{flex-shrink:0;background:var(--p);color:#fff;padding:4px 10px;border-radius:6px;font-size:.78rem;font-weight:700}.di h3{font-size:1rem;font-weight:600;color:var(--t)}.dt{font-size:.82rem;color:var(--tl);margin-top:2px}.dr{font-size:.85rem;color:#f5a623;margin-left:auto;white-space:nowrap}.dd{padding:0 0 4px}
 .htl-ph{min-height:0}
-</style>
+body.t30{--t:#1a1f26;--tl:#5b6470;--bg:#fbfaf7;--bl:#f2efe9;--bd:#e4e1da;--a:#b8441a;--s:#113f7a;--sh:none;--r:4px;--rl:4px;--t30w:860px;--t30g:clamp(24px,4vw,64px);--t30route:#7d848d;--t30stay:#1c6b3c;background:#fbfaf7;color:#1a1f26}
+body.t30 a:focus-visible,body.t30 button:focus-visible,body.t30 select:focus-visible{outline:2px solid #113f7a;outline-offset:2px}
+body.t30 .ip-bar{background:#fbfaf7;border-bottom:1px solid #e4e1da;box-shadow:none;gap:6px 22px;padding:10px var(--t30g);flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+body.t30 .ip-bar::-webkit-scrollbar{display:none}
+body.t30 .ip-pill,body.t30 .ip-pill-notes,body.t30 .ip-pill-book{background:none!important;border:0!important;border-radius:0;padding:4px 0;font-size:13px;font-weight:500;color:#1a1f26;flex:0 0 auto}
+body.t30 .ip-pill:hover{background:none!important;color:#113f7a!important;text-decoration:underline}
+body.t30 .ip-pill-notes{font-weight:600}
+body.t30 .ip-pill-book{color:#113f7a}
+body.t30 .ip-pill .ip-lbl{display:inline!important}
+body.t30 .ip-ic{display:none!important}
+body.t30 .ip-save-btn,body.t30 .ip-trips-btn{background:none!important;border:0;border-radius:0;box-shadow:none!important;transform:none!important;color:#113f7a;padding:4px 0;font-size:13px;font-weight:600;flex:0 0 auto}
+body.t30 .ip-save-btn:hover,body.t30 .ip-trips-btn:hover{text-decoration:underline}
+body.t30 .ip-save-lbl,body.t30 .ip-trips-lbl{display:inline!important}
+body.t30 .ip-pop{box-shadow:none;border-top:1px solid #e4e1da;border-bottom:1px solid #e4e1da;padding:20px var(--t30g)}
+body.t30 .ip-pop li::before{color:#5b6470}
+body.t30 .ip-pop-cta{background:#113f7a;border-radius:4px;box-shadow:none}
+body.t30 .ip-x{background:none;border:1px solid #e4e1da}
+body.t30 .bc{background:none;border:0;margin:0;padding:18px var(--t30g) 0;color:#5b6470}
+body.t30 .hr{background:none;min-height:0;overflow:visible}
+body.t30 .hr>img,body.t30 .hr::after{display:none}
+body.t30 .hc{color:#1a1f26;max-width:none;margin:0;padding:36px var(--t30g) 8px;min-height:0}
+body.t30 .t30-kick{font-size:13px;line-height:16px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#b8441a;margin:0 0 14px}
+body.t30 .hc h1{font-family:"Playfair Display",Georgia,serif;font-size:clamp(38px,4.2vw,60px);line-height:1.04;letter-spacing:-.015em;font-weight:700;color:#1a1f26;text-shadow:none;margin:0 0 28px;max-width:1080px}
+body.t30 .hs{display:flex;flex-wrap:wrap;gap:16px 48px;padding:18px 0;margin:0 0 22px;border-top:2px solid #1a1f26;border-bottom:1px solid #e4e1da;opacity:1;max-width:var(--t30w)}
+body.t30 .hs>span{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#5b6470}
+body.t30 .hs b{font-family:"Playfair Display",Georgia,serif;font-size:38px;line-height:1;letter-spacing:-.01em;font-weight:700;text-transform:none;color:#113f7a}
+body.t30 .hr-route{font-size:14px;line-height:22px;color:#5b6470;opacity:1;white-space:normal;max-width:var(--t30w);cursor:default;margin:0 0 16px;letter-spacing:0}
+body.t30 .hi{display:block;-webkit-line-clamp:unset;overflow:visible;font-size:17px;line-height:28px;color:#1a1f26;opacity:1;max-width:var(--t30w);cursor:default;margin:0}
+body.t30 .hr-tip{display:none!important}
+body.t30 .pg-ic{background:none;border:1px solid #e4e1da;color:#113f7a;border-radius:4px;font-family:Inter,system-ui,sans-serif;font-size:13px}
+body.t30 .ort-tb{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch;gap:12px;max-width:calc(var(--t30w) + 2*64px);margin:18px 0 0;padding:0 var(--t30g)}
+body.t30 .ort-tb>#ortCommentsHost,body.t30 .ort-tb>.pg-bn{flex:none!important;width:100%;max-width:var(--t30w)}
+body.t30 .ort-tb>.pg-bn,body.t30 .pg-bn{background:#f2efe9;border:0;border-radius:0;color:#1a1f26}
+body.t30 .pg-bn-y{background:#113f7a;border-radius:4px}
+body.t30 .pg-bn-n{border-radius:4px}
+body.t30 .vb-wrap{max-width:var(--t30w);margin:8px 0 0;padding:0 var(--t30g)}
+body.t30 .vb-card{background:none;border:0;border-top:1px solid #e4e1da;border-bottom:1px solid #e4e1da;border-radius:0;box-shadow:none;color:#1a1f26}
+body.t30 .vb-text{color:#1a1f26}
+body.t30 .vb-ico{background:#1c6b3c}
+body.t30 .vb-detail{background:none;border:0;margin:0;color:#1a1f26}
+body.t30 .tp{max-height:none;counter-reset:t30s}
+body.t30 .tp>*{max-width:var(--t30w)}
+body.t30 .na,body.t30 .btm,body.t30 .see-itin,body.t30 .dp-map,body.t30 .hover-photo,body.t30 .hover-photo.on{display:none!important}
+body.t30 .mb{border-radius:4px;box-shadow:none;border-color:#e4e1da}
+body.t30 .edit-on-map{background:#113f7a;border-radius:4px;box-shadow:none}
+body.t30 .mp.fs{position:fixed!important;inset:0;height:100vh!important;width:100vw;max-width:none;margin:0;border:0!important;z-index:10001}
+body.t30 .mopen{display:none}
+body.t30 .mp{background:#f2efe9}
+@media(min-width:901px){
+body.t30 .ml{display:grid;grid-template-columns:minmax(0,1fr) minmax(400px,40%);align-items:start;margin-top:24px;border-top:1px solid #e4e1da}
+body.t30 .tp{grid-column:1;grid-row:1;padding:40px var(--t30g) 72px}
+body.t30 .mp{grid-column:2;grid-row:1;position:sticky!important;top:calc(var(--hh) + 46px);height:calc(100vh - var(--hh) - 46px)!important;border-left:1px solid #e4e1da;background:#f2efe9;z-index:5}
+body.t30.hdr-off .mp{top:46px;height:calc(100vh - 46px)!important}
+body.t30 .mtg{display:none!important}
+}
+@media(max-width:900px){
+body.t30 .mp{height:36vh!important;min-height:220px}
+body.t30.map-off .mp,body.t30.map-off #mapPanel:not(.fs),body.t30.t30-flow.map-off #mapPanel:not(.fs){height:0!important;min-height:0!important;border:0!important;overflow:hidden!important}
+body.t30.map-off .mopen{display:flex!important;align-items:center;justify-content:space-between;gap:16px;width:100%;margin:0;padding:14px 16px;border:0;border-radius:0;background:#f2efe9;color:#113f7a;box-shadow:none;opacity:1;animation:none;font-family:Inter,system-ui,sans-serif;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+body.t30 .mopen .t30-mo-n{color:#5b6470}
+}
+body.t30 .op-card{border-radius:4px;box-shadow:none!important;transform:none!important}
+body.t30 .op-free{background:#f2efe9;border:0}
+body.t30 .op-act{background:none;border:1px solid #e4e1da}
+body.t30 .op-act:hover{border-color:#113f7a}
+body.t30 .op-card h4,body.t30 .op-card h3{color:#113f7a!important}
+body.t30 .op-arrow{color:#5b6470}
+body.t30 #ort-line-break .olb-lbl{color:#5b6470}
+body.t30 .ds{position:relative;padding:0 0 64px;padding-inline-start:60px;margin:0;border:0;counter-increment:t30s;background:none!important;border-radius:0!important}
+body.t30 .ds+.ds{border-top:0;padding-top:0;margin-top:0}
+body.t30 .ds::before{content:"";position:absolute;inset-inline-start:17px;top:0;bottom:0;border-inline-start:2px dashed var(--t30route)}
+body.t30 .ds:last-of-type{padding-bottom:0}
+body.t30 .ds::after{content:counter(t30s,decimal-leading-zero);position:absolute;inset-inline-start:0;top:0;width:36px;height:36px;box-sizing:border-box;border-radius:999px;border:0;background:#113f7a;color:#fff;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:700;line-height:36px;text-align:center}
+body.t30 .ds.active::after{background:#b8441a;color:#fff;box-shadow:0 0 0 5px #fbfaf7,0 0 0 6px #b8441a}
+body.t30 .dh{padding:0 0 12px;gap:8px 12px;align-items:flex-start;flex-wrap:wrap}
+body.t30 .di{gap:6px 12px}
+body.t30 .di h3{font-family:"Playfair Display",Georgia,serif;font-size:32px;line-height:36px;letter-spacing:-.01em;font-weight:700;color:#1a1f26;margin:0}
+body.t30 .dr{color:#5b6470;font-size:13px;letter-spacing:.1em}
+body.t30 .ort-speak-btn{border:1px solid #e4e1da;background:none;width:26px;height:26px;font-size:.75rem}
+body.t30 .ort-speak-btn.ort-speak-playing{background:#113f7a;border-color:#113f7a;animation:none}
+body.t30 .stay-line,body.t30 .stay-line.is-base{background:none;border:0;border-radius:0;padding:0;color:#5b6470;font-size:13px;font-weight:600;flex-basis:100%}
+body.t30 .stay-line.is-base{color:var(--t30stay)}
+body.t30 .stay-sel{border:1px solid #e4e1da;border-radius:4px;background:#fbfaf7}
+body.t30 .stay-base{border-inline-start:1px solid #e4e1da}
+body.t30 .stay-here{border:1px solid #e4e1da;border-radius:4px;background:none;color:#113f7a}
+body.t30 .stay-here:hover{background:none;color:#113f7a;border-color:#113f7a}
+body.t30 .kw-bar{gap:4px 14px;padding:0 0 12px}
+body.t30 .kw-tag{background:none;border:0;border-radius:0;padding:0;color:#5b6470;font-size:13px}
+body.t30 .kw-tag:hover{background:none;color:#113f7a;text-decoration:underline}
+body.t30 .d-intro{background:none;border:0;border-radius:0;padding:0;margin:0 0 20px;font-style:normal;font-size:18px;line-height:29px;font-weight:500;color:#1a1f26}
+body.t30 .vi{margin-bottom:16px}
+body.t30 .vc p{font-size:17px;line-height:28px;text-align:start;color:#1a1f26}
+body.t30 .vd{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5b6470;margin-top:4px}
+body.t30 .mag-figure.t30-fig{float:none;width:100%;margin:8px 0 24px;aspect-ratio:3/2;overflow:hidden;background:#f2efe9}
+body.t30 .mag-figure.t30-fig img{width:100%;height:100%;object-fit:cover;border-radius:0;display:block}
+body.t30 .mag-figure img,body.t30 .mag-photo{border-radius:0}
+body.t30 .ab{background:none;border-top:1px solid #e4e1da;border-radius:0;padding:16px 0 0;margin-top:24px}
+body.t30 .ab h4,body.t30 .aff-block>h4{font-family:Inter,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#5b6470}
+body.t30 .ai p{font-size:15px;line-height:24px}
+body.t30 .gyg-box{background:none;border:0;border-bottom:1px solid #e4e1da;border-radius:0;padding:12px 0}
+body.t30 .gyg-img{border-radius:0}
+body.t30 .aff-block{background:none;border:0;border-top:1px solid #e4e1da;border-radius:0;padding:16px 0 0}
+body.t30 .htl-inline{background:none;border:0;border-top:1px solid #e4e1da;border-bottom:1px solid #e4e1da;border-radius:0;box-shadow:none!important}
+body.t30 .htl-inline img{border-radius:0}
+body.t30 .nl{background:none;box-shadow:none;border-radius:0;border-top:1px solid #e4e1da;color:#5b6470;padding:14px 0 0;margin-top:24px;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+body.t30 .nl b{color:#1a1f26;font-weight:600}
+body.t30 .nl>span:first-child{background:none;padding:0;border-radius:0;color:#1a1f26}
+body.t30 .nl-help{background:none;border:1px solid #c9c5bc;color:#5b6470}
+body.t30 .nl-tip{text-transform:none;letter-spacing:0;font-weight:400;box-shadow:none;border-color:#e4e1da;border-radius:4px;color:#1a1f26}
+body.t30 .cs{background:#f2efe9;color:#1a1f26}
+body.t30 .cs h2{color:#1a1f26}
+body.t30 .cs p{opacity:1;color:#5b6470}
+body.t30 .cb{background:#113f7a;color:#fff;border-radius:4px;box-shadow:none}
+body.t30 .ns{background:#fbfaf7;border-top:1px solid #e4e1da}
+body.t30 .ns h2{color:#1a1f26}
+body.t30 .nc{background:none;border:1px solid #e4e1da;border-radius:4px;box-shadow:none!important;transform:none!important}
+body.t30 .nc:hover{border-color:#113f7a}
+body.t30 .ft{background:#fbfaf7;color:#5b6470;border-top:1px solid #e4e1da}
+body.t30 .ft a{color:#113f7a}
+@media(max-width:900px){
+body.t30 .ip-bar{padding:10px 16px}
+body.t30 .ip-pop{padding:20px 16px}
+body.t30 .hc{padding:28px 16px 8px}
+body.t30 .hc h1{font-size:30px;line-height:36px}
+body.t30 .hi{font-size:16px;line-height:26px}
+body.t30 .tp{padding:28px 16px 48px}
+body.t30 .ort-tb,body.t30 .vb-wrap{padding:0 16px}
+body.t30 .bc{display:none}
+body.t30 .ds{padding-inline-start:44px;padding-bottom:48px}
+body.t30 .ds::before{inset-inline-start:13px}
+body.t30 .ds::after{width:28px;height:28px;line-height:28px;font-size:12px}
+body.t30 .di h3{font-size:25px;line-height:30px}
+body.t30 .hs{gap:14px 28px}
+body.t30 .hs b{font-size:28px}
+body.t30 .vc p{font-size:16px;line-height:26px}
+}
+body.t30 .t30-sl{position:relative;min-height:420px;overflow:hidden;background:#f2efe9}
+body.t30 .t30-sl-i{position:absolute;inset:0;margin:0;opacity:0;transition:opacity .8s ease}
+body.t30 .t30-sl-i.on{opacity:1}
+body.t30 .t30-sl-i img{width:100%;height:100%;object-fit:cover;display:block}
+body.t30 .t30-sl-i figcaption{position:absolute;left:0;bottom:0;background:#1a1f26;color:#fff;font-family:Inter,system-ui,sans-serif;font-size:12px;line-height:16px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 14px}
+@media(min-width:901px){
+body.t30 .hc{display:grid;grid-template-columns:minmax(0,1fr) max(400px,calc((100% + var(--t30g))*.4));column-gap:var(--t30g);padding-right:0;align-items:start}
+body.t30 .hc>*{grid-column:1}
+body.t30 .hc>.t30-sl{grid-column:2;grid-row:1/span 12;align-self:stretch}
+}
+@media(max-width:900px){body.t30 .t30-sl{display:none}}
+@media(max-width:900px){
+body.t30 .ip-bar{flex-wrap:wrap!important;overflow:visible!important;align-items:center;gap:4px 7px!important;padding:8px 12px!important;justify-content:flex-start}
+body.t30 .ip-pill,body.t30 .ip-pill-notes,body.t30 .ip-pill-book{padding:6px 4px!important;font-size:1rem}
+body.t30 .ip-pill .ip-lbl{display:none!important}
+body.t30 .ip-ic{display:inline-flex!important}
+body.t30 .ip-ic svg{height:.95em!important}
+body.t30 #pill-hl{order:1}body.t30 #pill-dur{order:2}body.t30 #pill-wx{order:3}body.t30 #pill-notes{order:4}body.t30 #pill-prac{order:5}body.t30 #pill-cost{order:6}
+body.t30 #pill-flight{order:7}body.t30 #pill-car{order:8}body.t30 #pill-camper{order:9}
+body.t30 #ort-line-break{order:20!important;display:block!important;flex-basis:100%!important;height:0!important;margin:0!important;padding:0!important;overflow:hidden}
+body.t30 #ort-line-break .olb-lbl{display:none}
+body.t30 .ip-save-btn{order:21!important;margin-left:0!important;font-size:11.5px;padding:4px 0}
+body.t30 .ip-trips-btn{order:22!important;margin-left:0!important;font-size:11.5px;padding:4px 0}
+body.t30 .ip-bar>:not(.ip-pill):not(.ip-save-btn):not(.ip-trips-btn):not(#ort-line-break):not(.ip-pop){order:23;zoom:.66}
+body.t30 #ort-env-slot:empty{display:none}
+}
+@media(max-width:380px){
+body.t30 .ip-bar>:not(.ip-pill):not(.ip-save-btn):not(.ip-trips-btn):not(#ort-line-break):not(.ip-pop){zoom:.56}
+body.t30 .ip-save-btn,body.t30 .ip-trips-btn{font-size:11px}
+}
+.ort-booking{flex:0 0 auto;min-height:0;background:#fff;border-top:1px solid var(--bd);padding:10px 12px;display:grid;gap:7px;overflow:hidden}
+.ort-booking[hidden]{display:none}
+.ort-booking-title{font-size:13px;font-weight:700;color:#113f7a;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+.ort-booking-hotel{display:flex;align-items:center;gap:12px;min-width:0;text-decoration:none;color:#113f7a;background:#f6f8fb;border-radius:4px;overflow:hidden}
+.ort-booking-hotel img{width:42%;height:clamp(70px,18vh,150px);object-fit:cover;flex-shrink:0}
+.ort-booking-hotel>span{display:grid;gap:6px;padding:8px;min-width:0;font-size:13px}
+.ort-booking-hotel strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.ort-booking-map{width:100%;height:clamp(100px,20vh,180px);border:0;display:block;background:#f2f5f9}
+.ort-booking-all{display:block;text-align:center;padding:8px 10px;background:#113f7a;color:#fff!important;border-radius:4px;text-decoration:none;font-size:13px;font-weight:700;line-height:1.4}
+.htl-ph .ort-booking-all{margin:8px 0 14px}
+@media(max-width:900px){body.t30 #mapPanel:not(.fs){height:52vh!important;min-height:300px}.ort-booking{padding:7px 10px;gap:4px}.ort-booking-map{height:110px}.ort-booking-hotel img{height:72px}.ort-booking-all{padding:6px 8px;font-size:12px}body.t30 .mc{top:10px;bottom:auto;left:auto;right:10px;max-width:70%}}
+.ort-activities{clear:both;border-top:1px solid var(--bd,#e4e1da);margin:20px 0;padding:16px 0;display:grid;gap:10px}.ort-activities h4{margin:0;font-size:14px;color:#113f7a}.ort-activity{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;border:1px solid #e4e1da;border-radius:4px;background:#fff;padding:10px}.ort-activity:hover{border-color:#113f7a}.ort-activity[hidden]{display:none}.ort-activity img{width:76px;height:76px;object-fit:cover;flex-shrink:0}.ort-activity-body{display:grid;gap:8px;min-width:0}.ort-activity strong{font-size:14px;line-height:1.4}.ort-activity-cta,.ort-activities-more{font-size:13px;font-weight:600;color:#113f7a}.ort-activities-fallback{display:flex;gap:12px;flex-wrap:wrap}.ort-activities-fallback a,.ort-activities-more{padding:10px 12px;border:1px solid #113f7a;border-radius:4px;background:#fff;text-decoration:none}.ort-activities-more{justify-self:start;cursor:pointer}.ort-activities-note{font-size:11px;line-height:1.4;color:#5b6470;margin:0}@media(max-width:600px){.ort-activity img{width:60px;height:60px}}
+@media(min-width:901px){
+#textPanel{--ort-text-gap:50px;min-width:0;min-height:0;max-height:calc(100vh - var(--hh,70px) - var(--ort-text-gap));overflow-y:scroll!important;overflow-x:hidden;scrollbar-gutter:stable;scrollbar-width:auto!important;scrollbar-color:#ffffff #113f7a!important;overscroll-behavior-y:contain}
+.rcol~#textPanel{--ort-text-gap:16px}
+body.t30 #textPanel{--ort-text-gap:46px}
+body.t30.hdr-off #textPanel{max-height:calc(100vh - 46px)}
+#textPanel::-webkit-scrollbar{width:20px!important;display:block!important}
+#textPanel::-webkit-scrollbar-track{background:#113f7a!important}
+#textPanel::-webkit-scrollbar-thumb{background:#ffffff!important;border:2px solid #113f7a;border-radius:10px;min-height:48px}
+#textPanel::-webkit-scrollbar-thumb:hover{background:#ffffff!important}
+#textPanel:focus-visible{outline:2px solid #113f7a;outline-offset:-2px}
+#textPanel .ds{scroll-margin-top:12px}
+#textPanel .ort-stepnav{top:0;scroll-margin-top:0}
+}
+@media(min-width:901px){
+#rcol{position:sticky;top:var(--ort-rail-top,calc(var(--hh,70px) + 58px));height:var(--ort-rail-height,calc(100vh - var(--hh,70px) - 66px));min-height:0;transition:none}
+#rcol .mp:not(.fs){flex:1 1 0;min-height:0}
+#rcol .rduo{flex:0 0 clamp(100px,calc(var(--ort-rail-height,600px) * .4),290px);min-height:0}
+#rcol .rhotel{height:100%;min-height:0}
+#rcol~#textPanel{max-height:var(--ort-rail-height,calc(100vh - var(--hh,70px) - 66px))}
+body.t30 #mapPanel:not(.fs){top:var(--ort-rail-top,calc(var(--hh,70px) + 54px));height:var(--ort-rail-height,calc(100vh - var(--hh,70px) - 62px))!important;transition:none}
+body.t30 #textPanel{max-height:var(--ort-rail-height,calc(100vh - var(--hh,70px) - 62px))}
+}
+#ortPromo{margin-bottom:22px}#ortPromo h1{font-family:"Playfair Display",Georgia,serif;font-size:1.5rem;margin:0 0 14px;color:var(--p)}.ort-shell-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.ort-shell-action{display:block;width:100%;padding:16px;text-align:start;font:inherit;background:#fff;border:1px solid var(--bd);border-radius:12px;text-decoration:none;color:var(--p);cursor:pointer}.ort-shell-action strong,.ort-shell-action span{display:block}.ort-shell-action strong{font-size:.95rem;margin-bottom:6px}.ort-shell-action span{font-size:.8rem;color:var(--tl);line-height:1.5}.ort-shell-action:hover{border-color:var(--p);box-shadow:var(--sh)}.ort-shell-action:focus-visible{outline:2px solid var(--p);outline-offset:3px}@media(max-width:640px){.ort-shell-actions{grid-template-columns:1fr}.ort-shell-action{padding:12px 14px}}</style>
 </head>
-<body data-cc="" data-itin-id="">
+<body class="t30" data-cc="" data-itin-id="">
 <div id="placeBox" aria-live="polite"><span class="pb-day" id="pbDay"></span><span class="pb-name" id="pbName"></span><span class="pb-tag" id="pbTag"></span><button class="pb-close" onclick="closePlaceBox()" aria-label="Fermer">×</button></div>
 <header id="site-header" class="ort-hdr"></header>
 <nav class="bc" aria-label="breadcrumb"><a href="/index.html">OneRoadTrip</a><span>›</span>Meu itinerário personalizado</nav>
-<div class="ml"><div class="mp" id="mapPanel"><div id="ortLoopLegend" class="ort-loop-legend" style="display:none"></div><div class="dp-map" id="dayPhoto"></div><div id="map"></div><div id="hoverPhoto" class="hover-photo"><img id="hoverPhotoImg" src="" alt=""></div><div class="mc"><button class="mb mtg" onclick="toggleMap()" title="Ocultar o mapa">▲</button><button class="edit-on-map" id="editOnMap" style="display:none" onclick="openItinEditor()">✏️ <span id="editOnMapLbl">Editar</span></button><button class="mb" onclick="cMap()" title="Centrar">◎</button><button class="mb" onclick="tFs()" id="fsBtn" title="Ecrã inteiro">⛶</button></div><button class="see-itin" onclick="document.getElementById('textPanel').scrollIntoView({behavior:'smooth',block:'start'})">Ver o itinerário dia a dia ▼</button><div class="ml-leg" id="mapLeg"><div style="display:flex;justify-content:flex-end"><button onclick="var l=document.getElementById('mapLeg');l.classList.remove('open');l.classList.add('ml-leg-hidden');document.getElementById('mapLegBtn').style.display='block'" style="background:none;border:none;font-size:1rem;cursor:pointer;color:#999;line-height:1;padding:0 0 2px">×</button></div><div class="ml-li"><svg width="14" height="14" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Imperdível</div><div class="ml-li"><span class="ml-dot" style="background:#43A047"></span> Recomendado</div><div class="ml-li"><span class="ml-dot" style="background:#7CB342"></span> A descobrir</div><div class="ml-li"><span class="ml-dot" style="background:#e11d48"></span> Paragem atual</div></div><button class="ml-leg-btn" id="mapLegBtn" onclick="var l=document.getElementById('mapLeg');l.classList.remove('ml-leg-hidden');l.classList.add('open');this.style.display='none'" title="Légende">ℹ️</button></div>
-<button class="mopen" onclick="showMapAgain()">▼ <span>Ver o mapa</span></button><div class="tp" id="textPanel"></div></div>
+<div class="ml"><div class="mp" id="mapPanel"><div id="ortLoopLegend" class="ort-loop-legend" style="display:none"></div><div class="dp-map" id="dayPhoto"></div><div id="map"></div><div id="hoverPhoto" class="hover-photo"><img id="hoverPhotoImg" src="" alt=""></div><section class="ort-booking" id="ortBooking" hidden></section><div class="mc"><button class="mb mtg" onclick="toggleMap()" title="Ocultar o mapa">▲</button><button class="edit-on-map" id="editOnMap" style="display:none" onclick="openItinEditor()">✏️ <span id="editOnMapLbl">Editar</span></button><button class="mb" onclick="cMap()" title="Centrar">◎</button><button class="mb" onclick="tFs()" id="fsBtn" title="Ecrã inteiro">⛶</button></div><button class="see-itin" onclick="document.getElementById('textPanel').scrollIntoView({behavior:'smooth',block:'start'})">Ver o itinerário dia a dia ▼</button><div class="ml-leg" id="mapLeg"><div style="display:flex;justify-content:flex-end"><button onclick="var l=document.getElementById('mapLeg');l.classList.remove('open');l.classList.add('ml-leg-hidden');document.getElementById('mapLegBtn').style.display='block'" style="background:none;border:none;font-size:1rem;cursor:pointer;color:#999;line-height:1;padding:0 0 2px">×</button></div><div class="ml-li"><svg width="14" height="14" viewBox="0 0 24 24" fill="#1565C0" stroke="#fff" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> Imperdível</div><div class="ml-li"><span class="ml-dot" style="background:#43A047"></span> Recomendado</div><div class="ml-li"><span class="ml-dot" style="background:#7CB342"></span> A descobrir</div><div class="ml-li"><span class="ml-dot" style="background:#e11d48"></span> Paragem atual</div></div><button class="ml-leg-btn" id="mapLegBtn" onclick="var l=document.getElementById('mapLeg');l.classList.remove('ml-leg-hidden');l.classList.add('open');this.style.display='none'" title="Légende">ℹ️</button></div>
+<button class="mopen" onclick="showMapAgain()"><span class="t30-mo-l">Mostrar o mapa</span></button><div class="tp" id="textPanel" tabindex="0"></div></div>
 <div class="po" id="mapPop"><div class="pc" id="mapPopC"><button class="px" onclick="cPop()">×</button><div id="mapPopB"></div></div></div>
 <button class="btm" id="backToMap" onclick="showMapAgain()"><svg viewBox="0 0 24 24"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg>Ver o mapa</button>
 <footer id="footer-legal"></footer>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-<script src="/js/ort-routing.js?v=1786382104340" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js" defer></script>
+<script src="/js/ort-routing.js?v=1795085048822" defer></script>
 <script>
 var MP=[];var OP=[];
 var map,mk={},pl,isFs=false;
+function ortAddBaseMap(m){
+  var glLayer;
+  try{
+    if(typeof L.maplibreGL==='function'){
+      glLayer=L.maplibreGL({style:'https://tiles.openfreemap.org/styles/liberty',attribution:'\u00a9 OSM \u00a9 OpenFreeMap'});
+      var onRemove=glLayer.onRemove;
+      glLayer.onRemove=function(map){
+        if(this.getMaplibreMap())return onRemove.call(this,map);
+        var container=this.getContainer();
+        if(container&&container.parentNode)container.parentNode.removeChild(container);
+      };
+      glLayer.addTo(m);
+      return;
+    }
+  }catch(error){
+    // removeLayer declenche aussi le retrait des ecouteurs zoom/move/resize.
+    if(glLayer&&m.hasLayer(glLayer))m.removeLayer(glLayer);
+    console.warn('[MAP] WebGL indisponible : fond OpenStreetMap utilise.',error);
+  }
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom:19
+  }).addTo(m);
+}
+function ortScrollToStep(el){
+  if(!el)return;
+  var tp=document.getElementById('textPanel');
+  var nav=tp&&tp.querySelector('.ort-stepnav');
+  var behavior=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  // Page qui defile d'un bloc (t30-flow) : on fait defiler la page, pas le texte seul.
+  if(window.innerWidth>900&&tp&&tp.contains(el)&&!document.body.classList.contains('t30-flow')){
+    var offset=nav&&getComputedStyle(nav).display!=='none'?(parseFloat(getComputedStyle(tp).paddingTop)||0)+nav.offsetHeight+12:12;
+    var top=tp.scrollTop+el.getBoundingClientRect().top-tp.getBoundingClientRect().top-tp.clientTop-offset;
+    tp.scrollTo({top:Math.max(0,top),behavior:behavior});
+  }else if(nav&&document.body.classList.contains('t20')){
+    var off=nav.getBoundingClientRect().bottom;
+    var y=el.getBoundingClientRect().top+(window.pageYOffset||document.documentElement.scrollTop)-off-10;
+    window.scrollTo({top:Math.max(0,y),behavior:behavior});
+  }else{
+    el.scrollIntoView({behavior:behavior,block:'start'});
+  }
+}
+function ortShellActions(trip, labels){
+  var panel=document.getElementById('textPanel');
+  if(!panel)return;
+  var old=document.getElementById('ortPromo');
+  if(old)old.remove();
+  var oldLauncher=document.getElementById('ort-ed-launcher');
+  if(oldLauncher)oldLauncher.remove();
+  var box=document.createElement('section');
+  box.id='ortPromo';
+  var title=document.createElement('h1');
+  title.textContent=trip.title||document.title;
+  box.appendChild(title);
+  var launcher=document.createElement('div');
+  launcher.id='ort-ed-launcher';
+  launcher.style.display='none';
+  box.appendChild(launcher);
+  var row=document.createElement('div');
+  row.className='ort-shell-actions';
+  function card(node, heading, detail){
+    node.className='ort-shell-action';
+    var strong=document.createElement('strong');
+    strong.textContent=heading;
+    var text=document.createElement('span');
+    text.textContent=detail;
+    node.appendChild(strong);node.appendChild(text);row.appendChild(node);
+  }
+  var edit=document.createElement('button');
+  edit.type='button';edit.id='ort-shell-edit';
+  // La délégation reste active quand l'éditeur restaure le HTML après Annuler.
+  if(!window.ortShellEditBound){
+    document.addEventListener('click',function(e){
+      if(e.target.closest&&e.target.closest('#ort-shell-edit'))openItinEditor();
+    });
+    window.ortShellEditBound=true;
+  }
+  card(edit,labels[0],labels[1]);
+  var advanced=document.createElement('a');
+  advanced.id='ort-shell-advanced';
+  advanced.href=document.body.dataset.detailUrl;
+  card(advanced,labels[2],labels[3]);
+  box.appendChild(row);panel.insertBefore(box,panel.firstChild);
+}
+var ortShellReady=false;
 function wkLoad(img,url,attempt,fallbacks){attempt=attempt||0;fallbacks=fallbacks||[];function tryNext(){if(attempt<2){var delay=attempt===0?2000:5000;setTimeout(function(){wkLoad(img,url,attempt+1,fallbacks);},delay);}else if(fallbacks.length>0){var next=fallbacks.shift();wkLoad(img,next,0,fallbacks);}else{img.style.display='none';}}img.onload=function(){if(img.naturalWidth<2){tryNext();return;}img.classList.add('wk-loaded');};img.onerror=function(){tryNext();};img.src=url;}
 function goMap(){document.getElementById('mapPanel').scrollIntoView({behavior:'smooth',block:'start'});}
 function ortSnTop(){var d=document.documentElement,b=document.body;if(window.innerWidth>900){d.style.removeProperty('--snBase');return;}function edge(el){if(!el)return 0;var t=0;try{t=parseFloat(getComputedStyle(el).top);}catch(e){}if(isNaN(t))t=0;return t+el.offsetHeight;}var ip=document.querySelector('.ip-bar');var mp=document.getElementById('mapPanel');var base=edge(ip);if(mp&&!b.classList.contains('map-off')){var me=edge(mp);if(me>base)base=me;}if(!ip&&!mp){var hh=0;try{hh=parseInt(getComputedStyle(d).getPropertyValue('--hh'))||0;}catch(e){}base=b.classList.contains('hdr-off')?0:hh;}d.style.setProperty('--snBase',base+'px');}
@@ -157,10 +511,11 @@ function toggleMap(){ortMapOff(!document.body.classList.contains('map-off'));}
 (function(){if(window.innerWidth>900)return;var done=false,hasFolded=false;var _mo=window.ortMapOff;window.ortMapOff=function(v){if(v){hasFolded=true;}else if(hasFolded){done=true;}if(_mo)_mo(v);};function onScroll(){if(done)return;var y=window.scrollY||0;if(y>120&&!document.body.classList.contains('map-off')){done=true;window.ortMapOff(true);}}window.addEventListener('scroll',onScroll,{passive:true});})();
 function showMapAgain(){ortMapOff(false);setTimeout(goMap,60);}
 (function(){try{sessionStorage.removeItem('ortMapOff');}catch(e){}document.body.classList.remove('map-off');})();
+(function(){if(!document.body.classList.contains('t30'))return;var _mo=window.ortMapOff;if(typeof _mo!=='function')return;window.ortMapOff=function(v){_mo(v);if(!v){setTimeout(function(){try{if(window.map&&window.map.invalidateSize){window.map.invalidateSize();if(typeof cMap==='function')cMap();}}catch(e){}},360);}};})();
 function showPlaceBox(day,name,tag){var b=document.getElementById('placeBox');if(!b)return;document.getElementById('pbDay').textContent=day;document.getElementById('pbName').textContent=name;var tEl=document.getElementById('pbTag');if(tEl){tEl.textContent='';tEl.style.display='none';}b.classList.add('open');}
 function closePlaceBox(){var b=document.getElementById('placeBox');if(b)b.classList.remove('open');}
-function openItinEditor(){if(window.ORT_ITIN_EDITOR&&window.ORT_ITIN_EDITOR._launch){window.ORT_ITIN_EDITOR._launch();}}
-function initEditOnMapBtn(){var btn=document.getElementById('editOnMap');if(!btn)return;if(window.ORT_ITIN_EDITOR&&window.ORT_ITIN_EDITOR._getLabel){var lbl=document.getElementById('editOnMapLbl');if(lbl)lbl.textContent=window.ORT_ITIN_EDITOR._getLabel('editStops');btn.style.display='inline-flex';}else{setTimeout(initEditOnMapBtn,300);}}
+function openItinEditor(){if(!ortShellReady)return;if(window.ORT_ITIN_EDITOR&&window.ORT_ITIN_EDITOR._launch){window.ORT_ITIN_EDITOR._launch();}}
+function initEditOnMapBtn(){if(!ortShellReady)return;var btn=document.getElementById('editOnMap');if(!btn)return;if(window.ORT_ITIN_EDITOR&&window.ORT_ITIN_EDITOR._getLabel){var lbl=document.getElementById('editOnMapLbl');if(lbl)lbl.textContent=window.ORT_ITIN_EDITOR._getLabel('editStops');btn.style.display='inline-flex';}else{setTimeout(initEditOnMapBtn,300);}}
 document.addEventListener('DOMContentLoaded',function(){initEditOnMapBtn();});
 document.addEventListener("DOMContentLoaded",function(){(function w(){if(typeof L==="undefined"){setTimeout(w,100);return;}iM();})();});
 var ORT_LOOP_COLORS=['#2563eb','#e11d48','#059669','#d97706','#7c3aed','#0891b2','#db2777','#4d7c0f'];var ORT_LINK_COLOR='#64748b';var ortRouteLayers=[];
@@ -176,25 +531,211 @@ function ortToggleLoop(btn){var k=btn.getAttribute('data-k');ortLoopFilters[k]=(
 function ortClearRoute(){ortRouteLayers.forEach(function(l){try{map.removeLayer(l);}catch(e){}});ortRouteLayers=[];if(pl){try{map.removeLayer(pl);}catch(e){}pl=null;}}
 function ortDrawLoopRoute(ll,names){ortClearRoute();ortLastLL=ll;ortLastNames=names;var groups=ortLoopGroups(names);ortRenderLoopLegend(names);ortApplyTextFilter(names);var _nl=0,_gi;for(_gi=0;_gi<groups.length;_gi++){if(groups[_gi].loop>=0&&groups[_gi].loop+1>_nl)_nl=groups[_gi].loop+1;}function _col(l){return _nl<2?ORT_LOOP_COLORS[0]:ortLoopColor(l);}function _vis(g){return ortLoopFilters[g.loop<0?'link':'loop'+g.loop]!==false;}if(typeof calculateOSRMRoute!=='function'){groups.forEach(function(g){if(!_vis(g))return;var seg=ll.slice(g.start,g.end+1);ortRouteLayers.push(L.polyline(seg,{color:_col(g.loop),weight:3,opacity:.7,dashArray:'8,6'}).addTo(map));});return;}
 groups.forEach(function(g){if(!_vis(g))return;var seg=ll.slice(g.start,g.end+1);var col=_col(g.loop);calculateOSRMRoute(seg,'driving').then(function(result){if(result&&result.coordinates&&result.coordinates.length>1){ortRouteLayers.push(L.polyline(result.coordinates,{color:col,weight:4,opacity:.85}).addTo(map));}else{ortRouteLayers.push(L.polyline(seg,{color:col,weight:3,opacity:.7,dashArray:'8,6'}).addTo(map));}}).catch(function(){ortRouteLayers.push(L.polyline(seg,{color:col,weight:3,opacity:.7,dashArray:'8,6'}).addTo(map));});});}
-function iM(){map=L.map('map',{scrollWheelZoom:true,zoomControl:true});
-L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'\u00a9 OSM \u00a9 CARTO',maxZoom:19}).addTo(map);
+function iM(){map=L.map('map',{scrollWheelZoom:true,zoomControl:true,maxZoom:19});
 map.setView([20,0],2);
+ortAddBaseMap(map);
 }
 var initBd=null;
-function cMap(){if(map&&initBd){map.fitBounds(initBd.pad(0.1));autoFollow=true;}}
+function cMap(){if(map&&initBd){map.fitBounds(initBd.pad(0.1),{maxZoom:13});autoFollow=true;}}
 function sD(d){var p=MP.find(function(x){return x.day===d;});if(p&&map){map.setView([p.lat,p.lng],11,{animate:true});}hD(d);}
 var activeDay=0;
-function mkIcon(day,active){var bg=active?'#e11d48':'#113f7a';var sz=active?34:26;var fs=active?14:11;return L.divIcon({html:'<div style="background:'+bg+';color:#fff;width:'+sz+'px;height:'+sz+'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:'+fs+'px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3)'+(active?';transform:scale(1.1)':'')+'">'+day+'</div>',className:'dm',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});}
-function showDayPhoto(d){var p=MP.find(function(x){return x.day===d;});window._htlList=(p&&p.htls&&p.htls.length)?p.htls:[];window._htlStay22=(p&&p.s22)?p.s22:'';window._htlStay22Label=(p&&p.s22Label)?p.s22Label:'';var st=-1;for(var hk=0;hk<window._htlList.length;hk++){if(window._htlList[hk].el){st=hk;break;}}if(st<0){for(var hk2=0;hk2<window._htlList.length;hk2++){if(window._htlList[hk2].lvl===3){st=hk2;break;}}}if(st<0)st=0;var off=(p&&p.stayIdx)||0;if(window._htlList.length>1)st=(st+off)%window._htlList.length;window._htlIdx=st;}
-
+function mkIcon(day,active){var bg=active?'#e11d48':'#113f7a';var sz=active?34:26;var fs=active?14:11;return L.divIcon({html:'<div style="background:'+bg+';color:#fff;width:'+sz+'px;height:'+sz+'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:'+fs+'px;font-weight:700;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);position:relative'+(active?';transform:scale(1.1)':'')+'">'+day+(ortNightFlag(day)?'<span class="ort-flag">🚩</span>':'')+'</div>',className:'dm',iconSize:[sz,sz],iconAnchor:[sz/2,sz/2]});}
+function showDayPhoto(d){var p=MP.find(function(x){return x.day===d;});window._htlList=(p&&p.htls&&p.htls.length)?p.htls:[];window._htlStay22=(p&&p.s22)?p.s22:'';window._htlStay22Label=(p&&p.s22Label)?p.s22Label:'';var st=-1;for(var hk=0;hk<window._htlList.length;hk++){if(window._htlList[hk].el){st=hk;break;}}if(st<0){for(var hk2=0;hk2<window._htlList.length;hk2++){if(window._htlList[hk2].lvl===3){st=hk2;break;}}}if(st<0)st=0;var off=(p&&p.stayIdx)||0;if(window._htlList.length>1)st=(st+off)%window._htlList.length;window._htlIdx=st;if(window.ORT_BOOKING)window.ORT_BOOKING.show(d);}
+function ortBookingInit(){
+  var panel=document.getElementById('ortBooking');
+  if(!panel||window.ORT_BOOKING)return;
+  var labels={
+    fr:['Hébergements','Voir les hôtels sur la carte','Voir cet hôtel'],
+    en:['Accommodation','See hotels on the map','View this hotel'],
+    es:['Alojamientos','Ver hoteles en el mapa','Ver este hotel'],
+    pt:['Alojamentos','Ver hotéis no mapa','Ver este hotel'],
+    it:['Alloggi','Vedi gli hotel sulla mappa','Vedi questo hotel'],
+    ar:['أماكن الإقامة','عرض الفنادق على الخريطة','عرض هذا الفندق'],
+    nl:['Accommodaties','Bekijk hotels op de kaart','Bekijk dit hotel'],
+    de:['Unterkünfte','Hotels auf der Karte ansehen','Dieses Hotel ansehen']
+  };
+  var lang=document.documentElement.lang||'en',steps=[],hotels={},day=1,renderKey='',generation=0,loader;
+  function pid(s){return s.place_id||s.placeId||s.pid||'';}
+  function coordinates(s){
+    var c=s.coords||{};
+    var la=s.lat!=null?s.lat:(Array.isArray(c)?c[0]:c.lat);
+    var lo=s.lng!=null?s.lng:(s.lon!=null?s.lon:(Array.isArray(c)?c[1]:(c.lon!=null?c.lon:c.lng)));
+    return [la==null?NaN:Number(la),lo==null?NaN:Number(lo)];
+  }
+  function mapUrl(s){
+    var c=coordinates(s),p=new URLSearchParams({aid:'oneroadtrip',maincolor:'113f7a',markerimage:'https://www.oneroadtrip.com/assets/marker-ort.png'});
+    if(Number.isFinite(c[0])&&Number.isFinite(c[1])&&Math.abs(c[0])<=90&&Math.abs(c[1])<=180){p.set('lat',c[0].toFixed(6));p.set('lng',c[1].toFixed(6));p.set('venue',s.name||'');}
+    else p.set('address',s.name||'');
+    return 'https://www.stay22.com/embed/gm?'+p.toString();
+  }
+  function safeUrl(value){try{var u=new URL(value,location.origin);return /^https?:$/.test(u.protocol)?u.href:'';}catch(e){return '';}}
+  function hotelList(s){var own=s.hotels||s.htls;return own&&own.length?own:((hotels[pid(s)]&&hotels[pid(s)].hotels)||[]);}
+  function bestHotel(s){
+    var list=hotelList(s).filter(function(h){return h&&(h.bookingUrl||h.u||h.url)&&String(h.bookingUrl||h.u||h.url)!=='#';});
+    list.sort(function(a,b){return Number(!!(b.elite||b.el))-Number(!!(a.elite||a.el))||(Number(b.score||b.s)||0)-(Number(a.score||a.s)||0);});
+    return list[0]||null;
+  }
+  function hotelUrl(h,s){
+    var raw=h&&(h.bookingUrl||h.u||h.url),url=raw&&safeUrl(raw);
+    if(!url)return mapUrl(s);
+    var m=url.match(/^https:\/\/www\.booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/);
+    var suffix={fr:'fr',en:'en-gb',es:'es',pt:'pt-pt',it:'it',ar:'ar',nl:'nl',de:'de'};
+    // Conserver les URL affiliées déjà fournies ; LMA traite les liens Booking propres.
+    if(m&&!new URL(url).search)return 'https://www.booking.com/hotel/'+m[1]+'/'+m[2]+'.'+(suffix[lang]||'en-gb')+'.html';
+    return url;
+  }
+  function link(text,url,cls){var a=document.createElement('a');a.className=cls;a.href=url;a.target='_blank';a.rel='noopener sponsored';a.textContent=text;return a;}
+  function stepFor(d){
+    var p=(window.MP||[]).find(function(p){return p.day===d;});
+    if(!p)return steps[d-1];
+    var match=steps.find(function(s){var c=coordinates(s);return (pid(p)&&pid(p)===pid(s))||(s.name===p.name&&c[0]===Number(p.lat)&&c[1]===Number(p.lng));});
+    return match||p;
+  }
+  function hotelCard(h,s){
+    var T=labels[lang]||labels.en;
+    var a=link('',hotelUrl(h,s),'ort-booking-hotel');
+    var photo=h.imageUrl||h.im||h.img;
+    if(photo){var img=document.createElement('img');img.src=safeUrl(photo);img.alt='';img.loading='lazy';img.onerror=function(){this.remove();};a.appendChild(img);}
+    var info=document.createElement('span'),name=document.createElement('strong');
+    name.textContent=h.name||h.n||T[2];info.appendChild(name);
+    var score=h.score||h.s;if(score){var rating=document.createElement('span');rating.textContent=String(score)+' / 10';info.appendChild(rating);}
+    a.appendChild(info);return a;
+  }
+  function show(d){
+    day=d||day;
+    var s=stepFor(day)||steps[0];if(!s)return;
+    var T=labels[lang]||labels.en,h=bestHotel(s),url=mapUrl(s);
+    var key=JSON.stringify([s.name,url,h,lang]);if(key===renderKey)return;
+    renderKey=key;panel.replaceChildren();panel.hidden=false;
+    var title=document.createElement('div');title.className='ort-booking-title';title.textContent=T[0]+' · '+(s.name||'');panel.appendChild(title);
+    if(h)panel.appendChild(hotelCard(h,s));
+    else{
+      var iframe=document.createElement('iframe');iframe.className='ort-booking-map';iframe.title=T[1]+' · '+(s.name||'');iframe.loading='lazy';iframe.src=url;panel.appendChild(iframe);
+    }
+    panel.appendChild(link(T[1],url,'ort-booking-all'));
+    if(window.map&&window.map.invalidateSize)requestAnimationFrame(function(){window.map.invalidateSize({pan:false});});
+  }
+  function inlineHotels(){
+    document.querySelectorAll('.htl-ph[data-pid]').forEach(function(el){
+      var section=el.closest('.ds'),d=section&&Number(section.dataset.day),s=stepFor(d);
+      if(!s)s=steps.find(function(s){return pid(s)===el.dataset.pid;});
+      if(!s)return;
+      el.replaceChildren();var h=bestHotel(s);if(h)el.appendChild(hotelCard(h,s));
+      el.appendChild(link((labels[lang]||labels.en)[1],mapUrl(s),'ort-booking-all'));
+    });
+  }
+  function loadModule(){
+    if(window.ORT_HOTELS)return Promise.resolve(window.ORT_HOTELS);
+    if(loader)return loader;
+    loader=new Promise(function(resolve,reject){
+      var s=document.querySelector('script[src^="/js/ort-hotels.js"]');
+      var fresh=!s;if(fresh){s=document.createElement('script');s.src='/js/ort-hotels.js';}
+      s.addEventListener('load',function(){resolve(window.ORT_HOTELS);},{once:true});
+      s.addEventListener('error',reject,{once:true});
+      if(fresh)document.head.appendChild(s);
+    });
+    return loader;
+  }
+  function setTrip(trip,fetchHotels){
+    steps=trip.steps||[];hotels={};generation++;var version=generation;
+    renderKey='';show(day);inlineHotels();
+    var ids=Array.from(new Set(steps.map(pid).filter(Boolean)));
+    if(!ids.length||fetchHotels===false)return;
+    loadModule().then(function(api){
+      if(!api||!api.loadHotelsForMultiplePlaces)return null;
+      return api.loadHotelsForMultiplePlaces(ids);
+    }).then(function(data){
+      if(version!==generation||!data)return;
+      hotels=data;renderKey='';show(day);inlineHotels();
+    }).catch(function(){/* La carte et le lien affilié restent disponibles. */});
+  }
+  window.ORT_BOOKING={show:show,setTrip:setTrip};
+  if(window.MP&&window.MP.length)setTrip({steps:window.MP},false);
+};ortBookingInit();
+function ortActivitiesInit(){
+  var panel=document.getElementById('textPanel');if(!panel)return;
+  var lang=(document.documentElement.lang||'fr').slice(0,2),steps=[],places=[],active=false,timer;
+  var cache=Object.create(null),pending=Object.create(null);
+  var labels={
+    fr:['Activités à réserver','Réserver','Plus d’activités','Moins d’activités','Chercher sur','Liens affiliés : une commission peut nous être reversée, sans surcoût pour vous.'],
+    en:['Activities to book','Book','More activities','Fewer activities','Search on','Affiliate links: we may earn a commission at no extra cost to you.'],
+    es:['Actividades para reservar','Reservar','Más actividades','Menos actividades','Buscar en','Enlaces de afiliado: podemos recibir una comisión sin coste adicional para ti.'],
+    it:['Attività da prenotare','Prenota','Altre attività','Meno attività','Cerca su','Link di affiliazione: potremmo ricevere una commissione senza costi aggiuntivi per te.'],
+    pt:['Atividades para reservar','Reservar','Mais atividades','Menos atividades','Pesquisar em','Links de afiliado: podemos receber uma comissão sem custo adicional para si.'],
+    nl:['Activiteiten boeken','Boeken','Meer activiteiten','Minder activiteiten','Zoeken op','Affiliatelinks: wij kunnen een commissie ontvangen, zonder meerkosten voor jou.'],
+    de:['Aktivitäten buchen','Buchen','Mehr Aktivitäten','Weniger Aktivitäten','Suchen auf','Affiliate-Links: Wir erhalten unter Umständen eine Provision, ohne Aufpreis für dich.'],
+    ar:['أنشطة للحجز','احجز','المزيد من الأنشطة','أنشطة أقل','ابحث على','روابط تابعة: قد نحصل على عمولة دون تكلفة إضافية عليك.']
+  },T=labels[lang]||labels.en;
+  function pid(s){return s&&(s.place_id||s.placeId||s.pid)||'';}
+  function safeUrl(value){try{var u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password?u.href:'';}catch(e){return '';}}
+  function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text)n.textContent=text;return n;}
+  function link(title,url,cls){var a=el('a',cls,title);a.href=url;a.target='_blank';a.rel='nofollow sponsored noopener';return a;}
+  function provider(url){var h=new URL(url).hostname.toLowerCase();return /(^|\.)viator\./.test(h)?'Viator':/(^|\.)getyourguide\./.test(h)?'GetYourGuide':/(^|\.)tiqets\./.test(h)?'Tiqets':'';}
+  function load(cc){
+    if(!/^[A-Z]{2}$/.test(cc)||pending[cc])return pending[cc]||Promise.resolve();
+    pending[cc]=fetch('/data/viator/activities-'+cc+'.json').then(function(r){return r.ok?r.json():null;}).then(function(d){cache[cc]=d&&typeof d==='object'&&!Array.isArray(d)?d:{};}).catch(function(){cache[cc]={};}).then(render);
+    return pending[cc];
+  }
+  function samePlace(s,name,lat,lng){return s.name===name&&(!Number.isFinite(lat)||!Number.isFinite(lng)||(Math.abs(Number(s.lat)-lat)<.0001&&Math.abs(Number(s.lng==null?s.lon:s.lng)-lng)<.0001));}
+  function resolve(section){
+    var name=(section.querySelector('.di h3')||{}).textContent||'',lat=section.hasAttribute('data-lat')?Number(section.dataset.lat):NaN,lng=section.hasAttribute('data-lng')?Number(section.dataset.lng):NaN;
+    var id=section.dataset.placeId;
+    var s=id&&steps.find(function(s){return pid(s)===id;});
+    if(!s)s=steps.find(function(s){return samePlace(s,name,lat,lng);});
+    if(!s)s=places.find(function(s){return samePlace(s,name,lat,lng);});
+    return s||{name:name};
+  }
+  function entries(s){
+    var id=pid(s),cc=String(id).split('::')[0].toUpperCase(),entry=cache[cc]&&cache[cc][id],ls=entry&&entry.langs;
+    load(cc);
+    var result=ls&&(ls[lang]&&ls[lang].length?ls[lang]:ls.en&&ls.en.length?ls.en:ls.fr)||[];
+    result=Array.isArray(result)?result.slice():[];
+    var pl=places.find(function(p){return pid(p)===id;})||{};
+    ['visits','activities','bookings'].forEach(function(k){
+      var items=Array.isArray(s[k])&&s[k].length?s[k]:pl[k];
+      if(Array.isArray(items))items.forEach(function(a){if(a&&a.booking_url)result.push({title:a.name||a.title||a.text||T[0],url:a.booking_url,img:a.photo});});
+    });
+    return result;
+  }
+  function render(){
+    if(!active)return;
+    var seen=Object.create(null);
+    panel.querySelectorAll('section.ds').forEach(function(section){
+      var s=resolve(section),items=entries(s).filter(function(a){var u=a&&safeUrl(a.url);if(!u||seen[u])return false;seen[u]=true;return true;});
+      var links=window.ORT_PARTNERS&&window.ORT_PARTNERS.AFFILIATE_LINKS||{};
+      var gyg=safeUrl(links.gyg)||'https://getyourguide.tpo.li/YQ9RFXj5',tiqets=safeUrl(links.tiqets)||'https://tiqets.tpo.li/L1uxd085';
+      var key=JSON.stringify([pid(s),s.name,items,gyg,tiqets,lang]),old=section.querySelector('.ort-activities');
+      if(old&&old.dataset.key===key)return;
+      var block=el('div','ort-activities');block.dataset.key=key;
+      block.appendChild(el('h4','',T[0]+(s.name?' · '+s.name:'')));
+      items.forEach(function(a,i){
+        var url=safeUrl(a.url),card=link('',url,'ort-activity');card.hidden=i>=3;
+        var imageUrl=safeUrl(a.img);if(imageUrl){var img=el('img');img.src=imageUrl;img.alt='';img.loading='lazy';img.onerror=function(){this.remove();};card.appendChild(img);}
+        var body=el('span','ort-activity-body');body.appendChild(el('strong','',String(a.title||T[0])));
+        var brand=provider(url);body.appendChild(el('span','ort-activity-cta',T[1]+(brand?' · '+brand:'')));card.appendChild(body);block.appendChild(card);
+      });
+      if(items.length>3){var more=el('button','ort-activities-more',T[2]);more.type='button';more.setAttribute('aria-expanded','false');block.appendChild(more);}
+      if(!items.length){var fallback=el('div','ort-activities-fallback');fallback.appendChild(link(T[4]+' GetYourGuide',gyg,'ort-activity-cta'));fallback.appendChild(link(T[4]+' Tiqets',tiqets,'ort-activity-cta'));block.appendChild(fallback);}
+      block.appendChild(el('p','ort-activities-note',T[5]));
+      if(old)old.replaceWith(block);else{var before=section.querySelector('.htl-ph,.nl');section.insertBefore(block,before&&before.parentNode===section?before:null);}
+    });
+  }
+  function setTrip(trip,master){steps=trip&&trip.steps||[];places=Array.isArray(master)?master:[];active=true;render();return Promise.all(Object.keys(pending).map(function(k){return pending[k];}));}
+  document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.ort-activities-more');if(!b)return;var open=b.getAttribute('aria-expanded')!=='true';b.closest('.ort-activities').querySelectorAll('.ort-activity').forEach(function(a,i){a.hidden=i>=3&&!open;});b.setAttribute('aria-expanded',String(open));b.textContent=T[open?3:2];});
+  if(window.MutationObserver)new MutationObserver(function(){if(!active)return;clearTimeout(timer);timer=setTimeout(render,0);}).observe(panel,{childList:true,subtree:true});
+  window.ORT_ACTIVITIES={setTrip:setTrip,refresh:render};
+};ortActivitiesInit();
+var ORT_STAY_FLAG_T="Hotel aqui";
+var ORT_TT_T={"f":"Hotel aqui","n":"Noites recomendadas:","p":"noites","next":"Trajeto seguinte","modes":{"car":"Carro","train":"Comboio","flight":"Avião","ferry":"Ferry","boat":"Barco","walk":"A pé"}};
+function ortMarkerTip(p){var T=window.ORT_TT_T||{};var e=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};var h='<div class="ott-h"><span class="ott-n">'+p.day+'</span><strong>'+e(p.name)+'</strong></div>';if(p.sn>0)h+='<div class="ott-l ott-stay">🚩 '+e(T.f||'')+(p.sn>1?' · '+p.sn+' '+e(T.p||''):'')+'</div>';if(p.nx&&p.nx.km){var ic={car:'🚗',train:'🚆',flight:'✈️',ferry:'⛴️',boat:'🚤',walk:'🚶'}[p.nx.mode]||'🚗';var w=(T.modes||{})[p.nx.mode]||'';var mn=p.nx.min?(Math.floor(p.nx.min/60)>0?Math.floor(p.nx.min/60)+'h'+(p.nx.min%60?String(p.nx.min%60).padStart(2,'0'):''):p.nx.min+'min'):'';h+='<div class="ott-l ott-nx">'+e(T.next||'')+(p.nn?' <b>'+e(p.nn)+'</b>':'')+'</div>';h+='<div class="ott-l ott-km">'+ic+' <b>'+p.nx.km+' km</b>'+(mn?' · <b>'+mn+'</b>':'')+(w?' · '+e(w):'')+'</div>';}return h;}function ortNightFlag(d){try{var p=(window.MP||[]).find(function(x){return x.day===d;});return !!(p&&p.sn>0);}catch(e){return false;}}function ortStaySet(d,v){v=parseInt(v,10)||0;try{var _p=(window.MP||[]).find(function(x){return x.day===d;});if(_p)_p.sn=v;if(window.mk&&window.mk[d]&&typeof mkIcon==='function'){window.mk[d].setIcon(mkIcon(d,d===window.activeDay));if(_p&&window.mk[d].setTooltipContent)window.mk[d].setTooltipContent(ortMarkerTip(_p));}}catch(e){}var h=document.getElementById('htl-'+d);if(h){if(v>0)h.removeAttribute('hidden');else h.setAttribute('hidden','');}var l=document.getElementById('stay-'+d);if(l){if(v>0)l.classList.add('is-base');else l.classList.remove('is-base');var b=l.querySelector('.stay-base');if(b){if(v>0)b.setAttribute('hidden','');else b.removeAttribute('hidden');}var s=l.querySelector('.stay-sel');if(s&&parseInt(s.value,10)!==v)s.value=String(v);}try{document.dispatchEvent(new CustomEvent('ort:stay-change',{detail:{day:d,nights:v}}));}catch(e){}}function ortStayHere(d){ortStaySet(d,1);}
 </script>
-<script>(function(){window.hb3ReportBroken=function(name,book,url){try{  if(!name)return;  var seen=JSON.parse(sessionStorage.getItem('hb3_reported')||'[]');  if(seen.indexOf(name)!==-1)return; seen.push(name); sessionStorage.setItem('hb3_reported',JSON.stringify(seen));  var cc=''; var slug=''; var m=(book||'').match(/booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/); if(m){cc=m[1];slug=m[2];}  var id=(cc+'__'+slug)||name; id=id.replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,180);  var body={fields:{name:{stringValue:name},cc:{stringValue:cc},slug:{stringValue:slug},bookingUrl:{stringValue:book||''},brokenUrl:{stringValue:url||''},ts:{timestampValue:new Date().toISOString()}}};  var api='https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/broken_hotel_photos?documentId='+encodeURIComponent(id);  fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(function(){});}catch(e){}};window.hb3PhotoFailed=function(img){try{  var blk=img.closest('.hb3-block'); if(!blk||!blk.__hb3)return;  blk.__hb3.photoFailed(img);}catch(e){}};var ROT=4000;var blocks=document.querySelectorAll('.hb3-block');blocks.forEach(function(blk){  var track=blk.querySelector('.hb3-track'); if(!track)return;  var backups=[];  var raw=blk.querySelector('script.hb3-backups');  if(raw){try{backups=JSON.parse(raw.textContent||'[]');}catch(e){backups=[];}}  var timer=null,paused=false;  function useBackup(){    var b=backups.shift();    if(!b){track.style.display='none';var st=blk.querySelector('.hb3-stage');if(st)st.style.display='none';return;}    if(!b.ph||!b.ph.length){return useBackup();}    var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');};    var initial=(b.n.charAt(0)||'?').toUpperCase();    var imgs=b.ph.map(function(src,i){return '<img class="hb3-img'+(i===0?' hb3-img-on':'')+'" data-hb3-pidx="'+i+'" '+(i===0?'src="'+esc(src)+'"':'data-src="'+esc(src)+'"')+' alt="'+esc(b.n)+'" loading="lazy" onerror="if(window.hb3PhotoFailed)hb3PhotoFailed(this);">';}).join('');    var badge=b.e?'<div class="hb3-badge">\u2605</div>':'';    var pr=b.p===1?'$':(b.p===3?'$$$':'$$');    var sc=b.s?'<span class="hb3-score">'+esc(b.s)+'</span>':'';    track.innerHTML='<a class="hb3-slide'+(b.e?' hb3-elite':'')+'" href="'+esc(b.u)+'" target="_blank" rel="noopener sponsored" data-hb3-name="'+esc(b.n)+'" data-hb3-book="'+esc(b.u)+'" style="background:'+esc(b.c)+'">'+      '<div class="hb3-img-fallback"><span>'+esc(initial)+'</span></div>'+imgs+badge+      '<div class="hb3-price-tag">'+pr+'</div>'+      '<div class="hb3-overlay"><div class="hb3-name">'+esc(b.n)+'</div><div class="hb3-meta">'+sc+'<span class="hb3-level">'+esc(b.l)+'</span></div></div></a>';    bind();  }  function photoFailed(img){    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    img.setAttribute('data-hb3-dead','1');    img.classList.remove('hb3-img-on');    img.style.display='none';    var alive=slide.querySelectorAll('.hb3-img:not([data-hb3-dead])');    if(!alive.length){      if(timer){clearInterval(timer);timer=null;}      if(window.hb3ReportBroken)hb3ReportBroken(slide.getAttribute('data-hb3-name')||'',slide.getAttribute('data-hb3-book')||'',img.getAttribute('src')||img.getAttribute('data-src')||'');      useBackup();      return;    }    show(alive[0]);  }  function show(img){    if(!img)return;    var ds=img.getAttribute('data-src');    if(ds){img.setAttribute('src',ds);img.removeAttribute('data-src');}    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    slide.querySelectorAll('.hb3-img').forEach(function(o){o.classList.remove('hb3-img-on');});    img.classList.add('hb3-img-on');  }  function bind(){    if(timer){clearInterval(timer);timer=null;}    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    slide.addEventListener('mouseenter',function(){paused=true;});    slide.addEventListener('mouseleave',function(){paused=false;});    var all=slide.querySelectorAll('.hb3-img');    if(all.length<2)return;    timer=setInterval(function(){      if(paused)return;      if(!document.body.contains(slide)){clearInterval(timer);timer=null;return;}      var alive=[].slice.call(slide.querySelectorAll('.hb3-img:not([data-hb3-dead])'));      if(alive.length<2)return;      var cur=slide.querySelector('.hb3-img.hb3-img-on');      var pos=alive.indexOf(cur);      show(alive[(pos+1)%alive.length]);    },ROT);  }  blk.__hb3={photoFailed:photoFailed};  bind();});})();</script>
+<script>(function(){window.hb3ReportBroken=function(name,book,url){try{  if(!name)return;  var seen=JSON.parse(sessionStorage.getItem('hb3_reported')||'[]');  if(seen.indexOf(name)!==-1)return; seen.push(name); sessionStorage.setItem('hb3_reported',JSON.stringify(seen));  var cc=''; var slug=''; var m=(book||'').match(/booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/); if(m){cc=m[1];slug=m[2];}  var id=(cc+'__'+slug)||name; id=id.replace(/[^a-zA-Z0-9_-]/g,'-').slice(0,180);  var body={fields:{name:{stringValue:name},cc:{stringValue:cc},slug:{stringValue:slug},bookingUrl:{stringValue:book||''},brokenUrl:{stringValue:url||''},ts:{timestampValue:new Date().toISOString()}}};  var api='https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/broken_hotel_photos?documentId='+encodeURIComponent(id);  fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(function(){});}catch(e){}};window.hb3PhotoFailed=function(img){try{  var blk=img.closest('.hb3-block'); if(!blk||!blk.__hb3)return;  blk.__hb3.photoFailed(img);}catch(e){}};var blocks=document.querySelectorAll('.hb3-block');blocks.forEach(function(blk){  var track=blk.querySelector('.hb3-track'); if(!track)return;  var stage=blk.querySelector('.hb3-stage');  var hotels=[];  var raw=blk.querySelector('script.hb3-backups');  if(raw){try{hotels=JSON.parse(raw.textContent||'[]');}catch(e){hotels=[];}}  var hIdx=0;  var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');};  var elL=blk.querySelector('.hb3-nav-left'),elR=blk.querySelector('.hb3-nav-right');  var elU=blk.querySelector('.hb3-nav-up'),elD=blk.querySelector('.hb3-nav-down');  var elC=blk.querySelector('.hb3-count');  function paint(i){    var b=hotels[i]; if(!b||!b.ph||!b.ph.length)return false;    var initial=(String(b.n||'?').charAt(0)||'?').toUpperCase();    var imgs=b.ph.map(function(src,k){return '<img class="hb3-img'+(k===0?' hb3-img-on':'')+'" data-hb3-pidx="'+k+'" '+(k===0?'src="'+esc(src)+'"':'data-src="'+esc(src)+'"')+' alt="'+esc(b.n)+'" loading="lazy" onerror="if(window.hb3PhotoFailed)hb3PhotoFailed(this);">';}).join('');    var badge=b.e?'<div class="hb3-badge">\u2605</div>':'';    var pr=b.p===1?'$':(b.p===3?'$$$':'$$');    var sc=b.s?'<span class="hb3-score">'+esc(b.s)+'</span>':'';    track.innerHTML='<a class="hb3-slide'+(b.e?' hb3-elite':'')+'" href="'+esc(b.u)+'" target="_blank" rel="noopener sponsored" data-hb3-name="'+esc(b.n)+'" data-hb3-book="'+esc(b.u)+'" style="background:'+esc(b.c)+'">'+      '<div class="hb3-img-fallback"><span>'+esc(initial)+'</span></div>'+imgs+badge+      '<div class="hb3-price-tag">'+pr+'</div>'+      '<div class="hb3-overlay"><div class="hb3-name">'+esc(b.n)+'</div><div class="hb3-meta">'+sc+'<span class="hb3-level">'+esc(b.l)+'</span></div></div></a>';    hIdx=i; refresh(); return true;  }  function stepHotel(d){    if(hotels.length<2)return;    var i=hIdx;    for(var tries=0;tries<hotels.length;tries++){      i=(i+d+hotels.length)%hotels.length;      if(paint(i))return;    }  }  function stepPhoto(d){    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    var alive=[].slice.call(slide.querySelectorAll('.hb3-img:not([data-hb3-dead])'));    if(alive.length<2)return;    var cur=slide.querySelector('.hb3-img.hb3-img-on');    var pos=alive.indexOf(cur); if(pos<0)pos=0;    show(alive[(pos+d+alive.length)%alive.length]);    refresh();  }  function refresh(){    var slide=blk.querySelector('.hb3-slide');    var alive=slide?[].slice.call(slide.querySelectorAll('.hb3-img:not([data-hb3-dead])')):[];    var cur=slide?slide.querySelector('.hb3-img.hb3-img-on'):null;    var pos=alive.indexOf(cur); if(pos<0)pos=0;    var manyP=alive.length>1, manyH=hotels.length>1;    if(elL)elL.hidden=!manyP; if(elR)elR.hidden=!manyP;    if(elU)elU.hidden=!manyH; if(elD)elD.hidden=!manyH;    if(elC){      var txt=manyP?((pos+1)+'/'+alive.length):'';      if(manyH)txt+=(txt?' \u00b7 ':'')+'h\u00f4tel '+(hIdx+1)+'/'+hotels.length;      elC.textContent=txt; elC.style.display=txt?'':'none';    }  }  function show(img){    if(!img)return;    var ds=img.getAttribute('data-src');    if(ds){img.setAttribute('src',ds);img.removeAttribute('data-src');}    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    slide.querySelectorAll('.hb3-img').forEach(function(o){o.classList.remove('hb3-img-on');});    img.classList.add('hb3-img-on');  }  function photoFailed(img){    var slide=blk.querySelector('.hb3-slide'); if(!slide)return;    img.setAttribute('data-hb3-dead','1');    img.classList.remove('hb3-img-on');    img.style.display='none';    var alive=[].slice.call(slide.querySelectorAll('.hb3-img:not([data-hb3-dead])'));    if(!alive.length){      if(window.hb3ReportBroken)hb3ReportBroken(slide.getAttribute('data-hb3-name')||'',slide.getAttribute('data-hb3-book')||'',img.getAttribute('src')||img.getAttribute('data-src')||'');      hotels.splice(hIdx,1);      if(!hotels.length){track.style.display='none';if(stage)stage.style.display='none';return;}      if(hIdx>=hotels.length)hIdx=0;      paint(hIdx);      return;    }    show(alive[0]); refresh();  }  (function(){    var x0=0,y0=0,t0=0,moved=false;    track.addEventListener('touchstart',function(e){      if(!e.touches||e.touches.length!==1)return;      x0=e.touches[0].clientX; y0=e.touches[0].clientY; t0=Date.now(); moved=false;    },{passive:true});    track.addEventListener('touchmove',function(e){      if(!e.touches||e.touches.length!==1)return;      if(Math.abs(e.touches[0].clientX-x0)>10)moved=true;    },{passive:true});    track.addEventListener('touchend',function(e){      var t=(e.changedTouches&&e.changedTouches[0]); if(!t)return;      var dx=t.clientX-x0, dy=t.clientY-y0;      if(Date.now()-t0>700)return;      if(Math.abs(dx)<40&&Math.abs(dy)<40)return;      if(Math.abs(dx)>=Math.abs(dy)){stepPhoto(dx<0?1:-1);}else{stepHotel(dy<0?1:-1);}      moved=true;    },{passive:true});    track.addEventListener('click',function(e){      if(moved){e.preventDefault();e.stopPropagation();moved=false;}    },true);  })();  if(elL)elL.addEventListener('click',function(e){e.preventDefault();stepPhoto(-1);});  if(elR)elR.addEventListener('click',function(e){e.preventDefault();stepPhoto(1);});  if(elU)elU.addEventListener('click',function(e){e.preventDefault();stepHotel(-1);});  if(elD)elD.addEventListener('click',function(e){e.preventDefault();stepHotel(1);});  blk.__hb3={photoFailed:photoFailed};  refresh();});})();</script>
 <script>
 (function(){if(window.matchMedia&&!window.matchMedia("(max-width:900px)").matches)return;document.addEventListener("click",function(e){var ph=e.target.closest&&e.target.closest(".mag-photo");var fig=e.target.closest&&e.target.closest(".mag-figure");var tgt=ph||(fig&&(fig.classList.contains("mag-inset-left")||fig.classList.contains("mag-inset-right"))?fig:null);if(!tgt)return;e.preventDefault();var was=tgt.classList.contains("zoomed");var all=document.querySelectorAll(".zoomed");for(var i=0;i<all.length;i++)all[i].classList.remove("zoomed");if(!was)tgt.classList.add("zoomed");},false);})();
 function hD(d){document.querySelectorAll('.ds').forEach(function(s){s.classList.remove('active');});var el=document.getElementById('day-'+d);if(el)el.classList.add('active');if(activeDay&&mk[activeDay])mk[activeDay].setIcon(mkIcon(activeDay,false));activeDay=d;if(mk[d])mk[d].setIcon(mkIcon(d,true));showDayPhoto(d);}
 (function(){var mq=window.matchMedia('(min-width:901px)');if(!mq.matches)return;var box=document.getElementById('hoverPhoto');var img=document.getElementById('hoverPhotoImg');var tp=document.getElementById('textPanel');if(!box||!img||!tp)return;var enterTimer=null;var SEL='.mag-figure img,.mag-photo img,.mag-inset-left img,.mag-inset-right img,.hb3-img,.dp-inline img';function findTarget(e){var n=e.target;if(!n||n.nodeType!==1)return null;return n.matches&&n.matches(SEL)?n:null;}function show(src,alt){if(!src)return;img.src=src;img.alt=alt||'';box.classList.add('on');}function hide(){box.classList.remove('on');img.src='';if(enterTimer){clearTimeout(enterTimer);enterTimer=null;}}tp.addEventListener('mouseover',function(e){var t=findTarget(e);if(!t)return;if(enterTimer)clearTimeout(enterTimer);var src=t.currentSrc||t.src||t.getAttribute('data-src')||'';var alt=t.alt||'';enterTimer=setTimeout(function(){show(src,alt);},150);});tp.addEventListener('mouseout',function(e){var t=findTarget(e);if(!t)return;hide();});})();
 var autoFollow=true;
-var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var d=parseInt(e.target.dataset.day);if(d){hD(d);if(autoFollow&&map){var p=MP.find(function(x){return x.day===d;});if(p)map.panTo([p.lat,p.lng],{animate:true,duration:.5});}}}});},{threshold:.3});
+var obs=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var d=parseInt(e.target.dataset.day);if(d){hD(d);if(autoFollow&&map){var p=MP.find(function(x){return x.day===d;});if(p)map.panTo([p.lat,p.lng],{animate:true,duration:.5});}}}});},{rootMargin:(window.innerWidth<=900?'-55% 0px -40% 0px':'-30% 0px -65% 0px'),threshold:0});
 document.addEventListener('DOMContentLoaded',function(){setTimeout(function(){document.querySelectorAll('.ds').forEach(function(s){obs.observe(s);});if(typeof MP!=='undefined'&&MP&&MP.length&&typeof showDayPhoto==='function')showDayPhoto(MP[0].day);},600);});
 function tFs(){var pan=document.getElementById('mapPanel');isFs=!isFs;pan.classList.toggle('fs');document.getElementById('fsBtn').textContent=isFs?'\u2715':'\u26f6';if(map)setTimeout(function(){map.invalidateSize();},200);}
 function sPop(d){var sec=document.getElementById('day-'+d);if(!sec)return;document.getElementById('mapPopB').innerHTML=sec.innerHTML;document.getElementById('mapPop').style.display='block';}
@@ -221,18 +762,18 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
   else document.addEventListener('DOMContentLoaded',function(){var t2=document.getElementById('site-header');if(t2)mo.observe(t2,{childList:true,subtree:true});});
 })();
 </script>
-<script src="/js/ort-config.js?v=1786382104340"></script>
-<script src="/js/ort-i18n-socle.js?v=1786382104340"></script>
-<script src="/js/ort-i18n-auth.js?v=1786382104340"></script>
-<script src="/js/ort-header.js?v=1786382104340"></script>
-<script src="/js/ort-footer.js?v=1786382104340"></script>
+<script src="/js/ort-config.js?v=1795085048822"></script>
+<script src="/js/ort-i18n-socle.js?v=1795085048822"></script>
+<script src="/js/ort-i18n-auth.js?v=1795085048822"></script>
+<script src="/js/ort-header.js?v=1795085048822"></script>
+<script src="/js/ort-footer.js?v=1795085048822"></script>
 <script>
 (function(){
   var langUrls={};
   document.querySelectorAll('link[hreflang]').forEach(function(el){
     var l=el.getAttribute('hreflang');
     if(l&&l!=='x-default'){
-      try{var u=new URL(el.getAttribute('href'),window.location.origin);langUrls[l]=u.pathname;}catch(e){langUrls[l]=el.getAttribute('href');}
+      try{var u=new URL(el.getAttribute('href'),window.location.origin);var tid=new URLSearchParams(window.location.search).get('tripId');if(tid)u.searchParams.set('tripId',tid);u.searchParams.set('lang',l);langUrls[l]=u.pathname+u.search;}catch(e){langUrls[l]=el.getAttribute('href');}
     }
   });
   document.addEventListener('change',function(e){
@@ -254,8 +795,8 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
   });
 })();
 </script>
-<script src="/js/ort-itin-editor.js?v=1786382104340" defer></script>
-<script src="/js/ort-state-manager.js?v=1786382104340" defer></script>
+<script src="/js/ort-itin-editor.js?v=1795085048822" defer></script>
+<script src="/js/ort-state-manager.js?v=1795085048822" defer></script>
 <script>
 (function(){
   var ITIN_ID='';
@@ -295,6 +836,10 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
             console.log('[ORT-SHELL] Trip charge:',trip.steps.length,'etapes');
             var _cc=(trip.cc||trip.country||'').toUpperCase();
             if(_cc){document.body.dataset.cc=_cc;}
+            ITIN_ID=trip._originalItinId||(trip.baseItinerary&&trip.baseItinerary.itin)||urlTripId;
+            document.body.dataset.itinId=ITIN_ID;
+            var detailParams=new URLSearchParams({tripId:urlTripId,lang:LANG,cc:_cc});
+            document.body.dataset.detailUrl='/roadtrip_detail.html?'+detailParams.toString();
             if(trip.title){document.title=trip.title+' | OneRoadTrip';}
             var _places=[];
             var _photos={};
@@ -319,6 +864,9 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
             Promise.all([_pPlaces,_pPhotos]).then(function(){
             var _UI={fr:{step:'\u00c9tape',activities:'Activit\u00e9s',driveToNext:'Vers l\'\u00e9tape suivante'},en:{step:'Stop',activities:'Activities',driveToNext:'Drive to next stop'},es:{step:'Etapa',activities:'Actividades',driveToNext:'Trayecto siguiente'},pt:{step:'Etapa',activities:'Atividades',driveToNext:'Trajeto seguinte'},it:{step:'Tappa',activities:'Attivit\u00e0',driveToNext:'Tragitto successivo'},ar:{step:'\u0645\u062d\u0637\u0629',activities:'\u0623\u0646\u0634\u0637\u0629',driveToNext:'\u0627\u0644\u0637\u0631\u064a\u0642 \u0627\u0644\u062a\u0627\u0644\u064a'},nl:{step:'Stop',activities:'Activiteiten',driveToNext:'Naar de volgende stop'},de:{step:'Etappe',activities:'Aktivit\u00e4ten',driveToNext:'Zur n\u00e4chsten Etappe'}};
             var _t=_UI[LANG]||_UI.en;
+            var _ST={"n":"Noites recomendadas:","b":"Base recomendada","s":"Mesma base da véspera","f":"Hotel aqui","p":"noites","h":"Dormir em {x}","k":"km"};
+            function _stayKm2(a,b){if(!a||!b)return null;var R=6371,r=Math.PI/180;var dLa=(b[0]-a[0])*r,dLo=(b[1]-a[1])*r;var x=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dLo/2)*Math.sin(dLo/2);return Math.round(R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x)));}
+            function _stayLine(step,dayNum,stps){if(!step||step.stay_nights===undefined||step.stay_nights===null)return '';var sn=parseInt(step.stay_nights,10)||0;var sa=step.stay_at||'';var pid=step.place_id||step.placeId||'';var base=null;for(var i=0;i<stps.length;i++){if(sa&&(stps[i].place_id||stps[i].placeId)===sa){base=stps[i];break;}}var bn=base?(base.name||''):'';if(!bn&&sa){bn=String(sa).split('::').pop().replace(/[-_]/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});}var km=null;if(sa&&sa!==pid&&base){var bc=[base.lat||0,base.lng||base.lon||0],sc=[step.lat||0,step.lng||step.lon||0];if(bc[0]&&bc[1]&&sc[0]&&sc[1])km=_stayKm2(sc,bc);}var opts='';for(var o=0;o<=7;o++){opts+='<option value="'+o+'"'+(o===sn?' selected':'')+'>'+o+'</option>';}var baseTxt='';if(bn){baseTxt='<span class="stay-base"'+(sn>0?' hidden':'')+'>\ud83d\udecf\ufe0f '+_esc(_ST.b)+' : <b>'+_esc(bn)+'</b>'+(km!==null?' \u00b7 '+km+' '+_esc(_ST.k):'')+' <button type="button" class="stay-here" onclick="ortStayHere('+dayNum+')">'+_esc(String(_ST.h||'').replace('{x}',step.name||''))+'</button></span>';}return '<div class="stay-line'+(sn>0?' is-base':'')+'" id="stay-'+dayNum+'" data-day="'+dayNum+'" data-base="'+_esc(sa)+'" onclick="event.stopPropagation()"><label>'+_esc(_ST.n)+' <select class="stay-sel" onchange="ortStaySet('+dayNum+',this.value)">'+opts+'</select></label>'+baseTxt+'</div>';}
             function _esc(s){return s?String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'):'';}
             function _stars(r){if(!r||r<=0)return'';var n=Math.round(r/2);if(n<1)n=1;if(n>5)n=5;return'\u2605'.repeat(n)+'\u2606'.repeat(5-n);}
             function _drvT(m){if(!m)return'';var h=Math.floor(m/60),mn=m%60;return h>0?(mn>0?h+'h'+String(mn).padStart(2,'0'):h+'h'):mn+'min';}
@@ -345,7 +893,7 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
               html+='>';
               html+='<div class="dh" onclick="sD('+dayNum+')">';
               html+='<div class="db">'+_t.step+' '+dayNum+'</div>';
-              html+='<div class="di"><h3>'+_esc(step.name)+'</h3></div>';
+              html+='<div class="di"><h3>'+_esc(step.name)+'</h3>'+_stayLine(step,dayNum,stps)+'</div>';
               if(rating)html+='<div class="dr">'+_stars(rating)+'</div>';
               html+='</div>';
               var _figs=_buildMagFigs(pid,step.name,idx);
@@ -373,53 +921,38 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
                 html+='</div>';
               }
               if(idx<stps.length-1&&step.to_next_leg&&step.to_next_leg.distance_km){
-                html+='<div class="nl"><span>\ud83d\ude97</span><span>'+_esc(_t.driveToNext)+': <b>'+Math.round(step.to_next_leg.distance_km)+' km</b>';
+                var _MI={car:{fr:'Voiture',en:'Car',es:'Coche',pt:'Carro',it:'Auto',ar:'\u0633\u064a\u0627\u0631\u0629',nl:'Auto',de:'Auto'},train:{fr:'Train',en:'Train',es:'Tren',pt:'Comboio',it:'Treno',ar:'\u0642\u0637\u0627\u0631',nl:'Trein',de:'Zug'},flight:{fr:'Avion',en:'Flight',es:'Avi\u00f3n',pt:'Avi\u00e3o',it:'Aereo',ar:'\u0631\u062d\u0644\u0629 \u062c\u0648\u064a\u0629',nl:'Vliegtuig',de:'Flug'},ferry:{fr:'Ferry',en:'Ferry',es:'Ferry',pt:'Ferry',it:'Traghetto',ar:'\u0639\u0628\u0651\u0627\u0631\u0629',nl:'Veerboot',de:'F\u00e4hre'},boat:{fr:'Bateau',en:'Boat',es:'Barco',pt:'Barco',it:'Barca',ar:'\u0642\u0627\u0631\u0628',nl:'Boot',de:'Boot'},walk:{fr:'\u00c0 pied',en:'On foot',es:'A pie',pt:'A p\u00e9',it:'A piedi',ar:'\u0633\u064a\u0631\u064b\u0627',nl:'Te voet',de:'Zu Fu\u00df'}};
+                var _mm=_MI[step.to_next_leg.transport_mode]||_MI.car;
+                var _ic=_esc(_mm[LANG]||_mm.en);
+                var _rt=(step.to_next_leg.road_type||'').trim();
+                var _TP={car:{fr:'Le temps de trajet a \u00e9t\u00e9 calcul\u00e9 par un outil de routage sur les routes r\u00e9elles. C\u0027est une moyenne en circulation normale, sans pause. Tenez compte des heures de pointe, des saisons touristiques et des conditions de montagne.',en:'This driving time was calculated by a routing tool on real roads. It is an average in normal traffic, without breaks. Allow for rush hours, tourist seasons and mountain conditions.',es:'El tiempo de trayecto se ha calculado con una herramienta de rutas sobre carreteras reales. Es una media con tr\u00e1fico normal, sin paradas. Tenga en cuenta las horas punta, la temporada tur\u00edstica y las condiciones de monta\u00f1a.',pt:'O tempo de viagem foi calculado por uma ferramenta de rotas em estradas reais. \u00c9 uma m\u00e9dia em tr\u00e2nsito normal, sem paragens. Tenha em conta as horas de ponta, as \u00e9pocas tur\u00edsticas e as condi\u00e7\u00f5es de montanha.',it:'Il tempo di percorrenza \u00e8 stato calcolato da uno strumento di navigazione su strade reali. \u00c8 una media con traffico normale, senza soste. Tenete conto delle ore di punta, delle stagioni turistiche e delle condizioni di montagna.',ar:'\u062a\u0645 \u062d\u0633\u0627\u0628 \u0632\u0645\u0646 \u0627\u0644\u0631\u062d\u0644\u0629 \u0628\u0648\u0627\u0633\u0637\u0629 \u0623\u062f\u0627\u0629 \u062a\u0648\u062c\u064a\u0647 \u0639\u0644\u0649 \u0627\u0644\u0637\u0631\u0642 \u0627\u0644\u0641\u0639\u0644\u064a\u0629. \u0648\u0647\u0648 \u0645\u062a\u0648\u0633\u0637 \u0641\u064a \u0638\u0631\u0648\u0641 \u0633\u064a\u0631 \u0639\u0627\u062f\u064a\u0629 \u0648\u062f\u0648\u0646 \u062a\u0648\u0642\u0641. \u0636\u0639 \u0641\u064a \u062d\u0633\u0628\u0627\u0646\u0643 \u0633\u0627\u0639\u0627\u062a \u0627\u0644\u0630\u0631\u0648\u0629 \u0648\u0645\u0648\u0627\u0633\u0645 \u0627\u0644\u0633\u064a\u0627\u062d\u0629 \u0648\u0638\u0631\u0648\u0641 \u0627\u0644\u062c\u0628\u0627\u0644.',nl:'De reistijd is berekend door een routeplanner op echte wegen. Het is een gemiddelde bij normaal verkeer, zonder pauzes. Houd rekening met spitsuren, toeristische seizoenen en bergomstandigheden.',de:'Die Fahrzeit wurde von einem Routing-Werkzeug auf echten Stra\u00dfen berechnet. Sie gilt als Durchschnitt bei normalem Verkehr, ohne Pausen. Ber\u00fccksichtigen Sie Sto\u00dfzeiten, Reisesaison und Bergstra\u00dfen.'},walk:{fr:'La dur\u00e9e \u00e0 pied est calcul\u00e9e sur l\u0027itin\u00e9raire r\u00e9el \u00e0 une allure de randonn\u00e9e moyenne, pauses non comprises. Le d\u00e9nivel\u00e9 et le terrain peuvent l\u0027allonger nettement.',en:'The walking time is calculated on the real route at an average hiking pace, breaks not included. Elevation and terrain can lengthen it considerably.',es:'La duraci\u00f3n a pie se calcula sobre el itinerario real a un ritmo de senderismo medio, sin incluir paradas. El desnivel y el terreno pueden alargarla notablemente.',pt:'A dura\u00e7\u00e3o a p\u00e9 \u00e9 calculada no percurso real a um ritmo de caminhada m\u00e9dio, sem pausas. O desn\u00edvel e o terreno podem prolong\u00e1-la bastante.',it:'La durata a piedi \u00e8 calcolata sul percorso reale a un passo di escursione medio, soste escluse. Il dislivello e il terreno possono allungarla parecchio.',ar:'\u062a\u064f\u062d\u0633\u0628 \u0645\u062f\u0629 \u0627\u0644\u0645\u0634\u064a \u0639\u0644\u0649 \u0627\u0644\u0645\u0633\u0627\u0631 \u0627\u0644\u0641\u0639\u0644\u064a \u0628\u0648\u062a\u064a\u0631\u0629 \u0633\u064a\u0631 \u0645\u062a\u0648\u0633\u0637\u0629\u060c \u062f\u0648\u0646 \u0627\u062d\u062a\u0633\u0627\u0628 \u0627\u0644\u0627\u0633\u062a\u0631\u0627\u062d\u0627\u062a. \u0648\u0642\u062f \u064a\u0637\u064a\u0644\u0647\u0627 \u0641\u0627\u0631\u0642 \u0627\u0644\u0627\u0631\u062a\u0641\u0627\u0639 \u0648\u0637\u0628\u064a\u0639\u0629 \u0627\u0644\u0623\u0631\u0636 \u0628\u0634\u0643\u0644 \u0645\u0644\u062d\u0648\u0638.',nl:'De looptijd is berekend op de echte route in een gemiddeld wandeltempo, pauzes niet meegerekend. Hoogteverschil en terrein kunnen die flink verlengen.',de:'Die Gehzeit wird auf der tats\u00e4chlichen Route bei durchschnittlichem Wandertempo berechnet, ohne Pausen. H\u00f6henunterschied und Gel\u00e4nde k\u00f6nnen sie deutlich verl\u00e4ngern.'},train:{fr:'La dur\u00e9e indiqu\u00e9e est celle d\u0027un train direct sur cette liaison, \u00e0 laquelle nous ajoutons 1 h pour rejoindre la gare et embarquer. Les horaires varient selon le jour et la saison, v\u00e9rifiez-les avant de r\u00e9server.',en:'The time shown is that of a direct train on this route, plus 1 hour to reach the station and board. Timetables vary by day and season, check them before booking.',es:'La duraci\u00f3n indicada es la de un tren directo en esta conexi\u00f3n, m\u00e1s 1 h para llegar a la estaci\u00f3n y embarcar. Los horarios var\u00edan seg\u00fan el d\u00eda y la temporada, compru\u00e9belos antes de reservar.',pt:'A dura\u00e7\u00e3o indicada \u00e9 a de um comboio direto nesta liga\u00e7\u00e3o, mais 1 h para chegar \u00e0 esta\u00e7\u00e3o e embarcar. Os hor\u00e1rios variam consoante o dia e a \u00e9poca, verifique-os antes de reservar.',it:'La durata indicata \u00e8 quella di un treno diretto su questo collegamento, pi\u00f9 1 h per raggiungere la stazione e salire a bordo. Gli orari variano secondo il giorno e la stagione, verificateli prima di prenotare.',ar:'\u0627\u0644\u0645\u062f\u0629 \u0627\u0644\u0645\u0630\u0643\u0648\u0631\u0629 \u0647\u064a \u0645\u062f\u0629 \u0642\u0637\u0627\u0631 \u0645\u0628\u0627\u0634\u0631 \u0639\u0644\u0649 \u0647\u0630\u0627 \u0627\u0644\u062e\u0637\u060c \u0645\u0636\u0627\u0641\u064b\u0627 \u0625\u0644\u064a\u0647\u0627 \u0633\u0627\u0639\u0629 \u0648\u0627\u062d\u062f\u0629 \u0644\u0644\u0648\u0635\u0648\u0644 \u0625\u0644\u0649 \u0627\u0644\u0645\u062d\u0637\u0629 \u0648\u0627\u0644\u0635\u0639\u0648\u062f. \u062a\u062a\u063a\u064a\u0631 \u0627\u0644\u0645\u0648\u0627\u0639\u064a\u062f \u062d\u0633\u0628 \u0627\u0644\u064a\u0648\u0645 \u0648\u0627\u0644\u0645\u0648\u0633\u0645\u060c \u062a\u062d\u0642\u0642 \u0645\u0646\u0647\u0627 \u0642\u0628\u0644 \u0627\u0644\u062d\u062c\u0632.',nl:'De vermelde duur is die van een directe trein op deze verbinding, plus 1 uur om het station te bereiken en in te stappen. Dienstregelingen verschillen per dag en seizoen, controleer ze voor u boekt.',de:'Angegeben ist die Fahrzeit eines direkten Zuges auf dieser Verbindung, zuz\u00fcglich 1 Stunde f\u00fcr Anfahrt zum Bahnhof und Einstieg. Die Fahrpl\u00e4ne \u00e4ndern sich je nach Tag und Saison, pr\u00fcfen Sie sie vor der Buchung.'},flight:{fr:'Ce temps de vol est estim\u00e9 d\u0027apr\u00e8s la distance, pour un vol direct. Nous y ajoutons 3 h pour la pr\u00e9sentation \u00e0 l\u0027a\u00e9roport, l\u0027embarquement et la sortie. Les escales, si vous en prenez, ne sont pas compt\u00e9es.',en:'This flight time is estimated from the distance, for a direct flight. We add 3 hours for airport check-in, boarding and exit. Stopovers, if you take any, are not counted.',es:'Este tiempo de vuelo se estima seg\u00fan la distancia, para un vuelo directo. A\u00f1adimos 3 h para la presentaci\u00f3n en el aeropuerto, el embarque y la salida. Las escalas, si las hace, no est\u00e1n contadas.',pt:'Este tempo de voo \u00e9 estimado a partir da dist\u00e2ncia, para um voo direto. Acrescentamos 3 h para a apresenta\u00e7\u00e3o no aeroporto, o embarque e a sa\u00edda. As escalas, se as fizer, n\u00e3o est\u00e3o contabilizadas.',it:'Questo tempo di volo \u00e8 stimato in base alla distanza, per un volo diretto. Aggiungiamo 3 h per la presentazione in aeroporto, l\u0027imbarco e l\u0027uscita. Gli scali, se ne fate, non sono conteggiati.',ar:'\u0632\u0645\u0646 \u0627\u0644\u0637\u064a\u0631\u0627\u0646 \u0647\u0630\u0627 \u0645\u0642\u062f\u064e\u0651\u0631 \u0627\u0646\u0637\u0644\u0627\u0642\u064b\u0627 \u0645\u0646 \u0627\u0644\u0645\u0633\u0627\u0641\u0629\u060c \u0644\u0631\u062d\u0644\u0629 \u0645\u0628\u0627\u0634\u0631\u0629. \u0648\u0646\u0636\u064a\u0641 \u0625\u0644\u064a\u0647 3 \u0633\u0627\u0639\u0627\u062a \u0644\u0625\u062c\u0631\u0627\u0621\u0627\u062a \u0627\u0644\u0645\u0637\u0627\u0631 \u0648\u0627\u0644\u0635\u0639\u0648\u062f \u0648\u0627\u0644\u062e\u0631\u0648\u062c. \u0623\u0645\u0627 \u0627\u0644\u062a\u0648\u0642\u0641\u0627\u062a\u060c \u0625\u0646 \u0648\u064f\u062c\u062f\u062a\u060c \u0641\u063a\u064a\u0631 \u0645\u062d\u062a\u0633\u0628\u0629.',nl:'Deze vliegtijd is geschat op basis van de afstand, voor een directe vlucht. We tellen er 3 uur bij op voor inchecken, boarden en uitgang. Tussenstops, als u die maakt, zijn niet meegerekend.',de:'Diese Flugzeit ist aus der Entfernung gesch\u00e4tzt, f\u00fcr einen Direktflug. Wir rechnen 3 Stunden f\u00fcr Check-in, Boarding und Ausgang hinzu. Zwischenlandungen, falls Sie welche nehmen, sind nicht enthalten.'},ferry:{fr:'La dur\u00e9e est celle de la travers\u00e9e, \u00e0 laquelle nous ajoutons 2 h pour l\u0027embarquement et le d\u00e9barquement (30 min pour les courtes travers\u00e9es). Les ferries d\u00e9pendent des saisons et de la m\u00e9t\u00e9o, r\u00e9servez \u00e0 l\u0027avance en haute saison.',en:'The time shown is the crossing itself, plus 2 hours for boarding and disembarking (30 minutes on short crossings). Ferries depend on the season and the weather, book ahead in high season.',es:'La duraci\u00f3n es la de la traves\u00eda, m\u00e1s 2 h para el embarque y el desembarque (30 min en traves\u00edas cortas). Los ferris dependen de la temporada y del tiempo, reserve con antelaci\u00f3n en temporada alta.',pt:'A dura\u00e7\u00e3o \u00e9 a da travessia, mais 2 h para o embarque e o desembarque (30 min nas travessias curtas). Os ferries dependem da \u00e9poca e do tempo, reserve com anteced\u00eancia na \u00e9poca alta.',it:'La durata \u00e8 quella della traversata, pi\u00f9 2 h per l\u0027imbarco e lo sbarco (30 min sulle traversate brevi). I traghetti dipendono dalla stagione e dal meteo, prenotate in anticipo in alta stagione.',ar:'\u0627\u0644\u0645\u062f\u0629 \u0647\u064a \u0645\u062f\u0629 \u0627\u0644\u0639\u0628\u0648\u0631\u060c \u0645\u0636\u0627\u0641\u064b\u0627 \u0625\u0644\u064a\u0647\u0627 \u0633\u0627\u0639\u062a\u0627\u0646 \u0644\u0644\u0635\u0639\u0648\u062f \u0648\u0627\u0644\u0646\u0632\u0648\u0644 (30 \u062f\u0642\u064a\u0642\u0629 \u0641\u064a \u0627\u0644\u0639\u0628\u0648\u0631\u0627\u062a \u0627\u0644\u0642\u0635\u064a\u0631\u0629). \u062a\u062a\u0623\u062b\u0631 \u0627\u0644\u0639\u0628\u0651\u0627\u0631\u0627\u062a \u0628\u0627\u0644\u0645\u0648\u0633\u0645 \u0648\u0627\u0644\u0637\u0642\u0633\u060c \u0641\u0627\u062d\u062c\u0632 \u0645\u0633\u0628\u0642\u064b\u0627 \u0641\u064a \u0645\u0648\u0633\u0645 \u0627\u0644\u0630\u0631\u0648\u0629.',nl:'De duur is die van de overtocht, plus 2 uur voor in- en ontschepen (30 minuten bij korte overtochten). Veerboten hangen af van seizoen en weer, boek in het hoogseizoen vooraf.',de:'Angegeben ist die reine \u00dcberfahrt, zuz\u00fcglich 2 Stunden f\u00fcr Ein- und Ausschiffung (30 Minuten bei kurzen \u00dcberfahrten). F\u00e4hren h\u00e4ngen von Saison und Wetter ab, buchen Sie in der Hochsaison im Voraus.'},boat:{fr:'La dur\u00e9e est celle de la navigation, plus 2 h d\u0027embarquement et de d\u00e9barquement (30 min sur les courts trajets). Ces liaisons sont souvent saisonni\u00e8res ou priv\u00e9es, renseignez-vous sur place.',en:'The time shown is the sailing itself, plus 2 hours for boarding and disembarking (30 minutes on short trips). These services are often seasonal or private, ask locally.',es:'La duraci\u00f3n es la de la navegaci\u00f3n, m\u00e1s 2 h de embarque y desembarque (30 min en trayectos cortos). Estas conexiones suelen ser estacionales o privadas, inf\u00f3rmese sobre el terreno.',pt:'A dura\u00e7\u00e3o \u00e9 a da navega\u00e7\u00e3o, mais 2 h de embarque e desembarque (30 min em trajetos curtos). Estas liga\u00e7\u00f5es s\u00e3o muitas vezes sazonais ou privadas, informe-se no local.',it:'La durata \u00e8 quella della navigazione, pi\u00f9 2 h di imbarco e sbarco (30 min sui tragitti brevi). Questi collegamenti sono spesso stagionali o privati, informatevi sul posto.',ar:'\u0627\u0644\u0645\u062f\u0629 \u0647\u064a \u0645\u062f\u0629 \u0627\u0644\u0625\u0628\u062d\u0627\u0631\u060c \u0625\u0636\u0627\u0641\u0629 \u0625\u0644\u0649 \u0633\u0627\u0639\u062a\u064a\u0646 \u0644\u0644\u0635\u0639\u0648\u062f \u0648\u0627\u0644\u0646\u0632\u0648\u0644 (30 \u062f\u0642\u064a\u0642\u0629 \u0641\u064a \u0627\u0644\u0631\u062d\u0644\u0627\u062a \u0627\u0644\u0642\u0635\u064a\u0631\u0629). \u063a\u0627\u0644\u0628\u064b\u0627 \u0645\u0627 \u062a\u0643\u0648\u0646 \u0647\u0630\u0647 \u0627\u0644\u062e\u0637\u0648\u0637 \u0645\u0648\u0633\u0645\u064a\u0629 \u0623\u0648 \u062e\u0627\u0635\u0629\u060c \u0641\u0627\u0633\u062a\u0641\u0633\u0631 \u0641\u064a \u0627\u0644\u0645\u0643\u0627\u0646.',nl:'De duur is die van de vaart, plus 2 uur in- en ontschepen (30 minuten op korte trajecten). Deze verbindingen zijn vaak seizoensgebonden of priv\u00e9, informeer ter plaatse.',de:'Angegeben ist die reine Fahrzeit auf dem Wasser, zuz\u00fcglich 2 Stunden f\u00fcr Ein- und Ausschiffung (30 Minuten bei kurzen Strecken). Diese Verbindungen sind oft saisonal oder privat, fragen Sie vor Ort nach.'},mixed:{fr:'Ce trajet encha\u00eene plusieurs moyens de transport, par exemple route puis ferry. La dur\u00e9e totale inclut les temps d\u0027attente entre chaque segment. Le d\u00e9tail du parcours est d\u00e9crit dans la ligne du trajet.',en:'This leg combines several means of transport, for example road then ferry. The total time includes the waiting between each segment. The details are given in the leg description.',es:'Este trayecto encadena varios medios de transporte, por ejemplo carretera y luego ferri. La duraci\u00f3n total incluye las esperas entre cada tramo. El detalle del recorrido figura en la l\u00ednea del trayecto.',pt:'Este trajeto encadeia v\u00e1rios meios de transporte, por exemplo estrada e depois ferry. A dura\u00e7\u00e3o total inclui as esperas entre cada tro\u00e7o. O detalhe do percurso est\u00e1 descrito na linha do trajeto.',it:'Questa tratta combina pi\u00f9 mezzi di trasporto, per esempio strada e poi traghetto. La durata totale comprende le attese tra un segmento e l\u0027altro. Il dettaglio \u00e8 indicato nella riga del percorso.',ar:'\u062a\u062c\u0645\u0639 \u0647\u0630\u0647 \u0627\u0644\u0645\u0631\u062d\u0644\u0629 \u0628\u064a\u0646 \u0639\u062f\u0629 \u0648\u0633\u0627\u0626\u0644 \u0646\u0642\u0644\u060c \u0645\u062b\u0644 \u0627\u0644\u0637\u0631\u064a\u0642 \u062b\u0645 \u0627\u0644\u0639\u0628\u0651\u0627\u0631\u0629. \u0648\u062a\u0634\u0645\u0644 \u0627\u0644\u0645\u062f\u0629 \u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a\u0629 \u0623\u0648\u0642\u0627\u062a \u0627\u0644\u0627\u0646\u062a\u0638\u0627\u0631 \u0628\u064a\u0646 \u0643\u0644 \u0642\u0637\u0627\u0639 \u0648\u0622\u062e\u0631. \u0648\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0645\u0633\u0627\u0631 \u0645\u0630\u0643\u0648\u0631\u0629 \u0641\u064a \u0633\u0637\u0631 \u0627\u0644\u0631\u062d\u0644\u0629.',nl:'Dit traject combineert meerdere vervoermiddelen, bijvoorbeeld weg en dan veerboot. De totale duur omvat de wachttijden tussen de segmenten. De details staan in de trajectregel.',de:'Diese Etappe verbindet mehrere Verkehrsmittel, zum Beispiel Stra\u00dfe und dann F\u00e4hre. Die Gesamtdauer enth\u00e4lt die Wartezeiten zwischen den Abschnitten. Einzelheiten stehen in der Etappenzeile.'},estimate:{fr:'Cette dur\u00e9e est une estimation, pas encore v\u00e9rifi\u00e9e sur un outil de routage. Prenez-la comme un ordre de grandeur.',en:'This time is an estimate, not yet checked against a routing tool. Treat it as an order of magnitude.',es:'Esta duraci\u00f3n es una estimaci\u00f3n, a\u00fan no verificada con una herramienta de rutas. T\u00f3mela como un orden de magnitud.',pt:'Esta dura\u00e7\u00e3o \u00e9 uma estimativa, ainda n\u00e3o verificada numa ferramenta de rotas. Considere-a como uma ordem de grandeza.',it:'Questa durata \u00e8 una stima, non ancora verificata con uno strumento di navigazione. Prendetela come un ordine di grandezza.',ar:'\u0647\u0630\u0647 \u0627\u0644\u0645\u062f\u0629 \u062a\u0642\u062f\u064a\u0631\u064a\u0629 \u0648\u0644\u0645 \u062a\u064f\u062a\u062d\u0642\u0642 \u0628\u0639\u062f \u0628\u0623\u062f\u0627\u0629 \u062a\u0648\u062c\u064a\u0647. \u0627\u0639\u062a\u0628\u0631\u0647\u0627 \u0645\u0624\u0634\u0631\u064b\u0627 \u062a\u0642\u0631\u064a\u0628\u064a\u064b\u0627 \u0641\u0642\u0637.',nl:'Deze duur is een schatting, nog niet gecontroleerd met een routeplanner. Beschouw hem als een orde van grootte.',de:'Diese Dauer ist eine Sch\u00e4tzung, noch nicht mit einem Routing-Werkzeug gepr\u00fcft. Nehmen Sie sie als Gr\u00f6\u00dfenordnung.'}};
+                function _tipKey(lg,rt,mo){var r=String(rt||'').toLowerCase();var m=String(mo||'car').toLowerCase();if(m==='car'&&/ferry|bateau|boat|traghetto|f.hre|veerboot|barco|traves|crossing/.test(r))return'mixed';if(String(lg||'')==='heuristic')return'estimate';if(_TP[m])return m;return'car';}
+                var _tk=_tipKey(step.to_next_leg.method,_rt,step.to_next_leg.transport_mode);
+                var _tt=_esc(_TP[_tk][LANG]||_TP[_tk].en);
+                html+='<div class="nl"><span>'+_ic+'</span><span>'+_esc(_t.driveToNext)+': <b>'+Math.round(step.to_next_leg.distance_km)+' km</b>';
                 if(step.to_next_leg.drive_min)html+=' \u00b7 <b>'+_drvT(step.to_next_leg.drive_min)+'</b>';
-                html+='</span></div>';
+                if(_rt)html+=' \u00b7 '+_esc(_rt);
+                html+='</span><button type=button class=nl-help><span class=nl-q>?</span><span class=nl-tip>'+_tt+'</span></button>';
+                html+='</div>';
               }
               if(pid)html+='<div class="htl-ph" data-pid="'+_esc(pid)+'"></div>';
               html+='</section>';
             });
             var textPanel=document.getElementById('textPanel');
             if(textPanel){var _pp=document.getElementById('ortPromo');textPanel.innerHTML=html;if(_pp)textPanel.insertBefore(_pp,textPanel.firstChild);}
-            (function(){
-              var phs=document.querySelectorAll('.htl-ph[data-pid]');
-              if(!phs.length)return;
-              var pids=[];phs.forEach(function(el){pids.push(el.getAttribute('data-pid'));});
-              function loadScript2(src){return new Promise(function(ok,ko){if(document.querySelector('script[src="'+src+'"]')){ok();return;}var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ko;document.head.appendChild(s);});}
-              var bkLang={fr:'fr',en:'en-gb',es:'es',pt:'pt-pt',it:'it',ar:'ar',nl:'nl',de:'de'};
-              var bkSuf=bkLang[LANG]||'en-gb';
-              function doLoad(){
-                if(!window.ORT_HOTELS||!window.ORT_HOTELS.loadHotelsForMultiplePlaces)return;
-                window.ORT_HOTELS.loadHotelsForMultiplePlaces(pids).then(function(results){
-                  if(!results)return;
-                  phs.forEach(function(el){
-                    var pid2=el.getAttribute('data-pid');
-                    var pd=results[pid2];
-                    if(!pd||!pd.hotels||!pd.hotels.length)return;
-                    var best=pd.hotels.slice().sort(function(a,b){return(b.score||0)-(a.score||0);})[0];
-                    if(!best)return;
-                    var hLink='#';
-                    if(best.bookingUrl){var bm=best.bookingUrl.match(/https:\/\/www\.booking\.com\/hotel\/([a-z]{2})\/([^.?]+)/);if(bm)hLink='https://www.booking.com/hotel/'+bm[1]+'/'+bm[2]+'.'+bkSuf+'.html';}
-                    var hImg=best.imageUrl?best.imageUrl.replace('square240','square600'):'';
-                    el.innerHTML='<a class="htl-inline" href="'+hLink+'" target="_blank" rel="noopener sponsored">'+(hImg?'<img src="'+hImg+'" alt="'+_esc(best.name)+'" loading="lazy" width="70" height="70">':'')+'<div class="htl-info"><span class="htl-name">'+_esc(best.name)+'</span>'+(best.score?'<span class="htl-score">'+best.score+'</span>':'')+'</div></a>';
-                  });
-                  console.log('[ORT-SHELL] Hotels injectes');
-                });
-              }
-              if(window.ORT_HOTELS){doLoad();}else{loadScript2('/js/ort-hotels.js').then(function(){setTimeout(doLoad,100);}).catch(function(){console.warn('[ORT-SHELL] ort-hotels.js non disponible');});}
-            })();
             var newMP=[];
             stps.forEach(function(step,idx){
               var lat=step.lat||0;
               var lng=step.lng||step.lon||0;
               var pid=step.place_id||step.placeId||'';
               var photoUrl=_optImg(_getPhoto(pid));
-              if(lat&&lng)newMP.push({day:idx+1,name:step.name||'',lat:lat,lng:lng,tag:'',photo:photoUrl||'',photoAlts:[],htl:null});
+              if(lat&&lng)newMP.push({day:idx+1,name:step.name||'',lat:lat,lng:lng,tag:'',photo:photoUrl||'',photoAlts:[],htl:null,sn:((step.stay_nights===undefined||step.stay_nights===null)?null:(parseInt(step.stay_nights,10)||0)),nn:(stps[idx+1]?(stps[idx+1].name||''):''),nx:((step.to_next_leg&&step.to_next_leg.distance_km)?{km:Math.round(step.to_next_leg.distance_km),min:(step.to_next_leg.drive_min||0),mode:(step.to_next_leg.transport_mode||'car')}:null)});
             });
             if(typeof mk==='object'){Object.keys(mk).forEach(function(k){try{map.removeLayer(mk[k]);}catch(e){}});mk={};}
             if(pl){try{map.removeLayer(pl);}catch(e){}pl=null;}
             MP=newMP;
+            if(window.ORT_BOOKING)window.ORT_BOOKING.setTrip(trip);
+            if(window.ORT_ACTIVITIES)window.ORT_ACTIVITIES.setTrip(trip,_places);
             if(map&&MP.length>=2){
               var ll=MP.map(function(p){return[p.lat,p.lng];});var nm=MP.map(function(p){return p.name||'';});
               ortDrawLoopRoute(ll,nm);
@@ -428,24 +961,19 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
               var bd=L.latLngBounds(MP.map(function(p){return[p.lat,p.lng];}));
               MP.forEach(function(p){
                 var m=L.marker([p.lat,p.lng],{icon:mkIcon(p.day,false),zIndexOffset:p.day}).addTo(map);
-                m.bindTooltip('<strong>'+p.day+'. '+p.name+'</strong>',{direction:'auto',offset:[0,-10],opacity:.95,className:'ort-tt'});
-                m.on('click',function(){showPlaceBox(p.day,p.name,p.tag||'');var el=document.getElementById('day-'+p.day);if(el){el.scrollIntoView({behavior:'smooth',block:'start'});hD(p.day);}});
+                m.bindTooltip(ortMarkerTip(p),{direction:'auto',offset:[0,-10],opacity:.95,className:'ort-tt'});
+                m.on('click',function(){showPlaceBox(p.day,p.name,p.tag||'');var el=document.getElementById('day-'+p.day);if(el){hD(p.day);ortScrollToStep(el);}});
                 mk[p.day]=m;
               });
-              map.fitBounds(bd.pad(0.1));
+              map.fitBounds(bd.pad(0.1),{maxZoom:13});
               initBd=bd;
             }
             if(typeof obs!=='undefined'){
               document.querySelectorAll('.ds').forEach(function(s){obs.observe(s);});
             }
-            var _barMsgs={fr:'Votre itin\u00e9raire personnalis\u00e9',en:'Your customized itinerary',es:'Tu itinerario personalizado',pt:'Seu itiner\u00e1rio personalizado',it:'Il tuo itinerario personalizzato',ar:'\u0645\u0633\u0627\u0631\u0643 \u0627\u0644\u0645\u062e\u0635\u0635',nl:'Jouw persoonlijke route',de:'Deine pers\u00f6nliche Route'};
-            var _editMsgs={fr:'Modifier',en:'Edit',es:'Editar',pt:'Editar',it:'Modifica',ar:'\u062a\u0639\u062f\u064a\u0644',nl:'Bewerken',de:'Bearbeiten'};
-            var _editorMsgs={fr:'\u00c9diteur avanc\u00e9',en:'Advanced editor',es:'Editor avanzado',pt:'Editor avan\u00e7ado',it:'Editor avanzato',ar:'\u0627\u0644\u0645\u062d\u0631\u0631 \u0627\u0644\u0645\u062a\u0642\u062f\u0645',nl:'Geavanceerde editor',de:'Erweiterter Editor'};
-            var bar=document.createElement('div');
-            bar.style.cssText='padding:8px 20px;background:linear-gradient(135deg,#f0f7ff,#e8f4fd);border-bottom:2px solid #d0dff0;text-align:center;font-size:.85rem;position:sticky;top:0;z-index:11000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap';
-            bar.innerHTML='<span style="color:#113f7a;font-weight:600">\u2728 '+(_barMsgs[LANG]||_barMsgs.en)+'</span>'+
-              '<a href="/roadtrip_detail.html?tripId='+encodeURIComponent(urlTripId)+'&lang='+LANG+'" style="padding:5px 14px;border:none;border-radius:8px;background:#113f7a;color:#fff;cursor:pointer;font-weight:600;font-size:.82rem;text-decoration:none">\u270f\ufe0f '+(_editorMsgs[LANG]||_editorMsgs.en)+'</a>';
-            document.body.insertBefore(bar,document.body.firstChild);
+            ortShellReady=true;
+            ortShellActions(trip,["Modificar etapas","Adicione, remova ou reordene etapas no mapa.","Editor avançado","Edite durações, visitas e atividades; adicione hotéis e reservas."]);
+            initEditOnMapBtn();
           });  // fin Promise.all().then
           }).catch(function(e){console.warn('[ORT-SHELL] Erreur:',e);});
       });
@@ -461,5 +989,98 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape'){if(document
 function on(){var y=window.pageYOffset||document.documentElement.scrollTop||0;if(y<=10){h.classList.remove('hdr-hide');document.body.classList.remove('hdr-off');if(window.ortSnTop)ortSnTop();}else if(y>ly+4){h.classList.add('hdr-hide');document.body.classList.add('hdr-off');if(window.ortSnTop)ortSnTop();}else if(y<ly-4){h.classList.remove('hdr-hide');document.body.classList.remove('hdr-off');if(window.ortSnTop)ortSnTop();}ly=y;tk=false;}
 window.addEventListener('scroll',function(){if(!tk){tk=true;requestAnimationFrame(on);}},{passive:true});})();
 </script>
-</body>
+<script>function ortPinMapHotel(){
+  function boot(){
+    var rail=document.getElementById('rcol')||document.querySelector('body.t30 #mapPanel');
+    if(!rail)return;
+    var frame=0,lastHeight=0;
+    function sync(){
+      frame=0;
+      if(window.innerWidth<=900)return;
+      var top=0;
+      ['header.ort-hdr','.ip-bar'].forEach(function(sel){
+        var el=document.querySelector(sel);
+        if(!el||getComputedStyle(el).display==='none')return;
+        var r=el.getBoundingClientRect();
+        if(r.bottom>0&&r.top<window.innerHeight)top=Math.max(top,r.bottom);
+      });
+      top=Math.ceil(top)+8;
+      var height=Math.max(180,window.innerHeight-top-8);
+      document.documentElement.style.setProperty('--ort-rail-top',top+'px');
+      document.documentElement.style.setProperty('--ort-rail-height',height+'px');
+      if(height!==lastHeight){
+        lastHeight=height;
+        if(window.map&&window.map.invalidateSize)window.map.invalidateSize({pan:false});
+      }
+    }
+    function queue(){if(!frame)frame=requestAnimationFrame(sync);}
+    window.addEventListener('scroll',queue,{passive:true});
+    window.addEventListener('resize',queue);
+    if(window.ResizeObserver){
+      var ro=new ResizeObserver(queue);
+      document.querySelectorAll('header.ort-hdr,.ip-bar').forEach(function(el){ro.observe(el);});
+    }
+    if(window.MutationObserver)new MutationObserver(function(){queue();setTimeout(queue,300);}).observe(document.body,{attributes:true,attributeFilter:['class']});
+    sync();setTimeout(queue,400);setTimeout(queue,1500);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+};ortPinMapHotel();</script>
+<script>(function ortCountryLink(folders){
+  var lang=(document.documentElement.lang||'fr').slice(0,2), folder=folders[lang]||folders.en, dataPromise, last='';
+  var labels={fr:['Voir l’autre itinéraire sur ce pays','Voir les {n} autres itinéraires sur ce pays'],en:['See the other itinerary in this country','See {n} other itineraries in this country'],es:['Ver el otro itinerario de este país','Ver los otros {n} itinerarios de este país'],it:['Scopri l’altro itinerario in questo paese','Scopri gli altri {n} itinerari in questo paese'],pt:['Ver o outro itinerário neste país','Ver os outros {n} itinerários neste país'],de:['Weitere Reiseroute in diesem Land ansehen','{n} weitere Reiserouten in diesem Land ansehen'],nl:['Bekijk de andere reisroute in dit land','Bekijk de {n} andere reisroutes in dit land'],ar:['شاهد المسار الآخر في هذا البلد','شاهد {n} مسارات أخرى في هذا البلد']};
+  // Le style peut deja etre dans la page (lien pose a la construction) : pas de doublon.
+  var style=document.getElementById('ortCountryLinkCss')||document.createElement('style');
+  if(!style.id)style.textContent='.ort-country-link{display:block;padding:18px 22px;background:#fff3c4;color:#123f76!important;border:2px solid #efa900;border-radius:10px;font:700 18px/1.4 system-ui,sans-serif;text-decoration:none!important;box-shadow:0 3px 12px #0002;text-align:center;box-sizing:border-box}.ort-country-link:hover{background:#ffe59a}.ort-country-link:focus-visible{outline:3px solid #123f76;outline-offset:3px}.ort-country-rail .t30-sl{height:420px}.ort-country-rail .ort-country-link{margin-bottom:16px}body.t30 .hc>.ort-country-rail{grid-column:2;grid-row:1/span 12;align-self:stretch}.ort-country-host{position:relative;padding-inline-end:350px!important}.ort-country-host>.ort-country-link{position:absolute;inset-inline-end:24px;bottom:16px;width:300px;z-index:3}@media(max-width:900px){.ort-country-host{padding-inline-end:16px!important}.ort-country-host>.ort-country-link{position:static;width:auto;margin-top:16px}body.t30 .hc>.ort-country-rail{grid-column:1;grid-row:auto}.ort-country-rail .t30-sl{display:none}.ort-country-rail .ort-country-link{margin:16px 0}}';
+  if(!style.parentNode)document.head.appendChild(style);
+  function update(){
+    var cc=(document.body.dataset.cc||'').toUpperCase();
+    if(!/^[A-Z]{2}$/.test(cc)||cc===last)return;
+    last=cc;
+    if(!dataPromise)dataPromise=fetch('/'+folder+'/index-data.json').then(function(r){if(!r.ok)throw Error('catalog');return r.json();});
+    dataPromise.then(function(data){
+      if(last!==cc||!Array.isArray(data))return;
+      var slug=decodeURIComponent(location.pathname.split('/').pop()).replace(/\.html$/,'');
+      var seen=new Set();data.forEach(function(it){if(String(it.cc||'').toUpperCase()===cc&&!it.prive&&it.slug&&it.slug!==slug)seen.add(it.slug);});
+      var a=document.getElementById('ortCountryLink');
+      if(!seen.size){if(a)a.remove();return;}
+      // Lien deja en place (pose a la construction) : on corrige seulement le texte, sans le deplacer.
+      var placed=!!a;
+      if(!a){a=document.createElement('a');a.id='ortCountryLink';a.className='ort-country-link';}
+      a.textContent=(labels[lang]||labels.en)[seen.size===1?0:1].replace('{n}',seen.size)+' →';
+      a.href='/index.html?lang='+encodeURIComponent(lang)+'&sort=country&country='+cc+'#country-'+cc;
+      if(placed)return;
+      var hc=document.querySelector('.hr .hc'),photo=document.getElementById('t30Sl'),flowRail=document.getElementById('t30Rail');
+      // Page qui defile d'un bloc : le lien va toujours en tete de la colonne de droite.
+      if(flowRail){flowRail.prepend(a);}
+      else if(document.body.classList.contains('t30')&&photo){
+        var rail=photo.parentElement;
+        if(!rail.classList.contains('ort-country-rail')){rail=document.createElement('div');rail.className='ort-country-rail';photo.before(rail);rail.appendChild(photo);}
+        rail.prepend(a);
+      }else if(hc){hc.classList.add('ort-country-host');hc.appendChild(a);}
+      else {var text=document.getElementById('textPanel');if(text)text.prepend(a);}
+    }).catch(function(){/* Aucun compteur inventé si le catalogue est indisponible. */});
+  }
+  new MutationObserver(update).observe(document.body,{attributes:true,attributeFilter:['data-cc']});
+  // Le catalogue (lourd) se charge une fois la page affichee, sans ralentir l'ouverture.
+  function later(){if(window.requestIdleCallback)requestIdleCallback(update,{timeout:4000});else setTimeout(update,2500);}
+  if(document.readyState==='complete')later();else window.addEventListener('load',later,{once:true});
+})({"fr":"itineraires","en":"itineraries","es":"rutas","pt":"roteiros","it":"itinerari","ar":"masar","nl":"routes","de":"routen"});</script><script>(function ortVisibleTextScroll(){
+  var panel=document.getElementById('textPanel');if(!panel)return;
+  var track=document.createElement('div'),thumb=document.createElement('div'),frame=0,drag=null;
+  track.className='ort-text-scroll-track';thumb.className='ort-text-scroll-thumb';track.appendChild(thumb);document.body.appendChild(track);
+  track.setAttribute('role','scrollbar');track.setAttribute('aria-controls','textPanel');track.setAttribute('aria-orientation','vertical');track.setAttribute('aria-valuemin','0');track.tabIndex=0;
+  var lang=(document.documentElement.lang||'fr').slice(0,2);
+  track.setAttribute('aria-label',({fr:'Défilement des étapes',en:'Scroll itinerary',es:'Desplazar itinerario',it:'Scorri itinerario',pt:'Percorrer itinerário',de:'Reiseroute scrollen',nl:'Reisroute scrollen',ar:'تمرير مسار الرحلة'})[lang]||'Scroll itinerary');
+  var style=document.createElement('style');style.textContent='.ort-text-scroll-track{display:none;position:fixed;width:24px;background:#113f7a;border:2px solid #113f7a;border-radius:8px;box-sizing:border-box;z-index:900;touch-action:none;cursor:pointer;box-shadow:0 0 0 2px #fff}.ort-text-scroll-thumb{position:absolute;left:3px;right:3px;top:0;background:#fff;border:1px solid #d9e2ec;border-radius:6px;box-sizing:border-box;cursor:grab;min-height:44px}.ort-text-scroll-track:focus-visible{outline:3px solid #e49d16;outline-offset:2px}';document.head.appendChild(style);
+  function metrics(){var r=panel.getBoundingClientRect(),top=Math.max(0,r.top),bottom=Math.min(innerHeight,r.bottom);document.querySelectorAll('header.ort-hdr,.ip-bar').forEach(function(el){var h=el.getBoundingClientRect();if(h.top<=top&&h.bottom>top)top=h.bottom;});return {r:r,top:top,height:Math.max(0,bottom-top),max:Math.max(0,panel.scrollHeight-panel.clientHeight)};}
+  function paint(){frame=0;var m=metrics();if(innerWidth<=900||m.height<80||!m.max||!panel.getClientRects().length){track.style.display='none';return;}track.style.display='block';track.style.left=(m.r.right-25)+'px';track.style.top=m.top+'px';track.style.height=m.height+'px';var h=Math.max(44,(m.height-4)*panel.clientHeight/panel.scrollHeight);thumb.style.height=h+'px';thumb.style.transform='translateY('+((m.height-4-h)*panel.scrollTop/m.max)+'px)';track.setAttribute('aria-valuemax',String(m.max));track.setAttribute('aria-valuenow',String(Math.round(panel.scrollTop)));}
+  function schedule(){if(!frame)frame=requestAnimationFrame(paint);}
+  track.addEventListener('pointerdown',function(e){if(e.button!==0)return;e.preventDefault();track.focus({preventScroll:true});var r=track.getBoundingClientRect(),h=thumb.getBoundingClientRect().height,offset=e.target===thumb?e.clientY-thumb.getBoundingClientRect().top:h/2;drag={offset:offset};track.setPointerCapture(e.pointerId);move(e);});
+  function move(e){if(!drag)return;var r=track.getBoundingClientRect(),h=thumb.getBoundingClientRect().height,max=panel.scrollHeight-panel.clientHeight;panel.scrollTop=Math.max(0,Math.min(1,(e.clientY-r.top-2-drag.offset)/Math.max(1,r.height-4-h)))*max;schedule();}
+  track.addEventListener('pointermove',move);['pointerup','pointercancel','lostpointercapture'].forEach(function(name){track.addEventListener(name,function(){drag=null;});});
+  track.addEventListener('keydown',function(e){var delta={ArrowDown:60,ArrowUp:-60,PageDown:panel.clientHeight*.8,PageUp:-panel.clientHeight*.8};if(e.key==='Home')panel.scrollTop=0;else if(e.key==='End')panel.scrollTop=panel.scrollHeight;else if(e.key in delta)panel.scrollTop+=delta[e.key];else return;e.preventDefault();schedule();});
+  panel.addEventListener('scroll',schedule,{passive:true});window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('resize',schedule,{passive:true});
+  if(window.ResizeObserver)new ResizeObserver(schedule).observe(panel);
+  new MutationObserver(schedule).observe(panel,{childList:true,subtree:true});panel.addEventListener('load',schedule,true);paint();
+})();</script></body>
 </html>

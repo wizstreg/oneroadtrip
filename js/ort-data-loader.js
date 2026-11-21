@@ -23,7 +23,11 @@
   
   const CONFIG = {
     BASE_URL: './data/Roadtripsprefabriques/countries',
+    // Version legere d'abord (6 Mo au lieu de 31, gardee hors ligne), fabriquee
+    // a la mise en ligne par build-photos-light.js ; la complete en secours.
     PHOTOS_PATHS: [
+      './data/photos-json/photos_lieux.light.json',
+      '/data/photos-json/photos_lieux.light.json',
       './data/photos-json/photos_lieux.json',
       '/data/photos-json/photos_lieux.json',
       '../data/photos-json/photos_lieux.json'
@@ -145,13 +149,34 @@
         return await this._loadComposedItinerary(cc, itinId, lang);
       }
       
-      // Charger le fichier d'itinéraires
+      // Charger le fichier d'itineraires.
+      // Tous les pays ne sont pas traduits dans toutes les langues. Si le
+      // fichier de la langue demandee n existe pas, on prend l anglais, puis le
+      // francais, plutot que d echouer. Le visiteur voit alors le texte dans une
+      // autre langue, mais son interface reste dans la sienne.
       const ccLower = cc.toLowerCase();
-      const url = `${CONFIG.BASE_URL}/${ccLower}/${ccLower}.itins.modules-${lang}.json`;
-      
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`HTTP ${resp.status} pour ${url}`);
-      
+      const langsAEssayer = [lang, 'en', 'fr'].filter(function(v, i, a) {
+        return v && a.indexOf(v) === i;
+      });
+
+      let resp = null;
+      let langChargee = lang;
+      let derniereUrl = '';
+      for (const l of langsAEssayer) {
+        derniereUrl = `${CONFIG.BASE_URL}/${ccLower}/${ccLower}.itins.modules-${l}.json`;
+        try {
+          const r = await fetch(derniereUrl);
+          if (r.ok) { resp = r; langChargee = l; break; }
+        } catch (e) {
+          console.warn('[ORT-DATA] Echec reseau sur', derniereUrl, e.message);
+        }
+      }
+      if (!resp) throw new Error(`Itineraires introuvables pour ${cc} (dernier essai : ${derniereUrl})`);
+      if (langChargee !== lang) {
+        console.warn(`[ORT-DATA] ${cc} non disponible en ${lang}, contenu charge en ${langChargee}`);
+      }
+      global.ORT_CONTENT_LANG_LOADED = langChargee;
+
       const data = await resp.json();
       const itins = data.itins || data.itineraries || data || [];
       const itin = itins.find(i => (i.id || i.itin_id) === itinId);

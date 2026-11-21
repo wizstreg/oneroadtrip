@@ -2438,8 +2438,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // Charger au démarrage
 setTimeout(() => { if(document.getElementById('tab-creators')) loadCreators(); }, 500);
 
-</script>
 
+/* === ORT deep-link onglet (ajout hub admin) === */
+(function(){
+  function ortOpenTabFromHash(){
+    var h=(location.hash||'').replace('#','').trim();
+    if(!h) return;
+    var t=document.querySelector('.tab[data-tab="'+h+'"]');
+    if(t) t.click();
+  }
+  window.addEventListener('load', function(){
+    ortOpenTabFromHash();
+    setTimeout(ortOpenTabFromHash, 300);
+  });
+})();
+
+</script>
 <!-- ort-page-tracking-v1 -->
 <script>
 (function(){try{

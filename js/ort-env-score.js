@@ -760,27 +760,131 @@
     /** Ouvrir le panneau nearbies et charger les scores */
     /** Cache des titres d'itinéraires */
     var _itinTitlesCache = {};
+    var _itinUrlCache = {};
 
     /** Charger les titres depuis le fichier modules d'un pays */
     async function loadItinTitles(cc) {
         var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
         if (_itinTitlesCache['_loaded_' + cc + '_' + lang]) return;
         try {
-            var url = './data/Roadtripsprefabriques/countries/' + cc.toLowerCase() + '/' + cc.toLowerCase() + '.itins.modules-' + lang + '.json';
-            var resp = await fetch(url);
-            if (!resp.ok) return;
+            // Le dossier pays est en MAJUSCULES sur le disque (countries/DE/).
+            // Le nom du fichier varie selon les generations, on essaie les
+            // formes connues dans l ordre plutot que d en supposer une seule.
+            var CC = cc.toUpperCase();
+            var cclow = cc.toLowerCase();
+            var base = './data/Roadtripsprefabriques/countries/' + CC + '/';
+            var noms = [
+                CC + '.itins.modules-' + lang + '.json',
+                cclow + '.itins.modules-' + lang + '.json',
+                CC + '_itins_modules-' + lang + '.json'
+            ];
+            var resp = null;
+            for (var n = 0; n < noms.length; n++) {
+                try {
+                    var r = await fetch(base + noms[n]);
+                    if (r.ok) { resp = r; break; }
+                } catch (e) { /* on essaie le nom suivant */ }
+            }
+            if (!resp) return;
             var data = await resp.json();
-            var itins = data.itins || data.itineraries || data || [];
+            var itins = data.itineraries || data.itins || data || [];
             if (Array.isArray(itins)) {
                 for (var it of itins) {
-                    var id = it.id || it.itin_id || '';
-                    if (id) _itinTitlesCache[id] = it.title || it.name || '';
+                    // Champs reels du fichier : itin_id, id, title.
+                    var id = it.itin_id || it.id || '';
+                    if (id && it.title) _itinTitlesCache[id] = it.title;
                 }
             }
             _itinTitlesCache['_loaded_' + cc + '_' + lang] = true;
         } catch (e) {
             console.warn('[ENV] Erreur chargement titres ' + cc + ':', e.message);
         }
+    }
+
+    /**
+     * Titres des itineraires, depuis search-catalog-<langue>.json.
+     * Ce fichier est ecrit par generate-v4.js dans chaque dossier de langue et
+     * contient tous les itineraires publies. Une seule requete suffit, au lieu
+     * d un fichier par pays.
+     * Les noms de champs ne sont pas figes : on repere l identifiant a sa forme
+     * (il contient toujours ::) et on accepte plusieurs noms pour le titre.
+     */
+    function _catId(o) {
+        if (o.itin_id) return o.itin_id;
+        if (o.id) return o.id;
+        // Le catalogue de recherche peut nommer ce champ autrement. On le
+        // reconnait alors a sa forme : un identifiant contient toujours ::
+        for (var k in o) {
+            if (typeof o[k] === 'string' && o[k].indexOf('::') > 0) return o[k];
+        }
+        return '';
+    }
+    function _catTitle(o) { return o.title || ''; }
+    function _catUrl(o) { return o.url || o.href || ''; }
+
+    async function loadCatalogTitles(lang) {
+        if (_itinTitlesCache['_catalog_' + lang]) return;
+        var dir = _currentItinDir() || ITIN_DIRS[lang] || ITIN_DIRS.fr;
+        try {
+            var resp = await fetch('/' + dir + '/search-catalog-' + lang + '.json');
+            if (!resp.ok) return;
+            var data = await resp.json();
+            var rows = Array.isArray(data) ? data : (data.itineraries || data.itins || []);
+            if (!Array.isArray(rows)) return;
+            for (var i = 0; i < rows.length; i++) {
+                var id = _catId(rows[i]);
+                if (!id) continue;
+                var ti = _catTitle(rows[i]);
+                if (ti) _itinTitlesCache[id] = ti;
+                var u = _catUrl(rows[i]);
+                if (u) _itinUrlCache[id] = u;
+            }
+            _itinTitlesCache['_catalog_' + lang] = true;
+        } catch (e) {
+            console.warn('[ENV] Catalogue titres indisponible:', e.message);
+        }
+    }
+
+    /** Dossier d itineraires de la page courante, vide si on n y est pas. */
+    function _currentItinDir() {
+        var seg = window.location.pathname.split('/').filter(Boolean);
+        if (seg.length < 2) return '';
+        var here = seg[seg.length - 2];
+        for (var k in ITIN_DIRS) {
+            if (ITIN_DIRS[k] === here) return here;
+        }
+        return '';
+    }
+
+    /**
+     * Adresse de la page statique d un itineraire.
+     * Regle de nommage constatee : BO::ultimate-bolivia::3-4-weeks donne le
+     * fichier bo-ultimate-bolivia-3-4-weeks.html. Les deux-points deviennent
+     * des tirets, tout en minuscules.
+     * Le dossier depend de la langue. On reste dans le dossier de la page
+     * courante quand il en fait partie, sinon on prend celui de la langue.
+     */
+    var ITIN_DIRS = {
+        fr: 'itineraires', en: 'itineraries', es: 'rutas', pt: 'roteiros',
+        it: 'itinerari', ar: 'masar', nl: 'routes', de: 'routen'
+    };
+
+    function buildItinHref(nId, lang) {
+        var dir = _currentItinDir();
+        if (!dir) {
+            var cl = (window.ORT_getContentLang && window.ORT_getContentLang()) || lang || 'fr';
+            dir = ITIN_DIRS[cl] || ITIN_DIRS.fr;
+        }
+
+        // Si le catalogue donne l adresse, elle fait foi.
+        var known = _itinUrlCache[nId];
+        if (known) {
+            if (known.charAt(0) === '/') return known + '?lang=' + lang;
+            return '/' + dir + '/' + known.replace(/^\.?\//, '') + '?lang=' + lang;
+        }
+
+        var file = String(nId).split('::').join('-').toLowerCase() + '.html';
+        return '/' + dir + '/' + file + '?lang=' + lang;
     }
 
     async function openNearbyPanel(nearbyItins, currentGrade) {
@@ -807,6 +911,7 @@
         Object.keys(_itinTitlesCache).forEach(function(k) {
             if (k.startsWith('_loaded_') && !k.endsWith('_' + lang)) delete _itinTitlesCache[k];
         });
+        await loadCatalogTitles(lang);
         await Promise.all(Object.keys(countries).map(loadItinTitles));
 
         var html = '';
@@ -835,7 +940,7 @@
 
             // Lien vers l\'itinéraire
             var lang = (window.ORT_getLang && window.ORT_getLang()) || 'fr';
-            var href = 'roadtrip_detail.html?cc=' + cc + '&itin=' + encodeURIComponent(nId) + '&lang=' + lang;
+            var href = buildItinHref(nId, lang);
 
             html +=
                 '<div class="ort-env-nearby-item">' +

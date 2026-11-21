@@ -187,8 +187,58 @@
    * @param {Array} steps - Les étapes à traiter
    * @returns {Array} Les étapes avec nuits regroupées
    */
+  // ============================================================
+  // NUITS DECIDEES DANS LE FICHIER (stay_at / stay_nights)
+  // ============================================================
+
+  /**
+   * Vrai si chaque etape porte la base ou l'on dort et le nombre de nuits
+   * decides en amont. Un seul champ manquant et on retombe sur le calcul.
+   */
+  function hasStayData(steps) {
+    if (!steps || !Array.isArray(steps) || steps.length === 0) return false;
+    return steps.every(s => s
+      && typeof s.stay_at === 'string' && s.stay_at.length > 0
+      && Number.isFinite(Number(s.stay_nights)));
+  }
+
+  /**
+   * Somme des nuits decidees dans le fichier.
+   */
+  function sumStayNights(steps) {
+    if (!hasStayData(steps)) return 0;
+    return steps.reduce((total, s) => total + Number(s.stay_nights), 0);
+  }
+
+  /**
+   * Applique les nuits decidees dans le fichier.
+   * L'etape qui porte des nuits est la base, celles a zero rayonnent autour.
+   * Aucun calcul, aucune correction : le fichier fait foi.
+   * @returns {boolean} vrai si applique
+   */
+  function applyStayNights(steps) {
+    if (!hasStayData(steps)) return false;
+
+    steps.forEach(step => {
+      const nuits = Number(step.stay_nights);
+      step.nights = nuits;
+      step._isHub = nuits > 0;
+      step._isSatellite = nuits === 0;
+      step._stayAt = step.stay_at;
+      step._nightsFromFile = true;
+    });
+
+    const total = steps.reduce((t, s) => t + s.nights, 0);
+    console.log(`[ORT-TRIP-CALC] Nuits lues dans le fichier : ${total} nuit(s) sur ${steps.length} etapes`);
+    return true;
+  }
+
   function groupNightsByPlace(steps) {
     if (!steps || !Array.isArray(steps) || steps.length === 0) return steps;
+
+    // Le fichier dit deja ou l'on dort et combien de nuits : on n'invente rien.
+    if (applyStayNights(steps)) return steps;
+
     
     console.log('[ORT-TRIP-CALC] === REGROUPEMENT DES NUITS PAR LIEU ===');
     console.log(`[ORT-TRIP-CALC] ${steps.length} étapes à traiter`);
@@ -526,7 +576,20 @@
     
     const steps = state.steps;
     const n = steps.length;
-    
+
+    // Nuits decidees dans le fichier : on les garde telles quelles tant que le
+    // visiteur n'a pas demande une autre duree. Des qu'il change le nombre de
+    // nuits, le calcul reprend la main comme avant.
+    if (hasStayData(steps)) {
+      const nuitsFichier = sumStayNights(steps);
+      if (nuitsFichier === targetNights) {
+        applyStayNights(steps);
+        console.log(`[LOG-CONTROLE][TRIP-CALC] Nuits du fichier conservees (${nuitsFichier})`);
+        return nuitsFichier;
+      }
+      console.log(`[LOG-CONTROLE][TRIP-CALC] Duree changee : ${targetNights} demandees contre ${nuitsFichier} au fichier, recalcul`);
+    }
+
     console.log(`[LOG-CONTROLE][TRIP-CALC] ✅ Calcul pour ${n} étapes, cible ${targetNights} nuits`);
     
     // 1. Identifier les groupes
@@ -774,6 +837,10 @@
    */
   function validateNights(state) {
     if (!state?.steps) return;
+
+    // Nuits venues du fichier : rien a corriger, elles ont ete decidees en amont.
+    if (state.steps.every(s => s && s._nightsFromFile)) return;
+
     
     const n = state.steps.length;
     
@@ -828,6 +895,9 @@
     getDateTooltip,
     
     // Nuits
+    hasStayData,
+    sumStayNights,
+    applyStayNights,
     groupNightsByPlace,
     applySourceNights,
     determineNightsFromVisitTime,

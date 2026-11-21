@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<!-- ort-pwa-injected-v1 -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="OneRoadTrip">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png">
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+    });
+  }
+</script>
+<script src="/pwa-install-button.js" defer></script>
+<!-- /ort-pwa-injected-v1 -->
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aide OneRoadTrip : questions et réponses</title>
+<meta name="description" content="Toutes les réponses sur OneRoadTrip : trouver, créer, modifier et enregistrer un road trip, réserver, voyager hors ligne, et comprendre nos notes, distances et scores.">
+<link rel="canonical" href="https://www.oneroadtrip.com/help-fr.html">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<meta property="og:title" content="Aide OneRoadTrip : questions et réponses">
+<meta property="og:description" content="Toutes les réponses sur OneRoadTrip : trouver, créer, modifier et enregistrer un road trip, réserver, voyager hors ligne, et comprendre nos notes, distances et scores.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://www.oneroadtrip.com/help-fr.html">
+<style>
+:root{--p:#113f7a;--pd:#0a2a57;--s:#00b2ff;--a:#ff6b35;--t:#2c3e50;--tl:#647072;--bg:#fff;--bl:#f8f9fa;--bd:#e1e8ed}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--t);background:var(--bg);line-height:1.6}
+main.aide{max-width:820px;margin:0 auto;padding:24px 18px 60px}
+main.aide h1{color:var(--p);font-size:1.9rem;line-height:1.25;margin:10px 0 6px}
+main.aide .chapo{color:var(--tl);margin:0 0 20px}
+main.aide h2{color:#fff;font-size:1.2rem;margin:0;display:inline}
+main.aide details{border:1px solid var(--bd);border-radius:10px;margin:8px 0;background:#fff}
+main.aide details[open]{background:var(--bl)}
+main.aide summary{cursor:pointer;padding:12px 40px 12px 14px;list-style:none;position:relative}
+main.aide summary::-webkit-details-marker{display:none}
+main.aide summary::after{content:"+";position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:1.4rem;font-weight:700;color:var(--p);line-height:1}
+main.aide details[open]>summary::after{content:"−"}
+main.aide summary:hover{background:var(--bl);border-radius:10px}
+main.aide h3{color:var(--p);font-size:1.02rem;margin:0;display:inline}
+main.aide .rep{padding:0 14px 12px}
+main.aide details.rub{border:0;background:none;margin:14px 0;scroll-margin-top:80px}
+main.aide details.rub>summary{background:var(--p);border-radius:10px;padding:12px 44px 12px 16px}
+main.aide details.rub>summary:hover{background:var(--pd)}
+main.aide details.rub>summary::after{color:#fff}
+main.aide .rubc{padding:8px 0 6px}
+#sigBtn{position:fixed;right:16px;bottom:16px;z-index:9000;width:52px;height:52px;border-radius:50%;border:2px solid #fff;background:#dc2626;color:#fff;font-size:1.7rem;font-weight:800;line-height:1;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+#sigBtn:hover{background:#b91c1c}
+#sigBox{position:fixed;inset:0;z-index:10002;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px}
+#sigBox.open{display:flex}
+#sigBox .carte{position:relative;width:min(460px,100%);background:#fff;border-radius:14px;padding:20px;box-shadow:0 12px 40px rgba(0,0,0,.28)}
+#sigBox h2{margin:0 0 6px;color:var(--p);font-size:1.2rem}
+#sigBox p{margin:0 0 10px;font-size:.92rem}
+#sigBox textarea,#sigBox input{width:100%;border:1px solid var(--p);border-radius:10px;padding:10px 12px;font:inherit;margin:0 0 10px}
+#sigBox textarea{min-height:120px;resize:vertical}
+#sigBox .fermer{position:absolute;top:8px;right:12px;border:0;background:none;font-size:1.6rem;line-height:1;color:#888;cursor:pointer}
+#sigBox .envoyer{background:var(--p);color:#fff;border:0;border-radius:10px;padding:10px 18px;font-weight:700;cursor:pointer;font-size:1rem}
+#sigBox .envoyer:disabled{opacity:.6;cursor:default}
+#sigEtat{display:none;margin-top:10px;padding:10px 12px;border-radius:8px;font-size:.92rem}
+main.aide .outils{display:flex;gap:8px;margin:0 0 10px}
+main.aide .outils button{border:1px solid var(--p);background:#fff;color:var(--p);border-radius:8px;padding:6px 12px;font-weight:600;cursor:pointer;font-size:.9rem}
+main.aide .outils button:hover{background:var(--bl)}
+main.aide p{margin:6px 0}
+main.aide ul,main.aide ol{margin:6px 0;padding-left:24px}
+main.aide li{margin:4px 0}
+main.aide a{color:var(--p)}
+main.aide figure{margin:16px 0}
+main.aide figure img{display:block;max-width:100%;height:auto;border:1px solid var(--bd);border-radius:10px}
+@media(max-width:600px){main.aide h1{font-size:1.5rem}main.aide h2{font-size:1.05rem}}
+</style>
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "FAQPage",
+ "inLanguage": "fr",
+ "mainEntity": [
+  {
+   "@type": "Question",
+   "name": "Qu'est-ce que OneRoadTrip ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "OneRoadTrip est un site d'itinéraires de voyage. Vous y trouvez plus de 1 000 road trips prêts à partir dans une centaine de pays, avec pour chaque étape des visites et des activités. Chaque itinéraire peut être repris tel quel ou modifié à votre goût."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Est-ce que le site est gratuit ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. La consultation, la création et la modification des itinéraires sont gratuites."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment le site se finance-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Par les réservations. Quand vous réservez un hôtel, une activité ou un transport en passant par nos liens, nous touchons une commission. Le prix reste le même pour vous."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Qui écrit les itinéraires ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Les itinéraires sont générés par intelligence artificielle, contrôlés plusieurs fois par d'autres IA, puis contrôlés par un humain."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Dans quelles langues le site est-il disponible ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "En 7 langues : anglais, français, espagnol, italien, néerlandais, allemand et portugais. Quelques itinéraires existent aussi en arabe."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment trouver un road trip qui me convient ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "La page d'accueil propose cinq façons de faire : - Par critères : vous filtrez par mot-clé, pays, thème, durée ou distance. Vous pouvez afficher les distances en miles et basculer l'affichage entre photos et cartes. - Entre deux points : vous indiquez une ville de départ, une ville d'arrivée et une durée. Le site vous propose les meilleures étapes sur le chemin. Vous pouvez aussi ne donner qu'une ville, choisir \"Circuit\" et tracer une zone : le site vous propose alors les plus belles étapes dans cette zone. Voir la rubrique 3. - À partir des lieux : vous partez des endroits que vous voulez voir, parmi ceux que nous avons cartographiés. Voir la rubrique 4. - Planisphère : vous choisissez un itinéraire sur la carte du monde. - Demander à Lilia : vous décrivez votre envie en une phrase à notre assistante, qui cherche les itinéraires les plus proches. Exemple : \"des plages au soleil à moins de 4 h de Paris, en famille\"."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que signifient Bestseller, Testé ORT et Créateurs ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ce sont trois raccourcis placés sous les filtres : - Bestseller : les itinéraires les plus consultés. - Testé ORT : les itinéraires que nous avons parcourus nous-mêmes. - Créateurs : les itinéraires de blogueurs voyage, signés de leur nom."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment savoir quelle est la bonne saison ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Chaque vignette porte une petite pastille météo. Survolez-la, ou touchez-la sur mobile, pour lire \"Quand y aller\"."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment fonctionne la recherche \"Entre deux points\" ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Vous indiquez la ville de départ, la ville d'arrivée et la durée, de 2 à 30 jours. Le nombre d'étapes est facultatif : laissez \"Auto\" pour nous laisser choisir. Choisissez bien vos villes dans la liste proposée, sinon le résultat peut être imprécis."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je régler la longueur des trajets ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, dans \"Options avancées\". Vous fixez un nombre maximum de kilomètres par jour (200 par défaut) et le détour que vous acceptez (50 km par défaut)."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Je veux revenir à mon point de départ, comment faire ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Cochez \"Circuit (retour au départ)\". La ville d'arrivée disparaît, elle n'est plus utile."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je limiter la recherche à une zone précise ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, en mode Circuit. Indiquez d'abord votre ville de départ, puis cochez \"Circuit\" : une carte s'ouvre, centrée sur cette ville. Tracez la zone à explorer au doigt ou à la souris, puis validez. Si vous n'avez pas d'idée arrêtée, choisissez \"Nous laisser décider\"."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Ma zone est petite, que se passe-t-il ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Si elle contient trop peu de lieux, le site l'élargit ou ajoute quelques étapes en dehors pour compléter le circuit. Il vous le signale."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je construire un itinéraire de zéro ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, avec \"À partir des lieux\". Vous ajoutez vos étapes une par une, soit par la recherche, soit en cliquant sur la carte. Nous relions les points et calculons la route. En haut à gauche, vous voyez en direct le nombre d'étapes, de jours, de kilomètres et d'heures de route."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je choisir le temps passé à chaque étape ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Chaque étape de la liste a son propre réglage de durée, par demi-journée. Vous pouvez aussi changer l'ordre des étapes ou en supprimer une."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je ajouter un lieu qui n'existe pas sur le site ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Cliquez sur la carte à l'endroit voulu, même si le lieu n'est pas référencé. Vous pouvez aussi taper son nom et choisir dans ce qui vous est proposé."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que veulent dire les couleurs des lieux sur la carte ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Elles indiquent l'intérêt du lieu : Incontournable, Recommandé, À découvrir ou Standard. Les lieux déjà dans votre itinéraire apparaissent comme \"Sélectionné\"."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment prévoir plusieurs nuits au même endroit ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Sélectionnez ce lieu une nouvelle fois dans votre liste d'étapes. Le tracé tiendra compte de vos allers-retours."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que se passe-t-il quand je valide ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Votre itinéraire s'ouvre dans l'éditeur avancé ou dans le carnet de voyage, selon votre choix. Vous pouvez y modifier tout le contenu, ajouter vos hôtels et vos réservations, et obtenir un carnet de voyage."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je modifier un itinéraire proposé par le site ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Tous les itinéraires sont entièrement modifiables : étapes, durée, visites, activités. Depuis la page d'un itinéraire, vous avez trois façons de faire : - Modifier sur la carte : vous réorganisez les étapes, vous en retirez ou vous en ajoutez. - Fusionner : vous combinez l'itinéraire avec un itinéraire voisin pour un voyage plus long. - Tout éditer : vous passez dans l'éditeur avancé pour modifier aussi les visites et les activités, importer vos réservations et éditer un carnet imprimable."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Faut-il créer un compte ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Non pour consulter et modifier un itinéraire. Oui pour : - enregistrer un itinéraire, d'origine ou modifié ; - le partager ; - enregistrer vos réservations ; - demander un résumé IA. Le compte est gratuit. Vous pouvez vous connecter avec Google ou avec une adresse e-mail."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Où retrouver un itinéraire que j'ai enregistré ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Dans \"Vos voyages\", votre tableau de bord (https://www.oneroadtrip.com/dashboard_user.html). Pour chaque voyage, vous pouvez : - ouvrir le carnet de voyage ; - ouvrir l'éditeur avancé ; - le modifier sur la carte ; - le renommer ; - choisir ses photos ; - le partager ou le supprimer."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je imprimer mon itinéraire ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Pour un format correct à l'impression, ouvrez l'éditeur avancé sur ordinateur (bouton \"Tout éditer\") puis cliquez sur \"Imprimer\", dans la barre du haut."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je l'emporter sans connexion ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Vous pouvez consulter votre voyage hors ligne, à condition d'avoir installé l'application sur votre téléphone. Elle ne passe ni par l'App Store ni par Google Play : elle s'installe depuis le site, en quelques secondes."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment installer l'application sur Android ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ouvrez oneroadtrip.com dans Chrome. Touchez le bouton \"Installer l'application\" du site. S'il n'apparaît pas, ouvrez le menu de Chrome (les trois points en haut à droite) et choisissez \"Installer l'application\" ou \"Ajouter à l'écran d'accueil\". Confirmez : l'icône OneRoadTrip apparaît sur votre écran d'accueil."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment installer l'application sur iPhone ou iPad ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ouvrez oneroadtrip.com dans Safari. Touchez le bouton Partager (le carré avec une flèche vers le haut), puis \"Sur l'écran d'accueil\", puis \"Ajouter\". L'icône OneRoadTrip apparaît sur votre écran d'accueil."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que faut-il faire avant de partir sans réseau ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ouvrez votre voyage une fois sur votre téléphone tant que vous avez du réseau. Il reste ensuite lisible sans connexion. Les photos des lieux et les parties de la carte que vous n'avez pas encore affichées demandent du réseau."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je partager mon itinéraire avec mes compagnons de voyage ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Enregistrez d'abord votre voyage, puis cliquez sur \"Partager\" dans l'éditeur avancé et envoyez le lien généré. Vos proches voient le voyage en lecture seule. Attention : toute personne qui reçoit ce lien peut voir votre voyage."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment réserver mes hôtels et mes activités ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Chaque étape propose des liens vers nos partenaires de réservation. La réservation et le paiement se font sur le site du partenaire, pas sur OneRoadTrip. Nous travaillons avec des partenaires reconnus comme Booking, Trip.com (Skyscanner), QEEQ, Viator (Tripadvisor), CamperDays et bien d'autres. En passant par nos liens, vous ne payez rien de plus que sur leur site, et vous nous permettez de recevoir un petit pourcentage de votre achat."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "J'ai réservé, puis-je ajouter mes réservations ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui, dans l'éditeur avancé, avec le bouton \"Réservations\". En trois gestes : 1. Choisissez le type : \"Étape\" pour un hôtel, une activité ou une visite, \"Voyage\" pour un vol, une voiture ou une assurance. 2. Collez le mail de confirmation que vous avez reçu. 3. Cliquez sur \"Analyser\". Notre IA en extrait les points principaux et les rattache au voyage ou à la bonne étape. Vous pouvez aussi tout saisir à la main. L'IA reconnaît sept types de réservation : vol, location de voiture, assurance, hébergement, activité, visite et spectacle. Elle relève les dates, les heures, l'adresse, la référence, le prix et le nombre de voyageurs. Pour un vol, elle détaille chaque trajet, escales comprises. Pour une voiture, elle note le lieu et l'heure de prise en charge et de retour. Il faut être connecté. Vous pouvez faire analyser 20 réservations par mois. Relisez toujours le résultat avant de valider."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Où voir toutes mes réservations ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Dans \"Réservations\". Elles sont classées en deux blocs : celles du voyage (vols, voiture) puis celles de chaque étape, avec la date, la référence, l'adresse et le prix."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Puis-je connaître mon budget ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Dans l'éditeur avancé, chaque réservation ajoutée entre dans le budget. Vous voyez le total, la part du transport et de l'hébergement, puis le détail ligne par ligne. Vous pouvez ajouter vos propres dépenses."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Un problème avec une réservation, qui contacter ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Le partenaire chez qui vous avez réservé. C'est lui qui détient votre réservation et votre paiement."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Les informations sont-elles fiables ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Chaque itinéraire est contrôlé plusieurs fois, dont une fois par un humain. Mais nous ne connaissons pas toutes les destinations par cœur. Les horaires, les prix et les conditions d'accès peuvent changer : vérifiez-les avant de partir, surtout pour les sites très demandés."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "J'ai repéré une erreur, comment la signaler ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Trois possibilités : - sur la page d'un itinéraire, cliquez sur le \"!\" rouge et décrivez l'erreur. Celui du titre concerne tout l'itinéraire, celui d'une étape concerne cette étape ; - dans l'éditeur avancé, ouvrez \"Outils\" puis \"Signaler une erreur\" ; - sur cette page d'aide, cliquez sur le \"!\" rouge en bas à droite ; - utilisez le formulaire \"Nous contacter\" en bas de chaque page, ou écrivez à contact@oneroadtrip.com."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Je suis hôtelier, office de tourisme ou blogueur, puis-je travailler avec vous ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Nous étudions toute proposition. Écrivez-nous à contact@oneroadtrip.com."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment sont données les notes des lieux ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Chaque lieu reçoit une note sur 10, que vous voyez sous forme d'étoiles. Elle ne vient pas d'un avis personnel. Elle se calcule en trois temps. 1. Ce qu'il y a sur place. Pour une ville ou un village, nous comptons autour du lieu, sur la carte libre OpenStreetMap : les sites touristiques, le patrimoine historique et les hébergements. Nous ajoutons sa présence sur Wikipédia et le nombre de visites que nous y proposons. Un site classé à l'UNESCO, un parc naturel ou un grand monument à proximité donne un bonus. Pour un monument, une plage ou un site naturel, nous partons de la note laissée par les visiteurs sur Google. 2. La comparaison. Un lieu est classé par rapport à ses voisins, par rapport aux lieux de son pays et par rapport au monde entier. Les voisins comptent un peu plus : un beau village reste ainsi bien noté, même loin des grandes capitales. 3. L'avis d'une IA sur l'intérêt touristique du lieu. Il pèse plus ou moins lourd selon que l'IA est sûre d'elle ou non, jamais plus de la moitié de la note."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Que veulent dire Incontournable, Recommandé, À découvrir et Standard ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ce sont quatre niveaux tirés de la note du lieu : - Incontournable : 8,6 sur 10 et plus ; - Recommandé : de 7 à 8,5 ; - À découvrir : de 4,5 à 6,9 ; - Standard : en dessous de 4,5. Ils vous aident à repérer d'un coup d'œil, sur la carte, ce qui mérite le détour."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment sont calculés les distances et les temps de route ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "En deux temps : un calcul, puis un contrôle. - Le calcul. Chaque trajet en voiture ou à pied passe par un calculateur d'itinéraire routier, comme celui d'un GPS. - Le contrôle. Un résultat absurde est refusé : une distance plus courte que la ligne droite, un détour de plus de trois fois la ligne droite, une vitesse moyenne impossible (pour une voiture, moins de 20 km/h ou plus de 110 km/h). Une IA réexamine alors le trajet et tranche : c'est une piste, un ferry, un train, un vol. Sa réponse est contrôlée à son tour. Les pistes, les traversées en bateau, les trains et les vols ne passent pas par le calculateur routier. Un dernier contrôle bloque la mise en ligne d'un itinéraire tant qu'un de ses trajets reste incohérent."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Le temps d'un vol, d'un ferry ou d'un train comprend-il l'attente ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Oui. Au temps de trajet, nous ajoutons un forfait d'attente : - 3 h pour un vol ; - 2 h pour un ferry ou un bateau, 30 minutes si la traversée fait moins de 30 km ; - 1 h pour un train, 10 minutes pour un métro ou un tram en ville. Rien n'est ajouté pour la voiture ni pour la marche."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Les temps de route sont-ils fiables ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Ce sont des temps de conduite, sans pause, sans bouchon et sans recherche de parking. Prévoyez de la marge, surtout en montagne et en ville. Quand vous modifiez un itinéraire, les distances et les temps sont recalculés aussitôt."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment est fixé le nombre de nuits conseillé ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Chaque étape a une durée de visite conseillée. Une IA propose où dormir chaque soir et combien de nuits y passer. Les cas douteux sont relus par un humain. Les nuits sont comptées là où vous dormez : une étape courte, visitée en passant, n'en reçoit pas. Vous pouvez changer le nombre de nuits de chaque étape."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Qu'est-ce que la \"base conseillée\" ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "C'est l'endroit où nous vous conseillons de dormir après l'étape, avec la distance pour y aller. C'est toujours un lieu de votre itinéraire. Pour une étape courte, c'est en général la prochaine ville du parcours, pour ne pas revenir en arrière. Nous évitons de vous faire dormir dans un lieu sans hébergement : une cascade, une grotte, un col de montagne."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "D'où viennent la météo et la meilleure période ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Elles sont rédigées par une IA à la création de l'itinéraire, puis relues avec le reste. Ce sont des tendances de saison, pas une prévision : consultez la météo du jour avant de partir."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment est calculé le score carbone ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "Nous partons des kilomètres du voyage et de sa durée. Cela donne des kilos de CO2 par jour, convertis en une note de A+ à E : A+ pour moins de 5 kg par jour, E au-delà de 55 kg. Deux pastilles s'affichent à côté du titre : la première pour le voyage en voiture, la seconde pour le même voyage en transports en commun. Vous voyez ainsi ce que vous gagnez à laisser la voiture."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "Comment Lilia choisit-elle ses itinéraires ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "En trois temps. 1. Une IA lit votre phrase et en tire vos critères : ville de départ, temps de trajet maximum, lieux ou monuments à voir, mois, envie de soleil ou de neige, type de voyageurs, thèmes, durée du séjour. 2. Le site trie tout le catalogue selon ces critères, sans IA : distance depuis votre ville, thèmes, durée. Si vous citez un lieu précis, il passe avant tout le reste. 3. L'IA classe les meilleurs résultats et explique en une phrase pourquoi chacun correspond. Lilia ne cherche que dans notre catalogue et n'invente aucun itinéraire. Si votre demande est difficile à satisfaire, par exemple se baigner en février près de chez vous, elle vous le dit et propose ce qui s'en approche le plus."
+   }
+  },
+  {
+   "@type": "Question",
+   "name": "À quoi sert le résumé IA ?",
+   "acceptedAnswer": {
+    "@type": "Answer",
+    "text": "C'est l'avis d'une IA sur votre voyage, tel que vous l'avez modifié. Il contient : - jusqu'à trois alertes : un trajet trop long, un lieu fermé en saison, un détour inutile, un visa à prévoir ; - un avis en trois lignes : les points forts, les points faibles, et un verdict (pour qui, faut-il raccourcir ou allonger, un conseil) ; - pour chaque étape : l'essentiel à voir, puis le trajet vers l'étape suivante. Les jours, les lieux et les trajets viennent de votre itinéraire, pas de l'IA : elle ne peut pas les changer. Il faut être connecté pour le générer. Vous pouvez ensuite le copier, l'imprimer ou l'envoyer. Vous avez droit à un résumé par mois et par compte."
+   }
+  }
+ ]
+}
+</script>
+</head>
+<body>
+<header id="site-header" class="ort-hdr"></header>
+<main class="aide">
+<h1>Aide OneRoadTrip : questions et réponses</h1>
+<p class="chapo">Tout ce qu'il faut savoir pour trouver, créer, modifier et emporter votre road trip.</p>
+<div class="outils"><button type="button" id="toutOuvrir">Tout déplier</button><button type="button" id="toutFermer">Tout replier</button></div>
+<details class="rub" id="rubrique-1"><summary><h2>1. Découvrir OneRoadTrip</h2></summary><div class="rubc">
+<details><summary><h3>Qu'est-ce que OneRoadTrip ?</h3></summary><div class="rep">
+<p>OneRoadTrip est un site d'itinéraires de voyage. Vous y trouvez plus de 1 000 road trips prêts à partir dans une centaine de pays, avec pour chaque étape des visites et des activités. Chaque itinéraire peut être repris tel quel ou modifié à votre goût.</p>
+</div></details>
+<details><summary><h3>Est-ce que le site est gratuit ?</h3></summary><div class="rep">
+<p>Oui. La consultation, la création et la modification des itinéraires sont gratuites.</p>
+</div></details>
+<details><summary><h3>Comment le site se finance-t-il ?</h3></summary><div class="rep">
+<p>Par les réservations. Quand vous réservez un hôtel, une activité ou un transport en passant par nos liens, nous touchons une commission. Le prix reste le même pour vous.</p>
+</div></details>
+<details><summary><h3>Qui écrit les itinéraires ?</h3></summary><div class="rep">
+<p>Les itinéraires sont générés par intelligence artificielle, contrôlés plusieurs fois par d'autres IA, puis contrôlés par un humain.</p>
+</div></details>
+<details><summary><h3>Dans quelles langues le site est-il disponible ?</h3></summary><div class="rep">
+<p>En 7 langues : anglais, français, espagnol, italien, néerlandais, allemand et portugais. Quelques itinéraires existent aussi en arabe.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-2"><summary><h2>2. Trouver un itinéraire</h2></summary><div class="rubc">
+<details><summary><h3>Comment trouver un road trip qui me convient ?</h3></summary><div class="rep">
+<p>La page d'accueil propose cinq façons de faire :</p>
+<ul>
+<li>Par critères : vous filtrez par mot-clé, pays, thème, durée ou distance. Vous pouvez afficher les distances en miles et basculer l'affichage entre photos et cartes.
+</li>
+<li>Entre deux points : vous indiquez une ville de départ, une ville d'arrivée et une durée. Le site vous propose les meilleures étapes sur le chemin. Vous pouvez aussi ne donner qu'une ville, choisir "Circuit" et tracer une zone : le site vous propose alors les plus belles étapes dans cette zone. Voir la <a href="#rubrique-3">rubrique 3</a>.
+</li>
+<li>À partir des lieux : vous partez des endroits que vous voulez voir, parmi ceux que nous avons cartographiés. Voir la <a href="#rubrique-4">rubrique 4</a>.
+</li>
+<li>Planisphère : vous choisissez un itinéraire sur la carte du monde.
+</li>
+<li>Demander à Lilia : vous décrivez votre envie en une phrase à notre assistante, qui cherche les itinéraires les plus proches. Exemple : "des plages au soleil à moins de 4 h de Paris, en famille".
+</li></ul>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/liliasearch.webp" alt="les itinéraires proposés par Lilia, chacun avec une phrase qui explique le choix" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Que signifient Bestseller, Testé ORT et Créateurs ?</h3></summary><div class="rep">
+<p>Ce sont trois raccourcis placés sous les filtres :</p>
+<ul>
+<li>Bestseller : les itinéraires les plus consultés.
+</li>
+<li>Testé ORT : les itinéraires que nous avons parcourus nous-mêmes.
+</li>
+<li>Créateurs : les itinéraires de blogueurs voyage, signés de leur nom.
+</li></ul>
+</div></details>
+<details><summary><h3>Comment savoir quelle est la bonne saison ?</h3></summary><div class="rep">
+<p>Chaque vignette porte une petite pastille météo. Survolez-la, ou touchez-la sur mobile, pour lire "Quand y aller".</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-3"><summary><h2>3. Entre deux points</h2></summary><div class="rubc">
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/entredeuxpointssimple.webp" alt="l&#x27;onglet &quot;Entre deux points&quot; avec la ville de départ, la ville d&#x27;arrivée, la durée et le nombre d&#x27;étapes" loading="lazy"></figure>
+<details><summary><h3>Comment fonctionne la recherche "Entre deux points" ?</h3></summary><div class="rep">
+<p>Vous indiquez la ville de départ, la ville d'arrivée et la durée, de 2 à 30 jours. Le nombre d'étapes est facultatif : laissez "Auto" pour nous laisser choisir. Choisissez bien vos villes dans la liste proposée, sinon le résultat peut être imprécis.</p>
+</div></details>
+<details><summary><h3>Puis-je régler la longueur des trajets ?</h3></summary><div class="rep">
+<p>Oui, dans "Options avancées". Vous fixez un nombre maximum de kilomètres par jour (200 par défaut) et le détour que vous acceptez (50 km par défaut).</p>
+</div></details>
+<details><summary><h3>Je veux revenir à mon point de départ, comment faire ?</h3></summary><div class="rep">
+<p>Cochez "Circuit (retour au départ)". La ville d'arrivée disparaît, elle n'est plus utile.</p>
+</div></details>
+<details><summary><h3>Puis-je limiter la recherche à une zone précise ?</h3></summary><div class="rep">
+<p>Oui, en mode Circuit. Indiquez d'abord votre ville de départ, puis cochez "Circuit" : une carte s'ouvre, centrée sur cette ville. Tracez la zone à explorer au doigt ou à la souris, puis validez. Si vous n'avez pas d'idée arrêtée, choisissez "Nous laisser décider".</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/zone-place.webp" alt="la carte centrée sur la ville de départ, avec une zone tracée à la souris" loading="lazy"></figure>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/zone-place-confirm-after-drawing.webp" alt="après validation, l&#x27;onglet affiche &quot;Zone dessinée&quot; sous la case Circuit" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Ma zone est petite, que se passe-t-il ?</h3></summary><div class="rep">
+<p>Si elle contient trop peu de lieux, le site l'élargit ou ajoute quelques étapes en dehors pour compléter le circuit. Il vous le signale.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-4"><summary><h2>4. Créer son propre itinéraire</h2></summary><div class="rubc">
+<details><summary><h3>Puis-je construire un itinéraire de zéro ?</h3></summary><div class="rep">
+<p><a href="/carte_builder.html?mode=expert">oneroadtrip.com/carte_builder.html?mode=expert</a></p>
+<p>Oui, avec "À partir des lieux". Vous ajoutez vos étapes une par une, soit par la recherche, soit en cliquant sur la carte. Nous relions les points et calculons la route. En haut à gauche, vous voyez en direct le nombre d'étapes, de jours, de kilomètres et d'heures de route.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/fromtheplaces.webp" alt="la page &quot;À partir des lieux&quot;, avec la liste des étapes à gauche et le tracé sur la carte à droite" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Puis-je choisir le temps passé à chaque étape ?</h3></summary><div class="rep">
+<p>Oui. Chaque étape de la liste a son propre réglage de durée, par demi-journée. Vous pouvez aussi changer l'ordre des étapes ou en supprimer une.</p>
+</div></details>
+<details><summary><h3>Puis-je ajouter un lieu qui n'existe pas sur le site ?</h3></summary><div class="rep">
+<p>Oui. Cliquez sur la carte à l'endroit voulu, même si le lieu n'est pas référencé. Vous pouvez aussi taper son nom et choisir dans ce qui vous est proposé.</p>
+</div></details>
+<details><summary><h3>Que veulent dire les couleurs des lieux sur la carte ?</h3></summary><div class="rep">
+<p>Elles indiquent l'intérêt du lieu : Incontournable, Recommandé, À découvrir ou Standard. Les lieux déjà dans votre itinéraire apparaissent comme "Sélectionné".</p>
+</div></details>
+<details><summary><h3>Comment prévoir plusieurs nuits au même endroit ?</h3></summary><div class="rep">
+<p>Sélectionnez ce lieu une nouvelle fois dans votre liste d'étapes. Le tracé tiendra compte de vos allers-retours.</p>
+</div></details>
+<details><summary><h3>Que se passe-t-il quand je valide ?</h3></summary><div class="rep">
+<p>Votre itinéraire s'ouvre dans l'éditeur avancé ou dans le carnet de voyage, selon votre choix. Vous pouvez y modifier tout le contenu, ajouter vos hôtels et vos réservations, et obtenir un carnet de voyage.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-5"><summary><h2>5. Modifier, enregistrer, réserver</h2></summary><div class="rubc">
+<details><summary><h3>Puis-je modifier un itinéraire proposé par le site ?</h3></summary><div class="rep">
+<p>Oui. Tous les itinéraires sont entièrement modifiables : étapes, durée, visites, activités. Depuis la page d'un itinéraire, vous avez trois façons de faire :</p>
+<ul>
+<li>Modifier sur la carte : vous réorganisez les étapes, vous en retirez ou vous en ajoutez.
+</li>
+<li>Fusionner : vous combinez l'itinéraire avec un itinéraire voisin pour un voyage plus long.
+</li>
+<li>Tout éditer : vous passez dans l'éditeur avancé pour modifier aussi les visites et les activités, importer vos réservations et éditer un carnet imprimable.
+</li></ul>
+</div></details>
+<details><summary><h3>Faut-il créer un compte ?</h3></summary><div class="rep">
+<p>Non pour consulter et modifier un itinéraire. Oui pour :</p>
+<ul>
+<li>enregistrer un itinéraire, d'origine ou modifié ;
+</li>
+<li>le partager ;
+</li>
+<li>enregistrer vos réservations ;
+</li>
+<li>demander un résumé IA.
+</li></ul>
+<p>Le compte est gratuit. Vous pouvez vous connecter avec Google ou avec une adresse e-mail.</p>
+</div></details>
+<details><summary><h3>Où retrouver un itinéraire que j'ai enregistré ?</h3></summary><div class="rep">
+<p>Dans "Vos voyages", votre tableau de bord (<a href="/dashboard_user.html">oneroadtrip.com/dashboard_user.html</a>). Pour chaque voyage, vous pouvez :</p>
+<ul>
+<li>ouvrir le carnet de voyage ;
+</li>
+<li>ouvrir l'éditeur avancé ;
+</li>
+<li>le modifier sur la carte ;
+</li>
+<li>le renommer ;
+</li>
+<li>choisir ses photos ;
+</li>
+<li>le partager ou le supprimer.
+</li></ul>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/dashboard.webp" alt="le tableau de bord &quot;Vos voyages&quot;, avec deux voyages enregistrés et leurs boutons" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Puis-je imprimer mon itinéraire ?</h3></summary><div class="rep">
+<p>Oui. Pour un format correct à l'impression, ouvrez l'éditeur avancé sur ordinateur (bouton "Tout éditer") puis cliquez sur "Imprimer", dans la barre du haut.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/printitin.webp" alt="l&#x27;éditeur avancé, avec les boutons Vos voyages, Imprimer, Partager et Réservations en haut de page" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Puis-je l'emporter sans connexion ?</h3></summary><div class="rep">
+<p>Oui. Vous pouvez consulter votre voyage hors ligne, à condition d'avoir installé l'application sur votre téléphone. Elle ne passe ni par l'App Store ni par Google Play : elle s'installe depuis le site, en quelques secondes.</p>
+</div></details>
+<details><summary><h3>Comment installer l'application sur Android ?</h3></summary><div class="rep">
+<p>Ouvrez oneroadtrip.com dans Chrome. Touchez le bouton "Installer l'application" du site. S'il n'apparaît pas, ouvrez le menu de Chrome (les trois points en haut à droite) et choisissez "Installer l'application" ou "Ajouter à l'écran d'accueil". Confirmez : l'icône OneRoadTrip apparaît sur votre écran d'accueil.</p>
+</div></details>
+<details><summary><h3>Comment installer l'application sur iPhone ou iPad ?</h3></summary><div class="rep">
+<p>Ouvrez oneroadtrip.com dans Safari. Touchez le bouton Partager (le carré avec une flèche vers le haut), puis "Sur l'écran d'accueil", puis "Ajouter". L'icône OneRoadTrip apparaît sur votre écran d'accueil.</p>
+</div></details>
+<details><summary><h3>Que faut-il faire avant de partir sans réseau ?</h3></summary><div class="rep">
+<p>Ouvrez votre voyage une fois sur votre téléphone tant que vous avez du réseau. Il reste ensuite lisible sans connexion. Les photos des lieux et les parties de la carte que vous n'avez pas encore affichées demandent du réseau.</p>
+</div></details>
+<details><summary><h3>Puis-je partager mon itinéraire avec mes compagnons de voyage ?</h3></summary><div class="rep">
+<p>Oui. Enregistrez d'abord votre voyage, puis cliquez sur "Partager" dans l'éditeur avancé et envoyez le lien généré. Vos proches voient le voyage en lecture seule. Attention : toute personne qui reçoit ce lien peut voir votre voyage.</p>
+</div></details>
+<details><summary><h3>Comment réserver mes hôtels et mes activités ?</h3></summary><div class="rep">
+<p>Chaque étape propose des liens vers nos partenaires de réservation. La réservation et le paiement se font sur le site du partenaire, pas sur OneRoadTrip. Nous travaillons avec des partenaires reconnus comme Booking, Trip.com (Skyscanner), QEEQ, Viator (Tripadvisor), CamperDays et bien d'autres. En passant par nos liens, vous ne payez rien de plus que sur leur site, et vous nous permettez de recevoir un petit pourcentage de votre achat.</p>
+</div></details>
+<details><summary><h3>J'ai réservé, puis-je ajouter mes réservations ?</h3></summary><div class="rep">
+<p>Oui, dans l'éditeur avancé, avec le bouton "Réservations". En trois gestes :</p>
+<ol>
+<li>Choisissez le type : "Étape" pour un hôtel, une activité ou une visite, "Voyage" pour un vol, une voiture ou une assurance.</li>
+<li>Collez le mail de confirmation que vous avez reçu.</li>
+<li>Cliquez sur "Analyser". Notre IA en extrait les points principaux et les rattache au voyage ou à la bonne étape. Vous pouvez aussi tout saisir à la main.</li>
+</ol>
+<p>L'IA reconnaît sept types de réservation : vol, location de voiture, assurance, hébergement, activité, visite et spectacle. Elle relève les dates, les heures, l'adresse, la référence, le prix et le nombre de voyageurs. Pour un vol, elle détaille chaque trajet, escales comprises. Pour une voiture, elle note le lieu et l'heure de prise en charge et de retour.</p>
+<p>Il faut être connecté. Vous pouvez faire analyser 20 réservations par mois. Relisez toujours le résultat avant de valider.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/add-bookings.webp" alt="la page d&#x27;ajout d&#x27;une réservation : choix du type, de l&#x27;étape, et zone où coller le mail de confirmation" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Où voir toutes mes réservations ?</h3></summary><div class="rep">
+<p>Dans "Réservations". Elles sont classées en deux blocs : celles du voyage (vols, voiture) puis celles de chaque étape, avec la date, la référence, l'adresse et le prix.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/bookings.webp" alt="la liste des réservations, d&#x27;abord celles du voyage, puis étape par étape" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Puis-je connaître mon budget ?</h3></summary><div class="rep">
+<p>Oui. Dans l'éditeur avancé, chaque réservation ajoutée entre dans le budget. Vous voyez le total, la part du transport et de l'hébergement, puis le détail ligne par ligne. Vous pouvez ajouter vos propres dépenses.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/budget.webp" alt="la fenêtre du budget : total, répartition et liste des dépenses" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Un problème avec une réservation, qui contacter ?</h3></summary><div class="rep">
+<p>Le partenaire chez qui vous avez réservé. C'est lui qui détient votre réservation et votre paiement.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-6"><summary><h2>6. Fiabilité et contact</h2></summary><div class="rubc">
+<details><summary><h3>Les informations sont-elles fiables ?</h3></summary><div class="rep">
+<p>Chaque itinéraire est contrôlé plusieurs fois, dont une fois par un humain. Mais nous ne connaissons pas toutes les destinations par cœur. Les horaires, les prix et les conditions d'accès peuvent changer : vérifiez-les avant de partir, surtout pour les sites très demandés.</p>
+</div></details>
+<details><summary><h3>J'ai repéré une erreur, comment la signaler ?</h3></summary><div class="rep">
+<p>Trois possibilités :</p>
+<ul>
+<li>sur la page d'un itinéraire, cliquez sur le "!" rouge et décrivez l'erreur. Celui du titre concerne tout l'itinéraire, celui d'une étape concerne cette étape ;
+</li>
+<li>dans l'éditeur avancé, ouvrez "Outils" puis "Signaler une erreur" ;
+</li>
+<li>sur cette page d'aide, cliquez sur le "!" rouge en bas à droite ;
+</li>
+<li>utilisez le formulaire "Nous contacter" en bas de chaque page, ou écrivez à <a href="mailto:contact@oneroadtrip.com">contact@oneroadtrip.com</a>.
+</li></ul>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/itin-with.webp" alt="la page d&#x27;un itinéraire, avec le &quot;!&quot; rouge à côté du titre et à côté du nom de l&#x27;étape" loading="lazy"></figure>
+</div></details>
+<details><summary><h3>Je suis hôtelier, office de tourisme ou blogueur, puis-je travailler avec vous ?</h3></summary><div class="rep">
+<p>Nous étudions toute proposition. Écrivez-nous à <a href="mailto:contact@oneroadtrip.com">contact@oneroadtrip.com</a>.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-7"><summary><h2>7. Comment ça marche</h2></summary><div class="rubc">
+<details><summary><h3>Comment sont données les notes des lieux ?</h3></summary><div class="rep">
+<p>Chaque lieu reçoit une note sur 10, que vous voyez sous forme d'étoiles. Elle ne vient pas d'un avis personnel. Elle se calcule en trois temps.</p>
+<ol>
+<li>Ce qu'il y a sur place. Pour une ville ou un village, nous comptons autour du lieu, sur la carte libre OpenStreetMap : les sites touristiques, le patrimoine historique et les hébergements. Nous ajoutons sa présence sur Wikipédia et le nombre de visites que nous y proposons. Un site classé à l'UNESCO, un parc naturel ou un grand monument à proximité donne un bonus. Pour un monument, une plage ou un site naturel, nous partons de la note laissée par les visiteurs sur Google.</li>
+<li>La comparaison. Un lieu est classé par rapport à ses voisins, par rapport aux lieux de son pays et par rapport au monde entier. Les voisins comptent un peu plus : un beau village reste ainsi bien noté, même loin des grandes capitales.</li>
+<li>L'avis d'une IA sur l'intérêt touristique du lieu. Il pèse plus ou moins lourd selon que l'IA est sûre d'elle ou non, jamais plus de la moitié de la note.</li>
+</ol>
+</div></details>
+<details><summary><h3>Que veulent dire Incontournable, Recommandé, À découvrir et Standard ?</h3></summary><div class="rep">
+<p>Ce sont quatre niveaux tirés de la note du lieu :</p>
+<ul>
+<li>Incontournable : 8,6 sur 10 et plus ;
+</li>
+<li>Recommandé : de 7 à 8,5 ;
+</li>
+<li>À découvrir : de 4,5 à 6,9 ;
+</li>
+<li>Standard : en dessous de 4,5.
+</li></ul>
+<p>Ils vous aident à repérer d'un coup d'œil, sur la carte, ce qui mérite le détour.</p>
+</div></details>
+<details><summary><h3>Comment sont calculés les distances et les temps de route ?</h3></summary><div class="rep">
+<p>En deux temps : un calcul, puis un contrôle.</p>
+<ul>
+<li>Le calcul. Chaque trajet en voiture ou à pied passe par un calculateur d'itinéraire routier, comme celui d'un GPS.
+</li>
+<li>Le contrôle. Un résultat absurde est refusé : une distance plus courte que la ligne droite, un détour de plus de trois fois la ligne droite, une vitesse moyenne impossible (pour une voiture, moins de 20 km/h ou plus de 110 km/h). Une IA réexamine alors le trajet et tranche : c'est une piste, un ferry, un train, un vol. Sa réponse est contrôlée à son tour.
+</li></ul>
+<p>Les pistes, les traversées en bateau, les trains et les vols ne passent pas par le calculateur routier.</p>
+<p>Un dernier contrôle bloque la mise en ligne d'un itinéraire tant qu'un de ses trajets reste incohérent.</p>
+</div></details>
+<details><summary><h3>Le temps d'un vol, d'un ferry ou d'un train comprend-il l'attente ?</h3></summary><div class="rep">
+<p>Oui. Au temps de trajet, nous ajoutons un forfait d'attente :</p>
+<ul>
+<li>3 h pour un vol ;
+</li>
+<li>2 h pour un ferry ou un bateau, 30 minutes si la traversée fait moins de 30 km ;
+</li>
+<li>1 h pour un train, 10 minutes pour un métro ou un tram en ville.
+</li></ul>
+<p>Rien n'est ajouté pour la voiture ni pour la marche.</p>
+</div></details>
+<details><summary><h3>Les temps de route sont-ils fiables ?</h3></summary><div class="rep">
+<p>Ce sont des temps de conduite, sans pause, sans bouchon et sans recherche de parking. Prévoyez de la marge, surtout en montagne et en ville. Quand vous modifiez un itinéraire, les distances et les temps sont recalculés aussitôt.</p>
+</div></details>
+<details><summary><h3>Comment est fixé le nombre de nuits conseillé ?</h3></summary><div class="rep">
+<p>Chaque étape a une durée de visite conseillée. Une IA propose où dormir chaque soir et combien de nuits y passer. Les cas douteux sont relus par un humain. Les nuits sont comptées là où vous dormez : une étape courte, visitée en passant, n'en reçoit pas. Vous pouvez changer le nombre de nuits de chaque étape.</p>
+</div></details>
+<details><summary><h3>Qu'est-ce que la "base conseillée" ?</h3></summary><div class="rep">
+<p>C'est l'endroit où nous vous conseillons de dormir après l'étape, avec la distance pour y aller. C'est toujours un lieu de votre itinéraire. Pour une étape courte, c'est en général la prochaine ville du parcours, pour ne pas revenir en arrière. Nous évitons de vous faire dormir dans un lieu sans hébergement : une cascade, une grotte, un col de montagne.</p>
+</div></details>
+<details><summary><h3>D'où viennent la météo et la meilleure période ?</h3></summary><div class="rep">
+<p>Elles sont rédigées par une IA à la création de l'itinéraire, puis relues avec le reste. Ce sont des tendances de saison, pas une prévision : consultez la météo du jour avant de partir.</p>
+</div></details>
+<details><summary><h3>Comment est calculé le score carbone ?</h3></summary><div class="rep">
+<p>Nous partons des kilomètres du voyage et de sa durée. Cela donne des kilos de CO2 par jour, convertis en une note de A+ à E : A+ pour moins de 5 kg par jour, E au-delà de 55 kg.</p>
+<p>Deux pastilles s'affichent à côté du titre : la première pour le voyage en voiture, la seconde pour le même voyage en transports en commun. Vous voyez ainsi ce que vous gagnez à laisser la voiture.</p>
+</div></details>
+<details><summary><h3>Comment Lilia choisit-elle ses itinéraires ?</h3></summary><div class="rep">
+<p>En trois temps.</p>
+<ol>
+<li>Une IA lit votre phrase et en tire vos critères : ville de départ, temps de trajet maximum, lieux ou monuments à voir, mois, envie de soleil ou de neige, type de voyageurs, thèmes, durée du séjour.</li>
+<li>Le site trie tout le catalogue selon ces critères, sans IA : distance depuis votre ville, thèmes, durée. Si vous citez un lieu précis, il passe avant tout le reste.</li>
+<li>L'IA classe les meilleurs résultats et explique en une phrase pourquoi chacun correspond.</li>
+</ol>
+<p>Lilia ne cherche que dans notre catalogue et n'invente aucun itinéraire. Si votre demande est difficile à satisfaire, par exemple se baigner en février près de chez vous, elle vous le dit et propose ce qui s'en approche le plus.</p>
+</div></details>
+<details><summary><h3>À quoi sert le résumé IA ?</h3></summary><div class="rep">
+<p>C'est l'avis d'une IA sur votre voyage, tel que vous l'avez modifié. Il contient :</p>
+<ul>
+<li>jusqu'à trois alertes : un trajet trop long, un lieu fermé en saison, un détour inutile, un visa à prévoir ;
+</li>
+<li>un avis en trois lignes : les points forts, les points faibles, et un verdict (pour qui, faut-il raccourcir ou allonger, un conseil) ;
+</li>
+<li>pour chaque étape : l'essentiel à voir, puis le trajet vers l'étape suivante.
+</li></ul>
+<p>Les jours, les lieux et les trajets viennent de votre itinéraire, pas de l'IA : elle ne peut pas les changer.</p>
+<p>Il faut être connecté pour le générer. Vous pouvez ensuite le copier, l'imprimer ou l'envoyer.</p>
+<p>Vous avez droit à un résumé par mois et par compte.</p>
+</div></details>
+</div></details>
+<details class="rub" id="rubrique-8"><summary><h2>8. Les différentes pages du site</h2></summary><div class="rubc">
+<details><summary><h3>Le bandeau du haut</h3></summary><div class="rep">
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/bandeauhaut.webp" alt="le bandeau du haut avec les boutons Catalogue, Actualités, Blog, Vos voyages, la langue et la connexion" loading="lazy"></figure>
+<p>Il est présent sur toutes les pages. De gauche à droite :</p>
+<ul>
+<li>le logo : retour à la page d'accueil ;
+</li>
+<li>Catalogue : la liste de tous les itinéraires ;
+</li>
+<li>Actualités : nos dernières nouvelles ;
+</li>
+<li>Blog : nos articles de voyage ;
+</li>
+<li>Vos voyages : vos itinéraires enregistrés ;
+</li>
+<li>Aide : cette page de questions et réponses ;
+</li>
+<li>le choix de la langue ;
+</li>
+<li>Se connecter : votre compte.
+</li></ul>
+</div></details>
+<details><summary><h3>La page d'accueil</h3></summary><div class="rep">
+<p>https://www.oneroadtrip.com/</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/accueil.webp" alt="la page d&#x27;accueil, avec les cinq onglets de recherche et les premiers itinéraires" loading="lazy"></figure>
+<p>Elle vous permet de choisir ou de créer votre itinéraire. En haut, les chiffres du site et les cinq façons de chercher (voir <a href="#rubrique-2">rubrique 2</a>). Sous les filtres, trois raccourcis : Bestseller, Testé et approuvé ORT, Itinéraires de créateurs. En dessous, la liste de tous les itinéraires, triée par date, par pays ou par durée, en photos ou en cartes.</p>
+</div></details>
+<details><summary><h3>La page "À partir des lieux"</h3></summary><div class="rep">
+<p><a href="/carte_builder.html?mode=expert">oneroadtrip.com/carte_builder.html?mode=expert</a></p>
+<p>Elle vous permet de créer votre propre itinéraire en cliquant sur chaque lieu référencé ou en ajoutant un lieu nouveau (voir <a href="#rubrique-4">rubrique 4</a>).</p>
+</div></details>
+<details><summary><h3>La page planisphère</h3></summary><div class="rep">
+<p><a href="/globe.html">oneroadtrip.com/globe.html</a></p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/worldmap.webp" alt="le planisphère, un globe couvert de pastilles orange chiffrées" loading="lazy"></figure>
+<p>Elle vous permet de choisir un itinéraire en le situant sur le globe, dans le pays que vous visez. Chaque pastille orange porte le nombre d'itinéraires de la zone. Zoomez sur une région, puis ouvrez l'itinéraire qui vous plaît.</p>
+</div></details>
+<details><summary><h3>Les pages itinéraires</h3></summary><div class="rep">
+<p>(Voir l'image d'un itinéraire à la <a href="#rubrique-6">rubrique 6</a>, question sur les erreurs.)</p>
+<p>Ce sont nos itinéraires déjà créés. Selon l'itinéraire, la présentation peut changer un peu, mais vous y trouvez toujours :</p>
+<ul>
+<li>Une fenêtre de bienvenue à la première visite. Elle explique que le site est gratuit, comment modifier l'itinéraire, et donne les infos du voyage. Vous la retrouvez ensuite dans le menu.
+</li>
+<li>L'en-tête : le titre, le nombre de jours, le nombre d'étapes, les kilomètres et le temps de route, la liste des étapes dans l'ordre, un texte de présentation et un bouton "Voir les photos". Un "!" rouge à côté du titre sert à signaler une erreur. Un lien mène aux autres itinéraires du même pays.
+</li>
+<li>Les commentaires des voyageurs.
+</li>
+<li>Les infos du voyage : points forts, météo et meilleure période, budget.
+</li>
+<li>Les boutons de réservation : réserver un vol, louer une voiture, louer un van.
+</li>
+<li>La carte interactive : elle montre le tracé et les étapes. La légende distingue Incontournable, Recommandé, À découvrir et Étape en cours. Vous pouvez afficher les "Autres lieux" autour du parcours, passer en plein écran, et modifier l'itinéraire directement sur la carte.
+</li>
+<li>Le détail de chaque étape :
+<ul>
+<li>la note du lieu, en étoiles ;</li>
+<li>le nombre de nuits conseillé, que vous pouvez changer ;</li>
+<li>la base conseillée pour dormir et le bouton "Dormir à..." ;</li>
+<li>les visites, numérotées, avec un texte et une durée pour chacune ;</li>
+<li>les activités proposées ;</li>
+<li>des visites guidées et des billets à réserver, avec leur note et leur prix de départ ;</li>
+<li>"Où dormir" : un hôtel proposé, avec sa note et sa gamme de prix ;</li>
+<li>un bouton haut-parleur pour écouter le texte de l'étape ;</li>
+<li>un "!" rouge pour signaler une erreur sur cette étape.</li>
+</ul></li>
+<li>Des flèches "Étape précédente" et "Étape suivante" pour avancer dans le voyage.
+</li>
+<li>Le bouton "Sauvegarder" pour garder l'itinéraire dans "Vos voyages".
+</li>
+<li>En bas de page : "Tout éditer", "Fusionner des itinéraires", "Une question ? Une idée ?" pour nous écrire, "Découvrez aussi" avec des itinéraires proches, et "Itinéraire vérifié" pour signaler une erreur.
+</li></ul>
+</div></details>
+<details><summary><h3>L'éditeur avancé (sur ordinateur)</h3></summary><div class="rep">
+<p><a href="/roadtrip_detail">oneroadtrip.com/roadtrip_detail</a></p>
+<p>C'est la page où vous arrivez en cliquant sur "Tout éditer". Elle vous permet de :</p>
+<p>(Voir l'image de l'éditeur à la <a href="#rubrique-5">rubrique 5</a>, question sur l'impression.)</p>
+<ul>
+<li>Voir le résumé du voyage en haut : titre (modifiable), date de départ, nombre de nuits, kilomètres, temps de route et budget. À côté du titre, deux pastilles donnent le score carbone du voyage, de A+ à E. Juste en dessous : la meilleure période et les points forts.
+</li>
+<li>Lire la carte : elle montre le tracé numéroté. Vous pouvez y afficher les sites UNESCO et les parcs, et repérer les boucles du circuit par couleur.
+</li>
+<li>Modifier les étapes, avec le menu "Outils" : ajouter une étape, ajouter un lieu sur la carte, réorganiser l'itinéraire sur la carte, afficher d'autres lieux proposés.
+</li>
+<li>Réorganiser l'itinéraire sur la carte : un clic sur une étape lui donne sa place dans le nouvel ordre, un double-clic la retire, un nouveau double-clic la remet. Vous pouvez inverser le sens du circuit, prévisualiser, puis valider. Sans validation, rien n'est gardé.
+</li>
+<li>Régler chaque étape : nombre de nuits, visites prévues, activités, notes personnelles. Vous pouvez en ajouter ou en supprimer, voir les photos, voir les hôtels et ouvrir le lieu dans Google Maps.
+</li>
+<li>Réserver : activités et visites guidées, billets, spectacles, vols, location de voiture, transferts, assurance voyage.
+</li>
+<li>Ajouter vos propres éléments : importer une réservation (hôtels, guides, avions), voir vos réservations, intégrer vos photos.
+</li>
+<li>Suivre votre budget : total, détail par catégorie (transport, hébergement, activités, autres) et ajout de vos propres dépenses.
+</li>
+<li>Consulter la fiche pays : meilleure période, lieux emblématiques, transports, budget pour deux personnes, conseils essentiels, avertissements de sécurité.
+</li>
+<li>Obtenir un résumé du voyage rédigé par l'IA, à copier, imprimer ou envoyer par e-mail.
+</li>
+<li>Sortir votre voyage : carnet de voyage, PDF, impression, ajout des étapes à votre calendrier, export du tracé pour un GPS.
+</li>
+<li>Enregistrer, partager, noter le road trip et signaler une erreur.
+</li></ul>
+</div></details>
+<details><summary><h3>La page mobile (sur téléphone)</h3></summary><div class="rep">
+<p><a href="/roadtrip_mobile">oneroadtrip.com/roadtrip_mobile</a></p>
+<p>C'est la même chose que l'éditeur avancé, pensée pour le téléphone et pour le voyage lui-même.</p>
+<figure><img src="https://photos.oneroadtrip.com/articles-blog/rtmobile.webp" alt="la page mobile : le résumé du voyage en haut, la liste des étapes, et la barre du bas" loading="lazy"></figure>
+<p>En haut : le nombre d'étapes, de nuits, de kilomètres et la note carbone. Chaque étape de la liste affiche sa photo, sa note, la distance jusqu'à la suivante et les nuits prévues.</p>
+<p>Elle vous permet de :</p>
+<ul>
+<li>Écouter chaque étape, utile quand vous conduisez.
+</li>
+<li>Faire défiler le voyage étape par étape, avec les flèches.
+</li>
+<li>Régler chaque étape : nombre de nuits, visites prévues, activités, notes.
+</li>
+<li>Vous repérer : "Voir sur la carte", "Voir l'itinéraire" dans Google Maps, et autour de vous les restos, monuments, musées et courses.
+</li>
+<li>Aller à votre prochain lieu : sur la page Google Maps, touchez l'étape puis le lieu qui vous intéresse, et Google vous y conduit.
+</li>
+<li>Passer d'une vue à l'autre avec la barre du bas : Itinéraire, Google Map, Carte, Réservations, Organiser.
+</li>
+<li>Réserver pour chaque étape : tours, billets, hôtel.
+</li>
+<li>Préparer votre voyage dans "Organiser" : hôtels, activités, assurance, vols, location auto, transferts.
+</li>
+<li>Scanner une réservation (une photo suffit pour l'importer) ou un document de voyage (passeport, visa, permis).
+</li>
+<li>Obtenir le résumé du voyage par l'IA et l'envoyer par WhatsApp, SMS ou e-mail.
+</li>
+<li>Enregistrer et partager le voyage, changer de langue et gérer votre compte.
+</li></ul>
+</div></details>
+</div></details>
+</main>
+<button type="button" id="sigBtn" aria-label="Signaler une erreur" title="Signaler une erreur">!</button>
+<div id="sigBox" role="dialog" aria-modal="true" aria-labelledby="sigTitre">
+<div class="carte">
+<button type="button" class="fermer" id="sigFermer" aria-label="Fermer">&times;</button>
+<h2 id="sigTitre">Signaler une erreur</h2>
+<p>Une erreur ou une explication peu claire dans cette aide ? Décrivez-la, nous corrigeons.</p>
+<div id="sigForm">
+<textarea id="sigMsg" placeholder="Votre message" aria-label="Votre message"></textarea>
+<input type="email" id="sigMail" placeholder="Votre e-mail (facultatif, pour vous répondre)" aria-label="Votre e-mail (facultatif)">
+<button type="button" class="envoyer" id="sigEnvoyer">Envoyer</button>
+</div>
+<div id="sigEtat" data-ok="Merci, votre signalement est envoyé." data-vide="Merci d'écrire votre message." data-err="Envoi impossible. Réessayez ou écrivez à contact@oneroadtrip.com"></div>
+</div>
+</div>
+<footer id="footer-legal"></footer>
+<script>
+(function(){
+  function tous(etat){var d=document.querySelectorAll('main.aide details');for(var i=0;i<d.length;i++)d[i].open=etat;}
+  document.getElementById('toutOuvrir').onclick=function(){tous(true);};
+  document.getElementById('toutFermer').onclick=function(){tous(false);};
+  window.addEventListener('beforeprint',function(){tous(true);});
+  // Un lien vers une rubrique la deplie avant d'y aller.
+  function ouvreCible(){
+    var id=decodeURIComponent(location.hash.slice(1));
+    var el=id&&document.getElementById(id);
+    if(el&&el.tagName==='DETAILS'){el.open=true;el.scrollIntoView();}
+  }
+  window.addEventListener('hashchange',ouvreCible);
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href^="#rubrique-"]');
+    if(!a)return;
+    var el=document.getElementById(a.getAttribute('href').slice(1));
+    if(el)el.open=true;
+  });
+  ouvreCible();
+})();
+</script>
+<script>
+/* Signalement d'erreur : meme envoi que le formulaire "Ecrivez-nous" des itineraires. */
+(function(){
+  var box=document.getElementById('sigBox'),etat=document.getElementById('sigEtat'),
+      form=document.getElementById('sigForm'),btn=document.getElementById('sigEnvoyer');
+  function dire(cle,ok){etat.style.display='block';etat.style.background=ok?'#e6f4ea':'#fdecea';etat.style.color=ok?'#14532d':'#611a15';etat.textContent=etat.getAttribute(cle);}
+  function fermer(){box.classList.remove('open');}
+  document.getElementById('sigBtn').onclick=function(){
+    form.style.display='';etat.style.display='none';btn.disabled=false;
+    box.classList.add('open');document.getElementById('sigMsg').focus();
+  };
+  document.getElementById('sigFermer').onclick=fermer;
+  document.getElementById('sigMsg').addEventListener('input',function(){etat.style.display='none';});
+  box.addEventListener('click',function(e){if(e.target===box)fermer();});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')fermer();});
+  btn.onclick=function(){
+    var msg=(document.getElementById('sigMsg').value||'').trim();
+    var mail=(document.getElementById('sigMail').value||'').trim();
+    if(!msg){dire('data-vide',false);return;}
+    btn.disabled=true;
+    fetch('https://api.emailjs.com/api/v1.0/email/send',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({service_id:'service_9bdqzog',template_id:'template_f1eynm7',user_id:'ofOAMANfqdxM-tQsH',
+        template_params:{name:'Page Aide',email:mail||'contact@oneroadtrip.com',
+          title:'Erreur signalée - '+document.title,
+          message:msg+'\n\nPage : '+location.href+'\nE-mail du visiteur : '+(mail||'non donné')}})
+    }).then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      form.style.display='none';document.getElementById('sigMsg').value='';dire('data-ok',true);
+    }).catch(function(){dire('data-err',false);btn.disabled=false;});
+  };
+})();
+</script>
+<script src="/js/ort-config.js"></script>
+<script src="/js/ort-i18n-socle.js"></script>
+<script src="/js/ort-i18n-auth.js"></script>
+<script src="/js/ort-header.js"></script>
+<script src="/js/ort-footer.js"></script>
+<!-- ort-page-tracking-v1 -->
+<script>
+(function(){try{
+  if(window.__ortTrackStarted)return; window.__ortTrackStarted=true;
+  var openTs=Date.now(),maxScroll=0,sent=false;
+  function device(){try{var w=window.innerWidth||0;return (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||w<=900)?"mobile":"desktop";}catch(e){return "unknown";}}
+  function campaign(){try{var p=new URLSearchParams(location.search);var c=p.get("utm_campaign")||p.get("utm_source")||p.get("src")||"";return c?String(c).slice(0,80):"(direct)";}catch(e){return "(direct)";}}
+  function referrer(){try{var r=(document&&document.referrer)?document.referrer:"";if(!r||typeof r!=="string")return "(direct)";var h="";try{h=new URL(r).hostname;}catch(e){return "(direct)";}h=h.replace(/^www\./,"");if(!h)return "(direct)";if(h.indexOf("oneroadtrip")!==-1)return "(interne)";return h.slice(0,80);}catch(e){return "(direct)";}}
+  function visitorId(){try{var k="ort_vid";var v=localStorage.getItem(k);if(!v){v="v"+Date.now().toString(36)+Math.random().toString(36).slice(2,10);localStorage.setItem(k,v);}return v;}catch(e){return "(anon)";}}
+  function lang(){try{return (typeof currentLang!=="undefined"&&currentLang)?currentLang:((document&&document.documentElement&&document.documentElement.lang)||"?");}catch(e){return "?";}}
+  window.addEventListener("scroll",function(){try{var el=document.scrollingElement||document.documentElement;if(!el)return;var sc=el.scrollTop/((el.scrollHeight-el.clientHeight)||1)*100;if(sc>maxScroll)maxScroll=Math.min(100,Math.round(sc));}catch(e){}},{passive:true});
+  function send(){
+    if(sent)return; sent=true;
+    try{
+      var dur=Date.now()-openTs;
+      var body={fields:{tpl:{integerValue:0},itin:{stringValue:"__PAGE__"},cc:{stringValue:"__PAGE__"},lang:{stringValue:lang()},device:{stringValue:device()},campaign:{stringValue:campaign()},referrer:{stringValue:referrer()},visitor:{stringValue:visitorId()},durationMs:{integerValue:dur},scrollPct:{integerValue:maxScroll},page:{stringValue:"help-fr"},ts:{timestampValue:new Date(openTs).toISOString()}}};
+      var url="https://firestore.googleapis.com/v1/projects/oneroadtrip-prod/databases/(default)/documents/template_events";
+      var blob=new Blob([JSON.stringify(body)],{type:"application/json"});
+      if(navigator.sendBeacon){navigator.sendBeacon(url,blob);}else{fetch(url,{method:"POST",body:JSON.stringify(body),keepalive:true});}
+    }catch(e){}
+  }
+  window.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")send();});
+  window.addEventListener("pagehide",send);
+  window.addEventListener("beforeunload",send);
+}catch(e){}})();
+</script>
+<!-- /ort-page-tracking-v1 -->
+</body>
+</html>
